@@ -384,12 +384,119 @@ echo "Installing linux-modules-extra for kernel ${KERNEL_VERSION}..."
 # Install NVIDIA Driver
 # ============================================================
 # Driver selection strategy:
-# - vGPU: ONLY proprietary drivers (open modules fail with "not supported by open nvidia.ko")
+# - vGPU: try GRID guest driver first (.run from public GCS), then proprietary fallback
 # - Passthrough/bare-metal: try open first (required for Blackwell+), then proprietary fallback
 echo "\n========== NVIDIA Driver =========="
 
 INSTALL_LOG=$(mktemp)
 DRIVER_INSTALLED=false
+
+# ----------------------------------------------------------
+# vGPU: Try NVIDIA GRID guest driver first (.run installer)
+# ----------------------------------------------------------
+# Fractional/vGPU instances (AWS g6f, GCP G2 fractional, Azure NVadsA10v5, etc.)
+# require GRID guest drivers — Tesla/public drivers install but nvidia-smi fails.
+# GRID drivers are NOT available in the public CUDA apt repo.
+# GCP hosts official NVIDIA GRID .run installers at a public GCS URL.
+# These are standard NVIDIA binaries (not GCP-specific) and work on any CSP,
+# provided the host vGPU Manager version is compatible (same major branch).
+#
+# Strategy: try multiple GRID versions (newest first) to maximize compatibility
+# with different CSP vGPU Manager versions. If all fail, fall back to Tesla drivers.
+if [ "$IS_VGPU" = true ]; then
+    echo ""
+    echo "--- vGPU: Attempting GRID guest driver installation ---"
+    echo "  GRID drivers are required for fractional/vGPU instances."
+    echo "  Downloading from NVIDIA public repository (hosted on GCS)..."
+
+    # GRID driver candidates: newest first for broad compatibility.
+    # Format: "vGPU_branch_dir driver_version"
+    # Source: https://cloud.google.com/compute/docs/gpus/grid-drivers-table
+    # Note: Guest driver must match (same or adjacent) the CSP's vGPU Manager branch.
+    #   vGPU 19.x (R580) - latest recommended
+    #   vGPU 18.x (R570) - previous generation
+    #   vGPU 17.x (R550) - end-of-support but still deployed
+    #   vGPU 16.x (R535) - long-term support branch
+    GRID_CANDIDATES=(
+        "vGPU19.4 580.126.09"
+        "vGPU18.6 570.211.01"
+        "vGPU17.6 550.163.01"
+        "vGPU16.13 535.288.01"
+    )
+    GRID_BASE_URL="https://storage.googleapis.com/nvidia-drivers-us-public/GRID"
+
+    for grid_entry in "${GRID_CANDIDATES[@]}"; do
+        GRID_BRANCH="${grid_entry%% *}"
+        GRID_VERSION="${grid_entry##* }"
+        GRID_FILENAME="NVIDIA-Linux-x86_64-${GRID_VERSION}-grid.run"
+        GRID_URL="${GRID_BASE_URL}/${GRID_BRANCH}/${GRID_FILENAME}"
+        GRID_FILE="$(mktemp "/tmp/${GRID_FILENAME}.XXXXXX")" || {
+            echo "  ✗ Failed to create temporary file for GRID driver. Skipping..."
+            continue
+        }
+
+        echo ""
+        echo "  Trying GRID ${GRID_BRANCH} (driver ${GRID_VERSION})..."
+        echo "  URL: ${GRID_URL}"
+
+        # Download
+        set +e
+        if command -v curl &>/dev/null; then
+            curl -fsSL --connect-timeout 15 --max-time 300 "$GRID_URL" -o "$GRID_FILE" 2>/dev/null
+        else
+            wget -q --timeout=15 "$GRID_URL" -O "$GRID_FILE" 2>/dev/null
+        fi
+        DL_EXIT=$?
+        set -e
+
+        if [ $DL_EXIT -ne 0 ] || [ ! -s "$GRID_FILE" ]; then
+            echo "  ✗ Download failed (exit: $DL_EXIT). Trying next version..."
+            rm -f "$GRID_FILE"
+            continue
+        fi
+
+        echo "  ✓ Downloaded $(du -h "$GRID_FILE" | awk '{print $1}')"
+
+        # Install: --silent (non-interactive), --dkms (kernel module management),
+        # --no-cc-version-check (tolerate GCC version mismatches on cloud kernels)
+        echo "  Installing GRID driver..."
+        chmod +x "$GRID_FILE"
+        GRID_LOG="/var/log/nvidia-grid-installer.log"
+        set +e
+        sudo "$GRID_FILE" --silent --dkms --no-cc-version-check 2>&1 | sudo tee "$GRID_LOG" | tail -20
+        GRID_EXIT=${PIPESTATUS[0]}
+        set -e
+
+        rm -f "$GRID_FILE"
+
+        if [ $GRID_EXIT -eq 0 ]; then
+            echo "  ✓ GRID driver ${GRID_VERSION} installed successfully."
+            # Quick verification: does the kernel module load?
+            if modinfo nvidia &>/dev/null; then
+                echo "  ✓ GRID kernel module: $(modinfo nvidia 2>/dev/null | grep '^version:' | awk '{print $2}')"
+                DRIVER_INSTALLED=true
+                break
+            else
+                echo "  ⚠ GRID driver installed but kernel module not loadable. Trying next..."
+            fi
+        else
+            echo "  ✗ GRID ${GRID_VERSION} install failed (exit: $GRID_EXIT)."
+            echo "    This may indicate vGPU Manager version incompatibility."
+            echo "    Full log: $GRID_LOG"
+        fi
+    done
+
+    if [ "$DRIVER_INSTALLED" = true ]; then
+        echo ""
+        echo "  ✓ GRID guest driver installation succeeded."
+        echo "  Note: nvidia-smi will work after reboot."
+    else
+        echo ""
+        echo "  ⚠ All GRID driver versions failed."
+        echo "    Falling back to Tesla (public CUDA repo) drivers."
+        echo "    These may install but nvidia-smi might not work on vGPU instances."
+    fi
+fi
 
 # Helper: purge broken/leftover nvidia packages before retrying
 cleanup_nvidia_packages() {
@@ -418,49 +525,55 @@ show_dkms_log() {
     fi
 }
 
-# Build driver candidate list based on vGPU detection.
-# IMPORTANT: Use version-pinned packages (cuda-drivers-550) BEFORE unversioned (cuda-drivers).
-# The unversioned 'cuda-drivers' metapackage always pulls the LATEST driver from the CUDA repo.
-# Newer driver branches (e.g., 590.x) may drop support for certain GPU PCI IDs
-# (e.g., L4 GPU 10de:27b8 is "not supported by NVIDIA 590.48.01").
-# The 550.x branch is the current production/stable branch with broad GPU support.
-if [ "$IS_VGPU" = true ]; then
-    DRIVER_CANDIDATES=("cuda-drivers-550" "nvidia-driver-550" "cuda-drivers")
-else
-    DRIVER_CANDIDATES=("cuda-drivers-550-open" "cuda-drivers-open" "cuda-drivers-550" "nvidia-driver-550-open" "nvidia-driver-550" "cuda-drivers")
+# ----------------------------------------------------------
+# Fallback: apt-based driver installation (Tesla/public CUDA repo)
+# ----------------------------------------------------------
+# Skip if GRID driver was already installed successfully above.
+if [ "$DRIVER_INSTALLED" != true ]; then
+    # Build driver candidate list based on vGPU detection.
+    # IMPORTANT: Use version-pinned packages (cuda-drivers-550) BEFORE unversioned (cuda-drivers).
+    # The unversioned 'cuda-drivers' metapackage always pulls the LATEST driver from the CUDA repo.
+    # Newer driver branches (e.g., 590.x) may drop support for certain GPU PCI IDs
+    # (e.g., L4 GPU 10de:27b8 is "not supported by NVIDIA 590.48.01").
+    # The 550.x branch is the current production/stable branch with broad GPU support.
+    if [ "$IS_VGPU" = true ]; then
+        DRIVER_CANDIDATES=("cuda-drivers-550" "nvidia-driver-550" "cuda-drivers")
+    else
+        DRIVER_CANDIDATES=("cuda-drivers-550-open" "cuda-drivers-open" "cuda-drivers-550" "nvidia-driver-550-open" "nvidia-driver-550" "cuda-drivers")
+    fi
+
+    for CANDIDATE in "${DRIVER_CANDIDATES[@]}"; do
+        echo ""
+        echo "Attempting: ${CANDIDATE}..."
+        set +e
+        if [[ "$CANDIDATE" == nvidia-driver-* ]]; then
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                "${APT_OPTS[@]}" -o Dpkg::Options::="--force-overwrite" \
+                "$CANDIDATE" 2>&1 | tee "$INSTALL_LOG"
+        else
+            "${APT_INSTALL[@]}" "$CANDIDATE" 2>&1 | tee "$INSTALL_LOG"
+        fi
+        CANDIDATE_EXIT=${PIPESTATUS[0]}
+        set -e
+
+        if [ $CANDIDATE_EXIT -eq 0 ]; then
+            echo "✓ Successfully installed: ${CANDIDATE}"
+            DRIVER_INSTALLED=true
+            break
+        else
+            echo "✗ ${CANDIDATE} failed (exit code: $CANDIDATE_EXIT)"
+            show_dkms_log
+            cleanup_nvidia_packages
+        fi
+    done
 fi
-
-for CANDIDATE in "${DRIVER_CANDIDATES[@]}"; do
-    echo ""
-    echo "Attempting: ${CANDIDATE}..."
-    set +e
-    if [[ "$CANDIDATE" == nvidia-driver-* ]]; then
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            "${APT_OPTS[@]}" -o Dpkg::Options::="--force-overwrite" \
-            "$CANDIDATE" 2>&1 | tee "$INSTALL_LOG"
-    else
-        "${APT_INSTALL[@]}" "$CANDIDATE" 2>&1 | tee "$INSTALL_LOG"
-    fi
-    CANDIDATE_EXIT=${PIPESTATUS[0]}
-    set -e
-
-    if [ $CANDIDATE_EXIT -eq 0 ]; then
-        echo "✓ Successfully installed: ${CANDIDATE}"
-        DRIVER_INSTALLED=true
-        break
-    else
-        echo "✗ ${CANDIDATE} failed (exit code: $CANDIDATE_EXIT)"
-        show_dkms_log
-        cleanup_nvidia_packages
-    fi
-done
 
 rm -f "$INSTALL_LOG"
 
 if [ "$DRIVER_INSTALLED" != true ]; then
     echo ""
     echo "ERROR: All driver installation attempts failed."
-    echo "Tried: ${DRIVER_CANDIDATES[*]}"
+    echo "Tried: GRID (.run) + ${DRIVER_CANDIDATES[*]}"
     exit 1
 fi
 
