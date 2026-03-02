@@ -107,7 +107,7 @@ fi
 
 source venv/bin/activate
 
-# GuideLLM 설치 여부 확인 후 필요시에만 설치
+# Check if GuideLLM is installed, install only if needed
 if ! python3 -c "import guidellm" 2>/dev/null; then
   echo "Installing GuideLLM..."
   pip install -q --upgrade pip
@@ -119,15 +119,15 @@ fi
 # ==========================================
 # 4. Run Benchmark
 # ==========================================
-# 타임스탬프로 결과 저장 디렉토리 생성
+# Create result directory with timestamp
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 IP_SAFE=$(echo "$TARGET_IP" | tr '.' '_')
 RESULT_DIR="$WORK_DIR/results_${IP_SAFE}_${TIMESTAMP}"
 mkdir -p "$RESULT_DIR"
 
-# 데이터 소스 결정 (Custom Dataset vs Synthetic)
+# Decide data source (Custom Dataset vs Synthetic)
 if [ -n "$DATA" ]; then
-  # Custom 데이터셋 사용 (HuggingFace, file, 또는 custom synthetic)
+  # Use custom dataset (HuggingFace, file, or custom synthetic)
   echo "------------------------------------------"
   echo "Target:   $TARGET_URL"
   echo "Profile:  $PROFILE (Max $MAX_SECONDS seconds)"
@@ -168,7 +168,7 @@ if [ -n "$DATA" ]; then
   
   eval "$GUIDELLM_CMD"
 else
-  # Synthetic 데이터 사용 (기본)
+  # Use synthetic data (default)
   DATA_SOURCE="prompt_tokens=${INPUT_LEN},output_tokens=${OUTPUT_LEN}"
   
   echo "------------------------------------------"
