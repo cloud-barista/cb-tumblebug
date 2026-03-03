@@ -2474,10 +2474,10 @@ func replaceWithPrivateIPs(nsId, mciId, separator, prefix, postfix, labelSelecto
 }
 
 // getVmIdsByLabel returns VM IDs in an MCI that match the given label selector.
-// It automatically prepends system label conditions (sys.mciId) for scoping.
+// It automatically prepends system label conditions (sys.namespace, sys.mciId) for scoping.
 func getVmIdsByLabel(nsId, mciId, labelSelector string) ([]string, error) {
-	// Add system label conditions to scope within the MCI
-	combinedSelector := fmt.Sprintf("sys.mciId=%s,%s", mciId, labelSelector)
+	// Add system label conditions to scope within the namespace and MCI
+	combinedSelector := fmt.Sprintf("%s=%s,%s=%s,%s", model.LabelNamespace, nsId, model.LabelMciId, mciId, labelSelector)
 
 	log.Debug().Str("combinedLabelSelector", combinedSelector).Msg("GetIPs: filtering VMs by label")
 
