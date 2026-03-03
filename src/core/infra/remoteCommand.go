@@ -2283,7 +2283,9 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 				return "", fmt.Errorf("built-in function GetPublicIP error: %s", err.Error())
 			}
 		} else if strings.EqualFold(funcName, "GetPublicIPs") || strings.EqualFold(funcName, "GetPrivateIPs") {
-			// Logic for GetPublicIPs function
+			// Logic for GetPublicIPs/GetPrivateIPs function
+			// Supports optional "label" parameter for filtering VMs by label selector
+			// Example: $$Func(GetPublicIPs(separator=' ', label='accelerator=gpu'))
 			targetMciId := mciId
 			if val, ok := params["target"]; ok {
 				if strings.EqualFold(val, "this") {
@@ -2304,13 +2306,17 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
+			labelSelector := ""
+			if lbl, ok := params["label"]; ok {
+				labelSelector = lbl
+			}
 			if strings.EqualFold(funcName, "GetPublicIPs") {
-				replacement, err = replaceWithPublicIPs(nsId, targetMciId, separator, prefix, postfix)
+				replacement, err = replaceWithPublicIPs(nsId, targetMciId, separator, prefix, postfix, labelSelector)
 			} else {
-				replacement, err = replaceWithPrivateIPs(nsId, targetMciId, separator, prefix, postfix)
+				replacement, err = replaceWithPrivateIPs(nsId, targetMciId, separator, prefix, postfix, labelSelector)
 			}
 			if err != nil {
-				return "", fmt.Errorf("built-in function getPublicIPs error: %s", err.Error())
+				return "", fmt.Errorf("built-in function %s error: %s", funcName, err.Error())
 			}
 		} else if strings.EqualFold(funcName, "AssignTask") {
 			// Logic for AssignTask function
@@ -2390,12 +2396,38 @@ func replaceWithPrivateIP(nsId, mciId, vmId, prefix, postfix string) (string, er
 	return prefix + ip + postfix, err
 }
 
-// replaceWithPublicIPs function to get and replace string with the public IP list of the target
-func replaceWithPublicIPs(nsId, mciId, separator, prefix, postfix string) (string, error) {
+// replaceWithPublicIPs returns the public IP list of VMs in the target MCI.
+// If labelSelector is non-empty, only VMs matching the label selector are included.
+// Example labelSelector: "accelerator=gpu" or "role=worker,env=prod"
+func replaceWithPublicIPs(nsId, mciId, separator, prefix, postfix, labelSelector string) (string, error) {
 	mciStatus, err := GetMciStatus(nsId, mciId)
 	if err != nil {
 		return "", err
 	}
+
+	// If labelSelector is specified, filter VMs by label
+	if labelSelector != "" {
+		filteredVmIds, err := getVmIdsByLabel(nsId, mciId, labelSelector)
+		if err != nil {
+			return "", fmt.Errorf("label filtering failed: %w", err)
+		}
+		if len(filteredVmIds) == 0 {
+			log.Warn().Str("labelSelector", labelSelector).Msg("GetPublicIPs: no VMs matched the label selector")
+			return "", nil
+		}
+		allowedIds := make(map[string]bool, len(filteredVmIds))
+		for _, id := range filteredVmIds {
+			allowedIds[id] = true
+		}
+		var ips []string
+		for _, vmStatus := range mciStatus.Vm {
+			if allowedIds[vmStatus.Id] {
+				ips = append(ips, prefix+vmStatus.PublicIp+postfix)
+			}
+		}
+		return strings.Join(ips, separator), nil
+	}
+
 	ips := make([]string, len(mciStatus.Vm))
 	for i, vmStatus := range mciStatus.Vm {
 		ips[i] = prefix + vmStatus.PublicIp + postfix
@@ -2403,17 +2435,66 @@ func replaceWithPublicIPs(nsId, mciId, separator, prefix, postfix string) (strin
 	return strings.Join(ips, separator), nil
 }
 
-// replaceWithPrivateIPs function to get and replace string with the Private IP list of the target
-func replaceWithPrivateIPs(nsId, mciId, separator, prefix, postfix string) (string, error) {
+// replaceWithPrivateIPs returns the private IP list of VMs in the target MCI.
+// If labelSelector is non-empty, only VMs matching the label selector are included.
+func replaceWithPrivateIPs(nsId, mciId, separator, prefix, postfix, labelSelector string) (string, error) {
 	mciStatus, err := GetMciStatus(nsId, mciId)
 	if err != nil {
 		return "", err
 	}
+
+	// If labelSelector is specified, filter VMs by label
+	if labelSelector != "" {
+		filteredVmIds, err := getVmIdsByLabel(nsId, mciId, labelSelector)
+		if err != nil {
+			return "", fmt.Errorf("label filtering failed: %w", err)
+		}
+		if len(filteredVmIds) == 0 {
+			log.Warn().Str("labelSelector", labelSelector).Msg("GetPrivateIPs: no VMs matched the label selector")
+			return "", nil
+		}
+		allowedIds := make(map[string]bool, len(filteredVmIds))
+		for _, id := range filteredVmIds {
+			allowedIds[id] = true
+		}
+		var ips []string
+		for _, vmStatus := range mciStatus.Vm {
+			if allowedIds[vmStatus.Id] {
+				ips = append(ips, prefix+vmStatus.PrivateIp+postfix)
+			}
+		}
+		return strings.Join(ips, separator), nil
+	}
+
 	ips := make([]string, len(mciStatus.Vm))
 	for i, vmStatus := range mciStatus.Vm {
 		ips[i] = prefix + vmStatus.PrivateIp + postfix
 	}
 	return strings.Join(ips, separator), nil
+}
+
+// getVmIdsByLabel returns VM IDs in an MCI that match the given label selector.
+// It automatically prepends system label conditions (sys.mciId) for scoping.
+func getVmIdsByLabel(nsId, mciId, labelSelector string) ([]string, error) {
+	// Add system label conditions to scope within the MCI
+	combinedSelector := fmt.Sprintf("sys.mciId=%s,%s", mciId, labelSelector)
+
+	log.Debug().Str("combinedLabelSelector", combinedSelector).Msg("GetIPs: filtering VMs by label")
+
+	matchedResources, err := label.GetResourcesByLabelSelector(model.StrVM, combinedSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	vmIds := make([]string, 0, len(matchedResources))
+	for _, resource := range matchedResources {
+		if vmInfo, ok := resource.(*model.VmInfo); ok {
+			vmIds = append(vmIds, vmInfo.Id)
+		}
+	}
+
+	log.Debug().Int("matchedCount", len(vmIds)).Str("labelSelector", labelSelector).Msg("GetIPs: VMs matched by label")
+	return vmIds, nil
 }
 
 // replaceWithId function to replace string with the prefix and postfix
