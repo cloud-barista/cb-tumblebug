@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -193,7 +195,7 @@ func RestPostFileToMci(c echo.Context) error {
 	}
 
 	// File size validation
-	fileSizeLimit := int64(10 * 1024 * 1024) // (10MB limit)
+	fileSizeLimit := int64(50 * 1024 * 1024) // (50MB limit)
 	if file.Size > fileSizeLimit {
 		err := fmt.Errorf("file too large, max size is %v", fileSizeLimit)
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -226,6 +228,69 @@ func RestPostFileToMci(c echo.Context) error {
 
 	// Return the result
 	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestPostDownloadFileFromMciVm godoc
+// @ID PostDownloadFileFromMciVm
+// @Summary Download a file from a VM in MCI
+// @Description Download a file from a specific VM in MCI via SCP through bastion host.
+// @Description The file size should be less than 200MB.
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  application/octet-stream,json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param fileDownloadReq body model.FileDownloadReq true "File download request"
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {file} file "Downloaded file"
+// @Failure 400 {object} model.SimpleMsg "Invalid request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/downloadFile/mci/{mciId}/vm/{vmId} [post]
+func RestPostDownloadFileFromMciVm(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	req := &model.FileDownloadReq{}
+	if err := c.Bind(req); err != nil {
+		err = fmt.Errorf("invalid request body: %v", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	if req.SourcePath == "" {
+		err := fmt.Errorf("sourcePath is required")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Download the file from the VM
+	fileData, fileName, err := infra.DownloadFileFromMciVm(nsId, mciId, vmId, req.SourcePath)
+	if err != nil {
+		err = fmt.Errorf("failed to download file from VM: %v", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Sanitize fileName to prevent header injection
+	safeFileName := path.Base(fileName)
+	safeFileName = strings.Map(func(r rune) rune {
+		if r == '"' || r == '\\' || r == '\r' || r == '\n' {
+			return '_'
+		}
+		return r
+	}, safeFileName)
+	if safeFileName == "" || safeFileName == "." {
+		safeFileName = "downloaded_file"
+	}
+
+	// Set response headers for file download
+	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", safeFileName))
+	c.Response().Header().Set("Content-Type", "application/octet-stream")
+	c.Response().Header().Set("Content-Length", fmt.Sprintf("%d", len(fileData)))
+
+	log.Info().Msgf("Sending downloaded file: %s (%d bytes) from VM %s", fileName, len(fileData), vmId)
+
+	return c.Blob(http.StatusOK, "application/octet-stream", fileData)
 }
 
 // RestSetBastionNodes godoc

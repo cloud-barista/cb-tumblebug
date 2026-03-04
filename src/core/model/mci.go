@@ -1344,6 +1344,11 @@ type MciSshCmdResultForAPI struct {
 	Results []SshCmdResultForAPI `json:"results"`
 }
 
+// FileDownloadReq is struct for file download request from a VM
+type FileDownloadReq struct {
+	SourcePath string `json:"sourcePath" validate:"required" example:"/home/cb-user/result.json"` // Full path of the file on the remote VM
+}
+
 // SshInfo is struct for ssh info
 type SshInfo struct {
 	UserName   string // ex) root

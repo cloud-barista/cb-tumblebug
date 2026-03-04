@@ -3492,6 +3492,84 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/downloadFile/mci/{mciId}/vm/{vmId}": {
+            "post": {
+                "description": "Download a file from a specific VM in MCI via SCP through bastion host.\nThe file size should be less than 200MB.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream",
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Download a file from a VM in MCI",
+                "operationId": "PostDownloadFileFromMciVm",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "File download request",
+                        "name": "fileDownloadReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.FileDownloadReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Downloaded file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/installBenchmarkAgent/mci/{mciId}": {
             "post": {
                 "description": "Install the benchmark agent to specified MCI",
@@ -17620,6 +17698,19 @@ const docTemplate = `{
                     "description": "Total is the total number of tasks",
                     "type": "integer",
                     "example": 5
+                }
+            }
+        },
+        "model.FileDownloadReq": {
+            "type": "object",
+            "required": [
+                "sourcePath"
+            ],
+            "properties": {
+                "sourcePath": {
+                    "description": "Full path of the file on the remote VM",
+                    "type": "string",
+                    "example": "/home/cb-user/result.json"
                 }
             }
         },
