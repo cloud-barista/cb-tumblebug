@@ -2783,6 +2783,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/downloadFile/mci/{mciId}/vm/{vmId}:
+    post:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Download a file from a VM in MCI
+      description: |-
+        Download a file from a specific VM in MCI via SCP through bastion host.
+        The file size should be less than 200MB.
+      operationId: PostDownloadFileFromMciVm
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      requestBody:
+        description: File download request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.FileDownloadReq'
+        required: true
+      responses:
+        "200":
+          description: Downloaded file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid request
+          content:
+            application/octet-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/octet-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: fileDownloadReq
   /ns/{nsId}/installBenchmarkAgent/mci/{mciId}:
     post:
       tags:
@@ -14653,6 +14727,15 @@ components:
           type: integer
           description: Total is the total number of tasks
           example: 5
+    model.FileDownloadReq:
+      required:
+      - sourcePath
+      type: object
+      properties:
+        sourcePath:
+          type: string
+          description: Full path of the file on the remote VM
+          example: /home/cb-user/result.json
     model.FilterAvailableValues:
       type: object
       properties:

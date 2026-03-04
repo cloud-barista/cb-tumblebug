@@ -139,14 +139,14 @@ func CancelActiveCommandsForVm(vmId string) int {
 				log.Info().Str("vmId", vmId).Str("key", keyStr).Msg("Cancelling active SSH command due to VM termination")
 				info.CancelFunc()
 				cancelFuncs.Delete(key)
-				
+
 				// Update command status to Cancelled in kvstore
 				err := UpdateCommandStatusInfo(info.NsId, info.MciId, info.VmId, info.Index,
 					model.CommandStatusCancelled, "Command cancelled due to VM termination", "", "", "")
 				if err != nil {
 					log.Warn().Err(err).Str("vmId", vmId).Int("index", info.Index).Msg("Failed to update command status to Cancelled")
 				}
-				
+
 				cancelled++
 			}
 		}
@@ -480,7 +480,7 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId
 					// Status not yet updated to Cancelled, do it now
 					stdoutStr := mapToString(stdout)
 					stderrStr := mapToString(stderr)
-					UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCancelled, 
+					UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCancelled,
 						"Command execution cancelled", err.Error(), stdoutStr, stderrStr)
 				}
 			}
@@ -1970,6 +1970,272 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 	log.Info().Msgf("File successfully transferred to %s via Bastion", targetFullPath)
 
 	return nil
+}
+
+// DownloadFileFromMciVm downloads a file from a specific VM in MCI by SCP through bastion hosts
+func DownloadFileFromMciVm(nsId string, mciId string, vmId string, sourcePath string) ([]byte, string, error) {
+
+	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get VM IP: %v", err)
+	}
+
+	// Check VM status before executing file download
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get VM status: %v", err)
+	}
+	if vmInfo.Status != model.StatusRunning {
+		return nil, "", fmt.Errorf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+	}
+
+	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, "")
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to verify SSH username: %v", err)
+	}
+
+	targetSshInfo := model.SshInfo{
+		EndPoint:   fmt.Sprintf("%s:%d", targetVmIP, targetSshPort),
+		UserName:   targetUserName,
+		PrivateKey: []byte(targetPrivateKey),
+	}
+
+	// Download file from VM via bastion
+	fileData, fileName, err := downloadFileFromVmViaBastion(nsId, mciId, vmId, targetSshInfo, sourcePath)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download file from VM: %v", err)
+	}
+
+	log.Info().Msgf("Successfully downloaded file '%s' (%d bytes) from VM %s", fileName, len(fileData), vmId)
+	return fileData, fileName, nil
+}
+
+// downloadFileFromVmViaBastion downloads a file from a specific VM via Bastion Host using SCP
+func downloadFileFromVmViaBastion(nsId string, mciId string, vmId string, targetSshInfo model.SshInfo, sourcePath string) ([]byte, string, error) {
+
+	bastionNodes, err := GetBastionNodes(nsId, mciId, vmId)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get bastion nodes: %w", err)
+	}
+	if len(bastionNodes) == 0 {
+		return nil, "", fmt.Errorf("no bastion nodes configured for MCI %s VM %s", mciId, vmId)
+	}
+
+	bastionNode := bastionNodes[0]
+	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get bastion VM IP and SSH port: %v", err)
+	}
+
+	bastionUserName, bastionPrivateKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to verify SSH username for bastion: %v", err)
+	}
+
+	bastionSshInfo := model.SshInfo{
+		EndPoint:   fmt.Sprintf("%s:%d", bastionIp, bastionSshPort),
+		UserName:   bastionUserName,
+		PrivateKey: []byte(bastionPrivateKey),
+	}
+
+	// Set TOFU context for bastion and target VMs
+	bastionCtx := tofuContext{
+		NsId:  nsId,
+		MciId: bastionNode.MciId,
+		VmId:  bastionNode.VmId,
+	}
+	targetCtx := tofuContext{
+		NsId:  nsId,
+		MciId: mciId,
+		VmId:  vmId,
+	}
+
+	fileData, fileName, err := runSCPDownloadWithBastion(bastionSshInfo, targetSshInfo, sourcePath, bastionCtx, targetCtx)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download file from VM via bastion: %v", err)
+	}
+
+	return fileData, fileName, nil
+}
+
+// runSCPDownloadWithBastion downloads a file using SCP over SSH via a Bastion host (SCP source mode: scp -f)
+func runSCPDownloadWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, sourcePath string, bastionCtx tofuContext, targetCtx tofuContext) ([]byte, string, error) {
+	log.Info().Msgf("Setting up SCP download connection via Bastion Host for: %s", sourcePath)
+
+	// Parse the private key for the bastion host
+	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to parse bastion private key: %v", err)
+	}
+
+	bastionConfig := &ssh.ClientConfig{
+		User: bastionInfo.UserName,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(bastionSigner),
+		},
+		HostKeyCallback: createTOFUHostKeyCallback(bastionCtx),
+		Timeout:         30 * time.Second,
+	}
+
+	// Parse the private key for the target host
+	targetSigner, err := ssh.ParsePrivateKey(targetInfo.PrivateKey)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to parse target private key: %v", err)
+	}
+
+	targetConfig := &ssh.ClientConfig{
+		User: targetInfo.UserName,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(targetSigner),
+		},
+		HostKeyCallback: createTOFUHostKeyCallback(targetCtx),
+		Timeout:         30 * time.Second,
+	}
+
+	// Setup the bastion host connection
+	bastionClient, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to dial bastion: %v", err)
+	}
+	defer bastionClient.Close()
+
+	// Setup the actual SSH client through the bastion host
+	conn, err := bastionClient.Dial("tcp", targetInfo.EndPoint)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to dial target via bastion: %v", err)
+	}
+
+	ncc, chans, reqs, err := ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
+	if err != nil {
+		conn.Close()
+		return nil, "", fmt.Errorf("failed to create target SSH connection: %v", err)
+	}
+	client := ssh.NewClient(ncc, chans, reqs)
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create SSH session: %v", err)
+	}
+	defer session.Close()
+
+	// Set up pipes
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to set up stdout pipe: %v", err)
+	}
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to set up stderr pipe: %v", err)
+	}
+	stdin, err := session.StdinPipe()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to set up stdin for SCP: %v", err)
+	}
+
+	// Validate sourcePath to prevent command injection
+	if strings.ContainsAny(sourcePath, "'\"\n\r\x00") {
+		stdin.Close()
+		return nil, "", fmt.Errorf("invalid sourcePath: contains disallowed characters")
+	}
+
+	// Start SCP in source mode (download: scp -f)
+	cmd := fmt.Sprintf("scp -f '%s'", sourcePath)
+	log.Info().Msgf("Executing SCP download command: %s", cmd)
+
+	if err := session.Start(cmd); err != nil {
+		stdin.Close()
+		return nil, "", fmt.Errorf("failed to start SCP download command: %v", err)
+	}
+
+	// Capture stderr in background for error diagnostics
+	stderrBuf := new(bytes.Buffer)
+	go io.Copy(stderrBuf, stderr)
+
+	reader := bufio.NewReader(stdout)
+
+	// Step 1: Send initial ready signal (\x00 = null byte)
+	if _, err := stdin.Write([]byte{0}); err != nil {
+		stdin.Close()
+		return nil, "", fmt.Errorf("failed to send initial ready signal: %v", err)
+	}
+
+	// Step 2: Read file header line: "C<mode> <size> <filename>\n"
+	headerLine, err := reader.ReadString('\n')
+	if err != nil {
+		stdin.Close()
+		return nil, "", fmt.Errorf("failed to read SCP file header: %v, stderr: %s", err, stderrBuf.String())
+	}
+	headerLine = strings.TrimRight(headerLine, "\n")
+
+	// Check for error response from SCP (starts with \x01 or \x02)
+	if len(headerLine) > 0 && (headerLine[0] == 1 || headerLine[0] == 2) {
+		stdin.Close()
+		return nil, "", fmt.Errorf("SCP server error: %s", headerLine[1:])
+	}
+
+	// Parse the header: C<mode> <size> <filename>
+	if !strings.HasPrefix(headerLine, "C") {
+		stdin.Close()
+		return nil, "", fmt.Errorf("unexpected SCP header format: %s", headerLine)
+	}
+
+	var mode string
+	var fileSize int64
+	var fileName string
+	_, err = fmt.Sscanf(headerLine, "C%s %d %s", &mode, &fileSize, &fileName)
+	if err != nil {
+		stdin.Close()
+		return nil, "", fmt.Errorf("failed to parse SCP header '%s': %v", headerLine, err)
+	}
+
+	log.Info().Msgf("SCP download: receiving file '%s' (size: %d bytes, mode: %s)", fileName, fileSize, mode)
+
+	// File size limit: 200MB
+	fileSizeLimit := int64(200 * 1024 * 1024)
+	if fileSize > fileSizeLimit {
+		stdin.Close()
+		return nil, "", fmt.Errorf("file too large: %d bytes (limit: %d bytes)", fileSize, fileSizeLimit)
+	}
+
+	// Step 3: Acknowledge header (send \x00)
+	if _, err := stdin.Write([]byte{0}); err != nil {
+		stdin.Close()
+		return nil, "", fmt.Errorf("failed to acknowledge SCP header: %v", err)
+	}
+
+	// Step 4: Read the file data
+	fileData := make([]byte, fileSize)
+	_, err = io.ReadFull(reader, fileData)
+	if err != nil {
+		stdin.Close()
+		return nil, "", fmt.Errorf("failed to read file data: %v", err)
+	}
+
+	// Step 5: Read the trailing null byte (\x00) from server indicating transfer complete
+	eofByte := make([]byte, 1)
+	_, err = io.ReadFull(reader, eofByte)
+	if err != nil {
+		stdin.Close()
+		return nil, "", fmt.Errorf("failed to read EOF marker: %v", err)
+	}
+
+	// Step 6: Send final acknowledgment (\x00)
+	if _, err := stdin.Write([]byte{0}); err != nil {
+		// Non-fatal: file data already received
+		log.Warn().Err(err).Msg("Failed to send final acknowledgment (non-fatal)")
+	}
+
+	stdin.Close()
+
+	// Wait for session to complete
+	if err := session.Wait(); err != nil {
+		// Log but don't fail — file data already received successfully
+		log.Warn().Err(err).Msgf("SCP session exit (file data received successfully), stderr: %s", stderrBuf.String())
+	}
+
+	log.Info().Msgf("File '%s' (%d bytes) successfully downloaded via Bastion", fileName, fileSize)
+	return fileData, fileName, nil
 }
 
 // SetBastionNodes func sets bastion nodes

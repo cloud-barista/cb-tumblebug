@@ -219,11 +219,21 @@ run_benchmark() {
   done
   rm -rf "$TMP_DIR"
 
+  # Report only files that were actually generated
+  local GENERATED_FILES=()
+  for ext in json csv html; do
+    if [ -f "$WORK_DIR/${FILE_PREFIX}.$ext" ]; then
+      GENERATED_FILES+=("${FILE_PREFIX}.$ext")
+    fi
+  done
+
   echo "------------------------------------------"
   echo "Benchmark completed for $TARGET_IP"
-  echo "  ${FILE_PREFIX}.json"
-  echo "  ${FILE_PREFIX}.csv"
-  echo "  ${FILE_PREFIX}.html"
+  if [ ${#GENERATED_FILES[@]} -gt 0 ]; then
+    for f in "${GENERATED_FILES[@]}"; do echo "  $f"; done
+  else
+    echo "  (no output files generated)"
+  fi
   echo "------------------------------------------"
 }
 
@@ -235,22 +245,68 @@ for ip in "${TARGET_IPS[@]}"; do echo "  - $ip"; done
 echo "=========================================="
 
 TOTAL=${#TARGET_IPS[@]}
-CURRENT=0
 FAILED=0
 
-for ip in "${TARGET_IPS[@]}"; do
-  CURRENT=$((CURRENT + 1))
+if [ "$TOTAL" -eq 1 ]; then
+  # Single target: run directly (no background overhead)
   echo ""
   echo "=========================================="
-  echo "[$CURRENT/$TOTAL] Benchmarking: $ip"
+  echo "[1/1] Benchmarking: ${TARGET_IPS[0]}"
   echo "=========================================="
-  if run_benchmark "$ip"; then
-    echo "✓ $ip completed"
+  if run_benchmark "${TARGET_IPS[0]}"; then
+    echo "✓ ${TARGET_IPS[0]} completed"
   else
-    echo "✗ $ip failed (continuing with next target)"
-    FAILED=$((FAILED + 1))
+    echo "✗ ${TARGET_IPS[0]} failed"
+    FAILED=1
   fi
-done
+else
+  # Multiple targets: run in parallel
+  echo "Mode: parallel (all targets simultaneously)"
+  echo ""
+
+  declare -A PIDS          # PID -> IP mapping
+  declare -A LOG_FILES     # IP -> log file mapping
+
+  for ip in "${TARGET_IPS[@]}"; do
+    LOG_FILE="$WORK_DIR/.bench_log_${RUN_TIMESTAMP}_${ip}.log"
+    LOG_FILES["$ip"]="$LOG_FILE"
+
+    echo "  Starting benchmark for $ip (background)..."
+    run_benchmark "$ip" > "$LOG_FILE" 2>&1 &
+    PIDS[$!]="$ip"
+  done
+
+  echo ""
+  echo "Waiting for ${#PIDS[@]} benchmark(s) to complete..."
+  echo ""
+
+  # Wait for all background jobs and collect results
+  for pid in "${!PIDS[@]}"; do
+    ip="${PIDS[$pid]}"
+    if wait "$pid"; then
+      echo "✓ $ip completed (PID $pid)"
+    else
+      echo "✗ $ip failed (PID $pid)"
+      FAILED=$((FAILED + 1))
+    fi
+    # Print the benchmark log
+    if [ -f "${LOG_FILES[$ip]}" ]; then
+      echo "--- Output from $ip ---"
+      cat "${LOG_FILES[$ip]}"
+      echo "--- End of $ip ---"
+      echo ""
+      rm -f "${LOG_FILES[$ip]}"
+    fi
+  done
+fi
+
+# ==========================================
+# 5. Archive & Summary
+# ==========================================
+
+# Collect all result files from this run
+RESULT_FILES=($(ls -1 "$WORK_DIR"/bench_${RUN_TIMESTAMP}_*.{json,csv,html} 2>/dev/null || true))
+ARCHIVE_FILE="bench_${RUN_TIMESTAMP}.tar.gz"
 
 echo ""
 echo "=========================================="
@@ -258,5 +314,21 @@ echo "All benchmarks finished: $((TOTAL - FAILED))/$TOTAL succeeded"
 if [ $FAILED -gt 0 ]; then
   echo "⚠ $FAILED target(s) failed"
 fi
-echo "Results: $WORK_DIR/bench_${RUN_TIMESTAMP}_*"
+echo "=========================================="
+
+if [ ${#RESULT_FILES[@]} -gt 0 ]; then
+  # Create tar.gz archive of all result files (store flat, no directory prefix)
+  tar czf "$WORK_DIR/$ARCHIVE_FILE" -C "$WORK_DIR" $(basename -a "${RESULT_FILES[@]}")
+  echo ""
+  echo "Result files (${#RESULT_FILES[@]}):"
+  for f in "${RESULT_FILES[@]}"; do
+    echo "  $(basename "$f")"
+  done
+  echo ""
+  echo "Archive: $WORK_DIR/$ARCHIVE_FILE"
+  echo "  ($(du -h "$WORK_DIR/$ARCHIVE_FILE" | cut -f1) compressed)"
+else
+  echo ""
+  echo "No result files generated."
+fi
 echo "=========================================="
