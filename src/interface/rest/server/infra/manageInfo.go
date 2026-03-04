@@ -95,6 +95,29 @@ func RestGetMci(c echo.Context) error {
 	}
 }
 
+// RestGetMciReqFromMci godoc
+// @ID GetMciReqFromMci
+// @Summary Extract MCI creation request configuration from an existing MCI
+// @Description Reconstruct an MCI dynamic creation request body from an existing MCI's information.
+// @Description Returns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)
+// @Description are auto-created, making it easy to clone or recreate a similar MCI configuration.
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Success 200 {object} model.MciDynamicReq
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/configCopy [get]
+func RestGetMciReqFromMci(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+
+	result, err := infra.ExtractMciDynamicReqFromMciInfo(nsId, mciId)
+	return clientManager.EndRequestWithLog(c, err, result)
+}
+
 // RestGetAllMciResponse is a response structure for RestGetAllMci
 type RestGetAllMciResponse struct {
 	Mci []model.MciInfo `json:"mci"`

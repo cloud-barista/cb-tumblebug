@@ -398,6 +398,8 @@ func RunServer() {
 	g.GET("/:nsId/mci/:mciId/associatedResources", rest_infra.RestGetMciAssociatedResources)
 	g.PUT("/:nsId/mci/:mciId/associatedSecurityGroups", rest_infra.RestPutMciAssociatedSecurityGroups)
 
+	g.GET("/:nsId/mci/:mciId/configCopy", rest_infra.RestGetMciReqFromMci)
+
 	//g.GET("/:nsId/mci/:mciId", rest_infra.RestGetMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	//g.GET("/:nsId/mci", rest_infra.RestGetAllMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	// path specific timeout and ratelimit

@@ -5056,6 +5056,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/configCopy": {
+            "get": {
+                "description": "Reconstruct an MCI dynamic creation request body from an existing MCI's information.\nReturns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)\nare auto-created, making it easy to clone or recreate a similar MCI configuration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Extract MCI creation request configuration from an existing MCI",
+                "operationId": "GetMciReqFromMci",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciDynamicReq"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/handlingCount": {
             "get": {
                 "description": "Get the number of commands currently in 'Handling' status for all VMs in an MCI. Returns per-VM counts and total count.",
