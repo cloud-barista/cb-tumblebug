@@ -415,8 +415,8 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 		} else {
 			// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
 			if v.ImageId == "" || v.ImageId == "default" {
-				// Apply default type for AWS/GCP when imageId is not specified
-				spImgName = getDefaultK8sImageName(connConfig.ProviderName)
+				// Leave empty; the Spider driver will apply its own default for the given provider.
+				spImgName = ""
 			} else {
 				spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
 				if spImgName == "" || err != nil {
@@ -708,8 +708,8 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 	} else {
 		// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
 		if u.ImageId == "" || u.ImageId == "default" {
-			// Apply default type for AWS/GCP when imageId is not specified
-			spImgName = getDefaultK8sImageName(connConfig.ProviderName)
+			// Leave empty; the Spider driver will apply its own default for the given provider.
+			spImgName = ""
 		} else {
 			spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
 			if spImgName == "" || err != nil {
@@ -2197,19 +2197,6 @@ func convertSpiderNodeGroupStatusToK8sNodeGroupStatus(spNodeGroupStatus model.Sp
 	}
 
 	return model.K8sNodeGroupInactive
-}
-
-// getDefaultK8sImageName returns the default K8s node image type name for the given provider.
-// Returns empty string for providers that do not use type-based image selection.
-func getDefaultK8sImageName(providerName string) string {
-	switch strings.ToLower(providerName) {
-	case csp.AWS:
-		return "AL2023_x86_64_STANDARD"
-	case csp.GCP:
-		return "COS_CONTAINERD"
-	default:
-		return ""
-	}
 }
 
 // validateK8sImageForProvider validates that the provided imageId is a valid K8s node image

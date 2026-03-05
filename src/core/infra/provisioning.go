@@ -4118,7 +4118,6 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 		if isAutoRegistered {
 			log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sNodeGroup", dReq.ImageId)
 		}
-		// ✅ FIX: Assign imageId to request (this was missing!)
 		k8sNgReq.ImageId = dReq.ImageId
 		log.Debug().Msgf("Using user-specified imageId: %s", dReq.ImageId)
 	}
