@@ -4095,6 +4095,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/configCopy:
+    get:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Extract MCI creation request configuration from an existing MCI
+      description: |-
+        Reconstruct an MCI dynamic creation request body from an existing MCI's information.
+        Returns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)
+        are auto-created, making it easy to clone or recreate a similar MCI configuration.
+      operationId: GetMciReqFromMci
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciDynamicReq'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/handlingCount:
     get:
       tags:

@@ -351,6 +351,67 @@ func GetMciInfo(nsId string, mciId string) (*model.MciInfo, error) {
 	return &mciObj, nil
 }
 
+// ExtractMciDynamicReqFromMciInfo reconstructs an MciDynamicReq from a running MCI's info.
+// This returns a dynamic creation request (resources like vNet, subnet, SG, sshKey are auto-created)
+// so that users can easily clone or recreate a similar MCI configuration.
+func ExtractMciDynamicReqFromMciInfo(nsId string, mciId string) (*model.MciDynamicReq, error) {
+
+	mciInfo, err := GetMciInfo(nsId, mciId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(mciInfo.Vm) == 0 {
+		return nil, fmt.Errorf("MCI '%s' has no VMs to extract configuration from", mciId)
+	}
+
+	// Group VMs by SubGroupId to reconstruct SubGroup requests
+	subGroupMap := make(map[string][]model.VmInfo)
+	var subGroupOrder []string
+	for _, vm := range mciInfo.Vm {
+		sgId := vm.SubGroupId
+		if sgId == "" {
+			sgId = vm.Id // fallback: treat each VM as its own group
+		}
+		if _, exists := subGroupMap[sgId]; !exists {
+			subGroupOrder = append(subGroupOrder, sgId)
+		}
+		subGroupMap[sgId] = append(subGroupMap[sgId], vm)
+	}
+
+	var subGroups []model.CreateSubGroupDynamicReq
+	for _, sgId := range subGroupOrder {
+		vms := subGroupMap[sgId]
+		// Use the first VM in each subgroup as the representative spec
+		rep := vms[0]
+		sg := model.CreateSubGroupDynamicReq{
+			Name:           sgId,
+			SubGroupSize:   len(vms),
+			Label:          rep.Label,
+			Description:    rep.Description,
+			ConnectionName: rep.ConnectionName,
+			SpecId:         rep.SpecId,
+			ImageId:        rep.ImageId,
+			RootDiskType:   rep.RootDiskType,
+			RootDiskSize:   rep.RootDiskSize,
+			Zone:           rep.Region.Zone,
+		}
+		subGroups = append(subGroups, sg)
+	}
+
+	mciDynamicReq := &model.MciDynamicReq{
+		Name:            mciInfo.Name,
+		InstallMonAgent: mciInfo.InstallMonAgent,
+		Label:           mciInfo.Label,
+		SystemLabel:     mciInfo.SystemLabel,
+		Description:     mciInfo.Description,
+		SubGroups:       subGroups,
+		PostCommand:     mciInfo.PostCommand,
+	}
+
+	return mciDynamicReq, nil
+}
+
 // GetMciAccessInfo is func to retrieve MCI Access information
 func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAccessInfo, error) {
 
