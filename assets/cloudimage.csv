@@ -1,42 +1,41 @@
-providerName,regionName,cspImageName,osType,description,supportedInstance,infraType
-AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:20.04.202505200,Ubuntu 20.04,Server LTS Gen2,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202601310,Ubuntu 22.04,Server LTS Gen2,,vm
-AZURE,all,Canonical:ubuntu-22_04-lts:server:22.04.202512181,Ubuntu 22.04,Server LTS,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:server:24.04.202601300,Ubuntu 24.04,Server LTS,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:minimal:24.04.202601300,Ubuntu 24.04,Minimal,,vm
-AZURE,all,Canonical:ubuntu-25_04:server:25.04.202512190,Ubuntu 25.04,Server,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:server-arm64:24.04.202601300,Ubuntu 24.04 (ARM64),Server ARM64,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:minimal-arm64:24.04.202601300,Ubuntu 24.04 (ARM64),Minimal ARM64,,vm
-AZURE,all,Debian:debian-10:10-gen2:0.20240703.1797,Debian 10,Gen2,,vm
-AZURE,all,Debian:debian-11:11-gen2:0.20260203.2377,Debian 11,Gen2,,vm
-AZURE,all,Debian:debian-12:12-gen2:0.20260210.2384,Debian 12,Gen2,,vm
-AZURE,all,OpenLogic:CentOS:7_9-gen2:7.9.2023030701,CentOS 7,Gen2,,vm
-AZURE,all,OpenLogic:CentOS-LVM:8-lvm-gen2:8.5.2022101401,CentOS 8,LVM Gen2,,vm
-AZURE,all,RedHat:RHEL:74-gen2:7.4.2021051702,Red Hat Enterprise Linux 7,Gen2,,vm
-AZURE,all,RedHat:rhel-raw:89-gen2:8.9.2024020916,Red Hat Enterprise Linux 8,Raw Gen2,,vm
-AZURE,all,RedHat:rhel-raw:95_gen2:9.5.2024120516,Red Hat Enterprise Linux 9,Raw Gen2,,vm
-AZURE,all,RedHat:rhel-arm64:8_8-arm64-gen2:8.8.2023080216,Red Hat Enterprise Linux 8 (ARM64),ARM64 Gen2,,vm
-AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2016-datacenter-gen2:2016.127.20190620,Windows 2016,Datacenter Gen2,,vm
-AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2019-datacenter-gen2:2019.0.20190620,Windows 2019,Datacenter Gen2,,vm
-AZURE,all,Oracle:Oracle-Linux:ol93-arm64-lvm-gen2:9.3.3,Oracle Linux 9 (ARM64),LVM Gen2,,vm
-AZURE,all,almalinux:almalinux-arm:10-arm64-64k-gen2:10.0.202505290,AlmaLinux 10 (ARM64),Gen2,,vm
-AZURE,all,SUSE:opensuse-leap-15-6-arm64:gen2:2025.07.28,SUSE Linux Enterprise Server 15 (ARM64),Gen2,,vm
-AZURE,all,MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips:3.20250729.01,Azure Linux 3 (ARM64),FIPS Gen2,,vm
-AWS,all,AL2023_x86_64_STANDARD,Amazon Linux 2023,"EKS Node - AL2023, containerd, x86_64",,
-AWS,all,AL2023_ARM_64_STANDARD,Amazon Linux 2023 (ARM64),"EKS Node - AL2023, containerd, ARM64",,
-AWS,all,AL2023_x86_64_NVIDIA,Amazon Linux 2023,"EKS Node - AL2023, containerd, NVIDIA GPU, x86_64",,
-AWS,all,AL2023_ARM_64_NVIDIA,Amazon Linux 2023 (ARM64),"EKS Node - AL2023, containerd, NVIDIA GPU, ARM64",,
-AWS,all,AL2023_x86_64_NEURON,Amazon Linux 2023,"EKS Node - AL2023, containerd, Neuron (Inferentia/Trainium), x86_64",,
-AWS,all,BOTTLEROCKET_x86_64,Bottlerocket,"EKS Node - Bottlerocket, containerd, x86_64",,
-AWS,all,BOTTLEROCKET_ARM_64,Bottlerocket (ARM64),"EKS Node - Bottlerocket, containerd, ARM64",,
-AWS,all,BOTTLEROCKET_x86_64_NVIDIA,Bottlerocket,"EKS Node - Bottlerocket, containerd, NVIDIA GPU, x86_64",,
-AWS,all,BOTTLEROCKET_ARM_64_NVIDIA,Bottlerocket (ARM64),"EKS Node - Bottlerocket, containerd, NVIDIA GPU, ARM64",,
-AWS,all,WINDOWS_FULL_2019_x86_64,Windows Server 2019,"EKS Node - Windows Server 2019, Full, containerd, x86_64",,
-AWS,all,WINDOWS_CORE_2019_x86_64,Windows Server 2019,"EKS Node - Windows Server 2019, Core, containerd, x86_64",,
-AWS,all,WINDOWS_FULL_2022_x86_64,Windows Server 2022,"EKS Node - Windows Server 2022, Full, containerd, x86_64",,
-AWS,all,WINDOWS_CORE_2022_x86_64,Windows Server 2022,"EKS Node - Windows Server 2022, Core, containerd, x86_64",,
-AWS,all,WINDOWS_FULL_2025_x86_64,Windows Server 2025,"EKS Node - Windows Server 2025, Full, containerd, x86_64",,
-AWS,all,WINDOWS_CORE_2025_x86_64,Windows Server 2025,"EKS Node - Windows Server 2025, Core, containerd, x86_64",,
-GCP,all,COS_CONTAINERD,Container-Optimized OS,"GKE Node - COS, containerd, x86_64/ARM64",,
-GCP,all,UBUNTU_CONTAINERD,Ubuntu 22.04 LTS,"GKE Node - Ubuntu 22.04, containerd, x86_64/ARM64",,
-GCP,all,WINDOWS_LTSC_CONTAINERD,Windows Server 2019 LTSC,"GKE Node - Windows Server 2019 LTSC, containerd, x86_64",,
+providerName,regionName,cspImageName,osType,description,supportedInstance,infraType,osArchitecture,osDistribution
+AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:20.04.202505200,Ubuntu 20.04,Server LTS Gen2,,vm,,
+AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202601310,Ubuntu 22.04,Server LTS Gen2,,vm,,
+AZURE,all,Canonical:ubuntu-22_04-lts:server:22.04.202512181,Ubuntu 22.04,Server LTS,,vm,,
+AZURE,all,Canonical:ubuntu-24_04-lts:server:24.04.202601300,Ubuntu 24.04,Server LTS,,vm,,
+AZURE,all,Canonical:ubuntu-24_04-lts:minimal:24.04.202601300,Ubuntu 24.04,Minimal,,vm,,
+AZURE,all,Canonical:ubuntu-25_04:server:25.04.202512190,Ubuntu 25.04,Server,,vm,,
+AZURE,all,Canonical:ubuntu-24_04-lts:server-arm64:24.04.202601300,Ubuntu 24.04 (ARM64),Server ARM64,,vm,,
+AZURE,all,Canonical:ubuntu-24_04-lts:minimal-arm64:24.04.202601300,Ubuntu 24.04 (ARM64),Minimal ARM64,,vm,,
+AZURE,all,Debian:debian-10:10-gen2:0.20240703.1797,Debian 10,Gen2,,vm,,
+AZURE,all,Debian:debian-11:11-gen2:0.20260203.2377,Debian 11,Gen2,,vm,,
+AZURE,all,Debian:debian-12:12-gen2:0.20260210.2384,Debian 12,Gen2,,vm,,
+AZURE,all,OpenLogic:CentOS:7_9-gen2:7.9.2023030701,CentOS 7,Gen2,,vm,,
+AZURE,all,OpenLogic:CentOS-LVM:8-lvm-gen2:8.5.2022101401,CentOS 8,LVM Gen2,,vm,,
+AZURE,all,RedHat:RHEL:74-gen2:7.4.2021051702,Red Hat Enterprise Linux 7,Gen2,,vm,,
+AZURE,all,RedHat:rhel-raw:89-gen2:8.9.2024020916,Red Hat Enterprise Linux 8,Raw Gen2,,vm,,
+AZURE,all,RedHat:rhel-raw:95_gen2:9.5.2024120516,Red Hat Enterprise Linux 9,Raw Gen2,,vm,,
+AZURE,all,RedHat:rhel-arm64:8_8-arm64-gen2:8.8.2023080216,Red Hat Enterprise Linux 8 (ARM64),ARM64 Gen2,,vm,,
+AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2016-datacenter-gen2:2016.127.20190620,Windows 2016,Datacenter Gen2,,vm,,
+AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2019-datacenter-gen2:2019.0.20190620,Windows 2019,Datacenter Gen2,,vm,,
+AZURE,all,almalinux:almalinux-arm:10-arm64-64k-gen2:10.0.202505290,AlmaLinux 10 (ARM64),Gen2,,vm,,
+AZURE,all,SUSE:opensuse-leap-15-6-arm64:gen2:2025.07.28,SUSE Linux Enterprise Server 15 (ARM64),Gen2,,vm,,
+AZURE,all,MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips:3.20250729.01,Azure Linux 3 (ARM64),FIPS Gen2,,vm,,
+AWS,all,AL2023_x86_64_STANDARD,Amazon Linux 2023,"EKS Node - AL2023, containerd, x86_64",,k8s,x86_64,AL2023_x86_64_STANDARD
+AWS,all,AL2023_ARM_64_STANDARD,Amazon Linux 2023 (ARM64),"EKS Node - AL2023, containerd, ARM64",,k8s,arm64,AL2023_ARM_64_STANDARD
+AWS,all,AL2023_x86_64_NVIDIA,Amazon Linux 2023,"EKS Node - AL2023, containerd, NVIDIA GPU, x86_64",,k8s,x86_64,AL2023_x86_64_NVIDIA
+AWS,all,AL2023_ARM_64_NVIDIA,Amazon Linux 2023 (ARM64),"EKS Node - AL2023, containerd, NVIDIA GPU, ARM64",,k8s,arm64,AL2023_ARM_64_NVIDIA
+AWS,all,AL2023_x86_64_NEURON,Amazon Linux 2023,"EKS Node - AL2023, containerd, Neuron (Inferentia/Trainium), x86_64",,k8s,x86_64,AL2023_x86_64_NEURON
+AWS,all,BOTTLEROCKET_x86_64,Bottlerocket,"EKS Node - Bottlerocket, containerd, x86_64",,k8s,x86_64,BOTTLEROCKET_x86_64
+AWS,all,BOTTLEROCKET_ARM_64,Bottlerocket (ARM64),"EKS Node - Bottlerocket, containerd, ARM64",,k8s,arm64,BOTTLEROCKET_ARM_64
+AWS,all,BOTTLEROCKET_x86_64_NVIDIA,Bottlerocket,"EKS Node - Bottlerocket, containerd, NVIDIA GPU, x86_64",,k8s,x86_64,BOTTLEROCKET_x86_64_NVIDIA
+AWS,all,BOTTLEROCKET_ARM_64_NVIDIA,Bottlerocket (ARM64),"EKS Node - Bottlerocket, containerd, NVIDIA GPU, ARM64",,k8s,arm64,BOTTLEROCKET_ARM_64_NVIDIA
+AWS,all,WINDOWS_FULL_2019_x86_64,Windows Server 2019,"EKS Node - Windows Server 2019, Full, containerd, x86_64",,k8s,x86_64,WINDOWS_FULL_2019_x86_64
+AWS,all,WINDOWS_CORE_2019_x86_64,Windows Server 2019,"EKS Node - Windows Server 2019, Core, containerd, x86_64",,k8s,x86_64,WINDOWS_CORE_2019_x86_64
+AWS,all,WINDOWS_FULL_2022_x86_64,Windows Server 2022,"EKS Node - Windows Server 2022, Full, containerd, x86_64",,k8s,x86_64,WINDOWS_FULL_2022_x86_64
+AWS,all,WINDOWS_CORE_2022_x86_64,Windows Server 2022,"EKS Node - Windows Server 2022, Core, containerd, x86_64",,k8s,x86_64,WINDOWS_CORE_2022_x86_64
+AWS,all,WINDOWS_FULL_2025_x86_64,Windows Server 2025,"EKS Node - Windows Server 2025, Full, containerd, x86_64",,k8s,x86_64,WINDOWS_FULL_2025_x86_64
+AWS,all,WINDOWS_CORE_2025_x86_64,Windows Server 2025,"EKS Node - Windows Server 2025, Core, containerd, x86_64",,k8s,x86_64,WINDOWS_CORE_2025_x86_64
+GCP,all,COS_CONTAINERD,Container-Optimized OS,"GKE Node - COS, containerd, x86_64/ARM64",,k8s,x86_64,COS_CONTAINERD
+GCP,all,UBUNTU_CONTAINERD,Ubuntu 22.04 LTS,"GKE Node - Ubuntu 22.04, containerd, x86_64/ARM64",,k8s,x86_64,UBUNTU_CONTAINERD
+GCP,all,WINDOWS_LTSC_CONTAINERD,Windows Server 2019 LTSC,"GKE Node - Windows Server 2019 LTSC, containerd, x86_64",,k8s,x86_64,WINDOWS_LTSC_CONTAINERD
