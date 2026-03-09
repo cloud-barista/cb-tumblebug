@@ -53,7 +53,7 @@ compose: prepare-volumes ## Start Docker Compose services (auto init/unseal Open
 	fi
 	@$(MAKE) unseal
 	@echo "Starting all services..."
-	@DOCKER_BUILDKIT=1 docker compose up -d
+	@DOCKER_BUILDKIT=1 docker compose up -d --build
 	@echo ""
 	@echo "To register CSP credentials, run:  make init"
 	@$(MAKE) logs
