@@ -22496,7 +22496,7 @@ const docTemplate = `{
                     "example": false
                 },
                 "isKubernetesImage": {
-                    "description": "Whether the image is specialized image only for Kubernetes nodes.\nIf not specified, both true and false images will be included in the search results.\nImages that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.",
+                    "description": "Whether this image can be used to create K8s nodes.\nFor AWS/GCP, only type identifiers registered in cloudimage.csv are true.\nIf not specified, both true and false images will be included in the search results.\nImages that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.",
                     "type": "boolean",
                     "example": false
                 },
