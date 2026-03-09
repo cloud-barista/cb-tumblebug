@@ -126,9 +126,12 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 		tumblebugImage.IsGPUImage = true
 	}
 	// Check if this is a Kubernetes image
-	if common.IsK8sImage(searchStr) {
-		tumblebugImage.InfraType = "k8s|kubernetes|container"
-		tumblebugImage.IsKubernetesImage = true
+	// AWS/GCP do not use imageId for K8s node creation; skip keyword-based detection.
+	// IsKubernetesImage=true for AWS/GCP is set only via cloudimage.csv asset loading.
+	if providerName != csp.AWS && providerName != csp.GCP {
+		if common.IsK8sImage(searchStr) {
+			tumblebugImage.IsKubernetesImage = true
+		}
 	}
 	tumblebugImage.ImageStatus = spiderImage.ImageStatus
 	// Check if this is a deprecated image
@@ -1218,7 +1221,7 @@ func GetFetchImagesAsyncResult(nsId string) (*FetchImagesAsyncResult, error) {
 }
 
 // createBasicImageInfoFromCSV creates a basic ImageInfo structure from CSV data
-func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, connectionName, osType, description, infraType string) model.ImageInfo {
+func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, connectionName, osType, description, infraType, osArchitecture, osDistribution string) model.ImageInfo {
 	imageInfo := model.ImageInfo{
 		ResourceType:   model.StrImage,
 		Id:             cspImageName,
@@ -1244,6 +1247,21 @@ func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, c
 
 	// Set infra type
 	imageInfo.InfraType = expandInfraType(infraType)
+
+	// Set architecture and distribution from CSV if provided.
+	// These are populated for CSP images that cannot be enriched via CSP lookup (e.g., EKS/GKE node images).
+	if osArchitecture != "" {
+		imageInfo.OSArchitecture = model.OSArchitecture(osArchitecture)
+	}
+	if osDistribution != "" {
+		imageInfo.OSDistribution = osDistribution
+	}
+
+	// AWS/GCP rows registered in cloudimage.csv are always K8s node image types.
+	// They are not real imageIds but type identifiers (ami-type / image-type).
+	if strings.EqualFold(providerName, csp.AWS) || strings.EqualFold(providerName, csp.GCP) {
+		imageInfo.IsKubernetesImage = true
+	}
 
 	return imageInfo
 }
@@ -1289,16 +1307,35 @@ func mergeCSPDetails(target *model.ImageInfo, source *model.ImageInfo) {
 	target.CreationDate = source.CreationDate
 	target.ImageStatus = source.ImageStatus
 	target.IsGPUImage = source.IsGPUImage
-	target.IsKubernetesImage = source.IsKubernetesImage
+	// Do not overwrite IsKubernetesImage for AWS/GCP CSV-loaded images.
+	// Their IsKubernetesImage=true is set by policy (cloudimage.csv), not by CSP lookup.
+	if !strings.EqualFold(target.ProviderName, csp.AWS) && !strings.EqualFold(target.ProviderName, csp.GCP) {
+		target.IsKubernetesImage = source.IsKubernetesImage
+	}
 	target.Details = source.Details
 }
 
 // updateExistingImageFromCSV updates existing image with CSV data
-func updateExistingImageFromCSV(existingImage model.ImageInfo, osType, description, infraType string) model.ImageInfo {
+func updateExistingImageFromCSV(existingImage model.ImageInfo, osType, description, infraType, osArchitecture, osDistribution string) model.ImageInfo {
 	existingImage.OSType = osType
 	existingImage.Description = description
 	existingImage.InfraType = expandInfraType(infraType)
 	existingImage.SystemLabel = model.StrFromAssets
+
+	// Set architecture and distribution only when CSV provides a value.
+	// If empty, preserve the value already set by CSP lookup (important for Azure).
+	if osArchitecture != "" {
+		existingImage.OSArchitecture = model.OSArchitecture(osArchitecture)
+	}
+	if osDistribution != "" {
+		existingImage.OSDistribution = osDistribution
+	}
+
+	// Re-apply policy: AWS/GCP CSV-registered images are always K8s node image types.
+	if strings.EqualFold(existingImage.ProviderName, csp.AWS) || strings.EqualFold(existingImage.ProviderName, csp.GCP) {
+		existingImage.IsKubernetesImage = true
+	}
+
 	return existingImage
 }
 
@@ -1377,12 +1414,22 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 		// row4: description
 		// row5: supportedInstance
 		// row6: infraType
+		// row7: osArchitecture (optional)
+		// row8: osDistribution (optional)
 		providerName := strings.ToLower(row[0])
 		regionName := strings.ToLower(row[1])
 		imageReqTmp.CspImageName = row[2]
 		osType := row[3]
 		description := row[4]
 		infraType := strings.ToLower(row[6])
+		osArchitecture := ""
+		osDistribution := ""
+		if len(row) > 7 {
+			osArchitecture = strings.ToLower(row[7])
+		}
+		if len(row) > 8 {
+			osDistribution = row[8]
+		}
 
 		regionNameForConnection := regionName
 		if regionName == "all" {
@@ -1404,7 +1451,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 
 				// Create a basic image info from CSV data
 				tmpImageInfo := createBasicImageInfoFromCSV(nsId, providerName, regionName, imageReqTmp.CspImageName,
-					imageReqTmp.ConnectionName, osType, description, infraType)
+					imageReqTmp.ConnectionName, osType, description, infraType, osArchitecture, osDistribution)
 
 				// Try to enrich with CSP lookup (optional)
 				enrichImageInfoFromCSP(&tmpImageInfo, imageReqTmp, regionName, connectionList)
@@ -1417,7 +1464,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 			}(i, row, lenImages)
 		} else {
 			// Update existing image with new information from the asset file
-			tmpImageInfo := updateExistingImageFromCSV(existingImage, osType, description, infraType)
+			tmpImageInfo := updateExistingImageFromCSV(existingImage, osType, description, infraType, osArchitecture, osDistribution)
 
 			mutex.Lock()
 			tmpImageList = append(tmpImageList, tmpImageInfo)

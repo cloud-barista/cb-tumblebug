@@ -87,15 +87,15 @@ k8scluster:
     version:
       - region: [common]
         # ref: https://cloud.google.com/kubernetes-engine/docs/release-notes-stable
-        # Updated: 2025-10-30 (latest stable channel versions)
+        # Updated: 2026-02-19 (latest stable channel versions)
         # gcloud container get-server-config --region=asia-northeast3 --format=json | jq '{validMasterVersions, channels: [.channels[] | {channel, defaultVersion, validVersions}]}'
-        available: # stable channel versions as of 2025-10-29
+        available: # stable channel versions as of 2026-02-19 (2026-R7)
+          - name: "1.34"
+            id: "1.34.3-gke.1051003"
           - name: "1.33"
-            id: "1.33.5-gke.1125000"
-          - name: "1.32"      
-            id: "1.32.9-gke.1092000"
-          - name: "1.31"
-            id: "1.31.13-gke.1008000"
+            id: "1.33.5-gke.2172001"
+          - name: "1.32"
+            id: "1.32.11-gke.1038000"
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
@@ -190,6 +190,29 @@ k8scluster:
             id: "1.32.8-nks.1"
           - name: "1.31"
             id: "1.31.7-nks.1"
+    rootDisk:
+      - region: [common]
+        type:
+          - name: default
+            id: default
+        size:
+          min: 10
+          max: 40
+  ibm:
+    nodeGroupsOnCreation: true
+    nodeImageDesignation: false
+    requiredSubnetCount: 1
+    version:
+      - region: [common]
+        available: # Updated: 2025-12-18 (verified from IBM Cloud API via CB-Spider)
+          - name: "1.34"
+            id: "1.34.2"
+          - name: "1.33"
+            id: "1.33.6"
+          - name: "1.32"
+            id: "1.32.10"
+          - name: "1.31"
+            id: "1.31.14"
     rootDisk:
       - region: [common]
         type:
