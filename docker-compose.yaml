@@ -3,8 +3,6 @@ networks:
     internal: true
   external_network:
     driver: bridge
-  # terrarium_network: # Uncomment this line when you use this compose and the terrarium compose
-  #   external: true
 
 services:
   reverse-proxy:
@@ -33,7 +31,6 @@ services:
     networks:
       - internal_network
       - external_network
-      # - terrarium_network # Uncomment this line when you use this compose and the terrarium compose
     ports:
       - 1323:1323
     depends_on:
@@ -42,6 +39,8 @@ services:
       cb-spider:
         condition: service_started
       cb-tumblebug-postgres:
+        condition: service_healthy
+      mc-terrarium:
         condition: service_healthy
     volumes:
       - ./conf/:/app/conf/
@@ -64,13 +63,13 @@ services:
       - TB_POSTGRES_DATABASE=tumblebug
       - TB_POSTGRES_USER=tumblebug
       - TB_POSTGRES_PASSWORD=tumblebug
-      # - TB_TERRARIUM_API_USERNAME=default
-      # - TB_TERRARIUM_API_PASSWORD=$$2a$$10$$4PKzCuJ6fPYsbCF.HR//ieLjaCzBAdwORchx62F2JRXQsuR3d9T0q
+      - TB_TERRARIUM_API_USERNAME=${TERRARIUM_API_USERNAME:?Please set TERRARIUM_API_USERNAME}
+      - TB_TERRARIUM_API_PASSWORD=${TERRARIUM_API_PASSWORD:?Please set TERRARIUM_API_PASSWORD}
       # - TB_ALLOW_ORIGINS=*
       # - TB_AUTH_ENABLED=true
       # - TB_AUTH_MODE=jwt
-      - TB_API_USERNAME=default
-      - TB_API_PASSWORD=$$2a$$10$$4PKzCuJ6fPYsbCF.HR//ieLjaCzBAdwORchx62F2JRXQsuR3d9T0q
+      - TB_API_USERNAME=${TB_API_USERNAME:?Please set TB_API_USERNAME}
+      - TB_API_PASSWORD=${TB_API_PASSWORD:?Please set TB_API_PASSWORD}
       # - TB_AUTOCONTROL_DURATION_MS=10000
       # - TB_DEFAULT_NAMESPACE=default
       # - TB_DEFAULT_CREDENTIALHOLDER=admin
@@ -182,10 +181,8 @@ services:
     environment:
       - PLUGIN_SW=OFF
       - SERVER_ADDRESS=0.0.0.0:1024
-      # Should match with TB_API_USERNAME in cb-tumblebug environment
-      - SPIDER_USERNAME=default
-      # Should match with TB_API_PASSWORD in cb-tumblebug environment
-      - SPIDER_PASSWORD=$$2a$$10$$4PKzCuJ6fPYsbCF.HR//ieLjaCzBAdwORchx62F2JRXQsuR3d9T0q
+      - SPIDER_USERNAME=${SPIDER_USERNAME:?Please set SPIDER_USERNAME}
+      - SPIDER_PASSWORD=${SPIDER_PASSWORD:?Please set SPIDER_PASSWORD}
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
@@ -259,52 +256,131 @@ services:
       # Logging Configuration (INFO, DEBUG, WARNING, ERROR)
       - MCP_LOG_LEVEL=INFO
 
-  # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
-  # mc-terrarium:
-  #   image: cloudbaristaorg/mc-terrarium:0.0.22
-  #   container_name: mc-terrarium
-  #   # build:
-  #   #   context: .
-  #   #   dockerfile: Dockerfile
-  #   networks:
-  #     - external_network
-  #   ports:
-  #     - target: 8055
-  #       published: 8055
-  #       protocol: tcp
-  #   env_file:
-  #     - ${HOME}/.cloud-barista/secrets/credentials             # AWS credential
-  #     - ${HOME}/.cloud-barista/secrets/credential-azure.env    # Azure credential
-  #     - ${HOME}/.cloud-barista/secrets/credential-alibaba.env  # Alibaba credential
-  #     - ${HOME}/.cloud-barista/secrets/credential-tencent.env  # Tencent credential
-  #     - ${HOME}/.cloud-barista/secrets/credential-ibm.env      # IBM credential
-  #     - ${HOME}/.cloud-barista/secrets/credential-ncp.env      # NCP credential
-  #   volumes:
-  #     - ${HOME}/.cloud-barista/secrets/credential-gcp.json:/app/secrets/credential-gcp.json:ro # GCP credential
-  #     - ./container-volume/mc-terrarium-container/.terrarium:/app/.terrarium
-  #     - /etc/ssl/certs:/etc/ssl/certs:ro
-  #   environment:
-  #     - TERRARIUM_ROOT=/app
-  #     # - TERRARIUM_SELF_ENDPOINT=localhost:8055
-  #     # - TERRARIUM_API_ALLOW_ORIGINS=*
-  #     # - TERRARIUM_API_AUTH_ENABLED=true
-  #     # - TERRARIUM_API_USERNAME=default
-  #     # - TERRARIUM_API_PASSWORD=$$2a$$10$$cKUlDfR8k4VUubhhRwCV9.sFvKV3KEc9RJ.H8R/thIeVOrhQ.nuuW
-  #     # - TERRARIUM_LOGFILE_PATH=/app/log/terrarium.log
-  #     # - TERRARIUM_LOGFILE_MAXSIZE=1000
-  #     # - TERRARIUM_LOGFILE_MAXBACKUPS=3
-  #     # - TERRARIUM_LOGFILE_MAXAGE=30
-  #     # - TERRARIUM_LOGFILE_COMPRESS=false
-  #     - TERRARIUM_LOGLEVEL=info
-  #     # - TERRARIUM_LOGWRITER=both
-  #     # - TERRARIUM_NODE_ENV=production
-  #     # - TERRARIUM_AUTOCONTROL_DURATION_MS=10000
-  #   healthcheck: # for MC-Terrarirum
-  #     test: ["CMD", "curl", "-f", "http://localhost:8055/terrarium/readyz"]
-  #     interval: 5m
-  #     timeout: 5s
-  #     retries: 3
-  #     start_period: 10s
+  # ── MC-Terrarium ──────────────────────────────────────────────────────────
+  # Resource extensions (AWS-to-site VPN) for CB-Tumblebug using OpenTofu.
+  # CSP credentials are managed by OpenBao (no more env_file injection).
+  mc-terrarium:
+    image: cloudbaristaorg/mc-terrarium:0.1.0
+    container_name: mc-terrarium
+    # build:
+    #   context: ../mc-terrarium
+    #   dockerfile: Dockerfile
+    networks:
+      - internal_network # Inter-service communication (OpenBao access)
+      - external_network # CSP API calls (requires internet access)
+    ports:
+      - target: 8055
+        published: 8055
+        protocol: tcp
+    # [Legacy] CSP credentials via env_file — replaced by OpenBao centralized credential management.
+    # Credentials are now read from OpenBao at runtime via the vault provider.
+    # env_file:
+    #   - ${HOME}/.cloud-barista/secrets/credentials             # AWS credential
+    #   - ${HOME}/.cloud-barista/secrets/credential-azure.env    # Azure credential
+    #   - ${HOME}/.cloud-barista/secrets/credential-alibaba.env  # Alibaba credential
+    #   - ${HOME}/.cloud-barista/secrets/credential-tencent.env  # Tencent credential
+    #   - ${HOME}/.cloud-barista/secrets/credential-ibm.env      # IBM credential
+    #   - ${HOME}/.cloud-barista/secrets/credential-ncp.env      # NCP credential
+    volumes:
+      # [Legacy] GCP credential file mount — replaced by OpenBao.
+      # - ${HOME}/.cloud-barista/secrets/credential-gcp.json:/app/secrets/credential-gcp.json:ro
+      - ./container-volume/mc-terrarium-container/.terrarium:/app/.terrarium
+      - /etc/ssl/certs:/etc/ssl/certs:ro
+    environment:
+      - TERRARIUM_ROOT=/app
+      # - TERRARIUM_SELF_ENDPOINT=localhost:8055
+      # - TERRARIUM_API_ALLOW_ORIGINS=*
+      # - TERRARIUM_API_AUTH_ENABLED=true
+      - TERRARIUM_API_USERNAME=${TERRARIUM_API_USERNAME:?Please set TERRARIUM_API_USERNAME}
+      - TERRARIUM_API_PASSWORD=${TERRARIUM_API_PASSWORD:?Please set TERRARIUM_API_PASSWORD}
+      # - TERRARIUM_LOGFILE_PATH=log/terrarium.log
+      # - TERRARIUM_LOGFILE_MAXSIZE=1000
+      # - TERRARIUM_LOGFILE_MAXBACKUPS=3
+      # - TERRARIUM_LOGFILE_MAXAGE=30
+      # - TERRARIUM_LOGFILE_COMPRESS=false
+      - TERRARIUM_LOGLEVEL=info
+      # - TERRARIUM_LOGWRITER=both
+      # - TERRARIUM_NODE_ENV=production
+      #
+      # Note: OpenBao does not have its own OpenTofu/Terraform provider yet.
+      # The only available option is the hashicorp/vault provider, which
+      # exclusively reads VAULT_ADDR and VAULT_TOKEN from env vars.
+      # See: https://registry.terraform.io/providers/hashicorp/vault/latest/docs#token
+      - VAULT_ADDR=http://openbao:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/terrarium/readyz"]
+      interval: 10m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      openbao:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── OpenBao (secrets management) ──────────────────────────────────────────
+  # OpenBao securely stores and provides CSP credentials via API.
+  #
+  # [Persistent mode] (default)
+  #   - File-based storage — secrets survive restarts
+  #   - Requires one-time initialization + unseal after every restart
+  #   - First run:  ./init/init-openbao.sh (or make init-openbao)
+  #   - After restart: ./init/unseal-openbao.sh (or make unseal)
+  #
+  # [Dev mode]
+  #   - In-memory storage — secrets are LOST on container restart
+  #   - Auto-initialized, auto-unsealed, root token set by BAO_DEV_ROOT_TOKEN_ID
+  #   - To switch: see "Switching to dev mode" comments below
+  openbao:
+    image: openbao/openbao:2.5.1
+    container_name: openbao
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - internal_network # Inter-service communication (terrarium connects here)
+      - external_network # Host port exposure (for CLI/API access from host)
+    ports:
+      - target: 8200
+        published: 8200
+        protocol: tcp
+
+    # ── Persistent mode (active) ─────────────────────────────────────
+    environment:
+      - BAO_ADDR=http://0.0.0.0:8200 # BAO_ADDR is for binding listener inside container
+      - SKIP_SETCAP=true
+    # Fix bind-mount ownership (host UID 1000 → container openbao UID 100)
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        chown -R openbao:openbao /openbao/data || { echo "ERROR: chown failed on /openbao/data"; exit 1; }
+        exec docker-entrypoint.sh server -config=/openbao/config/openbao-config.hcl
+    volumes:
+      - ./container-volume/openbao-data:/openbao/data
+      - ./conf/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
+
+    # ── Dev mode (inactive) ────────────────────────────────────────
+    # To switch to dev mode:
+    #   1. Comment out the "Persistent mode" environment, command, and volumes above
+    #   2. Uncomment the "Dev mode" environment and command below
+    #   3. Run: docker compose up -d
+    #   (No init/unseal needed — dev mode is auto-initialized and auto-unsealed)
+    #
+    # environment:
+    #   - BAO_ADDR=http://0.0.0.0:8200
+    #   - BAO_DEV_ROOT_TOKEN_ID=${VAULT_TOKEN:-root-token}
+    # command: server -dev
+
+    healthcheck:
+      # 'bao status' exit codes:
+      #   0 = unsealed, 1 = sealed but running, 2 = uninitialized (first run)
+      # All three mean the OpenBao process is up and accepting API calls.
+      test: ["CMD", "sh", "-c", "rc=0; bao status || rc=$$?; [ $$rc -le 2 ]"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
 
   # # Swagger UI
   # swagger-ui:
@@ -363,7 +439,7 @@ services:
     image: metabase/metabase:latest
     container_name: cb-tumblebug-metabase
     restart: always
-    attach: false  # Exclude from docker compose up foreground output
+    attach: false # Exclude from docker compose up foreground output
     networks:
       - internal_network
       - external_network

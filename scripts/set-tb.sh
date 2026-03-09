@@ -94,6 +94,25 @@ cd "$CB_DIR"
 mkdir -p ~/.cloud-barista
 
 # ──────────────
+# Set up .env with default credentials
+# ──────────────
+echo
+if [ ! -f "$CB_DIR/.env" ]; then
+  echo "📋 Creating .env from .env.example with default credentials..."
+  cp "$CB_DIR/.env.example" "$CB_DIR/.env"
+  sed -i 's/^TB_API_USERNAME=$/TB_API_USERNAME=default/' "$CB_DIR/.env"
+  sed -i 's/^TB_API_PASSWORD=$/TB_API_PASSWORD=default/' "$CB_DIR/.env"
+  sed -i 's/^SPIDER_USERNAME=$/SPIDER_USERNAME=default/' "$CB_DIR/.env"
+  sed -i 's/^SPIDER_PASSWORD=$/SPIDER_PASSWORD=default/' "$CB_DIR/.env"
+  sed -i 's/^TERRARIUM_API_USERNAME=$/TERRARIUM_API_USERNAME=default/' "$CB_DIR/.env"
+  sed -i 's/^TERRARIUM_API_PASSWORD=$/TERRARIUM_API_PASSWORD=default/' "$CB_DIR/.env"
+  echo "✅ .env created by using default / default for API username and password."
+  echo "   → Edit $CB_DIR/.env to use custom credentials."
+else
+  echo "✅ .env already exists at $CB_DIR/.env. Skipping."
+fi
+
+# ──────────────
 # Register aliases
 # ──────────────
 echo
@@ -189,14 +208,19 @@ echo
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📌 NEXT STEPS"
 echo
-echo "👉 1. Run CB-Tumblebug (Docker Compose):"
+echo "👉 1. (Optional) Verify or change API credentials:"
 echo
-
-echo "   # Option A: Run without building (faster)"
-echo "   docker compose up"
+echo "   cat $CB_DIR/.env"
+echo "   → Default API username and password: default / default"
+echo "   → Edit .env to use custom credentials before starting."
 echo
-echo "   # Option B: Build and run everything (docker --build)"
-echo "   make compose"
+echo "👉 2. Start all services using pre-built images:"
+echo
+echo "   # Option A: Run without building (faster, uses pre-built images)"
+echo "   cd $CB_DIR && make up"
+echo
+echo "   # Option B: Build from source and run"
+echo "   cd $CB_DIR && make compose"
 
 if [ "$DOCKER_NEEDS_SUDO" = "true" ]; then
   echo
@@ -205,17 +229,17 @@ if [ "$DOCKER_NEEDS_SUDO" = "true" ]; then
   echo "   → Or log out and log back in to activate docker group membership"
 fi
 echo
-echo "👉 2. Create your cloud credentials:"
+echo "👉 3. Create your cloud credentials:"
 echo
 echo "   ./init/genCredential.sh"
 echo
 echo "   → Then edit ~/.cloud-barista/credentials.yaml with your CSP info."
 echo
-echo "👉 3. Encrypt the credentials file:"
+echo "👉 4. Encrypt the credentials file:"
 echo
 echo "   ./init/encCredential.sh"
 echo
-echo "👉 4. Initialize CB-Tumblebug with all connection and resource info:"
+echo "👉 5. Initialize CB-Tumblebug with all connection and resource info:"
 echo
 echo "   ./init/init.sh"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
