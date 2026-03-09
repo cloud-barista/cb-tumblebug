@@ -1,0 +1,27 @@
+{
+  "nsId": "system",
+  "resourceType": "vNet",
+  "name": "aws-standard-vpc",
+  "description": "Standard AWS VPC with 3 subnets (public, private, database) in ap-northeast-2",
+  "vNetReq": {
+    "connectionName": "aws-ap-northeast-2",
+    "cidrBlock": "10.0.0.0/16",
+    "subnetInfoList": [
+      {
+        "name": "public-subnet",
+        "ipv4_CIDR": "10.0.1.0/24",
+        "description": "Public subnet for web-facing resources"
+      },
+      {
+        "name": "private-subnet",
+        "ipv4_CIDR": "10.0.2.0/24",
+        "description": "Private subnet for application servers"
+      },
+      {
+        "name": "database-subnet",
+        "ipv4_CIDR": "10.0.3.0/24",
+        "description": "Database subnet for data stores"
+      }
+    ]
+  }
+}

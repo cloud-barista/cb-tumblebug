@@ -1,0 +1,19 @@
+{
+  "nsId": "system",
+  "resourceType": "mci",
+  "name": "aws-small-web",
+  "description": "Small AWS web server template using t3.small in ap-northeast-2 region",
+  "mciDynamicReq": {
+    "installMonAgent": "no",
+    "subGroups": [
+      {
+        "name": "web",
+        "subGroupSize": 1,
+        "specId": "aws+ap-northeast-2+t3.small",
+        "imageId": "ami-01f71f215b23ba262",
+        "rootDiskType": "gp3",
+        "rootDiskSize": 30
+      }
+    ]
+  }
+}
