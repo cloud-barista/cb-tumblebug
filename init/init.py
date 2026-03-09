@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 
-import os
-import base64
-import time
-import sys
 import argparse
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import base64
+import os
 import subprocess
+import sys
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from getpass import getpass
+
 import requests
 import yaml
 from alive_progress import alive_bar
-from tabulate import tabulate
 from colorama import Fore, Style, init
-from getpass import getpass
-from Crypto.PublicKey import RSA
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.Hash import SHA256
-from Crypto.Cipher import PKCS1_OAEP
-from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
+from tabulate import tabulate
 
 parser = argparse.ArgumentParser(
     description="Initialize CB-Tumblebug with credentials, assets, and pricing information.",
@@ -29,26 +29,28 @@ Examples:
   %(prog)s                                    # Run all steps (default)
   %(prog)s -y                                 # Run all steps without confirmation
   %(prog)s --credentials-only                 # Register credentials only
+  %(prog)s --openbao-only                     # Register CSP credentials to OpenBao only
   %(prog)s --load-assets-only                 # Load assets (specs and images) only
   %(prog)s --fetch-price-only                 # Fetch price information only
+  %(prog)s --credentials --openbao            # Register credentials + OpenBao
   %(prog)s --credentials --load-assets        # Register credentials and load assets
   %(prog)s -y --credentials --fetch-price     # Register credentials and fetch price (no confirmation)
-    """
+  %(prog)s --key-file /path/to/keyfile        # Use key file for decryption
+    """,
 )
-parser.add_argument('-y', '--yes', action='store_true',
-                    help='Automatically answer yes to prompts and proceed without confirmation')
-parser.add_argument('--credentials', '--credentials-only', action='store_true', dest='credentials_only',
-                    help='Register cloud credentials only')
-parser.add_argument('--load-assets', '--load-assets-only', action='store_true', dest='load_assets_only',
-                    help='Load common specs and images only')
-parser.add_argument('--fetch-price', '--fetch-price-only', action='store_true', dest='fetch_price_only',
-                    help='Fetch price information only')
+parser.add_argument("-y", "--yes", action="store_true", help="Automatically answer yes to prompts and proceed without confirmation")
+parser.add_argument("--credentials", "--credentials-only", action="store_true", dest="credentials_only", help="Register cloud credentials only")
+parser.add_argument("--openbao", "--openbao-only", action="store_true", dest="openbao_only", help="Register CSP credentials to OpenBao only (for MC-Terrarium)")
+parser.add_argument("--load-assets", "--load-assets-only", action="store_true", dest="load_assets_only", help="Load common specs and images only")
+parser.add_argument("--fetch-price", "--fetch-price-only", action="store_true", dest="fetch_price_only", help="Fetch price information only")
+parser.add_argument("--key-file", type=str, default=None, help="Path to decryption key file (default: ~/.cloud-barista/.tmp_enc_key, then prompt)")
 args = parser.parse_args()
 
 # Determine which operations to run
 # If no specific options are provided, run all operations (default behavior)
-run_all = not (args.credentials_only or args.load_assets_only or args.fetch_price_only)
+run_all = not (args.credentials_only or args.openbao_only or args.load_assets_only or args.fetch_price_only)
 run_credentials = run_all or args.credentials_only
+run_openbao = run_all or args.openbao_only
 run_load_assets = run_all or args.load_assets_only
 run_fetch_price = run_all or args.fetch_price_only
 
@@ -56,18 +58,83 @@ run_fetch_price = run_all or args.fetch_price_only
 init(autoreset=True)
 
 # Configuration
-TUMBLEBUG_SERVER = os.getenv('TUMBLEBUG_SERVER', 'localhost:1323')
-TB_API_USERNAME = os.getenv('TB_API_USERNAME', 'default')
-TB_API_PASSWORD = os.getenv('TB_API_PASSWORD', 'default')
+TUMBLEBUG_SERVER = os.getenv("TUMBLEBUG_SERVER", "localhost:1323")
+TB_API_USERNAME = os.getenv("TB_API_USERNAME", "default")
+TB_API_PASSWORD = os.getenv("TB_API_PASSWORD", "default")
 AUTH = f"Basic {base64.b64encode(f'{TB_API_USERNAME}:{TB_API_PASSWORD}'.encode()).decode()}"
-HEADERS = {'Authorization': AUTH, 'Content-Type': 'application/json'}
+HEADERS = {"Authorization": AUTH, "Content-Type": "application/json"}
 
 CRED_FILE_NAME_ENC = "credentials.yaml.enc"
-CRED_PATH = os.path.join(os.path.expanduser('~'), '.cloud-barista')
+CRED_PATH = os.path.join(os.path.expanduser("~"), ".cloud-barista")
 ENC_FILE_PATH = os.path.join(CRED_PATH, CRED_FILE_NAME_ENC)
 KEY_FILE = os.path.join(CRED_PATH, ".tmp_enc_key")
 
-expected_completion_time_seconds = 400 # Default 400 seconds for non-Azure asset load
+expected_completion_time_seconds = 400  # Default 400 seconds for non-Azure asset load
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OpenBao Configuration (CSP credential registration for MC-Terrarium)
+# ══════════════════════════════════════════════════════════════════════════════
+# OpenBao stores CSP credentials as KV v2 secrets so that MC-Terrarium's
+# OpenTofu templates can read them at runtime via the hashicorp/vault provider.
+#
+# CLI usage:  bao kv get secret/csp/aws
+# HCL usage:  vault_kv_secret_v2 { mount = "secret", name = "csp/aws" }
+# API path:   /v1/secret/data/csp/{provider}  ("data" is KV v2 API convention)
+# ──────────────────────────────────────────────────────────────────────────────
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
+
+VAULT_ADDR = os.getenv("VAULT_ADDR", "http://localhost:8200")
+VAULT_TOKEN = os.getenv("VAULT_TOKEN", "")
+
+KV_MOUNT = "secret"
+SECRET_PREFIX = "csp"
+
+# CSP key mapping: cb-tumblebug YAML keys → Terrarium/OpenTofu env var keys
+OPENBAO_KEY_MAP = {
+    "aws": {
+        "ClientId": "AWS_ACCESS_KEY_ID",
+        "ClientSecret": "AWS_SECRET_ACCESS_KEY",
+    },
+    "azure": {
+        "ClientId": "ARM_CLIENT_ID",
+        "ClientSecret": "ARM_CLIENT_SECRET",
+        "TenantId": "ARM_TENANT_ID",
+        "SubscriptionId": "ARM_SUBSCRIPTION_ID",
+    },
+    "gcp": {
+        "ProjectID": "project_id",
+        "ClientEmail": "client_email",
+        "PrivateKey": "private_key",
+        "private_key_id": "private_key_id",
+        "client_id": "client_id",
+    },
+    "alibaba": {
+        "ClientId": "ALIBABA_CLOUD_ACCESS_KEY_ID",
+        "ClientSecret": "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
+    },
+    "ibm": {
+        "ApiKey": "IC_API_KEY",
+    },
+    "ncp": {
+        "ClientId": "NCLOUD_ACCESS_KEY",
+        "ClientSecret": "NCLOUD_SECRET_KEY",
+    },
+    "tencent": {
+        "ClientId": "TENCENTCLOUD_SECRET_ID",
+        "ClientSecret": "TENCENTCLOUD_SECRET_KEY",
+    },
+    "openstack": {
+        "IdentityEndpoint": "OS_AUTH_URL",
+        "Username": "OS_USERNAME",
+        "Password": "OS_PASSWORD",
+        "DomainName": "OS_DOMAIN_NAME",
+        "ProjectID": "OS_PROJECT_NAME",
+    },
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
@@ -84,28 +151,44 @@ elif not os.path.isfile(ENC_FILE_PATH):
 def decrypt_credentials(enc_file_path, key):
     try:
         result = subprocess.run(
-            ['openssl', 'enc', '-aes-256-cbc', '-d', '-pbkdf2', '-in', enc_file_path, '-pass', f'pass:{key}'],
-            check=True,
-            capture_output=True
+            ["openssl", "enc", "-aes-256-cbc", "-d", "-pbkdf2", "-in", enc_file_path, "-pass", f"pass:{key}"], check=True, capture_output=True
         )
         if result.returncode != 0:
             return None, "Decryption failed."
-        return result.stdout.decode('utf-8'), None
+        return result.stdout.decode("utf-8"), None
     except subprocess.CalledProcessError as e:
         return None, f"Decryption error: {e.stderr.decode('utf-8')}"
 
-def get_decryption_key():
-    # Try using the key from the key file
-    if os.path.isfile(KEY_FILE):
-        with open(KEY_FILE, 'r') as kf:
-            key = kf.read().strip()
-            print(Fore.YELLOW + f"Using key from {KEY_FILE} to decrypt the credentials file.")
-            decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, key)
-            if error is None:
-                return decrypted_content
-            print(Fore.RED + error)
 
-    # Prompt for password up to 3 times if the key file is not used or fails
+def get_decryption_key():
+    """Decrypt credentials file using key file or interactive password.
+
+    Resolution order (same as mc-terrarium):
+      1. --key-file <path>  (explicit CLI argument)
+      2. ~/.cloud-barista/.tmp_enc_key  (convention)
+      3. Interactive password prompt (up to 3 attempts)
+    """
+    # 1. Try explicit --key-file argument
+    if args.key_file and os.path.isfile(args.key_file):
+        with open(args.key_file, "r") as kf:
+            key = kf.read().strip()
+        print(Fore.YELLOW + f"Using key from {args.key_file}")
+        decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, key)
+        if error is None:
+            return decrypted_content
+        print(Fore.RED + error)
+
+    # 2. Try default .tmp_enc_key (cb-tumblebug convention)
+    if os.path.isfile(KEY_FILE):
+        with open(KEY_FILE, "r") as kf:
+            key = kf.read().strip()
+        print(Fore.YELLOW + f"Using key from {KEY_FILE}")
+        decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, key)
+        if error is None:
+            return decrypted_content
+        print(Fore.RED + error)
+
+    # 3. Prompt for password (up to 3 attempts)
     for attempt in range(3):
         password = getpass(f"Enter the password of the encrypted credential to continue (attempt {attempt + 1}/3): ")
         decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, password)
@@ -116,6 +199,7 @@ def get_decryption_key():
     print(Fore.RED + "Failed to decrypt the file after 3 attempts. Exiting.")
     sys.exit(1)
 
+
 # Print the current configuration
 print(Fore.YELLOW + "Current Configuration\nPlease set the corresponding environment variables to make changes.")
 print(" - " + Fore.CYAN + "TUMBLEBUG_SERVER:" + Fore.RESET + f" {TUMBLEBUG_SERVER}")
@@ -123,12 +207,14 @@ print(" - " + Fore.CYAN + "TB_API_USERNAME:" + Fore.RESET + f" {TB_API_USERNAME[
 print(" - " + Fore.CYAN + "TB_API_PASSWORD:" + Fore.RESET + f" {TB_API_PASSWORD[0]}**********")
 print(" - " + Fore.CYAN + "CRED_PATH:" + Fore.RESET + f" {CRED_PATH}")
 print(" - " + Fore.CYAN + "CRED_FILE_NAME:" + Fore.RESET + f" {CRED_FILE_NAME_ENC}")
+if run_openbao:
+    print(" - " + Fore.CYAN + "VAULT_ADDR:" + Fore.RESET + f" {VAULT_ADDR}")
 print(" - " + Fore.CYAN + "expected completion time:" + Fore.RESET + f" {expected_completion_time_seconds} seconds\n")
 
 # (Moved) server health check will run after user confirmation to ensure inputs are provided first
 
 # Check for database backup availability early (before asking for confirmation)
-backup_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'assets.dump.gz')
+backup_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "assets.dump.gz")
 backup_available = os.path.isfile(backup_db_path)
 backup_size_mb = 0
 backup_age_days = 0
@@ -137,17 +223,17 @@ include_azure = False  # Decision variable for Azure image fetch
 
 if backup_available:
     backup_size_mb = os.path.getsize(backup_db_path) / (1024 * 1024)
-    
+
     # Get backup age from Git commit date (more accurate than file mtime)
     try:
         # Using git from trusted system path, file path is validated above
         git_commit_time_result = subprocess.run(
-            ['git', 'log', '-1', '--format=%ct', '--', 'assets/assets.dump.gz'],
-            cwd=os.path.dirname(os.path.abspath(__file__)) + '/..',
+            ["git", "log", "-1", "--format=%ct", "--", "assets/assets.dump.gz"],
+            cwd=os.path.dirname(os.path.abspath(__file__)) + "/..",
             capture_output=True,
             text=True,
             timeout=5,
-            check=False  # Don't raise exception on non-zero exit
+            check=False,  # Don't raise exception on non-zero exit
         )
         if git_commit_time_result.returncode == 0 and git_commit_time_result.stdout.strip():
             git_commit_timestamp = int(git_commit_time_result.stdout.strip())
@@ -163,9 +249,9 @@ if backup_available:
 
 # Ask for backup choice BEFORE showing operations summary
 if run_load_assets and backup_available and not args.yes:
-    print(Fore.CYAN + "="*80)
+    print(Fore.CYAN + "=" * 80)
     print(Fore.CYAN + "🚀 Choose Initialization Method")
-    print(Fore.CYAN + "="*80)
+    print(Fore.CYAN + "=" * 80)
     print("")
     print(Fore.GREEN + "  a. ⏩ Restore from backup (~1 minute)")
     print(Fore.WHITE + f"     Location: ./assets/assets.dump.gz ({backup_size_mb:.1f} MB, {backup_age_days} days old)")
@@ -184,18 +270,18 @@ if run_load_assets and backup_available and not args.yes:
     print(Fore.WHITE + "     → Fetches from ALL cloud providers including Azure")
     print(Fore.YELLOW + "     ⚠️  Warning: Azure image fetch is very slow and may take 40+ minutes")
     print("")
-    
+
     while True:
         choice = input(Fore.CYAN + "Select option (a/b/c): " + Fore.RESET).lower()
-        if choice in ['a']:
+        if choice in ["a"]:
             use_backup = True
             include_azure = False
             break
-        elif choice in ['b']:
+        elif choice in ["b"]:
             use_backup = False
             include_azure = False
             break
-        elif choice in ['c']:
+        elif choice in ["c"]:
             use_backup = False
             include_azure = True
             break
@@ -214,13 +300,13 @@ elif run_load_assets and not backup_available and not args.yes:
     print(Fore.WHITE + "  - No (default): ~20-30 minutes")
     print(Fore.YELLOW + "  - Yes: ~40+ minutes (Azure is very slow)")
     print("")
-    
+
     while True:
         choice = input(Fore.CYAN + "Include Azure? (y/N): " + Fore.RESET).lower()
-        if choice in ['y', 'yes']:
+        if choice in ["y", "yes"]:
             include_azure = True
             break
-        elif choice in ['n', 'no', '']:
+        elif choice in ["n", "no", ""]:
             include_azure = False
             break
         else:
@@ -229,8 +315,10 @@ elif run_load_assets and not backup_available and not args.yes:
 
 # Display what will be executed (after user choice)
 operations = []
+if run_openbao:
+    operations.append("Initialize OpenBao + Register CSP credentials → OpenBao (for MC-Terrarium)")
 if run_credentials:
-    operations.append("Register credentials")
+    operations.append("Register credentials → Tumblebug")
 if run_load_assets:
     if use_backup:
         operations.append(f"Load assets from backup ({backup_size_mb:.1f} MB - includes specs, images, pricing)")
@@ -239,9 +327,9 @@ if run_load_assets:
 if run_fetch_price and not use_backup:
     operations.append("Fetch price information")
 
-print(Fore.YELLOW + "\n" + "="*80)
+print(Fore.YELLOW + "\n" + "=" * 80)
 print(Fore.YELLOW + "Operations to be performed:")
-print(Fore.YELLOW + "="*80)
+print(Fore.YELLOW + "=" * 80)
 for i, op in enumerate(operations, 1):
     print(Fore.CYAN + f"  {i}. {op}")
 
@@ -252,29 +340,31 @@ elif run_load_assets and not backup_available:
     print("")
     print(Fore.YELLOW + "  ⚠️  No backup found - will fetch from CSPs (~20 minutes)")
 
-print(Fore.YELLOW + "="*80)
+print(Fore.YELLOW + "=" * 80)
 print("")
 
 # Determine if password input will be required
 # If password is needed, it serves as confirmation (skip "proceed?" prompt)
-password_required = run_credentials and not os.path.isfile(KEY_FILE)
+# Decryption is needed for both Tumblebug credentials and OpenBao registration.
+needs_decryption = run_credentials or run_openbao
+password_required = needs_decryption and not os.path.isfile(KEY_FILE)
 
 # Get decryption key BEFORE health check (if credentials are being registered)
 # This ensures all user inputs are completed before waiting for server
 decrypted_content = None
 cred_data = None
 
-if run_credentials:
+if needs_decryption:
     if password_required:
         # Password input serves as confirmation - no need for separate "proceed?" prompt
         print(Fore.CYAN + "Enter the credential password to proceed...")
     decrypted_content = get_decryption_key()
-    cred_data = yaml.safe_load(decrypted_content)['credentialholder']['admin']
+    cred_data = yaml.safe_load(decrypted_content)["credentialholder"]["admin"]
 else:
     # No credentials to register - ask for confirmation
     if not args.yes:
-        if input(Fore.CYAN + 'Do you want to proceed? (y/n): ').lower() not in ['y', 'yes']:
-            print(Fore.GREEN + "Cancel [{}]".format(' '.join(sys.argv)))
+        if input(Fore.CYAN + "Do you want to proceed? (y/n): ").lower() not in ["y", "yes"]:
+            print(Fore.GREEN + "Cancel [{}]".format(" ".join(sys.argv)))
             print(Fore.GREEN + "See you soon. :)")
             sys.exit(0)
     else:
@@ -282,13 +372,13 @@ else:
         print("")
 
 # If password was not required but credentials are being registered, ask for confirmation
-if run_credentials and not password_required and not args.yes:
+if needs_decryption and not password_required and not args.yes:
     # Key file was used, so ask for confirmation
-    if input(Fore.CYAN + 'Do you want to proceed? (y/n): ').lower() not in ['y', 'yes']:
-        print(Fore.GREEN + "Cancel [{}]".format(' '.join(sys.argv)))
+    if input(Fore.CYAN + "Do you want to proceed? (y/n): ").lower() not in ["y", "yes"]:
+        print(Fore.GREEN + "Cancel [{}]".format(" ".join(sys.argv)))
         print(Fore.GREEN + "See you soon. :)")
         sys.exit(0)
-elif run_credentials and not password_required and args.yes:
+elif needs_decryption and not password_required and args.yes:
     print(Fore.GREEN + "Auto-yes mode enabled - proceeding with selected options...")
     print("")
 
@@ -319,6 +409,7 @@ for attempt in range(1, max_retries + 1):
             print(Fore.RED + f"Failed to connect to server after {max_retries} attempts. Check the server address and try again.")
             sys.exit(1)
 
+
 # Function to encrypt credentials using AES and RSA public key
 def encrypt_credential_value_with_publickey(public_key_pem, credentials):
     public_key = RSA.import_key(public_key_pem)
@@ -340,6 +431,7 @@ def encrypt_credential_value_with_publickey(public_key_pem, credentials):
 
     return encrypted_credentials, encrypted_aes_key
 
+
 def register_credential(provider, credentials):
     try:
         if all(credentials.values()):
@@ -349,8 +441,8 @@ def register_credential(provider, credentials):
                 return provider, "Failed to retrieve public key, Skip", Fore.RED
 
             public_key_data = public_key_response.json()
-            public_key = public_key_data['publicKey']
-            public_key_token_id = public_key_data['publicKeyTokenId']
+            public_key = public_key_data["publicKey"]
+            public_key_token_id = public_key_data["publicKeyTokenId"]
 
             # Step 2: Encrypt the credentials using AES and RSA public key
             encrypted_credentials, encrypted_aes_key = encrypt_credential_value_with_publickey(public_key, credentials)
@@ -361,7 +453,7 @@ def register_credential(provider, credentials):
                 "credentialKeyValueList": [{"key": k, "value": v} for k, v in encrypted_credentials.items()],
                 "providerName": provider,
                 "publicKeyTokenId": public_key_token_id,
-                "encryptedClientAesKeyByPublicKey": encrypted_aes_key
+                "encryptedClientAesKeyByPublicKey": encrypted_aes_key,
             }
 
             print(Fore.YELLOW + f"- Registering and validating credentials for {provider.upper()}...")
@@ -374,7 +466,7 @@ def register_credential(provider, credentials):
                 message = print_credential_info(result_data)
                 return provider, message, Fore.GREEN
             else:
-                message = response.json().get('message', response.text)
+                message = response.json().get("message", response.text)
                 return provider, message, Fore.RED
         else:
             message = "Incomplete credential data, Skip"
@@ -386,80 +478,94 @@ def register_credential(provider, credentials):
 
 # Function to print formatted credential information
 def print_credential_info(response):
-    if 'credentialName' in response and 'credentialHolder' in response:
+    if "credentialName" in response and "credentialHolder" in response:
         # Print credential name and holder in bold
         print(Fore.YELLOW + f"\n{response['credentialName'].upper()} (holder: {response['credentialHolder']})" + Style.RESET_ALL)
-        
-    if 'allConnections' in response and 'connectionconfig' in response['allConnections']:
+
+    if "allConnections" in response and "connectionconfig" in response["allConnections"]:
         # Print the explanation line with icons
-        print(Style.BRIGHT + "Registered Connections: " + Style.RESET_ALL +
-              Fore.GREEN + "✓" + Style.RESET_ALL + "=verified, " +
-              Fore.RED + "✗" + Style.RESET_ALL + "=unverified, " +
-              Fore.MAGENTA + "*" + Style.RESET_ALL + "=representative zone")
+        print(
+            Style.BRIGHT
+            + "Registered Connections: "
+            + Style.RESET_ALL
+            + Fore.GREEN
+            + "✓"
+            + Style.RESET_ALL
+            + "=verified, "
+            + Fore.RED
+            + "✗"
+            + Style.RESET_ALL
+            + "=unverified, "
+            + Fore.MAGENTA
+            + "*"
+            + Style.RESET_ALL
+            + "=representative zone"
+        )
 
         # Group connections by region, collecting all zones and tracking verification status
         region_groups = {}
-        for conn in response['allConnections']['connectionconfig']:
-            if conn['providerName'] == response['providerName']:
-                region = conn['regionZoneInfo']['assignedRegion']
-                zone = conn['regionZoneInfo']['assignedZone']
-                config_name = conn['configName']
-                is_verified = conn['verified']
-                is_representative = conn['regionRepresentative']
-                
+        for conn in response["allConnections"]["connectionconfig"]:
+            if conn["providerName"] == response["providerName"]:
+                region = conn["regionZoneInfo"]["assignedRegion"]
+                zone = conn["regionZoneInfo"]["assignedZone"]
+                config_name = conn["configName"]
+                is_verified = conn["verified"]
+                is_representative = conn["regionRepresentative"]
+
                 if region not in region_groups:
                     region_groups[region] = {
-                        'base_config_name': config_name,  # Use first (shortest) config name as base
-                        'zones': set(),  # Use set for O(1) lookups
-                        'all_verified': True,  # Track if all connections are verified
-                        'any_verified': False  # Track if any connection is verified
+                        "base_config_name": config_name,  # Use first (shortest) config name as base
+                        "zones": set(),  # Use set for O(1) lookups
+                        "all_verified": True,  # Track if all connections are verified
+                        "any_verified": False,  # Track if any connection is verified
                     }
-                
+
                 # Update base_config_name to use shortest name (usually the base without zone suffix)
-                if len(config_name) < len(region_groups[region]['base_config_name']):
-                    region_groups[region]['base_config_name'] = config_name
-                
+                if len(config_name) < len(region_groups[region]["base_config_name"]):
+                    region_groups[region]["base_config_name"] = config_name
+
                 # Track verification status across all connections in this region
-                region_groups[region]['all_verified'] = region_groups[region]['all_verified'] and is_verified
-                region_groups[region]['any_verified'] = region_groups[region]['any_verified'] or is_verified
-                
+                region_groups[region]["all_verified"] = region_groups[region]["all_verified"] and is_verified
+                region_groups[region]["any_verified"] = region_groups[region]["any_verified"] or is_verified
+
                 # Add zone info - if zone is representative in any connection, mark it as representative
                 existing_zone = None
-                for z in region_groups[region]['zones']:
+                for z in region_groups[region]["zones"]:
                     if z[0] == zone:
                         existing_zone = z
                         break
-                
+
                 if existing_zone:
                     # If this zone is representative, update the existing entry
                     if is_representative and not existing_zone[1]:
-                        region_groups[region]['zones'].discard(existing_zone)
-                        region_groups[region]['zones'].add((zone, True))
+                        region_groups[region]["zones"].discard(existing_zone)
+                        region_groups[region]["zones"].add((zone, True))
                 else:
-                    region_groups[region]['zones'].add((zone, is_representative))
-        
+                    region_groups[region]["zones"].add((zone, is_representative))
+
         # Print in format: icon base-config-name : region (zone1* zone2 zone3)
         for region, data in sorted(region_groups.items()):
             # Format zones: representative zones with asterisk, sorted with representative first
-            zone_list = sorted(data['zones'], key=lambda x: (not x[1], x[0]))  # Representative first, then alphabetical
+            zone_list = sorted(data["zones"], key=lambda x: (not x[1], x[0]))  # Representative first, then alphabetical
             zone_displays = []
             for zone, is_rep in zone_list:
                 if is_rep:
                     zone_displays.append(f"{Fore.MAGENTA}{zone}*{Style.RESET_ALL}")
                 else:
                     zone_displays.append(zone)
-            
+
             zones_str = " ".join(zone_displays)
-            
+
             # Use green check if all verified, red X if none verified, yellow ~ if mixed
-            config_name = data['base_config_name']
-            if data['all_verified']:
+            config_name = data["base_config_name"]
+            if data["all_verified"]:
                 print(f"{Fore.GREEN}✓{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
-            elif not data['any_verified']:
+            elif not data["any_verified"]:
                 print(f"{Fore.RED}✗{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
             else:
                 # Mixed verification status
                 print(f"{Fore.YELLOW}~{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
+
 
 # Function to fetch price information from CSPs
 def fetch_price():
@@ -467,21 +573,171 @@ def fetch_price():
         # FetchPrice API is a POST endpoint with no required body
         response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
         response.raise_for_status()  # Will raise an exception for HTTP error codes
-        
+
         response_json = response.json()
         if response_json is None:  # Check if response.json() returned None
-            response_json = {'error': 'No content returned'}
-        
+            response_json = {"error": "No content returned"}
+
         # Log success message
         print(f"Price fetching initiated: {response_json.get('message', 'No message returned')}")
         return response_json
     except requests.RequestException as e:
-        error_msg = f'Failed to fetch prices: {str(e)}'
+        error_msg = f"Failed to fetch prices: {str(e)}"
         print(Fore.RED + error_msg)
-        return {'error': error_msg}
+        return {"error": error_msg}
 
 
-# Register credentials if requested
+# ══════════════════════════════════════════════════════════════════════════════
+# OpenBao Helper Functions (CSP credential registration for MC-Terrarium)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def load_vault_token_from_env(force=False):
+    """Load VAULT_TOKEN from project .env file. Use force=True to re-read after updates."""
+    global VAULT_TOKEN
+    if VAULT_TOKEN and not force:
+        return
+    env_path = os.path.join(PROJECT_DIR, ".env")
+    if os.path.isfile(env_path):
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("VAULT_TOKEN=") and not line.startswith("#"):
+                    VAULT_TOKEN = line.split("=", 1)[1].strip()
+                    os.environ["VAULT_TOKEN"] = VAULT_TOKEN
+                    return
+
+
+def register_openbao_credential(provider, credentials):
+    """Register a single CSP credential to OpenBao KV v2."""
+    has_value = any(v for v in credentials.values() if v)
+    if not has_value:
+        return provider, "skip", "No credential values"
+
+    secret_data = {}
+    key_map = OPENBAO_KEY_MAP.get(provider, {})
+    mapped_keys = []
+
+    for yaml_key, value in credentials.items():
+        if not value:
+            continue
+        terrarium_key = key_map.get(yaml_key)
+        if terrarium_key:
+            secret_data[terrarium_key] = value
+            mapped_keys.append(terrarium_key)
+
+    if not mapped_keys:
+        for yaml_key, value in credentials.items():
+            if value:
+                secret_data[yaml_key] = value
+        mapped_keys = list(secret_data.keys())
+
+    url = f"{VAULT_ADDR}/v1/{KV_MOUNT}/data/{SECRET_PREFIX}/{provider}"
+    headers = {"X-Vault-Token": VAULT_TOKEN, "Content-Type": "application/json"}
+    try:
+        resp = requests.post(url, json={"data": secret_data}, headers=headers, timeout=10)
+        resp.raise_for_status()
+        version = resp.json().get("data", {}).get("version", "?")
+        return provider, "ok", f"v{version}  keys=[{', '.join(mapped_keys)}]"
+    except requests.RequestException as e:
+        return provider, "fail", str(e)
+
+
+def register_openbao_placeholder_secrets(registered_providers):
+    """Register placeholder secrets for CSPs not in the credential file.
+
+    Ensures vault_kv_secret_v2 data sources do not hard-fail during
+    tofu plan/apply when a CSP's credentials have not been provided yet.
+    """
+    headers = {"X-Vault-Token": VAULT_TOKEN, "Content-Type": "application/json"}
+    placeholder_count = 0
+
+    for provider, key_mapping in OPENBAO_KEY_MAP.items():
+        if provider in registered_providers:
+            continue
+        url = f"{VAULT_ADDR}/v1/{KV_MOUNT}/data/{SECRET_PREFIX}/{provider}"
+        try:
+            resp = requests.get(url, headers=headers, timeout=5)
+            if resp.status_code == 200:
+                continue
+        except requests.RequestException:
+            pass
+        placeholder_data = {v: "" for v in key_mapping.values()}
+        try:
+            resp = requests.post(url, json={"data": placeholder_data}, headers=headers, timeout=10)
+            resp.raise_for_status()
+            print(f"  {Fore.YELLOW}PLCH{Style.RESET_ALL} {provider:12s}  placeholder registered")
+            placeholder_count += 1
+        except requests.RequestException as e:
+            print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {provider:12s}  placeholder failed: {e}")
+
+    return placeholder_count
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OpenBao: Register CSP credentials for MC-Terrarium
+# ══════════════════════════════════════════════════════════════════════════════
+if run_openbao:
+    print(Fore.YELLOW + "\n" + "=" * 80)
+    print(Fore.YELLOW + "OpenBao: Registering CSP credentials for MC-Terrarium")
+    print(Fore.YELLOW + "=" * 80)
+
+    # Load token from .env (set by 'make up' → 'make init-openbao')
+    load_vault_token_from_env()
+
+    if not VAULT_TOKEN:
+        print(Fore.RED + "VAULT_TOKEN not set. Run 'make up' or 'make init-openbao' first.")
+    elif not cred_data:
+        print(Fore.YELLOW + "No credential data available. Skipping OpenBao registration.")
+    else:
+        # Verify OpenBao is reachable and ready
+        try:
+            resp = requests.get(f"{VAULT_ADDR}/v1/sys/seal-status", timeout=5)
+            status = resp.json()
+            if not status.get("initialized"):
+                print(Fore.RED + "OpenBao is not initialized. Run 'make init-openbao' first.")
+            elif status.get("sealed"):
+                print(Fore.RED + "OpenBao is sealed. Run 'make unseal' first.")
+            else:
+                print(Fore.GREEN + "OpenBao is ready (initialized and unsealed).")
+                print(Fore.CYAN + "\nRegistering credentials to OpenBao...")
+                print()
+
+                openbao_ok = 0
+                openbao_skip = 0
+                openbao_fail = 0
+                registered_providers = set()
+
+                for provider, credentials in cred_data.items():
+                    pname, status_str, message = register_openbao_credential(provider, credentials)
+                    if status_str == "ok":
+                        print(f"  {Fore.GREEN}OK  {Style.RESET_ALL} {pname:12s}  {message}")
+                        openbao_ok += 1
+                        registered_providers.add(pname)
+                    elif status_str == "skip":
+                        print(f"  {Fore.YELLOW}SKIP{Style.RESET_ALL} {pname:12s}  ({message})")
+                        openbao_skip += 1
+                    else:
+                        print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {pname:12s}  {message}")
+                        openbao_fail += 1
+
+                placeholder_count = register_openbao_placeholder_secrets(registered_providers)
+
+                print()
+                print(
+                    f"OpenBao results: {Fore.GREEN}{openbao_ok} registered{Style.RESET_ALL}, "
+                    f"{Fore.YELLOW}{openbao_skip} skipped{Style.RESET_ALL}, "
+                    f"{Fore.RED}{openbao_fail} failed{Style.RESET_ALL}"
+                    + (f", {Fore.CYAN}{placeholder_count} placeholders{Style.RESET_ALL}" if placeholder_count > 0 else "")
+                )
+        except requests.RequestException:
+            print(Fore.RED + f"Cannot reach OpenBao at {VAULT_ADDR}.")
+            print(Fore.YELLOW + "Start it first: make up")
+
+    print()
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Register credentials to Tumblebug if requested
 if run_credentials:
     # cred_data was already decrypted before health check to ensure all user inputs complete first
     print(Fore.YELLOW + f"\nRegistering all valid credentials for all cloud regions...")
@@ -501,16 +757,16 @@ if run_credentials:
 # Load assets (specs and images) if requested
 if run_load_assets:
     # use_backup was already determined earlier (before confirmation prompt)
-    
+
     if use_backup:
         # Restore from backup
         print(Fore.YELLOW + "\n📦 Restoring database from backup...")
         print(Fore.RESET)
-        
+
         try:
             # Run restore script
-            restore_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts', 'restore-assets.sh')
-            
+            restore_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts", "restore-assets.sh")
+
             if not os.path.isfile(restore_script):
                 print(Fore.RED + f"Error: Restore script not found at {restore_script}")
                 print(Fore.YELLOW + "Falling back to standard initialization...")
@@ -520,17 +776,17 @@ if run_load_assets:
                 # Note: Script permissions are managed by Git (should be executable)
                 result = subprocess.run(
                     [restore_script, backup_db_path],
-                    env={**os.environ, 'RESTORE_SKIP_CONFIRM': 'yes'},  # Skip confirmation in script
+                    env={**os.environ, "RESTORE_SKIP_CONFIRM": "yes"},  # Skip confirmation in script
                     capture_output=True,
                     text=True,
-                    timeout=600  # 10 minutes timeout to prevent hanging
+                    timeout=600,  # 10 minutes timeout to prevent hanging
                 )
-                
+
                 if result.returncode == 0:
                     print(Fore.GREEN + "✅ Database restored successfully from backup!")
                     print(Fore.CYAN + "   Initialization time: ~1 minute (instead of ~20 minutes)")
                     print(Fore.CYAN + "   Restored: Specs, Images, and Pricing data")
-                    
+
                     # Create 'system' namespace if it doesn't exist (required for image/spec operations)
                     print(Fore.YELLOW + "\n   Ensuring 'system' namespace exists...")
                     try:
@@ -547,7 +803,7 @@ if run_load_assets:
                             print(Fore.GREEN + "   ✅ 'system' namespace already exists")
                     except Exception as ns_err:
                         print(Fore.YELLOW + f"   ⚠️  Namespace check failed: {str(ns_err)}")
-                    
+
                     # Skip the load_resources call since DB is already populated
                     run_load_assets = False  # Mark as completed
                     # Also skip fetch_price since pricing data is included in backup
@@ -562,7 +818,7 @@ if run_load_assets:
             print(Fore.RED + f"❌ Error during database restore: {str(e)}")
             print(Fore.YELLOW + "Falling back to standard initialization...")
             use_backup = False
-    
+
     # If not using backup or backup failed, proceed with standard initialization
     if not use_backup and run_load_assets:
         # Adjust estimated time based on Azure inclusion
@@ -583,12 +839,12 @@ if run_load_assets:
             url = f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets"
             if include_azure:
                 url += "?includeAzure=true"
-            
+
             response = requests.get(url, headers=HEADERS)
             response.raise_for_status()  # Will raise an exception for HTTP error codes
             response_json = response.json()
         except requests.RequestException as e:
-            response_json = {'error': str(e)}
+            response_json = {"error": str(e)}
         finally:
             event.set()  # Signal that the request is complete regardless of success or failure
 
@@ -607,22 +863,22 @@ if run_load_assets:
         # Use a simple spinner instead of progress bar for indeterminate duration
         # This avoids the stuttering issue caused by inaccurate time.sleep() and
         # provides smoother visual feedback for operations with unpredictable duration
-        spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
         spinner_idx = 0
         elapsed = 0
         last_print_sec = -1  # Track last printed second for non-TTY mode
         is_tty = sys.stdout.isatty()  # Detect if running in interactive terminal
-        
+
         while not event.is_set():
             # Use shorter sleep for smoother animation
             time.sleep(0.08)
             elapsed += 0.08
             spinner_idx = (spinner_idx + 1) % len(spinner_chars)
-            
+
             # Format elapsed time
             mins, secs = divmod(int(elapsed), 60)
             time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
-            
+
             if is_tty:
                 # Interactive terminal: spinner animation with carriage return
                 print(f"\r{spinner_chars[spinner_idx]} Loading... {time_str} (expected: ~{expected_completion_time_seconds}s)", end="", flush=True)
@@ -634,11 +890,11 @@ if run_load_assets:
                     # Print simple progress every 30 seconds to avoid log spam
                     if current_sec % 30 == 0:
                         print(f"Loading... {time_str}", flush=True)
-        
+
         # Clear the spinner line (only for TTY)
         if is_tty:
             print(f"\r{' ' * 80}\r", end="")
-        
+
         # Wait for the thread to complete
         thread.join()
 
@@ -647,8 +903,8 @@ if run_load_assets:
         duration = end_time - start_time
 
         # Handling output based on the API response
-        if 'error' in response_json:
-            print(Fore.RED + "Error during resource loading: " + response_json['error'])
+        if "error" in response_json:
+            print(Fore.RED + "Error during resource loading: " + response_json["error"])
             exit(1)
         elif response_json:
             print(Fore.CYAN + f"\nLoading completed (elapsed: {int(duration)}s)")

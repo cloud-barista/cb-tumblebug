@@ -51,6 +51,7 @@ src/interface/rest/docs/swagger.yaml
 conf/*
 conf/credentials.conf
 !conf/traefik.yaml
+!conf/openbao-config.hcl
 
 # Runtime files
 src/benchmarking.csv
@@ -70,6 +71,10 @@ log/
 
 # .env file for docker-compose
 .env
+!.env.example
+
+# Secrets (OpenBao init output)
+secrets/openbao-init.json
 
 # Python
 __pycache__/

@@ -14,6 +14,7 @@ TBMETAPATH="$TB_ROOT_PATH/meta_db/dat"
 VOL_TB_META_PATH="$TB_ROOT_PATH/container-volume/cb-tumblebug-container"
 VOL_SP_META_PATH="$TB_ROOT_PATH/container-volume/cb-spider-container"
 VOL_ETC_DATA_PATH="$TB_ROOT_PATH/container-volume/etcd"
+VOL_TERRARIUM_PATH="$TB_ROOT_PATH/container-volume/mc-terrarium-container"
 
 echo
 echo ==========================================================
@@ -35,6 +36,9 @@ ls $VOL_SP_META_PATH
 echo
 echo -e "Path:${RED}${VOL_ETC_DATA_PATH} ${NC}"
 ls $VOL_ETC_DATA_PATH
+echo
+echo -e "Path:${RED}${VOL_TERRARIUM_PATH} ${NC}"
+ls $VOL_TERRARIUM_PATH 2>/dev/null
 echo
 
 while true; do
@@ -60,6 +64,7 @@ ls $TBMETAPATH
 ls $VOL_TB_META_PATH
 ls $VOL_SP_META_PATH
 ls $VOL_ETC_DATA_PATH
+ls $VOL_TERRARIUM_PATH 2>/dev/null
 
 echo
 
@@ -67,5 +72,6 @@ sudo rm -rf $TBMETAPATH
 sudo rm -rf $VOL_TB_META_PATH
 sudo rm -rf $VOL_SP_META_PATH
 sudo rm -rf $VOL_ETC_DATA_PATH
+sudo rm -rf $VOL_TERRARIUM_PATH
 
 echo -e "${LGREEN} Done! ${NC}"

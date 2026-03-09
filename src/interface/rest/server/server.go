@@ -27,7 +27,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/rs/zerolog/log"
 
@@ -235,14 +234,10 @@ func RunServer() {
 					return false
 				},
 				Validator: func(username, password string, c echo.Context) (bool, error) {
-					// Be careful to use constant time comparison to prevent timing attacks
-					if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 {
-						// bcrypt verification
-						// log.Debug().Msgf("bcrypt.CompareHashAndPassword(%s, %s)", apiPass, password)
-						err := bcrypt.CompareHashAndPassword([]byte(apiPass), []byte(password))
-						if err == nil {
-							return true, nil
-						}
+					// Use constant time comparison to prevent timing attacks
+					if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
+						subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
+						return true, nil
 					}
 					return false, nil
 				},

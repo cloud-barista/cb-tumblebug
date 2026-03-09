@@ -1,4 +1,5 @@
 # Cloud-Barista 👋
+
 # CB-Tumblebug (Multi-Cloud Infra Management)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
@@ -16,7 +17,9 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-53-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## What is CB-Tumblebug? ✨
@@ -24,13 +27,15 @@
 **CB-Tumblebug (CB-TB)** is an advanced **multi-cloud infrastructure management system** that enables seamless provisioning, management, and orchestration of resources across multiple cloud service providers. Part of the Cloud-Barista project, CB-TB abstracts the complexity of multi-cloud environments into a unified, intuitive interface.
 
 ### 🎯 Key Capabilities
+
 - **🌐 Multi-Cloud Orchestration**: Manage AWS, Azure, GCP, Alibaba Cloud, and more from a single platform
 - **⚡ Auto-provisioning**: Intelligent resource recommendations and automated deployment
 - **🔐 Secure Operations**: Encrypted credential management and hybrid encryption protocols
-- **🗺️ Visual Infrastructure Map**: Interactive GUI for infrastructure visualization and management  
+- **🗺️ Visual Infrastructure Map**: Interactive GUI for infrastructure visualization and management
 - **🤖 AI-Powered Management**: NEW! Control infrastructure using natural language via our MCP Server
 
 ### 📚 Documentation & Resources
+
 - [📖 Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview) | [✨ Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features) | [🏗️ Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
 - [☁️ Supported Cloud Providers & Resources](https://docs.google.com/spreadsheets/d/1idBoaTxEMzuVACKUIMIE9OY1rPO-7yZ0y7Rs1dBG0og/edit?usp=sharing)
 
@@ -44,7 +49,8 @@
 <details>
 <summary>📋 Development Status & Contributing Notes</summary>
 
-### 🚧 Ongoing Development 
+### 🚧 Ongoing Development
+
 CB-TB has not reached version 1.0 yet. We welcome any new suggestions, issues, opinions, and contributors!
 Please note that the functionalities of Cloud-Barista are not yet stable or secure.
 Be cautious if you plan to use the current release in a production environment.
@@ -52,6 +58,7 @@ If you encounter any difficulties using Cloud-Barista,
 please let us know by opening an issue or joining the Cloud-Barista Slack.
 
 ### 🌍 Localization & Globalization
+
 As an open-source project initiated by Korean members,
 we aim to encourage participation from Korean contributors during the initial stages of this project.
 Therefore, the CB-TB repository will accept the use of the Korean language in its early stages.
@@ -64,6 +71,7 @@ the titles of Issues, Pull Requests, and Commits, while accommodating local lang
 ### 🌟 Featured Use Cases
 
 **🤖 NEW: AI-Powered Multi-Cloud Management**
+
 - Control CB-Tumblebug through AI assistants like Claude and VS Code
 - Natural language interface for infrastructure provisioning and management using MCP (Model Context Protocol)
 - Streamable HTTP transport for modern MCP compatibility
@@ -71,9 +79,9 @@ the titles of Issues, Pull Requests, and Commits, while accommodating local lang
 
 **🎮 GPU-Powered Multi-Cloud LLM Deployment**
 [![Multi-Cloud LLMs in parallel](https://github.com/cloud-barista/cb-tumblebug/assets/5966944/e15feb67-ba02-4066-af62-d9f8e8330a63)](https://www.youtube.com/watch?v=SD9ZoT_OZpQ)
+
 - Deploy GPU instances across multiple clouds for AI/ML workloads
 - [🧠 LLM Scripts & Examples](https://github.com/cloud-barista/cb-tumblebug/tree/main/scripts/usecases/llm)
-
 
 ---
 
@@ -95,22 +103,44 @@ Get CB-Tumblebug running in under 5 minutes:
 ```bash
 # 1. Automated setup (recommended for new users)
 curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash
+# ↑ Copies .env.example → .env and sets default API username and password for all sub-systems
+# Optionally edit .env to use custom credentials before starting.
 
-# 2. Start all services
+# 2. Start all services (auto-initializes OpenBao)
 cd ~/go/src/github.com/cloud-barista/cb-tumblebug
 make up
 
-# 3. Configure credentials (see detailed setup below)
-./init/genCredential.sh
-# Edit ~/.cloud-barista/credentials.yaml with your cloud credentials
-./init/encCredential.sh
+# 3. Generate credentials.yaml from template (./init/genCredential.sh)
+make gen-cred
+
+# 4. Manually Edit ~/.cloud-barista/credentials.yaml with your cloud credentials
+# vi ~/.cloud-barista/credentials.yaml
+
+# 5. Encrypt credentials.yaml to credentials.yaml.enc (./init/encCredential.sh)
+make enc-cred
+
+# 6. Run initialization script (./init/init.sh)
 make init
 
-# 4. Access services
+# 7. Access services
 # - API: http://localhost:1323/tumblebug/api
 # - MapUI: http://localhost:1324
 # - MCP Server: http://localhost:8000/mcp (if enabled)
 ```
+
+> ❕ **Manual setup (without set-tb.sh)**:
+>
+> - Copy `.env.example` to `.env` and
+> - Set API username and password of all sub-systems in `.env` before running `make up`.
+
+### Usage Scenarios
+
+| Scenario                                     | Commands                                                                         |
+| -------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Quick start**                              | `make up` → `make gen-cred` → `edit credentials` → `make enc-cred` → `make init` |
+| **Restart** (after reboot)                   | `make up`                                                                        |
+| **Reset DB only** (keep OpenBao credentials) | `make clean-db` → `make up`                                                      |
+| **Full reset** (including OpenBao)           | `make clean-all` → `make up` → `make init`                                       |
 
 > 💡 **New to CB-Tumblebug?** Follow the [detailed setup guide](#installation--setup-) below for comprehensive instructions.
 
@@ -120,13 +150,13 @@ make init
 
 ### System Requirements
 
-| Component | Minimum Specification | Recommended |
-|-----------|----------------------|-------------|
-| **OS** | Linux (Ubuntu 22.04+) | Ubuntu 22.04 LTS |
-| **CPU** | 4 cores | 8+ cores |
-| **Memory** | 6 GiB | 16+ GiB |
-| **Storage** | 20 GiB free space | 50+ GiB SSD |
-| **Example** | AWS `c5a.xlarge` | AWS `c5a.2xlarge` |
+| Component   | Minimum Specification | Recommended       |
+| ----------- | --------------------- | ----------------- |
+| **OS**      | Linux (Ubuntu 22.04+) | Ubuntu 22.04 LTS  |
+| **CPU**     | 4 cores               | 8+ cores          |
+| **Memory**  | 6 GiB                 | 16+ GiB           |
+| **Storage** | 20 GiB free space     | 50+ GiB SSD       |
+| **Example** | AWS `c5a.xlarge`      | AWS `c5a.2xlarge` |
 
 > ⚠️ **Performance Note**: Lower specifications may cause initialization failures or performance degradation.
 
@@ -141,7 +171,6 @@ make init
 - 📦 [View Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies)
 - 🛡️ [Software Bill of Materials (SBOM)](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
 
-
 ---
 
 ## Installation & Setup 🚀
@@ -151,7 +180,8 @@ make init
 For new users on clean Linux systems:
 
 - https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/set-tb.sh
-- 
+-
+
 ```bash
 # Download and run automated setup script
 curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash
@@ -159,7 +189,6 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
 
 > ℹ️ After the script finishes, you may need to **log out and back in** to activate Docker permissions and aliases.
 > If you'd prefer to install dependencies and clone the repository manually, follow the steps below. 👇
-
 
 ### (1) Download CB-Tumblebug
 
@@ -184,14 +213,14 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
 ### (2) Run CB-TB and All Related Components
 
 - Check Docker Compose Installation:
-  
+
   Ensure that Docker Engine and Docker Compose are installed on your system.
   If not, you can use the following script to install them (note: this script is not intended for production environments):
 
   ```bash
   # download and install docker with docker compose
   curl -sSL get.docker.com | sh
-  
+
   # optional: add user to docker groupd
   sudo groupadd docker
   sudo usermod -aG docker ${USER}
@@ -200,92 +229,105 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
   # test the docker works
   docker run hello-world
   ```
-    
+
 - Start All Components Using Docker Compose:
 
   To run all components, use the following command:
-  
+
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-  docker compose up
+  make up
   ```
-  
-  This command will start all components as defined in the preconfigured [docker-compose.yaml](https://github.com/cloud-barista/cb-tumblebug/blob/main/docker-compose.yaml) file. For configuration customization, please refer to the [guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1669).
 
-  The following components will be started:
-  - ETCD: CB-Tumblebug KeyValue DB
-  - CB-Spider: a Cloud API controller
-  - CB-MapUI: a simple Map-based GUI web server
+  This command starts all services and **automatically initializes and unseals OpenBao** on first run. For configuration customization, please refer to the [guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1669).The following components will be started:
   - CB-Tumblebug: the system with API server
-  - CB-Tumblebug MCP Server: AI assistant interface (if enabled)
+  - CB-Spider: a Cloud API controller
+  - MC-Terrarium: multi-cloud infrastructure enrichment (VPN, etc.)
+  - OpenBao: secrets management for CSP credentials (Vault-compatible)
+  - ETCD: CB-Tumblebug KeyValue DB
   - PostgreSQL: Specs and Images storage
+  - CB-MapUI: a simple Map-based GUI web server
+  - CB-Tumblebug MCP Server: AI assistant interface (if enabled)
   - Traefik: Reverse proxy for secure access
 
   **Container Architecture Overview:**
+
   ```mermaid
   graph TB
       subgraph "External Access"
           User[👤 User]
           AI[🤖 AI Assistant<br/>Claude/VS Code]
       end
-      
+
       subgraph "Docker Compose Environment"
           subgraph "Frontend & Interfaces"
               UI[CB-MapUI<br/>:1324]
               MCP[TB-MCP Server<br/>:8000]
               Proxy[Traefik Proxy<br/>:80/:443]
           end
-          
+
           subgraph "Backend Services"
               TB[CB-Tumblebug<br/>:1323<br/>Multi-Cloud Management]
               Spider[CB-Spider<br/>:1024<br/>Cloud API Abstraction]
+              Terrarium[MC-Terrarium<br/>:8055<br/>Infrastructure Enrichment]
               ETCD[ETCD<br/>:2379<br/>Metadata Store]
               PG[PostgreSQL<br/>:5432<br/>Specs/Images DB]
           end
+
+          subgraph "Secrets Management"
+              OpenBao[OpenBao<br/>:8200<br/>CSP Credentials]
+          end
       end
-      
+
       subgraph "Cloud Providers"
           AWS[AWS]
-          Azure[Azure] 
+          Azure[Azure]
           GCP[GCP]
           Others[Others...]
       end
-      
+
       %% User connections
       User -->|HTTP/HTTPS| Proxy
       User -->|HTTP| UI
       User -->|HTTP| TB
       AI -->|MCP HTTP| MCP
-      
+
       %% Proxy routing
       Proxy -->|Route| UI
-      
+
       %% Internal service connections
       UI -.->|API calls| TB
       MCP -->|REST API| TB
       TB -->|REST API| Spider
+      TB -->|REST API| Terrarium
       TB -->|gRPC| ETCD
       TB -->|SQL| PG
-      
+      Terrarium -->|Secrets| OpenBao
+
       %% Cloud connections
       Spider -->|Cloud APIs| AWS
       Spider -->|Cloud APIs| Azure
       Spider -->|Cloud APIs| GCP
       Spider -->|Cloud APIs| Others
-      
+      Terrarium -->|OpenTofu| AWS
+      Terrarium -->|OpenTofu| Azure
+      Terrarium -->|OpenTofu| GCP
+
       %% Styling
       classDef frontend fill:#e3f2fd,stroke:#1976d2
       classDef backend fill:#f3e5f5,stroke:#7b1fa2
       classDef storage fill:#e8f5e8,stroke:#388e3c
       classDef cloud fill:#fff3e0,stroke:#f57c00
-      
+      classDef secrets fill:#fce4ec,stroke:#c62828
+
       class UI,MCP,Proxy frontend
-      class TB,Spider,ETCD,PG backend
+      class TB,Spider,Terrarium,ETCD,PG backend
       class AWS,Azure,GCP,Others cloud
+      class OpenBao secrets
   ```
 
   ![image](https://github.com/user-attachments/assets/4466b6ff-6566-4ee0-ae60-d57e3d152821)
-  
+
   After running the command, you should see output similar to the following:
   ![image](https://github.com/user-attachments/assets/1861edfd-411f-4c43-ab62-fa3658b8a1e9)
 
@@ -298,7 +340,7 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
   **Note**: Before using CB-Tumblebug, you need to initialize it.
 
 ---
-  
+
 ### (3) Initialize CB-Tumblebug to configure Multi-Cloud info
 
 To provisioning multi-cloud infrastructures with CB-TB, it is necessary to register the connection information (credentials) for clouds, as well as commonly used images and specifications.
@@ -341,41 +383,42 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
           ClientSecret:
         ...
     ```
+
 - Encrypt `credentials.yaml` into `credentials.yaml.enc`
 
   To protect sensitive information, `credentials.yaml` is not used directly. Instead, it must be encrypted using `encCredential.sh`. The encrypted file `credentials.yaml.enc` is then used by `init.py`. This approach ensures that sensitive credentials are not stored in plain text.
-
   - Encrypting Credentials
+
     ```bash
     init/encCredential.sh
-    ``` 
+    ```
+
     When executing the script, you have two options: 1) enter your password or 2) let the system generate a random passkey.
 
     Option 1: Entering your password:
 
     ![Image](https://github.com/user-attachments/assets/8f051ce8-9282-4e6d-a8ae-af5c831622c7)
-    
+
     Option 2: Letting the system generate a random passkey, which MUST be securely stored in a safe location:
 
     ![Image](https://github.com/user-attachments/assets/807511ee-05d9-481e-a191-d1aad2e9aeb2)
 
   If you need to update your credentials, decrypt the encrypted file using `decCredential.sh`, make the necessary changes to `credentials.yaml`, and then re-encrypt it.
-
   - Decrypting Credentials
+
     ```bash
     init/decCredential.sh
     ```
+
     Option 1: If encrypted using option 1, please use the same password to decrypt the file:
 
     ![Image](https://github.com/user-attachments/assets/600921fb-cdff-4313-ae4d-266ddd31809b)
-    
+
     Option 2: If encrypted using option 2, enter the passkey to decrypt the file:
 
     ![Image](https://github.com/user-attachments/assets/2bb029a4-8dd9-4e1a-8cad-af70ca72e9fd)
 
-
 - (INIT) Register all multi-cloud connection information and common resources
-
   - How to register
 
     Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py) script by the [`init.sh`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.sh). (enter 'y' for confirmation prompts)
@@ -391,7 +434,6 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - The credentials in `~/.cloud-barista/credentials.yaml.enc` (encrypted file from the `credentials.yaml`) will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
       - Note: You can check the latest regions and zones of CSP using [`update-cloudinfo.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/misc/update-cloudinfo.py) and review the file for updates. (contributions to updates are welcome)
     - Common images and specifications recorded in the [`cloudimage.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudimage.csv) and [`cloudspec.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudspec.csv) files in the [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets) directory will be automatically registered.
-   
     - **`init.py` will apply the hybrid encryption for secure transmission of credentials**
       1. Retrieve RSA Public Key: Use the `/credential/publicKey` API to get the public key.
       2. Encrypt Credentials: Encrypt credentials with a randomly generated `AES` key, then encrypt the `AES` key with the `RSA public key`.
@@ -400,37 +442,51 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
       This method ensures your credentials are securely transmitted and protected during registration. See [init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py#L150) for a Python implementation.
       In detail, check out [Secure Credential Registration Guide (How to use the credential APIs)](https://github.com/cloud-barista/cb-tumblebug/discussions/1773)
 
+- (INIT) Register CSP credentials into OpenBao for MC-Terrarium
+
+  `make init` also registers CSP credentials into **OpenBao** (Vault-compatible secrets manager) so that **MC-Terrarium** can access them at runtime via its OpenTofu templates. This happens in the same `init.py` run — no separate step is needed.
+
+  ```
+  ~/.cloud-barista/credentials.yaml.enc
+          ↓ init.py (decrypt in-memory)
+          ├─→ Tumblebug API  →  CB-Spider  (cloud connections)
+          └─→ OpenBao KV v2 (← Terrarium's OpenTofu templates)
+  ```
+
+  > For full details on OpenBao credential paths, Makefile targets, and troubleshooting, see [init/README.md](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/README.md).
+
 ---
 
 ### (4) Shutting down and Version Upgrade
 
 - Shutting down CB-TB and related components
-
   - Stop all containers by `ctrl` + `c` or type the command `docker compose stop` / `docker compose down` / `make down`
     (When a shutdown event occurs to CB-TB, the system will be shutting down gracefully: API requests that can be processed within 10 seconds will be completed)
-    
+
     ![image](https://github.com/user-attachments/assets/009e5df6-93cb-4ff7-93c0-62458341c78b)
 
   - In case of cleanup is needed due to internal system errors
     - Check and delete resources created through CB-TB
-    - Delete CB-TB & CB-Spider metadata using the provided script
+    - Delete CB-TB, CB-Spider, and MC-Terrarium metadata using the provided script
       ```bash
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
       make clean-db
+      ```
+    - For a full reset including OpenBao (requires re-initialization of credentials):
+      ```bash
+      make clean-all
       ```
 
 - Upgrading the CB-TB & CB-Spider versions
 
   The following cleanup steps are unnecessary if you clearly understand the impact of the upgrade
-
   - Check and delete resources created through CB-TB
-  - Delete CB-TB & CB-Spider metadata
+  - Delete CB-TB, CB-Spider, and MC-Terrarium metadata
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
     make clean-db
     ```
   - Restart with the upgraded version
-
 
 ---
 
@@ -447,7 +503,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 The Model Context Protocol (MCP) Server enables natural language interaction with CB-Tumblebug through AI assistants:
 
 - **🧠 AI-Powered Infrastructure Management**: Deploy and manage multi-cloud resources using natural language commands
-- **🔗 Seamless Integration**: Works with Claude Desktop (via proxy), VS Code (direct), and other MCP-compatible clients  
+- **🔗 Seamless Integration**: Works with Claude Desktop (via proxy), VS Code (direct), and other MCP-compatible clients
 - **📡 Modern Protocol**: Uses Streamable HTTP transport (current MCP standard)
 - **⚡ Quick Start**: Enable with `make up` and uncomment MCP service in `docker-compose.yaml`
 
@@ -473,7 +529,7 @@ make up
 CB-MapUI provides an intuitive, map-based interface for managing multi-cloud infrastructure:
 
 - **🗺️ Geographic Visualization**: See your infrastructure deployed across the globe
-- **📊 Real-time Monitoring**: Monitor resource status and performance  
+- **📊 Real-time Monitoring**: Monitor resource status and performance
 - **🎮 Interactive Control**: Create, manage, and control resources visually
 - **🌐 Multi-Cloud View**: Unified view across all cloud providers
 
@@ -488,6 +544,7 @@ open http://localhost:1324
 ![CB-MapUI Interface](https://github.com/cloud-barista/cb-mapui/assets/5966944/2423fbcd-0fdb-4511-85e2-488ba15ae8c0)
 
 **Features:**
+
 - Drag-and-drop resource creation
 - Real-time infrastructure mapping
 - Cross-cloud resource relationships
@@ -504,11 +561,13 @@ open http://localhost:1324
 CB-Tumblebug provides a comprehensive REST API for automated infrastructure management:
 
 **🌐 API Dashboard & Documentation**
+
 - **Interactive API Explorer**: [http://localhost:1323/tumblebug/api](http://localhost:1323/tumblebug/api)
 - **Live Documentation**: [![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml)
 
 **🔐 Authentication**
 CB-TB uses Basic Authentication (development phase - not production-ready):
+
 ```bash
 # Include base64 encoded credentials in request headers
 Authorization: Basic <base64(username:password)>
@@ -523,7 +582,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/spec" \
   -H "Authorization: Basic <credentials>" \
   -d '{"name": "web-spec", "connectionName": "aws-ap-northeast-2"}'
 
-# 2. Create VM image  
+# 2. Create VM image
 curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/image" \
   -H "Authorization: Basic <credentials>" \
   -d '{"name": "ubuntu-image", "connectionName": "aws-ap-northeast-2"}'
@@ -535,11 +594,12 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
 ```
 
 **🛠️ Core API Categories**
+
 - **Infrastructure Resources**: VM specs, images, networks, security groups
 - **Multi-Cloud Infrastructure (MCI)**: Provision and manage distributed infrastructure
 - **Monitoring & Control**: Performance metrics, scaling, lifecycle management
 - **Credentials & Connections**: Secure cloud provider configuration
-    - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
+  - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
   - Create, view, control, execute remote commands, shut down, and delete MCI using the MCI(multi-cloud infrastructure service) management APIs
     - [Create MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/post_ns__nsId__mci)
     - [MCI remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Remote%20command/post_ns__nsId__cmd_mci__mciId_)
@@ -568,7 +628,6 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
 
 - [Automatically configure Ansible execution environment on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/MCI-Ansible-deployment)
 
-
 ---
 
 ## How to Build 🛠️
@@ -576,16 +635,13 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
 ### (1) Setup Prerequisites
 
 - Setup required tools
-
   - Install: git, gcc, make
     ```bash
     sudo apt update
     sudo apt install make gcc git
     ```
   - Install: Golang
-
     - Check https://golang.org/dl/ and setup Go
-
       - Download
         ```bash
         wget https://go.dev/dl/go1.25.0.linux-amd64.tar.gz;
@@ -614,7 +670,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
 - Run Docker Compose with the build option
 
   To build the current CB-Tumblebug source code into a container image and run it along with the other containers, use the following command:
-  
+
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug
   sudo DOCKER_BUILDKIT=1 docker compose up --build
@@ -637,13 +693,11 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
   The initial build will take some time, but subsequent builds will be faster by the Go build cache.
 
   **Note** To update the Swagger API documentation, run `make swag`
-
   - API documentation file will be generated at `cb-tumblebug/src/interface/rest/docs/swagger.yaml`
   - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/api (provided when CB-TB is running)
   - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
 
 - Set environment variables required to run CB-TB (in another tab)
-
   - Check and configure the contents of `cb-tumblebug/conf/setup.env` (CB-TB environment variables, modify as needed)
     - Apply the environment variables to the system
       ```bash
@@ -663,7 +717,6 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
   make run
   ```
 
-
 ---
 
 ## How to Contribute 🙏
@@ -671,7 +724,6 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
 CB-TB welcomes improvements from both new and experienced contributors!
 
 Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main/CONTRIBUTING.md).
-
 
 ## Contributors ✨
 

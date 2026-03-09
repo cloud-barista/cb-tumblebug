@@ -7,7 +7,12 @@ run: ## Run the built application
 clean: ## Clean build artifacts
 	cd src/ && $(MAKE) clean
 
-clean-all: clean ## Clean build artifacts, containers, and databases
+clean-all: compose-down clean-db ## Full reset including OpenBao (requires re-init)
+	@echo "Cleaning OpenBao data..."
+	@sudo rm -rf container-volume/openbao-data
+	@rm -f secrets/openbao-init.json
+	@sed -i 's/^VAULT_TOKEN=.*/VAULT_TOKEN=/' .env 2>/dev/null || true
+	@echo "Cleaned! Run 'make up' then 'make init' to re-initialize."
 
 swag swagger: ## Generate Swagger documentation
 	cd src/ && $(MAKE) swag
@@ -19,8 +24,42 @@ init: ## Run initialization script (./init/init.sh)
 	@./init/init.sh
 
 # ===== Docker Compose Commands =====
-compose: ## Start Docker Compose services with --build (docker compose up --build)
-	DOCKER_BUILDKIT=1 docker compose up --build
+# docker-compose.yaml includes all services + OpenBao.
+#
+# Usage scenarios:
+#   1) Fresh start:       make up → make init
+#   2) Restart:           make up
+#   3) Reset DB only:     make clean-db → make up → make init
+#   4) Full reset:        make clean-all → make up → make init
+prepare-volumes: ## Create bind-mount directories with current user ownership
+	@echo "Preparing container-volume directories..."
+	@mkdir -p container-volume/cb-tumblebug-container/meta_db container-volume/cb-tumblebug-container/log 2>/dev/null || \
+		sudo mkdir -p container-volume/cb-tumblebug-container/meta_db container-volume/cb-tumblebug-container/log
+	@mkdir -p container-volume/cb-spider-container/meta_db container-volume/cb-spider-container/log 2>/dev/null || \
+		sudo mkdir -p container-volume/cb-spider-container/meta_db container-volume/cb-spider-container/log
+	@mkdir -p container-volume/etcd/data 2>/dev/null || sudo mkdir -p container-volume/etcd/data
+	@mkdir -p container-volume/openbao-data 2>/dev/null || sudo mkdir -p container-volume/openbao-data
+	@mkdir -p container-volume/mc-terrarium-container/.terrarium 2>/dev/null || \
+		sudo mkdir -p container-volume/mc-terrarium-container/.terrarium
+	@echo "Prepared!"
+# Note: OpenBao data dir ownership is fixed by entrypoint chown in docker-compose.yaml.
+
+compose: prepare-volumes ## Start Docker Compose services (auto init/unseal OpenBao)
+	@echo "Starting OpenBao..."
+	@DOCKER_BUILDKIT=1 docker compose up -d openbao
+	@if [ ! -f .env ] || ! grep -q '^VAULT_TOKEN=.\+' .env 2>/dev/null; then \
+		echo "VAULT_TOKEN not found — running first-time OpenBao initialization..."; \
+		bash init/init-openbao.sh; \
+	fi
+	@$(MAKE) unseal
+	@echo "Starting all services..."
+	@DOCKER_BUILDKIT=1 docker compose up -d --build
+	@echo ""
+	@echo "To register CSP credentials, run:  make init"
+	@$(MAKE) logs
+
+logs: ## Follow Docker Compose logs (docker compose logs -f)
+	docker compose logs -f
 
 compose-down: ## Stop Docker Compose services (docker compose down)
 	@echo "Stopping Docker Compose services..."
@@ -52,14 +91,22 @@ restore-assets: ## Restore PostgreSQL database from assets backup (or FILE=<path
 	fi
 
 # ===== Utility Aliases =====
-up: ## Quick start (alias for compose)
-	$(MAKE) compose
-
-compose-up: ## Build and start Docker Compose services (alias for compose)
-	$(MAKE) compose
+up: ## Start all services (alias for compose)
+	@$(MAKE) compose
 
 down: ## Quick stop (alias for compose-down)
-	$(MAKE) compose-down 
+	@$(MAKE) compose-down
+
+# ===== OpenBao Commands =====
+init-openbao: ## Initialize OpenBao (one-time setup: generate unseal key + root token)
+	@echo "Initializing OpenBao..."
+	@chmod +x ./init/init-openbao.sh 2>/dev/null || true
+	@./init/init-openbao.sh
+
+unseal: ## Unseal OpenBao (needed after every container restart)
+	@echo "Trying to unseal OpenBao (if not already unsealed)..."
+	@chmod +x ./init/unseal-openbao.sh 2>/dev/null || true
+	@./init/unseal-openbao.sh || true
 
 gen-cred: ## Generate credentials.yaml from template (./init/genCredential.sh)
 	@echo "Generating credentials.yaml from template..."
@@ -101,16 +148,21 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "🐳 Container Build & Run:"
-	@echo "  \033[36mup (compose-up)\033[0m        Start services with --build (docker compose up --build)"
+	@echo "  \033[36mup (compose-up)\033[0m        Start services with --build (docker compose up --build) and auto init/unseal OpenBao"
 	@echo "  \033[36mdown (compose-down)\033[0m    Stop services (docker compose down)"
 	@echo "  \033[36mps (status)\033[0m            Show status of services (docker compose ps)"
+	@echo "  \033[36mlogs\033[0m                   Follow service logs (docker compose logs -f)"
 	@echo ""
 	@echo "⚙️  Initialization:"
 	@grep -E '^(init|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
+	@echo "🔐 OpenBao (Secrets Management):"
+	@echo "  \033[36minit-openbao\033[0m           Initialize OpenBao (one-time setup)"
+	@echo "  \033[36munseal\033[0m                 Unseal OpenBao (after container restart)"
+	@echo ""
 	@echo "🧹 Cleanup:"
 	@echo "  \033[36mclean-db\033[0m               Clean database metadata (./init/cleanDB.sh)"
-	@echo "  \033[36mclean-all\033[0m              Clean build + containers + databases"
+	@echo "  \033[36mclean-all\033[0m              Clean build + containers + databases + OpenBao (requires re-init)"
 	@echo ""
 	@echo "💾 Database Backup & Restore:"
 	@grep -E '^(backup-assets|restore-assets):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -130,4 +182,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init compose compose-up compose-down status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help
+.PHONY: default run clean clean-all swag swagger init compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help
