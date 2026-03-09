@@ -682,11 +682,11 @@ if run_openbao:
     print(Fore.YELLOW + "OpenBao: Registering CSP credentials for MC-Terrarium")
     print(Fore.YELLOW + "=" * 80)
 
-    # Load token from .env (set by 'make compose' → 'make init-openbao')
+    # Load token from .env (set by 'make up' → 'make init-openbao')
     load_vault_token_from_env()
 
     if not VAULT_TOKEN:
-        print(Fore.RED + "VAULT_TOKEN not set. Run 'make compose' or 'make init-openbao' first.")
+        print(Fore.RED + "VAULT_TOKEN not set. Run 'make up' or 'make init-openbao' first.")
     elif not cred_data:
         print(Fore.YELLOW + "No credential data available. Skipping OpenBao registration.")
     else:
@@ -732,7 +732,7 @@ if run_openbao:
                 )
         except requests.RequestException:
             print(Fore.RED + f"Cannot reach OpenBao at {VAULT_ADDR}.")
-            print(Fore.YELLOW + "Start it first: make compose")
+            print(Fore.YELLOW + "Start it first: make up")
 
     print()
 # ══════════════════════════════════════════════════════════════════════════════

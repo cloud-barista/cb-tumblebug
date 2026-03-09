@@ -106,17 +106,23 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
 # ↑ Copies .env.example → .env and sets default API username and password for all sub-systems
 # Optionally edit .env to use custom credentials before starting.
 
-# 2. Start all services using pre-built images (auto-initializes OpenBao)
+# 2. Start all services (auto-initializes OpenBao)
 cd ~/go/src/github.com/cloud-barista/cb-tumblebug
 make up
 
-# 3. Configure CSP credentials (see detailed setup below)
-./init/genCredential.sh
-# Edit ~/.cloud-barista/credentials.yaml with your cloud credentials
-./init/encCredential.sh
+# 3. Generate credentials.yaml from template (./init/genCredential.sh)
+make gen-cred
+
+# 4. Manually Edit ~/.cloud-barista/credentials.yaml with your cloud credentials
+# vi ~/.cloud-barista/credentials.yaml
+
+# 5. Encrypt credentials.yaml to credentials.yaml.enc (./init/encCredential.sh)
+make enc-cred
+
+# 6. Run initialization script (./init/init.sh)
 make init
 
-# 4. Access services
+# 7. Access services
 # - API: http://localhost:1323/tumblebug/api
 # - MapUI: http://localhost:1324
 # - MCP Server: http://localhost:8000/mcp (if enabled)
@@ -125,17 +131,16 @@ make init
 > ❕ **Manual setup (without set-tb.sh)**:
 >
 > - Copy `.env.example` to `.env` and
-> - Set API username and password of all sub-systems in `.env` before running `make up` or `make compose`.
+> - Set API username and password of all sub-systems in `.env` before running `make up`.
 
 ### Usage Scenarios
 
-| Scenario                                     | Commands                                   |
-| -------------------------------------------- | ------------------------------------------ |
-| **Quick start** (pre-built images)           | `make up` → `make init`                    |
-| **Dev start** (build from source)            | `make compose` → `make init`               |
-| **Restart** (after reboot)                   | `make up`                                  |
-| **Reset DB only** (keep OpenBao credentials) | `make clean-db` → `make up`                |
-| **Full reset** (including OpenBao)           | `make clean-all` → `make up` → `make init` |
+| Scenario                                     | Commands                                                                         |
+| -------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Quick start**                              | `make up` → `make gen-cred` → `edit credentials` → `make enc-cred` → `make init` |
+| **Restart** (after reboot)                   | `make up`                                                                        |
+| **Reset DB only** (keep OpenBao credentials) | `make clean-db` → `make up`                                                      |
+| **Full reset** (including OpenBao)           | `make clean-all` → `make up` → `make init`                                       |
 
 > 💡 **New to CB-Tumblebug?** Follow the [detailed setup guide](#installation--setup-) below for comprehensive instructions.
 
@@ -231,12 +236,10 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
 
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-  make compose
+  make up
   ```
 
-  This command builds images, starts all services, and **automatically initializes and unseals OpenBao** on first run. For configuration customization, please refer to the [guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1669).
-
-  The following components will be started:
+  This command starts all services and **automatically initializes and unseals OpenBao** on first run. For configuration customization, please refer to the [guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1669).The following components will be started:
   - CB-Tumblebug: the system with API server
   - CB-Spider: a Cloud API controller
   - MC-Terrarium: multi-cloud infrastructure enrichment (VPN, etc.)

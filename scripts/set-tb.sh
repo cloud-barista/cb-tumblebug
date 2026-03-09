@@ -214,13 +214,10 @@ echo "   cat $CB_DIR/.env"
 echo "   → Default API username and password: default / default"
 echo "   → Edit .env to use custom credentials before starting."
 echo
-echo "👉 2. Start all services using pre-built images:"
+echo "👉 2. Start services with --build (docker compose up --build) and auto init/unseal OpenBao:"
 echo
-echo "   # Option A: Run without building (faster, uses pre-built images)"
 echo "   cd $CB_DIR && make up"
-echo
-echo "   # Option B: Build from source and run"
-echo "   cd $CB_DIR && make compose"
+echo "   → This will build the containers, start the services, and automatically initialize and unseal OpenBao."
 
 if [ "$DOCKER_NEEDS_SUDO" = "true" ]; then
   echo
@@ -231,17 +228,17 @@ fi
 echo
 echo "👉 3. Create your cloud credentials:"
 echo
-echo "   ./init/genCredential.sh"
+echo "   cd $CB_DIR && make gen-cred"
 echo
 echo "   → Then edit ~/.cloud-barista/credentials.yaml with your CSP info."
 echo
 echo "👉 4. Encrypt the credentials file:"
 echo
-echo "   ./init/encCredential.sh"
+echo "   cd $CB_DIR && make enc-cred"
 echo
 echo "👉 5. Initialize CB-Tumblebug with all connection and resource info:"
 echo
-echo "   ./init/init.sh"
+echo "   cd $CB_DIR && make init"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ──────────────

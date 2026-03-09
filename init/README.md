@@ -180,7 +180,7 @@ rm ~/.local/bin/uv ~/.local/bin/uvx
 
 ### How Auto-Initialization Works
 
-1. `make compose` (or `make up`) starts the OpenBao container first
+1. `make up` starts the OpenBao container first
 2. If `VAULT_TOKEN` is not set in `.env`, runs `init-openbao.sh` to:
    - Initialize OpenBao (1 unseal key, threshold 1)
    - Save unseal key and root token to `secrets/openbao-init.json`
@@ -188,7 +188,7 @@ rm ~/.local/bin/uv ~/.local/bin/uvx
 3. Unseals OpenBao using `unseal-openbao.sh`
 4. Starts all remaining services
 
-On subsequent restarts (`make up` or `make compose`), only the unseal step runs — no re-initialization.
+On subsequent restarts (`make up`), only the unseal step runs — no re-initialization.
 
 ### OpenBao Credential Paths
 
@@ -207,8 +207,8 @@ On subsequent restarts (`make up` or `make compose`), only the unseal step runs 
 
 | Target              | Description                                               |
 | ------------------- | --------------------------------------------------------- |
-| `make compose`      | Build + start all (auto-init/unseal OpenBao)              |
-| `make up`           | Start services without rebuild (auto-init/unseal OpenBao) |
+| `make up`           | Start all services (auto-init/unseal OpenBao)             |
+| `make down`         | Stop all services                                         |
 | `make init`         | Register credentials to both Tumblebug and OpenBao        |
 | `make unseal`       | Manually unseal OpenBao                                   |
 | `make init-openbao` | Manually initialize OpenBao (first run only)              |

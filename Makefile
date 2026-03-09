@@ -12,7 +12,7 @@ clean-all: compose-down clean-db ## Full reset including OpenBao (requires re-in
 	@sudo rm -rf container-volume/openbao-data
 	@rm -f secrets/openbao-init.json
 	@sed -i 's/^VAULT_TOKEN=.*/VAULT_TOKEN=/' .env 2>/dev/null || true
-	@echo "Cleaned! Run 'make compose' to rebuild and re-initialize."
+	@echo "Cleaned! Run 'make up' then 'make init' to re-initialize."
 
 swag swagger: ## Generate Swagger documentation
 	cd src/ && $(MAKE) swag
@@ -27,9 +27,10 @@ init: ## Run initialization script (./init/init.sh)
 # docker-compose.yaml includes all services + OpenBao.
 #
 # Usage scenarios:
-#   1) Fresh start:       make compose → make init
-#   2) Reset DB only:     make clean-db → make compose
-#   3) Full reset:        make clean-all → make compose → make init
+#   1) Fresh start:       make up → make init
+#   2) Restart:           make up
+#   3) Reset DB only:     make clean-db → make up → make init
+#   4) Full reset:        make clean-all → make up → make init
 prepare-volumes: ## Create bind-mount directories with current user ownership
 	@echo "Preparing container-volume directories..."
 	@mkdir -p container-volume/cb-tumblebug-container/meta_db container-volume/cb-tumblebug-container/log 2>/dev/null || \
@@ -43,18 +44,16 @@ prepare-volumes: ## Create bind-mount directories with current user ownership
 	@echo "Prepared!"
 # Note: OpenBao data dir ownership is fixed by entrypoint chown in docker-compose.yaml.
 
-compose: prepare-volumes ## Build and start all services (auto init/unseal OpenBao)
-	@echo "Building images..."
-	@DOCKER_BUILDKIT=1 docker compose build
+compose: prepare-volumes ## Start Docker Compose services (auto init/unseal OpenBao)
 	@echo "Starting OpenBao..."
-	@docker compose up -d openbao
+	@DOCKER_BUILDKIT=1 docker compose up -d openbao
 	@if [ ! -f .env ] || ! grep -q '^VAULT_TOKEN=.\+' .env 2>/dev/null; then \
 		echo "VAULT_TOKEN not found — running first-time OpenBao initialization..."; \
 		bash init/init-openbao.sh; \
 	fi
 	@$(MAKE) unseal
 	@echo "Starting all services..."
-	@docker compose up -d
+	@DOCKER_BUILDKIT=1 docker compose up -d
 	@echo ""
 	@echo "To register CSP credentials, run:  make init"
 	@$(MAKE) logs
@@ -92,19 +91,8 @@ restore-assets: ## Restore PostgreSQL database from assets backup (or FILE=<path
 	fi
 
 # ===== Utility Aliases =====
-up: prepare-volumes ## Start all services without rebuild (auto init/unseal OpenBao)
-	@echo "Starting OpenBao..."
-	@docker compose up -d openbao
-	@if [ ! -f .env ] || ! grep -q '^VAULT_TOKEN=.\+' .env 2>/dev/null; then \
-		echo "VAULT_TOKEN not found — running first-time OpenBao initialization..."; \
-		bash init/init-openbao.sh; \
-	fi
-	@$(MAKE) unseal
-	@echo "Starting all services..."
-	@docker compose up -d
-	@echo ""
-	@echo "To register CSP credentials, run:  make init"
-	@$(MAKE) logs
+up: ## Start all services (alias for compose)
+	@$(MAKE) compose
 
 down: ## Quick stop (alias for compose-down)
 	@$(MAKE) compose-down
@@ -160,23 +148,21 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "🐳 Container Build & Run:"
-	@echo "  \033[36mup\033[0m                     Start services without rebuild"
-	@echo "  \033[36mcompose\033[0m                Build and start all services (docker compose build + up)"
+	@echo "  \033[36mup (compose-up)\033[0m        Start services with --build (docker compose up --build) and auto init/unseal OpenBao"
 	@echo "  \033[36mdown (compose-down)\033[0m    Stop services (docker compose down)"
 	@echo "  \033[36mps (status)\033[0m            Show status of services (docker compose ps)"
 	@echo "  \033[36mlogs\033[0m                   Follow service logs (docker compose logs -f)"
+	@echo ""
+	@echo "⚙️  Initialization:"
+	@grep -E '^(init|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🔐 OpenBao (Secrets Management):"
 	@echo "  \033[36minit-openbao\033[0m           Initialize OpenBao (one-time setup)"
 	@echo "  \033[36munseal\033[0m                 Unseal OpenBao (after container restart)"
 	@echo ""
-	@echo "⚙️  Initialization:"
-	@grep -E '^(init|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
-	@echo ""
 	@echo "🧹 Cleanup:"
 	@echo "  \033[36mclean-db\033[0m               Clean database metadata (./init/cleanDB.sh)"
-	@echo "  \033[36mclean-all\033[0m              Full reset including OpenBao (requires re-init)"
-	@echo "  \033[36mclean\033[0m                  Clean build artifacts"
+	@echo "  \033[36mclean-all\033[0m              Clean build + containers + databases + OpenBao (requires re-init)"
 	@echo ""
 	@echo "💾 Database Backup & Restore:"
 	@grep -E '^(backup-assets|restore-assets):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -189,13 +175,9 @@ help: ## Display this help screen
 	@echo ""	
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "💡 Quick Start Workflow:"
-	@echo "   1. cp .env.example .env"
-	@echo "   2. make compose               (build + start; auto-initializes OpenBao)"
-	@echo "   3. make gen-cred ▶ (edit credentials) ▶ make enc-cred ▶ make init"
+	@echo "   make up ▶ make gen-cred ▶ (edit credentials) ▶ make enc-cred ▶ make init"
 	@echo ""
-	@echo "   💡 After container restart: 'make up' auto-unseals OpenBao."
-	@echo "   💡 'make init' registers credentials to both Tumblebug and OpenBao,"
-	@echo "      and you'll be asked if you want to use the pre-built"
+	@echo "   💡 During 'make init', you'll be asked if you want to use the pre-built"
 	@echo "      database backup (1 min) or fetch fresh data from CSPs (20 min)."
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
