@@ -111,7 +111,8 @@ func RestGetMci(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param template query string false "If provided, save the extracted config as a template with this name"
-// @Success 200 {object} model.MciDynamicReq "Extracted MCI configuration (without template param)"
+// @Success 200 {object} model.MciDynamicReq "Without template param: extracted MCI configuration"
+// @Success 200 {object} model.MciDynamicTemplateInfo "With template param: created template info"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/configCopy [get]
