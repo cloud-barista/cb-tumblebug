@@ -4716,6 +4716,89 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/template/{templateId}": {
+            "post": {
+                "description": "Create a new MCI by applying an MCI Dynamic Template.\nThe template provides the base VM configuration, and the apply request\nallows overriding the MCI name and description.\n\n**Override Behavior (Phase 1):**\n- ` + "`" + `name` + "`" + ` (required): Name for the new MCI\n- ` + "`" + `description` + "`" + ` (optional): Overrides the template's description\n- All other configuration (specs, images, subgroups) comes from the template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Create MCI from a Template",
+                "operationId": "PostMciDynamicFromTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID to apply",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template apply request with MCI name and optional description",
+                        "name": "applyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TemplateApplyReq"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "hold"
+                        ],
+                        "type": "string",
+                        "description": "Deployment option: 'hold' to create MCI without immediate VM provisioning",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created MCI from template",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template or namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal deployment error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}": {
             "get": {
                 "description": "Get MCI object (option: status, accessInfo, vmId)",
@@ -5058,7 +5141,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/mci/{mciId}/configCopy": {
             "get": {
-                "description": "Reconstruct an MCI dynamic creation request body from an existing MCI's information.\nReturns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)\nare auto-created, making it easy to clone or recreate a similar MCI configuration.",
+                "description": "Reconstruct an MCI dynamic creation request body from an existing MCI's information.\nReturns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)\nare auto-created, making it easy to clone or recreate a similar MCI configuration.\n\n**Template Option:**\nWhen the ` + "`" + `template` + "`" + ` query parameter is provided, the extracted configuration is\nsaved as a reusable MCI Dynamic Template with the given name.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5086,11 +5169,17 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "If provided, save the extracted config as a template with this name",
+                        "name": "template",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Extracted MCI configuration (without template param)",
                         "schema": {
                             "$ref": "#/definitions/model.MciDynamicReq"
                         }
@@ -11095,6 +11184,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/securityGroup/template/{templateId}": {
+            "post": {
+                "description": "Create a new SecurityGroup by applying a SecurityGroup Template.\nThe template provides the base SecurityGroup configuration (connectionName, vNetId, firewallRules),\nand the apply request allows overriding the SecurityGroup name and description.\n\n**Override Behavior (Phase 1):**\n- ` + "`" + `name` + "`" + ` (required): Name for the new SecurityGroup\n- ` + "`" + `description` + "`" + ` (optional): Overrides the template's description\n- All other configuration (connectionName, vNetId, firewallRules) comes from the template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Security Group Management"
+                ],
+                "summary": "Create SecurityGroup from a Template",
+                "operationId": "PostSecurityGroupFromTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID to apply",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template apply request with SecurityGroup name and optional description",
+                        "name": "applyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupTemplateApplyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created SecurityGroup from template",
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template or namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal resource creation error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/securityGroup/{securityGroupId}": {
             "get": {
                 "description": "Get Security Group",
@@ -12451,6 +12608,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/vNet/template/{templateId}": {
+            "post": {
+                "description": "Create a new vNet by applying a vNet Template.\nThe template provides the base vNet configuration (connectionName, cidrBlock, subnets),\nand the apply request allows overriding the vNet name and description.\n\n**Override Behavior (Phase 1):**\n- ` + "`" + `name` + "`" + ` (required): Name for the new vNet\n- ` + "`" + `description` + "`" + ` (optional): Overrides the template's description\n- All other configuration (connectionName, cidrBlock, subnets) comes from the template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Create vNet from a Template",
+                "operationId": "PostVNetFromTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID to apply",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template apply request with vNet name and optional description",
+                        "name": "applyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetTemplateApplyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created vNet from template",
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template or namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal resource creation error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/vNet/{vNetId}": {
             "get": {
                 "description": "Get VNet",
@@ -12940,6 +13165,945 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Missing xRequestId",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/mci": {
+            "get": {
+                "description": "List all MCI Dynamic Templates in a namespace.\nOptionally filter by keyword matching against template name or description (case-insensitive).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Template Management"
+                ],
+                "summary": "List all MCI Dynamic Templates",
+                "operationId": "GetAllMciDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Keyword to filter templates by name or description",
+                        "name": "filterKeyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of templates",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciDynamicTemplateListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a reusable MCI Dynamic Template. Templates store MCI dynamic creation\nrequest configurations that can be applied later to create MCIs with consistent settings.\n\n**Template Contents:**\n- VM specifications (specId, imageId) for each subgroup\n- Subgroup sizing and naming\n- Network and disk configuration\n- Post-deployment commands\n- Monitoring agent options\n\nTemplates can be created manually or extracted from existing MCIs.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Template Management"
+                ],
+                "summary": "Create an MCI Dynamic Template",
+                "operationId": "PostMciDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCI Dynamic Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.MciDynamicTemplateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created template",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciDynamicTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or template name",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Template already exists",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all MCI Dynamic Templates in a namespace.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Template Management"
+                ],
+                "summary": "Delete all MCI Dynamic Templates",
+                "operationId": "DeleteAllMciDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All templates deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/mci/{templateId}": {
+            "get": {
+                "description": "Retrieve a specific MCI Dynamic Template by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Template Management"
+                ],
+                "summary": "Get an MCI Dynamic Template",
+                "operationId": "GetMciDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciDynamicTemplateInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing MCI Dynamic Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Template Management"
+                ],
+                "summary": "Update an MCI Dynamic Template",
+                "operationId": "PutMciDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCI Dynamic Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.MciDynamicTemplateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciDynamicTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific MCI Dynamic Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Template Management"
+                ],
+                "summary": "Delete an MCI Dynamic Template",
+                "operationId": "DeleteMciDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/securityGroup": {
+            "get": {
+                "description": "List all SecurityGroup Templates in a namespace.\nOptionally filter by keyword matching against template name or description (case-insensitive).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SecurityGroup Template Management"
+                ],
+                "summary": "List all SecurityGroup Templates",
+                "operationId": "GetAllSecurityGroupTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Keyword to filter templates by name or description",
+                        "name": "filterKeyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of templates",
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupTemplateListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a reusable SecurityGroup Template. Templates store SecurityGroup creation\nrequest configurations that can be applied later to create SecurityGroups with consistent settings.\n\n**Template Contents:**\n- Connection name (cloud provider and region)\n- vNet ID for the security group\n- Firewall rules (ports, protocol, direction, CIDR)\n- Description\n\nTemplates can be created manually with desired SecurityGroup configurations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SecurityGroup Template Management"
+                ],
+                "summary": "Create a SecurityGroup Template",
+                "operationId": "PostSecurityGroupTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "SecurityGroup Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupTemplateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created template",
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or template name",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Template already exists",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all SecurityGroup Templates in a namespace.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SecurityGroup Template Management"
+                ],
+                "summary": "Delete all SecurityGroup Templates",
+                "operationId": "DeleteAllSecurityGroupTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All templates deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/securityGroup/{templateId}": {
+            "get": {
+                "description": "Retrieve a specific SecurityGroup Template by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SecurityGroup Template Management"
+                ],
+                "summary": "Get a SecurityGroup Template",
+                "operationId": "GetSecurityGroupTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupTemplateInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing SecurityGroup Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SecurityGroup Template Management"
+                ],
+                "summary": "Update a SecurityGroup Template",
+                "operationId": "PutSecurityGroupTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "SecurityGroup Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupTemplateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.SecurityGroupTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific SecurityGroup Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SecurityGroup Template Management"
+                ],
+                "summary": "Delete a SecurityGroup Template",
+                "operationId": "DeleteSecurityGroupTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/vNet": {
+            "get": {
+                "description": "List all vNet Templates in a namespace.\nOptionally filter by keyword matching against template name or description (case-insensitive).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] vNet Template Management"
+                ],
+                "summary": "List all vNet Templates",
+                "operationId": "GetAllVNetTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Keyword to filter templates by name or description",
+                        "name": "filterKeyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of templates",
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetTemplateListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a reusable vNet Template. Templates store vNet creation\nrequest configurations that can be applied later to create vNets with consistent settings.\n\n**Template Contents:**\n- Connection name (cloud provider and region)\n- CIDR block configuration\n- Subnet definitions (names, CIDR blocks, zones)\n- Description\n\nTemplates can be created manually with desired vNet configurations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] vNet Template Management"
+                ],
+                "summary": "Create a vNet Template",
+                "operationId": "PostVNetTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "vNet Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetTemplateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created template",
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or template name",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Template already exists",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all vNet Templates in a namespace.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] vNet Template Management"
+                ],
+                "summary": "Delete all vNet Templates",
+                "operationId": "DeleteAllVNetTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All templates deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/vNet/{templateId}": {
+            "get": {
+                "description": "Retrieve a specific vNet Template by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] vNet Template Management"
+                ],
+                "summary": "Get a vNet Template",
+                "operationId": "GetVNetTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetTemplateInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing vNet Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] vNet Template Management"
+                ],
+                "summary": "Update a vNet Template",
+                "operationId": "PutVNetTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "vNet Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetTemplateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.VNetTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific vNet Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] vNet Template Management"
+                ],
+                "summary": "Delete a vNet Template",
+                "operationId": "DeleteVNetTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -19847,6 +21011,92 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MciDynamicTemplateInfo": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt is the creation timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "3-tier web application template"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the template",
+                    "type": "string",
+                    "example": "my-template"
+                },
+                "mciDynamicReq": {
+                    "description": "MciDynamicReq is the template body (MCI dynamic request)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciDynamicReq"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the template",
+                    "type": "string",
+                    "example": "my-template"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string",
+                    "example": "mci"
+                },
+                "source": {
+                    "description": "Source indicates where this template was created from\n- \"user\": manually created by user\n- \"mci:{nsId}/{mciId}\": extracted from an existing MCI",
+                    "type": "string",
+                    "example": "user"
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt is the last update timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "model.MciDynamicTemplateListResponse": {
+            "type": "object",
+            "properties": {
+                "templates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MciDynamicTemplateInfo"
+                    }
+                }
+            }
+        },
+        "model.MciDynamicTemplateReq": {
+            "type": "object",
+            "required": [
+                "mciDynamicReq",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "3-tier web application template"
+                },
+                "mciDynamicReq": {
+                    "description": "MciDynamicReq is the template body (MCI dynamic request configuration)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciDynamicReq"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name is the template ID and name",
+                    "type": "string",
+                    "example": "my-template"
+                }
+            }
+        },
         "model.MciHandlingCommandCountResponse": {
             "type": "object",
             "properties": {
@@ -22752,6 +24002,110 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SecurityGroupTemplateApplyReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description for the new SecurityGroup (optional, overrides template description)",
+                    "type": "string",
+                    "example": "SecurityGroup created from template"
+                },
+                "name": {
+                    "description": "Name for the new SecurityGroup to be created from the template",
+                    "type": "string",
+                    "example": "my-new-sg"
+                }
+            }
+        },
+        "model.SecurityGroupTemplateInfo": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt is the creation timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "Standard web server security group template"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the template",
+                    "type": "string",
+                    "example": "my-sg-template"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the template",
+                    "type": "string",
+                    "example": "my-sg-template"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string",
+                    "example": "securityGroup"
+                },
+                "securityGroupReq": {
+                    "description": "SecurityGroupReq is the template body (SecurityGroup creation request)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SecurityGroupReq"
+                        }
+                    ]
+                },
+                "source": {
+                    "description": "Source indicates where this template was created from\n- \"user\": manually created by user",
+                    "type": "string",
+                    "example": "user"
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt is the last update timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "model.SecurityGroupTemplateListResponse": {
+            "type": "object",
+            "properties": {
+                "templates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SecurityGroupTemplateInfo"
+                    }
+                }
+            }
+        },
+        "model.SecurityGroupTemplateReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "securityGroupReq"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "Standard web server security group template"
+                },
+                "name": {
+                    "description": "Name is the template ID and name",
+                    "type": "string",
+                    "example": "my-sg-template"
+                },
+                "securityGroupReq": {
+                    "description": "SecurityGroupReq is the template body (SecurityGroup creation request configuration)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SecurityGroupReq"
+                        }
+                    ]
+                }
+            }
+        },
         "model.SecurityGroupUpdateReq": {
             "type": "object",
             "properties": {
@@ -24341,6 +25695,24 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TemplateApplyReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description for the new MCI (optional, overrides template description)",
+                    "type": "string",
+                    "example": "MCI created from template"
+                },
+                "name": {
+                    "description": "Name for the new MCI to be created from the template",
+                    "type": "string",
+                    "example": "my-new-mci"
+                }
+            }
+        },
         "model.UpdateScheduleJobRequest": {
             "type": "object",
             "properties": {
@@ -24511,6 +25883,110 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.SubnetReq"
                     }
+                }
+            }
+        },
+        "model.VNetTemplateApplyReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description for the new vNet (optional, overrides template description)",
+                    "type": "string",
+                    "example": "vNet created from template"
+                },
+                "name": {
+                    "description": "Name for the new vNet to be created from the template",
+                    "type": "string",
+                    "example": "my-new-vnet"
+                }
+            }
+        },
+        "model.VNetTemplateInfo": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt is the creation timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "Standard 3-subnet VPC template"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the template",
+                    "type": "string",
+                    "example": "my-vnet-template"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the template",
+                    "type": "string",
+                    "example": "my-vnet-template"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string",
+                    "example": "vNet"
+                },
+                "source": {
+                    "description": "Source indicates where this template was created from\n- \"user\": manually created by user",
+                    "type": "string",
+                    "example": "user"
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt is the last update timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "vNetReq": {
+                    "description": "VNetReq is the template body (vNet creation request)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.VNetReq"
+                        }
+                    ]
+                }
+            }
+        },
+        "model.VNetTemplateListResponse": {
+            "type": "object",
+            "properties": {
+                "templates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VNetTemplateInfo"
+                    }
+                }
+            }
+        },
+        "model.VNetTemplateReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "vNetReq"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "Standard 3-subnet VPC template"
+                },
+                "name": {
+                    "description": "Name is the template ID and name",
+                    "type": "string",
+                    "example": "my-vnet-template"
+                },
+                "vNetReq": {
+                    "description": "VNetReq is the template body (vNet creation request configuration)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.VNetReq"
+                        }
+                    ]
                 }
             }
         },

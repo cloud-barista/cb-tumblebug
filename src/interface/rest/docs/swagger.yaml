@@ -4104,6 +4104,10 @@ paths:
         Reconstruct an MCI dynamic creation request body from an existing MCI's information.
         Returns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)
         are auto-created, making it easy to clone or recreate a similar MCI configuration.
+
+        **Template Option:**
+        When the `template` query parameter is provided, the extracted configuration is
+        saved as a reusable MCI Dynamic Template with the given name.
       operationId: GetMciReqFromMci
       parameters:
       - name: nsId
@@ -4120,9 +4124,15 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: template
+        in: query
+        description: "If provided, save the extracted config as a template with this\
+          \ name"
+        schema:
+          type: string
       responses:
         "200":
-          description: OK
+          description: Extracted MCI configuration (without template param)
           content:
             application/json:
               schema:
@@ -6556,6 +6566,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/template/{templateId}:
+    post:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Create MCI from a Template
+      description: |-
+        Create a new MCI by applying an MCI Dynamic Template.
+        The template provides the base VM configuration, and the apply request
+        allows overriding the MCI name and description.
+
+        **Override Behavior (Phase 1):**
+        - `name` (required): Name for the new MCI
+        - `description` (optional): Overrides the template's description
+        - All other configuration (specs, images, subgroups) comes from the template
+      operationId: PostMciDynamicFromTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID to apply
+        required: true
+        schema:
+          type: string
+      - name: option
+        in: query
+        description: "Deployment option: 'hold' to create MCI without immediate VM\
+          \ provisioning"
+        schema:
+          type: string
+          enum:
+          - hold
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Template apply request with MCI name and optional description
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.TemplateApplyReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created MCI from template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template or namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal deployment error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: applyReq
   /ns/{nsId}/mciDynamic:
     post:
       tags:
@@ -9404,6 +9489,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: firewallRuleReq
+  /ns/{nsId}/resources/securityGroup/template/{templateId}:
+    post:
+      tags:
+      - "[Infra Resource] Security Group Management"
+      summary: Create SecurityGroup from a Template
+      description: |-
+        Create a new SecurityGroup by applying a SecurityGroup Template.
+        The template provides the base SecurityGroup configuration (connectionName, vNetId, firewallRules),
+        and the apply request allows overriding the SecurityGroup name and description.
+
+        **Override Behavior (Phase 1):**
+        - `name` (required): Name for the new SecurityGroup
+        - `description` (optional): Overrides the template's description
+        - All other configuration (connectionName, vNetId, firewallRules) comes from the template
+      operationId: PostSecurityGroupFromTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID to apply
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Template apply request with SecurityGroup name and optional description
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SecurityGroupTemplateApplyReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created SecurityGroup from template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SecurityGroupInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template or namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal resource creation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: applyReq
   /ns/{nsId}/resources/spec:
     post:
       tags:
@@ -10500,6 +10647,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/vNet/template/{templateId}:
+    post:
+      tags:
+      - "[Infra Resource] Network Management"
+      summary: Create vNet from a Template
+      description: |-
+        Create a new vNet by applying a vNet Template.
+        The template provides the base vNet configuration (connectionName, cidrBlock, subnets),
+        and the apply request allows overriding the vNet name and description.
+
+        **Override Behavior (Phase 1):**
+        - `name` (required): Name for the new vNet
+        - `description` (optional): Overrides the template's description
+        - All other configuration (connectionName, cidrBlock, subnets) comes from the template
+      operationId: PostVNetFromTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID to apply
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Template apply request with vNet name and optional description
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.VNetTemplateApplyReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created vNet from template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VNetInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template or namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal resource creation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: applyReq
   /ns/{nsId}/sharedResource:
     post:
       tags:
@@ -10614,6 +10823,760 @@ paths:
           description: Missing xRequestId
           content:
             text/event-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/mci:
+    get:
+      tags:
+      - "[MC-Infra] MCI Template Management"
+      summary: List all MCI Dynamic Templates
+      description: |-
+        List all MCI Dynamic Templates in a namespace.
+        Optionally filter by keyword matching against template name or description (case-insensitive).
+      operationId: GetAllMciDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: filterKeyword
+        in: query
+        description: Keyword to filter templates by name or description
+        schema:
+          type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciDynamicTemplateListResponse'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[MC-Infra] MCI Template Management"
+      summary: Create an MCI Dynamic Template
+      description: |-
+        Create a reusable MCI Dynamic Template. Templates store MCI dynamic creation
+        request configurations that can be applied later to create MCIs with consistent settings.
+
+        **Template Contents:**
+        - VM specifications (specId, imageId) for each subgroup
+        - Subgroup sizing and naming
+        - Network and disk configuration
+        - Post-deployment commands
+        - Monitoring agent options
+
+        Templates can be created manually or extracted from existing MCIs.
+      operationId: PostMciDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      requestBody:
+        description: MCI Dynamic Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.MciDynamicTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciDynamicTemplateInfo'
+        "400":
+          description: Invalid request format or template name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Template already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[MC-Infra] MCI Template Management"
+      summary: Delete all MCI Dynamic Templates
+      description: Delete all MCI Dynamic Templates in a namespace.
+      operationId: DeleteAllMciDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      responses:
+        "200":
+          description: All templates deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/mci/{templateId}:
+    get:
+      tags:
+      - "[MC-Infra] MCI Template Management"
+      summary: Get an MCI Dynamic Template
+      description: Retrieve a specific MCI Dynamic Template by ID.
+      operationId: GetMciDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciDynamicTemplateInfo'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[MC-Infra] MCI Template Management"
+      summary: Update an MCI Dynamic Template
+      description: Update an existing MCI Dynamic Template.
+      operationId: PutMciDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: MCI Dynamic Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.MciDynamicTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Updated template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciDynamicTemplateInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[MC-Infra] MCI Template Management"
+      summary: Delete an MCI Dynamic Template
+      description: Delete a specific MCI Dynamic Template.
+      operationId: DeleteMciDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/securityGroup:
+    get:
+      tags:
+      - "[Infra Resource] SecurityGroup Template Management"
+      summary: List all SecurityGroup Templates
+      description: |-
+        List all SecurityGroup Templates in a namespace.
+        Optionally filter by keyword matching against template name or description (case-insensitive).
+      operationId: GetAllSecurityGroupTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: filterKeyword
+        in: query
+        description: Keyword to filter templates by name or description
+        schema:
+          type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SecurityGroupTemplateListResponse'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] SecurityGroup Template Management"
+      summary: Create a SecurityGroup Template
+      description: |-
+        Create a reusable SecurityGroup Template. Templates store SecurityGroup creation
+        request configurations that can be applied later to create SecurityGroups with consistent settings.
+
+        **Template Contents:**
+        - Connection name (cloud provider and region)
+        - vNet ID for the security group
+        - Firewall rules (ports, protocol, direction, CIDR)
+        - Description
+
+        Templates can be created manually with desired SecurityGroup configurations.
+      operationId: PostSecurityGroupTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      requestBody:
+        description: SecurityGroup Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SecurityGroupTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SecurityGroupTemplateInfo'
+        "400":
+          description: Invalid request format or template name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Template already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[Infra Resource] SecurityGroup Template Management"
+      summary: Delete all SecurityGroup Templates
+      description: Delete all SecurityGroup Templates in a namespace.
+      operationId: DeleteAllSecurityGroupTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      responses:
+        "200":
+          description: All templates deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/securityGroup/{templateId}:
+    get:
+      tags:
+      - "[Infra Resource] SecurityGroup Template Management"
+      summary: Get a SecurityGroup Template
+      description: Retrieve a specific SecurityGroup Template by ID.
+      operationId: GetSecurityGroupTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SecurityGroupTemplateInfo'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Infra Resource] SecurityGroup Template Management"
+      summary: Update a SecurityGroup Template
+      description: Update an existing SecurityGroup Template.
+      operationId: PutSecurityGroupTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: SecurityGroup Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SecurityGroupTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Updated template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SecurityGroupTemplateInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[Infra Resource] SecurityGroup Template Management"
+      summary: Delete a SecurityGroup Template
+      description: Delete a specific SecurityGroup Template.
+      operationId: DeleteSecurityGroupTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/vNet:
+    get:
+      tags:
+      - "[Infra Resource] vNet Template Management"
+      summary: List all vNet Templates
+      description: |-
+        List all vNet Templates in a namespace.
+        Optionally filter by keyword matching against template name or description (case-insensitive).
+      operationId: GetAllVNetTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: filterKeyword
+        in: query
+        description: Keyword to filter templates by name or description
+        schema:
+          type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VNetTemplateListResponse'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] vNet Template Management"
+      summary: Create a vNet Template
+      description: |-
+        Create a reusable vNet Template. Templates store vNet creation
+        request configurations that can be applied later to create vNets with consistent settings.
+
+        **Template Contents:**
+        - Connection name (cloud provider and region)
+        - CIDR block configuration
+        - Subnet definitions (names, CIDR blocks, zones)
+        - Description
+
+        Templates can be created manually with desired vNet configurations.
+      operationId: PostVNetTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      requestBody:
+        description: vNet Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.VNetTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VNetTemplateInfo'
+        "400":
+          description: Invalid request format or template name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Template already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[Infra Resource] vNet Template Management"
+      summary: Delete all vNet Templates
+      description: Delete all vNet Templates in a namespace.
+      operationId: DeleteAllVNetTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      responses:
+        "200":
+          description: All templates deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/vNet/{templateId}:
+    get:
+      tags:
+      - "[Infra Resource] vNet Template Management"
+      summary: Get a vNet Template
+      description: Retrieve a specific vNet Template by ID.
+      operationId: GetVNetTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VNetTemplateInfo'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Infra Resource] vNet Template Management"
+      summary: Update a vNet Template
+      description: Update an existing vNet Template.
+      operationId: PutVNetTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: vNet Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.VNetTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Updated template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VNetTemplateInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[Infra Resource] vNet Template Management"
+      summary: Delete a vNet Template
+      description: Delete a specific vNet Template.
+      operationId: DeleteVNetTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/transferFile/k8sCluster/{k8sClusterId}:
@@ -16331,6 +17294,71 @@ components:
           description: SystemLabel is for describing the mci in a keyword (any string
             can be used) for special System purpose
           example: ""
+    model.MciDynamicTemplateInfo:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: CreatedAt is the creation timestamp
+          example: 2024-01-01T00:00:00Z
+        description:
+          type: string
+          description: Description of the template
+          example: 3-tier web application template
+        id:
+          type: string
+          description: Id is unique identifier for the template
+          example: my-template
+        mciDynamicReq:
+          type: object
+          description: MciDynamicReq is the template body (MCI dynamic request)
+          allOf:
+          - $ref: '#/components/schemas/model.MciDynamicReq'
+        name:
+          type: string
+          description: Name is human-readable string to represent the template
+          example: my-template
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+          example: mci
+        source:
+          type: string
+          description: |-
+            Source indicates where this template was created from
+            - "user": manually created by user
+            - "mci:{nsId}/{mciId}": extracted from an existing MCI
+          example: user
+        updatedAt:
+          type: string
+          description: UpdatedAt is the last update timestamp
+          example: 2024-01-01T00:00:00Z
+    model.MciDynamicTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.MciDynamicTemplateInfo'
+    model.MciDynamicTemplateReq:
+      required:
+      - mciDynamicReq
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+          description: Description of the template
+          example: 3-tier web application template
+        mciDynamicReq:
+          type: object
+          description: MciDynamicReq is the template body (MCI dynamic request configuration)
+          allOf:
+          - $ref: '#/components/schemas/model.MciDynamicReq'
+        name:
+          type: string
+          description: Name is the template ID and name
+          example: my-template
     model.MciHandlingCommandCountResponse:
       type: object
       properties:
@@ -18481,6 +19509,86 @@ components:
           type: string
           description: "Optional for registration: some CSPs (e.g., Azure, Tencent,\
             \ NHN) don't bind SG to VPC"
+    model.SecurityGroupTemplateApplyReq:
+      required:
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+          description: "Description for the new SecurityGroup (optional, overrides\
+            \ template description)"
+          example: SecurityGroup created from template
+        name:
+          type: string
+          description: Name for the new SecurityGroup to be created from the template
+          example: my-new-sg
+    model.SecurityGroupTemplateInfo:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: CreatedAt is the creation timestamp
+          example: 2024-01-01T00:00:00Z
+        description:
+          type: string
+          description: Description of the template
+          example: Standard web server security group template
+        id:
+          type: string
+          description: Id is unique identifier for the template
+          example: my-sg-template
+        name:
+          type: string
+          description: Name is human-readable string to represent the template
+          example: my-sg-template
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+          example: securityGroup
+        securityGroupReq:
+          type: object
+          description: SecurityGroupReq is the template body (SecurityGroup creation
+            request)
+          allOf:
+          - $ref: '#/components/schemas/model.SecurityGroupReq'
+        source:
+          type: string
+          description: |-
+            Source indicates where this template was created from
+            - "user": manually created by user
+          example: user
+        updatedAt:
+          type: string
+          description: UpdatedAt is the last update timestamp
+          example: 2024-01-01T00:00:00Z
+    model.SecurityGroupTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SecurityGroupTemplateInfo'
+    model.SecurityGroupTemplateReq:
+      required:
+      - name
+      - securityGroupReq
+      type: object
+      properties:
+        description:
+          type: string
+          description: Description of the template
+          example: Standard web server security group template
+        name:
+          type: string
+          description: Name is the template ID and name
+          example: my-sg-template
+        securityGroupReq:
+          type: object
+          description: SecurityGroupReq is the template body (SecurityGroup creation
+            request configuration)
+          allOf:
+          - $ref: '#/components/schemas/model.SecurityGroupReq'
     model.SecurityGroupUpdateReq:
       type: object
       properties:
@@ -19622,6 +20730,20 @@ components:
           type: object
           additionalProperties:
             type: string
+    model.TemplateApplyReq:
+      required:
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+          description: "Description for the new MCI (optional, overrides template\
+            \ description)"
+          example: MCI created from template
+        name:
+          type: string
+          description: Name for the new MCI to be created from the template
+          example: my-new-mci
     model.UpdateScheduleJobRequest:
       type: object
       properties:
@@ -19746,6 +20868,84 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.SubnetReq'
+    model.VNetTemplateApplyReq:
+      required:
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+          description: "Description for the new vNet (optional, overrides template\
+            \ description)"
+          example: vNet created from template
+        name:
+          type: string
+          description: Name for the new vNet to be created from the template
+          example: my-new-vnet
+    model.VNetTemplateInfo:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: CreatedAt is the creation timestamp
+          example: 2024-01-01T00:00:00Z
+        description:
+          type: string
+          description: Description of the template
+          example: Standard 3-subnet VPC template
+        id:
+          type: string
+          description: Id is unique identifier for the template
+          example: my-vnet-template
+        name:
+          type: string
+          description: Name is human-readable string to represent the template
+          example: my-vnet-template
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+          example: vNet
+        source:
+          type: string
+          description: |-
+            Source indicates where this template was created from
+            - "user": manually created by user
+          example: user
+        updatedAt:
+          type: string
+          description: UpdatedAt is the last update timestamp
+          example: 2024-01-01T00:00:00Z
+        vNetReq:
+          type: object
+          description: VNetReq is the template body (vNet creation request)
+          allOf:
+          - $ref: '#/components/schemas/model.VNetReq'
+    model.VNetTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.VNetTemplateInfo'
+    model.VNetTemplateReq:
+      required:
+      - name
+      - vNetReq
+      type: object
+      properties:
+        description:
+          type: string
+          description: Description of the template
+          example: Standard 3-subnet VPC template
+        name:
+          type: string
+          description: Name is the template ID and name
+          example: my-vnet-template
+        vNetReq:
+          type: object
+          description: VNetReq is the template body (vNet creation request configuration)
+          allOf:
+          - $ref: '#/components/schemas/model.VNetReq'
     model.VmCreationError:
       type: object
       properties:

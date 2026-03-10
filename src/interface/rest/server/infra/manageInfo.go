@@ -101,18 +101,30 @@ func RestGetMci(c echo.Context) error {
 // @Description Reconstruct an MCI dynamic creation request body from an existing MCI's information.
 // @Description Returns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)
 // @Description are auto-created, making it easy to clone or recreate a similar MCI configuration.
+// @Description
+// @Description **Template Option:**
+// @Description When the `template` query parameter is provided, the extracted configuration is
+// @Description saved as a reusable MCI Dynamic Template with the given name.
 // @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Success 200 {object} model.MciDynamicReq
+// @Param template query string false "If provided, save the extracted config as a template with this name"
+// @Success 200 {object} model.MciDynamicReq "Extracted MCI configuration (without template param)"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/configCopy [get]
 func RestGetMciReqFromMci(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
+	templateName := c.QueryParam("template")
+
+	if templateName != "" {
+		// Extract and create template
+		result, err := infra.ExtractAndCreateTemplate(nsId, mciId, templateName)
+		return clientManager.EndRequestWithLog(c, err, result)
+	}
 
 	result, err := infra.ExtractMciDynamicReqFromMciInfo(nsId, mciId)
 	return clientManager.EndRequestWithLog(c, err, result)

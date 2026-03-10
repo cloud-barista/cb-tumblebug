@@ -221,6 +221,7 @@ const (
 	StrCluster               string = "cluster"
 	StrContainer             string = "container"
 	StrNamespace             string = "ns"
+	StrTemplate              string = "template"
 	StrCommon                string = "common"
 	StrEmpty                 string = ""
 	StrSharedResourceName    string = "-shared-"
@@ -256,8 +257,8 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 	StrVM:            func() interface{} { return &VmInfo{} },
 	StrMCI:           func() interface{} { return &MciInfo{} },
 	StrK8s:           func() interface{} { return &K8sClusterInfo{} },
-	StrNamespace:     func() interface{} { return &NsInfo{} },
-	StrVPN:           func() interface{} { return &VpnInfo{} },
+	StrNamespace:          func() interface{} { return &NsInfo{} },
+	StrVPN:                func() interface{} { return &VpnInfo{} },
 }
 
 // ResourceIds is struct for containing id and name of each Resource type

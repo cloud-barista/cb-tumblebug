@@ -1,0 +1,30 @@
+{
+  "nsId": "system",
+  "resourceType": "securityGroup",
+  "name": "aws-web-sg",
+  "description": "Standard web server security group for AWS (SSH, HTTP, HTTPS inbound)",
+  "securityGroupReq": {
+    "connectionName": "aws-ap-northeast-2",
+    "vNetId": "default-shared-aws-ap-northeast-2",
+    "firewallRules": [
+      {
+        "ports": "22",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "80",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "443",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      }
+    ]
+  }
+}

@@ -383,6 +383,17 @@ func RunServer() {
 	g.POST("/:nsId/mci/:mciId/subGroupDynamic", rest_infra.RestPostMciSubGroupDynamic)
 	g.POST("/:nsId/mci/:mciId/subGroupDynamicReview", rest_infra.RestPostMciDynamicSubGroupVmReview)
 
+	// Template-based MCI provisioning
+	g.POST("/:nsId/mci/template/:templateId", rest_infra.RestPostMciDynamicFromTemplate)
+
+	// MCI Dynamic Template Management
+	g.POST("/:nsId/template/mci", rest_infra.RestPostMciDynamicTemplate)
+	g.GET("/:nsId/template/mci", rest_infra.RestGetAllMciDynamicTemplate)
+	g.GET("/:nsId/template/mci/:templateId", rest_infra.RestGetMciDynamicTemplate)
+	g.PUT("/:nsId/template/mci/:templateId", rest_infra.RestPutMciDynamicTemplate)
+	g.DELETE("/:nsId/template/mci/:templateId", rest_infra.RestDeleteMciDynamicTemplate)
+	g.DELETE("/:nsId/template/mci", rest_infra.RestDeleteAllMciDynamicTemplate)
+
 	// Provisioning History and Analytics Routes
 	e.GET("/tumblebug/provisioning/log/:specId", rest_infra.RestGetProvisioningLog)
 	e.DELETE("/tumblebug/provisioning/log/:specId", rest_infra.RestDeleteProvisioningLog)
@@ -621,6 +632,17 @@ func RunServer() {
 	g.POST("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestPostFirewallRules)
 	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestDelFirewallRules)
 
+	// Template-based SecurityGroup provisioning
+	g.POST("/:nsId/resources/securityGroup/template/:templateId", rest_resource.RestPostSecurityGroupFromTemplate)
+
+	// SecurityGroup Template Management
+	g.POST("/:nsId/template/securityGroup", rest_resource.RestPostSecurityGroupTemplate)
+	g.GET("/:nsId/template/securityGroup", rest_resource.RestGetAllSecurityGroupTemplate)
+	g.GET("/:nsId/template/securityGroup/:templateId", rest_resource.RestGetSecurityGroupTemplate)
+	g.PUT("/:nsId/template/securityGroup/:templateId", rest_resource.RestPutSecurityGroupTemplate)
+	g.DELETE("/:nsId/template/securityGroup/:templateId", rest_resource.RestDeleteSecurityGroupTemplate)
+	g.DELETE("/:nsId/template/securityGroup", rest_resource.RestDeleteAllSecurityGroupTemplate)
+
 	// Network management: vNet
 	g.POST("/:nsId/resources/vNet", rest_resource.RestPostVNet)
 	g.GET("/:nsId/resources/vNet/:vNetId", rest_resource.RestGetVNet)
@@ -628,6 +650,18 @@ func RunServer() {
 	// g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
 	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet)
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
+
+	// Template-based vNet provisioning
+	g.POST("/:nsId/resources/vNet/template/:templateId", rest_resource.RestPostVNetFromTemplate)
+
+	// vNet Template Management
+	g.POST("/:nsId/template/vNet", rest_resource.RestPostVNetTemplate)
+	g.GET("/:nsId/template/vNet", rest_resource.RestGetAllVNetTemplate)
+	g.GET("/:nsId/template/vNet/:templateId", rest_resource.RestGetVNetTemplate)
+	g.PUT("/:nsId/template/vNet/:templateId", rest_resource.RestPutVNetTemplate)
+	g.DELETE("/:nsId/template/vNet/:templateId", rest_resource.RestDeleteVNetTemplate)
+	g.DELETE("/:nsId/template/vNet", rest_resource.RestDeleteAllVNetTemplate)
+
 	// Network management: subnet associated with vNet
 	g.POST("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestPostSubnet)
 	g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestGetSubnet)

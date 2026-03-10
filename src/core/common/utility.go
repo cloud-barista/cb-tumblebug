@@ -267,6 +267,21 @@ func GenConnectionKey(connectionId string) string {
 	return "/connection/" + connectionId
 }
 
+// GenTemplateKey is func to generate a key for template stored in ETCD
+// Key format: /ns/{nsId}/template/{targetType}/{templateId}
+func GenTemplateKey(nsId string, targetType string, templateId string) string {
+	if nsId == "" {
+		return ""
+	}
+	if targetType == "" {
+		return "/ns/" + nsId + "/template"
+	}
+	if templateId == "" {
+		return "/ns/" + nsId + "/template/" + targetType
+	}
+	return "/ns/" + nsId + "/template/" + targetType + "/" + templateId
+}
+
 // GenCredentialHolderKey is func to generate a key for credentialHolder info
 func GenCredentialHolderKey(holderId string) string {
 	return "/credentialHolder/" + holderId

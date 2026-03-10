@@ -120,6 +120,7 @@ func GetLabelTypes() []string {
 		StrKubernetes,
 		StrContainer,
 		StrNamespace,
+
 	}
 }
 
