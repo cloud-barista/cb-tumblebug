@@ -5179,9 +5179,24 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Extracted MCI configuration (without template param)",
+                        "description": "Without template param: extracted MCI config / With template param: created template info",
                         "schema": {
-                            "$ref": "#/definitions/model.MciDynamicReq"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/infra.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/model.MciDynamicReq"
+                                        },
+                                        "[TEMPLATE]": {
+                                            "$ref": "#/definitions/model.MciDynamicTemplateInfo"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {

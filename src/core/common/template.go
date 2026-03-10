@@ -203,9 +203,11 @@ func UpdateMciDynamicTemplate(nsId string, templateId string, req *model.MciDyna
 		return emptyResult, err
 	}
 
-	// Update fields
+	// Update fields (Name is not changeable; it is tied to Id and ETCD key)
+	if req.Name != "" && req.Name != templateId {
+		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
+	}
 	now := time.Now().Format(time.RFC3339)
-	existing.Name = req.Name
 	existing.Description = req.Description
 	existing.UpdatedAt = now
 	existing.MciDynamicReq = req.MciDynamicReq
@@ -282,32 +284,6 @@ func DeleteAllMciDynamicTemplate(nsId string) error {
 	}
 
 	return nil
-}
-
-// CreateMciDynamicTemplateFromMci creates a template from an existing MCI
-func CreateMciDynamicTemplateFromMci(nsId string, mciId string, templateName string) (model.MciDynamicTemplateInfo, error) {
-	emptyResult := model.MciDynamicTemplateInfo{}
-
-	err := CheckString(templateName)
-	if err != nil {
-		log.Error().Err(err).Msg("invalid template name")
-		return emptyResult, err
-	}
-
-	// Check if template already exists
-	key := GenTemplateKey(nsId, "mci", templateName)
-	_, exists, err := kvstore.GetKv(key)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyResult, err
-	}
-	if exists {
-		return emptyResult, fmt.Errorf("template '%s' already exists in namespace '%s'", templateName, nsId)
-	}
-
-	// This function is called from infra package, so we need to provide the extraction logic
-	// The caller should pass the extracted MciDynamicReq
-	return emptyResult, fmt.Errorf("use CreateMciDynamicTemplateWithReq instead")
 }
 
 // CreateMciDynamicTemplateWithReq creates a template from an MciDynamicReq (used for extraction from existing MCI)
@@ -549,9 +525,11 @@ func UpdateVNetTemplate(nsId string, templateId string, req *model.VNetTemplateR
 		return emptyResult, err
 	}
 
-	// Update fields
+	// Update fields (Name is not changeable; it is tied to Id and ETCD key)
+	if req.Name != "" && req.Name != templateId {
+		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
+	}
 	now := time.Now().Format(time.RFC3339)
-	existing.Name = req.Name
 	existing.Description = req.Description
 	existing.UpdatedAt = now
 	existing.VNetReq = req.VNetReq
@@ -811,9 +789,11 @@ func UpdateSecurityGroupTemplate(nsId string, templateId string, req *model.Secu
 		return emptyResult, err
 	}
 
-	// Update fields
+	// Update fields (Name is not changeable; it is tied to Id and ETCD key)
+	if req.Name != "" && req.Name != templateId {
+		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
+	}
 	now := time.Now().Format(time.RFC3339)
-	existing.Name = req.Name
 	existing.Description = req.Description
 	existing.UpdatedAt = now
 	existing.SecurityGroupReq = req.SecurityGroupReq
