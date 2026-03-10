@@ -1453,8 +1453,16 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 				tmpImageInfo := createBasicImageInfoFromCSV(nsId, providerName, regionName, imageReqTmp.CspImageName,
 					imageReqTmp.ConnectionName, osType, description, infraType, osArchitecture, osDistribution)
 
-				// Try to enrich with CSP lookup (optional)
-				enrichImageInfoFromCSP(&tmpImageInfo, imageReqTmp, regionName, connectionList)
+				// AWS/GCP K8s image type identifiers (e.g., BOTTLEROCKET_x86_64, COS_CONTAINERD) registered
+				// in cloudimage.csv are not real CSP image IDs — they are EKS/GKE internal type keywords.
+				// CSP lookup via CB-Spider will always fail for these, so skip enrichment.
+				skipCSPLookup := tmpImageInfo.IsKubernetesImage &&
+					(strings.EqualFold(providerName, csp.AWS) || strings.EqualFold(providerName, csp.GCP))
+
+				if !skipCSPLookup {
+					// Try to enrich with CSP lookup (optional)
+					enrichImageInfoFromCSP(&tmpImageInfo, imageReqTmp, regionName, connectionList)
+				}
 
 				// Add to list regardless of CSP lookup success
 				mutex.Lock()
