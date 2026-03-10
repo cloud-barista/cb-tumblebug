@@ -4132,11 +4132,19 @@ paths:
           type: string
       responses:
         "200":
-          description: "With template param: created template info"
+          description: "Without template param: extracted MCI config / With template\
+            \ param: created template info"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.MciDynamicTemplateInfo'
+                allOf:
+                - $ref: '#/components/schemas/infra.JSONResult'
+                - type: object
+                  properties:
+                    '[DEFAULT]':
+                      $ref: '#/components/schemas/model.MciDynamicReq'
+                    '[TEMPLATE]':
+                      $ref: '#/components/schemas/model.MciDynamicTemplateInfo'
         "404":
           description: Not Found
           content:

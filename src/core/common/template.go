@@ -204,6 +204,9 @@ func UpdateMciDynamicTemplate(nsId string, templateId string, req *model.MciDyna
 	}
 
 	// Update fields (Name is not changeable; it is tied to Id and ETCD key)
+	if req.Name != "" && req.Name != templateId {
+		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
+	}
 	now := time.Now().Format(time.RFC3339)
 	existing.Description = req.Description
 	existing.UpdatedAt = now
@@ -523,6 +526,9 @@ func UpdateVNetTemplate(nsId string, templateId string, req *model.VNetTemplateR
 	}
 
 	// Update fields (Name is not changeable; it is tied to Id and ETCD key)
+	if req.Name != "" && req.Name != templateId {
+		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
+	}
 	now := time.Now().Format(time.RFC3339)
 	existing.Description = req.Description
 	existing.UpdatedAt = now
@@ -784,6 +790,9 @@ func UpdateSecurityGroupTemplate(nsId string, templateId string, req *model.Secu
 	}
 
 	// Update fields (Name is not changeable; it is tied to Id and ETCD key)
+	if req.Name != "" && req.Name != templateId {
+		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
+	}
 	now := time.Now().Format(time.RFC3339)
 	existing.Description = req.Description
 	existing.UpdatedAt = now
