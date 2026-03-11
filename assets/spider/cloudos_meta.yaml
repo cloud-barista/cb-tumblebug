@@ -1,0 +1,146 @@
+# The CB-Spider Mission is to connect all the clouds with a single interface.
+#
+#      * Cloud-Barista: https://github.com/cloud-barista
+#
+# by CB-Spider Team, 2021.10.
+
+### Meta info of CloudOS
+
+AWS:
+  region: Region / Zone
+  credential: ClientId / ClientSecret
+  credentialcsp: aws_access_key_id / aws_secret_access_key
+  # rootdisktype: standard / io1 / io2 / gp2 / sc1 / st1 / gp3
+  # issues: https://github.com/cloud-barista/cb-spider/pull/523#issuecomment-965363272
+  rootdisktype: standard / gp2 / gp3
+  disktype: standard / gp2 / gp3 / io1 / io2 / st1 / sc1
+  disksize: standard|1|1024|GB / gp2|1|16384|GB / gp3|1|16384|GB / io1|4|16384|GB / io2|4|16384|GB / st1|125|16384|GB / sc1|125|16384|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 255 / 256 / 255 / 255 / 255 / 256 / 32 / 127 / 100
+  defaultregiontoquery: ap-northeast-2 / ap-northeast-2a
+
+AZURE:
+  region: Region / Zone
+  credential: ClientId / ClientSecret / TenantId / SubscriptionId
+  credentialcsp: clientId / clientSecret / tenantId / subscriptionId
+  # type issues: https://github.com/cloud-barista/cb-spider/pull/529#issue-1051678985
+  rootdisktype: PremiumSSD / StandardSSD / StandardHDD
+  disktype: PremiumSSD / StandardSSD / StandardHDD
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 64 / 80 / 64 / 80 / 64 / 80 / 80 / 80 / 63
+  defaultregiontoquery: koreacentral / 1
+
+GCP:
+  region: Region / Zone
+  credential: PrivateKey / ProjectID / ClientEmail
+  credentialcsp: private_key / project_id / client_email
+  rootdisktype: pd-standard / pd-balanced / pd-ssd / pd-extreme
+  disktype: pd-standard / pd-balanced / pd-ssd / pd-extreme
+  disksize: pd-standard|10|65536|GB / pd-balanced|10|65536|GB / pd-ssd|10|65536|GB / pd-extreme|500|65536|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  #idmaxlength: 63 / 63 / 63 / 0 / 63
+  idmaxlength: 63 / 63 / 57 / 0 / 63 / 63 / 63 / 63 / 40
+
+ALIBABA:
+  region: Region / Zone
+  credential: ClientId / ClientSecret
+  credentialcsp: AccessKeyId / AccessKeySecret
+  rootdisktype: cloud_essd / cloud_efficiency / cloud / cloud_ssd
+  #rootdisktype: cloud_efficiency / cloud / cloud_ssd
+  rootdisksize: cloud_essd|20|32768|GB / cloud_efficiency|20|32768|GB / cloud|5|2000|GB / cloud_ssd|20|32768|GB
+  #rootdisksize: cloud_efficiency|20|32768|GB / cloud|5|2000|GB / cloud_ssd|20|32768|GB
+  disktype: cloud / cloud_efficiency / cloud_ssd / cloud_essd
+  disksize: cloud|5|2000|GB / cloud_efficiency|20|32768|GB / cloud_ssd|20|32768|GB / cloud_essd_PL0|40|32768|GB / cloud_essd_PL1|20|32768|GB / cloud_essd_PL2|461|32768|GB / cloud_essd_PL3|1261|32768|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 128 / 128 / 128 / 128 / 128 / 128 / 80 / 128 / 63
+  defaultregiontoquery: ap-northeast-2 / ap-northeast-2a
+
+TENCENT:
+  region: Region / Zone
+  credential: ClientId / ClientSecret
+  credentialcsp: SecretId / SecretKey
+  #rootdisktype: CLOUD_PREMIUM / LOCAL_BASIC / LOCAL_SSD / CLOUD_BASIC / CLOUD_SSD
+  rootdisktype: CLOUD_PREMIUM / CLOUD_SSD
+  rootdisksize: CLOUD_PREMIUM|50|16000|GB / CLOUD_SSD|50|16000|GB
+  disktype: CLOUD_PREMIUM / CLOUD_SSD / CLOUD_HSSD / CLOUD_BASIC / CLOUD_TSSD
+  disksize: CLOUD_PREMIUM|10|32000|GB / CLOUD_SSD|20|32000|GB / CLOUD_HSSD|20|32000|GB / CLOUD_BASIC|10|32000|GB / CLOUD_TSSD|10|32000|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 60 / 60 / 60 / 25 / 88 / 60 / 60 / 60 / 50
+  defaultregiontoquery: ap-seoul / ap-seoul-1
+
+IBM:
+  region: Region / Zone
+  credential: ApiKey
+  credentialcsp: ApiKey
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 63 / 63 / 63 / 63 / 63 / 63 / 63 / 63 / 32 / 63
+  defaultregiontoquery: us-south / us-south-1
+
+OPENSTACK:
+  region: Region / Zone
+  credential: IdentityEndpoint / Username / Password / DomainName / ProjectID
+  credentialcsp: IdentityEndpoint / Username / Password / DomainName / ProjectID
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 255 / 255 / 255 / 255 / 255 / 255 / 255 / 255 / 0
+  
+NCP:
+  region: Region / Zone
+  credential: ClientId / ClientSecret
+  credentialcsp: ncloud_access_key / ncloud_secret_key
+  rootdisktype: HDD
+  rootdisksize: HDD|10|2000|GB
+  disktype: SSD / HDD
+  disksize: SSD|100|16380|GB / HDD|100|16380|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 30 / 30 / 30 / 30 / 30 / 30 / 30 / 30 / 20
+
+NHN:
+  region: Region / Zone
+  credential: IdentityEndpoint / Username / Password / DomainName / TenantId
+  credentialcsp: IdentityEndpoint / Username / Password / DomainName / TenantId
+  rootdisktype: General_HDD / General_SSD
+  rootdisksize: General_HDD|20|1000|GB / General_SSD|20|1000|GB
+  disktype: General_HDD / General_SSD
+  disksize: General_HDD|10|2000|GB / General_SSD|10|2000|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 32 / 32 / 255 / 32 / 90 / 255 / 80 / 255 / 32
+
+KTCLASSIC:
+  region: Region / Zone
+  credential: ClientId / ClientSecret
+  credentialcsp: API_Key / Secret_Key
+  rootdisktype: HDD / SSD
+  rootdisksize: HDD|20|50|GB / SSD|20|50|GB
+  disktype: HDD / SSD-Provisioned
+  disksize: HDD|10|500|GB / SSD-Provisioned|100|800|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster
+  idmaxlength: 30 / 30 / 30 / 100 / 63 / 50 / 30 / 32 / 0
+
+KT:
+  region: Region / Zone
+  credential: IdentityEndpoint / Username / Password / DomainName / ProjectID
+  credentialcsp: IdentityEndpoint / Username / Password / DomainName / ProjectID
+  rootdisktype: HDD / SSD
+  rootdisksize: HDD|50|100|GB / SSD|50|100|GB
+  disktype: HDD / SSD
+  disksize: HDD|10|2000|GB / SSD|10|2000|GB
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 30 / 48 / 30 / 100 / 63 / 50 / 30 / 50 / 0
+
+#--- Emulation
+
+MOCK:
+  region: Region
+  credential: MockName
+  credentialcsp: MockName
+  # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
+  idmaxlength: 255 / 255 / 255 / 255 / 255 / 255 / 255 / 255 / 255
+  rootdisktype: SSD /HDD / MEM
+  disktype: SSD / HDD / MEM
+  disksize: SSD|1|16384|GB / HDD|1|16384|GB / MEM|10|512|GB
+
+CLOUDTWIN:
+  region: Region
+  credential: IdentityEndpoint / DomainName / MockName
+  credentialcsp: IdentityEndpoint / DomainName / MockName
+

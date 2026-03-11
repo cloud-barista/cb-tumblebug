@@ -163,7 +163,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.12.7
+    image: cloudbaristaorg/cb-spider:0.12.8
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -178,6 +178,10 @@ services:
     volumes:
       - ./container-volume/cb-spider-container/meta_db/:/root/go/src/github.com/cloud-barista/cb-spider/meta_db/
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
+      # Note: cb-spider 0.12.8+ Docker image excludes cloud-driver-libs/ (static mode optimization).
+      # These config files are maintained in assets/spider/ and must be updated when upgrading cb-spider.
+      - ./assets/spider/cloudos_meta.yaml:/root/go/src/github.com/cloud-barista/cb-spider/cloud-driver-libs/cloudos_meta.yaml
+      - ./assets/spider/cloudos.yaml:/root/go/src/github.com/cloud-barista/cb-spider/cloud-driver-libs/cloudos.yaml
     environment:
       - PLUGIN_SW=OFF
       - SERVER_ADDRESS=0.0.0.0:1024
@@ -187,6 +191,7 @@ services:
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
       - ADMINWEB=OFF
+      - SPIDER_BACKUP_ENABLED=false
     healthcheck: # for CB-Spider
       test: ["CMD", "curl", "-f", "http://localhost:1024/spider/readyz"]
       interval: 1m
@@ -197,7 +202,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.12.11
+    image: cloudbaristaorg/cb-mapui:0.12.12
     container_name: cb-mapui
     labels:
       # Explicitly tell Traefik to expose this container

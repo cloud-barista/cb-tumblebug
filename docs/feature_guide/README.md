@@ -13,6 +13,7 @@ This directory contains detailed documentation for specific features of CB-Tumbl
 | **[Job Scheduler](existing-csp-res-job-scheduler.md)** | Guide for the automated task scheduler, currently supporting periodic CSP resource synchronization and registration. |
 | **[Namespace & Identity](namespace-and-resource-identity.md)** | Deep dive into the logical isolation model (Namespace) and the resource identification system (User ID vs System UID vs CSP ID). |
 | **[Remote Command & File Transfer](remote-command-and-file-transfer.md)** | Guide for executing remote commands and transferring files to MCI VMs via Bastion Host with TOFU (Trust On First Use) SSH host key verification. |
+| **[Resource Template Management](resource-template-management.md)** | Guide for defining, storing, and applying reusable infrastructure templates (MCI, vNet, SecurityGroup) to enable repeatable multi-cloud provisioning. |
 
 ## 🚀 Purpose
 

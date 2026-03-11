@@ -1,0 +1,26 @@
+# Cloud Driver Manager of CB-Spider.
+# The CB-Spider is a sub-Framework of the Cloud-Barista Multi-Cloud Project.
+# The CB-Spider Mission is to connect all the clouds with a single interface.
+#
+#      * Cloud-Barista: https://github.com/cloud-barista
+#
+# by CB-Spider Team, 2021.11.
+# by CB-Spider Team, 2020.11.
+# by CB-Spider Team, 2020.03.
+
+### List of support CloudOS.
+cloudos:
+  - AWS
+  - AZURE
+  - GCP
+  - ALIBABA
+  - TENCENT
+  - IBM
+  - OPENSTACK
+  - NCP
+  - NHN
+  - KT
+  - KTCLASSIC
+#--- Emulation
+  - MOCK
+#  - CLOUDTWIN
