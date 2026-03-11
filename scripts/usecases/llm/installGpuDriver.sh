@@ -172,7 +172,7 @@ done
 # Ensure lspci is available (not included in minimal OS images)
 if ! command -v lspci &>/dev/null; then
     echo "Installing pciutils (lspci not found, common on minimal images)..."
-    sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq pciutils
+    sudo apt-get update -qq && "${APT_INSTALL[@]}" pciutils
 fi
 
 if [ -z "$GPU_TYPE" ]; then
