@@ -169,6 +169,12 @@ done
 # ============================================================
 # GPU Auto-detection
 # ============================================================
+# Ensure lspci is available (not included in minimal OS images)
+if ! command -v lspci &>/dev/null; then
+    echo "Installing pciutils (lspci not found, common on minimal images)..."
+    sudo apt-get update -qq && "${APT_INSTALL[@]}" pciutils
+fi
+
 if [ -z "$GPU_TYPE" ]; then
     echo "Auto-detecting GPU type..."
     if sudo lspci 2>/dev/null | grep -qi nvidia; then
