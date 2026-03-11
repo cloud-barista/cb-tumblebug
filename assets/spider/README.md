@@ -12,7 +12,6 @@ Starting from CB-Spider 0.12.8, the Docker image no longer includes `cloud-drive
 - **VM provisioning** — cloud-init scripts (`.cloud-init-*`) are injected during VM creation
 - **Root disk configuration** — `cloudos_meta.yaml` provides CSP-specific disk type/size metadata
 - **CSP registry** — `cloudos.yaml` lists supported cloud providers
-- **Region metadata** — `region/` contains per-CSP region information
 
 Since CB-Tumblebug administrators may need to customize some of these files
 (e.g., cloud-init scripts for specific deployment environments or CSP-specific settings),
@@ -42,4 +41,3 @@ cp -r <cb-spider-source>/cloud-driver-libs/* assets/spider/
 | `cloudos_meta.yaml` | CSP metadata (credentials, disk types, region defaults) |
 | `cloudos.yaml` | List of supported cloud providers |
 | `.cloud-init-*/` | Per-CSP cloud-init scripts for VM initialization |
-| `region/` | Per-CSP region display names (not used by CB-TB; included for CB-Spider AdminWeb) |
