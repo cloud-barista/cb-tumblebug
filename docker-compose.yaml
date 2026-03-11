@@ -179,9 +179,8 @@ services:
       - ./container-volume/cb-spider-container/meta_db/:/root/go/src/github.com/cloud-barista/cb-spider/meta_db/
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
       # Note: cb-spider 0.12.8+ Docker image excludes cloud-driver-libs/ (static mode optimization).
-      # These config files are maintained in assets/spider/ and must be updated when upgrading cb-spider.
-      - ./assets/spider/cloudos_meta.yaml:/root/go/src/github.com/cloud-barista/cb-spider/cloud-driver-libs/cloudos_meta.yaml
-      - ./assets/spider/cloudos.yaml:/root/go/src/github.com/cloud-barista/cb-spider/cloud-driver-libs/cloudos.yaml
+      # This directory is maintained in assets/spider/ and must be updated when upgrading cb-spider.
+      - ./assets/spider/:/root/go/src/github.com/cloud-barista/cb-spider/cloud-driver-libs/
     environment:
       - PLUGIN_SW=OFF
       - SERVER_ADDRESS=0.0.0.0:1024

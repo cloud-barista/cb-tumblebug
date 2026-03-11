@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+
+USER="cb-user"
+HOME_DIR="/home/${USER}"
+SSH_DIR="${HOME_DIR}/.ssh"
+AUTH_KEYS="${SSH_DIR}/authorized_keys"
+IMDS="http://169.254.169.254"
+
+# 1) Create cb-user
+id -u "$USER" &>/dev/null || useradd -m -s /bin/bash -G sudo "$USER"
+
+# 2) Create .ssh directory and set permissions
+install -d -m 700 -o "$USER" -g "$USER" "$SSH_DIR"
+
+# 3) Retrieve IMDSv2 token
+TOKEN="$(curl -sS -X PUT "${IMDS}/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")"
+
+# 4) Fetch public key (when a Key Pair is attached to the instance)
+#    Use -f so it fails immediately on error
+curl -sSf -H "X-aws-ec2-metadata-token: ${TOKEN}" \
+  "${IMDS}/latest/meta-data/public-keys/0/openssh-key" > "$AUTH_KEYS"
+
+# 5) Set permissions and ownership
+chmod 600 "$AUTH_KEYS"
+chown -R "$USER:$USER" "$HOME_DIR"
+
+# 6) Allow passwordless sudo (sudoers.d recommended)
+echo "${USER} ALL=(ALL:ALL) NOPASSWD: ALL" > "/etc/sudoers.d/${USER}"
+chmod 440 "/etc/sudoers.d/${USER}"
+

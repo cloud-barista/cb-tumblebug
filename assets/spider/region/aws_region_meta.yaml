@@ -1,0 +1,337 @@
+DisplayName:
+  us-east-1:
+    "": "United States, Northern Virginia"
+    us-east-1a: "United States, Northern Virginia"
+    us-east-1b: "United States, Northern Virginia"
+    us-east-1c: "United States, Northern Virginia"
+    us-east-1d: "United States, Northern Virginia"
+    us-east-1e: "United States, Northern Virginia"
+    us-east-1f: "United States, Northern Virginia"
+  us-east-2:
+    "": "United States, Ohio"
+    us-east-2a: "United States, Ohio"
+    us-east-2b: "United States, Ohio"
+    us-east-2c: "United States, Ohio"
+  us-west-1:
+    "": "United States, Northern California"
+    us-west-1a: "United States, Northern California"
+    us-west-1b: "United States, Northern California"
+    us-west-1c: "United States, Northern California"
+  us-west-2:
+    "": "United States, Oregon"
+    us-west-2a: "United States, Oregon"
+    us-west-2b: "United States, Oregon"
+    us-west-2c: "United States, Oregon"
+    us-west-2d: "United States, Oregon"
+  af-south-1:
+    "": "South Africa, Cape Town"
+    af-south-1a: "South Africa, Cape Town"
+    af-south-1b: "South Africa, Cape Town"
+    af-south-1c: "South Africa, Cape Town"
+  ap-east-1:
+    "": "Hong Kong"
+    ap-east-1a: "Hong Kong"
+    ap-east-1b: "Hong Kong"
+    ap-east-1c: "Hong Kong"
+  ap-south-1:
+    "": "India, Mumbai"
+    ap-south-1a: "India, Mumbai"
+    ap-south-1b: "India, Mumbai"
+    ap-south-1c: "India, Mumbai"
+  ap-south-2:
+    "": "India, Hyderabad"
+    ap-south-2a: "India, Hyderabad"
+    ap-south-2b: "India, Hyderabad"
+    ap-south-2c: "India, Hyderabad"
+  ap-southeast-1:
+    "": "Singapore, Singapore"
+    ap-southeast-1a: "Singapore, Singapore"
+    ap-southeast-1b: "Singapore, Singapore"
+    ap-southeast-1c: "Singapore, Singapore"
+  ap-southeast-2:
+    "": "Australia, Sydney"
+    ap-southeast-2a: "Australia, Sydney"
+    ap-southeast-2b: "Australia, Sydney"
+    ap-southeast-2c: "Australia, Sydney"
+  ap-southeast-3:
+    "": "Indonesia, Jakarta"
+    ap-southeast-3a: "Indonesia, Jakarta"
+    ap-southeast-3b: "Indonesia, Jakarta"
+    ap-southeast-3c: "Indonesia, Jakarta"
+  ap-southeast-4:
+    "": "Australia, Melbourne"
+    ap-southeast-4a: "Australia, Melbourne"
+    ap-southeast-4b: "Australia, Melbourne"
+    ap-southeast-4c: "Australia, Melbourne"
+  ap-southeast-5:
+    "": "Malaysia, Malaysia"
+    ap-southeast-5a: "Malaysia, Malaysia"
+    ap-southeast-5b: "Malaysia, Malaysia"
+    ap-southeast-5c: "Malaysia, Malaysia"
+  ap-northeast-1:
+    "": "Japan, Tokyo"
+    ap-northeast-1a: "Japan, Tokyo"
+    ap-northeast-1b: "Japan, Tokyo"
+    ap-northeast-1c: "Japan, Tokyo"
+    ap-northeast-1d: "Japan, Tokyo"
+  ap-northeast-2:
+    "": "South Korea, Seoul"
+    ap-northeast-2a: "South Korea, Seoul"
+    ap-northeast-2b: "South Korea, Seoul"
+    ap-northeast-2c: "South Korea, Seoul"
+    ap-northeast-2d: "South Korea, Seoul"
+  ap-northeast-3:
+    "": "Japan, Osaka"
+    ap-northeast-3a: "Japan, Osaka"
+    ap-northeast-3b: "Japan, Osaka"
+    ap-northeast-3c: "Japan, Osaka"
+  ca-central-1:
+    "": "Canada, Quebec"
+    ca-central-1a: "Canada, Quebec"
+    ca-central-1b: "Canada, Quebec"
+    ca-central-1c: "Canada, Quebec"
+  ca-west-1:
+    "": "Canada, Alberta"
+    ca-west-1a: "Canada, Alberta"
+    ca-west-1b: "Canada, Alberta"
+    ca-west-1c: "Canada, Alberta"
+  cn-north-1:
+    "": "China, Beijing"
+    cn-north-1a: "China, Beijing"
+    cn-north-1b: "China, Beijing"
+    cn-north-1c: "China, Beijing"
+  cn-northwest-1:
+    "": "China, Ningxia"
+    cn-northwest-1a: "China, Ningxia"
+    cn-northwest-1b: "China, Ningxia"
+    cn-northwest-1c: "China, Ningxia"
+  eu-central-1:
+    "": "Germany, Brandenburg"
+    eu-central-1a: "Germany, Brandenburg"
+    eu-central-1b: "Germany, Brandenburg"
+    eu-central-1c: "Germany, Brandenburg"
+  eu-central-2:
+    "": "Switzerland, Zurich"
+    eu-central-2a: "Switzerland, Zurich"
+    eu-central-2b: "Switzerland, Zurich"
+    eu-central-2c: "Switzerland, Zurich"
+  eu-west-1:
+    "": "Ireland, Leinster"
+    eu-west-1a: "Ireland, Leinster"
+    eu-west-1b: "Ireland, Leinster"
+    eu-west-1c: "Ireland, Leinster"
+  eu-west-2:
+    "": "United Kingdom, England"
+    eu-west-2a: "United Kingdom, England"
+    eu-west-2b: "United Kingdom, England"
+    eu-west-2c: "United Kingdom, England"
+  eu-west-3:
+    "": "France, Île-de-France"
+    eu-west-3a: "France, Île-de-France"
+    eu-west-3b: "France, Île-de-France"
+    eu-west-3c: "France, Île-de-France"
+  eu-north-1:
+    "": "Sweden, Stockholm"
+    eu-north-1a: "Sweden, Stockholm"
+    eu-north-1b: "Sweden, Stockholm"
+    eu-north-1c: "Sweden, Stockholm"
+  eu-south-1:
+    "": "Italy, Lombardy"
+    eu-south-1a: "Italy, Lombardy"
+    eu-south-1b: "Italy, Lombardy"
+    eu-south-1c: "Italy, Lombardy"
+  eu-south-2:
+    "": "Spain, Catalonia"
+    eu-south-2a: "Spain, Catalonia"
+    eu-south-2b: "Spain, Catalonia"
+    eu-south-2c: "Spain, Catalonia"
+  il-central-1:
+    "": "Israel, Tel Aviv"
+    il-central-1a: "Israel, Tel Aviv"
+    il-central-1b: "Israel, Tel Aviv"
+    il-central-1c: "Israel, Tel Aviv"
+  me-south-1:
+    "": "Bahrain, Manama"
+    me-south-1a: "Bahrain, Manama"
+    me-south-1b: "Bahrain, Manama"
+    me-south-1c: "Bahrain, Manama"
+  me-central-1:
+    "": "United Arab Emirates, Dubai"
+    me-central-1a: "United Arab Emirates, Dubai"
+    me-central-1b: "United Arab Emirates, Dubai"
+    me-central-1c: "United Arab Emirates, Dubai"
+  sa-east-1:
+    "": "Brazil, São Paulo"
+    sa-east-1a: "Brazil, São Paulo"
+    sa-east-1b: "Brazil, São Paulo"
+    sa-east-1c: "Brazil, São Paulo"
+
+CSPDisplayName:
+  us-east-1:
+    "": "US East (N. Virginia)"
+    us-east-1a: "US East (N. Virginia)"
+    us-east-1b: "US East (N. Virginia)"
+    us-east-1c: "US East (N. Virginia)"
+    us-east-1d: "US East (N. Virginia)"
+    us-east-1e: "US East (N. Virginia)"
+    us-east-1f: "US East (N. Virginia)"
+  us-east-2:
+    "": "US East (Ohio)"
+    us-east-2a: "US East (Ohio)"
+    us-east-2b: "US East (Ohio)"
+    us-east-2c: "US East (Ohio)"
+  us-west-1:
+    "": "US West (N. California)"
+    us-west-1a: "US West (N. California)"
+    us-west-1b: "US West (N. California)"
+  us-west-2:
+    "": "US West (Oregon)"
+    us-west-2a: "US West (Oregon)"
+    us-west-2b: "US West (Oregon)"
+    us-west-2c: "US West (Oregon)"
+    us-west-2d: "US West (Oregon)"
+  af-south-1:
+    "": "Africa (Cape Town)"
+    af-south-1a: "Africa (Cape Town)"
+    af-south-1b: "Africa (Cape Town)"
+    af-south-1c: "Africa (Cape Town)"
+  ap-east-1:
+    "": "Asia Pacific (Hong Kong)"
+    ap-east-1a: "Asia Pacific (Hong Kong)"
+    ap-east-1b: "Asia Pacific (Hong Kong)"
+    ap-east-1c: "Asia Pacific (Hong Kong)"
+  ap-south-1:
+    "": "Asia Pacific (Mumbai)"
+    ap-south-1a: "Asia Pacific (Mumbai)"
+    ap-south-1b: "Asia Pacific (Mumbai)"
+    ap-south-1c: "Asia Pacific (Mumbai)"
+  ap-south-2:
+    "": "Asia Pacific (Hyderabad)"
+    ap-south-2a: "Asia Pacific (Hyderabad)"
+    ap-south-2b: "Asia Pacific (Hyderabad)"
+    ap-south-2c: "Asia Pacific (Hyderabad)"
+  ap-southeast-1:
+    "": "Asia Pacific (Singapore)"
+    ap-southeast-1a: "Asia Pacific (Singapore)"
+    ap-southeast-1b: "Asia Pacific (Singapore)"
+    ap-southeast-1c: "Asia Pacific (Singapore)"
+  ap-southeast-2:
+    "": "Asia Pacific (Sydney)"
+    ap-southeast-2a: "Asia Pacific (Sydney)"
+    ap-southeast-2b: "Asia Pacific (Sydney)"
+    ap-southeast-2c: "Asia Pacific (Sydney)"
+  ap-southeast-3:
+    "": "Asia Pacific (Jakarta)"
+    ap-southeast-3a: "Asia Pacific (Jakarta)"
+    ap-southeast-3b: "Asia Pacific (Jakarta)"
+    ap-southeast-3c: "Asia Pacific (Jakarta)"
+  ap-southeast-4:
+    "": "Asia Pacific (Melbourne)"
+    ap-southeast-4a: "Asia Pacific (Melbourne)"
+    ap-southeast-4b: "Asia Pacific (Melbourne)"
+    ap-southeast-4c: "Asia Pacific (Melbourne)"
+  ap-southeast-5:
+    "": "Asia Pacific (Malaysia)"
+    ap-southeast-5a: "Asia Pacific (Malaysia)"
+    ap-southeast-5b: "Asia Pacific (Malaysia)"
+    ap-southeast-5c: "Asia Pacific (Malaysia)"
+  ap-northeast-1:
+    "": "Asia Pacific (Tokyo)"
+    ap-northeast-1a: "Asia Pacific (Tokyo)"
+    ap-northeast-1b: "Asia Pacific (Tokyo)"
+    ap-northeast-1c: "Asia Pacific (Tokyo)"
+    ap-northeast-1d: "Asia Pacific (Tokyo)"
+  ap-northeast-2:
+    "": "Asia Pacific (Seoul)"
+    ap-northeast-2a: "Asia Pacific (Seoul)"
+    ap-northeast-2b: "Asia Pacific (Seoul)"
+    ap-northeast-2c: "Asia Pacific (Seoul)"
+    ap-northeast-2d: "Asia Pacific (Seoul)"
+  ap-northeast-3:
+    "": "Asia Pacific (Osaka)"
+    ap-northeast-3a: "Asia Pacific (Osaka)"
+    ap-northeast-3b: "Asia Pacific (Osaka)"
+    ap-northeast-3c: "Asia Pacific (Osaka)"
+  ca-central-1:
+    "": "Canada (Central)"
+    ca-central-1a: "Canada (Central)"
+    ca-central-1b: "Canada (Central)"
+    ca-central-1c: "Canada (Central)"
+  ca-west-1:
+    "": "Canada West (Calgary)"
+    ca-west-1a: "Canada West (Calgary)"
+    ca-west-1b: "Canada West (Calgary)"
+    ca-west-1c: "Canada West (Calgary)"
+  cn-north-1:
+    "": "China (Beijing)"
+    cn-north-1a: "China (Beijing)"
+    cn-north-1b: "China (Beijing)"
+    cn-north-1c: "China (Beijing)"
+  cn-northwest-1:
+    "": "China (Ningxia)"
+    cn-northwest-1a: "China (Ningxia)"
+    cn-northwest-1b: "China (Ningxia)"
+    cn-northwest-1c: "China (Ningxia)"
+  eu-central-1:
+    "": "Europe (Frankfurt)"
+    eu-central-1a: "Europe (Frankfurt)"
+    eu-central-1b: "Europe (Frankfurt)"
+    eu-central-1c: "Europe (Frankfurt)"
+  eu-central-2:
+    "": "Europe (Zurich)"
+    eu-central-2a: "Europe (Zurich)"
+    eu-central-2b: "Europe (Zurich)"
+    eu-central-2c: "Europe (Zurich)"
+  eu-west-1:
+    "": "Europe (Ireland)"
+    eu-west-1a: "Europe (Ireland)"
+    eu-west-1b: "Europe (Ireland)"
+    eu-west-1c: "Europe (Ireland)"
+  eu-west-2:
+    "": "Europe (London)"
+    eu-west-2a: "Europe (London)"
+    eu-west-2b: "Europe (London)"
+    eu-west-2c: "Europe (London)"
+  eu-west-3:
+    "": "Europe (Paris)"
+    eu-west-3a: "Europe (Paris)"
+    eu-west-3b: "Europe (Paris)"
+    eu-west-3c: "Europe (Paris)"
+  eu-north-1:
+    "": "Europe (Stockholm)"
+    eu-north-1a: "Europe (Stockholm)"
+    eu-north-1b: "Europe (Stockholm)"
+    eu-north-1c: "Europe (Stockholm)"
+  eu-south-1:
+    "": "Europe (Milan)"
+    eu-south-1a: "Europe (Milan)"
+    eu-south-1b: "Europe (Milan)"
+    eu-south-1c: "Europe (Milan)"
+  eu-south-2:
+    "": "Europe (Spain)"
+    eu-south-2a: "Europe (Spain)"
+    eu-south-2b: "Europe (Spain)"
+    eu-south-2c: "Europe (Spain)"
+  il-central-1:
+    "": "Israel (Tel Aviv)"
+    il-central-1a: "Israel (Tel Aviv)"
+    il-central-1b: "Israel (Tel Aviv)"
+    il-central-1c: "Israel (Tel Aviv)"
+  me-south-1:
+    "": "Middle East (Bahrain)"
+    me-south-1a: "Middle East (Bahrain)"
+    me-south-1b: "Middle East (Bahrain)"
+    me-south-1c: "Middle East (Bahrain)"
+  me-central-1:
+    "": "Middle East (UAE)"
+    me-central-1a: "Middle East (UAE)"
+    me-central-1b: "Middle East (UAE)"
+    me-central-1c: "Middle East (UAE)"
+  sa-east-1:
+    "": "South America (São Paulo)"
+    sa-east-1a: "South America (São Paulo)"
+    sa-east-1b: "South America (São Paulo)"
+    sa-east-1c: "South America (São Paulo)"
+
+# ref : https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-availability-zones
+# ref : https://www.aws-services.info/regions.html

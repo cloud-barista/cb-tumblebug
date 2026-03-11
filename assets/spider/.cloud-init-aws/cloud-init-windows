@@ -1,0 +1,4 @@
+<powershell>
+net user "administrator" "*PASSWORD*"
+</powershell>
+<persist>true</persist>

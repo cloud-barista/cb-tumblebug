@@ -1,0 +1,19 @@
+DisplayName:
+  KOR-Seoul:
+    "": "South Korea, Seoul"
+    95e2f517-d64a-4866-8585-5177c256f7c7: "South Korea, Seoul"
+    d7d0177e-6cda-404a-a46f-a5b356d2874e: "South Korea, Seoul"
+  KOR-Central:
+    "": "South Korea, Chungcheongnam-do"
+    eceb5d65-6571-4696-875f-5a17949f3317: "South Korea, Chungcheongnam-do"
+    9845bd17-d438-4bde-816d-1b12f37d5080: "South Korea, Chungcheongnam-do"
+
+CSPDisplayName:
+  KOR-Seoul:
+    "": "Seoul"
+    95e2f517-d64a-4866-8585-5177c256f7c7: "KOR-Seoul M"
+    d7d0177e-6cda-404a-a46f-a5b356d2874e: "KOR-Seoul M2"
+  KOR-Central:
+    "": "Cheonan"
+    eceb5d65-6571-4696-875f-5a17949f3317: "KOR-Central A"
+    9845bd17-d438-4bde-816d-1b12f37d5080: "KOR-Central B"
