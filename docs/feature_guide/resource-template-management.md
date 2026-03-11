@@ -81,7 +81,7 @@ Running MCI → Extract Configuration → Save as Template → Redeploy Anywhere
 
 When applying a template, only the **name** and optionally the **description** are overridden. All other configuration comes from the template unchanged:
 
-```json
+```jsonc
 // Apply request — minimal input
 {
   "name": "my-new-mci",
