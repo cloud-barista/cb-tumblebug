@@ -641,9 +641,9 @@ def register_openbao_credential(provider, credentials):
         resp = requests.post(url, json={"data": secret_data}, headers=headers, timeout=10)
         resp.raise_for_status()
         version = resp.json().get("data", {}).get("version", "?")
-        return provider, "ok", f"v{version}  keys=[{', '.join(mapped_keys)}]"
-    except requests.RequestException as e:
-        return provider, "fail", str(e)
+        return provider, "ok", f"v{version} ({len(mapped_keys)} keys)"
+    except requests.RequestException:
+        return provider, "fail", "Connection or authentication error"
 
 
 def register_openbao_placeholder_secrets(registered_providers):
@@ -671,8 +671,8 @@ def register_openbao_placeholder_secrets(registered_providers):
             resp.raise_for_status()
             print(f"  {Fore.YELLOW}PLCH{Style.RESET_ALL} {provider:12s}  placeholder registered")
             placeholder_count += 1
-        except requests.RequestException as e:
-            print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {provider:12s}  placeholder failed: {e}")
+        except requests.RequestException:
+            print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {provider:12s}  placeholder failed (check connection)")
 
     return placeholder_count
 
@@ -755,7 +755,9 @@ if run_credentials:
             else:
                 print("")
                 print(color + f"- {provider.upper()}: {message}")
-                print_credential_info(message)
+                # Only call print_credential_info if registration was successful (message is a dict)
+                if color == Fore.GREEN and isinstance(message, dict):
+                    print_credential_info(message)
 
 # Load assets (specs and images) if requested
 if run_load_assets:
