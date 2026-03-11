@@ -1,0 +1,8 @@
+#!/bin/bash
+#### add Cloud-Barista user
+useradd -s /bin/bash cb-user -rm -G sudo;
+mkdir /home/cb-user/.ssh; 
+cp -r /root/.ssh/ /home/cb-user/;
+cp -r /home/ubuntu/.ssh/ /home/cb-user/;
+chown -R cb-user:cb-user /home/cb-user;
+echo "cb-user ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers;

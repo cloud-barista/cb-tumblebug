@@ -1,0 +1,83 @@
+DisplayName:
+  default:
+    "": "Default, Default Region"
+    default-z1: "Default Zone 1, Default"
+    default-z2: "Default Zone 2, Default"
+    default-z3: "Default Zone 3, Default"
+  mercury:
+    "": "Mercury, Mercury Region"
+    mercury-z1: "Mercury Zone 1, Mercury"
+    mercury-z2: "Mercury Zone 2, Mercury"
+    mercury-z3: "Mercury Zone 3, Mercury"
+  venus:
+    "": "Venus, Venus Region"
+    venus-z1: "Venus Zone 1, Venus"
+    venus-z2: "Venus Zone 2, Venus"
+    venus-z3: "Venus Zone 3, Venus"
+  mars:
+    "": "Mars, Mars Region"
+    mars-z1: "Mars Zone 1, Mars"
+    mars-z2: "Mars Zone 2, Mars"
+    mars-z3: "Mars Zone 3, Mars"
+  jupiter:
+    "": "Jupiter, Jupiter Region"
+    jupiter-z1: "Jupiter Zone 1, Jupiter"
+    jupiter-z2: "Jupiter Zone 2, Jupiter"
+    jupiter-z3: "Jupiter Zone 3, Jupiter"
+  saturn:
+    "": "Saturn, Saturn Region"
+    saturn-z1: "Saturn Zone 1, Saturn"
+    saturn-z2: "Saturn Zone 2, Saturn"
+    saturn-z3: "Saturn Zone 3, Saturn"
+  uranus:
+    "": "Uranus, Uranus Region"
+    uranus-z1: "Uranus Zone 1, Uranus"
+    uranus-z2: "Uranus Zone 2, Uranus"
+    uranus-z3: "Uranus Zone 3, Uranus"
+  neptune:
+    "": "Neptune, Neptune Region"
+    neptune-z1: "Neptune Zone 1, Neptune"
+    neptune-z2: "Neptune Zone 2, Neptune"
+    neptune-z3: "Neptune Zone 3, Neptune"
+
+CSPDisplayName:
+  default:
+    "": "Default, Default Region"
+    default-z1: "Default Zone 1, Default"
+    default-z2: "Default Zone 2, Default"
+    default-z3: "Default Zone 3, Default"
+  mercury:
+    "": "Mercury, Mercury Region"
+    mercury-z1: "Mercury Zone 1, Mercury"
+    mercury-z2: "Mercury Zone 2, Mercury"
+    mercury-z3: "Mercury Zone 3, Mercury"
+  venus:
+    "": "Venus, Venus Region"
+    venus-z1: "Venus Zone 1, Venus"
+    venus-z2: "Venus Zone 2, Venus"
+    venus-z3: "Venus Zone 3, Venus"
+  mars:
+    "": "Mars, Mars Region"
+    mars-z1: "Mars Zone 1, Mars"
+    mars-z2: "Mars Zone 2, Mars"
+    mars-z3: "Mars Zone 3, Mars"
+  jupiter:
+    "": "Jupiter, Jupiter Region"
+    jupiter-z1: "Jupiter Zone 1, Jupiter"
+    jupiter-z2: "Jupiter Zone 2, Jupiter"
+    jupiter-z3: "Jupiter Zone 3, Jupiter"
+  saturn:
+    "": "Saturn, Saturn Region"
+    saturn-z1: "Saturn Zone 1, Saturn"
+    saturn-z2: "Saturn Zone 2, Saturn"
+    saturn-z3: "Saturn Zone 3, Saturn"
+  uranus:
+    "": "Uranus, Uranus Region"
+    uranus-z1: "Uranus Zone 1, Uranus"
+    uranus-z2: "Uranus Zone 2, Uranus"
+    uranus-z3: "Uranus Zone 3, Uranus"
+  neptune:
+    "": "Neptune, Neptune Region"
+    neptune-z1: "Neptune Zone 1, Neptune"
+    neptune-z2: "Neptune Zone 2, Neptune"
+    neptune-z3: "Neptune Zone 3, Neptune"

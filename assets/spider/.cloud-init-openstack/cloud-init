@@ -1,0 +1,11 @@
+#cloud-config
+users:
+  - name: {{username}}
+    ssh-authorized-keys:
+      - {{public_key}}
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    groups: sudo
+    shell: /bin/bash
+runcmd:
+  - sed -i -e '$aAllowUsers {{username}}' /etc/ssh/sshd_config
+  - restart ssh

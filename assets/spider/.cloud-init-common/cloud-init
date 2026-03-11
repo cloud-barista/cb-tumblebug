@@ -1,0 +1,7 @@
+#!/bin/bash
+#### add Cloud-Barista user
+useradd -s /bin/bash cb-user -rm -G sudo;
+mkdir /home/cb-user/.ssh; 
+curl -s `cloud-init query subplatform | sed 's/metadata (//g' | sed 's/)//g'`/latest/meta-data/public-keys/0/openssh-key > /home/cb-user/.ssh/authorized_keys;
+chown -R cb-user:cb-user /home/cb-user;
+echo "cb-user ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers;

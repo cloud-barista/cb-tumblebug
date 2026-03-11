@@ -1,0 +1,113 @@
+DisplayName:
+  au-syd:
+    "": "Australia, Sydney"
+    au-syd-1: "Australia, Sydney"
+    au-syd-2: "Australia, Sydney"
+    au-syd-3: "Australia, Sydney"
+  br-sao:
+    "": "Brazil, Sao Paulo"
+    br-sao-1: "Brazil, Sao Paulo"
+    br-sao-2: "Brazil, Sao Paulo"
+    br-sao-3: "Brazil, Sao Paulo"
+  ca-tor:
+    "": "Canada, Toronto"
+    ca-tor-1: "Canada, Toronto"
+    ca-tor-2: "Canada, Toronto"
+    ca-tor-3: "Canada, Toronto"
+  eu-de:
+    "": "Germany, Frankfurt"
+    eu-de-1: "Germany, Frankfurt"
+    eu-de-2: "Germany, Frankfurt"
+    eu-de-3: "Germany, Frankfurt"
+  eu-gb:
+    "": "United Kingdom, London"
+    eu-gb-1: "United Kingdom, London"
+    eu-gb-2: "United Kingdom, London"
+    eu-gb-3: "United Kingdom, London"
+  eu-es:
+    "": "Spain, Madrid"
+    eu-es-1: "Spain, Madrid"
+    eu-es-2: "Spain, Madrid"
+    eu-es-3: "Spain, Madrid"
+  in-che:
+    "": "India, Chennai"
+    in-che-1: "India, Chennai"
+    in-che-2: "India, Chennai"
+    in-che-3: "India, Chennai"
+  jp-osa:
+    "": "Japan, Osaka"
+    jp-osa-1: "Japan, Osaka"
+    jp-osa-2: "Japan, Osaka"
+    jp-osa-3: "Japan, Osaka"
+  jp-tok:
+    "": "Japan, Tokyo"
+    jp-tok-1: "Japan, Tokyo"
+    jp-tok-2: "Japan, Tokyo"
+    jp-tok-3: "Japan, Tokyo"
+  us-east:
+    "": "United States, Washington DC"
+    us-east-1: "United States, Washington DC"
+    us-east-2: "United States, Washington DC"
+    us-east-3: "United States, Washington DC"
+  us-south:
+    "": "United States, Dallas"
+    us-south-1: "United States, Dallas"
+    us-south-2: "United States, Dallas"
+    us-south-3: "United States, Dallas"
+
+CSPDisplayName:
+  au-syd:
+    "": "Sydney"
+    au-syd-1: "Sydney"
+    au-syd-2: "Sydney"
+    au-syd-3: "Sydney"
+  br-sao:
+    "": "Sao Paulo"
+    br-sao-1: "Sao Paulo"
+    br-sao-2: "Sao Paulo"
+    br-sao-3: "Sao Paulo"
+  ca-tor:
+    "": "Toronto"
+    ca-tor-1: "Toronto"
+    ca-tor-2: "Toronto"
+    ca-tor-3: "Toronto"
+  eu-de:
+    "": "Frankfurt"
+    eu-de-1: "Frankfurt"
+    eu-de-2: "Frankfurt"
+    eu-de-3: "Frankfurt"
+  eu-gb:
+    "": "London"
+    eu-gb-1: "London"
+    eu-gb-2: "London"
+    eu-gb-3: "London"
+  eu-es:
+    "": "Madrid"
+    eu-es-1: "Madrid"
+    eu-es-2: "Madrid"
+    eu-es-3: "Madrid"
+  in-che:
+    "": "Chennai"
+    in-che-1: "Chennai"
+    in-che-2: "Chennai"
+    in-che-3: "Chennai"
+  jp-osa:
+    "": "Osaka"
+    jp-osa-1: "Osaka"
+    jp-osa-2: "Osaka"
+    jp-osa-3: "Osaka"
+  jp-tok:
+    "": "Tokyo"
+    jp-tok-1: "Tokyo"
+    jp-tok-2: "Tokyo"
+    jp-tok-3: "Tokyo"
+  us-east:
+    "": "Washington DC"
+    us-east-1: "Washington DC"
+    us-east-2: "Washington DC"
+    us-east-3: "Washington DC"
+  us-south:
+    "": "Dallas"
+    us-south-1: "Dallas"
+    us-south-2: "Dallas"
+    us-south-3: "Dallas"

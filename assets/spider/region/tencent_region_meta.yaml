@@ -1,0 +1,194 @@
+DisplayName:
+  ap-beijing:
+    "": "China, Beijing"
+    ap-beijing-1: "China, Beijing"
+    ap-beijing-2: "China, Beijing"
+    ap-beijing-3: "China, Beijing"
+    ap-beijing-4: "China, Beijing"
+    ap-beijing-5: "China, Beijing"
+    ap-beijing-6: "China, Beijing"
+    ap-beijing-7: "China, Beijing"
+  ap-chengdu:
+    "": "China, Sichuan"
+    ap-chengdu-1: "China, Sichuan"
+    ap-chengdu-2: "China, Sichuan"
+  ap-chongqing:
+    "": "China, Chongqing"
+    ap-chongqing-1: "China, Chongqing"
+  ap-guangzhou:
+    "": "China, Guangdong"
+    ap-guangzhou-1: "China, Guangdong"
+    ap-guangzhou-2: "China, Guangdong"
+    ap-guangzhou-3: "China, Guangdong"
+    ap-guangzhou-4: "China, Guangdong"
+    # ap-guangzhou-5: China, Guangdong # Not exists in the csp's list
+    ap-guangzhou-6: "China, Guangdong"
+    ap-guangzhou-7: "China, Guangdong"
+  ap-nanjing:
+    "": "China, Jiangsu"
+    ap-nanjing-1: "China, Jiangsu"
+    ap-nanjing-2: "China, Jiangsu"
+    ap-nanjing-3: "China, Jiangsu"
+  ap-shanghai:
+    "": "China, Shanghai"
+    ap-shanghai-1: "China, Shanghai"
+    ap-shanghai-2: "China, Shanghai"
+    ap-shanghai-3: "China, Shanghai"
+    ap-shanghai-4: "China, Shanghai"
+    ap-shanghai-5: "China, Shanghai"
+  ap-shenzhen-fsi: # finance zone
+    "": "China, Guangdong"
+    ap-shenzhen-fsi-1: "China, Guangdong"
+    ap-shenzhen-fsi-2: "China, Guangdong"
+    ap-shenzhen-fsi-3: "China, Guangdong"
+  ap-tianjin: # not available
+    "": "China, Tianjin"
+    ap-tianjin-1: "China, Tianjin"
+  ap-hongkong:
+    "": "China, Hong Kong"
+    ap-hongkong-1: "China, Hong Kong"
+    ap-hongkong-2: "China, Hong Kong"
+  ap-tokyo:
+    "": "Japan, Tokyo"
+    ap-tokyo-1: "Japan, Tokyo"
+    ap-tokyo-2: "Japan, Tokyo"
+  ap-seoul:
+    "": "South Korea, Seoul"
+    ap-seoul-1: "South Korea, Seoul"
+    ap-seoul-2: "South Korea, Seoul"
+  ap-singapore:
+    "": "Singapore, Singapore"
+    ap-singapore-1: "Singapore, Singapore"
+    ap-singapore-2: "Singapore, Singapore"
+    ap-singapore-3: "Singapore, Singapore"
+    ap-singapore-4: "Singapore, Singapore"
+  ap-bangkok:
+    "": "Thailand, Bangkok"
+    ap-bangkok-1: "Thailand, Bangkok"
+    ap-bangkok-2: "Thailand, Bangkok"
+  ap-mumbai: # not available
+    "": "India, Maharashtra"
+    ap-mumbai-1: "India, Maharashtra"
+  ap-jakarta:
+    "": "Indonesia, Jakarta"
+    ap-jakarta-1: "Indonesia, Jakarta"
+  eu-frankfurt:
+    "": "Germany, Hesse" # Nodes in Frankfurt can cover Europe
+    eu-frankfurt-1: "Germany, Hesse"
+  eu-moscow: # not available
+    "": "Russia, Moscow"
+    eu-moscow-1: "Russia, Moscow"
+    eu-moscow-2: "Russia, Moscow"
+  na-siliconvalley:
+    "": "United States, California" # Nodes in Silicon Valley can cover Western US
+    na-siliconvalley-1: "United States, California"
+    na-siliconvalley-2: "United States, California"
+  na-ashburn:
+    "": "United States, Virginia" # Nodes in Virginia can cover Eastern US
+    na-ashburn-1: "United States, Virginia"
+  na-toronto: # not available
+    "": "Canada, Ontario"
+    na-toronto-1: "Canada, Ontario"
+    na-toronto-2: "Canada, Ontario"
+  sa-saopaulo:
+    "": "Brazil, São Paulo"
+    sa-saopaulo-1: "Brazil, São Paulo"
+    sa-saopaulo-2: "Brazil, São Paulo"
+
+
+CSPDisplayName:
+  ap-beijing:
+    "": "North China (Beijing)"
+    ap-beijing-1: "North China (Beijing)" # (sold out)
+    ap-beijing-2: "North China (Beijing)" # (sold out)
+    ap-beijing-3: "North China (Beijing)"
+    ap-beijing-4: "North China (Beijing)" # (sold out)
+    ap-beijing-5: "North China (Beijing)" # (sold out)
+    ap-beijing-6: "North China (Beijing)"
+    ap-beijing-7: "North China (Beijing)"
+  ap-chengdu:
+    "": "Southwest China (Chengdu)"
+    ap-chengdu-1: "Southwest China (Chengdu)"
+    ap-chengdu-2: "Southwest China (Chengdu)" # (sold out)
+  ap-chongqing:
+    "": "Southwest China (Chongqing)"
+    ap-chongqing-1: "Southwest China (Chongqing)"
+  ap-guangzhou:
+    "": "South China (Guangzhou)"
+    ap-guangzhou-1: "South China (Guangzhou)" # (sold out)
+    ap-guangzhou-2: "South China (Guangzhou)" # (sold out)
+    ap-guangzhou-3: "South China (Guangzhou)" # (sold out)
+    ap-guangzhou-4: "South China (Guangzhou)" # (sold out)
+    ap-guangzhou-6: "South China (Guangzhou)"
+    ap-guangzhou-7: "South China (Guangzhou)"
+  ap-nanjing:
+    "": "East China (Nanjing)"
+    ap-nanjing-1: "East China (Nanjing)"
+    ap-nanjing-2: "East China (Nanjing)" # (sold out)
+    ap-nanjing-3: "East China (Nanjing)"
+  ap-shanghai:
+    "": "East China (Shanghai)"
+    ap-shanghai-1: "East China (Shanghai)" # (sold out)
+    ap-shanghai-2: "East China (Shanghai)"
+    ap-shanghai-3: "East China (Shanghai)" # (sold out)
+    ap-shanghai-4: "East China (Shanghai)" # (sold out)
+    ap-shanghai-5: "East China (Shanghai)"
+  ap-shenzhen-fsi: # Not exists in the csp's list. finance purpose region
+    "": "South China (Shenzhen)"
+    ap-shenzhen-fsi-1: "South China (Shenzhen)"
+    ap-shenzhen-fsi-2: "South China (Shenzhen)"
+  ap-tianjin: # Not exists in the csp's list
+    "": "North China (Tianjin)"
+    ap-tianjin-1: "North China (Tianjin)"
+  ap-hongkong:
+    "": "Hong Kong/Macao/Taiwan (Hong Kong, China)"
+    ap-hongkong-1: "Hong Kong/Macao/Taiwan (Hong Kong, China)"
+    ap-hongkong-2: "Hong Kong/Macao/Taiwan (Hong Kong, China)"
+    ap-hongkong-3: "Hong Kong/Macao/Taiwan (Hong Kong, China)"
+  ap-tokyo:
+    "": "Northeast Asia (Tokyo)"
+    ap-tokyo-1: "Northeast Asia (Tokyo)"
+    ap-tokyo-2: "Northeast Asia (Tokyo)"
+  ap-seoul:
+    "": "Northeast Asia (Seoul)"
+    ap-seoul-1: "Northeast Asia (Seoul)"
+    ap-seoul-2: "Northeast Asia (Seoul)"
+  ap-singapore:
+    "": "Southeast Asia (Singapore)"
+    ap-singapore-1: "Southeast Asia (Singapore)"
+    ap-singapore-2: "Southeast Asia (Singapore)"
+    ap-singapore-3: "Southeast Asia (Singapore)"
+    ap-singapore-4: "Southeast Asia (Singapore)"
+  ap-bangkok:
+    "": "Southeast Asia (Bangkok)"
+    ap-bangkok-1: "Southeast Asia (Bangkok)"
+    ap-bangkok-2: "Southeast Asia (Bangkok)"
+  ap-mumbai: # Not exists in the csp's list
+    "": "South Asia (Mumbai)"
+    ap-mumbai-1: "South Asia (Mumbai)"
+  ap-jakarta:
+    "": "Southeast Asia (Jakarta)"
+    ap-jakarta-1: "Southeast Asia (Jakarta)"
+  eu-frankfurt:
+    "": "Europe (Frankfurt)"
+    eu-frankfurt-1: "Europe (Frankfurt)"
+  eu-moscow: # Not exists in the csp's list
+    "": "Europe (Moscow)"
+    eu-moscow-1: "Europe (Moscow)"
+    eu-moscow-2: "Europe (Moscow)"
+  na-siliconvalley:
+    "": "West US (Silicon Valley)"
+    na-siliconvalley-1: "West US (Silicon Valley)"
+    na-siliconvalley-2: "West US (Silicon Valley)"
+  na-ashburn:
+    "": "East US (Virginia)"
+    na-ashburn-1: "East US (Virginia)"
+    na-ashburn-2: "East US (Virginia)"
+  na-toronto: # Not in the csp's list
+    "": "North America (Toronto)"
+    na-toronto-1: "North America (Toronto)"
+    na-toronto-2: "North America (Toronto)"
+  sa-saopaulo:
+    "": "South America (São Paulo)"
+    sa-saopaulo-1: "South America (São Paulo)"
+    sa-saopaulo-2: "South America (São Paulo)"
