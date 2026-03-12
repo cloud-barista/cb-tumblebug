@@ -226,6 +226,11 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.SubnetReq) (model
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
+	err = common.CheckString(subnetReq.Name)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
 
 	subnetInfo.Id = subnetReq.Name
 	subnetInfo.Name = subnetReq.Name

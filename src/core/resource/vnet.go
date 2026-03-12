@@ -27,6 +27,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -518,6 +519,13 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
+	for _, subnetInfo := range vNetReq.SubnetInfoList {
+		err = common.CheckString(subnetInfo.Name)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return emptyRet, err
+		}
+	}
 
 	// Set the resource type
 	resourceType := model.StrVNet
@@ -530,11 +538,12 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 	vNetInfo.Id = vNetReq.Name
 	vNetInfo.Uid = uid
 	vNetInfo.ConnectionName = vNetReq.ConnectionName
-	vNetInfo.ConnectionConfig, err = common.GetConnConfig(vNetInfo.ConnectionName)
+	connConfig, err := common.GetConnConfig(vNetInfo.ConnectionName)
 	if err != nil {
 		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 		log.Error().Err(err).Msg("")
 	}
+	vNetInfo.ConnectionConfig = connConfig
 	vNetInfo.Description = vNetReq.Description
 	// todo: restore the tag list later
 	// vNetInfo.TagList = vNetReq.TagList
@@ -543,12 +552,13 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 	//       since each subnet uid must be consistent
 	for _, subnetInfo := range vNetReq.SubnetInfoList {
 		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, model.SubnetInfo{
-			ResourceType: model.StrSubnet,
-			Id:           subnetInfo.Name,
-			Name:         subnetInfo.Name,
-			Uid:          common.GenUid(),
-			IPv4_CIDR:    subnetInfo.IPv4_CIDR,
-			Zone:         subnetInfo.Zone,
+			ResourceType:     model.StrSubnet,
+			Id:               subnetInfo.Name,
+			Name:             subnetInfo.Name,
+			Uid:              common.GenUid(),
+			IPv4_CIDR:        subnetInfo.IPv4_CIDR,
+			Zone:             subnetInfo.Zone,
+			ConnectionConfig: connConfig,
 			// todo: restore the tag list later
 			// TagList:   subnetInfo.TagList,
 		})
@@ -592,6 +602,9 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 	spReqt := spiderCreateVPCRequest{}
 	spReqt.ConnectionName = vNetReq.ConnectionName
 	spReqt.ReqInfo.Name = vNetInfo.Uid
+	// ! The following CSPs actually doesn't support to set CIDR block. (GCP, IBM)
+	// * However, Tumblebug "intentionally" manages the CIDR block for multi-cloud network management purpose.
+	// NOTE: Since Spider has CIDR block processing logic, it is input regardless of CSP when calling the API.
 	spReqt.ReqInfo.IPv4_CIDR = vNetReq.CidrBlock
 
 	// Note: Use the subnets in the vNetInfo object (instead of the vNetReq object)
@@ -672,8 +685,14 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 	// Set the vNet object with the response from the Spider
 	vNetInfo.CspResourceId = spResp.IId.SystemId
 	vNetInfo.CspResourceName = spResp.IId.NameId
-	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
+	// ! The following CSPs actually doesn't support to set CIDR block. (GCP, IBM)
+	// * However, Tumblebug "intentionally" manages the CIDR block entered by the user. It's for multi-cloud network management purpose.
+	if vNetReq.CidrBlock != "" && (vNetInfo.ConnectionConfig.ProviderName == csp.GCP || vNetInfo.ConnectionConfig.ProviderName == csp.IBM) {
+		vNetInfo.CidrBlock = vNetReq.CidrBlock
+	} else {
+		vNetInfo.CidrBlock = spResp.IPv4_CIDR
+	}
 	// todo: restore the tag list later
 	// vNetInfo.TagList = spResp.TagList
 
