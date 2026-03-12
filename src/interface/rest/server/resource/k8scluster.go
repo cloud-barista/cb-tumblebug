@@ -389,6 +389,33 @@ func RestGetK8sCluster(c echo.Context) error {
 	}
 }
 
+// RestGetK8sClusterToken func is a rest api wrapper for GetK8sClusterToken.
+// RestGetK8sClusterToken godoc
+// @ID GetK8sClusterToken
+// @Summary Get a token for K8sCluster access
+// @Description Proxies CB-Spider's cluster token API and returns an ExecCredential token.
+// @Description Only applicable to CSPs that use exec-based authentication (e.g., GCP GKE, AWS EKS).
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
+// @Success 200 {object} resource.SpiderClusterTokenResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/token [get]
+func RestGetK8sClusterToken(c echo.Context) error {
+	nsId := c.Param("nsId")
+	k8sClusterId := c.Param("k8sClusterId")
+
+	res, err := resource.GetK8sClusterToken(nsId, k8sClusterId)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to get token for K8sCluster " + k8sClusterId + ": " + err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
 // Response structure for RestGetAllK8sCluster
 type RestGetAllK8sClusterResponse struct {
 	K8sCluster []model.K8sClusterInfo `json:"K8sClusterInfo"`
