@@ -910,7 +910,8 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 	// Set the vNet object with the response from the Spider
 	vNetInfo.CspResourceId = spResp.IId.SystemId
 	vNetInfo.CspResourceName = spResp.IId.NameId
-	vNetInfo.CidrBlock = spResp.IPv4_CIDR
+	// Intentionally use the user-provided vNet CIDR block managed by Tumblebug for multi-cloud network management purpose
+	// vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
 	// todo: restore the tag list later
 	// vNetInfo.TagList = spResp.TagList
