@@ -1812,7 +1812,7 @@ cloud:
         - jp-pub-a
         - jp-pub-b
       US1:
-        id: US1      
+        id: US1
         desc: US West (California)
         location:
           display: California, USA
@@ -1824,13 +1824,15 @@ cloud:
     description: OpenStack
     driver: openstack-driver-v1.0.so
     region:
-      regionone:
+      RegionOne:
+        id: RegionOne
         description: Korea Daejeon (Internal)
         location:
           display: South Korea (Daejeon)
           latitude: 36.3804
           longitude: 127.365
-        zone: []
+        zone:
+        - nova
   tencent:
     description: Tencent Cloud
     driver: tencent-driver-v1.0.so
