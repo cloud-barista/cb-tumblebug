@@ -228,7 +228,7 @@ var cspSupportingObjectStorage = map[string]bool{
 }
 
 func isObjectStorageSupported(cspType string) bool {
-	cspType = strings.ToLower(cspType)
+	cspType = csp.ResolveCloudPlatform(cspType)
 	supported, exists := cspSupportingObjectStorage[cspType]
 	if !exists {
 		return false
@@ -250,7 +250,7 @@ var cspSupportingObjectStorageCors = map[string]bool{
 }
 
 func isObjectStorageCorsSupported(cspType string) bool {
-	cspType = strings.ToLower(cspType)
+	cspType = csp.ResolveCloudPlatform(cspType)
 	supported, exists := cspSupportingObjectStorageCors[cspType]
 	if !exists {
 		return false
@@ -272,7 +272,7 @@ var cspSupportingObjectStorageVersioning = map[string]bool{
 }
 
 func isObjectStorageVersioningSupported(cspType string) bool {
-	cspType = strings.ToLower(cspType)
+	cspType = csp.ResolveCloudPlatform(cspType)
 	supported, exists := cspSupportingObjectStorageVersioning[cspType]
 	if !exists {
 		return false

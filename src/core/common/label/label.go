@@ -104,7 +104,9 @@ func isCSPSyncEnabled(labelType string, connectionName string) bool {
 	}
 
 	// Check if this CSP globally doesn't support tags for any resource types
-	if shouldSkip, exists := cspSyncSkipConfig.CSPGlobalSkip[cspType]; exists && shouldSkip {
+	// Use ResolveCloudPlatform to handle derived CSPs (e.g., openstack-new01 → openstack)
+	platformType := csp.ResolveCloudPlatform(cspType)
+	if shouldSkip, exists := cspSyncSkipConfig.CSPGlobalSkip[platformType]; exists && shouldSkip {
 		return false
 	}
 
@@ -114,7 +116,7 @@ func isCSPSyncEnabled(labelType string, connectionName string) bool {
 	}
 
 	// Check CSP-specific skip configuration
-	if cspSkipMap, exists := cspSyncSkipConfig.CSPSpecificSkipConfig[cspType]; exists {
+	if cspSkipMap, exists := cspSyncSkipConfig.CSPSpecificSkipConfig[platformType]; exists {
 		if shouldSkip, exists := cspSkipMap[labelType]; exists && shouldSkip {
 			return false
 		}

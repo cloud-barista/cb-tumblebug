@@ -1833,6 +1833,20 @@ cloud:
           longitude: 127.365
         zone:
         - nova
+  openstack-ex01:
+    description: Example of OpenStack-based CSP
+    cloudPlatform: openstack
+    driver: openstack-driver-v1.0.so
+    region:
+      RegionOne:
+        id: RegionOne
+        description: Example of OpenStack New01 Region
+        location:
+          display: South Korea (virtual region)
+          latitude: 37.5665
+          longitude: 127.578
+        zone:
+        - nova
   tencent:
     description: Tencent Cloud
     driver: tencent-driver-v1.0.so
