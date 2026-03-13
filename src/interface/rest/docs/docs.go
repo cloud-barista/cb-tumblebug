@@ -17770,6 +17770,9 @@ const docTemplate = `{
         "model.CSPDetail": {
             "type": "object",
             "properties": {
+                "cloudPlatform": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },

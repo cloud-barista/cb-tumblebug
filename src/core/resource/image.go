@@ -61,6 +61,8 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 
 	regionAgnosticProviders := []string{csp.Azure, csp.GCP, csp.Tencent}
 
+	// Note: regionAgnosticProviders is checked against resolved platform below via slices.Contains.
+
 	if spiderImage.IId.NameId == "" {
 		err := fmt.Errorf("ConvertSpiderImageToTumblebugImage failed; spiderImage.IId.NameId == EmptyString")
 		emptyTumblebugImage := model.ImageInfo{}
@@ -76,8 +78,9 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 
 	cspImageName := spiderImage.IId.NameId
 	providerName := connectionConfig.ProviderName
+	platformName := csp.ResolveCloudPlatform(providerName)
 	currentRegion := connectionConfig.RegionDetail.RegionName
-	if slices.Contains(regionAgnosticProviders, providerName) {
+	if slices.Contains(regionAgnosticProviders, platformName) {
 		// For region-agnostic providers, use common region
 		currentRegion = model.StrCommon
 	}
@@ -128,7 +131,7 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	// Check if this is a Kubernetes image
 	// AWS/GCP do not use imageId for K8s node creation; skip keyword-based detection.
 	// IsKubernetesImage=true for AWS/GCP is set only via cloudimage.csv asset loading.
-	if providerName != csp.AWS && providerName != csp.GCP {
+	if platformName != csp.AWS && platformName != csp.GCP {
 		if common.IsK8sImage(searchStr) {
 			tumblebugImage.IsKubernetesImage = true
 		}
@@ -146,21 +149,21 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	// KT Cloud and IBM Cloud have specific architecture mappings
 	if spiderImage.OSArchitecture == model.ArchitectureNA {
 		// For KT Cloud, we set X86_64 if the architecture is not specified
-		if providerName == csp.KT {
+		if platformName == csp.KT {
 			tumblebugImage.OSArchitecture = model.X86_64
 		}
 		// For IBM Cloud, we set S390X if the architecture is not specified
-		if providerName == csp.IBM {
+		if platformName == csp.IBM {
 			tumblebugImage.OSArchitecture = model.S390X
 		}
 	}
 	tumblebugImage.OSPlatform = spiderImage.OSPlatform
 	tumblebugImage.OSDistribution = spiderImage.OSDistribution
-	if providerName == csp.NHN {
+	if platformName == csp.NHN {
 		// For NHN Cloud, we need to extract the OS distribution from KeyValueList
 		tumblebugImage.OSDistribution = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
 	}
-	if providerName == csp.NCP {
+	if platformName == csp.NCP {
 		// For NCP, we need to extract the hypervisor type from KeyValueList and append it to the OSDistribution
 		hypervisorInfo := common.LookupKeyValueList(spiderImage.KeyValueList, "HypervisorType")
 		if hypervisorInfo != "" {
@@ -990,7 +993,7 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 
 			// Adjust parallel connections for specific providers
 			providerParallelConn := parallelConnPerProvider
-			if provider == csp.AWS {
+			if csp.ResolveCloudPlatform(provider) == csp.AWS {
 				providerParallelConn = 3 // to handle more parallel connections
 			}
 
@@ -1259,7 +1262,7 @@ func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, c
 
 	// AWS/GCP rows registered in cloudimage.csv are always K8s node image types.
 	// They are not real imageIds but type identifiers (ami-type / image-type).
-	if strings.EqualFold(providerName, csp.AWS) || strings.EqualFold(providerName, csp.GCP) {
+	if strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.AWS) || strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.GCP) {
 		imageInfo.IsKubernetesImage = true
 	}
 
@@ -1309,7 +1312,7 @@ func mergeCSPDetails(target *model.ImageInfo, source *model.ImageInfo) {
 	target.IsGPUImage = source.IsGPUImage
 	// Do not overwrite IsKubernetesImage for AWS/GCP CSV-loaded images.
 	// Their IsKubernetesImage=true is set by policy (cloudimage.csv), not by CSP lookup.
-	if !strings.EqualFold(target.ProviderName, csp.AWS) && !strings.EqualFold(target.ProviderName, csp.GCP) {
+	if !strings.EqualFold(csp.ResolveCloudPlatform(target.ProviderName), csp.AWS) && !strings.EqualFold(csp.ResolveCloudPlatform(target.ProviderName), csp.GCP) {
 		target.IsKubernetesImage = source.IsKubernetesImage
 	}
 	target.Details = source.Details
@@ -1332,7 +1335,7 @@ func updateExistingImageFromCSV(existingImage model.ImageInfo, osType, descripti
 	}
 
 	// Re-apply policy: AWS/GCP CSV-registered images are always K8s node image types.
-	if strings.EqualFold(existingImage.ProviderName, csp.AWS) || strings.EqualFold(existingImage.ProviderName, csp.GCP) {
+	if strings.EqualFold(csp.ResolveCloudPlatform(existingImage.ProviderName), csp.AWS) || strings.EqualFold(csp.ResolveCloudPlatform(existingImage.ProviderName), csp.GCP) {
 		existingImage.IsKubernetesImage = true
 	}
 
@@ -1457,7 +1460,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 				// in cloudimage.csv are not real CSP image IDs — they are EKS/GKE internal type keywords.
 				// CSP lookup via CB-Spider will always fail for these, so skip enrichment.
 				skipCSPLookup := tmpImageInfo.IsKubernetesImage &&
-					(strings.EqualFold(providerName, csp.AWS) || strings.EqualFold(providerName, csp.GCP))
+					(strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.AWS) || strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.GCP))
 
 				if !skipCSPLookup {
 					// Try to enrich with CSP lookup (optional)
@@ -2254,7 +2257,7 @@ func GetImagesByRegion(nsId string, provider string, region string) ([]model.Ima
 
 // applyCspSpecificImageFiltering applies CSP-specific filtering rules based on spec information
 func applyCspSpecificImageFiltering(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
-	switch strings.ToLower(specInfo.ProviderName) {
+	switch csp.ResolveCloudPlatform(specInfo.ProviderName) {
 	case csp.NCP:
 		return filterImagesByCorrespondingIds(images, specInfo)
 	// Add more CSP-specific filtering logic here as needed

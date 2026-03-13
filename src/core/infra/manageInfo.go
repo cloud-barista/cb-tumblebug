@@ -2626,7 +2626,7 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 		return err
 	}
 
-	log.Debug().Msg("[Delete VM] " + vmId)
+	log.Debug().Msg("Deleting VM " + vmId)
 
 	// skip termination if option is force
 	if option != "force" {
@@ -2637,9 +2637,9 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 			return err
 		}
 		// for deletion, need to wait until termination is finished
-		// Sleep for 5 seconds
-		log.Info().Msg("Wait for VM termination in 5 seconds")
-		time.Sleep(5 * time.Second)
+		// Sleep for 2 seconds
+		log.Info().Msg("Wait for VM termination in 2 seconds")
+		time.Sleep(2 * time.Second)
 
 	}
 

@@ -2140,7 +2140,7 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 
 			// NCP special case: Always require zone assignment for K8s cluster subnet consistency
 			// ref: https://github.com/cloud-barista/cb-tumblebug/issues/2136
-			if provider == csp.NCP {
+			if csp.ResolveCloudPlatform(provider) == csp.NCP {
 				shouldAssignZone = true
 			}
 
@@ -2169,7 +2169,7 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 
 			// Check if provider requires only single subnet
-			requiresSingleSubnet := slices.Contains(singleSubnetProviders, provider)
+			requiresSingleSubnet := slices.Contains(singleSubnetProviders, csp.ResolveCloudPlatform(provider))
 
 			// Create second subnet only if provider supports multiple subnets
 			// When explicit zone is specified, second subnet is placed in a different zone for redundancy
@@ -2198,7 +2198,7 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 							subnet.Zone = explicitZone
 							log.Warn().Msgf("No different zone available, using same zone '%s' for second subnet", explicitZone)
 						}
-					} else if provider == csp.NCP {
+					} else if csp.ResolveCloudPlatform(provider) == csp.NCP {
 						// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
 						// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
 						subnet.Zone = zones[0]
@@ -2235,7 +2235,7 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 			rule = model.FirewallRuleReq{Ports: "1-65535", Protocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 			ruleList = append(ruleList, rule)
 			// CloudIt only offers tcp, udp Protocols
-			if !strings.EqualFold(provider, "cloudit") {
+			if !strings.EqualFold(csp.ResolveCloudPlatform(provider), "cloudit") {
 				rule = model.FirewallRuleReq{Protocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 				ruleList = append(ruleList, rule)
 			}

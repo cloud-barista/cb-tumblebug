@@ -36,6 +36,7 @@ import (
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	uid "github.com/rs/xid"
@@ -564,6 +565,17 @@ func GetConnConfigListByProviderRegionZone(provider, region, zone string) ([]str
 
 // RegisterAllCloudInfo is func to register all cloud info from asset to CB-Spider
 func RegisterAllCloudInfo() error {
+	// First, populate the cloud platform mapping for all CSPs
+	for providerName, cspDetail := range RuntimeCloudInfo.CSPs {
+		if cspDetail.CloudPlatform != "" {
+			// Derived CSP: maps to the base platform (e.g., openstack-new01 → openstack)
+			csp.RegisterCloudPlatform(providerName, cspDetail.CloudPlatform)
+		} else {
+			// Standard CSP: identity mapping (e.g., aws → aws)
+			csp.RegisterCloudPlatform(providerName, providerName)
+		}
+	}
+
 	for providerName := range RuntimeCloudInfo.CSPs {
 		err := RegisterCloudInfo(providerName)
 		if err != nil {
@@ -587,11 +599,16 @@ func RegisterCloudInfo(providerName string) error {
 
 	driverName := RuntimeCloudInfo.CSPs[providerName].Driver
 
+	// Resolve the cloud platform type for Spider registration.
+	// Spider uses ProviderName to select the correct driver handler,
+	// so it must be the platform type (e.g., "OPENSTACK") not the CSP instance name (e.g., "OPENSTACK-NEW01").
+	platformName := csp.ResolveCloudPlatform(providerName)
+
 	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/driver"
 	method := "POST"
 	var callResult model.CloudDriverInfo
-	requestBody := model.CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
+	requestBody := model.CloudDriverInfo{ProviderName: strings.ToUpper(platformName), DriverName: driverName, DriverLibFileName: driverName}
 
 	_, err := clientManager.ExecuteHttpRequest(
 		client,
@@ -626,7 +643,11 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	url := model.SpiderRestUrl + "/region"
 	method := "POST"
 	var callResult model.SpiderRegionZoneInfo
-	requestBody := model.SpiderRegionZoneInfo{ProviderName: strings.ToUpper(providerName), RegionName: regionName}
+
+	// Use platform name for Spider's ProviderName (driver selection),
+	// but keep CSP instance name in RegionName for uniqueness.
+	platformName := csp.ResolveCloudPlatform(providerName)
+	requestBody := model.SpiderRegionZoneInfo{ProviderName: strings.ToUpper(platformName), RegionName: regionName}
 
 	// register representative regionZone (region only)
 	requestBody.RegionName = providerName + "-" + regionName
@@ -839,9 +860,14 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 		decryptedKeyValueList[i].Value = strings.ReplaceAll(keyValue.Value, "\\n", "\n")
 	}
 
+	// Resolve cloud platform type for Spider registration.
+	// Spider uses ProviderName to select the correct driver handler,
+	// so it must be the platform type (e.g., "OPENSTACK") not the CSP instance name (e.g., "OPENSTACK-NEW01").
+	platformName := csp.ResolveCloudPlatform(req.ProviderName)
+
 	reqToSpider := model.CredentialInfo{
 		CredentialName:   genneratedCredentialName,
-		ProviderName:     strings.ToUpper(req.ProviderName),
+		ProviderName:     strings.ToUpper(platformName),
 		KeyValueInfoList: decryptedKeyValueList,
 	}
 
@@ -878,40 +904,56 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 
 	// TODO: add code to register CredentialHolder object
 
+	// Use the original CSP name (req.ProviderName) for CloudInfo lookup,
+	// not Spider's returned ProviderName which is the platform type.
+	// e.g., look up "openstack-new01" in cloudinfo.yaml, not "openstack"
 	cloudInfo, err := GetCloudInfo()
 	if err != nil {
 		return callResult, err
 	}
-	cspDetail, ok := cloudInfo.CSPs[callResult.ProviderName]
+	cspDetail, ok := cloudInfo.CSPs[req.ProviderName]
 	if !ok {
-		return callResult, fmt.Errorf("cloudType '%s' not found", callResult.ProviderName)
+		return callResult, fmt.Errorf("cloudType '%s' not found", req.ProviderName)
 	}
 
-	// register connection config for all regions with the credential
-	allRegisteredRegions, err := RetrieveRegionListFromCsp()
-	if err != nil {
-		return callResult, err
-	}
-	for _, region := range allRegisteredRegions.Region {
-		if strings.ToLower(region.ProviderName) == callResult.ProviderName {
-			configName := callResult.CredentialHolder + "-" + region.RegionName
-			if strings.EqualFold(callResult.CredentialHolder, model.DefaultCredentialHolder) {
-				configName = region.RegionName
-			}
-			connConfig := model.ConnConfig{
-				ConfigName:         configName,
-				ProviderName:       strings.ToUpper(callResult.ProviderName),
-				DriverName:         cspDetail.Driver,
-				CredentialName:     callResult.CredentialName,
-				RegionZoneInfoName: region.RegionName,
-				CredentialHolder:   req.CredentialHolder,
-			}
-			_, err := RegisterConnectionConfig(connConfig)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return callResult, err
-			}
+	// Register connection config for all regions defined in CloudInfo for this CSP.
+	// Iterate CloudInfo regions directly instead of filtering Spider regions by ProviderName,
+	// to avoid prefix collision (e.g., "openstack-" matching both "openstack" and "openstack-new01" regions).
+	for regionName := range cspDetail.Regions {
+		// Region was registered in Spider as: providerName + "-" + regionName
+		spiderRegionName := req.ProviderName + "-" + regionName
+		configName := req.CredentialHolder + "-" + spiderRegionName
+		if strings.EqualFold(req.CredentialHolder, model.DefaultCredentialHolder) {
+			configName = spiderRegionName
 		}
+		connConfig := model.ConnConfig{
+			ConfigName:         configName,
+			ProviderName:       req.ProviderName, // CSP instance name (e.g., "openstack-new01")
+			DriverName:         cspDetail.Driver,
+			CredentialName:     callResult.CredentialName,
+			RegionZoneInfoName: spiderRegionName,
+			CredentialHolder:   req.CredentialHolder,
+		}
+		_, err := RegisterConnectionConfig(connConfig)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return callResult, err
+		}
+	}
+
+	// Override callResult.ProviderName back to the CSP instance name for downstream use
+	callResult.ProviderName = req.ProviderName
+
+	// Build expected config names from CloudInfo regions for this CSP instance.
+	// This avoids prefix collision when filtering by ProviderName (e.g., "openstack" vs "openstack-new01").
+	expectedConfigNames := make(map[string]bool)
+	for regionName := range cspDetail.Regions {
+		spiderRegionName := req.ProviderName + "-" + regionName
+		configName := req.CredentialHolder + "-" + spiderRegionName
+		if strings.EqualFold(req.CredentialHolder, model.DefaultCredentialHolder) {
+			configName = spiderRegionName
+		}
+		expectedConfigNames[configName] = true
 	}
 
 	validate := true
@@ -923,9 +965,11 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 			return callResult, err
 		}
 
+		// (expectedConfigNames already built above)
+
 		filteredConnections := model.ConnConfigList{}
 		for _, connConfig := range allConnections.Connectionconfig {
-			if strings.EqualFold(callResult.ProviderName, connConfig.ProviderName) {
+			if expectedConfigNames[connConfig.ConfigName] {
 				connConfig.ProviderName = strings.ToLower(connConfig.ProviderName)
 				filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, connConfig)
 			}
@@ -985,9 +1029,10 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 			return callResult, err
 		}
 
+		// Filter connections for this CSP instance using expected config names
 		filteredConnections := model.ConnConfigList{}
 		for _, connConfig := range allConnections.Connectionconfig {
-			if strings.EqualFold(req.ProviderName, connConfig.ProviderName) {
+			if expectedConfigNames[connConfig.ConfigName] {
 				filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, connConfig)
 			}
 		}
@@ -1024,7 +1069,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 		}
 		allRepresentativeRegionConnections, err := GetConnConfigList(req.CredentialHolder, false, true)
 		for _, connConfig := range allRepresentativeRegionConnections.Connectionconfig {
-			if strings.EqualFold(req.ProviderName, connConfig.ProviderName) {
+			if expectedConfigNames[connConfig.ConfigName] {
 				verified := false
 				for _, verifiedConnConfig := range verifiedConnections.Connectionconfig {
 					if strings.EqualFold(connConfig.ConfigName, verifiedConnConfig.ConfigName) {
@@ -1072,7 +1117,9 @@ func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, er
 	var callResult model.SpiderConnConfig
 	requestBody := model.SpiderConnConfig{}
 	requestBody.ConfigName = connConfig.ConfigName
-	requestBody.ProviderName = connConfig.ProviderName
+	// Spider needs the platform type (e.g., "OPENSTACK") for driver selection,
+	// not the CSP instance name (e.g., "openstack-new01")
+	requestBody.ProviderName = strings.ToUpper(csp.ResolveCloudPlatform(connConfig.ProviderName))
 	requestBody.DriverName = connConfig.DriverName
 	requestBody.CredentialName = connConfig.CredentialName
 	requestBody.RegionName = connConfig.RegionZoneInfoName
@@ -1115,7 +1162,9 @@ func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, er
 
 	connection := model.ConnConfig{}
 	connection.ConfigName = callResult.ConfigName
-	connection.ProviderName = strings.ToLower(callResult.ProviderName)
+	// Preserve the original CSP instance name (e.g., "openstack-new01"),
+	// not the platform type returned by Spider (e.g., "OPENSTACK")
+	connection.ProviderName = strings.ToLower(connConfig.ProviderName)
 	connection.DriverName = callResult.DriverName
 	connection.CredentialName = callResult.CredentialName
 	connection.RegionZoneInfoName = callResult.RegionName
