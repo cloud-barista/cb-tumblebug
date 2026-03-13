@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"path"
 	"reflect"
 	"regexp"
@@ -1164,6 +1165,63 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 	storedTbK8sCInfo.Label = labelInfo.Labels
 
 	return storedTbK8sCInfo, nil
+}
+
+// fetchSpiderClusterToken calls the token API and returns the ExecCredential response.
+// It takes cspResourceName and connectionName directly to avoid a redundant kvstore lookup.
+func fetchSpiderClusterToken(cspResourceName, connectionName string) (*model.K8sClusterTokenResponse, error) {
+	client := clientManager.NewHttpClient()
+	client.SetTimeout(30 * time.Second)
+	// Explicitly escape cspResourceName and connectionName, as they may contain special characters
+	spiderUrl := fmt.Sprintf("%s/cluster/%s/token?ConnectionName=%s",
+		model.SpiderRestUrl,
+		url.PathEscape(cspResourceName),
+		url.QueryEscape(connectionName),
+	)
+
+	// Pass cacheDuration=0 to always fetch a fresh token (tokens are short-lived credentials).
+	requestBody := clientManager.NoBody
+	var tokenRes model.K8sClusterTokenResponse
+	_, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		spiderUrl,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&tokenRes,
+		0,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token from CB-Spider (cluster=%s): %w", cspResourceName, err)
+	}
+
+	// Guard against HTTP 200 with an empty token (e.g., unsupported CSP).
+	if tokenRes.Status.Token == "" {
+		return nil, fmt.Errorf("CB-Spider returned empty token for cluster(%s)", cspResourceName)
+	}
+
+	return &tokenRes, nil
+}
+
+// GetK8sClusterToken resolves nsId/k8sClusterId to CspResourceName/ConnectionName and returns an access token.
+func GetK8sClusterToken(nsId string, k8sClusterId string) (*model.K8sClusterTokenResponse, error) {
+	log.Info().Msgf("GetK8sClusterToken: nsId=%s, k8sClusterId=%s", nsId, k8sClusterId)
+
+	check, err := CheckK8sCluster(nsId, k8sClusterId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check K8sCluster(%s): %w", k8sClusterId, err)
+	}
+	if !check {
+		return nil, fmt.Errorf("K8sCluster(%s) not found", k8sClusterId)
+	}
+
+	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get K8sCluster info(%s): %w", k8sClusterId, err)
+	}
+
+	return fetchSpiderClusterToken(tbK8sCInfo.CspResourceName, tbK8sCInfo.ConnectionName)
 }
 
 // CheckK8sCluster returns the existence of the TB K8sCluster object in bool form.

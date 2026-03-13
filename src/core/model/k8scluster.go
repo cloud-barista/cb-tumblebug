@@ -462,6 +462,18 @@ type K8sAddonsInfo struct {
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
+// K8sClusterTokenResponse is the response struct for K8sCluster token API.
+type K8sClusterTokenResponse struct {
+	ApiVersion string                `json:"apiVersion"`
+	Kind       string                `json:"kind"`
+	Status     K8sClusterTokenStatus `json:"status"`
+}
+
+// K8sClusterTokenStatus holds the token value for K8s cluster authentication.
+type K8sClusterTokenStatus struct {
+	Token string `json:"token"`
+}
+
 // K8sClusterConnectionConfigCandidatesReq is struct for a request to check requirements to create a new K8sCluster instance dynamically (with default resource option)
 type K8sClusterConnectionConfigCandidatesReq struct {
 	// SpecId is field for id of a spec in common namespace
