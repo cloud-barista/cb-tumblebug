@@ -1167,22 +1167,9 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 	return storedTbK8sCInfo, nil
 }
 
-// SpiderClusterTokenResponse mirrors CB-Spider's ClusterTokenResponse for ExecCredential passthrough.
-type SpiderClusterTokenResponse struct {
-	ApiVersion string                   `json:"apiVersion"`
-	Kind       string                   `json:"kind"`
-	Status     SpiderClusterTokenStatus `json:"status"`
-}
-
-type SpiderClusterTokenStatus struct {
-	Token string `json:"token"`
-}
-
-// fetchSpiderClusterToken calls CB-Spider's token API and returns the ExecCredential response.
-// It takes cspResourceName and connectionName directly, so callers that already have
-// K8sClusterInfo (e.g., GetK8sCluster for Option C) can invoke it without a redundant
-// kvstore lookup.
-func fetchSpiderClusterToken(cspResourceName, connectionName string) (*SpiderClusterTokenResponse, error) {
+// fetchSpiderClusterToken calls the token API and returns the ExecCredential response.
+// It takes cspResourceName and connectionName directly to avoid a redundant kvstore lookup.
+func fetchSpiderClusterToken(cspResourceName, connectionName string) (*model.K8sClusterTokenResponse, error) {
 	client := clientManager.NewHttpClient()
 	client.SetTimeout(30 * time.Second)
 	// Explicitly escape cspResourceName and connectionName, as they may contain special characters
@@ -1192,12 +1179,9 @@ func fetchSpiderClusterToken(cspResourceName, connectionName string) (*SpiderClu
 		url.QueryEscape(connectionName),
 	)
 
-	// Pass cacheDuration=0 to disable caching.
-	// Tokens are security credentials; while a short cache (VeryShortDuration=1s) poses no
-	// technical expiry risk, the principle is to always fetch a fresh token.
-	// Since Spider may internally cache CSP tokens, there is no need for duplicate caching at the TB level.
+	// Pass cacheDuration=0 to always fetch a fresh token (tokens are short-lived credentials).
 	requestBody := clientManager.NoBody
-	var tokenRes SpiderClusterTokenResponse
+	var tokenRes model.K8sClusterTokenResponse
 	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		"GET",
@@ -1213,8 +1197,6 @@ func fetchSpiderClusterToken(cspResourceName, connectionName string) (*SpiderClu
 	}
 
 	// Guard against HTTP 200 with an empty token (e.g., unsupported CSP).
-	// Checking here ensures both Option B (external API) and Option C (GetK8sCluster)
-	// get consistent error handling without duplicating the check in callers.
 	if tokenRes.Status.Token == "" {
 		return nil, fmt.Errorf("CB-Spider returned empty token for cluster(%s)", cspResourceName)
 	}
@@ -1222,10 +1204,8 @@ func fetchSpiderClusterToken(cspResourceName, connectionName string) (*SpiderClu
 	return &tokenRes, nil
 }
 
-// GetK8sClusterToken is the public function for external API use.
-// It resolves nsId/k8sClusterId → CspResourceName/ConnectionName, then calls fetchSpiderClusterToken.
-// Applicable to CSPs that use exec-based authentication (e.g., GCP GKE, AWS EKS).
-func GetK8sClusterToken(nsId string, k8sClusterId string) (*SpiderClusterTokenResponse, error) {
+// GetK8sClusterToken resolves nsId/k8sClusterId to CspResourceName/ConnectionName and returns an access token.
+func GetK8sClusterToken(nsId string, k8sClusterId string) (*model.K8sClusterTokenResponse, error) {
 	log.Info().Msgf("GetK8sClusterToken: nsId=%s, k8sClusterId=%s", nsId, k8sClusterId)
 
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
