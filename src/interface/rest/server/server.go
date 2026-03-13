@@ -532,8 +532,6 @@ func RunServer() {
 	g.DELETE("/:nsId/k8sCluster/:k8sClusterId", rest_resource.RestDeleteK8sCluster)
 	g.DELETE("/:nsId/k8sCluster", rest_resource.RestDeleteAllK8sCluster)
 	g.PUT("/:nsId/k8sCluster/:k8sClusterId/upgrade", rest_resource.RestPutUpgradeK8sCluster)
-	// Echo router gives priority to static segments (/token) over param segments (:k8sClusterId),
-	// so this does not conflict with the existing GET /:nsId/k8sCluster/:k8sClusterId route
 	g.GET("/:nsId/k8sCluster/:k8sClusterId/token", rest_resource.RestGetK8sClusterToken,
 		middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
