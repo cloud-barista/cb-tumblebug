@@ -1,6 +1,33 @@
 package csp
 
-import "strings"
+import (
+	"strings"
+	"sync"
+)
+
+// cloudPlatformMap stores the mapping from CSP instance name to cloud platform type.
+// For standard CSPs (aws, azure, ...), the mapping is identity (aws → aws).
+// For derived CSPs (e.g., openstack-new01), it maps to the base platform (openstack-new01 → openstack).
+// This allows multiple CSP instances to share the same driver and behavior dispatch logic.
+var cloudPlatformMap sync.Map
+
+// RegisterCloudPlatform registers a CSP instance name to its cloud platform type.
+// This is called during startup from RegisterAllCloudInfo().
+func RegisterCloudPlatform(cspName, platformType string) {
+	cloudPlatformMap.Store(strings.ToLower(cspName), strings.ToLower(platformType))
+}
+
+// ResolveCloudPlatform returns the cloud platform type for a given CSP instance name.
+// For standard CSPs (aws, azure, etc.), returns the name unchanged.
+// For derived CSPs (openstack-new01), returns the base platform type (openstack).
+// If no mapping is registered, returns the input name as-is (identity mapping).
+func ResolveCloudPlatform(providerName string) string {
+	name := strings.ToLower(providerName)
+	if platform, ok := cloudPlatformMap.Load(name); ok {
+		return platform.(string)
+	}
+	return name
+}
 
 // Supported Cloud Service Providers
 const (
@@ -165,10 +192,12 @@ var rateLimitConfigs = map[string]RateLimitConfig{
 }
 
 // GetRateLimitConfig returns the rate limiting configuration for a given CSP.
+// Uses ResolveCloudPlatform to look up the platform type for derived CSPs
+// (e.g., "openstack-new01" resolves to "openstack" config).
 // Returns the default configuration if the CSP is not explicitly configured.
 func GetRateLimitConfig(providerName string) RateLimitConfig {
-	normalized := strings.ToLower(providerName)
-	if config, exists := rateLimitConfigs[normalized]; exists {
+	platform := ResolveCloudPlatform(providerName)
+	if config, exists := rateLimitConfigs[platform]; exists {
 		return config
 	}
 	return defaultRateLimitConfig

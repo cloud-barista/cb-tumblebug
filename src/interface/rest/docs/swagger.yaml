@@ -14853,6 +14853,8 @@ components:
     model.CSPDetail:
       type: object
       properties:
+        cloudPlatform:
+          type: string
         description:
           type: string
         driver:

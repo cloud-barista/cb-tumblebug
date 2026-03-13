@@ -102,7 +102,7 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	tumblebugSpec.ProviderName = providerName
 
 	// For Azure, filter out Gen1-only VM families
-	if providerName == string(csp.Azure) {
+	if csp.ResolveCloudPlatform(providerName) == csp.Azure {
 		// TODO: needs to be merged with a general ignore filtering method
 		if isAzureGen1OnlySpec(tumblebugSpec.CspSpecName) {
 			err := fmt.Errorf("skipping Azure Gen1-only VM family spec: %s", tumblebugSpec.CspSpecName)
@@ -195,7 +195,7 @@ func extractArchitecture(providerName string, details []model.KeyValue, cspSpecN
 	// 	ArchitectureNA OSArchitecture = "NA"
 	// )
 
-	switch providerName {
+	switch csp.ResolveCloudPlatform(providerName) {
 	case csp.AWS:
 		// For AWS, look for ProcessorInfo and extract SupportedArchitectures from its value
 		archInfo := common.LookupKeyValueList(details, "ProcessorInfo")
@@ -2795,7 +2795,8 @@ func shouldIgnoreSpec(specName, providerName, regionName string) bool {
 	}
 
 	// Get CSP-specific patterns from the CSPs map
-	cspPatterns, exists := config.CSPs[strings.ToLower(providerName)]
+	// Use ResolveCloudPlatform to handle derived CSPs (e.g., openstack-new01 → openstack)
+	cspPatterns, exists := config.CSPs[csp.ResolveCloudPlatform(providerName)]
 	if !exists {
 		return false
 	}

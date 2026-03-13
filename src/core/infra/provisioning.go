@@ -1918,7 +1918,7 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 		providerName := specInfoPtr.ProviderName
 
 		// Check KT Cloud limitations - temporary restriction to .itl specs only
-		if providerName == csp.KT {
+		if csp.ResolveCloudPlatform(providerName) == csp.KT {
 			if !strings.Contains(subGroupDynamicReq.SpecId, ".itl") {
 				// Only show warning when spec does not contain '.itl'
 				vmReview.Warnings = append(vmReview.Warnings, "KT Cloud provisioning is currently limited to '.itl' specs only (temporary limitation). This spec may fail to provision.")
@@ -2442,7 +2442,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, de
 
 	// Add provider-specific global recommendations
 	for _, providerName := range reviewResult.ResourceSummary.ProviderNames {
-		switch providerName {
+		switch csp.ResolveCloudPlatform(providerName) {
 		case csp.KT:
 			reviewResult.Recommendations = append(reviewResult.Recommendations,
 				"NOTICE: KT Cloud provisioning is currently limited to specs with '.itl' in the name (temporary limitation)")
@@ -3482,7 +3482,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		// The user can later update this SSH key via the ComplementSshKey API.
 		if !sshKeyMatched {
 			providerName := strings.ToLower(vmInfoData.ConnectionConfig.ProviderName)
-			if providerName == csp.GCP {
+			if csp.ResolveCloudPlatform(providerName) == csp.GCP {
 				log.Info().Msgf("GCP detected: creating placeholder SSH key for VM '%s' (GCP does not manage SSH keys as independent resources)", vmInfoData.Name)
 				placeholderSshKey, placeholderErr := resource.CreatePlaceholderSshKey(nsId, requestBody.ConnectionName, vmInfoData.Name, vmInfoData.Uid)
 				if placeholderErr != nil {
