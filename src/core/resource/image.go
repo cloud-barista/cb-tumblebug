@@ -1575,7 +1575,11 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 	}
 
 	if req.OSArchitecture != "" {
-		sqlQuery = sqlQuery.Where("LOWER(os_architecture) = ?", strings.ToLower(string(req.OSArchitecture)))
+		// Include images with the requested architecture OR "na" (not available/specified by the CSP)
+		// Images with "na" architecture are treated as compatible with any architecture
+		sqlQuery = sqlQuery.Where(
+			model.ORM.Where("LOWER(os_architecture) = ?", strings.ToLower(string(req.OSArchitecture))).
+				Or("LOWER(os_architecture) = ?", strings.ToLower(string(model.ArchitectureNA))))
 	}
 
 	if req.IsGPUImage != nil {

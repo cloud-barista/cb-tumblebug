@@ -208,7 +208,6 @@ func GetNs(id string) (model.NsInfo, error) {
 		return temp, err
 	}
 
-	log.Debug().Msg("[Get namespace] " + id)
 	key := "/ns/" + id
 	log.Debug().Msg(key)
 
