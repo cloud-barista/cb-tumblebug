@@ -30,6 +30,7 @@ This takes **15–30 minutes**. After completion, you'll have a working OpenStac
 - Neutron (networking)
 - Cinder (block storage)
 - Horizon dashboard
+- Placeholder entries for Octavia (load-balancer) and Manila (shared-file-system) for CB-Spider compatibility
 
 ### 2. Get Registration Info
 
@@ -56,6 +57,29 @@ This outputs:
 
 The new CSP will appear in the connection list and can be used for VM provisioning.
 
+### 4. Update Endpoints (after IP change)
+
+If the VM's public IP changes (e.g., after suspend/resume or stop/start):
+
+```bash
+./3.updateEndpoints.sh --csp-name openstack-devstack
+```
+
+This updates all OpenStack service catalog endpoints to the new public IP and outputs an updated `credentials.yaml` snippet. After running, update `~/.cloud-barista/credentials.yaml` and re-run `make enc-cred && make init`.
+
+> **Tip**: Use AWS Elastic IP to avoid IP changes altogether.
+
+### 5. Clean / Rollback (after failed install)
+
+If the installation failed or you want to start fresh:
+
+```bash
+./4.cleanDevStack.sh         # Keep source for faster re-install
+./4.cleanDevStack.sh --full  # Remove everything including source
+```
+
+After cleanup, run `./1.installDevStack.sh` again to re-install.
+
 ## Architecture
 
 ```
@@ -77,3 +101,20 @@ AWS m5.metal VM
 - **Performance**: KVM runs natively on bare-metal. If using non-metal instances, change `LIBVIRT_TYPE=qemu` in `local.conf` (very slow).
 - **Persistence**: DevStack is development-only. Data does not persist across reboots. Run `./opt/stack/devstack/stack.sh` to restart after reboot.
 - **Security**: The default `cbtumblebug` password is for testing only. Change it for any non-local deployment.
+
+## Troubleshooting
+
+### "No suitable endpoint could be found in the service catalog"
+
+CB-Spider's OpenStack driver requires ALL service clients (including Octavia and Manila) during connection initialization. The install script automatically creates placeholder service catalog entries for these services. If you see this error:
+
+```bash
+# SSH into the DevStack VM and run:
+./2.getRegistrationInfo.sh    # Ensures placeholders exist
+# or
+./3.updateEndpoints.sh        # Also ensures placeholders exist
+```
+
+### "Authentication failed"
+
+Verify the credentials in `~/.cloud-barista/credentials.yaml` match the DevStack admin password. The `ProjectID` must match the actual admin project ID (run `openstack project show admin -f value -c id` on the DevStack VM).

@@ -194,10 +194,11 @@ SERVICE_PASSWORD=\${ADMIN_PASSWORD}
 # -------------------------------------------------------
 HOST_IP=${HOST_IP}
 
-# Register service endpoints with Public IP so external clients
-# (e.g., CB-Spider) can reach them via the service catalog.
-# If no public IP is detected, falls back to HOST_IP.
-SERVICE_HOST=${PUBLIC_IP}
+# Note: Do NOT set SERVICE_HOST to Public IP on AWS.
+# AWS public IPs are NAT'd and not bound to local interfaces,
+# so services (e.g., etcd) cannot bind to them.
+# The registration script (2.getRegistrationInfo.sh) handles
+# rewriting internal IPs to public IPs in the output snippets.
 
 # Always re-clone source repos (safe for re-installs after clean.sh)
 RECLONE=yes
@@ -278,6 +279,36 @@ if [ $STACK_EXIT -eq 0 ]; then
     if [ $CHANGED -gt 0 ]; then
         echo ""
         echo " Updated $CHANGED service catalog endpoint(s): $INTERNAL_IP -> $PUBLIC_IP"
+    fi
+
+    # ----------------------------------------------------------
+    # Create placeholder service catalog entries for CB-Spider
+    # CB-Spider's OpenStack driver requires ALL service clients
+    # (including Octavia/Manila) during connection initialization.
+    # DevStack minimal install doesn't include these services,
+    # so we create placeholder entries to prevent "No suitable
+    # endpoint could be found in the service catalog" errors.
+    # ----------------------------------------------------------
+    PLACEHOLDER_CREATED=0
+
+    # Octavia (Load Balancer) - required by CB-Spider NLBClient
+    if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
+        openstack service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer 2>/dev/null && \
+        openstack endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" 2>/dev/null && \
+        PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
+        echo " Created placeholder: load-balancer (octavia)"
+    fi
+
+    # Manila (Shared File System) - required by CB-Spider SharedFileSystemClient
+    if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^shared-file-system$"; then
+        openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" shared-file-system 2>/dev/null && \
+        openstack endpoint create --region "$REGION" shared-file-system public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" 2>/dev/null && \
+        PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
+        echo " Created placeholder: shared-file-system (manilav2)"
+    fi
+
+    if [ $PLACEHOLDER_CREATED -gt 0 ]; then
+        echo " Created $PLACEHOLDER_CREATED placeholder service(s) for CB-Spider compatibility"
     fi
 
     echo ""

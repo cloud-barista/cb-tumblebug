@@ -124,6 +124,23 @@ if [ "$PUBLIC_IP" != "$HOST_IP" ]; then
 fi
 
 # ============================================================
+# Ensure placeholder services exist for CB-Spider compatibility
+# CB-Spider requires Octavia (NLB) and Manila (SharedFileSystem)
+# service clients, but minimal DevStack doesn't include them.
+# ============================================================
+if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
+    openstack service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer 2>/dev/null && \
+    openstack endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" 2>/dev/null && \
+    echo "  Created placeholder: load-balancer (octavia)"
+fi
+
+if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^shared-file-system$"; then
+    openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" shared-file-system 2>/dev/null && \
+    openstack endpoint create --region "$REGION" shared-file-system public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" 2>/dev/null && \
+    echo "  Created placeholder: shared-file-system (manilav2)"
+fi
+
+# ============================================================
 # Output registration information
 # ============================================================
 echo ""
