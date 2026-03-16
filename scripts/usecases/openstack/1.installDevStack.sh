@@ -14,7 +14,7 @@
 # Parameters:
 #   --csp-name  CSP provider name for CB-Tumblebug registration (default: openstack-devstack)
 #   --password  OpenStack admin password (default: cbtumblebug)
-#   --branch    DevStack branch to install (default: stable/2024.2)
+#   --branch    DevStack branch to install (default: stable/2025.2)
 #   --latitude  Latitude for location info (default: 0)
 #   --longitude Longitude for location info (default: 0)
 #   --location  Display name for location (default: DevStack)
@@ -38,7 +38,7 @@ fi
 # Parse arguments
 # ============================================================
 ADMIN_PASSWORD="cbtumblebug"
-OPENSTACK_BRANCH="stable/2024.2"
+OPENSTACK_BRANCH="stable/2025.2"
 CSP_NAME="openstack-devstack"
 LOCATION_LATITUDE="0"
 LOCATION_LONGITUDE="0"
@@ -229,6 +229,18 @@ LOGDAYS=1
 # Cinder volume size
 # -------------------------------------------------------
 VOLUME_BACKING_FILE_SIZE=50G
+
+# -------------------------------------------------------
+# Octavia (Load Balancer) - required by CB-Spider NLBClient
+# gophercloud service catalog type: "load-balancer"
+# -------------------------------------------------------
+enable_plugin octavia https://opendev.org/openstack/octavia ${OPENSTACK_BRANCH}
+
+# -------------------------------------------------------
+# Manila (Shared File System) - required by CB-Spider SharedFileSystemClient
+# gophercloud service catalog type: "sharev2"
+# -------------------------------------------------------
+enable_plugin manila https://opendev.org/openstack/manila ${OPENSTACK_BRANCH}
 LOCALCONF
 "
 
@@ -238,7 +250,7 @@ echo "Generated local.conf with HOST_IP=$HOST_IP"
 # Step 5: Run DevStack installation
 # ============================================================
 echo ""
-echo "[5/5] Running stack.sh (this takes 15-30 minutes)..."
+echo "[5/5] Running stack.sh (this takes 20-40 minutes with Octavia/Manila)..."
 echo "      Logs: /opt/stack/logs/stack.sh.log"
 
 # Temporarily disable 'exit on error' so we can capture stack.sh's exit code
@@ -282,33 +294,58 @@ if [ $STACK_EXIT -eq 0 ]; then
     fi
 
     # ----------------------------------------------------------
-    # Create placeholder service catalog entries for CB-Spider
-    # CB-Spider's OpenStack driver requires ALL service clients
-    # (including Octavia/Manila) during connection initialization.
-    # DevStack minimal install doesn't include these services,
-    # so we create placeholder entries to prevent "No suitable
-    # endpoint could be found in the service catalog" errors.
+    # Verify CB-Spider required services in service catalog
+    # CB-Spider's OpenStack driver (gophercloud) requires these
+    # service types during connection initialization:
+    #   NewLoadBalancerV2()      -> type "load-balancer"
+    #   NewSharedFileSystemV2()  -> type "sharev2"
+    #
+    # These should be installed via DevStack plugins (Octavia/Manila).
+    # If a plugin failed to register, create a placeholder as fallback.
     # ----------------------------------------------------------
+    echo ""
+    echo " Verifying CB-Spider required services..."
     PLACEHOLDER_CREATED=0
 
-    # Octavia (Load Balancer) - required by CB-Spider NLBClient
-    if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
-        openstack service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer 2>/dev/null && \
-        openstack endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" 2>/dev/null && \
+    # Octavia (Load Balancer) - gophercloud type: "load-balancer"
+    if openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
+        echo "   ✓ load-balancer (Octavia) - installed"
+    else
+        echo "   ✗ load-balancer (Octavia) - NOT found, creating placeholder..."
+        openstack service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer && \
+        openstack endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" && \
         PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
-        echo " Created placeholder: load-balancer (octavia)"
     fi
 
-    # Manila (Shared File System) - required by CB-Spider SharedFileSystemClient
-    if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^shared-file-system$"; then
-        openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" shared-file-system 2>/dev/null && \
-        openstack endpoint create --region "$REGION" shared-file-system public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" 2>/dev/null && \
+    # Manila (Shared File System) - gophercloud type: "sharev2"
+    if openstack service list -f value -c Type 2>/dev/null | grep -q "^sharev2$"; then
+        echo "   ✓ sharev2 (Manila) - installed"
+    else
+        echo "   ✗ sharev2 (Manila) - NOT found, creating placeholder..."
+        openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" sharev2 && \
+        openstack endpoint create --region "$REGION" sharev2 public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" && \
         PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
-        echo " Created placeholder: shared-file-system (manilav2)"
+    fi
+
+    # Clean up old incorrect placeholder if it exists (type "shared-file-system" instead of "sharev2")
+    # Only delete if the service description contains "placeholder for CB-Spider" to avoid
+    # deleting legitimate Manila services in production OpenStack environments.
+    OLD_SFS_ID=$(openstack service list -f value -c ID -c Type 2>/dev/null | awk '$2 == "shared-file-system" {print $1}')
+    if [ -n "$OLD_SFS_ID" ]; then
+        OLD_SFS_DESC=$(openstack service show "$OLD_SFS_ID" -f value -c description 2>/dev/null || echo "")
+        if echo "$OLD_SFS_DESC" | grep -q "placeholder for CB-Spider"; then
+            for eid in $(openstack endpoint list --service "$OLD_SFS_ID" -f value -c ID 2>/dev/null); do
+                openstack endpoint delete "$eid" 2>/dev/null
+            done
+            openstack service delete "$OLD_SFS_ID" 2>/dev/null
+            echo "   Removed old placeholder: shared-file-system (wrong type)"
+        else
+            echo "   Skipped: shared-file-system service exists but is not a placeholder"
+        fi
     fi
 
     if [ $PLACEHOLDER_CREATED -gt 0 ]; then
-        echo " Created $PLACEHOLDER_CREATED placeholder service(s) for CB-Spider compatibility"
+        echo "   ⚠ Created $PLACEHOLDER_CREATED placeholder(s) - plugin install may have failed"
     fi
 
     echo ""
