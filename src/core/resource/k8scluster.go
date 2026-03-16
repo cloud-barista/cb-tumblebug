@@ -1181,7 +1181,7 @@ func fetchSpiderClusterToken(cspResourceName, connectionName string) (*model.K8s
 
 	// Pass cacheDuration=0 to always fetch a fresh token (tokens are short-lived credentials).
 	requestBody := clientManager.NoBody
-	var tokenRes model.K8sClusterTokenResponse
+	var execCred model.ExecCredential
 	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		"GET",
@@ -1189,7 +1189,7 @@ func fetchSpiderClusterToken(cspResourceName, connectionName string) (*model.K8s
 		nil,
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
-		&tokenRes,
+		&execCred,
 		0,
 	)
 	if err != nil {
@@ -1197,10 +1197,11 @@ func fetchSpiderClusterToken(cspResourceName, connectionName string) (*model.K8s
 	}
 
 	// Guard against HTTP 200 with an empty token (e.g., unsupported CSP).
-	if tokenRes.Status.Token == "" {
+	if execCred.Status.Token == "" {
 		return nil, fmt.Errorf("CB-Spider returned empty token for cluster(%s)", cspResourceName)
 	}
 
+	tokenRes := model.K8sClusterTokenResponse{ExecCredential: execCred}
 	return &tokenRes, nil
 }
 
