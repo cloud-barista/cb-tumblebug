@@ -31,16 +31,30 @@ init: ## Run initialization script (./init/init.sh)
 #   2) Restart:           make up
 #   3) Reset DB only:     make clean-db → make up → make init
 #   4) Full reset:        make clean-all → make up → make init
-prepare-volumes: ## Create bind-mount directories with current user ownership
+prepare-volumes: ## Create bind-mount directories with correct ownership
 	@echo "Preparing container-volume directories..."
-	@mkdir -p container-volume/cb-tumblebug-container/meta_db container-volume/cb-tumblebug-container/log 2>/dev/null || \
-		sudo mkdir -p container-volume/cb-tumblebug-container/meta_db container-volume/cb-tumblebug-container/log
-	@mkdir -p container-volume/cb-spider-container/meta_db container-volume/cb-spider-container/log 2>/dev/null || \
-		sudo mkdir -p container-volume/cb-spider-container/meta_db container-volume/cb-spider-container/log
-	@mkdir -p container-volume/etcd/data 2>/dev/null || sudo mkdir -p container-volume/etcd/data
-	@mkdir -p container-volume/openbao-data 2>/dev/null || sudo mkdir -p container-volume/openbao-data
-	@mkdir -p container-volume/mc-terrarium-container/.terrarium 2>/dev/null || \
-		sudo mkdir -p container-volume/mc-terrarium-container/.terrarium
+	@mkdir -p \
+		container-volume/cb-tumblebug-container/meta_db \
+		container-volume/cb-tumblebug-container/log \
+		container-volume/cb-spider-container/meta_db \
+		container-volume/cb-spider-container/log \
+		container-volume/etcd/data \
+		container-volume/openbao-data \
+		container-volume/mc-terrarium-container/.terrarium \
+		2>/dev/null || \
+	sudo mkdir -p \
+		container-volume/cb-tumblebug-container/meta_db \
+		container-volume/cb-tumblebug-container/log \
+		container-volume/cb-spider-container/meta_db \
+		container-volume/cb-spider-container/log \
+		container-volume/etcd/data \
+		container-volume/openbao-data \
+		container-volume/mc-terrarium-container/.terrarium
+	@# Fix ownership for mc-terrarium volume (container runs as appuser, uid 1000)
+	@if [ "$$(stat -c '%u' container-volume/mc-terrarium-container/.terrarium 2>/dev/null)" != "$$(id -u)" ]; then \
+		echo "Fixing ownership of mc-terrarium volume..."; \
+		sudo chown -R $$(id -u):$$(id -g) container-volume/mc-terrarium-container/.terrarium; \
+	fi
 	@echo "Prepared!"
 # Note: OpenBao data dir ownership is fixed by entrypoint chown in docker-compose.yaml.
 
@@ -72,7 +86,7 @@ ps: ## Show status of services (alias for status)
 	@$(MAKE) status
 
 # ===== Database Cleanup Commands =====
-clean-db: ## Clean all database metadata (./init/cleanDB.sh)
+clean-db: compose-down ## Clean all database metadata (./init/cleanDB.sh)
 	@echo "Running cleanDB script..."
 	@chmod +x ./init/cleanDB.sh 2>/dev/null || true
 	@./init/cleanDB.sh

@@ -84,3 +84,8 @@ __pycache__/
 venv/
 .uv
 uv.lock
+.env
+
+# VPN test results (local only)
+src/testclient/test-clis/site-to-site-vpn/test-results/*
+!src/testclient/test-clis/site-to-site-vpn/test-results/.gitkeep

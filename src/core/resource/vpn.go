@@ -33,14 +33,35 @@ import (
 )
 
 const (
-	minWaitDuration = 10 * time.Second
-	maxWaitDuration = 120 * time.Second
+	minWaitDuration      = 10 * time.Second
+	maxWaitDuration      = 120 * time.Second
+	vpnRetryWaitDuration = 10 * time.Second
 )
+
+// executeWithOneRetry retries once after a short wait to absorb transient
+// dependency timing issues from infrastructure provisioning/deletion.
+func executeWithOneRetry(opName string, f func() error) error {
+	err := f()
+	if err == nil {
+		return nil
+	}
+
+	log.Warn().Err(err).Msgf("%s failed, retrying once in %s", opName, vpnRetryWaitDuration)
+	time.Sleep(vpnRetryWaitDuration)
+
+	err = f()
+	if err != nil {
+		return fmt.Errorf("%s failed after 1 retry: %w", opName, err)
+	}
+
+	log.Info().Msgf("%s succeeded on retry", opName)
+	return nil
+}
 
 // supportedCspForVpn is a map of supported CSPs for VPN connections.
 // The keys are the hub CSPs, and the values are slices of supported spoke CSPs.
 var supportedCspForVpn = map[string][]string{
-	csp.AWS: {csp.Azure, csp.GCP, csp.Alibaba, csp.Tencent, csp.IBM},
+	csp.AWS: {csp.Azure, csp.GCP, csp.Alibaba, csp.Tencent, csp.IBM, csp.OpenStack},
 	// csp.Azure:   {csp.AWS, csp.GCP},
 	// csp.GCP:     {csp.AWS, csp.Azure},
 	// csp.Alibaba: {csp.AWS},
@@ -250,7 +271,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 	site1Detail.ConnectionName = vNetInfo1.ConnectionName
 	site1Detail.ConnectionConfig, err = common.GetConnConfig(site1Detail.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 		log.Error().Err(err).Msg("")
 	}
 
@@ -258,7 +279,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 	site2Detail.ConnectionName = vNetInfo2.ConnectionName
 	site2Detail.ConnectionConfig, err = common.GetConnConfig(site2Detail.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 		log.Error().Err(err).Msg("")
 	}
 
@@ -273,6 +294,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		err := fmt.Errorf("failed to check if the site-to-site VPN (%s) exists or not", vpnInfo.Id)
 		return emptyRet, err
 	}
+	
 	// For retry, read the stored VPN info if exists
 	if exists {
 		if !retried {
@@ -385,6 +407,9 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 			reqInfracode.VpnConfig.TargetCsp.Azure = new(terrariumModel.AzureConfig)
 			reqInfracode.VpnConfig.TargetCsp.Azure.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
 			reqInfracode.VpnConfig.TargetCsp.Azure.VirtualNetworkName = vNetInfo2.CspResourceName // * Azure uses CspResourceName
+
+			// According to the agreement between Tumblebug and Spider maintainers,
+			// ResourceGroupName is allocated per Region, and internally RegionId is used.
 			reqInfracode.VpnConfig.TargetCsp.Azure.ResourceGroupName = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
 			reqInfracode.VpnConfig.TargetCsp.Azure.BgpAsn = vpnReq.Site2.CspSpecificProperty.Azure.BgpAsn
 			reqInfracode.VpnConfig.TargetCsp.Azure.VpnSku = vpnReq.Site2.CspSpecificProperty.Azure.VpnSku
@@ -448,6 +473,15 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 				reqInfracode.VpnConfig.TargetCsp.Ibm.SubnetId = vNetInfo2.SubnetInfoList[0].CspResourceId
 			}
 
+		case csp.OpenStack:
+			reqInfracode.VpnConfig.TargetCsp.Type = "dcs" // DCS: DevStack Cloud Service (currently supported by Terrarium).
+			reqInfracode.VpnConfig.TargetCsp.Dcs = new(terrariumModel.DcsConfig)
+			reqInfracode.VpnConfig.TargetCsp.Dcs.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
+			// reqInfracode.VpnConfig.TargetCsp.Dcs.RouterId = // Read this by subnet ID in Terrarium
+			if len(vNetInfo2.SubnetInfoList) >= 1 {
+				reqInfracode.VpnConfig.TargetCsp.Dcs.SubnetId = vNetInfo2.SubnetInfoList[0].CspResourceId
+			}
+
 		default:
 			err = fmt.Errorf("not supported, %s", site2CspName)
 			log.Error().Err(err).Msg("")
@@ -460,16 +494,19 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 		resInfracode := new(model.Response)
 
-		_, err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			clientManager.SetUseBody(*reqInfracode),
-			reqInfracode,
-			resInfracode,
-			clientManager.VeryShortDuration,
-		)
+		err = executeWithOneRetry("create site-to-site VPN", func() error {
+			_, reqErr := clientManager.ExecuteHttpRequest(
+				client,
+				method,
+				url,
+				nil,
+				clientManager.SetUseBody(*reqInfracode),
+				reqInfracode,
+				resInfracode,
+				clientManager.VeryShortDuration,
+			)
+			return reqErr
+		})
 
 		if err != nil {
 			log.Err(err).Msg("")
@@ -712,7 +749,7 @@ func processResourceArray(array []interface{}) []model.ResourceDetail {
 }
 
 // GetSiteToSiteVPN returns a site-to-site VPN via Terrarium
-func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (model.VpnInfo, error) {
+func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string, refresh bool) (model.VpnInfo, error) {
 
 	var emptyRet model.VpnInfo
 	var vpnInfo model.VpnInfo
@@ -805,7 +842,7 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 
 	// Get resource info
 	method = "GET"
-	url = fmt.Sprintf("%s/tr/%s/%s?detail=%s", epTerrarium, trId, enrichments, detail)
+	url = fmt.Sprintf("%s/tr/%s/%s?detail=%s&refresh=%t", epTerrarium, trId, enrichments, detail, refresh)
 	requestBody = clientManager.NoBody
 	resResourceInfo := new(model.Response)
 
@@ -1001,16 +1038,19 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	requestBody = clientManager.NoBody
 	resDeleteSiteToSiteVpn := new(model.Response)
 
-	_, err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		resDeleteSiteToSiteVpn,
-		clientManager.VeryShortDuration,
-	)
+	err = executeWithOneRetry("delete site-to-site VPN", func() error {
+		_, reqErr := clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			resDeleteSiteToSiteVpn,
+			clientManager.VeryShortDuration,
+		)
+		return reqErr
+	})
 
 	if err != nil {
 		log.Err(err).Msg("")

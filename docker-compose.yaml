@@ -264,7 +264,7 @@ services:
   # Resource extensions (AWS-to-site VPN) for CB-Tumblebug using OpenTofu.
   # CSP credentials are managed by OpenBao (no more env_file injection).
   mc-terrarium:
-    image: cloudbaristaorg/mc-terrarium:0.1.0
+    image: cloudbaristaorg/mc-terrarium:0.1.2
     container_name: mc-terrarium
     # build:
     #   context: ../mc-terrarium

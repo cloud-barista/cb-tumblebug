@@ -55,7 +55,7 @@ tags:
   description: Network Load Balancer management
 - name: "[Infra Resource] NLB Management (for developer)"
   description: Advanced NLB management operations for developers
-- name: "[Infra Resource] Site-to-site VPN Management (under development)"
+- name: "[Infra Resource] Site-to-site VPN Management (preview)"
   description: Site-to-site VPN tunnel management
 - name: "[Admin] System Configuration"
   description: System settings and configuration management
@@ -4701,7 +4701,7 @@ paths:
   /ns/{nsId}/mci/{mciId}/site:
     get:
       tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
       summary: Get sites in MCI
       description: Get sites in MCI
       operationId: GetSitesInMci
@@ -6329,7 +6329,7 @@ paths:
   /ns/{nsId}/mci/{mciId}/vpn:
     get:
       tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
       summary: Get all site-to-site VPNs
       description: Get all site-to-site VPNs
       operationId: GetAllSiteToSiteVpn
@@ -6384,9 +6384,9 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
     post:
       tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
       summary: Create a site-to-site VPN
-      description: |-
+      description: |
         Create a site-to-site VPN
 
         The supported CSP sets are as follows:
@@ -6394,6 +6394,8 @@ paths:
         - AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM
 
         - Note: It will take about `15 ~ 45 minutes`.
+
+        - Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.
       operationId: PostSiteToSiteVpn
       parameters:
       - name: nsId
@@ -6453,7 +6455,7 @@ paths:
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     get:
       tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
       summary: Get resource info of a site-to-site VPN
       description: Get resource info of a site-to-site VPN
       operationId: GetSiteToSiteVpn
@@ -6479,6 +6481,12 @@ paths:
         schema:
           type: string
           default: vpn01
+      - name: refresh
+        in: query
+        description: Refresh the resource info from CSPs
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           description: OK
@@ -6506,9 +6514,12 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
     delete:
       tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
       summary: Delete a site-to-site VPN
-      description: Delete a site-to-site VPN
+      description: |
+        Delete a site-to-site VPN
+
+        - Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.
       operationId: DeleteSiteToSiteVpn
       parameters:
       - name: nsId
@@ -6560,7 +6571,7 @@ paths:
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId}:
     get:
       tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
       summary: Check the status of a specific request by its ID
       description: Check the status of a specific request by its ID
       operationId: GetRequestStatusOfSiteToSiteVpn
@@ -14796,6 +14807,54 @@ components:
           type: string
           example: "64512"
           default: "64512"
+    model.AzureBgpPeeringCidrs:
+      type: object
+      properties:
+        toAlibaba:
+          type: array
+          example:
+          - 169.254.21.16/30
+          - 169.254.21.20/30
+          - 169.254.22.16/30
+          - 169.254.22.20/30
+          items:
+            type: string
+        toAws:
+          type: array
+          example:
+          - 169.254.21.0/30
+          - 169.254.21.4/30
+          - 169.254.22.0/30
+          - 169.254.22.4/30
+          items:
+            type: string
+        toGcp:
+          type: array
+          example:
+          - 169.254.21.8/30
+          - 169.254.21.12/30
+          - 169.254.22.8/30
+          - 169.254.22.12/30
+          items:
+            type: string
+        toIbm:
+          type: array
+          example:
+          - 169.254.21.32/30
+          - 169.254.21.36/30
+          - 169.254.22.32/30
+          - 169.254.22.36/30
+          items:
+            type: string
+        toTencent:
+          type: array
+          example:
+          - 169.254.21.24/30
+          - 169.254.21.28/30
+          - 169.254.22.24/30
+          - 169.254.22.28/30
+          items:
+            type: string
     model.AzureSpecificProperty:
       type: object
       properties:
@@ -14803,6 +14862,8 @@ components:
           type: string
           example: "65531"
           default: "65531"
+        bgpPeeringCidrs:
+          $ref: '#/components/schemas/model.AzureBgpPeeringCidrs'
         gatewaySubnetCidr:
           type: string
           example: xxx.xxx.xxx.xxx/xx

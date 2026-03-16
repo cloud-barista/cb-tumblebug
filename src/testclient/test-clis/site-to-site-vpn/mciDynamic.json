@@ -1,0 +1,35 @@
+{
+  "description": "Multi-CSP Test infra for VPN tunnel",
+  "installMonAgent": "no",
+  "name": "",
+  "subGroups": [
+    {
+      "imageId": "ami-08a4fd517a4872931",
+      "specId": "aws+ap-northeast-2+t3a.nano"
+    },
+    {
+      "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2204-jammy-v20260206",
+      "specId": "gcp+asia-northeast3+g1-small"
+    },
+    {
+      "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202601310",
+      "specId": "azure+koreasouth+standard_b1s"
+    },
+    {
+      "imageId": "ubuntu_22_04_x64_20G_alibase_20260213.vhd",
+      "specId": "alibaba+ap-northeast-2+ecs.t6-c1m1.large"
+    },
+    {
+      "imageId": "img-487zeit5",
+      "specId": "tencent+ap-seoul+S5.MEDIUM4"
+    },
+    {
+      "imageId": "r022-7f9d54ab-b0fd-4ea5-9c0d-f65463e240e1",
+      "specId": "ibm+jp-tok+bx2-2x8"
+    },
+    {
+      "imageId": "0b583339-0a62-4e5d-9cfb-4666539961d0",
+      "specId": "openstack+regionone+m1.small"
+    }
+  ]
+}
