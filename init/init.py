@@ -44,7 +44,9 @@ parser.add_argument("--credentials", "--credentials-only", action="store_true", 
 parser.add_argument("--openbao", "--openbao-only", action="store_true", dest="openbao_only", help="Register CSP credentials to OpenBao only (for MC-Terrarium)")
 parser.add_argument("--load-assets", "--load-assets-only", action="store_true", dest="load_assets_only", help="Load common specs and images only")
 parser.add_argument("--fetch-price", "--fetch-price-only", action="store_true", dest="fetch_price_only", help="Fetch price information only")
-parser.add_argument("--load-templates", "--load-templates-only", action="store_true", dest="load_templates_only", help="Load template files from init/templates/ directory")
+parser.add_argument(
+    "--load-templates", "--load-templates-only", action="store_true", dest="load_templates_only", help="Load template files from init/templates/ directory"
+)
 parser.add_argument("--key-file", type=str, default=None, help="Path to decryption key file (default: ~/.cloud-barista/.tmp_enc_key, then prompt)")
 args = parser.parse_args()
 
@@ -133,7 +135,7 @@ OPENBAO_KEY_MAP = {
         "Username": "OS_USERNAME",
         "Password": "OS_PASSWORD",
         "DomainName": "OS_DOMAIN_NAME",
-        "ProjectID": "OS_PROJECT_NAME",
+        "ProjectID": "OS_PROJECT_ID",
     },
 }
 
@@ -927,53 +929,55 @@ if run_fetch_price:
 
 # Load templates if requested
 if run_load_templates:
-    import json as json_module
     import glob
-    
-    templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
-    
+    import json as json_module
+
+    templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+
     if os.path.isdir(templates_dir):
-        template_files = sorted(glob.glob(os.path.join(templates_dir, '*.json')))
+        template_files = sorted(glob.glob(os.path.join(templates_dir, "*.json")))
         if template_files:
             print(Fore.YELLOW + f"\nLoading {len(template_files)} template(s) from {templates_dir}...")
-            
+
             for tf in template_files:
                 try:
-                    with open(tf, 'r') as f:
+                    with open(tf, "r") as f:
                         template_data = json_module.load(f)
-                    
+
                     # Determine namespace (default to 'system' for global templates)
-                    ns_id = template_data.pop('nsId', 'system')
-                    
+                    ns_id = template_data.pop("nsId", "system")
+
                     # Determine template type from resourceType field or content-based auto-detection.
                     # Detection priority:
                     # 1. 'resourceType' field (e.g., "mci", "vNet")
                     #    - Consistent with Go model's ResourceType field
                     #    - Works for both hand-crafted files and GET API response saved as file
                     # 2. Content-based detection (presence of 'mciDynamicReq' or 'vNetReq' key)
-                    resource_type = template_data.pop('resourceType', None)
-                    if resource_type == 'mci':
-                        template_type = 'mci'
-                    elif resource_type == 'vNet':
-                        template_type = 'vNet'
-                    elif resource_type == 'securityGroup':
-                        template_type = 'securityGroup'
-                    elif 'mciDynamicReq' in template_data:
-                        template_type = 'mci'
-                    elif 'vNetReq' in template_data:
-                        template_type = 'vNet'
-                    elif 'securityGroupReq' in template_data:
-                        template_type = 'securityGroup'
+                    resource_type = template_data.pop("resourceType", None)
+                    if resource_type == "mci":
+                        template_type = "mci"
+                    elif resource_type == "vNet":
+                        template_type = "vNet"
+                    elif resource_type == "securityGroup":
+                        template_type = "securityGroup"
+                    elif "mciDynamicReq" in template_data:
+                        template_type = "mci"
+                    elif "vNetReq" in template_data:
+                        template_type = "vNet"
+                    elif "securityGroupReq" in template_data:
+                        template_type = "securityGroup"
                     else:
-                        print(Fore.RED + f"  ❌ Cannot detect template type for {os.path.basename(tf)}: "
-                              f"no 'resourceType' or known request body key found. Skipping.")
+                        print(
+                            Fore.RED + f"  ❌ Cannot detect template type for {os.path.basename(tf)}: "
+                            f"no 'resourceType' or known request body key found. Skipping."
+                        )
                         continue
-                    
+
                     # Remove fields that are in the Info model but not in the Req model,
                     # in case the file is a saved GET API response
-                    for extra_field in ['id', 'uid', 'source', 'createdAt', 'updatedAt', 'systemLabel']:
+                    for extra_field in ["id", "uid", "source", "createdAt", "updatedAt", "systemLabel"]:
                         template_data.pop(extra_field, None)
-                    
+
                     # Ensure namespace exists
                     try:
                         ns_check = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/ns/{ns_id}", headers=HEADERS, timeout=10)
@@ -982,15 +986,15 @@ if run_load_templates:
                             requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/ns", json=ns_payload, headers=HEADERS, timeout=10)
                     except Exception:
                         pass
-                    
+
                     # POST template to appropriate API endpoint based on template type
                     url = f"http://{TUMBLEBUG_SERVER}/tumblebug/ns/{ns_id}/template/{template_type}"
                     resp = requests.post(url, json=template_data, headers=HEADERS, timeout=30)
-                    
-                    template_name = template_data.get('name', os.path.basename(tf))
+
+                    template_name = template_data.get("name", os.path.basename(tf))
                     if resp.status_code == 200:
                         print(Fore.GREEN + f"  ✅ Template loaded: {template_name} (type: {template_type}, ns: {ns_id})")
-                    elif 'already exists' in resp.text:
+                    elif "already exists" in resp.text:
                         print(Fore.CYAN + f"  ℹ️  Template already exists: {template_name} (type: {template_type}, ns: {ns_id})")
                     else:
                         print(Fore.RED + f"  ❌ Failed to load template {template_name}: {resp.text}")

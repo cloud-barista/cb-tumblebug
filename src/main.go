@@ -671,7 +671,7 @@ func addIndexes() error {
 // @tag.name [Infra Resource] NLB Management (for developer)
 // @tag.description Advanced NLB management operations for developers
 
-// @tag.name [Infra Resource] Site-to-site VPN Management (under development)
+// @tag.name [Infra Resource] Site-to-site VPN Management (preview)
 // @tag.description Site-to-site VPN tunnel management
 
 // @tag.name [Admin] System Configuration

@@ -17,6 +17,7 @@ package resource
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -33,7 +34,7 @@ import (
 // @ID GetSitesInMci
 // @Summary Get sites in MCI
 // @Description Get sites in MCI
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -49,7 +50,7 @@ func RestGetSitesInMci(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -57,7 +58,7 @@ func RestGetSitesInMci(c echo.Context) error {
 	err = common.CheckString(mciId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -262,7 +263,10 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @Description - AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM
 // @Description
 // @Description - Note: It will take about `15 ~ 45 minutes`.
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Description
+// @Description - Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.
+// @Description
+// @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
@@ -280,7 +284,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -288,14 +292,14 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	err = common.CheckString(mciId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	action := c.QueryParam("action")
 	if action != "retry" && action != "" {
 		errMsg := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -319,7 +323,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	err = common.CheckString(vpnReq.Name)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid vpnName (%s)", vpnReq.Name)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -337,7 +341,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 // @ID GetAllSiteToSiteVpn
 // @Summary Get all site-to-site VPNs
 // @Description Get all site-to-site VPNs
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -355,7 +359,7 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -363,14 +367,14 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 	err = common.CheckString(mciId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	option := c.QueryParam("option")
 	if option != "InfoList" && option != "IdList" && option != "" {
 		errMsg := fmt.Errorf("invalid option (%s)", option)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -391,7 +395,7 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusOK, vpnIdList)
 	default:
 		errMsg := fmt.Errorf("invalid option (%s)", option)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -401,12 +405,13 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 // @ID GetSiteToSiteVpn
 // @Summary Get resource info of a site-to-site VPN
 // @Description Get resource info of a site-to-site VPN
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
+// @Param refresh query boolean false "Refresh the resource info from CSPs" default(true)
 // @Success 200 {object} model.VpnInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -418,27 +423,37 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	mciId := c.Param("mciId")
 	err = common.CheckString(mciId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	vpnId := c.Param("vpnId")
 	err = common.CheckString(vpnId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	refresh := c.QueryParam("refresh")
+	refreshBool := true
+	if refresh != "" {
+		refreshBool, err = strconv.ParseBool(refresh)
+		if err != nil {
+			log.Warn().Msgf("invalid refresh (%s), set to true", refresh)
+			refreshBool = true
+		}
 	}
 
 	// * Only provide the "refined" detail level for now
 	detail := "refined"
-	resp, err := resource.GetSiteToSiteVPN(nsId, mciId, vpnId, detail)
+	resp, err := resource.GetSiteToSiteVPN(nsId, mciId, vpnId, detail, refreshBool)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -451,7 +466,10 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @ID DeleteSiteToSiteVpn
 // @Summary Delete a site-to-site VPN
 // @Description Delete a site-to-site VPN
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Description
+// @Description - Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.
+// @Description
+// @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
@@ -468,7 +486,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -476,7 +494,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	err = common.CheckString(mciId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -484,7 +502,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	err = common.CheckString(vpnId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -501,7 +519,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @ID GetRequestStatusOfSiteToSiteVpn
 // @Summary Check the status of a specific request by its ID
 // @Description Check the status of a specific request by its ID
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -519,14 +537,14 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	mciId := c.Param("mciId")
 	err = common.CheckString(mciId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -534,13 +552,13 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	err = common.CheckString(vpnId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	reqId := c.Param("requestId")
 	if reqId == "" {
 		errMsg := fmt.Errorf("invalid reqId (%s)", reqId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	reqId = strings.TrimSpace(reqId)

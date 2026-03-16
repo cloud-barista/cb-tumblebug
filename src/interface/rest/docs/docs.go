@@ -5925,7 +5925,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
                 ],
                 "summary": "Get sites in MCI",
                 "operationId": "GetSitesInMci",
@@ -7737,7 +7737,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
                 ],
                 "summary": "Get all site-to-site VPNs",
                 "operationId": "GetAllSiteToSiteVpn",
@@ -7798,7 +7798,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a site-to-site VPN\n\nThe supported CSP sets are as follows:\n\n- AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM\n\n- Note: It will take about ` + "`" + `15 ~ 45 minutes` + "`" + `.",
+                "description": "Create a site-to-site VPN\n\nThe supported CSP sets are as follows:\n\n- AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM\n\n- Note: It will take about ` + "`" + `15 ~ 45 minutes` + "`" + `.\n\n- Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.\n",
                 "consumes": [
                     "application/json"
                 ],
@@ -7806,7 +7806,7 @@ const docTemplate = `{
                     "application/x-json-stream"
                 ],
                 "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
                 ],
                 "summary": "Create a site-to-site VPN",
                 "operationId": "PostSiteToSiteVpn",
@@ -7884,7 +7884,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
                 ],
                 "summary": "Get resource info of a site-to-site VPN",
                 "operationId": "GetSiteToSiteVpn",
@@ -7912,6 +7912,13 @@ const docTemplate = `{
                         "name": "vpnId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Refresh the resource info from CSPs",
+                        "name": "refresh",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -7942,7 +7949,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a site-to-site VPN",
+                "description": "Delete a site-to-site VPN\n\n- Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.\n",
                 "consumes": [
                     "application/json"
                 ],
@@ -7950,7 +7957,7 @@ const docTemplate = `{
                     "application/x-json-stream"
                 ],
                 "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
                 ],
                 "summary": "Delete a site-to-site VPN",
                 "operationId": "DeleteSiteToSiteVpn",
@@ -8018,7 +8025,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
                 ],
                 "summary": "Check the status of a specific request by its ID",
                 "operationId": "GetRequestStatusOfSiteToSiteVpn",
@@ -17680,6 +17687,71 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AzureBgpPeeringCidrs": {
+            "type": "object",
+            "properties": {
+                "toAlibaba": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "169.254.21.16/30",
+                        "169.254.21.20/30",
+                        "169.254.22.16/30",
+                        "169.254.22.20/30"
+                    ]
+                },
+                "toAws": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "169.254.21.0/30",
+                        "169.254.21.4/30",
+                        "169.254.22.0/30",
+                        "169.254.22.4/30"
+                    ]
+                },
+                "toGcp": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "169.254.21.8/30",
+                        "169.254.21.12/30",
+                        "169.254.22.8/30",
+                        "169.254.22.12/30"
+                    ]
+                },
+                "toIbm": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "169.254.21.32/30",
+                        "169.254.21.36/30",
+                        "169.254.22.32/30",
+                        "169.254.22.36/30"
+                    ]
+                },
+                "toTencent": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "169.254.21.24/30",
+                        "169.254.21.28/30",
+                        "169.254.22.24/30",
+                        "169.254.22.28/30"
+                    ]
+                }
+            }
+        },
         "model.AzureSpecificProperty": {
             "type": "object",
             "properties": {
@@ -17687,6 +17759,9 @@ const docTemplate = `{
                     "type": "string",
                     "default": "65531",
                     "example": "65531"
+                },
+                "bgpPeeringCidrs": {
+                    "$ref": "#/definitions/model.AzureBgpPeeringCidrs"
                 },
                 "gatewaySubnetCidr": {
                     "type": "string",
@@ -27316,7 +27391,7 @@ const docTemplate = `{
         },
         {
             "description": "Site-to-site VPN tunnel management",
-            "name": "[Infra Resource] Site-to-site VPN Management (under development)"
+            "name": "[Infra Resource] Site-to-site VPN Management (preview)"
         },
         {
             "description": "System settings and configuration management",

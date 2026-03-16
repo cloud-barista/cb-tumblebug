@@ -1,0 +1,41 @@
+tumblebug:
+  # Tumblebug API endpoint
+  endpoint: http://localhost:1323
+  
+  # Namespace and MCI IDs
+  demo:
+    nsId: default
+    mciId: mci01
+  
+  # MCI Dynamics request body template (JSON)
+  api:
+    mciDynamic:
+      reqBody: mciDynamic.json
+
+# Site-to-site VPN test cases
+testTargetPairs:
+  testCases:
+    - site1: aws
+      site2: gcp
+      vpnId: vpn-aws-gcp
+      execute: true
+    - site1: aws
+      site2: alibaba
+      vpnId: vpn-aws-alibaba
+      execute: true
+    - site1: aws
+      site2: tencent
+      vpnId: vpn-aws-tencent
+      execute: true
+    - site1: aws
+      site2: ibm
+      vpnId: vpn-aws-ibm
+      execute: true 
+    - site1: aws
+      site2: azure
+      vpnId: vpn-aws-azure
+      execute: true
+    - site1: aws
+      site2: openstack
+      vpnId: vpn-aws-openstack 
+      execute: true 

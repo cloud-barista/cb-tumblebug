@@ -85,9 +85,18 @@ type AwsSpecificProperty struct {
 }
 
 type AzureSpecificProperty struct {
-	GatewaySubnetCidr string `json:"gatewaySubnetCidr,omitempty" default:"" example:"xxx.xxx.xxx.xxx/xx"`
-	BgpAsn            string `json:"bgpAsn,omitempty" default:"65531" example:"65531"`
-	VpnSku            string `json:"vpnSku,omitempty" default:"VpnGw1AZ" example:"VpnGw1AZ"`
+	GatewaySubnetCidr string                `json:"gatewaySubnetCidr,omitempty" default:"" example:"xxx.xxx.xxx.xxx/xx"`
+	BgpAsn            string                `json:"bgpAsn,omitempty" default:"65531" example:"65531"`
+	VpnSku            string                `json:"vpnSku,omitempty" default:"VpnGw1AZ" example:"VpnGw1AZ"`
+	BgpPeeringCidrs   *AzureBgpPeeringCidrs `json:"bgpPeeringCidrs,omitempty"`
+}
+
+type AzureBgpPeeringCidrs struct {
+	ToAws     []string `json:"toAws,omitempty" example:"169.254.21.0/30,169.254.21.4/30,169.254.22.0/30,169.254.22.4/30"`
+	ToGcp     []string `json:"toGcp,omitempty" example:"169.254.21.8/30,169.254.21.12/30,169.254.22.8/30,169.254.22.12/30"`
+	ToAlibaba []string `json:"toAlibaba,omitempty" example:"169.254.21.16/30,169.254.21.20/30,169.254.22.16/30,169.254.22.20/30"`
+	ToTencent []string `json:"toTencent,omitempty" example:"169.254.21.24/30,169.254.21.28/30,169.254.22.24/30,169.254.22.28/30"`
+	ToIbm     []string `json:"toIbm,omitempty" example:"169.254.21.32/30,169.254.21.36/30,169.254.22.32/30,169.254.22.36/30"`
 }
 
 type GcpSpecificProperty struct {
