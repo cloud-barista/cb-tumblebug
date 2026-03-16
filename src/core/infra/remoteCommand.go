@@ -2625,6 +2625,59 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 				postfix = post
 			}
 			replacement = replaceWithId(vmId, prefix, postfix)
+		} else if strings.EqualFold(funcName, "GetLocationDisplay") ||
+			strings.EqualFold(funcName, "GetLocationLatitude") ||
+			strings.EqualFold(funcName, "GetLocationLongitude") {
+			// Logic for GetLocationDisplay, GetLocationLatitude, GetLocationLongitude functions
+			// These return the location info (display name, latitude, longitude) of the target VM.
+			// Example: $$Func(GetLocationDisplay(target=this.this))
+			// Example: $$Func(GetLocationLatitude())
+			// Example: $$Func(GetLocationLongitude(prefix='--longitude '))
+			targetMciId := mciId
+			targetVmId := vmId
+			if val, ok := params["target"]; ok {
+				val = strings.TrimSpace(val)
+				if val != "" {
+					parts := strings.Split(val, ".")
+					if len(parts) == 2 {
+						targetMciId = parts[0]
+						targetVmId = parts[1]
+						if targetMciId == "this" {
+							targetMciId = mciId
+						}
+						if targetVmId == "this" {
+							targetVmId = vmId
+						}
+						if targetMciId == "" || targetVmId == "" {
+							return "", fmt.Errorf("built-in function %s error: target MCI or VM %s is invalid", funcName, val)
+						}
+					} else if strings.EqualFold(val, "this") {
+						targetMciId = mciId
+						targetVmId = vmId
+					} else {
+						return "", fmt.Errorf("built-in function %s error: target %q has invalid format; expected \"this\" or \"mciId.vmId\"", funcName, val)
+					}
+				}
+			}
+			prefix := ""
+			if pre, ok := params["prefix"]; ok {
+				prefix = pre
+			}
+			postfix := ""
+			if post, ok := params["postfix"]; ok {
+				postfix = post
+			}
+			loc, locErr := replaceWithLocation(nsId, targetMciId, targetVmId)
+			if locErr != nil {
+				return "", fmt.Errorf("built-in function %s error: %s", funcName, locErr.Error())
+			}
+			if strings.EqualFold(funcName, "GetLocationDisplay") {
+				replacement = prefix + loc.Display + postfix
+			} else if strings.EqualFold(funcName, "GetLocationLatitude") {
+				replacement = prefix + fmt.Sprintf("%g", loc.Latitude) + postfix
+			} else {
+				replacement = prefix + fmt.Sprintf("%g", loc.Longitude) + postfix
+			}
 		} else {
 			return "", fmt.Errorf("built-in function error in command: unknown function: %s", funcName)
 		}
@@ -2766,6 +2819,15 @@ func getVmIdsByLabel(nsId, mciId, labelSelector string) ([]string, error) {
 // replaceWithId function to replace string with the prefix and postfix
 func replaceWithId(id, prefix, postfix string) string {
 	return prefix + id + postfix
+}
+
+// replaceWithLocation returns the Location of the target VM
+func replaceWithLocation(nsId, mciId, vmId string) (model.Location, error) {
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		return model.Location{}, err
+	}
+	return vmInfo.Location, nil
 }
 
 // Command Status Management Functions
