@@ -236,6 +236,15 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 		}
 	}
 
+	// If VM is already terminated, treat terminate as a completed no-op
+	if strings.EqualFold(action, model.ActionTerminate) {
+		vmStatus, statusErr := GetMciVmStatus(nsId, mciId, vmId, false)
+		if statusErr == nil && strings.EqualFold(vmStatus.Status, model.StatusTerminated) {
+			log.Info().Msgf("[VM %s] already terminated, skipping", vmId)
+			return "Already terminated", nil
+		}
+	}
+
 	var wg sync.WaitGroup
 	results := make(chan model.ControlVmResult, 1)
 	wg.Add(1)
@@ -739,12 +748,19 @@ func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParame
 
 		// duplicated action
 		if strings.EqualFold(vm.Status, targetStatus) {
+			if strings.EqualFold(action, model.ActionTerminate) {
+				// Terminate is idempotent: already terminated is considered success
+				return nil
+			}
 			if !strings.EqualFold(action, model.ActionReboot) {
 				return errors.New(action + " is not allowed for VM under " + vm.Status)
 			}
 		}
 		// redundant action
 		if strings.EqualFold(vm.Status, model.StatusTerminated) {
+			if strings.EqualFold(action, model.ActionTerminate) {
+				return nil
+			}
 			return errors.New(action + " is not allowed for VM under " + vm.Status)
 		}
 		// under transitional status
@@ -773,10 +789,16 @@ func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParame
 
 		// duplicated action
 		if strings.EqualFold(mci.Status, targetStatus) {
+			if strings.EqualFold(action, model.ActionTerminate) {
+				return nil
+			}
 			return errors.New(action + " is not allowed for MCI under " + mci.Status)
 		}
 		// redundant action
 		if strings.EqualFold(mci.Status, model.StatusTerminated) {
+			if strings.EqualFold(action, model.ActionTerminate) {
+				return nil
+			}
 			return errors.New(action + " is not allowed for MCI under " + mci.Status)
 		}
 		// under transitional status

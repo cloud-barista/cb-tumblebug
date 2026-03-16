@@ -530,7 +530,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 	for _, v := range cspResourceStatus.AllList.OnlyCSPList {
 		tmpResourceOnCsp.CspResourceId = v.SystemId
 		// Azure has different ID for NameId and SystemId
-		if providerName == csp.Azure {
+		if csp.ResolveCloudPlatform(providerName) == csp.Azure {
 			if resourceType != model.StrDataDisk {
 				tmpResourceOnCsp.CspResourceId = v.NameId
 			}

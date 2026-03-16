@@ -22,6 +22,7 @@ type CloudInfo struct {
 // CSPDetail is structure for CSP information
 type CSPDetail struct {
 	Description                string                  `mapstructure:"description" json:"description"`
+	CloudPlatform              string                  `mapstructure:"cloudPlatform" json:"cloudPlatform,omitempty"`
 	Driver                     string                  `mapstructure:"driver" json:"driver"`
 	Links                      []string                `mapstructure:"link" json:"links,omitempty"`
 	UseEmptyRepresentativeZone bool                    `mapstructure:"useEmptyRepresentativeZone" json:"useEmptyRepresentativeZone,omitempty"`
