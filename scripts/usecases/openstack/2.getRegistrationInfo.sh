@@ -124,20 +124,53 @@ if [ "$PUBLIC_IP" != "$HOST_IP" ]; then
 fi
 
 # ============================================================
-# Ensure placeholder services exist for CB-Spider compatibility
+# Verify CB-Spider required services in service catalog
 # CB-Spider requires Octavia (NLB) and Manila (SharedFileSystem)
-# service clients, but minimal DevStack doesn't include them.
+# These should be installed via DevStack plugins.
+# If missing, create placeholders as fallback.
 # ============================================================
-if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
-    openstack service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer 2>/dev/null && \
-    openstack endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" 2>/dev/null && \
-    echo "  Created placeholder: load-balancer (octavia)"
+echo ""
+echo "Verifying CB-Spider required services..."
+PLACEHOLDER_CREATED=0
+
+# Octavia (Load Balancer) - gophercloud type: "load-balancer"
+if openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
+    echo "  ✓ load-balancer (Octavia) - installed"
+else
+    echo "  ✗ load-balancer (Octavia) - NOT found, creating placeholder..."
+    openstack service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer && \
+    openstack endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" && \
+    PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
 fi
 
-if ! openstack service list -f value -c Type 2>/dev/null | grep -q "^shared-file-system$"; then
-    openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" shared-file-system 2>/dev/null && \
-    openstack endpoint create --region "$REGION" shared-file-system public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" 2>/dev/null && \
-    echo "  Created placeholder: shared-file-system (manilav2)"
+# Manila (Shared File System) - gophercloud type: "sharev2"
+if openstack service list -f value -c Type 2>/dev/null | grep -q "^sharev2$"; then
+    echo "  ✓ sharev2 (Manila) - installed"
+else
+    echo "  ✗ sharev2 (Manila) - NOT found, creating placeholder..."
+    openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" sharev2 && \
+    openstack endpoint create --region "$REGION" sharev2 public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" && \
+    PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
+fi
+
+# Clean up old incorrect placeholder if it exists (type "shared-file-system" instead of "sharev2")
+# Only delete if description contains "placeholder for CB-Spider" to avoid deleting real services.
+OLD_SFS_ID=$(openstack service list -f value -c ID -c Type 2>/dev/null | awk '$2 == "shared-file-system" {print $1}')
+if [ -n "$OLD_SFS_ID" ]; then
+    OLD_SFS_DESC=$(openstack service show "$OLD_SFS_ID" -f value -c description 2>/dev/null || echo "")
+    if echo "$OLD_SFS_DESC" | grep -q "placeholder for CB-Spider"; then
+        for eid in $(openstack endpoint list --service "$OLD_SFS_ID" -f value -c ID 2>/dev/null); do
+            openstack endpoint delete "$eid" 2>/dev/null
+        done
+        openstack service delete "$OLD_SFS_ID" 2>/dev/null
+        echo "  Removed old placeholder: shared-file-system (wrong type)"
+    else
+        echo "  Skipped: shared-file-system service exists but is not a placeholder"
+    fi
+fi
+
+if [ $PLACEHOLDER_CREATED -gt 0 ]; then
+    echo "  ⚠ Created $PLACEHOLDER_CREATED placeholder(s) - consider re-running install with plugins"
 fi
 
 # ============================================================
