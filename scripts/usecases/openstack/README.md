@@ -42,13 +42,13 @@ Options:
 
 This outputs:
 - **cloudinfo.yaml snippet** — copy into `cb-tumblebug/assets/cloudinfo.yaml`
-- **credentials.yaml snippet** — copy into `cb-tumblebug/init/credentials.yaml`
+- **credentials.yaml snippet** — copy into `~/.cloud-barista/credentials.yaml`
 - API connectivity test results
 
 ### 3. Register in CB-Tumblebug
 
 1. Add the generated snippets to the respective files
-2. Open AWS Security Group ports: **80, 5000, 8774, 9292, 9696**
+2. Open AWS Security Group ports: **80, 8774, 9292, 9696**
 3. Run:
    ```bash
    make enc-cred && make init

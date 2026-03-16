@@ -54,7 +54,8 @@ if [ ! -f "$DEVSTACK_DIR/openrc" ]; then
 fi
 
 # Extract admin password from local.conf
-ADMIN_PASSWORD=$(grep "^ADMIN_PASSWORD=" "$DEVSTACK_DIR/local.conf" 2>/dev/null | cut -d'=' -f2 || echo "cbtumblebug")
+ADMIN_PASSWORD=$(grep "^ADMIN_PASSWORD=" "$DEVSTACK_DIR/local.conf" 2>/dev/null | cut -d'=' -f2)
+ADMIN_PASSWORD=${ADMIN_PASSWORD:-cbtumblebug}
 
 # Source openrc to get environment variables
 source "$DEVSTACK_DIR/openrc" admin admin 2>/dev/null

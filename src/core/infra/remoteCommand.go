@@ -2636,22 +2636,27 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			targetMciId := mciId
 			targetVmId := vmId
 			if val, ok := params["target"]; ok {
-				parts := strings.Split(val, ".")
-				if len(parts) == 2 {
-					targetMciId = parts[0]
-					targetVmId = parts[1]
-					if targetMciId == "this" {
+				val = strings.TrimSpace(val)
+				if val != "" {
+					parts := strings.Split(val, ".")
+					if len(parts) == 2 {
+						targetMciId = parts[0]
+						targetVmId = parts[1]
+						if targetMciId == "this" {
+							targetMciId = mciId
+						}
+						if targetVmId == "this" {
+							targetVmId = vmId
+						}
+						if targetMciId == "" || targetVmId == "" {
+							return "", fmt.Errorf("built-in function %s error: target MCI or VM %s is invalid", funcName, val)
+						}
+					} else if strings.EqualFold(val, "this") {
 						targetMciId = mciId
-					}
-					if targetVmId == "this" {
 						targetVmId = vmId
+					} else {
+						return "", fmt.Errorf("built-in function %s error: target %q has invalid format; expected \"this\" or \"mciId.vmId\"", funcName, val)
 					}
-					if targetMciId == "" || targetVmId == "" {
-						return "", fmt.Errorf("built-in function %s error: target MCI or VM %s is invalid", funcName, val)
-					}
-				} else if strings.EqualFold(val, "this") {
-					targetMciId = mciId
-					targetVmId = vmId
 				}
 			}
 			prefix := ""

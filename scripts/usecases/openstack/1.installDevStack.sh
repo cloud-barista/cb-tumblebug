@@ -156,15 +156,15 @@ echo "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/stack > /dev/null
 echo ""
 echo "[3/5] Cloning DevStack ($OPENSTACK_BRANCH)..."
 
-sudo -u stack bash -c "
+sudo -u stack OPENSTACK_BRANCH="$OPENSTACK_BRANCH" bash <<'DEVSTACK_CLONE'
     cd /opt/stack
     if [ -d devstack ]; then
         echo 'DevStack directory exists, pulling latest...'
-        cd devstack && git checkout ${OPENSTACK_BRANCH} && git pull
+        cd devstack && git checkout "$OPENSTACK_BRANCH" && git pull
     else
-        git clone https://opendev.org/openstack/devstack -b ${OPENSTACK_BRANCH}
+        git clone https://opendev.org/openstack/devstack -b "$OPENSTACK_BRANCH"
     fi
-"
+DEVSTACK_CLONE
 
 # ============================================================
 # Step 4: Configure DevStack (local.conf)
@@ -240,12 +240,14 @@ echo ""
 echo "[5/5] Running stack.sh (this takes 15-30 minutes)..."
 echo "      Logs: /opt/stack/logs/stack.sh.log"
 
-sudo -u stack bash -c "
-    cd /opt/stack/devstack
-    ./stack.sh
-"
-
+# Temporarily disable 'exit on error' so we can capture stack.sh's exit code
+set +e
+sudo -u stack bash -c '
+    cd /opt/stack/devstack && ./stack.sh
+'
 STACK_EXIT=$?
+# Re-enable 'exit on error' for the remainder of the script
+set -e
 
 echo ""
 echo "============================================================"
