@@ -4295,6 +4295,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/token": {
+            "get": {
+                "description": "Get an access token for the specified K8sCluster.\nOnly applicable to CSPs that use exec-based authentication (e.g., GCP GKE, AWS EKS).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Get a token for K8sCluster access",
+                "operationId": "GetK8sClusterToken",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "k8scluster01",
+                        "description": "K8sCluster ID",
+                        "name": "k8sClusterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterTokenResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/k8sCluster/{k8sClusterId}/upgrade": {
             "put": {
                 "description": "Upgrade a K8sCluster's version",
@@ -18826,6 +18880,28 @@ const docTemplate = `{
                 "DiskError"
             ]
         },
+        "model.ExecCredential": {
+            "type": "object",
+            "properties": {
+                "apiVersion": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.ExecCredentialStatus"
+                }
+            }
+        },
+        "model.ExecCredentialStatus": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "model.ExecutionTask": {
             "type": "object",
             "properties": {
@@ -20381,6 +20457,14 @@ const docTemplate = `{
                 "K8sClusterUpdating",
                 "K8sClusterDeleting"
             ]
+        },
+        "model.K8sClusterTokenResponse": {
+            "type": "object",
+            "properties": {
+                "execCredential": {
+                    "$ref": "#/definitions/model.ExecCredential"
+                }
+            }
         },
         "model.K8sClusterVersionDetail": {
             "type": "object",

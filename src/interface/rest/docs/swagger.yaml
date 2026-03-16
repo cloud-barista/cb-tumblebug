@@ -3415,6 +3415,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: k8sNodeGroupDynamicReq
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/token:
+    get:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Get a token for K8sCluster access
+      description: |-
+        Get an access token for the specified K8sCluster.
+        Only applicable to CSPs that use exec-based authentication (e.g., GCP GKE, AWS EKS).
+      operationId: GetK8sClusterToken
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterTokenResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/k8sCluster/{k8sClusterId}/upgrade:
     put:
       tags:
@@ -15655,6 +15698,20 @@ components:
       - DiskAttached
       - DiskDeleting
       - DiskError
+    model.ExecCredential:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        status:
+          $ref: '#/components/schemas/model.ExecCredentialStatus'
+    model.ExecCredentialStatus:
+      type: object
+      properties:
+        token:
+          type: string
     model.ExecutionTask:
       type: object
       properties:
@@ -16801,6 +16858,11 @@ components:
       - K8sClusterInactive
       - K8sClusterUpdating
       - K8sClusterDeleting
+    model.K8sClusterTokenResponse:
+      type: object
+      properties:
+        execCredential:
+          $ref: '#/components/schemas/model.ExecCredential'
     model.K8sClusterVersionDetail:
       type: object
       properties:
