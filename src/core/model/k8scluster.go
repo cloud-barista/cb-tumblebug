@@ -462,6 +462,27 @@ type K8sAddonsInfo struct {
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
+// ExecCredential mirrors the Kubernetes ExecCredential format (client.authentication.k8s.io/v1).
+// kubectl parses this structure when an exec-based kubeconfig is used.
+// Ref: https://kubernetes.io/docs/reference/config-api/client-authentication.v1/
+type ExecCredential struct {
+	ApiVersion string               `json:"apiVersion"`
+	Kind       string               `json:"kind"`
+	Status     ExecCredentialStatus `json:"status"`
+}
+
+// ExecCredentialStatus holds credentials for the transport to use.
+// Mirrors the Kubernetes ExecCredentialStatus (client.authentication.k8s.io/v1).
+type ExecCredentialStatus struct {
+	Token string `json:"token"`
+}
+
+// K8sClusterTokenResponse is the response struct for the K8sCluster token API.
+// It wraps an ExecCredential object that kubectl can use directly for exec-based auth.
+type K8sClusterTokenResponse struct {
+	ExecCredential ExecCredential `json:"execCredential"`
+}
+
 // K8sClusterConnectionConfigCandidatesReq is struct for a request to check requirements to create a new K8sCluster instance dynamically (with default resource option)
 type K8sClusterConnectionConfigCandidatesReq struct {
 	// SpecId is field for id of a spec in common namespace
