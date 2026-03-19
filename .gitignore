@@ -33,7 +33,6 @@ app
 meta_db/
 
 # Temporary directory and file
-container-volume/
 scripts/misc/cloudinfo-review.yaml
 
 
@@ -65,13 +64,9 @@ log/
 *.log
 *.history
 
-# Ignore all docker-compose.yaml files created by users, except docker-compose.yaml
-*docker-compose*.yaml
-!docker-compose.yaml
-
-# .env file for docker-compose
+# Deployments & Docker
 .env
-!.env.example
+container-volume/
 
 # Secrets (OpenBao init output)
 secrets/openbao-init.json
