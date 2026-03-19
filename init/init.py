@@ -29,10 +29,9 @@ Examples:
   %(prog)s                                    # Run all steps (default)
   %(prog)s -y                                 # Run all steps without confirmation
   %(prog)s --credentials-only                 # Register credentials only
-  %(prog)s --openbao-only                     # Register CSP credentials to OpenBao only
+  %(prog)s --credentials-only                 # Register credentials only
   %(prog)s --load-assets-only                 # Load assets (specs and images) only
   %(prog)s --fetch-price-only                 # Fetch price information only
-  %(prog)s --credentials --openbao            # Register credentials + OpenBao
   %(prog)s --load-templates-only              # Load template files only
   %(prog)s --credentials --load-assets        # Register credentials and load assets
   %(prog)s -y --credentials --fetch-price     # Register credentials and fetch price (no confirmation)
@@ -40,21 +39,46 @@ Examples:
     """,
 )
 parser.add_argument("-y", "--yes", action="store_true", help="Automatically answer yes to prompts and proceed without confirmation")
-parser.add_argument("--credentials", "--credentials-only", action="store_true", dest="credentials_only", help="Register cloud credentials only")
-parser.add_argument("--openbao", "--openbao-only", action="store_true", dest="openbao_only", help="Register CSP credentials to OpenBao only (for MC-Terrarium)")
-parser.add_argument("--load-assets", "--load-assets-only", action="store_true", dest="load_assets_only", help="Load common specs and images only")
-parser.add_argument("--fetch-price", "--fetch-price-only", action="store_true", dest="fetch_price_only", help="Fetch price information only")
 parser.add_argument(
-    "--load-templates", "--load-templates-only", action="store_true", dest="load_templates_only", help="Load template files from init/templates/ directory"
+    "--credentials",
+    "--credentials-only",
+    action="store_true",
+    dest="credentials_only",
+    help="Register cloud credentials only",
 )
-parser.add_argument("--key-file", type=str, default=None, help="Path to decryption key file (default: ~/.cloud-barista/.tmp_enc_key, then prompt)")
+parser.add_argument(
+    "--load-assets",
+    "--load-assets-only",
+    action="store_true",
+    dest="load_assets_only",
+    help="Load common specs and images only",
+)
+parser.add_argument(
+    "--fetch-price",
+    "--fetch-price-only",
+    action="store_true",
+    dest="fetch_price_only",
+    help="Fetch price information only",
+)
+parser.add_argument(
+    "--load-templates",
+    "--load-templates-only",
+    action="store_true",
+    dest="load_templates_only",
+    help="Load template files from init/templates/ directory",
+)
+parser.add_argument(
+    "--key-file",
+    type=str,
+    default=None,
+    help="Path to decryption key file (default: ~/.cloud-barista/.tmp_enc_key, then prompt)",
+)
 args = parser.parse_args()
 
 # Determine which operations to run
 # If no specific options are provided, run all operations (default behavior)
-run_all = not (args.credentials_only or args.openbao_only or args.load_assets_only or args.fetch_price_only or args.load_templates_only)
+run_all = not (args.credentials_only or args.load_assets_only or args.fetch_price_only or args.load_templates_only)
 run_credentials = run_all or args.credentials_only
-run_openbao = run_all or args.openbao_only
 run_load_assets = run_all or args.load_assets_only
 run_fetch_price = run_all or args.fetch_price_only
 run_load_templates = run_all or args.load_templates_only
@@ -77,69 +101,6 @@ KEY_FILE = os.path.join(CRED_PATH, ".tmp_enc_key")
 expected_completion_time_seconds = 400  # Default 400 seconds for non-Azure asset load
 
 # ══════════════════════════════════════════════════════════════════════════════
-# OpenBao Configuration (CSP credential registration for MC-Terrarium)
-# ══════════════════════════════════════════════════════════════════════════════
-# OpenBao stores CSP credentials as KV v2 secrets so that MC-Terrarium's
-# OpenTofu templates can read them at runtime via the hashicorp/vault provider.
-#
-# CLI usage:  bao kv get secret/csp/aws
-# HCL usage:  vault_kv_secret_v2 { mount = "secret", name = "csp/aws" }
-# API path:   /v1/secret/data/csp/{provider}  ("data" is KV v2 API convention)
-# ──────────────────────────────────────────────────────────────────────────────
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
-
-VAULT_ADDR = os.getenv("VAULT_ADDR", "http://localhost:8200")
-VAULT_TOKEN = os.getenv("VAULT_TOKEN", "")
-
-KV_MOUNT = "secret"
-SECRET_PREFIX = "csp"
-
-# CSP key mapping: cb-tumblebug YAML keys → Terrarium/OpenTofu env var keys
-OPENBAO_KEY_MAP = {
-    "aws": {
-        "ClientId": "AWS_ACCESS_KEY_ID",
-        "ClientSecret": "AWS_SECRET_ACCESS_KEY",
-    },
-    "azure": {
-        "ClientId": "ARM_CLIENT_ID",
-        "ClientSecret": "ARM_CLIENT_SECRET",
-        "TenantId": "ARM_TENANT_ID",
-        "SubscriptionId": "ARM_SUBSCRIPTION_ID",
-    },
-    "gcp": {
-        "ProjectID": "project_id",
-        "ClientEmail": "client_email",
-        "PrivateKey": "private_key",
-        "private_key_id": "private_key_id",
-        "client_id": "client_id",
-    },
-    "alibaba": {
-        "ClientId": "ALIBABA_CLOUD_ACCESS_KEY_ID",
-        "ClientSecret": "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
-    },
-    "ibm": {
-        "ApiKey": "IC_API_KEY",
-    },
-    "ncp": {
-        "ClientId": "NCLOUD_ACCESS_KEY",
-        "ClientSecret": "NCLOUD_SECRET_KEY",
-    },
-    "tencent": {
-        "ClientId": "TENCENTCLOUD_SECRET_ID",
-        "ClientSecret": "TENCENTCLOUD_SECRET_KEY",
-    },
-    "openstack": {
-        "IdentityEndpoint": "OS_AUTH_URL",
-        "Username": "OS_USERNAME",
-        "Password": "OS_PASSWORD",
-        "DomainName": "OS_DOMAIN_NAME",
-        "ProjectID": "OS_PROJECT_ID",
-    },
-}
-
-# ══════════════════════════════════════════════════════════════════════════════
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
@@ -156,7 +117,9 @@ elif not os.path.isfile(ENC_FILE_PATH):
 def decrypt_credentials(enc_file_path, key):
     try:
         result = subprocess.run(
-            ["openssl", "enc", "-aes-256-cbc", "-d", "-pbkdf2", "-in", enc_file_path, "-pass", f"pass:{key}"], check=True, capture_output=True
+            ["openssl", "enc", "-aes-256-cbc", "-d", "-pbkdf2", "-in", enc_file_path, "-pass", f"pass:{key}"],
+            check=True,
+            capture_output=True,
         )
         if result.returncode != 0:
             return None, "Decryption failed."
@@ -198,6 +161,13 @@ def get_decryption_key():
         password = getpass(f"Enter the password of the encrypted credential to continue (attempt {attempt + 1}/3): ")
         decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, password)
         if error is None:
+            # Save verified password to KEY_FILE for reuse by other scripts
+            try:
+                with open(KEY_FILE, "w") as kf:
+                    kf.write(password)
+                os.chmod(KEY_FILE, 0o600)
+            except Exception:
+                pass
             return decrypted_content
         print(Fore.RED + error)
 
@@ -212,8 +182,6 @@ print(" - " + Fore.CYAN + "TB_API_USERNAME:" + Fore.RESET + f" {TB_API_USERNAME[
 print(" - " + Fore.CYAN + "TB_API_PASSWORD:" + Fore.RESET + f" {TB_API_PASSWORD[0]}**********")
 print(" - " + Fore.CYAN + "CRED_PATH:" + Fore.RESET + f" {CRED_PATH}")
 print(" - " + Fore.CYAN + "CRED_FILE_NAME:" + Fore.RESET + f" {CRED_FILE_NAME_ENC}")
-if run_openbao:
-    print(" - " + Fore.CYAN + "VAULT_ADDR:" + Fore.RESET + f" {VAULT_ADDR}")
 print(" - " + Fore.CYAN + "expected completion time:" + Fore.RESET + f" {expected_completion_time_seconds} seconds\n")
 
 # (Moved) server health check will run after user confirmation to ensure inputs are provided first
@@ -320,8 +288,6 @@ elif run_load_assets and not backup_available and not args.yes:
 
 # Display what will be executed (after user choice)
 operations = []
-if run_openbao:
-    operations.append("Initialize OpenBao + Register CSP credentials → OpenBao (for MC-Terrarium)")
 if run_credentials:
     operations.append("Register credentials → Tumblebug")
 if run_load_assets:
@@ -350,8 +316,8 @@ print("")
 
 # Determine if password input will be required
 # If password is needed, it serves as confirmation (skip "proceed?" prompt)
-# Decryption is needed for both Tumblebug credentials and OpenBao registration.
-needs_decryption = run_credentials or run_openbao
+# Decryption is needed for Tumblebug credentials.
+needs_decryption = run_credentials
 password_required = needs_decryption and not os.path.isfile(KEY_FILE)
 
 # Get decryption key BEFORE health check (if credentials are being registered)
@@ -592,156 +558,6 @@ def fetch_price():
         return {"error": error_msg}
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# OpenBao Helper Functions (CSP credential registration for MC-Terrarium)
-# ══════════════════════════════════════════════════════════════════════════════
-
-
-def load_vault_token_from_env(force=False):
-    """Load VAULT_TOKEN from project .env file. Use force=True to re-read after updates."""
-    global VAULT_TOKEN
-    if VAULT_TOKEN and not force:
-        return
-    env_path = os.path.join(PROJECT_DIR, ".env")
-    if os.path.isfile(env_path):
-        with open(env_path) as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("VAULT_TOKEN=") and not line.startswith("#"):
-                    VAULT_TOKEN = line.split("=", 1)[1].strip()
-                    os.environ["VAULT_TOKEN"] = VAULT_TOKEN
-                    return
-
-
-def register_openbao_credential(provider, credentials):
-    """Register a single CSP credential to OpenBao KV v2."""
-    has_value = any(v for v in credentials.values() if v)
-    if not has_value:
-        return provider, "skip", "No credential values"
-
-    secret_data = {}
-    key_map = OPENBAO_KEY_MAP.get(provider, {})
-    mapped_keys = []
-
-    for yaml_key, value in credentials.items():
-        if not value:
-            continue
-        terrarium_key = key_map.get(yaml_key)
-        if terrarium_key:
-            secret_data[terrarium_key] = value
-            mapped_keys.append(terrarium_key)
-
-    if not mapped_keys:
-        for yaml_key, value in credentials.items():
-            if value:
-                secret_data[yaml_key] = value
-        mapped_keys = list(secret_data.keys())
-
-    url = f"{VAULT_ADDR}/v1/{KV_MOUNT}/data/{SECRET_PREFIX}/{provider}"
-    headers = {"X-Vault-Token": VAULT_TOKEN, "Content-Type": "application/json"}
-    try:
-        resp = requests.post(url, json={"data": secret_data}, headers=headers, timeout=10)
-        resp.raise_for_status()
-        version = resp.json().get("data", {}).get("version", "?")
-        return provider, "ok", f"v{version} ({len(mapped_keys)} keys)"
-    except requests.RequestException:
-        return provider, "fail", "Connection or authentication error"
-
-
-def register_openbao_placeholder_secrets(registered_providers):
-    """Register placeholder secrets for CSPs not in the credential file.
-
-    Ensures vault_kv_secret_v2 data sources do not hard-fail during
-    tofu plan/apply when a CSP's credentials have not been provided yet.
-    """
-    headers = {"X-Vault-Token": VAULT_TOKEN, "Content-Type": "application/json"}
-    placeholder_count = 0
-
-    for provider, key_mapping in OPENBAO_KEY_MAP.items():
-        if provider in registered_providers:
-            continue
-        url = f"{VAULT_ADDR}/v1/{KV_MOUNT}/data/{SECRET_PREFIX}/{provider}"
-        try:
-            resp = requests.get(url, headers=headers, timeout=5)
-            if resp.status_code == 200:
-                continue
-        except requests.RequestException:
-            pass
-        placeholder_data = {v: "" for v in key_mapping.values()}
-        try:
-            resp = requests.post(url, json={"data": placeholder_data}, headers=headers, timeout=10)
-            resp.raise_for_status()
-            print(f"  {Fore.YELLOW}PLCH{Style.RESET_ALL} {provider:12s}  placeholder registered")
-            placeholder_count += 1
-        except requests.RequestException:
-            print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {provider:12s}  placeholder failed (check connection)")
-
-    return placeholder_count
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# OpenBao: Register CSP credentials for MC-Terrarium
-# ══════════════════════════════════════════════════════════════════════════════
-if run_openbao:
-    print(Fore.YELLOW + "\n" + "=" * 80)
-    print(Fore.YELLOW + "OpenBao: Registering CSP credentials for MC-Terrarium")
-    print(Fore.YELLOW + "=" * 80)
-
-    # Load token from .env (set by 'make up' → 'make init-openbao')
-    load_vault_token_from_env()
-
-    if not VAULT_TOKEN:
-        print(Fore.RED + "VAULT_TOKEN not set. Run 'make up' or 'make init-openbao' first.")
-    elif not cred_data:
-        print(Fore.YELLOW + "No credential data available. Skipping OpenBao registration.")
-    else:
-        # Verify OpenBao is reachable and ready
-        try:
-            resp = requests.get(f"{VAULT_ADDR}/v1/sys/seal-status", timeout=5)
-            status = resp.json()
-            if not status.get("initialized"):
-                print(Fore.RED + "OpenBao is not initialized. Run 'make init-openbao' first.")
-            elif status.get("sealed"):
-                print(Fore.RED + "OpenBao is sealed. Run 'make unseal' first.")
-            else:
-                print(Fore.GREEN + "OpenBao is ready (initialized and unsealed).")
-                print(Fore.CYAN + "\nRegistering credentials to OpenBao...")
-                print()
-
-                openbao_ok = 0
-                openbao_skip = 0
-                openbao_fail = 0
-                registered_providers = set()
-
-                for provider, credentials in cred_data.items():
-                    pname, status_str, message = register_openbao_credential(provider, credentials)
-                    if status_str == "ok":
-                        print(f"  {Fore.GREEN}OK  {Style.RESET_ALL} {pname:12s}  {message}")
-                        openbao_ok += 1
-                        registered_providers.add(pname)
-                    elif status_str == "skip":
-                        print(f"  {Fore.YELLOW}SKIP{Style.RESET_ALL} {pname:12s}  ({message})")
-                        openbao_skip += 1
-                    else:
-                        print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {pname:12s}  {message}")
-                        openbao_fail += 1
-
-                placeholder_count = register_openbao_placeholder_secrets(registered_providers)
-
-                print()
-                print(
-                    f"OpenBao results: {Fore.GREEN}{openbao_ok} registered{Style.RESET_ALL}, "
-                    f"{Fore.YELLOW}{openbao_skip} skipped{Style.RESET_ALL}, "
-                    f"{Fore.RED}{openbao_fail} failed{Style.RESET_ALL}"
-                    + (f", {Fore.CYAN}{placeholder_count} placeholders{Style.RESET_ALL}" if placeholder_count > 0 else "")
-                )
-        except requests.RequestException:
-            print(Fore.RED + f"Cannot reach OpenBao at {VAULT_ADDR}.")
-            print(Fore.YELLOW + "Start it first: make up")
-
-    print()
-# ══════════════════════════════════════════════════════════════════════════════
-
 # Register credentials to Tumblebug if requested
 if run_credentials:
     # cred_data was already decrypted before health check to ensure all user inputs complete first
@@ -888,7 +704,11 @@ if run_load_assets:
 
             if is_tty:
                 # Interactive terminal: spinner animation with carriage return
-                print(f"\r{spinner_chars[spinner_idx]} Loading... {time_str} (expected: ~{expected_completion_time_seconds}s)", end="", flush=True)
+                print(
+                    f"\r{spinner_chars[spinner_idx]} Loading... {time_str} (expected: ~{expected_completion_time_seconds}s)",
+                    end="",
+                    flush=True,
+                )
             else:
                 # Non-interactive (SSH, pipe, redirect): print only once per second
                 current_sec = int(elapsed)

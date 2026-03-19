@@ -4,21 +4,20 @@
 
 The `init.py` script is designed to automate the process of registering credentials and loading common specifications and images for a Tumblebug server. It can be executed directly or via the `init.sh` script which sets up a Python virtual environment. This script ensures the Tumblebug server is healthy before proceeding and performs several network operations in a secure and managed way.
 
-### What `make init` Does
+`make init` performs a sequential initialization process:
 
-`make init` runs `init.sh` → `init.py`, which performs two independent credential registration paths:
+1. **OpenBao (← MC-Terrarium)**: Registers CSP credentials into OpenBao KV v2 (`secret/csp/{provider}`) using `conf/openbao/openbao-register-creds.sh`.
+2. **Tumblebug → CB-Spider**: Registers cloud credentials via the Tumblebug API (hybrid-encrypted with RSA + AES) using `init/init.sh` → `init.py`.
 
-1. **Tumblebug → CB-Spider**: Registers cloud credentials via the Tumblebug API (hybrid-encrypted with RSA + AES)
-2. **OpenBao (← MC-Terrarium)**: Registers CSP credentials into OpenBao KV v2 (`secret/csp/{provider}`); MC-Terrarium's OpenTofu templates query OpenBao at runtime
+Both steps read from the same encrypted credential file (`~/.cloud-barista/credentials.yaml.enc`) using a temporary decryption key stored in `~/.cloud-barista/.tmp_enc_key` during the process.
 
-Both paths read from the same encrypted credential file (`~/.cloud-barista/credentials.yaml.enc`).
-
-```
 ~/.cloud-barista/credentials.yaml.enc
-        ↓ init.py (decrypt in-memory)
-        ├─→ Tumblebug API → CB-Spider (cloud connections)
-        └─→ OpenBao KV v2 (← Terrarium's OpenTofu templates)
-```
+↓ Makefile (prompt password if needed) → ~/.cloud-barista/.tmp_enc_key
+├─→ conf/openbao/openbao-register-creds.sh → OpenBao KV v2
+└─→ init/init.sh → init.py → Tumblebug API → CB-Spider
+↓ (cleanup .tmp_enc_key if created by Makefile)
+
+````
 
 ## 🚀 NEW: Fast Initialization with Database Backup
 
@@ -44,7 +43,7 @@ A pre-built database backup was found:
   ⏱️  Standard initialization (fetch from CSPs):  ~20 minutes
 
 Would you like to use the backup database? (y/n):
-```
+````
 
 **Auto-yes mode**: Use `-y` flag to automatically use backup without prompting:
 
@@ -151,8 +150,9 @@ init/decCredential.sh
 - `credentials.yaml`: Contains the credentials data to be registered with the Tumblebug server.
 - `encCredential.sh`: Script to encrypt `credentials.yaml`.
 - `decCredential.sh`: Script to decrypt `credentials.yaml.enc`.
-- `init-openbao.sh`: One-time OpenBao initialization (generates unseal key + root token).
-- `unseal-openbao.sh`: Unseals OpenBao after container restart.
+- `conf/openbao/openbao-config.hcl`: OpenBao configuration.
+- `conf/openbao/openbao-init.sh`: One-time OpenBao initialization (generates unseal key + root token).
+- `conf/openbao/openbao-unseal.sh`: Unseals OpenBao after container restart.
 
 > For OpenBao auto-initialization, credential paths, and Makefile targets, see [Appendix](#appendix-openbao-reference) below.
 
@@ -181,11 +181,11 @@ rm ~/.local/bin/uv ~/.local/bin/uvx
 ### How Auto-Initialization Works
 
 1. `make up` starts the OpenBao container first
-2. If `VAULT_TOKEN` is not set in `.env`, runs `init-openbao.sh` to:
+2. If `VAULT_TOKEN` is not set in `.env`, runs `conf/openbao/openbao-init.sh` to:
    - Initialize OpenBao (1 unseal key, threshold 1)
    - Save unseal key and root token to `secrets/openbao-init.json`
    - Write `VAULT_TOKEN` to `.env`
-3. Unseals OpenBao using `unseal-openbao.sh`
+3. Unseals OpenBao using `conf/openbao/openbao-unseal.sh`
 4. Starts all remaining services
 
 On subsequent restarts (`make up`), only the unseal step runs — no re-initialization.
@@ -205,14 +205,14 @@ On subsequent restarts (`make up`), only the unseal step runs — no re-initiali
 
 ### Makefile Targets (OpenBao)
 
-| Target              | Description                                               |
-| ------------------- | --------------------------------------------------------- |
-| `make up`           | Start all services (auto-init/unseal OpenBao)             |
-| `make down`         | Stop all services                                         |
-| `make init`         | Register credentials to both Tumblebug and OpenBao        |
-| `make unseal`       | Manually unseal OpenBao                                   |
-| `make init-openbao` | Manually initialize OpenBao (first run only)              |
-| `make clean-db`     | Delete Tumblebug/Spider/Terrarium data (keeps OpenBao)    |
-| `make clean-all`    | Full reset including OpenBao (requires `make init` again) |
+| Target              | Description                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| `make up`           | Start all services (auto-init/unseal OpenBao)                   |
+| `make down`         | Stop all services                                               |
+| `make init`         | Register credentials to both OpenBao and Tumblebug (sequential) |
+| `make unseal`       | Manually unseal OpenBao                                         |
+| `make init-openbao` | Manually initialize OpenBao (first run only)                    |
+| `make clean-db`     | Delete Tumblebug/Spider/Terrarium data (keeps OpenBao)          |
+| `make clean-all`    | Full reset including OpenBao (requires `make init` again)       |
 
 > For troubleshooting and more details, see [MC-Terrarium v0.1.0 — init/README.md](https://github.com/cloud-barista/mc-terrarium/blob/v0.1.0/init/README.md).
