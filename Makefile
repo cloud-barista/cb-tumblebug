@@ -17,7 +17,14 @@ init: ## Run initialization sequence (credential registration for OpenBao and Tu
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "CB-Tumblebug Initialization"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@if [ ! -f ~/.cloud-barista/.tmp_enc_key ]; then \
+	@IS_TMP_KEY=0; \
+	cleanup_tmp_key() { \
+		if [ "$$IS_TMP_KEY" = "1" ] && [ -f ~/.cloud-barista/.tmp_enc_key ]; then \
+			rm -f ~/.cloud-barista/.tmp_enc_key; \
+		fi; \
+	}; \
+	trap cleanup_tmp_key EXIT INT TERM HUP; \
+	if [ ! -f ~/.cloud-barista/.tmp_enc_key ]; then \
 		echo "Notice: A temporary key file will be created for initialization."; \
 		echo "        It will be removed automatically after initialization."; \
 		printf "Enter the password for credentials.yaml.enc: "; \
@@ -38,10 +45,7 @@ init: ## Run initialization sequence (credential registration for OpenBao and Tu
 	); \
 	EXIT_CODE=$$?; \
 	if [ "$$EXIT_CODE" -ne 0 ]; then \
-		echo "Initialization failed. Removing potential incorrect key..."; \
-		rm -f ~/.cloud-barista/.tmp_enc_key; \
-	elif [ "$$IS_TMP_KEY" = "1" ]; then \
-		rm -f ~/.cloud-barista/.tmp_enc_key; \
+		echo "Initialization failed."; \
 	fi; \
 	exit $$EXIT_CODE
 	@echo "Initialization complete!"
