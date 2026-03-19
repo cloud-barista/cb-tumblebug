@@ -5,22 +5,6 @@ networks:
     driver: bridge
 
 services:
-  reverse-proxy:
-    image: "traefik:v3.6"
-    # "docker compose pull reverse-proxy" to get the latest Traefik image minor version update
-    container_name: "traefik"
-    ports:
-      - 80:80
-      - 443:443
-      - 8080:8080
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./conf/traefik.yaml:/etc/traefik/traefik.yaml
-      - ${HOME}/.cloud-barista/certs/:/certs/
-    networks:
-      - external_network
-      - internal_network
-
   # CB-Tumblebug
   cb-tumblebug:
     image: cloudbaristaorg/cb-tumblebug:0.12.2
@@ -171,10 +155,9 @@ services:
     networks:
       - internal_network
       - external_network # for outbound access (not ideal for security)
-    # expose:
-    #   - 1024
-    ports:
-      - 1024:1024
+    # Uncomment below if you want to access CB-Spider for remote
+    # ports:
+    #   - 1024:1024
     volumes:
       - ./container-volume/cb-spider-container/meta_db/:/root/go/src/github.com/cloud-barista/cb-spider/meta_db/
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
@@ -203,23 +186,6 @@ services:
   cb-mapui:
     image: cloudbaristaorg/cb-mapui:0.12.15
     container_name: cb-mapui
-    labels:
-      # Explicitly tell Traefik to expose this container
-      - traefik.enable=true
-      # Define the rule for routing requests to this service
-      # Note - Multiple hosts are supported (e.g., traefik.http.routers.cb-mapui.rule=Host(`cb-mapui.localhost`) || Host(`xxx.xxx.xxx.xxx`))
-      # Warn - (Please be careful) Public IP can be used for the rule (e.g., Host(`xxx.xxx.xxx.xxx`))
-      - traefik.http.routers.cb-mapui.rule=Host(`cb-mapui.localhost`)
-      # Allow request only from the predefined entry point named "web"
-      # - traefik.http.routers.cb-mapui.entrypoints=web
-      # Allow request only from the predefined entry point named "websecure"
-      - traefik.http.routers.cb-mapui.entrypoints=websecure
-      # Enable HTTPS
-      - traefik.http.routers.cb-mapui.tls=true
-      # Requests to the service are forwarded via HTTP
-      - traefik.http.services.cb-mapui.loadbalancer.server.scheme=http
-      # The port the service listens on
-      - traefik.http.services.cb-mapui.loadbalancer.server.port=1324
     # build:
     #   context: ../cb-mapui
     #   dockerfile: Dockerfile
@@ -313,7 +279,15 @@ services:
       - VAULT_ADDR=http://openbao:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-}
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/terrarium/readyz"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://localhost:8055/terrarium/readyz",
+        ]
       interval: 10m
       timeout: 5s
       retries: 3
