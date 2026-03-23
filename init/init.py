@@ -29,7 +29,6 @@ Examples:
   %(prog)s                                    # Run all steps (default)
   %(prog)s -y                                 # Run all steps without confirmation
   %(prog)s --credentials-only                 # Register credentials only
-  %(prog)s --credentials-only                 # Register credentials only
   %(prog)s --load-assets-only                 # Load assets (specs and images) only
   %(prog)s --fetch-price-only                 # Fetch price information only
   %(prog)s --load-templates-only              # Load template files only
