@@ -53,7 +53,7 @@ conf/credentials.conf
 !conf/traefik.yaml
 
 # Config file for OpenBao
-!conf/openbao
+!init/openbao
 
 # Secrets (Matches any directory named 'secrets' anywhere in the tree)
 **/secrets/*

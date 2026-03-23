@@ -36,8 +36,8 @@ init: ## Run initialization sequence (credential registration for OpenBao and Tu
 	fi; \
 	( \
 		echo "1. Registering credentials to OpenBao..."; \
-		chmod +x ./conf/openbao/openbao-register-creds.sh 2>/dev/null || true; \
-		./conf/openbao/openbao-register-creds.sh -y && \
+		chmod +x ./init/openbao/openbao-register-creds.sh 2>/dev/null || true; \
+		./init/openbao/openbao-register-creds.sh -y && \
 		echo "" && \
 		echo "2. Registering credentials to Tumblebug..." && \
 		chmod +x ./init/init.sh 2>/dev/null || true; \
@@ -90,7 +90,7 @@ compose: prepare-volumes ## Start Docker Compose services (auto init/unseal Open
 	@DOCKER_BUILDKIT=1 docker compose up -d openbao
 	@if [ ! -f .env ] || ! grep -q '^VAULT_TOKEN=.\+' .env 2>/dev/null; then \
 		echo "VAULT_TOKEN not found — running first-time OpenBao initialization..."; \
-		bash conf/openbao/openbao-init.sh; \
+		bash init/openbao/openbao-init.sh; \
 	fi
 	@$(MAKE) unseal
 	@echo "Starting all services..."
@@ -118,7 +118,7 @@ clean-db: compose-down ## Clean all database metadata (./init/cleanDB.sh)
 clean-all: compose-down clean-db ## Full reset including OpenBao (requires re-init)
 	@echo "Cleaning OpenBao data..."
 	@sudo rm -rf container-volume/openbao-data
-	@rm -f conf/openbao/secrets/openbao-init.json
+	@rm -f init/openbao/secrets/openbao-init.json
 	@sed -i 's/^VAULT_TOKEN=.*/VAULT_TOKEN=/' .env 2>/dev/null || true
 	@echo "Cleaned! Run 'make up' then 'make init' to re-initialize."
 
@@ -145,13 +145,13 @@ down: ## Quick stop (alias for compose-down)
 # ===== OpenBao Commands =====
 init-openbao: ## Initialize OpenBao (one-time setup: generate unseal key + root token)
 	@echo "Initializing OpenBao..."
-	@chmod +x ./conf/openbao/openbao-init.sh 2>/dev/null || true
-	@./conf/openbao/openbao-init.sh
+	@chmod +x ./init/openbao/openbao-init.sh 2>/dev/null || true
+	@./init/openbao/openbao-init.sh
 
 unseal: ## Unseal OpenBao (needed after every container restart)
 	@echo "Trying to unseal OpenBao (if not already unsealed)..."
-	@chmod +x ./conf/openbao/openbao-unseal.sh 2>/dev/null || true
-	@./conf/openbao/openbao-unseal.sh || true
+	@chmod +x ./init/openbao/openbao-unseal.sh 2>/dev/null || true
+	@./init/openbao/openbao-unseal.sh || true
 
 gen-cred: ## Generate credentials.yaml from template (./init/genCredential.sh)
 	@echo "Generating credentials.yaml from template..."

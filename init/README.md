@@ -6,14 +6,14 @@ The `init.py` script is designed to automate the process of registering credenti
 
 `make init` performs a sequential initialization process:
 
-1. **OpenBao (← MC-Terrarium)**: Registers CSP credentials into OpenBao KV v2 (`secret/csp/{provider}`) using `conf/openbao/openbao-register-creds.sh`.
+1. **OpenBao (← MC-Terrarium)**: Registers CSP credentials into OpenBao KV v2 (`secret/csp/{provider}`) using `init/openbao/openbao-register-creds.sh`.
 2. **Tumblebug → CB-Spider**: Registers cloud credentials via the Tumblebug API (hybrid-encrypted with RSA + AES) using `init/init.sh` → `init.py`.
 
 Both steps read from the same encrypted credential file (`~/.cloud-barista/credentials.yaml.enc`) using a temporary decryption key stored in `~/.cloud-barista/.tmp_enc_key` during the process.
 
 ~/.cloud-barista/credentials.yaml.enc
 ↓ Makefile (prompt password if needed) → ~/.cloud-barista/.tmp_enc_key
-├─→ conf/openbao/openbao-register-creds.sh → OpenBao KV v2
+├─→ init/openbao/openbao-register-creds.sh → OpenBao KV v2
 └─→ init/init.sh → init.py → Tumblebug API → CB-Spider
 ↓ (cleanup .tmp_enc_key if created by Makefile)
 
@@ -150,9 +150,9 @@ init/decCredential.sh
 - `credentials.yaml`: Contains the credentials data to be registered with the Tumblebug server.
 - `encCredential.sh`: Script to encrypt `credentials.yaml`.
 - `decCredential.sh`: Script to decrypt `credentials.yaml.enc`.
-- `conf/openbao/openbao-config.hcl`: OpenBao configuration.
-- `conf/openbao/openbao-init.sh`: One-time OpenBao initialization (generates unseal key + root token).
-- `conf/openbao/openbao-unseal.sh`: Unseals OpenBao after container restart.
+- `init/openbao/openbao-config.hcl`: OpenBao configuration.
+- `init/openbao/openbao-init.sh`: One-time OpenBao initialization (generates unseal key + root token).
+- `init/openbao/openbao-unseal.sh`: Unseals OpenBao after container restart.
 
 > For OpenBao auto-initialization, credential paths, and Makefile targets, see [Appendix](#appendix-openbao-reference) below.
 
@@ -181,11 +181,11 @@ rm ~/.local/bin/uv ~/.local/bin/uvx
 ### How Auto-Initialization Works
 
 1. `make up` starts the OpenBao container first
-2. If `VAULT_TOKEN` is not set in `.env`, runs `conf/openbao/openbao-init.sh` to:
-   - Initialize OpenBao (1 unseal key, threshold 1)
+2. If `VAULT_TOKEN` is not set in `.env`, runs `init/openbao/openbao-init.sh` to:
+   - Generate initial unseal keys and root token
    - Save unseal key and root token to `secrets/openbao-init.json`
-   - Write `VAULT_TOKEN` to `.env`
-3. Unseals OpenBao using `conf/openbao/openbao-unseal.sh`
+   - Set `VAULT_TOKEN` in `.env`
+3. Unseals OpenBao using `init/openbao/openbao-unseal.sh`
 4. Starts all remaining services
 
 On subsequent restarts (`make up`), only the unseal step runs — no re-initialization.

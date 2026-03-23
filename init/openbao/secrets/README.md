@@ -7,15 +7,15 @@ This directory is used to store sensitive outputs from the **OpenBao** initializ
 Currently, there are two `secrets/` directories in this project:
 
 - **[`secrets/`](../../../secrets/) (Root)**: The primary location for initialization outputs.
-- **[`conf/openbao/secrets/`](./)** (This directory): A secondary location for component-specific placeholders or documentation.
+- **[`init/openbao/secrets/`](./)** (This directory): A secondary location for component-specific placeholders or documentation.
 
 ## Key Files
 
-| File | Description |
-| :--- | :--- |
+| File                | Description                                                                                                     |
+| :------------------ | :-------------------------------------------------------------------------------------------------------------- |
 | `openbao-init.json` | Contains the **unseal key** and **root token** for OpenBao. Required for unsealing and credential registration. |
-| `.gitkeep` | Preserves this directory in Git even when empty. |
-| `README.md` | This file (unignored project-wide in `.gitignore`). |
+| `.gitkeep`          | Preserves this directory in Git even when empty.                                                                |
+| `README.md`         | This file (unignored project-wide in `.gitignore`).                                                             |
 
 ## Management Scripts
 
