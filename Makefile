@@ -17,27 +17,14 @@ init: ## Run initialization sequence (credential registration for OpenBao and Tu
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "CB-Tumblebug Initialization"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@IS_TMP_KEY=0; \
-	cleanup_tmp_key() { \
-		if [ "$$IS_TMP_KEY" = "1" ] && [ -f ~/.cloud-barista/.tmp_enc_key ]; then \
-			rm -f ~/.cloud-barista/.tmp_enc_key; \
-		fi; \
-	}; \
-	trap cleanup_tmp_key EXIT INT TERM HUP; \
-	if [ ! -f ~/.cloud-barista/.tmp_enc_key ]; then \
-		echo "Notice: A temporary key file will be created for initialization."; \
-		echo "        It will be removed automatically after initialization."; \
-		printf "Enter the password for credentials.yaml.enc: "; \
-		read -s PASS; \
-		echo ""; \
-		printf "%s" "$$PASS" > ~/.cloud-barista/.tmp_enc_key; \
-		chmod 600 ~/.cloud-barista/.tmp_enc_key; \
-		IS_TMP_KEY=1; \
-	fi; \
-	( \
+	@echo "Notice: For security, the password will be requested twice (once for OpenBao, once for Tumblebug)."
+	@echo "   - 1st: For OpenBao registration"
+	@echo "   - 2nd: For Tumblebug initialization"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@( \
 		echo "1. Registering credentials to OpenBao..."; \
 		chmod +x ./init/openbao/openbao-register-creds.sh 2>/dev/null || true; \
-		./init/openbao/openbao-register-creds.sh -y && \
+		./init/openbao/openbao-register-creds.sh && \
 		echo "" && \
 		echo "2. Registering credentials to Tumblebug..." && \
 		chmod +x ./init/init.sh 2>/dev/null || true; \
