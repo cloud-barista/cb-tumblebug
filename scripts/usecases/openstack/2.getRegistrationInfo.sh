@@ -110,8 +110,8 @@ if [ "$PUBLIC_IP" != "$HOST_IP" ]; then
     CHANGED=0
     for eid in $(openstack endpoint list -f value -c ID 2>/dev/null); do
         eurl=$(openstack endpoint show "$eid" -f value -c url 2>/dev/null)
-        if echo "$eurl" | grep -q "$HOST_IP"; then
-            new_url=$(echo "$eurl" | sed "s/$HOST_IP/$PUBLIC_IP/g")
+        if echo "$eurl" | grep -Fq "$HOST_IP"; then
+            new_url=${eurl//$HOST_IP/$PUBLIC_IP}
             openstack endpoint set --url "$new_url" "$eid" 2>/dev/null
             CHANGED=$((CHANGED + 1))
         fi
