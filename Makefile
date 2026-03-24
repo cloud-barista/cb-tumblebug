@@ -14,28 +14,8 @@ swag swagger: ## Generate Swagger documentation
 SHELL := /bin/bash
 
 init: ## Run initialization sequence (credential registration for OpenBao and Tumblebug)
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "CB-Tumblebug Initialization"
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "Notice: For security, the password will be requested twice (once for OpenBao, once for Tumblebug)."
-	@echo "   - 1st: For OpenBao registration"
-	@echo "   - 2nd: For Tumblebug initialization"
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@( \
-		echo "1. Registering credentials to OpenBao..."; \
-		chmod +x ./init/openbao/openbao-register-creds.sh 2>/dev/null || true; \
-		./init/openbao/openbao-register-creds.sh && \
-		echo "" && \
-		echo "2. Registering credentials to Tumblebug..." && \
-		chmod +x ./init/init.sh 2>/dev/null || true; \
-		./init/init.sh; \
-	); \
-	EXIT_CODE=$$?; \
-	if [ "$$EXIT_CODE" -ne 0 ]; then \
-		echo "Initialization failed."; \
-	fi; \
-	exit $$EXIT_CODE
-	@echo "Initialization complete!"
+	@chmod +x ./init/multi-init.sh 2>/dev/null || true
+	@./init/multi-init.sh
 
 # ===== Docker Compose Commands =====
 # docker-compose.yaml includes all services + OpenBao.
