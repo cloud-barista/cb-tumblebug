@@ -1714,7 +1714,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 
 		// Add error history (timeline events only, no full error duplication)
 		if len(errorHistory) > 0 {
-			errorMsg += "Error Timeline:\n"
+			errorMsg += "Complete Error Timeline:\n"
 			for i, errEntry := range errorHistory {
 				errorMsg += fmt.Sprintf("  %d. %s\n", i+1, errEntry)
 			}
