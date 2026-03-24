@@ -155,7 +155,16 @@ def get_decryption_key():
             return decrypted_content
         print(Fore.RED + error)
 
-    # 3. Prompt for password (up to 3 attempts)
+    # 3. Check Environment Variable (MULTI_INIT_PWD)
+    env_password = os.environ.get("MULTI_INIT_PWD")
+    if env_password:
+        decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, env_password)
+        if error is None:
+            return decrypted_content
+        else:
+            print(Fore.YELLOW + "Warning: Password in MULTI_INIT_PWD failed to decrypt. Falling back to manual prompt.")
+
+    # 4. Prompt for password (up to 3 attempts)
     for attempt in range(3):
         password = getpass(f"Enter the password of the encrypted credential to continue (attempt {attempt + 1}/3): ")
         decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, password)

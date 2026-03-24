@@ -19,6 +19,8 @@ import argparse
 import os
 import subprocess
 import sys
+from getpass import getpass
+import sys
 import time
 
 import requests
@@ -250,9 +252,16 @@ def get_decrypted_content():
             return content, True  # (content, used_key_file)
         print(Fore.RED + error)
 
-    # 3. Prompt for password (up to 3 attempts)
-    from getpass import getpass
+    # 3. Check Environment Variable (MULTI_INIT_PWD)
+    env_password = os.environ.get("MULTI_INIT_PWD")
+    if env_password:
+        content, error = decrypt_credentials(ENC_FILE, env_password)
+        if error is None:
+            return content, False  # (content, used_key_file=False)
+        else:
+            print(Fore.YELLOW + "Warning: Password in MULTI_INIT_PWD failed to decrypt. Falling back to manual prompt.")
 
+    # 4. Prompt for password (up to 3 attempts)
     for attempt in range(1, 4):
         password = getpass(f"Enter the password for credentials.yaml.enc (attempt {attempt}/3): ")
         content, error = decrypt_credentials(ENC_FILE, password)
