@@ -257,13 +257,6 @@ def get_decrypted_content():
         password = getpass(f"Enter the password for credentials.yaml.enc (attempt {attempt}/3): ")
         content, error = decrypt_credentials(ENC_FILE, password)
         if error is None:
-            # Save verified password to KEY_FILE for reuse by other scripts
-            try:
-                with open(KEY_FILE, "w") as kf:
-                    kf.write(password)
-                os.chmod(KEY_FILE, 0o600)
-            except Exception:
-                pass
             return content, False  # (content, used_key_file=False)
         print(Fore.RED + error)
 

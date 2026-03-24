@@ -9,13 +9,12 @@ The `init.py` script is designed to automate the process of registering credenti
 1. **OpenBao (← MC-Terrarium)**: Registers CSP credentials into OpenBao KV v2 (`secret/csp/{provider}`) using `init/openbao/openbao-register-creds.sh`.
 2. **Tumblebug → CB-Spider**: Registers cloud credentials via the Tumblebug API (hybrid-encrypted with RSA + AES) using `init/init.sh` → `init.py`.
 
-Both steps read from the same encrypted credential file (`~/.cloud-barista/credentials.yaml.enc`) using a temporary decryption key stored in `~/.cloud-barista/.tmp_enc_key` during the process.
+Both steps read from the same encrypted credential file (`~/.cloud-barista/credentials.yaml.enc`). For security, you will be prompted for the decryption password twice (once for each step).
 
 ~/.cloud-barista/credentials.yaml.enc
-↓ Makefile (prompt password if needed) → ~/.cloud-barista/.tmp_enc_key
-├─→ init/openbao/openbao-register-creds.sh → OpenBao KV v2
-└─→ init/init.sh → init.py → Tumblebug API → CB-Spider
-↓ (cleanup .tmp_enc_key if created by Makefile)
+↓ Makefile
+├─→ init/openbao/openbao-register-creds.sh → OpenBao KV v2 (Prompts for password)
+└─→ init/init.sh → init.py → Tumblebug API → CB-Spider (Prompts for password)
 
 ````
 
