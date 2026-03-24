@@ -7,21 +7,48 @@ run: ## Run the built application
 clean: ## Clean build artifacts
 	cd src/ && $(MAKE) clean
 
-clean-all: compose-down clean-db ## Full reset including OpenBao (requires re-init)
-	@echo "Cleaning OpenBao data..."
-	@sudo rm -rf container-volume/openbao-data
-	@rm -f secrets/openbao-init.json
-	@sed -i 's/^VAULT_TOKEN=.*/VAULT_TOKEN=/' .env 2>/dev/null || true
-	@echo "Cleaned! Run 'make up' then 'make init' to re-initialize."
-
 swag swagger: ## Generate Swagger documentation
 	cd src/ && $(MAKE) swag
 
 # ===== Initialization =====
-init: ## Run initialization script (./init/init.sh)
-	@echo "Running initialization script..."
-	@chmod +x ./init/init.sh 2>/dev/null || true
-	@./init/init.sh
+SHELL := /bin/bash
+
+init: ## Run initialization sequence (credential registration for OpenBao and Tumblebug)
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "CB-Tumblebug Initialization"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@IS_TMP_KEY=0; \
+	cleanup_tmp_key() { \
+		if [ "$$IS_TMP_KEY" = "1" ] && [ -f ~/.cloud-barista/.tmp_enc_key ]; then \
+			rm -f ~/.cloud-barista/.tmp_enc_key; \
+		fi; \
+	}; \
+	trap cleanup_tmp_key EXIT INT TERM HUP; \
+	if [ ! -f ~/.cloud-barista/.tmp_enc_key ]; then \
+		echo "Notice: A temporary key file will be created for initialization."; \
+		echo "        It will be removed automatically after initialization."; \
+		printf "Enter the password for credentials.yaml.enc: "; \
+		read -s PASS; \
+		echo ""; \
+		printf "%s" "$$PASS" > ~/.cloud-barista/.tmp_enc_key; \
+		chmod 600 ~/.cloud-barista/.tmp_enc_key; \
+		IS_TMP_KEY=1; \
+	fi; \
+	( \
+		echo "1. Registering credentials to OpenBao..."; \
+		chmod +x ./init/openbao/openbao-register-creds.sh 2>/dev/null || true; \
+		./init/openbao/openbao-register-creds.sh -y && \
+		echo "" && \
+		echo "2. Registering credentials to Tumblebug..." && \
+		chmod +x ./init/init.sh 2>/dev/null || true; \
+		./init/init.sh; \
+	); \
+	EXIT_CODE=$$?; \
+	if [ "$$EXIT_CODE" -ne 0 ]; then \
+		echo "Initialization failed."; \
+	fi; \
+	exit $$EXIT_CODE
+	@echo "Initialization complete!"
 
 # ===== Docker Compose Commands =====
 # docker-compose.yaml includes all services + OpenBao.
@@ -63,14 +90,11 @@ compose: prepare-volumes ## Start Docker Compose services (auto init/unseal Open
 	@DOCKER_BUILDKIT=1 docker compose up -d openbao
 	@if [ ! -f .env ] || ! grep -q '^VAULT_TOKEN=.\+' .env 2>/dev/null; then \
 		echo "VAULT_TOKEN not found — running first-time OpenBao initialization..."; \
-		bash init/init-openbao.sh; \
+		bash init/openbao/openbao-init.sh; \
 	fi
 	@$(MAKE) unseal
 	@echo "Starting all services..."
-	@DOCKER_BUILDKIT=1 docker compose up -d --build
-	@echo ""
-	@echo "To register CSP credentials, run:  make init"
-	@$(MAKE) logs
+	@DOCKER_BUILDKIT=1 docker compose up --build
 
 logs: ## Follow Docker Compose logs (docker compose logs -f)
 	docker compose logs -f
@@ -90,6 +114,13 @@ clean-db: compose-down ## Clean all database metadata (./init/cleanDB.sh)
 	@echo "Running cleanDB script..."
 	@chmod +x ./init/cleanDB.sh 2>/dev/null || true
 	@./init/cleanDB.sh
+
+clean-all: compose-down clean-db ## Full reset including OpenBao (requires re-init)
+	@echo "Cleaning OpenBao data..."
+	@sudo rm -rf container-volume/openbao-data
+	@rm -f init/openbao/secrets/openbao-init.json
+	@sed -i 's/^VAULT_TOKEN=.*/VAULT_TOKEN=/' .env 2>/dev/null || true
+	@echo "Cleaned! Run 'make up' then 'make init' to re-initialize."
 
 # ===== Database Backup & Restore =====
 backup-assets: ## Backup PostgreSQL database to assets directory for version control
@@ -114,13 +145,13 @@ down: ## Quick stop (alias for compose-down)
 # ===== OpenBao Commands =====
 init-openbao: ## Initialize OpenBao (one-time setup: generate unseal key + root token)
 	@echo "Initializing OpenBao..."
-	@chmod +x ./init/init-openbao.sh 2>/dev/null || true
-	@./init/init-openbao.sh
+	@chmod +x ./init/openbao/openbao-init.sh 2>/dev/null || true
+	@./init/openbao/openbao-init.sh
 
 unseal: ## Unseal OpenBao (needed after every container restart)
 	@echo "Trying to unseal OpenBao (if not already unsealed)..."
-	@chmod +x ./init/unseal-openbao.sh 2>/dev/null || true
-	@./init/unseal-openbao.sh || true
+	@chmod +x ./init/openbao/openbao-unseal.sh 2>/dev/null || true
+	@./init/openbao/openbao-unseal.sh || true
 
 gen-cred: ## Generate credentials.yaml from template (./init/genCredential.sh)
 	@echo "Generating credentials.yaml from template..."

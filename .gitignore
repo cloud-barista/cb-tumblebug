@@ -50,7 +50,14 @@ src/interface/rest/docs/swagger.yaml
 conf/*
 conf/credentials.conf
 !conf/traefik.yaml
-!conf/openbao-config.hcl
+
+# Config file for OpenBao
+!init/openbao
+
+# Secrets (Matches any directory named 'secrets' anywhere in the tree)
+**/secrets/*
+!**/secrets/.gitkeep
+!**/secrets/README.md
 
 # Runtime files
 src/benchmarking.csv
@@ -67,9 +74,6 @@ log/
 # Deployments & Docker
 .env
 container-volume/
-
-# Secrets (OpenBao init output)
-secrets/openbao-init.json
 
 # Python
 __pycache__/

@@ -5,3 +5,8 @@ logs/
 meta_db/
 **/credentials.conf
 .gitignore
+
+# Secrets
+**/secrets/*
+!**/secrets/.gitkeep
+!**/secrets/README.md

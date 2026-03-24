@@ -1,4 +1,4 @@
-# OpenBao server configuration
+# OpenBao server configuration for MC-Terrarium
 #
 # This configuration uses file-based persistent storage.
 # Data survives container restarts via the Docker volume (openbao-data).

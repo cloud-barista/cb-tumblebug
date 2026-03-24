@@ -295,8 +295,8 @@ services:
   # [Persistent mode] (default)
   #   - File-based storage — secrets survive restarts
   #   - Requires one-time initialization + unseal after every restart
-  #   - First run:  ./init/init-openbao.sh (or make init-openbao)
-  #   - After restart: ./init/unseal-openbao.sh (or make unseal)
+  #   - First run:  ./init/openbao/openbao-init.sh (or make init-openbao)
+  #   - After restart: ./init/openbao/openbao-unseal.sh (or make unseal)
   #
   # [Dev mode]
   #   - In-memory storage — secrets are LOST on container restart
@@ -327,7 +327,7 @@ services:
         exec docker-entrypoint.sh server -config=/openbao/config/openbao-config.hcl
     volumes:
       - ./container-volume/openbao-data:/openbao/data
-      - ./conf/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
+      - ./init/openbao/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
 
     # ── Dev mode (inactive) ────────────────────────────────────────
     # To switch to dev mode:

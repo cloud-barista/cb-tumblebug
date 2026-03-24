@@ -1,0 +1,11 @@
+[project]
+name = "terrarium-init"
+version = "0.1.0"
+description = "MC-Terrarium initialization: OpenBao setup and CSP credential import."
+readme = "../README.md"
+requires-python = ">=3.8.0"
+dependencies = [
+    "colorama==0.4.6",
+    "pyyaml==6.0.1",
+    "requests==2.32.4",
+]
