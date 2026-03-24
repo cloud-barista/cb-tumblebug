@@ -102,8 +102,8 @@ TOTAL=0
 for eid in $(openstack endpoint list -f value -c ID 2>/dev/null); do
     TOTAL=$((TOTAL + 1))
     eurl=$(openstack endpoint show "$eid" -f value -c url 2>/dev/null)
-    if echo "$eurl" | grep -q "$OLD_IP"; then
-        new_url=$(echo "$eurl" | sed "s/$OLD_IP/$PUBLIC_IP/g")
+    if echo "$eurl" | grep -Fq "$OLD_IP"; then
+        new_url=${eurl//$OLD_IP/$PUBLIC_IP}
         openstack endpoint set --url "$new_url" "$eid" 2>/dev/null
         CHANGED=$((CHANGED + 1))
         echo "  ✓ $eurl -> $new_url"

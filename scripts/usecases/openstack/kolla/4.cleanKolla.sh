@@ -54,13 +54,17 @@ fi
 # ============================================================
 echo "[2/5] Cleaning up Kolla Docker containers..."
 
-KOLLA_CONTAINERS=$(docker ps -a --filter "name=kolla" -q 2>/dev/null)
-if [ -n "$KOLLA_CONTAINERS" ]; then
-    docker stop $KOLLA_CONTAINERS 2>/dev/null || true
-    docker rm -f $KOLLA_CONTAINERS 2>/dev/null || true
-    echo "  Removed $(echo "$KOLLA_CONTAINERS" | wc -w) Kolla container(s)."
+if ! command -v docker >/dev/null 2>&1; then
+    echo "  Docker not found; skipping container cleanup."
 else
-    echo "  No Kolla containers found."
+    KOLLA_CONTAINERS=$(docker ps -a --filter "name=kolla" -q 2>/dev/null || true)
+    if [ -n "$KOLLA_CONTAINERS" ]; then
+        docker stop $KOLLA_CONTAINERS 2>/dev/null || true
+        docker rm -f $KOLLA_CONTAINERS 2>/dev/null || true
+        echo "  Removed $(echo "$KOLLA_CONTAINERS" | wc -w) Kolla container(s)."
+    else
+        echo "  No Kolla containers found."
+    fi
 fi
 
 # ============================================================
@@ -118,9 +122,14 @@ if $FULL_CLEAN; then
         echo "  Removed Kolla Docker images."
     fi
 
-    # Clean up docker volumes
-    docker volume prune -f 2>/dev/null || true
-    echo "  Pruned unused Docker volumes."
+    # Clean up Kolla-related docker volumes only (not all unused volumes)
+    KOLLA_VOLUMES=$(docker volume ls --format '{{.Name}}' 2>/dev/null | grep -E '^kolla[_-]' || true)
+    if [ -n "$KOLLA_VOLUMES" ]; then
+        docker volume rm -f $KOLLA_VOLUMES 2>/dev/null || true
+        echo "  Removed Kolla Docker volumes."
+    else
+        echo "  No Kolla Docker volumes found."
+    fi
 
     # Remove Cinder data directory
     sudo rm -rf /var/lib/cinder

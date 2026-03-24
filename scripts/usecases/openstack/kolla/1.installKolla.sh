@@ -6,7 +6,7 @@
 # Advantages over DevStack:
 #   - Docker-based: services survive reboots (auto-restart)
 #   - Stable: designed for long-running environments
-#   - Native Octavia/Manila support (no placeholder hacks)
+#   - Octavia/Manila: service-catalog placeholders auto-created for CB-Spider compatibility
 #   - Rolling upgrades supported
 #
 # Prerequisites:

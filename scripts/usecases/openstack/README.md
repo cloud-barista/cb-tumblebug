@@ -111,8 +111,8 @@ CB-Spider's OpenStack driver (gophercloud v2) requires ALL service clients durin
 | Service | gophercloud v2 Type | Aliases (also matched) | DevStack 2025.2 | Fix |
 |---------|---------------------|----------------------|-----------------|-----|
 | Cinder  | `block-storage`     | `volumev3`, `volumev2`, `volume`, `block-store` | `block-storage` | None needed (direct match) |
-| Octavia | `load-balancer`     | (none)               | Not installed   | Placeholder |
-| Manila  | `shared-file-system`| `sharev2`, `share`   | Not installed   | Placeholder |
+| Octavia | `load-balancer`     | (none)               | Enabled via plugin (may not be deployed) | Placeholder if missing |
+| Manila  | `shared-file-system`| `sharev2`, `share`   | Enabled via plugin (may not be deployed) | Placeholder if missing |
 
 The install script automatically creates placeholder entries for Octavia and Manila. If you see this error:
 

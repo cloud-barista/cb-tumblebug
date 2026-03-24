@@ -66,7 +66,7 @@ Options:
 1. Add the generated snippets to:
    - `~/.cloud-barista/credentials.yaml`
    - `cb-tumblebug/assets/cloudinfo.yaml`
-2. Open AWS Security Group ports: **5000, 8774, 9292, 9696, 8776**
+2. Open AWS Security Group ports: **5000, 8774, 9292, 9696, 8776, 80**
 3. Run:
    ```bash
    make enc-cred && make init
