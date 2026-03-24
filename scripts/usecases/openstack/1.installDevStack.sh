@@ -232,13 +232,13 @@ VOLUME_BACKING_FILE_SIZE=50G
 
 # -------------------------------------------------------
 # Octavia (Load Balancer) - required by CB-Spider NLBClient
-# gophercloud service catalog type: "load-balancer"
+# gophercloud v2 service catalog type: "load-balancer"
 # -------------------------------------------------------
 enable_plugin octavia https://opendev.org/openstack/octavia ${OPENSTACK_BRANCH}
 
 # -------------------------------------------------------
 # Manila (Shared File System) - required by CB-Spider SharedFileSystemClient
-# gophercloud service catalog type: "sharev2"
+# gophercloud v2 service catalog type: "shared-file-system" (alias: "sharev2")
 # -------------------------------------------------------
 enable_plugin manila https://opendev.org/openstack/manila ${OPENSTACK_BRANCH}
 LOCALCONF
@@ -295,19 +295,32 @@ if [ $STACK_EXIT -eq 0 ]; then
 
     # ----------------------------------------------------------
     # Verify CB-Spider required services in service catalog
-    # CB-Spider's OpenStack driver (gophercloud) requires these
-    # service types during connection initialization:
+    # CB-Spider's OpenStack driver (gophercloud v2) requires
+    # these service types during connection initialization:
     #   NewLoadBalancerV2()      -> type "load-balancer"
-    #   NewSharedFileSystemV2()  -> type "sharev2"
+    #   NewBlockStorageV3()      -> type "block-storage" (aliases: "volumev3", "volumev2", "volume")
+    #   NewSharedFileSystemV2()  -> type "shared-file-system" (aliases: "sharev2", "share")
     #
-    # These should be installed via DevStack plugins (Octavia/Manila).
-    # If a plugin failed to register, create a placeholder as fallback.
+    # gophercloud v2 uses ServiceTypeAliases, so:
+    #   - Cinder "block-storage" is matched directly (no alias entry needed)
+    #   - Manila "sharev2" or "shared-file-system" both work
+    #   - Octavia/Manila are optional plugins; create placeholders if not installed
     # ----------------------------------------------------------
     echo ""
     echo " Verifying CB-Spider required services..."
     PLACEHOLDER_CREATED=0
 
-    # Octavia (Load Balancer) - gophercloud type: "load-balancer"
+    # Cinder (Block Storage) - gophercloud v2 type: "block-storage"
+    # gophercloud v2 ServiceTypeAliases: "block-storage" -> ["volumev3", "volumev2", "volume", "block-store"]
+    # No alias entry needed; "block-storage" is matched directly.
+    if openstack service list -f value -c Type 2>/dev/null | grep -qE "^(block-storage|volumev3)$"; then
+        echo "   ✓ block-storage (Cinder) - installed"
+    else
+        echo "   ✗ block-storage (Cinder) - NOT found"
+        echo "     WARNING: Cinder is not available. Disk operations will fail."
+    fi
+
+    # Octavia (Load Balancer) - gophercloud v2 type: "load-balancer"
     if openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
         echo "   ✓ load-balancer (Octavia) - installed"
     else
@@ -317,31 +330,14 @@ if [ $STACK_EXIT -eq 0 ]; then
         PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
     fi
 
-    # Manila (Shared File System) - gophercloud type: "sharev2"
-    if openstack service list -f value -c Type 2>/dev/null | grep -q "^sharev2$"; then
-        echo "   ✓ sharev2 (Manila) - installed"
+    # Manila (Shared File System) - gophercloud v2 type: "shared-file-system" (alias: "sharev2")
+    if openstack service list -f value -c Type 2>/dev/null | grep -qE "^(shared-file-system|sharev2)$"; then
+        echo "   ✓ shared-file-system (Manila) - installed"
     else
-        echo "   ✗ sharev2 (Manila) - NOT found, creating placeholder..."
-        openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" sharev2 && \
-        openstack endpoint create --region "$REGION" sharev2 public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" && \
+        echo "   ✗ shared-file-system (Manila) - NOT found, creating placeholder..."
+        openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" shared-file-system && \
+        openstack endpoint create --region "$REGION" shared-file-system public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" && \
         PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
-    fi
-
-    # Clean up old incorrect placeholder if it exists (type "shared-file-system" instead of "sharev2")
-    # Only delete if the service description contains "placeholder for CB-Spider" to avoid
-    # deleting legitimate Manila services in production OpenStack environments.
-    OLD_SFS_ID=$(openstack service list -f value -c ID -c Type 2>/dev/null | awk '$2 == "shared-file-system" {print $1}')
-    if [ -n "$OLD_SFS_ID" ]; then
-        OLD_SFS_DESC=$(openstack service show "$OLD_SFS_ID" -f value -c description 2>/dev/null || echo "")
-        if echo "$OLD_SFS_DESC" | grep -q "placeholder for CB-Spider"; then
-            for eid in $(openstack endpoint list --service "$OLD_SFS_ID" -f value -c ID 2>/dev/null); do
-                openstack endpoint delete "$eid" 2>/dev/null
-            done
-            openstack service delete "$OLD_SFS_ID" 2>/dev/null
-            echo "   Removed old placeholder: shared-file-system (wrong type)"
-        else
-            echo "   Skipped: shared-file-system service exists but is not a placeholder"
-        fi
     fi
 
     if [ $PLACEHOLDER_CREATED -gt 0 ]; then

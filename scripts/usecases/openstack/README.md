@@ -21,7 +21,7 @@ SSH into the AWS VM and run:
 
 Options:
 - `--password PASSWORD` — OpenStack admin password (default: `cbtumblebug`)
-- `--branch BRANCH` — OpenStack release branch (default: `stable/2024.2`)
+- `--branch BRANCH` — OpenStack release branch (default: `stable/2025.2`)
 
 This takes **15–30 minutes**. After completion, you'll have a working OpenStack with:
 - Keystone (identity)
@@ -30,7 +30,7 @@ This takes **15–30 minutes**. After completion, you'll have a working OpenStac
 - Neutron (networking)
 - Cinder (block storage)
 - Horizon dashboard
-- Placeholder entries for Octavia (load-balancer) and Manila (shared-file-system) for CB-Spider compatibility
+- Placeholder/alias entries for CB-Spider compatibility (load-balancer, shared-file-system)
 
 ### 2. Get Registration Info
 
@@ -106,13 +106,21 @@ AWS m5.metal VM
 
 ### "No suitable endpoint could be found in the service catalog"
 
-CB-Spider's OpenStack driver requires ALL service clients (including Octavia and Manila) during connection initialization. The install script automatically creates placeholder service catalog entries for these services. If you see this error:
+CB-Spider's OpenStack driver (gophercloud v2) requires ALL service clients during connection initialization. It expects these service types in the Keystone service catalog:
+
+| Service | gophercloud v2 Type | Aliases (also matched) | DevStack 2025.2 | Fix |
+|---------|---------------------|----------------------|-----------------|-----|
+| Cinder  | `block-storage`     | `volumev3`, `volumev2`, `volume`, `block-store` | `block-storage` | None needed (direct match) |
+| Octavia | `load-balancer`     | (none)               | Not installed   | Placeholder |
+| Manila  | `shared-file-system`| `sharev2`, `share`   | Not installed   | Placeholder |
+
+The install script automatically creates placeholder entries for Octavia and Manila. If you see this error:
 
 ```bash
 # SSH into the DevStack VM and run:
-./2.getRegistrationInfo.sh    # Ensures placeholders exist
+./2.getRegistrationInfo.sh    # Ensures placeholders/aliases exist
 # or
-./3.updateEndpoints.sh        # Also ensures placeholders exist
+./3.updateEndpoints.sh        # Also ensures placeholders/aliases exist
 ```
 
 ### "Authentication failed"
