@@ -1705,12 +1705,14 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 
 	// If CreateMci fails, build comprehensive error message with history
 	if err != nil {
-		addErrorToHistory("MCI Creation", err.Error())
+		// Do NOT add the full CreateMci error to history — it will be shown once in Detail below.
+		// Only record a brief note in the timeline.
+		addErrorToHistory("MCI Creation", fmt.Sprintf("MCI '%s' creation failed (see Detail below)", req.Name))
 
 		// Build comprehensive error message
 		errorMsg := fmt.Sprintf("MCI '%s' creation failed in final provisioning stage.\n\n", req.Name)
 
-		// Add full error history
+		// Add error history (timeline events only, no full error duplication)
 		if len(errorHistory) > 0 {
 			errorMsg += "Complete Error Timeline:\n"
 			for i, errEntry := range errorHistory {
@@ -1719,7 +1721,8 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 			errorMsg += "\n"
 		}
 
-		errorMsg += fmt.Sprintf("Final Error: %s\n", err.Error())
+		// Full error appears only once here
+		errorMsg += fmt.Sprintf("Detail: %s\n", err.Error())
 
 		// Check if SubGroups is empty (which causes the validation error in CreateMci)
 		if len(mciReq.SubGroups) == 0 {
