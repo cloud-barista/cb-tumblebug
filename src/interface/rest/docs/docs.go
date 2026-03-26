@@ -15933,6 +15933,108 @@ const docTemplate = `{
                 }
             }
         },
+        "/resources/globalDns/record": {
+            "get": {
+                "description": "Get DNS records for a domain from Route53",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Utility] Global DNS Management"
+                ],
+                "summary": "Get GlobalDns Record",
+                "operationId": "GetGlobalDnsRecord",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain Name",
+                        "name": "domainName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Record Name (Prefix search)",
+                        "name": "recordName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Record Type",
+                        "name": "recordType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RestGetGlobalDnsRecordResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update (UPSERT) a DNS record for a domain in Route53. (Testing Required / Under Development)\nChoose at least one of these three IP source methods:\n1. MCI ID (mciId): Fetch Public IPs of all VMs in the MCI.\n2. Label Selector (labelSelector): Fetch IPs of matching resources.\n3. Manual IP Values (values): Manually provide IP addresses.\nIf multiple methods are used, IPs will be merged and deduplicated.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Utility] Global DNS Management"
+                ],
+                "summary": "Update GlobalDns Record",
+                "operationId": "PutGlobalDnsRecord",
+                "parameters": [
+                    {
+                        "description": "Details for record update",
+                        "name": "globalDnsRecordReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.GlobalDnsRecordReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/resources/objectStorage": {
             "get": {
                 "description": "(To be deprecated) Get the list of all object storages (buckets)\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `ListAllMyBucketsResult` + "`" + `\n- The response includes xmlns attribute: ` + "`" + `xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `\n- Swagger UI may show ` + "`" + `resource.ListAllMyBucketsResult` + "`" + ` due to rendering limitations\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cOwner\u003e\n\u003cID\u003eaws-ap-northeast-2\u003c/ID\u003e\n\u003cDisplayName\u003eaws-ap-northeast-2\u003c/DisplayName\u003e\n\u003c/Owner\u003e\n\u003cBuckets\u003e\n\u003c/Buckets\u003e\n\u003c/ListAllMyBucketsResult\u003e\n` + "`" + `` + "`" + `` + "`" + `",
@@ -19520,6 +19622,126 @@ const docTemplate = `{
                 "provider": {
                     "type": "string",
                     "example": "alibaba"
+                }
+            }
+        },
+        "model.GlobalDnsIPSource": {
+            "type": "object",
+            "properties": {
+                "ips": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"1.2.3.4\"]"
+                    ]
+                },
+                "label": {
+                    "$ref": "#/definitions/model.GlobalDnsLabelSource"
+                },
+                "mci": {
+                    "$ref": "#/definitions/model.GlobalDnsMciSource"
+                }
+            }
+        },
+        "model.GlobalDnsLabelSource": {
+            "type": "object",
+            "required": [
+                "labelSelector",
+                "nsId"
+            ],
+            "properties": {
+                "labelSelector": {
+                    "type": "string",
+                    "example": "app=nginx"
+                },
+                "nsId": {
+                    "type": "string",
+                    "example": "default"
+                }
+            }
+        },
+        "model.GlobalDnsMciSource": {
+            "type": "object",
+            "required": [
+                "mciId",
+                "nsId"
+            ],
+            "properties": {
+                "mciId": {
+                    "type": "string",
+                    "example": "mci-01"
+                },
+                "nsId": {
+                    "type": "string",
+                    "example": "default"
+                }
+            }
+        },
+        "model.GlobalDnsRecordInfo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "mci.example.com"
+                },
+                "ttl": {
+                    "type": "integer",
+                    "example": 300
+                },
+                "type": {
+                    "type": "string",
+                    "example": "A"
+                },
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"1.2.3.4\"]"
+                    ]
+                }
+            }
+        },
+        "model.GlobalDnsRecordReq": {
+            "type": "object",
+            "required": [
+                "domainName",
+                "setBy"
+            ],
+            "properties": {
+                "domainName": {
+                    "description": "--- DNS Record Settings ---",
+                    "type": "string",
+                    "example": "example.com"
+                },
+                "recordName": {
+                    "type": "string",
+                    "example": "mci.example.com"
+                },
+                "recordType": {
+                    "type": "string",
+                    "enum": [
+                        "A",
+                        "AAAA",
+                        "CNAME",
+                        "TXT"
+                    ],
+                    "example": "A"
+                },
+                "setBy": {
+                    "description": "--- IP Source Selection ---",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.GlobalDnsIPSource"
+                        }
+                    ]
+                },
+                "ttl": {
+                    "type": "integer",
+                    "example": 300
                 }
             }
         },
@@ -23348,6 +23570,17 @@ const docTemplate = `{
                 "success": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "model.RestGetGlobalDnsRecordResponse": {
+            "type": "object",
+            "properties": {
+                "record": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.GlobalDnsRecordInfo"
+                    }
                 }
             }
         },

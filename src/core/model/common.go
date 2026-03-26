@@ -172,6 +172,8 @@ var DefaultNamespace string
 var DefaultCredentialHolder string
 var EtcdEndpoints string
 var SelfEndpoint string
+var VaultAddr string
+var VaultToken string
 var MyDB *sql.DB
 var err error
 
@@ -191,6 +193,8 @@ const (
 	StrDBPassword            string = "TB_POSTGRES_PASSWORD"
 	StrAutocontrolDurationMs string = "TB_AUTOCONTROL_DURATION_MS"
 	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
+	StrVaultAddr             string = "VAULT_ADDR"
+	StrVaultToken            string = "VAULT_TOKEN"
 	StrFromAssets            string = "from-assets"
 	ErrStrKeyNotFound        string = "key not found"
 	StrAdd                   string = "add"
@@ -223,6 +227,7 @@ const (
 	StrNamespace             string = "ns"
 	StrTemplate              string = "template"
 	StrCommon                string = "common"
+	StrGlobalDns             string = "globalDns"
 	StrEmpty                 string = ""
 	StrSharedResourceName    string = "-shared-"
 	// StrFirewallRule               string = "firewallRule"
@@ -259,6 +264,7 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 	StrK8s:           func() interface{} { return &K8sClusterInfo{} },
 	StrNamespace:     func() interface{} { return &NsInfo{} },
 	StrVPN:           func() interface{} { return &VpnInfo{} },
+	StrGlobalDns:     func() interface{} { return &GlobalDnsRecordInfo{} },
 }
 
 // ResourceIds is struct for containing id and name of each Resource type

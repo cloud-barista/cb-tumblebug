@@ -13254,6 +13254,88 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /resources/globalDns/record:
+    get:
+      tags:
+      - "[Utility] Global DNS Management"
+      summary: Get GlobalDns Record
+      description: Get DNS records for a domain from Route53
+      operationId: GetGlobalDnsRecord
+      parameters:
+      - name: domainName
+        in: query
+        description: Domain Name
+        required: true
+        schema:
+          type: string
+      - name: recordName
+        in: query
+        description: Record Name (Prefix search)
+        schema:
+          type: string
+      - name: recordType
+        in: query
+        description: Record Type
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RestGetGlobalDnsRecordResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Utility] Global DNS Management"
+      summary: Update GlobalDns Record
+      description: |-
+        Update (UPSERT) a DNS record for a domain in Route53. (Testing Required / Under Development)
+        Choose at least one of these three IP source methods:
+        1. MCI ID (mciId): Fetch Public IPs of all VMs in the MCI.
+        2. Label Selector (labelSelector): Fetch IPs of matching resources.
+        3. Manual IP Values (values): Manually provide IP addresses.
+        If multiple methods are used, IPs will be merged and deduplicated.
+      operationId: PutGlobalDnsRecord
+      requestBody:
+        description: Details for record update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.GlobalDnsRecordReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: globalDnsRecordReq
   /resources/objectStorage:
     get:
       tags:
@@ -16174,6 +16256,90 @@ components:
         provider:
           type: string
           example: alibaba
+    model.GlobalDnsIPSource:
+      type: object
+      properties:
+        ips:
+          type: array
+          example:
+          - "[\"1.2.3.4\"]"
+          items:
+            type: string
+        label:
+          $ref: '#/components/schemas/model.GlobalDnsLabelSource'
+        mci:
+          $ref: '#/components/schemas/model.GlobalDnsMciSource'
+    model.GlobalDnsLabelSource:
+      required:
+      - labelSelector
+      - nsId
+      type: object
+      properties:
+        labelSelector:
+          type: string
+          example: app=nginx
+        nsId:
+          type: string
+          example: default
+    model.GlobalDnsMciSource:
+      required:
+      - mciId
+      - nsId
+      type: object
+      properties:
+        mciId:
+          type: string
+          example: mci-01
+        nsId:
+          type: string
+          example: default
+    model.GlobalDnsRecordInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: mci.example.com
+        ttl:
+          type: integer
+          example: 300
+        type:
+          type: string
+          example: A
+        values:
+          type: array
+          example:
+          - "[\"1.2.3.4\"]"
+          items:
+            type: string
+    model.GlobalDnsRecordReq:
+      required:
+      - domainName
+      - setBy
+      type: object
+      properties:
+        domainName:
+          type: string
+          description: '--- DNS Record Settings ---'
+          example: example.com
+        recordName:
+          type: string
+          example: mci.example.com
+        recordType:
+          type: string
+          example: A
+          enum:
+          - A
+          - AAAA
+          - CNAME
+          - TXT
+        setBy:
+          type: object
+          description: '--- IP Source Selection ---'
+          allOf:
+          - $ref: '#/components/schemas/model.GlobalDnsIPSource'
+        ttl:
+          type: integer
+          example: 300
     model.HandlingCommandCountResponse:
       type: object
       properties:
@@ -18985,6 +19151,13 @@ components:
         success:
           type: boolean
           example: true
+    model.RestGetGlobalDnsRecordResponse:
+      type: object
+      properties:
+        record:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.GlobalDnsRecordInfo'
     model.RestPostSqlDBRequest:
       required:
       - connectionName

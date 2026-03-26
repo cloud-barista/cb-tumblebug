@@ -65,6 +65,8 @@ services:
       # - TB_LOGLEVEL=debug
       # - TB_LOGWRITER=both
       # - TB_NODE_ENV=development
+      - VAULT_ADDR=http://openbao:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-}
     healthcheck: # for CB-Tumblebug
       test: ["CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz"]
       interval: 1m

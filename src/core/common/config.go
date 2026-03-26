@@ -201,6 +201,12 @@ func UpdateGlobalVariable(id string) error {
 	case model.StrEtcdEndpoints:
 		model.EtcdEndpoints = configInfo.Value
 		log.Debug().Msg("<TB_ETCD_ENDPOINTS> " + model.EtcdEndpoints)
+	case model.StrVaultAddr:
+		model.VaultAddr = configInfo.Value
+		log.Debug().Msg("<VAULT_ADDR> " + model.VaultAddr)
+	case model.StrVaultToken:
+		model.VaultToken = configInfo.Value
+		log.Debug().Msg("<VAULT_TOKEN> ********")
 	default:
 
 	}
@@ -241,6 +247,12 @@ func InitConfig(id string) error {
 	case model.StrAutocontrolDurationMs:
 		model.AutocontrolDurationMs = NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
 		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + model.AutocontrolDurationMs)
+	case model.StrVaultAddr:
+		model.VaultAddr = NVL(os.Getenv("VAULT_ADDR"), "http://localhost:8200")
+		log.Debug().Msg("<VAULT_ADDR> " + model.VaultAddr)
+	case model.StrVaultToken:
+		model.VaultToken = os.Getenv("VAULT_TOKEN")
+		log.Debug().Msg("<VAULT_TOKEN> ********")
 	default:
 
 	}
