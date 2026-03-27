@@ -85,6 +85,7 @@ graph TB
 - Each holder can have credentials for **different sets of CSPs** (e.g., `admin` has AWS+GCP+Azure, `role01` has AWS only)
 - The **default holder** (`admin`) is the system default — when no holder is specified, `admin` is used
 - Holder names are **case-insensitive** and stored in lowercase
+- **Hyphens (`-`) are not allowed** in holder names — only lowercase alphanumeric characters and underscores (`[a-z0-9_]`) are permitted. This restriction exists because hyphens are used as delimiters in connection naming (e.g., `role01-aws-ap-northeast-2`). If hyphens were allowed (e.g., `team-a`), connection names would become ambiguous (`team-a-aws-...` — is the holder `team-a` or `team`?)
 - A holder is **not explicitly created** — it emerges automatically when credentials are registered under that holder name
 
 ### 3. Connection (ConnConfig)
@@ -554,6 +555,9 @@ erDiagram
 
 **Q: What happens if I don't set `X-Credential-Holder`?**
 A: The default holder (`admin`) is used automatically. All existing behavior is preserved — this is backward compatible.
+
+**Q: What characters are allowed in holder names?**
+A: Only lowercase alphanumeric characters and underscores: `[a-z0-9_]`. Hyphens (`-`) are **not allowed** because they serve as delimiters in connection naming. For example, use `team_a` or `role01` instead of `team-a`.
 
 **Q: Can I add a new credential holder without restarting?**
 A: Yes. Use `POST /tumblebug/credential` with the new `credentialHolder` value. Connections are auto-created and the holder becomes immediately available.

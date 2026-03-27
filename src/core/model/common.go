@@ -239,8 +239,8 @@ const (
 	CredentialHolderHeaderKey string = "X-Credential-Holder"
 )
 
-// ContextKey is an unexported type for context keys to prevent collisions with
-// keys defined in other packages. Uses typed keys per Go best practices.
+// ContextKey is a typed key for context values to prevent collisions with
+// keys defined in other packages, following Go best practices.
 type ContextKey string
 
 const (

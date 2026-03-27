@@ -567,6 +567,17 @@ if run_credentials:
     holder_names = list(all_holders.keys())
     print(Fore.YELLOW + f"\nRegistering credentials for {len(holder_names)} credential holder(s): {', '.join(holder_names)}...")
 
+    # Validate holder names (only lowercase alphanumeric and underscores allowed; no hyphens)
+    import re
+    holder_name_pattern = re.compile(r'^[a-z0-9_]+$')
+    for holder_name in holder_names:
+        if not holder_name_pattern.match(holder_name.lower()):
+            print(Fore.RED + f"\nError: Invalid credential holder name '{holder_name}'.")
+            print(Fore.RED + "  Holder names must contain only lowercase alphanumeric characters and underscores [a-z0-9_].")
+            print(Fore.RED + "  Hyphens (-) are not allowed (reserved as connection name delimiters).")
+            print(Fore.RED + f"  Suggestion: Use '{holder_name.lower().replace('-', '_')}' instead.")
+            sys.exit(1)
+
     # Register credentials for all holders and their providers
     for holder_name in holder_names:
         cred_data = all_holders[holder_name]

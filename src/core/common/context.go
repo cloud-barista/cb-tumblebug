@@ -18,9 +18,40 @@ package common
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
+
+// credentialHolderNamePattern defines the allowed characters for credential holder names.
+// Only lowercase alphanumeric characters and underscores are permitted.
+// Hyphens (-) are NOT allowed because they are used as the delimiter in connection naming:
+//   - Default holder: {provider}-{region} (e.g., "aws-ap-northeast-2")
+//   - Non-default holder: {holder}-{provider}-{region} (e.g., "role01-aws-ap-northeast-2")
+//
+// If hyphens were allowed in holder names, connection names would become ambiguous
+// (e.g., "team-a-aws-ap-northeast-2" could mean holder="team-a" or holder="team").
+var credentialHolderNamePattern = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+// ValidateCredentialHolderName validates a credential holder name.
+// Rules:
+//   - Must not be empty
+//   - Must contain only lowercase alphanumeric characters and underscores [a-z0-9_]
+//   - Hyphens (-) are forbidden (used as connection name delimiter)
+//   - Must be 1-50 characters long
+func ValidateCredentialHolderName(holder string) error {
+	if holder == "" {
+		return fmt.Errorf("credential holder name must not be empty")
+	}
+	if len(holder) > 50 {
+		return fmt.Errorf("credential holder name must be 50 characters or less (got %d)", len(holder))
+	}
+	if !credentialHolderNamePattern.MatchString(holder) {
+		return fmt.Errorf("credential holder name '%s' contains invalid characters; only lowercase alphanumeric and underscores are allowed (hyphens are reserved as connection name delimiters)", holder)
+	}
+	return nil
+}
 
 // WithCredentialHolder returns a new context with the given credential holder value.
 func WithCredentialHolder(ctx context.Context, holder string) context.Context {

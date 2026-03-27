@@ -149,13 +149,21 @@ func RunServer() {
 				holder = model.DefaultCredentialHolder
 			}
 			holder = strings.ToLower(holder)
+			// Validate holder name (reject hyphens and other invalid characters)
+			if err := common.ValidateCredentialHolderName(holder); err != nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{
+					"message": fmt.Sprintf("Invalid X-Credential-Holder header: %s", err.Error()),
+				})
+			}
 			ctx = common.WithCredentialHolder(ctx, holder)
 
-			// Request ID
+			// Request ID (get or generate so core functions always have a valid ID)
 			reqID := c.Request().Header.Get(echo.HeaderXRequestID)
-			if reqID != "" {
-				ctx = common.WithRequestID(ctx, reqID)
+			if reqID == "" {
+				reqID = fmt.Sprintf("%d", time.Now().UnixNano())
+				c.Request().Header.Set(echo.HeaderXRequestID, reqID)
 			}
+			ctx = common.WithRequestID(ctx, reqID)
 
 			c.SetRequest(c.Request().WithContext(ctx))
 			return next(c)

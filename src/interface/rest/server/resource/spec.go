@@ -373,6 +373,12 @@ func RestGetAvailableZonesForSpec(c echo.Context) error {
 
 	// If credentialHolder query param is explicitly provided, override context value
 	if credentialHolder := c.QueryParam("credentialHolder"); credentialHolder != "" {
+		credentialHolder = strings.ToLower(credentialHolder)
+		if err := common.ValidateCredentialHolderName(credentialHolder); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"message": fmt.Sprintf("Invalid credentialHolder query parameter: %s", err.Error()),
+			})
+		}
 		ctx = common.WithCredentialHolder(ctx, credentialHolder)
 	}
 

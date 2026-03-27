@@ -301,7 +301,7 @@ func GetCredentialHolderList() (model.CredentialHolderList, error) {
 	holderMap := make(map[string]*holderStats)
 
 	for _, conn := range allConnections.Connectionconfig {
-		holder := conn.CredentialHolder
+		holder := strings.ToLower(conn.CredentialHolder)
 		if holder == "" {
 			holder = model.DefaultCredentialHolder
 		}
@@ -346,6 +346,7 @@ func GetCredentialHolder(holderId string) (model.CredentialHolderInfo, error) {
 	if holderId == "" {
 		return model.CredentialHolderInfo{}, fmt.Errorf("holderId is required")
 	}
+	holderId = strings.ToLower(holderId)
 
 	allConnections, err := GetConnConfigList(holderId, false, false)
 	if err != nil {
@@ -953,6 +954,9 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	mu.Unlock()
 
 	req.CredentialHolder = strings.ToLower(req.CredentialHolder)
+	if err := ValidateCredentialHolderName(req.CredentialHolder); err != nil {
+		return model.CredentialInfo{}, fmt.Errorf("invalid credentialHolder: %w", err)
+	}
 	req.ProviderName = strings.ToLower(req.ProviderName)
 	genneratedCredentialName := req.CredentialHolder + "-" + req.ProviderName
 	if strings.EqualFold(req.CredentialHolder, model.DefaultCredentialHolder) {
