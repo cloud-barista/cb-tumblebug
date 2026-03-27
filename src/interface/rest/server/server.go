@@ -157,14 +157,6 @@ func RunServer() {
 			}
 			ctx = common.WithCredentialHolder(ctx, holder)
 
-			// Request ID (get or generate so core functions always have a valid ID)
-			reqID := c.Request().Header.Get(echo.HeaderXRequestID)
-			if reqID == "" {
-				reqID = fmt.Sprintf("%d", time.Now().UnixNano())
-				c.Request().Header.Set(echo.HeaderXRequestID, reqID)
-			}
-			ctx = common.WithRequestID(ctx, reqID)
-
 			c.SetRequest(c.Request().WithContext(ctx))
 			return next(c)
 		}
