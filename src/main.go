@@ -66,13 +66,19 @@ func init() {
 	// Etcd
 	model.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
 
+	// Vault
+	model.VaultAddr = common.NVL(os.Getenv("VAULT_ADDR"), "http://localhost:8200")
+	model.VaultToken = os.Getenv("VAULT_TOKEN")
+
 	// load the latest configuration from DB (if exist)
 
 	log.Info().Msg("init: updating system environment")
 	common.UpdateGlobalVariable(model.StrDragonflyRestUrl)
 	common.UpdateGlobalVariable(model.StrSpiderRestUrl)
-	common.UpdateGlobalVariable(model.TerrariumRestUrl)
+	common.UpdateGlobalVariable(model.StrTerrariumRestUrl)
 	common.UpdateGlobalVariable(model.StrAutocontrolDurationMs)
+	common.UpdateGlobalVariable(model.StrVaultAddr)
+	common.UpdateGlobalVariable(model.StrVaultToken)
 
 	// Initialize the logger
 	logLevel := common.NVL(os.Getenv("TB_LOGLEVEL"), "debug")

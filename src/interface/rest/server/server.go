@@ -718,6 +718,10 @@ func RunServer() {
 	g.GET("/:nsId/resources/objectStorage/:osId/object", rest_resource.RestListDataObjects)
 	g.DELETE("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestDeleteDataObject)
 
+	// Global DNS management (functional only)
+	e.PUT("/tumblebug/resources/globalDns/record", rest_resource.RestPutGlobalDnsRecord)
+	e.GET("/tumblebug/resources/globalDns/record", rest_resource.RestGetGlobalDnsRecord)
+
 	// #### To be deprecated #### Route for Object Storage
 	objectStorageGroup := e.Group("/tumblebug")
 	// Object Storage (bucket) Operations
