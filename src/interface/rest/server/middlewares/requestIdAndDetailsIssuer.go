@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/labstack/echo/v4"
 )
@@ -30,6 +31,10 @@ func RequestIdAndDetailsIssuer(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Set "X-Request-Id" in response header
 		c.Response().Header().Set(echo.HeaderXRequestID, reqID)
+
+		// Inject request ID into context.Context so core functions can access it
+		ctx := common.WithRequestID(c.Request().Context(), reqID)
+		c.SetRequest(c.Request().WithContext(ctx))
 
 		details := clientManager.RequestDetails{
 			StartTime:   time.Now(),

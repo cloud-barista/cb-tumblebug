@@ -49,6 +49,8 @@ import (
 // @Success 200 {object} model.SecurityGroupUpdateResponse "Updated Security Group info with added firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [post]
 func RestPostFirewallRules(c echo.Context) error {
 
@@ -99,6 +101,8 @@ func RestPostFirewallRules(c echo.Context) error {
 // @Success 200 {object} model.TbFirewallRulesInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [put]
 func RestPutFirewallRules(c echo.Context) error {
 	//nsId := c.Param("nsId")
@@ -120,6 +124,8 @@ func RestPutFirewallRules(c echo.Context) error {
 // @Success 200 {object} model.TbFirewallRulesInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [get]
 func RestGetFirewallRules(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -156,6 +162,8 @@ type RestGetAllFirewallRulesResponse struct {
 // @Param firewallRuleReq body model.SecurityGroupUpdateReq true "FirewallRules to delete (only firewallRules field is used)"
 // @Success 200 {object} model.SecurityGroupUpdateResponse "Updated Security Group info after rule deletion"
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [delete]
 func RestDelFirewallRules(c echo.Context) error {
 

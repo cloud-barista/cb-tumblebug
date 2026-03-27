@@ -31,6 +31,8 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param recommendSpecReq body model.RecommendSpecReq false "Conditions for recommending specs (filter and priority)"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID to filter specs by the holder's available providers (default: system default holder which shows all providers)"
 // @Success 200 {object} []model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -44,7 +46,8 @@ func RestRecommendSpec(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := infra.RecommendSpec(nsId, *u)
+	ctx := c.Request().Context()
+	content, err := infra.RecommendSpec(ctx, nsId, *u)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -58,6 +61,7 @@ func RestRecommendSpec(c echo.Context) error {
 // @Success 200 {object} model.RecommendSpecRequestOptions
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /recommendSpecOptions [get]
 func RestRecommendSpecOptions(c echo.Context) error {
 

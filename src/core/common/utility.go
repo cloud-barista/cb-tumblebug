@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -283,9 +284,114 @@ func GenTemplateKey(nsId string, targetType string, templateId string) string {
 	return "/ns/" + nsId + "/template/" + targetType + "/" + templateId
 }
 
-// GenCredentialHolderKey is func to generate a key for credentialHolder info
-func GenCredentialHolderKey(holderId string) string {
-	return "/credentialHolder/" + holderId
+// GetCredentialHolderList derives distinct credential holders from registered connection configs
+func GetCredentialHolderList() (model.CredentialHolderList, error) {
+	allConnections, err := GetConnConfigList("", false, false)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get connection config list for credential holders")
+		return model.CredentialHolderList{}, err
+	}
+
+	type holderStats struct {
+		providers        map[string]bool
+		connectionCount  int
+		verifiedCount    int
+	}
+
+	holderMap := make(map[string]*holderStats)
+
+	for _, conn := range allConnections.Connectionconfig {
+		holder := strings.ToLower(conn.CredentialHolder)
+		if holder == "" {
+			holder = model.DefaultCredentialHolder
+		}
+		stats, exists := holderMap[holder]
+		if !exists {
+			stats = &holderStats{providers: make(map[string]bool)}
+			holderMap[holder] = stats
+		}
+		stats.providers[conn.ProviderName] = true
+		stats.connectionCount++
+		if conn.Verified {
+			stats.verifiedCount++
+		}
+	}
+
+	var result model.CredentialHolderList
+	for holder, stats := range holderMap {
+		providers := make([]string, 0, len(stats.providers))
+		for p := range stats.providers {
+			providers = append(providers, p)
+		}
+		sort.Strings(providers)
+		result.CredentialHolderList = append(result.CredentialHolderList, model.CredentialHolderInfo{
+			CredentialHolder:        holder,
+			Providers:               providers,
+			ConnectionCount:         stats.connectionCount,
+			VerifiedConnectionCount: stats.verifiedCount,
+			IsDefault:               strings.EqualFold(holder, model.DefaultCredentialHolder),
+		})
+	}
+
+	// Sort by holder name for consistent output
+	sort.Slice(result.CredentialHolderList, func(i, j int) bool {
+		return result.CredentialHolderList[i].CredentialHolder < result.CredentialHolderList[j].CredentialHolder
+	})
+
+	return result, nil
+}
+
+// GetCredentialHolder retrieves a specific credential holder's info derived from connection configs
+func GetCredentialHolder(holderId string) (model.CredentialHolderInfo, error) {
+	if holderId == "" {
+		return model.CredentialHolderInfo{}, fmt.Errorf("holderId is required")
+	}
+	holderId = strings.ToLower(holderId)
+
+	allConnections, err := GetConnConfigList(holderId, false, false)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to get connection configs for credential holder '%s'", holderId)
+		return model.CredentialHolderInfo{}, err
+	}
+
+	if len(allConnections.Connectionconfig) == 0 {
+		return model.CredentialHolderInfo{}, fmt.Errorf("credential holder '%s' not found (no connections registered)", holderId)
+	}
+
+	providerSet := make(map[string]bool)
+	verifiedCount := 0
+	for _, conn := range allConnections.Connectionconfig {
+		providerSet[conn.ProviderName] = true
+		if conn.Verified {
+			verifiedCount++
+		}
+	}
+
+	providers := make([]string, 0, len(providerSet))
+	for p := range providerSet {
+		providers = append(providers, p)
+	}
+	sort.Strings(providers)
+
+	return model.CredentialHolderInfo{
+		CredentialHolder:        holderId,
+		Providers:               providers,
+		ConnectionCount:         len(allConnections.Connectionconfig),
+		VerifiedConnectionCount: verifiedCount,
+		IsDefault:               strings.EqualFold(holderId, model.DefaultCredentialHolder),
+	}, nil
+}
+
+// ResolveConnectionName converts a default credential holder's connection name
+// to the appropriate connection name for the given credential holder.
+// Default holder connections use the pattern: "{provider}-{region}" (e.g., "aws-ap-northeast-2")
+// Non-default holder connections use: "{holder}-{provider}-{region}" (e.g., "team-a-aws-ap-northeast-2")
+// If credentialHolder is empty or matches the default, the original name is returned as-is.
+func ResolveConnectionName(defaultConnectionName string, credentialHolder string) string {
+	if credentialHolder == "" || strings.EqualFold(credentialHolder, model.DefaultCredentialHolder) {
+		return defaultConnectionName
+	}
+	return credentialHolder + "-" + defaultConnectionName
 }
 
 // LookupKeyValueList is func to lookup model.KeyValue list
@@ -848,6 +954,9 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	mu.Unlock()
 
 	req.CredentialHolder = strings.ToLower(req.CredentialHolder)
+	if err := ValidateCredentialHolderName(req.CredentialHolder); err != nil {
+		return model.CredentialInfo{}, fmt.Errorf("invalid credentialHolder: %w", err)
+	}
 	req.ProviderName = strings.ToLower(req.ProviderName)
 	genneratedCredentialName := req.CredentialHolder + "-" + req.ProviderName
 	if strings.EqualFold(req.CredentialHolder, model.DefaultCredentialHolder) {
@@ -901,8 +1010,6 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	for callResultKey := range callResult.KeyValueInfoList {
 		callResult.KeyValueInfoList[callResultKey].Value = "************"
 	}
-
-	// TODO: add code to register CredentialHolder object
 
 	// Use the original CSP name (req.ProviderName) for CloudInfo lookup,
 	// not Spider's returned ProviderName which is the platform type.

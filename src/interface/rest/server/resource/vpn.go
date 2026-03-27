@@ -43,6 +43,8 @@ import (
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/site [get]
 func RestGetSitesInMci(c echo.Context) error {
 
@@ -277,6 +279,8 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn [post]
 func RestPostSiteToSiteVpn(c echo.Context) error {
 
@@ -352,6 +356,8 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn [get]
 func RestGetAllSiteToSiteVpn(c echo.Context) error {
 
@@ -416,6 +422,8 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [get]
 func RestGetSiteToSiteVpn(c echo.Context) error {
 
@@ -479,6 +487,8 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [delete]
 func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
@@ -530,6 +540,8 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId} [get]
 func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 

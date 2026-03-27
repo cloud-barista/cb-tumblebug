@@ -34,6 +34,8 @@ import (
 // @Success 200 {object} model.AgentInstallContentWrapper
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/monitoring/install/mci/{mciId} [post]
 func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 
@@ -62,6 +64,8 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 // @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId} [put]
 func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 
@@ -92,6 +96,8 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 // @Success 200 {object} model.MonResultSimpleResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/monitoring/mci/{mciId}/metric/{metric} [get]
 func RestGetMonitorData(c echo.Context) error {
 

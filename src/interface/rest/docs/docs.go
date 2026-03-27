@@ -42,6 +42,14 @@ const docTemplate = `{
                 ],
                 "summary": "Test JWT authentication",
                 "operationId": "TestJWTAuth",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Information of JWT authentication",
@@ -86,6 +94,18 @@ const docTemplate = `{
                         "name": "regionName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -138,6 +158,18 @@ const docTemplate = `{
                         "name": "regionName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -185,6 +217,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.GetAvailableRegionZonesRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -232,6 +276,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.GetAvailableRegionZonesListRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -285,6 +341,18 @@ const docTemplate = `{
                         "description": "Credential holder name (defaults to 'admin')",
                         "name": "credentialHolder",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -330,6 +398,18 @@ const docTemplate = `{
                         "name": "providerName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -375,6 +455,18 @@ const docTemplate = `{
                         "name": "providerName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -413,6 +505,14 @@ const docTemplate = `{
                 ],
                 "summary": "Get cloud information",
                 "operationId": "GetCloudInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -449,6 +549,14 @@ const docTemplate = `{
                 ],
                 "summary": "List all configs",
                 "operationId": "GetAllConfig",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -492,6 +600,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ConfigReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -528,6 +642,14 @@ const docTemplate = `{
                 ],
                 "summary": "Init all configs",
                 "operationId": "InitAllConfig",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -565,6 +687,12 @@ const docTemplate = `{
                         "name": "configId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -608,6 +736,12 @@ const docTemplate = `{
                         "name": "configId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -675,6 +809,12 @@ const docTemplate = `{
                         "description": "filter connections with the representative region only",
                         "name": "filterRegionRepresentative",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -720,6 +860,12 @@ const docTemplate = `{
                         "name": "connConfigName",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -767,6 +913,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.CredentialReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -805,11 +957,109 @@ const docTemplate = `{
                 ],
                 "summary": "Get RSA Public Key for Credential Encryption",
                 "operationId": "GetPublicKeyForCredentialEncryption",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.PublicKeyResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/credentialHolder": {
+            "get": {
+                "description": "List all credential holders derived from registered connection configs.\nEach holder includes associated providers, connection counts, and verification status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud Credential Management"
+                ],
+                "summary": "List all credential holders",
+                "operationId": "GetCredentialHolderList",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CredentialHolderList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/credentialHolder/{holderId}": {
+            "get": {
+                "description": "Get credential holder info derived from registered connection configs.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud Credential Management"
+                ],
+                "summary": "Get a specific credential holder",
+                "operationId": "GetCredentialHolder",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "admin",
+                        "description": "Credential Holder ID",
+                        "name": "holderId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CredentialHolderInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
@@ -844,6 +1094,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ImageFetchOption"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -891,6 +1153,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ImageFetchOption"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -929,6 +1203,20 @@ const docTemplate = `{
                 ],
                 "summary": "Get result of asynchronous image fetching",
                 "operationId": "GetFetchImagesAsyncResult",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -965,6 +1253,20 @@ const docTemplate = `{
                 ],
                 "summary": "Fetch price from all CSP connections and update the price information for associated specs in the system.",
                 "operationId": "FetchPrice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1010,6 +1312,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SpecFetchOption"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1062,6 +1376,12 @@ const docTemplate = `{
                         "name": "Request",
                         "in": "body",
                         "schema": {}
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1089,6 +1409,14 @@ const docTemplate = `{
                 ],
                 "summary": "Check HTTP version of incoming request",
                 "operationId": "CheckHTTPVersion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1134,6 +1462,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.InspectResourcesRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1172,6 +1506,14 @@ const docTemplate = `{
                 ],
                 "summary": "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections",
                 "operationId": "InspectResourcesOverview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1217,6 +1559,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.K8sClusterConnectionConfigCandidatesReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1255,6 +1609,14 @@ const docTemplate = `{
                 ],
                 "summary": "Get kubernetes cluster information",
                 "operationId": "GetK8sClusterInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1299,6 +1661,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.RecommendSpecReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1369,6 +1743,12 @@ const docTemplate = `{
                         "name": "uid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1443,6 +1823,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.Label"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1517,6 +1903,12 @@ const docTemplate = `{
                         "name": "key",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1555,6 +1947,14 @@ const docTemplate = `{
                 ],
                 "summary": "Return LabelTypes and system defined label keys with example",
                 "operationId": "GetSystemLabelInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "LabelTypes and System labels with example values",
@@ -1596,6 +1996,18 @@ const docTemplate = `{
                         "description": "Include Azure images (may take 40+ minutes)",
                         "name": "includeAzure",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1637,6 +2049,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/resource.RestLookupImageRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1684,6 +2108,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/common.TbConnectionName"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1731,6 +2167,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/resource.RestLookupSpecRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1778,6 +2226,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/common.TbConnectionName"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1826,6 +2286,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciConnectionConfigCandidatesReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1899,6 +2365,12 @@ const docTemplate = `{
                         "name": "uid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1946,6 +2418,12 @@ const docTemplate = `{
                         "description": "Option",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2006,6 +2484,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.NsReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2042,6 +2526,14 @@ const docTemplate = `{
                 ],
                 "summary": "Delete all namespaces",
                 "operationId": "DelAllNs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2080,6 +2572,12 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2133,6 +2631,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.NsReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2177,6 +2681,12 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2256,6 +2766,18 @@ const docTemplate = `{
                         "name": "action",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2319,6 +2841,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/infra.RestGetAllBenchmarkRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2373,6 +2907,18 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2428,6 +2974,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2488,6 +3046,18 @@ const docTemplate = `{
                         "name": "resourceId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2572,6 +3142,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Custom request ID",
                         "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
                         "in": "header"
                     }
                 ],
@@ -2669,6 +3245,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2747,6 +3329,18 @@ const docTemplate = `{
                         "description": "Filter by command status (Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses.",
                         "name": "status",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2802,6 +3396,18 @@ const docTemplate = `{
                         "name": "taskId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2871,6 +3477,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.CancelTaskRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -2942,6 +3560,18 @@ const docTemplate = `{
                         "name": "action",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3022,6 +3652,18 @@ const docTemplate = `{
                         "description": "Force control to skip checking controllable status",
                         "name": "force",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3107,6 +3749,18 @@ const docTemplate = `{
                         "description": "Force control to skip checking controllable status",
                         "name": "force",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3160,6 +3814,18 @@ const docTemplate = `{
                         "name": "customImageId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3207,6 +3873,18 @@ const docTemplate = `{
                         "name": "dataDiskId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3263,6 +3941,18 @@ const docTemplate = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3310,6 +4000,18 @@ const docTemplate = `{
                         "name": "securityGroupId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3357,6 +4059,18 @@ const docTemplate = `{
                         "name": "sshKeyId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3414,6 +4128,18 @@ const docTemplate = `{
                         "description": "Delete subnets as well",
                         "name": "withSubnets",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3474,6 +4200,18 @@ const docTemplate = `{
                         "name": "subnetId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3545,6 +4283,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Custom request ID",
                         "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
                         "in": "header"
                     }
                 ],
@@ -3618,6 +4362,18 @@ const docTemplate = `{
                         "description": "Option for checking update",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3685,6 +4441,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: default-alibaba-ap-northeast-2-vpc)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3769,6 +4537,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.K8sClusterReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3829,6 +4609,18 @@ const docTemplate = `{
                         "description": "Option for K8sCluster deletion",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3877,6 +4669,18 @@ const docTemplate = `{
                         "name": "k8sClusterId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3938,6 +4742,18 @@ const docTemplate = `{
                         "description": "Option for K8sCluster deletion",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3995,6 +4811,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.K8sNodeGroupReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4066,6 +4894,18 @@ const docTemplate = `{
                         "description": "Option for K8sNodeGroup deletion",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4131,6 +4971,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ChangeK8sNodeGroupAutoscaleSizeReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4202,6 +5054,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SetK8sNodeGroupAutoscalingReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4271,6 +5135,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4325,6 +5195,18 @@ const docTemplate = `{
                         "name": "k8sClusterId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4395,6 +5277,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.UpgradeK8sClusterReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4471,6 +5365,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Custom request ID",
                         "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
                         "in": "header"
                     }
                 ],
@@ -4549,6 +5449,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4612,6 +5518,18 @@ const docTemplate = `{
                         "description": "Option",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4686,6 +5604,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4752,6 +5682,18 @@ const docTemplate = `{
                         "description": "Option for delete all MCIs (support force object delete, terminate before delete)",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4822,6 +5764,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Custom request ID for tracking",
                         "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
                         "in": "header"
                     }
                 ],
@@ -4913,6 +5861,18 @@ const docTemplate = `{
                         "description": "(For option=accessinfo) accessInfoOption (showSshKey)",
                         "name": "accessInfoOption",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4996,6 +5956,18 @@ const docTemplate = `{
                         "description": "Option for delete MCI (support force delete)",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5044,6 +6016,18 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5107,6 +6091,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupUpdateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5169,6 +6165,18 @@ const docTemplate = `{
                         "name": "bastionVmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5229,6 +6237,18 @@ const docTemplate = `{
                         "description": "If provided, save the extracted config as a template with this name",
                         "name": "template",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5304,6 +6324,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5367,6 +6393,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.NLBReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5442,6 +6480,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5527,6 +6577,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.NLBReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5586,6 +6648,18 @@ const docTemplate = `{
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5642,6 +6716,18 @@ const docTemplate = `{
                         "name": "nlbId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5701,6 +6787,18 @@ const docTemplate = `{
                         "name": "nlbId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5757,6 +6855,18 @@ const docTemplate = `{
                         "name": "nlbId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5828,6 +6938,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.NLBAddRemoveVMReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5897,6 +7019,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.NLBAddRemoveVMReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5945,6 +7079,18 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6014,6 +7160,18 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6077,6 +7235,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.CreateSubGroupDynamicReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID to select which credentials to use for provisioning (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6158,6 +7328,12 @@ const docTemplate = `{
                         "description": "Custom request ID for tracking",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID to select which credentials to use for review (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6218,6 +7394,18 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6289,6 +7477,18 @@ const docTemplate = `{
                         "description": "Option",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6358,6 +7558,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ScaleOutSubGroupReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6433,6 +7645,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.CreateSubGroupReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6507,6 +7731,18 @@ const docTemplate = `{
                         "name": "targetVmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6580,6 +7816,18 @@ const docTemplate = `{
                         "name": "bastionVmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6660,6 +7908,18 @@ const docTemplate = `{
                         "description": "(For option=accessinfo) accessInfoOption (showSshKey)",
                         "name": "accessInfoOption",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6747,6 +8007,18 @@ const docTemplate = `{
                         "description": "Option for delete VM (support force delete)",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6876,6 +8148,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6995,6 +8273,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7071,6 +8355,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7145,6 +8435,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7213,6 +8509,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7275,6 +8577,18 @@ const docTemplate = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7379,6 +8693,18 @@ const docTemplate = `{
                         "description": "Force to attach/detach even if VM info is not matched",
                         "name": "force",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7448,6 +8774,18 @@ const docTemplate = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7509,6 +8847,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Custom request ID",
                         "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
                         "in": "header"
                     }
                 ],
@@ -7581,6 +8925,18 @@ const docTemplate = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7643,6 +8999,18 @@ const docTemplate = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7703,6 +9071,18 @@ const docTemplate = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7768,6 +9148,18 @@ const docTemplate = `{
                         "description": "Option",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7844,6 +9236,18 @@ const docTemplate = `{
                         "description": "Action",
                         "name": "action",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7919,6 +9323,18 @@ const docTemplate = `{
                         "description": "Refresh the resource info from CSPs",
                         "name": "refresh",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -7985,6 +9401,18 @@ const docTemplate = `{
                         "name": "vpnId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8060,6 +9488,18 @@ const docTemplate = `{
                         "name": "requestId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8135,6 +9575,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Custom request ID for tracking and correlation across API calls",
                         "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID to select which credentials to use for provisioning (default: system default holder)",
+                        "name": "x-credential-holder",
                         "in": "header"
                     }
                 ],
@@ -8218,6 +9664,12 @@ const docTemplate = `{
                         "description": "Custom request ID for tracking",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID to select which credentials to use for review (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8287,6 +9739,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciCmdReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8348,6 +9812,18 @@ const docTemplate = `{
                         "name": "metric",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8410,6 +9886,18 @@ const docTemplate = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8456,6 +9944,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8500,6 +10000,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8548,6 +10060,18 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8609,6 +10133,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciPolicyReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8661,6 +10197,18 @@ const docTemplate = `{
                         "name": "mciId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8710,6 +10258,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.RegisterVNetReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8772,6 +10332,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.RegisterSubnetReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8827,6 +10399,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8906,6 +10490,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: Ubuntu18.04)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -8984,6 +10580,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.CustomImageReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9035,6 +10643,18 @@ const docTemplate = `{
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9082,6 +10702,18 @@ const docTemplate = `{
                         "name": "customImageId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9133,6 +10765,18 @@ const docTemplate = `{
                         "name": "customImageId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9194,6 +10838,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: Registered from CSP resource)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9271,6 +10927,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.DataDiskReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9322,6 +10990,18 @@ const docTemplate = `{
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9369,6 +11049,18 @@ const docTemplate = `{
                         "name": "dataDiskId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9429,6 +11121,18 @@ const docTemplate = `{
                         "name": "dataDiskId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9480,6 +11184,18 @@ const docTemplate = `{
                         "name": "dataDiskId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9528,6 +11244,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.FilterSpecsByRangeRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9595,6 +11323,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: Ubuntu18.04)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9688,6 +11428,18 @@ const docTemplate = `{
                         "description": "Force update to existing image object",
                         "name": "update",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9739,6 +11491,18 @@ const docTemplate = `{
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9786,6 +11550,18 @@ const docTemplate = `{
                         "name": "imageId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9846,6 +11622,18 @@ const docTemplate = `{
                         "name": "imageId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9897,6 +11685,18 @@ const docTemplate = `{
                         "name": "imageId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -9958,6 +11758,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10026,6 +11838,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ObjectStorageCreateRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10086,6 +11910,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10138,6 +11974,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10187,6 +12035,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10232,6 +12092,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10299,6 +12171,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ObjectStorageSetCorsRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10354,6 +12238,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10411,6 +12307,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10471,6 +12379,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10555,6 +12475,18 @@ const docTemplate = `{
                         "description": "Expiration time in seconds",
                         "name": "expires",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10620,6 +12552,18 @@ const docTemplate = `{
                         "name": "objectKey",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10682,6 +12626,18 @@ const docTemplate = `{
                         "name": "objectKey",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10739,6 +12695,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10806,6 +12774,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ObjectStorageSetVersioningRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10863,6 +12843,18 @@ const docTemplate = `{
                         "name": "osId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -10937,6 +12929,18 @@ const docTemplate = `{
                         "name": "versionId",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11002,6 +13006,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SearchImageRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11047,6 +13063,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11114,6 +13142,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: Registered from CSP resource)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11191,6 +13231,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11242,6 +13294,18 @@ const docTemplate = `{
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11298,6 +13362,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupTemplateApplyReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11357,6 +13433,18 @@ const docTemplate = `{
                         "name": "securityGroupId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11417,6 +13505,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupUpdateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11468,6 +13568,18 @@ const docTemplate = `{
                         "name": "securityGroupId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11524,6 +13636,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupUpdateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11584,6 +13708,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupUpdateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11658,6 +13794,18 @@ const docTemplate = `{
                         "description": "Force update to existing spec object",
                         "name": "update",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11711,6 +13859,18 @@ const docTemplate = `{
                         "name": "specId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11771,6 +13931,18 @@ const docTemplate = `{
                         "name": "specId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11822,6 +13994,18 @@ const docTemplate = `{
                         "name": "specId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11873,6 +14057,18 @@ const docTemplate = `{
                         "description": "Option",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -11941,6 +14137,18 @@ const docTemplate = `{
                         "description": "Action",
                         "name": "action",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12008,6 +14216,18 @@ const docTemplate = `{
                         "description": "Resource info by detail (refined, raw)",
                         "name": "detail",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12066,6 +14286,18 @@ const docTemplate = `{
                         "name": "sqlDbId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12139,6 +14371,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: Registered from CSP resource)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12216,6 +14460,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SshKeyReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12267,6 +14523,18 @@ const docTemplate = `{
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12314,6 +14582,18 @@ const docTemplate = `{
                         "name": "sshKeyId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12374,6 +14654,18 @@ const docTemplate = `{
                         "name": "sshKeyId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12425,6 +14717,18 @@ const docTemplate = `{
                         "name": "sshKeyId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12481,6 +14785,18 @@ const docTemplate = `{
                         "name": "sshKeyId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12548,6 +14864,18 @@ const docTemplate = `{
                         "description": "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)",
                         "name": "filterVal",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12615,6 +14943,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.VNetReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12666,6 +15006,18 @@ const docTemplate = `{
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12722,6 +15074,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.VNetTemplateApplyReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12781,6 +15145,18 @@ const docTemplate = `{
                         "name": "vNetId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12843,6 +15219,18 @@ const docTemplate = `{
                         "description": "Action",
                         "name": "action",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12890,6 +15278,18 @@ const docTemplate = `{
                         "name": "vNetId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -12950,6 +15350,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SubnetReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13010,6 +15422,18 @@ const docTemplate = `{
                         "name": "subnetId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13078,6 +15502,18 @@ const docTemplate = `{
                         "description": "Action",
                         "name": "action",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13138,6 +15574,18 @@ const docTemplate = `{
                         "description": "connectionName of cloud for designated resource",
                         "name": "connectionName",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13178,6 +15626,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13230,6 +15690,18 @@ const docTemplate = `{
                         "name": "xRequestId",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13276,6 +15748,18 @@ const docTemplate = `{
                         "description": "Keyword to filter templates by name or description",
                         "name": "filterKeyword",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13323,6 +15807,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciDynamicTemplateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13373,6 +15869,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13420,6 +15928,18 @@ const docTemplate = `{
                         "name": "templateId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13480,6 +16000,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciDynamicTemplateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13537,6 +16069,18 @@ const docTemplate = `{
                         "name": "templateId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13589,6 +16133,18 @@ const docTemplate = `{
                         "description": "Keyword to filter templates by name or description",
                         "name": "filterKeyword",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13636,6 +16192,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupTemplateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13686,6 +16254,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13733,6 +16313,18 @@ const docTemplate = `{
                         "name": "templateId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13793,6 +16385,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SecurityGroupTemplateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13850,6 +16454,18 @@ const docTemplate = `{
                         "name": "templateId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13902,6 +16518,18 @@ const docTemplate = `{
                         "description": "Keyword to filter templates by name or description",
                         "name": "filterKeyword",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13949,6 +16577,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.VNetTemplateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -13999,6 +16639,18 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14046,6 +16698,18 @@ const docTemplate = `{
                         "name": "templateId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14106,6 +16770,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.VNetTemplateReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14163,6 +16839,18 @@ const docTemplate = `{
                         "name": "templateId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14260,6 +16948,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14349,6 +17043,12 @@ const docTemplate = `{
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14404,6 +17104,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.UpdateSpecListByAvailabilityRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14449,6 +17161,12 @@ const docTemplate = `{
                         "name": "key",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14492,6 +17210,12 @@ const docTemplate = `{
                         "name": "key",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14548,6 +17272,18 @@ const docTemplate = `{
                         "description": "CSP Type (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)",
                         "name": "cspType",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14593,6 +17329,12 @@ const docTemplate = `{
                         "name": "key",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14636,6 +17378,12 @@ const docTemplate = `{
                         "name": "key",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14674,6 +17422,14 @@ const docTemplate = `{
                 ],
                 "summary": "List all registered Providers",
                 "operationId": "GetProviderList",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -14717,6 +17473,12 @@ const docTemplate = `{
                         "name": "providerName",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14769,6 +17531,12 @@ const docTemplate = `{
                         "name": "regionName",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14816,6 +17584,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ProvisioningEvent"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14861,6 +17635,12 @@ const docTemplate = `{
                         "name": "specId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14907,6 +17687,12 @@ const docTemplate = `{
                         "name": "specId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -14962,6 +17748,12 @@ const docTemplate = `{
                         "name": "cspImageName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15011,6 +17803,14 @@ const docTemplate = `{
                 ],
                 "summary": "Check Tumblebug is ready",
                 "operationId": "GetReadyz",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -15041,6 +17841,14 @@ const docTemplate = `{
                 ],
                 "summary": "Set system as initialized",
                 "operationId": "SetSystemInitialized",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -15069,6 +17877,14 @@ const docTemplate = `{
                 ],
                 "summary": "Reset system initialization status",
                 "operationId": "UnsetSystemInitialized",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -15101,6 +17917,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.RecommendSpecReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID to filter specs by the holder's available providers (default: system default holder which shows all providers)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15142,6 +17970,14 @@ const docTemplate = `{
                 ],
                 "summary": "Get options for RecommendSpec API",
                 "operationId": "RecommendSpecOptions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -15178,6 +18014,14 @@ const docTemplate = `{
                 ],
                 "summary": "RetrieveR all region lists from CSPs",
                 "operationId": "RetrieveRegionListFromCsp",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -15252,6 +18096,12 @@ const docTemplate = `{
                         "description": "Flag to show VMs in a collective MCI form (y,n)",
                         "name": "mciFlag",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15296,6 +18146,20 @@ const docTemplate = `{
                 ],
                 "summary": "List all scheduled CSP resource registration jobs",
                 "operationId": "GetScheduleRegisterCspResourcesList",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -15333,6 +18197,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ScheduleJobRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15381,6 +18257,20 @@ const docTemplate = `{
                 ],
                 "summary": "Delete ALL scheduled jobs",
                 "operationId": "DeleteScheduleRegisterCspResourcesAll",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully deleted all jobs (message includes count)",
@@ -15418,6 +18308,18 @@ const docTemplate = `{
                         "name": "jobId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15470,6 +18372,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.UpdateScheduleJobRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15519,6 +18433,18 @@ const docTemplate = `{
                         "name": "jobId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15564,6 +18490,18 @@ const docTemplate = `{
                         "name": "jobId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15609,6 +18547,18 @@ const docTemplate = `{
                         "name": "jobId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15686,6 +18636,12 @@ const docTemplate = `{
                         "description": "Flag to show VMs in a collective MCI form (y,n)",
                         "name": "mciFlag",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15731,6 +18687,12 @@ const docTemplate = `{
                         "name": "reqId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15774,6 +18736,12 @@ const docTemplate = `{
                         "name": "reqId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15848,6 +18816,12 @@ const docTemplate = `{
                         "description": "Option to save the results to a file (set 'true' to activate)",
                         "name": "savefile",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -15878,6 +18852,14 @@ const docTemplate = `{
                 ],
                 "summary": "Delete all requests' details",
                 "operationId": "DeleteAllRequests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -15909,6 +18891,18 @@ const docTemplate = `{
                         "name": "providerName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16057,6 +19051,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16114,6 +19120,18 @@ const docTemplate = `{
                         "description": "Expiration time in seconds for the presigned URL",
                         "name": "expires",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16171,6 +19189,18 @@ const docTemplate = `{
                         "description": "Expiration time in seconds for the presigned URL",
                         "name": "expires",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16213,6 +19243,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16253,6 +19295,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16307,6 +19361,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/resource.Delete"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16347,6 +19413,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16384,6 +19462,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16426,6 +19516,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16481,6 +19583,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/resource.CORSConfiguration"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16518,6 +19632,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16557,6 +19683,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16599,6 +19737,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16648,6 +19798,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/resource.VersioningConfiguration"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16687,6 +19849,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16745,6 +19919,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16792,6 +19978,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16837,6 +20035,18 @@ const docTemplate = `{
                         "name": "credential",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16889,6 +20099,12 @@ const docTemplate = `{
                         "name": "labelSelector",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -16941,6 +20157,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Custom request ID for tracking",
                         "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
                         "in": "header"
                     }
                 ],
@@ -16999,6 +20221,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.MciDynamicReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -17052,6 +20286,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/common.NumberRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -17113,6 +20353,12 @@ const docTemplate = `{
                         "name": "cspImageName",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -17151,6 +20397,20 @@ const docTemplate = `{
                 ],
                 "summary": "Update images from cloudimage.csv asset file",
                 "operationId": "UpdateImagesFromAsset",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "202": {
                         "description": "Accepted",
@@ -17196,6 +20456,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/netutil.RestPostUtilToDesignNetworkRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -17243,6 +20509,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/netutil.RestPostUtilToValidateNetworkRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -17290,6 +20562,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/netutil.RestPostUtilToDesignVNetRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -18771,6 +22049,56 @@ const docTemplate = `{
                 },
                 "vmUserPassword": {
                     "type": "string"
+                }
+            }
+        },
+        "model.CredentialHolderInfo": {
+            "description": "Credential holder summary with associated providers and connection counts.",
+            "type": "object",
+            "properties": {
+                "connectionCount": {
+                    "description": "ConnectionCount is the total number of connection configs for this holder",
+                    "type": "integer",
+                    "example": 42
+                },
+                "credentialHolder": {
+                    "description": "CredentialHolder is the holder identifier (e.g., \"admin\", \"team-a\")",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "isDefault": {
+                    "description": "IsDefault indicates whether this holder is the system default",
+                    "type": "boolean",
+                    "example": true
+                },
+                "providers": {
+                    "description": "Providers is the list of cloud providers registered under this holder",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "aws",
+                        "gcp",
+                        "azure"
+                    ]
+                },
+                "verifiedConnectionCount": {
+                    "description": "VerifiedConnectionCount is the number of verified connections for this holder",
+                    "type": "integer",
+                    "example": 38
+                }
+            }
+        },
+        "model.CredentialHolderList": {
+            "description": "List of credential holder summaries",
+            "type": "object",
+            "properties": {
+                "credentialHolderList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CredentialHolderInfo"
+                    }
                 }
             }
         },

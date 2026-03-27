@@ -77,6 +77,12 @@ paths:
       summary: Test JWT authentication
       description: Test JWT authentication
       operationId: TestJWTAuth
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: Information of JWT authentication
@@ -110,6 +116,17 @@ paths:
         in: query
         description: Name of region to retrieve
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -151,6 +168,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -177,6 +205,18 @@ paths:
       summary: Get available regions and zones for a specific spec
       description: Query the availability of a specific spec across all regions/zones
       operationId: GetAvailableRegionZonesForSpec
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Spec availability request
         content:
@@ -212,6 +252,18 @@ paths:
       description: Query the availability for multiple specs in parallel and return
         batch results
       operationId: GetAvailableRegionZonesForSpecList
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Batch spec availability request
         content:
@@ -260,6 +312,17 @@ paths:
         description: Credential holder name (defaults to 'admin')
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Available zones information
@@ -291,6 +354,17 @@ paths:
         in: query
         description: Name of the CSP to retrieve
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -326,6 +400,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -352,6 +437,12 @@ paths:
       summary: Get cloud information
       description: Get cloud information
       operationId: GetCloudInfo
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -378,6 +469,12 @@ paths:
       summary: List all configs
       description: List all configs
       operationId: GetAllConfig
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -404,6 +501,12 @@ paths:
       description: "Create or Update config (TB_SPIDER_REST_URL, TB_DRAGONFLY_REST_URL,\
         \ ...)"
       operationId: PostConfig
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Key and Value for configuration
         content:
@@ -437,6 +540,12 @@ paths:
       summary: Init all configs
       description: Init all configs
       operationId: InitAllConfig
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -462,6 +571,11 @@ paths:
         in: path
         description: Config ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -494,6 +608,11 @@ paths:
         in: path
         description: Config ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -546,6 +665,11 @@ paths:
           enum:
           - true
           - false
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -579,6 +703,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -610,6 +739,12 @@ paths:
         \ including the AES key, must be base64 encoded before sending, and the public\
         \ key token ID must be included in the request."
       operationId: RegisterCredential
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Credential request info
         content:
@@ -647,6 +782,12 @@ paths:
         and SHA-256 as the hash function. This key is used to encrypt an AES key that
         will be used for hybrid encryption of credentials.
       operationId: GetPublicKeyForCredentialEncryption
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -654,6 +795,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.PublicKeyResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /credentialHolder:
+    get:
+      tags:
+      - "[Admin] Cloud Credential Management"
+      summary: List all credential holders
+      description: |-
+        List all credential holders derived from registered connection configs.
+        Each holder includes associated providers, connection counts, and verification status.
+      operationId: GetCredentialHolderList
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.CredentialHolderList'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /credentialHolder/{holderId}:
+    get:
+      tags:
+      - "[Admin] Cloud Credential Management"
+      summary: Get a specific credential holder
+      description: Get credential holder info derived from registered connection configs.
+      operationId: GetCredentialHolder
+      parameters:
+      - name: holderId
+        in: path
+        description: Credential Holder ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.CredentialHolderInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
@@ -675,6 +882,18 @@ paths:
 
         **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchImages
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Fetch option
         content:
@@ -717,6 +936,18 @@ paths:
 
         **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchImagesAsync
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Fetch option
         content:
@@ -751,6 +982,18 @@ paths:
       summary: Get result of asynchronous image fetching
       description: Get detailed results from the last asynchronous image fetch operation
       operationId: GetFetchImagesAsyncResult
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -779,6 +1022,18 @@ paths:
       description: Fetch price from all CSP connections and update the price information
         for associated specs in the system.
       operationId: FetchPrice
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -813,6 +1068,18 @@ paths:
 
         **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchSpecs
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Fetch option
         content:
@@ -857,6 +1124,11 @@ paths:
         schema:
           type: string
           default: vmspec
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: "Request body (various formats) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc]\
           \ for more details"
@@ -882,6 +1154,12 @@ paths:
       description: Checks and logs the HTTP version of the incoming request to the
         server console.
       operationId: CheckHTTPVersion
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -910,6 +1188,12 @@ paths:
       description: "Inspect Resources (vNet, securityGroup, sshKey, vm) registered\
         \ in CB-Tumblebug, CB-Spider, CSP"
       operationId: InspectResources
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Specify connectionName and resource type
         content:
@@ -946,6 +1230,12 @@ paths:
       description: "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered\
         \ in CB-Tumblebug and CSP for all connections"
       operationId: InspectResourcesOverview
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -973,6 +1263,18 @@ paths:
       description: Check available ConnectionConfig list before create K8sCluster
         Dynamically from common spec and image
       operationId: PostK8sClusterDynamicCheckRequest
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for K8sCluster dynamic request information
         content:
@@ -1007,6 +1309,12 @@ paths:
       summary: Get kubernetes cluster information
       description: Get kubernetes cluster information
       operationId: GetK8sClusterInfo
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -1034,6 +1342,18 @@ paths:
       description: Recommend K8sCluster's Node plan (filter and priority) Find details
         from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
       operationId: RecommendK8sNode
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Recommend K8sCluster's Node plan (filter and priority)
         content:
@@ -1097,6 +1417,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: Labels for the resource
@@ -1147,6 +1472,11 @@ paths:
         in: path
         description: Resource uid
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       requestBody:
@@ -1216,6 +1546,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: Label removed successfully
@@ -1242,6 +1577,12 @@ paths:
       summary: Return LabelTypes and system defined label keys with example
       description: Return LabelTypes and system defined label keys with example
       operationId: GetSystemLabelInfo
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: LabelTypes and System labels with example values
@@ -1274,6 +1615,17 @@ paths:
           enum:
           - "true"
           - "false"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -1294,6 +1646,18 @@ paths:
       summary: Lookup image (for debugging purposes)
       description: Lookup image (for debugging purposes)
       operationId: LookupImage
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Specify connectionName, cspImageName"
         content:
@@ -1328,6 +1692,18 @@ paths:
       summary: Lookup image list (for debugging purposes)
       description: Lookup image list (for debugging purposes)
       operationId: LookupImageList
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Specify connectionName
         content:
@@ -1362,6 +1738,18 @@ paths:
       summary: Lookup spec (for debugging purposes)
       description: Lookup spec (for debugging purposes)
       operationId: LookupSpec
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Specify connectionName & cspSpecNameS
         content:
@@ -1396,6 +1784,18 @@ paths:
       summary: Lookup spec list (for debugging purposes)
       description: Lookup spec list (for debugging purposes)
       operationId: LookupSpecList
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Specify connectionName
         content:
@@ -1479,6 +1879,12 @@ paths:
         3. Use `/mciDynamicReview` for detailed cost estimation and final validation
         4. Proceed with `/mciDynamic` using validated configuration
       operationId: PostMciDynamicCheckRequest
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Resource check request containing common specifications to validate
         content:
@@ -1548,6 +1954,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: Merged CSP labels successfully
@@ -1582,6 +1993,11 @@ paths:
           type: string
           enum:
           - id
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -1614,6 +2030,12 @@ paths:
       summary: Create namespace
       description: Create namespace
       operationId: PostNs
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Details for a new namespace
         content:
@@ -1647,6 +2069,12 @@ paths:
       summary: Delete all namespaces
       description: Delete all namespaces
       operationId: DelAllNs
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -1675,6 +2103,11 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -1708,6 +2141,11 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Details to update existing namespace
         content:
@@ -1749,6 +2187,11 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -1804,6 +2247,17 @@ paths:
           - rtt
           - mrtt
           - clean
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Host IP address to benchmark
         content:
@@ -1853,6 +2307,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Host IP address to benchmark
         content:
@@ -1902,6 +2367,17 @@ paths:
         schema:
           type: string
           default: probe
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -1939,6 +2415,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Request body to build agnostic images
         content:
@@ -1991,6 +2478,17 @@ paths:
         in: path
         description: Resource ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -2054,6 +2552,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -2136,6 +2640,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: MCI Command Request
         content:
@@ -2209,6 +2719,17 @@ paths:
           - Timeout
           - Cancelled
           - Interrupted
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -2248,6 +2769,17 @@ paths:
         in: path
         description: "Task ID (format: xRequestId:vmId:index)"
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -2296,6 +2828,17 @@ paths:
         in: path
         description: Task ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -2362,6 +2905,17 @@ paths:
           enum:
           - continue
           - withdraw
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -2426,6 +2980,17 @@ paths:
           enum:
           - "false"
           - "true"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -2493,6 +3058,17 @@ paths:
           enum:
           - "false"
           - "true"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -2534,6 +3110,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -2567,6 +3154,17 @@ paths:
         in: path
         description: Data Disk ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -2612,6 +3210,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -2647,6 +3256,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -2680,6 +3300,17 @@ paths:
         in: path
         description: SSH Key ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -2724,6 +3355,17 @@ paths:
           enum:
           - "true"
           - "false"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "201":
           description: Created
@@ -2768,6 +3410,17 @@ paths:
         in: path
         description: Subnet ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -2817,6 +3470,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -2886,6 +3545,17 @@ paths:
           type: string
           enum:
           - update
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: MCI Command Request
         content:
@@ -2945,6 +3615,17 @@ paths:
         description: "Field value for filtering (ex: default-alibaba-ap-northeast-2-vpc)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -3000,6 +3681,17 @@ paths:
         schema:
           type: string
           default: "false"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details of the K8sCluster object
         content:
@@ -3053,6 +3745,17 @@ paths:
           type: string
           enum:
           - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -3088,6 +3791,17 @@ paths:
         schema:
           type: string
           default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -3135,6 +3849,17 @@ paths:
           type: string
           enum:
           - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -3170,6 +3895,17 @@ paths:
         schema:
           type: string
           default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details of the K8sNodeGroup object
         content:
@@ -3233,6 +3969,17 @@ paths:
           type: string
           enum:
           - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -3275,6 +4022,17 @@ paths:
         schema:
           type: string
           default: k8sng01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details of the ChangeK8sNodeGroupAutoscaleSizeReq object
         content:
@@ -3331,6 +4089,17 @@ paths:
         schema:
           type: string
           default: k8sng01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details of the SetK8sNodeGroupAutoscalingReq object
         content:
@@ -3383,6 +4152,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -3439,6 +4214,17 @@ paths:
         schema:
           type: string
           default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -3487,6 +4273,17 @@ paths:
         schema:
           type: string
           default: "false"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details of the UpgradeK8sClusterReq object
         content:
@@ -3546,6 +4343,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -3642,6 +4445,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Request body to provision multiple K8sClusters dynamically in\
           \ parallel. <br> Must include clusters array with specId and imageId info\
@@ -3704,6 +4513,17 @@ paths:
           - id
           - simple
           - status
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -3778,6 +4598,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "MCI creation request with VM specifications, networking, and\
           \ deployment options"
@@ -3843,6 +4674,17 @@ paths:
           enum:
           - force
           - terminate
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -3901,6 +4743,17 @@ paths:
       - name: accessInfoOption
         in: query
         description: (For option=accessinfo) accessInfoOption (showSshKey)
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -3962,6 +4815,17 @@ paths:
           enum:
           - terminate
           - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -3998,6 +4862,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4061,6 +4936,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for SecurityGroup update (only firewallRules field is
           used for update)
@@ -4119,6 +5005,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4171,6 +5068,17 @@ paths:
         in: query
         description: "If provided, save the extracted config as a template with this\
           \ name"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -4228,6 +5136,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4270,6 +5184,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details of the NLB object
         content:
@@ -4336,6 +5261,17 @@ paths:
         description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -4391,6 +5327,17 @@ paths:
           type: string
           enum:
           - register
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details of the NLB object
         content:
@@ -4444,6 +5391,17 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4486,6 +5444,17 @@ paths:
         schema:
           type: string
           default: g1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4532,6 +5501,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4574,6 +5554,17 @@ paths:
         schema:
           type: string
           default: g1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4622,6 +5613,17 @@ paths:
         schema:
           type: string
           default: g1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: VMs to add to NLB
         content:
@@ -4677,6 +5679,17 @@ paths:
         schema:
           type: string
           default: g1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Select VMs to remove from NLB
         content:
@@ -4720,6 +5733,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4768,6 +5792,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Request body to create MCI snapshots
         content:
@@ -4863,6 +5898,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID to select which credentials to use for\
+          \ provisioning (default: system default holder)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: "SubGroup dynamic request specifying specId, imageId, and scaling\
           \ parameters"
@@ -4959,6 +6005,12 @@ paths:
         description: Custom request ID for tracking
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID to select which credentials to use for\
+          \ review (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Request body to review VM dynamic addition. Must include specId\
           \ and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small,\
@@ -5017,6 +6069,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5072,6 +6135,17 @@ paths:
           type: string
           enum:
           - id
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5176,6 +6250,17 @@ paths:
         schema:
           type: string
           default: g1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Scale-out request specifying the number of additional VMs to
           create
@@ -5291,6 +6376,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Detailed VM subgroup specification including exact resource\
           \ IDs, networking, and scaling parameters"
@@ -5365,6 +6461,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5422,6 +6529,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5483,6 +6601,17 @@ paths:
       - name: accessInfoOption
         in: query
         description: (For option=accessinfo) accessInfoOption (showSshKey)
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -5548,6 +6677,17 @@ paths:
           type: string
           enum:
           - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5652,6 +6792,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5750,6 +6896,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5808,6 +6960,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -5869,6 +7027,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5922,6 +7086,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -5970,6 +7140,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -6041,6 +7222,17 @@ paths:
           enum:
           - "true"
           - "false"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Request body to attach/detach dataDisk
         content:
@@ -6096,6 +7288,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an Data Disk object
         content:
@@ -6152,6 +7355,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -6200,6 +7409,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Request body to create VM snapshot
         content:
@@ -6257,6 +7477,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -6307,6 +7538,17 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -6357,6 +7599,17 @@ paths:
           enum:
           - InfoList
           - IdList
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -6419,6 +7672,17 @@ paths:
           type: string
           enum:
           - retry
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Sites info for VPN configuration
         content:
@@ -6487,6 +7751,17 @@ paths:
         schema:
           type: boolean
           default: true
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -6543,6 +7818,17 @@ paths:
         schema:
           type: string
           default: vpn01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -6601,6 +7887,17 @@ paths:
         in: path
         description: Request ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -6668,6 +7965,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -6801,6 +8104,12 @@ paths:
         description: Custom request ID for tracking and correlation across API calls
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID to select which credentials to use for\
+          \ provisioning (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Dynamic MCI request with common specifications. Must include
           specId and imageId for each VM group. See description for detailed example.
@@ -6894,6 +8203,12 @@ paths:
         description: Custom request ID for tracking
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID to select which credentials to use for\
+          \ review (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Request body to review MCI dynamic provisioning. Must include\
           \ specId and imageId info of each VM request. Same format as /mciDynamic\
@@ -6953,6 +8268,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an MCI object
         content:
@@ -7010,6 +8336,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7060,6 +8397,17 @@ paths:
         schema:
           type: string
           default: vm01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7094,6 +8442,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7127,6 +8486,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7162,6 +8532,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7202,6 +8583,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an MCI automation policy request
         content:
@@ -7250,6 +8642,17 @@ paths:
         schema:
           type: string
           default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7278,6 +8681,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Inforamation required to register the VNet created externally
         content:
@@ -7324,6 +8738,17 @@ paths:
         in: path
         description: VNet ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -7400,6 +8825,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: MCI registration request containing existing CSP VM IDs and connection
           details
@@ -7474,6 +8910,17 @@ paths:
         description: "Field value for filtering (ex: Ubuntu18.04)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -7522,6 +8969,17 @@ paths:
           type: string
           enum:
           - register
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Request to Register existing Custom Image in a CSP
         content:
@@ -7568,6 +9026,17 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7600,6 +9069,17 @@ paths:
         in: path
         description: customImage ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -7639,6 +9119,17 @@ paths:
         in: path
         description: customImage ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -7684,6 +9175,17 @@ paths:
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: Registered from CSP resource)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -7733,6 +9235,17 @@ paths:
           type: string
           enum:
           - register
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an Data Disk object
         content:
@@ -7779,6 +9292,17 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7811,6 +9335,17 @@ paths:
         in: path
         description: Data Disk ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -7850,6 +9385,17 @@ paths:
         in: path
         description: DataDisk ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -7899,6 +9445,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -7929,6 +9486,17 @@ paths:
         schema:
           type: string
           default: system
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Filter for range-filtering specs (limit: 0 for all results,\
           \ >0 for limited results)"
@@ -7989,6 +9557,17 @@ paths:
         description: "Field value for filtering (ex: Ubuntu18.04)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -8044,6 +9623,17 @@ paths:
         schema:
           type: boolean
           default: false
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Specify (name, connectionName, cspImageName) to register an\
           \ image object automatically"
@@ -8091,6 +9681,17 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8127,6 +9728,17 @@ paths:
           \ 2) provider+region+imageId, 3) imageId. For exact matching, use provider+imageId\
           \ form."
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -8166,6 +9778,17 @@ paths:
         in: path
         description: "Image ID ({providerName}+{regionName}+{cspImageName})"
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -8215,6 +9838,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8260,6 +9894,17 @@ paths:
         description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -8300,6 +9945,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Object Storage Create Request
         content:
@@ -8355,6 +10011,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8395,6 +10062,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "204":
           description: No Content
@@ -8432,6 +10110,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8464,6 +10153,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8510,6 +10210,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: CORS Configuration Request
         content:
@@ -8561,6 +10272,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "204":
           description: No Content
@@ -8605,6 +10327,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8652,6 +10385,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK - Returns object storage info with contents
@@ -8736,6 +10480,17 @@ paths:
         schema:
           type: integer
           default: 3600
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8786,6 +10541,17 @@ paths:
         in: path
         description: Object Key
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -8842,6 +10608,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK - Object metadata returned in headers
@@ -8886,6 +10663,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -8936,6 +10724,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Versioning Configuration Request
         content:
@@ -8988,6 +10787,17 @@ paths:
         schema:
           type: string
           default: os01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -9051,6 +10861,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "204":
           description: No Content
@@ -9094,6 +10915,17 @@ paths:
         schema:
           type: boolean
           default: false
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: condition
         content:
@@ -9135,6 +10967,17 @@ paths:
         schema:
           type: string
           default: system
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -9186,6 +11029,17 @@ paths:
         description: "Field value for filtering (ex: Registered from CSP resource)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -9234,6 +11088,17 @@ paths:
           type: string
           enum:
           - register
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an securityGroup object
         content:
@@ -9280,6 +11145,17 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -9312,6 +11188,17 @@ paths:
         in: path
         description: Security Group ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -9372,6 +11259,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an securityGroup object (only firewallRules field
           is used for update)
@@ -9418,6 +11316,17 @@ paths:
         in: path
         description: Security Group ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -9468,6 +11377,17 @@ paths:
         in: path
         description: Security Group ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -9530,6 +11450,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: FirewallRules to delete (only firewallRules field is used)
         content:
@@ -9578,6 +11509,17 @@ paths:
         in: path
         description: Template ID to apply
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -9643,6 +11585,17 @@ paths:
         schema:
           type: boolean
           default: false
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Specify n(ame, connectionName, cspSpecName) to register a spec\
           \ object automatically"
@@ -9692,6 +11645,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -9729,6 +11693,17 @@ paths:
         in: path
         description: "Spec ID ({providerName}+{regionName}+{cspSpecName})"
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -9778,6 +11753,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -9815,6 +11801,17 @@ paths:
           enum:
           - InfoList
           - IdList
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK" /////////////
@@ -9869,6 +11866,17 @@ paths:
           type: string
           enum:
           - retry
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Request body to create a SQL database
         content:
@@ -9930,6 +11938,17 @@ paths:
         schema:
           type: string
           default: refined
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -9976,6 +11995,17 @@ paths:
         schema:
           type: string
           default: sqldb01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10033,6 +12063,17 @@ paths:
         description: "Field value for filtering (ex: Registered from CSP resource)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -10081,6 +12122,17 @@ paths:
           type: string
           enum:
           - register
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an SSH Key object
         content:
@@ -10127,6 +12179,17 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10159,6 +12222,17 @@ paths:
         in: path
         description: SSH Key ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -10198,6 +12272,17 @@ paths:
         in: path
         description: SshKey ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -10247,6 +12332,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10280,6 +12376,17 @@ paths:
         in: path
         description: SSH Key ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -10341,6 +12448,17 @@ paths:
         description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -10381,6 +12499,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Details for an VNet object
         content:
@@ -10427,6 +12556,17 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10459,6 +12599,17 @@ paths:
         in: path
         description: VNet ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -10513,6 +12664,17 @@ paths:
           - withsubnets
           - refine
           - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10545,6 +12707,17 @@ paths:
         in: path
         description: VNet ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -10584,6 +12757,17 @@ paths:
         in: path
         description: VNet ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -10638,6 +12822,17 @@ paths:
         in: path
         description: Subnet ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -10696,6 +12891,17 @@ paths:
           enum:
           - refine
           - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10736,6 +12942,17 @@ paths:
         in: path
         description: Template ID to apply
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -10802,6 +13019,17 @@ paths:
         description: connectionName of cloud for designated resource
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10830,6 +13058,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -10874,6 +13113,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: SSE stream of command events
@@ -10907,6 +13157,17 @@ paths:
       - name: filterKeyword
         in: query
         description: Keyword to filter templates by name or description
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -10947,6 +13208,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: MCI Dynamic Template request
         content:
@@ -10994,6 +13266,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: All templates deleted successfully
@@ -11026,6 +13309,17 @@ paths:
         in: path
         description: Template ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -11065,6 +13359,17 @@ paths:
         in: path
         description: Template ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -11120,6 +13425,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Template deleted successfully
@@ -11161,6 +13477,17 @@ paths:
         description: Keyword to filter templates by name or description
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: List of templates
@@ -11198,6 +13525,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: SecurityGroup Template request
         content:
@@ -11245,6 +13583,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: All templates deleted successfully
@@ -11277,6 +13626,17 @@ paths:
         in: path
         description: Template ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -11316,6 +13676,17 @@ paths:
         in: path
         description: Template ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -11371,6 +13742,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Template deleted successfully
@@ -11412,6 +13794,17 @@ paths:
         description: Keyword to filter templates by name or description
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: List of templates
@@ -11449,6 +13842,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: vNet Template request
         content:
@@ -11496,6 +13900,17 @@ paths:
         schema:
           type: string
           default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: All templates deleted successfully
@@ -11528,6 +13943,17 @@ paths:
         in: path
         description: Template ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -11567,6 +13993,17 @@ paths:
         in: path
         description: Template ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -11620,6 +14057,17 @@ paths:
         in: path
         description: Template ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -11689,6 +14137,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -11771,6 +14225,12 @@ paths:
         description: Custom request ID
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         content:
           multipart/form-data:
@@ -11825,6 +14285,17 @@ paths:
         schema:
           type: string
           default: system
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Spec cleanup request
         content:
@@ -11866,6 +14337,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -11896,6 +14372,11 @@ paths:
         in: query
         description: delete object value by key
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -11945,6 +14426,17 @@ paths:
           - ncp
           - nhn
           - kt
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -11976,6 +14468,11 @@ paths:
         in: query
         description: retrieve objects by key
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -12010,6 +14507,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12036,6 +14538,12 @@ paths:
       summary: List all registered Providers
       description: List all registered Providers
       operationId: GetProviderList
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12067,6 +14575,11 @@ paths:
         in: path
         description: Name of the CSP to retrieve
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -12106,6 +14619,11 @@ paths:
         in: path
         description: Name of region to retrieve
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -12156,6 +14674,12 @@ paths:
         - Affects future MCI review recommendations
         - Builds historical baseline for reliability metrics
       operationId: RecordProvisioningEvent
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Provisioning event details with success/failure information
         content:
@@ -12221,6 +14745,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: Provisioning history log with success/failure statistics and
@@ -12274,6 +14803,11 @@ paths:
         in: path
         description: "VM Specification ID to delete history for (format: provider+region+spec_name)"
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -12342,6 +14876,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: "Risk analysis result with level, message, and detailed analysis"
@@ -12377,6 +14916,12 @@ paths:
       description: Check Tumblebug is ready. Returns ready status and initialization
         status.
       operationId: GetReadyz
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12398,6 +14943,12 @@ paths:
       description: Set the system initialization status to true. Called by init.py
         after completing initialization.
       operationId: SetSystemInitialized
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12418,6 +14969,12 @@ paths:
       description: Reset the system initialization status to false. Useful for re-initialization
         scenarios.
       operationId: UnsetSystemInitialized
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12435,6 +14992,18 @@ paths:
         Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
         Get available options by /recommendSpecOptions for filtering and prioritizing specs in RecommendSpec API
       operationId: RecommendSpec
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID to filter specs by the holder's available\
+          \ providers (default: system default holder which shows all providers)"
+        schema:
+          type: string
       requestBody:
         description: Conditions for recommending specs (filter and priority)
         content:
@@ -12472,6 +15041,12 @@ paths:
       description: Get available options for filtering and prioritizing specs in RecommendSpec
         API
       operationId: RecommendSpecOptions
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12498,6 +15073,12 @@ paths:
       summary: RetrieveR all region lists from CSPs
       description: RetrieveR all region lists from CSPs
       operationId: RetrieveRegionListFromCsp
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12568,6 +15149,11 @@ paths:
           enum:
           - "y"
           - "n"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: "Specify provider/region/zone or connectionName (deprecated),\
           \ NS Id, and MCI Name Prefix"
@@ -12610,6 +15196,18 @@ paths:
       description: Get a list of all scheduled CSP resource registration jobs (jobs
         are not scoped to namespaces)
       operationId: GetScheduleRegisterCspResourcesList
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12668,6 +15266,18 @@ paths:
         - Configuration uniqueness based on: jobType + nsId + connectionName + mciNamePrefix + option + mciFlag
         - Returns 409 Conflict if duplicate job exists with existing job ID
       operationId: PostScheduleRegisterCspResources
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Schedule job request (nsId must be specified in request body)
         content:
@@ -12734,6 +15344,18 @@ paths:
         - Returns the count of deleted jobs
         - Returns 200 even if no jobs were found (count will be 0)
       operationId: DeleteScheduleRegisterCspResourcesAll
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: Successfully deleted all jobs (message includes count)
@@ -12780,6 +15402,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12823,6 +15456,17 @@ paths:
         in: path
         description: Job ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -12881,6 +15525,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12916,6 +15571,17 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -12949,6 +15615,17 @@ paths:
         in: path
         description: Job ID
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -13010,6 +15687,11 @@ paths:
           enum:
           - "y"
           - "n"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Specify NS Id and MCI Name Prefix
         content:
@@ -13052,6 +15734,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13082,6 +15769,11 @@ paths:
         in: path
         description: Request ID to delete
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -13137,6 +15829,11 @@ paths:
           enum:
           - "true"
           - "false"
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13154,6 +15851,12 @@ paths:
       summary: Delete all requests' details
       description: Delete details of all requests
       operationId: DeleteAllRequests
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13173,6 +15876,17 @@ paths:
         in: query
         description: Name of the CSP to retrieve
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -13233,6 +15947,11 @@ paths:
         in: query
         description: "Label selector query. Example: env=production,tier=backend"
         required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -13371,6 +16090,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13417,6 +16147,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13451,6 +16192,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13515,6 +16267,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: List of objects to delete
         content:
@@ -13552,6 +16315,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "204":
           description: No Content
@@ -13578,6 +16352,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13615,6 +16400,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "204":
           description: No Content
@@ -13652,6 +16448,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13714,6 +16521,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13776,6 +16594,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: CORS Configuration in XML format
         content:
@@ -13811,6 +16640,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "204":
           description: No Content
@@ -13848,6 +16688,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13890,6 +16741,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -13932,6 +16794,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: Versioning Configuration
         content:
@@ -13999,6 +16872,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -14045,6 +16929,17 @@ paths:
         schema:
           type: string
           default: aws-ap-northeast-2
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "204":
           description: No Content
@@ -14102,6 +16997,17 @@ paths:
         schema:
           type: integer
           default: 3600
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -14162,6 +17068,17 @@ paths:
         schema:
           type: integer
           default: 3600
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -14190,6 +17107,12 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -14274,6 +17197,17 @@ paths:
           - probe
           - monitor
           - test
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       requestBody:
         description: "Optional MCI configuration. If not provided, system defaults\
           \ will be used"
@@ -14316,6 +17250,12 @@ paths:
       description: Receives a number and streams the decrementing number every second
         until zero
       operationId: PostTestStreamResponse
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: Number input
         content:
@@ -14392,6 +17332,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       responses:
         "200":
           description: "Detailed risk analysis with spec, image, and overall risk\
@@ -14419,6 +17364,18 @@ paths:
       summary: Update images from cloudimage.csv asset file
       description: Update image information based on the cloudimage.csv asset file
       operationId: UpdateImagesFromAsset
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
       responses:
         "202":
           description: Accepted
@@ -14446,6 +17403,12 @@ paths:
       description: Design a hierarchical network configuration of a VPC network or
         multi-cloud network consisting of multiple VPC networks
       operationId: PostUtilToDesignNetwork
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: A root/main network CIDR block and subnetting rules
         content:
@@ -14481,6 +17444,12 @@ paths:
       description: Validate a hierarchical configuration of a VPC network or multi-cloud
         network consisting of multiple VPC networks
       operationId: PostUtilToValidateNetwork
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: A hierarchical network configuration
         content:
@@ -14515,6 +17484,12 @@ paths:
       summary: Design VNet and subnets based on user-friendly properties
       description: Design VNet and subnets based on user-friendly properties
       operationId: PostUtilToDesignVNet
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       requestBody:
         description: User-friendly properties to design VNet and subnets
         content:
@@ -15626,6 +18601,48 @@ components:
           type: string
         vmUserPassword:
           type: string
+    model.CredentialHolderInfo:
+      type: object
+      properties:
+        connectionCount:
+          type: integer
+          description: ConnectionCount is the total number of connection configs for
+            this holder
+          example: 42
+        credentialHolder:
+          type: string
+          description: "CredentialHolder is the holder identifier (e.g., \"admin\"\
+            , \"team-a\")"
+          example: admin
+        isDefault:
+          type: boolean
+          description: IsDefault indicates whether this holder is the system default
+          example: true
+        providers:
+          type: array
+          description: Providers is the list of cloud providers registered under this
+            holder
+          example:
+          - aws
+          - gcp
+          - azure
+          items:
+            type: string
+        verifiedConnectionCount:
+          type: integer
+          description: VerifiedConnectionCount is the number of verified connections
+            for this holder
+          example: 38
+      description: Credential holder summary with associated providers and connection
+        counts.
+    model.CredentialHolderList:
+      type: object
+      properties:
+        credentialHolderList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CredentialHolderInfo'
+      description: List of credential holder summaries
     model.CredentialInfo:
       type: object
       properties:

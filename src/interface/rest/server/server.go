@@ -136,6 +136,32 @@ func RunServer() {
 	// limit the application to 20 requests/sec using the default in-memory store
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
 
+	// Custom middleware for RequestContext
+	// Injects request-scoped metadata (credential holder, request ID, etc.)
+	// into context.Context so core functions can access them without parameter drilling.
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx := c.Request().Context()
+
+			// Credential holder
+			holder := c.Request().Header.Get(model.CredentialHolderHeaderKey)
+			if holder == "" {
+				holder = model.DefaultCredentialHolder
+			}
+			holder = strings.ToLower(holder)
+			// Validate holder name (reject hyphens and other invalid characters)
+			if err := common.ValidateCredentialHolderName(holder); err != nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{
+					"message": fmt.Sprintf("Invalid X-Credential-Holder header: %s", err.Error()),
+				})
+			}
+			ctx = common.WithCredentialHolder(ctx, holder)
+
+			c.SetRequest(c.Request().WithContext(ctx))
+			return next(c)
+		}
+	})
+
 	// Custom middleware for RequestID and RequestDetails
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -298,6 +324,8 @@ func RunServer() {
 
 	e.GET("/tumblebug/credential/publicKey", rest_common.RestGetPublicKeyForCredentialEncryption)
 	e.POST("/tumblebug/credential", rest_common.RestRegisterCredential)
+	e.GET("/tumblebug/credentialHolder", rest_common.RestGetCredentialHolderList)
+	e.GET("/tumblebug/credentialHolder/:holderId", rest_common.RestGetCredentialHolder)
 
 	e.POST("/tumblebug/lookupSpecs", rest_resource.RestLookupSpecList)
 	e.POST("/tumblebug/lookupSpec", rest_resource.RestLookupSpec)

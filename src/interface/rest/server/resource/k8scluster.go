@@ -41,6 +41,8 @@ import (
 // @Success 200 {object} model.K8sClusterVersionDetailAvailable
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /availableK8sVersion [get]
 func RestGetAvailableK8sVersion(c echo.Context) error {
 
@@ -64,6 +66,8 @@ func RestGetAvailableK8sVersion(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterNodeImageDetailAvailable
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /availableK8sNodeImage [get]
 func RestGetAvailableK8sNodeImage(c echo.Context) error {
 
@@ -86,6 +90,8 @@ func RestGetAvailableK8sNodeImage(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterNodeGroupsOnCreation
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /checkK8sNodeGroupsOnK8sCreation [get]
 func RestCheckK8sNodeGroupsOnK8sCreation(c echo.Context) error {
 
@@ -107,6 +113,8 @@ func RestCheckK8sNodeGroupsOnK8sCreation(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterNodeImageDesignation
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /checkK8sNodeImageDesignation [get]
 func RestCheckK8sNodeImageDesignation(c echo.Context) error {
 
@@ -128,6 +136,8 @@ func RestCheckK8sNodeImageDesignation(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterRequiredSubnetCount
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /requiredK8sSubnetCount [get]
 func RestGetRequiredK8sSubnetCount(c echo.Context) error {
 
@@ -152,6 +162,8 @@ func RestGetRequiredK8sSubnetCount(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster [post]
 func RestPostK8sCluster(c echo.Context) error {
 
@@ -195,6 +207,8 @@ func RestPostK8sCluster(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId} [put]
 */
 func RestPutK8sCluster(c echo.Context) error {
@@ -217,6 +231,8 @@ func RestPutK8sCluster(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup [post]
 func RestPostK8sNodeGroup(c echo.Context) error {
 
@@ -255,6 +271,8 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 // @Param option query string false "Option for K8sNodeGroup deletion" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName} [delete]
 func RestDeleteK8sNodeGroup(c echo.Context) error {
 
@@ -296,6 +314,8 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Success 200 {object} model.SetK8sNodeGroupAutoscalingRes
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoscaling [put]
 func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 
@@ -336,6 +356,8 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @Success 200 {object} model.ChangeK8sNodeGroupAutoscaleSizeRes
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/autoscaleSize [put]
 func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 
@@ -374,6 +396,8 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId} [get]
 func RestGetK8sCluster(c echo.Context) error {
 
@@ -403,6 +427,8 @@ func RestGetK8sCluster(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterTokenResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/token [get]
 func RestGetK8sClusterToken(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -431,6 +457,8 @@ type RestGetAllK8sClusterResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllK8sClusterResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster [get]
 func RestGetAllK8sCluster(c echo.Context) error {
 
@@ -478,6 +506,8 @@ func RestGetAllK8sCluster(c echo.Context) error {
 // @Param option query string false "Option for K8sCluster deletion" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId} [delete]
 func RestDeleteK8sCluster(c echo.Context) error {
 
@@ -515,6 +545,8 @@ func RestDeleteK8sCluster(c echo.Context) error {
 // @Param option query string false "Option for K8sCluster deletion" Enums(force)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster [delete]
 func RestDeleteAllK8sCluster(c echo.Context) error {
 
@@ -548,6 +580,8 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/upgrade [put]
 func RestPutUpgradeK8sCluster(c echo.Context) error {
 
@@ -586,6 +620,8 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 // @Success 200 {object} model.CheckK8sClusterDynamicReqInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /k8sClusterDynamicCheckRequest [post]
 func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 
@@ -613,9 +649,10 @@ func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sClusterDynamic [post]
 func RestPostK8sClusterDynamic(c echo.Context) error {
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	optionFlag := c.QueryParam("option")
@@ -628,7 +665,7 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CreateK8sClusterDynamic(reqID, nsId, req, optionFlag, skipVersionCheck)
+	result, err := infra.CreateK8sClusterDynamic(ctx, nsId, req, optionFlag, skipVersionCheck)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create K8sCluster dynamically")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -679,9 +716,10 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 // @Success 207 {object} model.K8sMultiClusterInfo "Multi-Status - Partial success, some clusters created but others failed"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sMultiClusterDynamic [post]
 func RestPostK8sMultiClusterDynamic(c echo.Context) error {
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	optionFlag := c.QueryParam("option")
@@ -696,7 +734,7 @@ func RestPostK8sMultiClusterDynamic(c echo.Context) error {
 
 	log.Info().Msgf("Received request to create %d K8sClusters in parallel", len(req.Clusters))
 
-	result, err := infra.CreateK8sMultiClusterDynamic(reqID, nsId, req, optionFlag, skipVersionCheck)
+	result, err := infra.CreateK8sMultiClusterDynamic(ctx, nsId, req, optionFlag, skipVersionCheck)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create K8sClusters dynamically")
 		// Partial success case: some clusters created successfully
@@ -723,9 +761,10 @@ func RestPostK8sMultiClusterDynamic(c echo.Context) error {
 // @Success 200 {object} model.K8sNodeGroupInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroupDynamic [post]
 func RestPostK8sNodeGroupDynamic(c echo.Context) error {
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
@@ -736,8 +775,7 @@ func RestPostK8sNodeGroupDynamic(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	log.Debug().Msgf("reqID: %s, nsId: %s, k8sClusterId: %s, req: %v\n", reqID, nsId, k8sClusterId, req)
-	result, err := infra.CreateK8sNodeGroupDynamic(reqID, nsId, k8sClusterId, req)
+	result, err := infra.CreateK8sNodeGroupDynamic(ctx, nsId, k8sClusterId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create K8sNodeGroup dynamically")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -758,6 +796,8 @@ func RestPostK8sNodeGroupDynamic(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/control/k8sCluster/{k8sClusterId} [get]
 func RestGetControlK8sCluster(c echo.Context) error {
 
@@ -793,6 +833,8 @@ func RestGetControlK8sCluster(c echo.Context) error {
 // @Success 200 {object} []model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /k8sClusterRecommendNode [post]
 func RestRecommendK8sNode(c echo.Context) error {
 
@@ -803,7 +845,8 @@ func RestRecommendK8sNode(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := infra.RecommendK8sNode(nsId, *u)
+	ctx := c.Request().Context()
+	content, err := infra.RecommendK8sNode(ctx, nsId, *u)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -827,6 +870,7 @@ func RestRecommendK8sNode(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterContainerCmdResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/cmd/k8sCluster/{k8sClusterId} [post]
 func RestPostCmdK8sCluster(c echo.Context) error {
 
@@ -866,6 +910,7 @@ func RestPostCmdK8sCluster(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterContainerCmdResults
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/transferFile/k8sCluster/{k8sClusterId} [post]
 func RestPostFileToK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")

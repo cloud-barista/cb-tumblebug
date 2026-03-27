@@ -47,6 +47,8 @@ import (
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or template name"
 // @Failure 409 {object} model.SimpleMsg "Template already exists"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/vNet [post]
 func RestPostVNetTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -77,6 +79,8 @@ func RestPostVNetTemplate(c echo.Context) error {
 // @Success 200 {object} model.VNetTemplateInfo "Template information"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/vNet/{templateId} [get]
 func RestGetVNetTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -98,6 +102,8 @@ func RestGetVNetTemplate(c echo.Context) error {
 // @Param filterKeyword query string false "Keyword to filter templates by name or description"
 // @Success 200 {object} model.VNetTemplateListResponse "List of templates"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/vNet [get]
 func RestGetAllVNetTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -125,6 +131,8 @@ func RestGetAllVNetTemplate(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/vNet/{templateId} [put]
 func RestPutVNetTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -156,6 +164,8 @@ func RestPutVNetTemplate(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg "Template deleted successfully"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/vNet/{templateId} [delete]
 func RestDeleteVNetTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -179,6 +189,8 @@ func RestDeleteVNetTemplate(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} model.SimpleMsg "All templates deleted successfully"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/vNet [delete]
 func RestDeleteAllVNetTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -212,6 +224,8 @@ func RestDeleteAllVNetTemplate(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template or namespace not found"
 // @Failure 500 {object} model.SimpleMsg "Internal resource creation error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/template/{templateId} [post]
 func RestPostVNetFromTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -272,6 +286,8 @@ func RestPostVNetFromTemplate(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or template name"
 // @Failure 409 {object} model.SimpleMsg "Template already exists"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/securityGroup [post]
 func RestPostSecurityGroupTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -302,6 +318,8 @@ func RestPostSecurityGroupTemplate(c echo.Context) error {
 // @Success 200 {object} model.SecurityGroupTemplateInfo "Template information"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/securityGroup/{templateId} [get]
 func RestGetSecurityGroupTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -323,6 +341,8 @@ func RestGetSecurityGroupTemplate(c echo.Context) error {
 // @Param filterKeyword query string false "Keyword to filter templates by name or description"
 // @Success 200 {object} model.SecurityGroupTemplateListResponse "List of templates"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/securityGroup [get]
 func RestGetAllSecurityGroupTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -350,6 +370,8 @@ func RestGetAllSecurityGroupTemplate(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/securityGroup/{templateId} [put]
 func RestPutSecurityGroupTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -381,6 +403,8 @@ func RestPutSecurityGroupTemplate(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg "Template deleted successfully"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/securityGroup/{templateId} [delete]
 func RestDeleteSecurityGroupTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -404,6 +428,8 @@ func RestDeleteSecurityGroupTemplate(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} model.SimpleMsg "All templates deleted successfully"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/securityGroup [delete]
 func RestDeleteAllSecurityGroupTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -437,6 +463,8 @@ func RestDeleteAllSecurityGroupTemplate(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template or namespace not found"
 // @Failure 500 {object} model.SimpleMsg "Internal resource creation error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/template/{templateId} [post]
 func RestPostSecurityGroupFromTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")

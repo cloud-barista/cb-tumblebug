@@ -2856,19 +2856,17 @@ const (
 // For Alibaba Cloud, it additionally filters zones using CSP API to check spec availability.
 //
 // Parameters:
+//   - ctx: Request context (contains credential holder info)
 //   - specId: TB spec ID (format: provider+region+cspSpecName)
-//   - credentialHolder: Credential holder name (defaults to model.DefaultCredentialHolder if empty)
 //
 // Returns:
 //   - *model.AvailableZonesInfo: Success result with available zones (nil if error)
 //   - *model.AvailableZonesError: Error result with details (nil if success)
-func GetAvailableZonesForSpec(specId string, credentialHolder string) (*model.AvailableZonesInfo, *model.AvailableZonesError) {
+func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.AvailableZonesInfo, *model.AvailableZonesError) {
 	startTime := time.Now()
 
-	// Default credential holder
-	if credentialHolder == "" {
-		credentialHolder = model.DefaultCredentialHolder
-	}
+	// Get credential holder from context
+	credentialHolder := common.CredentialHolderFromContext(ctx)
 
 	// Helper function to create error response
 	makeError := func(errorCode, errorMessage, suggestion string, alternativeRegions []string) *model.AvailableZonesError {

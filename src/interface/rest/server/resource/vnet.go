@@ -37,6 +37,8 @@ import (
 // @Success 201 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet [post]
 func RestPostVNet(c echo.Context) error {
 
@@ -88,6 +90,8 @@ func RestPostVNet(c echo.Context) error {
 // @Success 200 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [put]
 */
 // func RestPutVNet(c echo.Context) error {
@@ -108,6 +112,8 @@ func RestPostVNet(c echo.Context) error {
 // @Success 200 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [get]
 func RestGetVNet(c echo.Context) error {
 	// [Input]
@@ -156,6 +162,8 @@ type RestGetAllVNetResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllVNetResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet [get]
 func RestGetAllVNet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -177,6 +185,8 @@ func RestGetAllVNet(c echo.Context) error {
 // @Param action query string false "Action" Enums(withsubnets,refine,force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [delete]
 func RestDelVNet(c echo.Context) error {
 	// [Input]
@@ -243,6 +253,8 @@ func RestDelVNet(c echo.Context) error {
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet [delete]
 func RestDelAllVNet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -261,6 +273,8 @@ func RestDelAllVNet(c echo.Context) error {
 // @Success 201 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerCspResource/vNet [post]
 func RestPostRegisterVNet(c echo.Context) error {
 
@@ -314,6 +328,8 @@ func RestPostRegisterVNet(c echo.Context) error {
 // @Success 201 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/deregisterResource/vNet/{vNetId} [delete]
 func RestDeleteDeregisterVNet(c echo.Context) error {
 

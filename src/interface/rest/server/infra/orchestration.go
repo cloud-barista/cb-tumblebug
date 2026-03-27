@@ -37,6 +37,8 @@ import (
 // @Success 200 {object} model.MciPolicyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/policy/mci/{mciId} [post]
 func RestPostMciPolicy(c echo.Context) error {
 
@@ -64,6 +66,8 @@ func RestPostMciPolicy(c echo.Context) error {
 // @Success 200 {object} model.MciPolicyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/policy/mci/{mciId} [get]
 func RestGetMciPolicy(c echo.Context) error {
 
@@ -99,6 +103,8 @@ type RestGetAllMciPolicyResponse struct {
 // @Success 200 {object} RestGetAllMciPolicyResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/policy/mci [get]
 func RestGetAllMciPolicy(c echo.Context) error {
 
@@ -129,6 +135,8 @@ func RestGetAllMciPolicy(c echo.Context) error {
 // @Success 200 {object} MciPolicyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/policy/mci/{mciId} [put]
 */
 func RestPutMciPolicy(c echo.Context) error {
@@ -146,6 +154,8 @@ func RestPutMciPolicy(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/policy/mci/{mciId} [delete]
 func RestDelMciPolicy(c echo.Context) error {
 
@@ -167,6 +177,8 @@ func RestDelMciPolicy(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/policy/mci [delete]
 func RestDelAllMciPolicy(c echo.Context) error {
 

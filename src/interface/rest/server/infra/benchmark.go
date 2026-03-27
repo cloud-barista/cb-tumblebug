@@ -35,6 +35,8 @@ import (
 // @Success 200 {object} model.MciSshCmdResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/installBenchmarkAgent/mci/{mciId} [post]
 func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 
@@ -79,6 +81,8 @@ type RestGetAllBenchmarkRequest struct {
 // @Success 200 {object} model.BenchmarkInfoArray
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/benchmarkAll/mci/{mciId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
 
@@ -106,6 +110,8 @@ func RestGetAllBenchmark(c echo.Context) error {
 // @Success 200 {object} model.BenchmarkInfoArray
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/benchmarkLatency/mci/{mciId} [get]
 func RestGetBenchmarkLatency(c echo.Context) error {
 
@@ -134,6 +140,8 @@ type RestGetBenchmarkRequest struct {
 // @Success 200 {object} model.BenchmarkInfoArray
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/benchmark/mci/{mciId} [post]
 func RestGetBenchmark(c echo.Context) error {
 

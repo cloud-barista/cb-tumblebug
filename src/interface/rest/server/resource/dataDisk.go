@@ -38,6 +38,8 @@ import (
 // @Success 200 {object} model.DataDiskInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/dataDisk [post]
 func RestPostDataDisk(c echo.Context) error {
 
@@ -67,6 +69,8 @@ func RestPostDataDisk(c echo.Context) error {
 // @Success 200 {object} model.DataDiskInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [put]
 func RestPutDataDisk(c echo.Context) error {
 
@@ -94,6 +98,8 @@ func RestPutDataDisk(c echo.Context) error {
 // @Success 200 {object} model.DataDiskInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [get]
 func RestGetDataDisk(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -119,6 +125,8 @@ type RestGetAllDataDiskResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllDataDiskResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/dataDisk [get]
 func RestGetAllDataDisk(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -136,6 +144,8 @@ func RestGetAllDataDisk(c echo.Context) error {
 // @Param dataDiskId path string true "Data Disk ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [delete]
 func RestDelDataDisk(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -153,6 +163,8 @@ func RestDelDataDisk(c echo.Context) error {
 // @Param dataDiskId path string true "Data Disk ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/deregisterResource/dataDisk/{dataDiskId} [delete]
 func RestDeregisterDataDisk(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -170,6 +182,8 @@ func RestDeregisterDataDisk(c echo.Context) error {
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/dataDisk [delete]
 func RestDelAllDataDisk(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -192,6 +206,8 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [put]
 func RestPutVmDataDisk(c echo.Context) error {
 
@@ -241,6 +257,8 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [post]
 func RestPostVmDataDisk(c echo.Context) error {
 
@@ -274,6 +292,8 @@ func RestPostVmDataDisk(c echo.Context) error {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllDataDiskResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [get]
 func RestGetVmDataDisk(c echo.Context) error {
 

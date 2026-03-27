@@ -34,6 +34,8 @@ import (
 // @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey [post]
 func RestPostSshKey(c echo.Context) error {
 
@@ -63,6 +65,8 @@ func RestPostSshKey(c echo.Context) error {
 // @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [put]
 func RestPutSshKey(c echo.Context) error {
 
@@ -91,6 +95,8 @@ func RestPutSshKey(c echo.Context) error {
 // @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId}/complement [put]
 func RestComplementSshKey(c echo.Context) error {
 
@@ -118,6 +124,8 @@ func RestComplementSshKey(c echo.Context) error {
 // @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [get]
 func RestGetSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -143,6 +151,8 @@ type RestGetAllSshKeyResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSshKeyResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey [get]
 func RestGetAllSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -160,6 +170,8 @@ func RestGetAllSshKey(c echo.Context) error {
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [delete]
 func RestDelSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -177,6 +189,8 @@ func RestDelSshKey(c echo.Context) error {
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/deregisterResource/sshKey/{sshKeyId} [delete]
 func RestDeregisterSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -194,6 +208,8 @@ func RestDeregisterSshKey(c echo.Context) error {
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey [delete]
 func RestDelAllSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.

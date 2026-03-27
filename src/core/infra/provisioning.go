@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1314,11 +1315,12 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 }
 
 // CheckMciDynamicReq is func to check request info to create MCI obeject and deploy requested VMs in a dynamic way
-func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.CheckMciDynamicReqInfo, error) {
+func CheckMciDynamicReq(ctx context.Context, req *model.MciConnectionConfigCandidatesReq) (*model.CheckMciDynamicReqInfo, error) {
 
+	credentialHolder := common.CredentialHolderFromContext(ctx)
 	mciReqInfo := model.CheckMciDynamicReqInfo{}
 
-	connectionConfigList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
+	connectionConfigList, err := common.GetConnConfigList(credentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("cannot load ConnectionConfigList in MCI dynamic request check")
 		log.Error().Err(err).Msg("")
@@ -1363,7 +1365,10 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 }
 
 // CreateMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
-func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.MciInfo, error) {
+func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq, deployOption string) (*model.MciInfo, error) {
+
+	reqID := common.RequestIDFromContext(ctx)
+	credentialHolder := common.CredentialHolderFromContext(ctx)
 
 	// Initialize comprehensive error tracking
 	var errorHistory []string
@@ -1444,7 +1449,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 			// log VM request details
 			log.Debug().Msgf("[%d] VM Request: %+v", index, subGroupReq)
 
-			err := checkCommonResAvailableForSubGroupDynamicReq(&subGroupReq, nsId)
+			err := checkCommonResAvailableForSubGroupDynamicReq(ctx, &subGroupReq, nsId)
 			if err != nil {
 				log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", index)
 				mutex.Lock()
@@ -1516,7 +1521,8 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 				continue
 			}
 
-			connectionName := specInfo.ConnectionName
+			connectionName := common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
+			// credentialHolder already extracted from ctx above
 			if subGroupReq.ConnectionName != "" {
 				connectionName = subGroupReq.ConnectionName
 			}
@@ -1545,7 +1551,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 						time.Sleep(2 * time.Second)
 					}
 
-					result, err := getSubGroupReqFromDynamicReq(reqID, nsId, &subGroupDynamicReq)
+					result, err := getSubGroupReqFromDynamicReq(ctx, nsId, &subGroupDynamicReq)
 					resultChan <- vmResult{result: result, err: err}
 				}
 
@@ -1738,12 +1744,14 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 }
 
 // ValidateMciDynamicReq is func to validate MCI dynamic request before actual provisioning
-func ValidateMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
-	return ReviewMciDynamicReq(reqID, nsId, req, deployOption)
+func ValidateMciDynamicReq(ctx context.Context, nsId string, req *model.MciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
+	return ReviewMciDynamicReq(ctx, nsId, req, deployOption)
 }
 
 // reviewSingleSubGroupDynamicReq reviews and validates a single VM dynamic request
-func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynamicReq, deployOption string) (model.ReviewSubGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
+func reviewSingleSubGroupDynamicReq(ctx context.Context, subGroupDynamicReq model.CreateSubGroupDynamicReq, deployOption string) (model.ReviewSubGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
+
+	credentialHolder := common.CredentialHolderFromContext(ctx)
 	vmReview := model.ReviewSubGroupDynamicReqInfo{
 		VmName:       subGroupDynamicReq.Name,
 		SubGroupSize: subGroupDynamicReq.SubGroupSize,
@@ -1786,12 +1794,14 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 		viable = false
 	} else {
 		specInfoPtr = &specInfo
-		vmReview.ConnectionName = specInfo.ConnectionName
+		// Resolve connection name based on credential holder
+		resolvedConnectionName := common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
+		vmReview.ConnectionName = resolvedConnectionName
 		vmReview.ProviderName = specInfo.ProviderName
 		vmReview.RegionName = specInfo.RegionName
 
 		// Check if spec is available in CSP
-		cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+		cspSpec, err := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 		if err != nil {
 			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", subGroupDynamicReq.SpecId, err))
 			vmReview.SpecValidation = model.ReviewResourceValidation{
@@ -1829,7 +1839,8 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 
 	// Validate ImageId (with auto-registration if found in CSP but not in DB)
 	if specInfoPtr != nil {
-		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, specInfoPtr.ConnectionName, subGroupDynamicReq.ImageId)
+		resolvedConnName := common.ResolveConnectionName(specInfoPtr.ConnectionName, credentialHolder)
+		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, resolvedConnName, subGroupDynamicReq.ImageId)
 		if err != nil {
 			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available: %v", subGroupDynamicReq.ImageId, err))
 			vmReview.ImageValidation = model.ReviewResourceValidation{
@@ -2131,7 +2142,7 @@ func ReviewSpecImagePair(specId, imageId string) (*model.SpecImagePairReviewResu
 }
 
 // ReviewSingleSubGroupDynamicReq reviews and validates a single VM dynamic request and returns comprehensive review information
-func ReviewSingleSubGroupDynamicReq(reqID string, nsId string, req *model.CreateSubGroupDynamicReq) (*model.ReviewSubGroupDynamicReqInfo, error) {
+func ReviewSingleSubGroupDynamicReq(ctx context.Context, nsId string, req *model.CreateSubGroupDynamicReq) (*model.ReviewSubGroupDynamicReqInfo, error) {
 	log.Debug().Msgf("Starting single VM dynamic request review for: %s", req.Name)
 
 	// Basic validation
@@ -2141,14 +2152,14 @@ func ReviewSingleSubGroupDynamicReq(reqID string, nsId string, req *model.Create
 	}
 
 	// Use the common VM review function with empty deployOption
-	vmReview, _, _, _, _ := reviewSingleSubGroupDynamicReq(*req, "")
+	vmReview, _, _, _, _ := reviewSingleSubGroupDynamicReq(ctx, *req, "")
 
 	log.Debug().Msgf("Single VM review completed: %s - %s", vmReview.Status, vmReview.Message)
 	return &vmReview, nil
 }
 
 // ReviewMciDynamicReq is func to review and validate MCI dynamic request comprehensively
-func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
+func ReviewMciDynamicReq(ctx context.Context, nsId string, req *model.MciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
 
 	log.Debug().Msgf("Starting MCI dynamic request review for: %s", req.Name)
 
@@ -2227,7 +2238,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, de
 			defer func() { <-semaphore }()
 
 			// Use the common VM review function
-			vmReview, specInfoPtr, viable, hasVmWarning, vmCost := reviewSingleSubGroupDynamicReq(subGroupDynamicReq, deployOption)
+			vmReview, specInfoPtr, viable, hasVmWarning, vmCost := reviewSingleSubGroupDynamicReq(ctx, subGroupDynamicReq, deployOption)
 
 			// Send result to channel
 			vmReviewChan <- struct {
@@ -2502,7 +2513,7 @@ func CreateSystemMciDynamic(option string) (*model.MciInfo, error) {
 			recommendSpecReq.Limit = 1
 			common.PrintJsonPretty(recommendSpecReq)
 
-			specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
+			specList, err := RecommendSpec(common.NewDefaultContext(), model.SystemCommonNs, recommendSpecReq)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return nil, err
@@ -2529,11 +2540,11 @@ func CreateSystemMciDynamic(option string) (*model.MciInfo, error) {
 		return nil, err
 	}
 
-	return CreateMciDynamic("", nsId, req, "")
+	return CreateMciDynamic(common.NewDefaultContext(), nsId, req, "")
 }
 
 // CreateMciSubGroupDynamic is func to create requested VM in a dynamic way and add it to MCI
-func CreateMciSubGroupDynamic(nsId string, mciId string, req *model.CreateSubGroupDynamicReq) (*model.MciInfo, error) {
+func CreateMciSubGroupDynamic(ctx context.Context, nsId string, mciId string, req *model.CreateSubGroupDynamicReq) (*model.MciInfo, error) {
 
 	emptyMci := &model.MciInfo{}
 	subGroupId := req.Name
@@ -2547,13 +2558,13 @@ func CreateMciSubGroupDynamic(nsId string, mciId string, req *model.CreateSubGro
 		return emptyMci, err
 	}
 
-	err = checkCommonResAvailableForSubGroupDynamicReq(req, nsId)
+	err = checkCommonResAvailableForSubGroupDynamicReq(ctx, req, nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyMci, err
 	}
 
-	vmReqResult, err := getSubGroupReqFromDynamicReq("", nsId, req)
+	vmReqResult, err := getSubGroupReqFromDynamicReq(ctx, nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyMci, err
@@ -2563,7 +2574,9 @@ func CreateMciSubGroupDynamic(nsId string, mciId string, req *model.CreateSubGro
 }
 
 // checkCommonResAvailableForSubGroupDynamicReq is func to check common resources availability for SubGroupDynamicReq
-func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynamicReq, nsId string) error {
+func checkCommonResAvailableForSubGroupDynamicReq(ctx context.Context, req *model.CreateSubGroupDynamicReq, nsId string) error {
+
+	credentialHolder := common.CredentialHolderFromContext(ctx)
 
 	log.Debug().Msgf("Checking common resources for VM Dynamic Request: %+v", req)
 	log.Debug().Msgf("Namespace ID: %s", nsId)
@@ -2575,16 +2588,19 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynam
 		return fmt.Errorf("failed to get VM specification '%s': %w", req.SpecId, err)
 	}
 
+	// Resolve connection name based on credential holder
+	resolvedConnectionName := common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
+
 	// Channel to collect errors from parallel goroutines
 	errorChan := make(chan error, 2)
 
 	// Check spec availability in parallel
 	go func() {
-		_, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+		_, err := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 		if err != nil {
 			log.Error().Err(err).Msgf("Spec validation failed for %s", specInfo.CspSpecName)
 			errorChan <- fmt.Errorf("spec '%s' is not available in connection '%s': %w",
-				specInfo.CspSpecName, specInfo.ConnectionName, err)
+				specInfo.CspSpecName, resolvedConnectionName, err)
 		} else {
 			log.Debug().Msgf("Spec validation successful: %s", specInfo.CspSpecName)
 			errorChan <- nil
@@ -2593,11 +2609,11 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynam
 
 	// Check image availability in parallel (with auto-registration if found in CSP but not in DB)
 	go func() {
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, specInfo.ConnectionName, req.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, resolvedConnectionName, req.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msgf("Image validation failed for %s", req.ImageId)
 			errorChan <- fmt.Errorf("image '%s' is not available in connection '%s': %w",
-				req.ImageId, specInfo.ConnectionName, err)
+				req.ImageId, resolvedConnectionName, err)
 		} else {
 			if isAutoRegistered {
 				log.Info().Msgf("Image '%s' was auto-registered from CSP", req.ImageId)
@@ -2610,6 +2626,7 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynam
 	// Collect errors from both goroutines
 	var errorMessages []string
 	for i := 0; i < 2; i++ {
+	
 		if err := <-errorChan; err != nil {
 			errorMessages = append(errorMessages, err.Error())
 		}
@@ -2628,7 +2645,9 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynam
 }
 
 // waitForVNetReady waits for VNet to be in a ready state with timeout and retry mechanism
-func waitForVNetReady(nsId string, vNetId string, reqID string) error {
+func waitForVNetReady(ctx context.Context, nsId string, vNetId string) error {
+	reqID := common.RequestIDFromContext(ctx)
+
 	const (
 		maxRetries             = 200
 		retryInterval          = 5 * time.Second
@@ -2685,7 +2704,10 @@ func waitForVNetReady(nsId string, vNetId string, reqID string) error {
 }
 
 // getSubGroupReqFromDynamicReq is func to getSubGroupReqFromDynamicReq with created resource tracking
-func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSubGroupDynamicReq) (*VmReqWithCreatedResources, error) {
+func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.CreateSubGroupDynamicReq) (*VmReqWithCreatedResources, error) {
+
+	reqID := common.RequestIDFromContext(ctx)
+	credentialHolder := common.CredentialHolderFromContext(ctx)
 
 	onDemand := true
 	var createdResources []CreatedResource
@@ -2704,7 +2726,8 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 	}
 
 	// remake vmReqest from given input and check resource availability
-	subGroupReq.ConnectionName = specInfo.ConnectionName
+	// Resolve connection name based on credential holder
+	subGroupReq.ConnectionName = common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
 
 	// If ConnectionName is specified by the request, Use ConnectionName from the request
 	if k.ConnectionName != "" {
@@ -2766,10 +2789,10 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 		// Create a new default vNet if it does not exist
 		if err != nil {
 			log.Debug().Msg("Not found default vNet: " + err.Error())
-			// Pass Zone option if explicitly specified in the request
-			var sharedResourceOpts *resource.SharedResourceOptions
+			// Pass Zone and CredentialHolder options
+			sharedResourceOpts := &resource.SharedResourceOptions{CredentialHolder: credentialHolder}
 			if req.Zone != "" {
-				sharedResourceOpts = &resource.SharedResourceOptions{Zone: req.Zone}
+				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating VNet with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
 			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrVNet, subGroupReq.ConnectionName, sharedResourceOpts)
@@ -2786,7 +2809,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 			}
 		}
 		// Wait for the VNet to be ready after creation
-		err = waitForVNetReady(nsId, subGroupReq.VNetId, reqID)
+		err = waitForVNetReady(ctx, nsId, subGroupReq.VNetId)
 		if err != nil {
 			detailedErr := fmt.Errorf("VNet '%s' is not ready for use after creation: %w", subGroupReq.VNetId, err)
 			log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, subGroupReq.VNetId)
@@ -2806,7 +2829,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 		// Check if VNet is ready, if not wait for it
 		if vNetInfo.Status != string(resource.NetworkAvailable) && vNetInfo.Status != string(resource.NetworkInUse) {
 			log.Info().Msgf("VNet '%s' exists but not ready (status: %s), waiting for ready state", subGroupReq.VNetId, vNetInfo.Status)
-			err = waitForVNetReady(nsId, subGroupReq.VNetId, reqID)
+			err = waitForVNetReady(ctx, nsId, subGroupReq.VNetId)
 			if err != nil {
 				detailedErr := fmt.Errorf("existing VNet '%s' is not ready for use: %w", subGroupReq.VNetId, err)
 				log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, subGroupReq.VNetId)
@@ -2851,10 +2874,10 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 		// Create a new default SSHKey if it does not exist
 		if err != nil {
 			log.Debug().Msg("Not found default SSHKey: " + err.Error())
-			// Pass Zone option if explicitly specified in the request
-			var sharedResourceOpts *resource.SharedResourceOptions
+			// Pass Zone and CredentialHolder options
+			sharedResourceOpts := &resource.SharedResourceOptions{CredentialHolder: credentialHolder}
 			if req.Zone != "" {
-				sharedResourceOpts = &resource.SharedResourceOptions{Zone: req.Zone}
+				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SSHKey with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
 			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrSSHKey, subGroupReq.ConnectionName, sharedResourceOpts)
@@ -2894,10 +2917,10 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 		log.Debug().Msg("checked if the default security group does NOT exist")
 		if err != nil {
 			log.Debug().Msg("Not found default security group: " + err.Error())
-			// Pass Zone option if explicitly specified in the request
-			var sharedResourceOpts *resource.SharedResourceOptions
+			// Pass Zone and CredentialHolder options
+			sharedResourceOpts := &resource.SharedResourceOptions{CredentialHolder: credentialHolder}
 			if req.Zone != "" {
-				sharedResourceOpts = &resource.SharedResourceOptions{Zone: req.Zone}
+				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SecurityGroup with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
 			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName, sharedResourceOpts)
@@ -3703,7 +3726,7 @@ func CheckK8sClusterDynamicReq(req *model.K8sClusterConnectionConfigCandidatesRe
 	mciCCCReq := model.MciConnectionConfigCandidatesReq{
 		SpecIds: req.SpecIds,
 	}
-	mciDReqInfo, err := CheckMciDynamicReq(&mciCCCReq)
+	mciDReqInfo, err := CheckMciDynamicReq(common.NewDefaultContext(), &mciCCCReq)
 
 	k8sDReqInfo := filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo)
 
@@ -3826,7 +3849,8 @@ func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *mod
 }
 
 // getK8sClusterReqFromDynamicReq is func to get K8sClusterReq from K8sClusterDynamicReq
-func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sClusterDynamicReq, skipVersionCheck bool) (*model.K8sClusterReq, error) {
+func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *model.K8sClusterDynamicReq, skipVersionCheck bool) (*model.K8sClusterReq, error) {
+	reqID := common.RequestIDFromContext(ctx)
 	onDemand := true
 
 	emptyK8sReq := &model.K8sClusterReq{}
@@ -4016,7 +4040,8 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sCl
 }
 
 // CreateK8sClusterDynamic is func to create K8sCluster obeject and deploy requested K8sCluster and NodeGroup in a dynamic way
-func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
+func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.K8sClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
+	reqID := common.RequestIDFromContext(ctx)
 	emptyK8sCluster := &model.K8sClusterInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -4049,7 +4074,7 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDy
 	}
 
 	//If not, generate default resources dynamically.
-	k8sReq, err := getK8sClusterReqFromDynamicReq(reqID, nsId, dReq, skipVersionCheck)
+	k8sReq, err := getK8sClusterReqFromDynamicReq(ctx, nsId, dReq, skipVersionCheck)
 	if err != nil {
 		log.Err(err).Msg("Failed to get shared resources for dynamic K8sCluster creation")
 		return emptyK8sCluster, err
@@ -4087,7 +4112,8 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDy
 }
 
 // getK8sNodeGroupReqFromDynamicReq is func to get K8sNodeGroupReq from K8sNodeGroupDynamicReq
-func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo *model.K8sClusterInfo, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sNodeGroupReq, error) {
+func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClusterInfo *model.K8sClusterInfo, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sNodeGroupReq, error) {
+	reqID := common.RequestIDFromContext(ctx)
 	emptyK8sNgReq := &model.K8sNodeGroupReq{}
 	k8sNgReq := &model.K8sNodeGroupReq{}
 
@@ -4170,7 +4196,8 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 }
 
 // CreateK8sNodeGroupDynamic is func to create K8sNodeGroup obeject and deploy requested K8sNodeGroup in a dynamic way
-func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sClusterInfo, error) {
+func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId string, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sClusterInfo, error) {
+	reqID := common.RequestIDFromContext(ctx)
 	log.Debug().Msgf("reqID: %s, nsId: %s, k8sClusterId: %s, dReq: %v\n", reqID, nsId, k8sClusterId, dReq)
 
 	emptyK8sCluster := &model.K8sClusterInfo{}
@@ -4212,7 +4239,7 @@ func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, d
 		return emptyK8sCluster, err
 	}
 
-	k8sNgReq, err := getK8sNodeGroupReqFromDynamicReq(reqID, nsId, tbK8sCInfo, dReq)
+	k8sNgReq, err := getK8sNodeGroupReqFromDynamicReq(ctx, nsId, tbK8sCInfo, dReq)
 	if err != nil {
 		log.Err(err).Msg("Failed to get shared resources for dynamic K8sNodeGroup creation")
 		return emptyK8sCluster, err
@@ -4934,7 +4961,8 @@ func getRecentUniqueFailureMessages(provisioningLog *model.ProvisioningLog, maxM
 }
 
 // CreateK8sMultiClusterDynamic creates multiple K8sClusters in parallel
-func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8sMultiClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.K8sMultiClusterInfo, error) {
+func CreateK8sMultiClusterDynamic(ctx context.Context, nsId string, multiReq *model.K8sMultiClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.K8sMultiClusterInfo, error) {
+	reqID := common.RequestIDFromContext(ctx)
 	if len(multiReq.Clusters) == 0 {
 		return nil, fmt.Errorf("no clusters specified in the request")
 	}
@@ -4968,7 +4996,7 @@ func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8s
 	for i, clusterReq := range multiReq.Clusters {
 		go func(index int, req model.K8sClusterDynamicReq) {
 			// Generate unique request ID for each cluster
-			clusterReqID := fmt.Sprintf("%s-cluster-%d", reqID, index)
+			clusterCtx := common.WithRequestID(ctx, fmt.Sprintf("%s-cluster-%d", reqID, index))
 
 			// Auto-generate cluster name and inject clustergroup label if NamePrefix is provided
 			if namePrefix != "" {
@@ -4996,7 +5024,7 @@ func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8s
 
 			log.Info().Msgf("[%d/%d] Starting K8sCluster creation: %s", index+1, len(multiReq.Clusters), req.Name)
 
-			cluster, err := CreateK8sClusterDynamic(clusterReqID, nsId, &req, deployOption, skipVersionCheck)
+			cluster, err := CreateK8sClusterDynamic(clusterCtx, nsId, &req, deployOption, skipVersionCheck)
 
 			if err != nil {
 				log.Error().Err(err).Msgf("[%d/%d] Failed to create K8sCluster: %s", index+1, len(multiReq.Clusters), req.Name)

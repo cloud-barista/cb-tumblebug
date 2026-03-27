@@ -25,6 +25,7 @@ type AuthsInfo struct {
 // @Produce  json
 // @Success 200 {object} AuthsInfo "Information of JWT authentication"
 // @Failure 400 {object} object "Invalid Request"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /auth/test [get]
 // @Security Bearer
 func TestJWTAuth(c echo.Context) error {

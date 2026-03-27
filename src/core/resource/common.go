@@ -2044,6 +2044,10 @@ type SharedResourceOptions struct {
 	// Useful for GPU VMs or other resources only available in specific zones.
 	// If empty, auto-selection based on connection config applies.
 	Zone string
+
+	// CredentialHolder specifies the credential holder for filtering connection configs.
+	// If empty, defaults to model.DefaultCredentialHolder ("admin").
+	CredentialHolder string
 }
 
 // CreateSharedResource is to register default resource from asset files (../assets/*.csv)
@@ -2071,8 +2075,11 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 		resList = append(resList, resType)
 	}
 
-	// TODO: This is a temporary solution. need to be changed after the policy is decided.
+	// Determine credential holder from options, fallback to default
 	credentialHolder := model.DefaultCredentialHolder
+	if options != nil && options.CredentialHolder != "" {
+		credentialHolder = options.CredentialHolder
+	}
 
 	// Read default resources from file and create objects
 

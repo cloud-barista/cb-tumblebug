@@ -324,14 +324,15 @@ password_required = needs_decryption and not os.path.isfile(KEY_FILE)
 # Get decryption key BEFORE health check (if credentials are being registered)
 # This ensures all user inputs are completed before waiting for server
 decrypted_content = None
-cred_data = None
+all_holders = None
 
 if needs_decryption:
     if password_required:
         # Password input serves as confirmation - no need for separate "proceed?" prompt
         print(Fore.CYAN + "Enter the credential password to proceed...")
     decrypted_content = get_decryption_key()
-    cred_data = yaml.safe_load(decrypted_content)["credentialholder"]["admin"]
+    all_holders = yaml.safe_load(decrypted_content)["credentialholder"]
+    # all_holders is a dict: {"admin": {provider: creds, ...}, "role01": {provider: creds, ...}, ...}
 else:
     # No credentials to register - ask for confirmation
     if not args.yes:
@@ -404,13 +405,13 @@ def encrypt_credential_value_with_publickey(public_key_pem, credentials):
     return encrypted_credentials, encrypted_aes_key
 
 
-def register_credential(provider, credentials):
+def register_credential(holder_name, provider, credentials):
     try:
         if all(credentials.values()):
             # Step 1: Get the public key for encryption
             public_key_response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/credential/publicKey", headers=HEADERS)
             if public_key_response.status_code != 200:
-                return provider, "Failed to retrieve public key, Skip", Fore.RED
+                return holder_name, provider, "Failed to retrieve public key, Skip", Fore.RED
 
             public_key_data = public_key_response.json()
             public_key = public_key_data["publicKey"]
@@ -421,14 +422,15 @@ def register_credential(provider, credentials):
 
             # Step 3: Prepare the payload with the encrypted credentials and AES key
             credential_payload = {
-                "credentialHolder": "admin",
+                "credentialHolder": holder_name,
                 "credentialKeyValueList": [{"key": k, "value": v} for k, v in encrypted_credentials.items()],
                 "providerName": provider,
                 "publicKeyTokenId": public_key_token_id,
                 "encryptedClientAesKeyByPublicKey": encrypted_aes_key,
             }
 
-            print(Fore.YELLOW + f"- Registering and validating credentials for {provider.upper()}...")
+            holder_label = f"[{holder_name}] " if holder_name != "admin" else ""
+            print(Fore.YELLOW + f"- {holder_label}Registering and validating credentials for {provider.upper()}...")
             # Step 4: Register the encrypted credentials
             response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/credential", json=credential_payload, headers=HEADERS)
 
@@ -436,16 +438,16 @@ def register_credential(provider, credentials):
                 # Extract relevant data for message
                 result_data = response.json()
                 message = print_credential_info(result_data)
-                return provider, message, Fore.GREEN
+                return holder_name, provider, message, Fore.GREEN
             else:
                 message = response.json().get("message", response.text)
-                return provider, message, Fore.RED
+                return holder_name, provider, message, Fore.RED
         else:
             message = "Incomplete credential data, Skip"
-            return provider, message, Fore.RED
+            return holder_name, provider, message, Fore.RED
     except Exception as e:
         message = "Error registering credentials: " + str(e)
-        return provider, message, Fore.RED
+        return holder_name, provider, message, Fore.RED
 
 
 # Function to print formatted credential information
@@ -561,22 +563,48 @@ def fetch_price():
 
 # Register credentials to Tumblebug if requested
 if run_credentials:
-    # cred_data was already decrypted before health check to ensure all user inputs complete first
-    print(Fore.YELLOW + f"\nRegistering all valid credentials for all cloud regions...")
+    # all_holders was already parsed before health check to ensure all user inputs complete first
+    holder_names = list(all_holders.keys())
+    print(Fore.YELLOW + f"\nRegistering credentials for {len(holder_names)} credential holder(s): {', '.join(holder_names)}...")
 
-    # Register credentials to TumblebugServer using ThreadPoolExecutor
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        future_to_provider = {executor.submit(register_credential, provider, credentials): provider for provider, credentials in cred_data.items()}
-        for future in as_completed(future_to_provider):
-            provider, message, color = future.result()
-            if message is None:
-                message = ""  # Handle NoneType message
-            else:
-                print("")
-                print(color + f"- {provider.upper()}: {message}")
-                # Only call print_credential_info if registration was successful (message is a dict)
-                if color == Fore.GREEN and isinstance(message, dict):
-                    print_credential_info(message)
+    # Validate holder names (only lowercase alphanumeric and underscores allowed; no hyphens)
+    import re
+    holder_name_pattern = re.compile(r'^[a-z0-9_]+$')
+    for holder_name in holder_names:
+        if not holder_name_pattern.match(holder_name.lower()):
+            print(Fore.RED + f"\nError: Invalid credential holder name '{holder_name}'.")
+            print(Fore.RED + "  Holder names must contain only lowercase alphanumeric characters and underscores [a-z0-9_].")
+            print(Fore.RED + "  Hyphens (-) are not allowed (reserved as connection name delimiters).")
+            print(Fore.RED + f"  Suggestion: Use '{holder_name.lower().replace('-', '_')}' instead.")
+            sys.exit(1)
+
+    # Register credentials for all holders and their providers
+    for holder_name in holder_names:
+        cred_data = all_holders[holder_name]
+        if not cred_data:
+            print(Fore.YELLOW + f"\n  Skipping holder '{holder_name}' (no credentials defined)")
+            continue
+
+        if holder_name != "admin":
+            print(Fore.CYAN + f"\n  === Credential Holder: {holder_name} ===")
+
+        # Register credentials to TumblebugServer using ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            future_to_key = {
+                executor.submit(register_credential, holder_name, provider, credentials): (holder_name, provider)
+                for provider, credentials in cred_data.items()
+            }
+            for future in as_completed(future_to_key):
+                holder, provider, message, color = future.result()
+                if message is None:
+                    message = ""  # Handle NoneType message
+                else:
+                    print("")
+                    holder_label = f"[{holder}] " if holder != "admin" else ""
+                    print(color + f"- {holder_label}{provider.upper()}: {message}")
+                    # Only call print_credential_info if registration was successful (message is a dict)
+                    if color == Fore.GREEN and isinstance(message, dict):
+                        print_credential_info(message)
 
 # Load assets (specs and images) if requested
 if run_load_assets:

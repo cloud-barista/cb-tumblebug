@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/rand"
@@ -106,7 +107,9 @@ func applyRange(field reflect.Value, operator string, operand float32) error {
 }
 
 // RecommendSpec is func to recommend a VM
-func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
+// It automatically filters specs by the credential holder's available providers,
+// unless the caller has already specified a providerName filter.
+func RecommendSpec(ctx context.Context, nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
 	// Filtering and sorting with DB query
 
 	u := &model.FilterSpecsByRangeRequest{}
@@ -114,6 +117,18 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, 
 	if err := applyFilterPolicies(u, &plan); err != nil {
 		log.Error().Err(err).Msg("Failed to apply filter policies")
 		return nil, err
+	}
+
+	// Auto-apply provider filter based on credential holder's available connections.
+	// Only if the caller hasn't already specified a providerName filter.
+	if u.ProviderName == "" {
+		credentialHolder := common.CredentialHolderFromContext(ctx)
+		holderInfo, err := common.GetCredentialHolder(credentialHolder)
+		if err == nil && len(holderInfo.Providers) > 0 && !holderInfo.IsDefault {
+			u.ProviderName = strings.Join(holderInfo.Providers, ",")
+			log.Info().Msgf("Auto-filtering specs by credential holder '%s' providers: %s",
+				credentialHolder, u.ProviderName)
+		}
 	}
 
 	// Set final limit
@@ -1232,14 +1247,14 @@ func RecommendVmPerformance(nsId string, specList *[]model.SpecInfo) ([]model.Sp
 }
 
 // RecommendK8sNode is func to recommend a node for K8sCluster
-func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
+func RecommendK8sNode(ctx context.Context, nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
 	// Validate K8s minimum requirements in filter policy
 	if err := validateK8sMinimumRequirements(&plan); err != nil {
 		log.Error().Err(err).Msg("K8s minimum requirements validation failed")
 		return nil, err
 	}
 
-	return RecommendSpec(nsId, plan)
+	return RecommendSpec(ctx, nsId, plan)
 }
 
 // validateK8sMinimumRequirements validates that filter policy meets K8s minimum requirements

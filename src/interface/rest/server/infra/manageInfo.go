@@ -52,6 +52,8 @@ type JSONResult struct {
 // @success 200 {object} JSONResult{[DEFAULT]=model.MciInfo,[ID]=model.IdList,[STATUS]=model.MciStatusInfo,[AccessInfo]=model.MciAccessInfo} "Different return structures by the given action param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId} [get]
 func RestGetMci(c echo.Context) error {
 
@@ -114,6 +116,8 @@ func RestGetMci(c echo.Context) error {
 // @Success 200 {object} JSONResult{[DEFAULT]=model.MciDynamicReq,[TEMPLATE]=model.MciDynamicTemplateInfo} "Without template param: extracted MCI config / With template param: created template info"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/configCopy [get]
 func RestGetMciReqFromMci(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -152,6 +156,8 @@ type RestGetAllMciStatusResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMciResponse,[SIMPLE]=RestGetAllMciResponse,[ID]=model.IdList,[STATUS]=RestGetAllMciStatusResponse} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci [get]
 func RestGetAllMci(c echo.Context) error {
 
@@ -208,6 +214,8 @@ func RestGetAllMci(c echo.Context) error {
 // @Success 200 {object} MciInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId} [put]
 func RestPutMci(c echo.Context) error {
 	return nil
@@ -226,6 +234,8 @@ func RestPutMci(c echo.Context) error {
 // @Param option query string false "Option for delete MCI (support force delete)" Enums(terminate,force)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId} [delete]
 func RestDelMci(c echo.Context) error {
 
@@ -248,6 +258,8 @@ func RestDelMci(c echo.Context) error {
 // @Param option query string false "Option for delete all MCIs (support force object delete, terminate before delete)" Enums(force, terminate)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci [delete]
 func RestDelAllMci(c echo.Context) error {
 
@@ -277,6 +289,8 @@ func RestDelAllMci(c echo.Context) error {
 // @success 200 {object} JSONResult{[DEFAULT]=model.VmInfo,[STATUS]=model.VmStatusInfo,[IDNAME]=model.IdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [get]
 func RestGetMciVm(c echo.Context) error {
 
@@ -321,6 +335,8 @@ func RestGetMciVm(c echo.Context) error {
 // @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [put]
 func RestPutMciVm(c echo.Context) error {
 	return nil
@@ -340,6 +356,8 @@ func RestPutMciVm(c echo.Context) error {
 // @Param option query string false "Option for delete VM (support force delete)" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [delete]
 func RestDelMciVm(c echo.Context) error {
 
@@ -371,6 +389,8 @@ func RestDelMciVm(c echo.Context) error {
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/deregisterResource/mci/{mciId}/vm/{vmId} [delete]
 func RestDeregisterMciVm(c echo.Context) error {
 
@@ -402,6 +422,8 @@ func RestDeregisterMciVm(c echo.Context) error {
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [get]
 func RestGetMciGroupVms(c echo.Context) error {
 
@@ -428,6 +450,8 @@ func RestGetMciGroupVms(c echo.Context) error {
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/subgroup [get]
 func RestGetMciGroupIds(c echo.Context) error {
 
@@ -453,6 +477,8 @@ func RestGetMciGroupIds(c echo.Context) error {
 // @Success 200 {object} model.MciAssociatedResourceList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/associatedResources [get]
 func RestGetMciAssociatedResources(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -475,6 +501,8 @@ func RestGetMciAssociatedResources(c echo.Context) error {
 // @Success 200 {array} model.SecurityGroupInfo "Updated Security Group info list with synchronized firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/associatedSecurityGroups [put]
 // @Summary Update all Security Groups associated with a given MCI (Synchronize Firewall Rules)
 // @Description Update all Security Groups associated with a given MCI. The firewall rules of all associated Security Groups will be synchronized to match the requested set.

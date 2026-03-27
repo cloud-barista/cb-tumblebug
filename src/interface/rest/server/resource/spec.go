@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -42,6 +43,8 @@ import (
 // @Success 200 {object} model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/spec [post]
 func RestPostSpec(c echo.Context) error {
 
@@ -93,6 +96,8 @@ func RestPostSpec(c echo.Context) error {
 // @Success 200 {object} model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/spec/{specId} [put]
 func RestPutSpec(c echo.Context) error {
 
@@ -127,6 +132,8 @@ type RestLookupSpecRequest struct {
 // @Success 200 {object} model.SpiderSpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /lookupSpec [post]
 func RestLookupSpec(c echo.Context) error {
 
@@ -152,6 +159,8 @@ func RestLookupSpec(c echo.Context) error {
 // @Success 200 {object} model.SpiderSpecList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /lookupSpecs [post]
 func RestLookupSpecList(c echo.Context) error {
 
@@ -184,6 +193,8 @@ func RestLookupSpecList(c echo.Context) error {
 // @Success 202 {object} resource.FetchSpecsAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /fetchSpecs [post]
 func RestFetchSpecs(c echo.Context) error {
 	nsId := model.SystemCommonNs
@@ -211,6 +222,8 @@ func RestFetchSpecs(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /fetchPrice [post]
 func RestFetchPrice(c echo.Context) error {
 
@@ -241,6 +254,8 @@ type RestFilterSpecsResponse struct {
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/filterSpecsByRange [post]
 func RestFilterSpecsByRange(c echo.Context) error {
 
@@ -270,6 +285,8 @@ func RestFilterSpecsByRange(c echo.Context) error {
 // @Success 200 {object} model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/spec/{specId} [get]
 func RestGetSpec(c echo.Context) error {
 
@@ -295,6 +312,8 @@ func RestGetSpec(c echo.Context) error {
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{cspSpecName})"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/spec/{specId} [delete]
 func RestDelSpec(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -312,6 +331,8 @@ func RestDelSpec(c echo.Context) error {
 // @Success 200 {object} model.SpecAvailabilityInfo
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /availableRegionZonesForSpec [post]
 func RestGetAvailableRegionZonesForSpec(c echo.Context) error {
 	u := &model.GetAvailableRegionZonesRequest{}
@@ -342,10 +363,24 @@ func RestGetAvailableRegionZonesForSpec(c echo.Context) error {
 // @Success 200 {object} model.AvailableZonesInfo "Available zones information"
 // @Failure 400 {object} model.AvailableZonesError "Error with details"
 // @Failure 404 {object} model.AvailableZonesError "Spec not found or resource not available"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /availableZonesForSpec [get]
 func RestGetAvailableZonesForSpec(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	specId := c.QueryParam("specId")
-	credentialHolder := c.QueryParam("credentialHolder")
+
+	// If credentialHolder query param is explicitly provided, override context value
+	if credentialHolder := c.QueryParam("credentialHolder"); credentialHolder != "" {
+		credentialHolder = strings.ToLower(credentialHolder)
+		if err := common.ValidateCredentialHolderName(credentialHolder); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"message": fmt.Sprintf("Invalid credentialHolder query parameter: %s", err.Error()),
+			})
+		}
+		ctx = common.WithCredentialHolder(ctx, credentialHolder)
+	}
 
 	if specId == "" {
 		errResp := model.AvailableZonesError{
@@ -357,9 +392,9 @@ func RestGetAvailableZonesForSpec(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errResp)
 	}
 
-	log.Debug().Msgf("[Get Available Zones For Spec] SpecId: %s, CredentialHolder: %s", specId, credentialHolder)
+	log.Debug().Msgf("[Get Available Zones For Spec] SpecId: %s", specId)
 
-	successResult, errorResult := resource.GetAvailableZonesForSpec(specId, credentialHolder)
+	successResult, errorResult := resource.GetAvailableZonesForSpec(ctx, specId)
 
 	if errorResult != nil {
 		// Determine appropriate HTTP status code based on error code
@@ -391,6 +426,8 @@ func RestGetAvailableZonesForSpec(c echo.Context) error {
 // @Success 200 {object} model.SpecAvailabilityBatchResult
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /availableRegionZonesForSpecList [post]
 func RestGetAvailableRegionZonesForSpecList(c echo.Context) error {
 	u := &model.GetAvailableRegionZonesListRequest{}
@@ -421,6 +458,8 @@ func RestGetAvailableRegionZonesForSpecList(c echo.Context) error {
 // @Success 200 {object} model.SpecCleanupResult
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/updateExistingSpecListByAvailableRegionZones [post]
 func RestUpdateExistingSpecListByAvailableRegionZones(c echo.Context) error {
 	nsId := c.Param("nsId")

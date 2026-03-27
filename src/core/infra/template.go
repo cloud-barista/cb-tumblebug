@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -23,7 +24,7 @@ import (
 )
 
 // CreateMciDynamicFromTemplate creates an MCI from a template with overrides
-func CreateMciDynamicFromTemplate(reqID string, nsId string, templateId string, applyReq *model.TemplateApplyReq, option string) (*model.MciInfo, error) {
+func CreateMciDynamicFromTemplate(ctx context.Context, nsId string, templateId string, applyReq *model.TemplateApplyReq, option string) (*model.MciInfo, error) {
 
 	// Get the template
 	templateInfo, err := common.GetMciDynamicTemplate(nsId, templateId)
@@ -42,7 +43,7 @@ func CreateMciDynamicFromTemplate(reqID string, nsId string, templateId string, 
 	}
 
 	// Call the existing CreateMciDynamic function
-	result, err := CreateMciDynamic(reqID, nsId, &mciReq, option)
+	result, err := CreateMciDynamic(ctx, nsId, &mciReq, option)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create MCI from template")
 		return nil, err
