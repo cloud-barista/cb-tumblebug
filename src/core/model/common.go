@@ -234,6 +234,21 @@ const (
 
 	// SystemCommonNs is const for SystemCommon NameSpace ID
 	SystemCommonNs string = "system"
+
+	// CredentialHolderHeaderKey is the HTTP header key for specifying credential holder
+	CredentialHolderHeaderKey string = "X-Credential-Holder"
+)
+
+// ContextKey is an unexported type for context keys to prevent collisions with
+// keys defined in other packages. Uses typed keys per Go best practices.
+type ContextKey string
+
+const (
+	// CtxKeyCredentialHolder is the context.Context key for credential holder
+	CtxKeyCredentialHolder ContextKey = "credentialHolder"
+
+	// CtxKeyRequestID is the context.Context key for request ID
+	CtxKeyRequestID ContextKey = "requestID"
 )
 
 var StartTime string
@@ -337,6 +352,27 @@ type CredentialInfo struct {
 // ConnConfigList is struct for containing a CB-Spider struct for connection config list
 type ConnConfigList struct { // Spider
 	Connectionconfig []ConnConfig `json:"connectionconfig"`
+}
+
+// CredentialHolderInfo is struct for credential holder summary derived from registered connections.
+// @Description Credential holder summary with associated providers and connection counts.
+type CredentialHolderInfo struct {
+	// CredentialHolder is the holder identifier (e.g., "admin", "team-a")
+	CredentialHolder string `json:"credentialHolder" example:"admin"`
+	// Providers is the list of cloud providers registered under this holder
+	Providers []string `json:"providers" example:"aws,gcp,azure"`
+	// ConnectionCount is the total number of connection configs for this holder
+	ConnectionCount int `json:"connectionCount" example:"42"`
+	// VerifiedConnectionCount is the number of verified connections for this holder
+	VerifiedConnectionCount int `json:"verifiedConnectionCount" example:"38"`
+	// IsDefault indicates whether this holder is the system default
+	IsDefault bool `json:"isDefault" example:"true"`
+}
+
+// CredentialHolderList is struct for containing a list of credential holder summaries
+// @Description List of credential holder summaries
+type CredentialHolderList struct {
+	CredentialHolderList []CredentialHolderInfo `json:"credentialHolderList"`
 }
 
 // SpiderRegionZoneInfo is struct for containing region struct of CB-Spider

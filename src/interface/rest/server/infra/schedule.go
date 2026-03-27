@@ -76,6 +76,8 @@ import (
 // @Failure 409 {object} model.SimpleMsg "Duplicate job already exists"
 // @Failure 422 {object} model.SimpleMsg "Invalid registration options"
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule [post]
 func RestPostScheduleRegisterCspResources(c echo.Context) error {
 	// Parse request body
@@ -142,6 +144,8 @@ func RestPostScheduleRegisterCspResources(c echo.Context) error {
 // @Produce json
 // @Success 200 {object} model.ScheduleJobListResponse
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule [get]
 func RestGetScheduleRegisterCspResourcesList(c echo.Context) error {
 	// Get all jobs (jobs are not namespace-scoped)
@@ -188,6 +192,8 @@ func RestGetScheduleRegisterCspResourcesList(c echo.Context) error {
 // @Success 200 {object} model.ScheduleJobStatus
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule/{jobId} [get]
 func RestGetScheduleRegisterCspResourcesStatus(c echo.Context) error {
 	jobId := c.Param("jobId")
@@ -231,6 +237,8 @@ func RestGetScheduleRegisterCspResourcesStatus(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule/{jobId} [put]
 func RestPutScheduleRegisterCspResources(c echo.Context) error {
 	jobId := c.Param("jobId")
@@ -282,6 +290,8 @@ func RestPutScheduleRegisterCspResources(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule/{jobId} [delete]
 func RestDeleteScheduleRegisterCspResources(c echo.Context) error {
 	jobId := c.Param("jobId")
@@ -334,6 +344,8 @@ func RestDeleteScheduleRegisterCspResources(c echo.Context) error {
 // @Produce json
 // @Success 200 {object} model.SimpleMsg "Successfully deleted all jobs (message includes count)"
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule [delete]
 func RestDeleteScheduleRegisterCspResourcesAll(c echo.Context) error {
 	// Stop and delete all jobs (jobs are not namespace-scoped)
@@ -374,6 +386,8 @@ func RestDeleteScheduleRegisterCspResourcesAll(c echo.Context) error {
 // @Success 200 {object} model.ScheduleJobStatus
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule/{jobId}/pause [put]
 func RestPutScheduleRegisterCspResourcesPause(c echo.Context) error {
 	jobId := c.Param("jobId")
@@ -414,6 +428,8 @@ func RestPutScheduleRegisterCspResourcesPause(c echo.Context) error {
 // @Success 200 {object} model.ScheduleJobStatus
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /registerCspResources/schedule/{jobId}/resume [put]
 func RestPutScheduleRegisterCspResourcesResume(c echo.Context) error {
 	jobId := c.Param("jobId")

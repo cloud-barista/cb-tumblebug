@@ -25,6 +25,7 @@ type NumberRequest struct {
 // @Success 200 {object} map[string]int "currentNumber"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 500 {object} map[string]string "Stream failed"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /testStreamResponse [post]
 func RestTestStreamResponse(c echo.Context) error {
 	var req NumberRequest

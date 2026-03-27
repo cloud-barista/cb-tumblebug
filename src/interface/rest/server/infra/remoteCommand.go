@@ -79,6 +79,7 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.MciSshCmdRes
 // @Success 202 {object} map[string]string "Async mode: returns xRequestId"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/cmd/mci/{mciId} [post]
 func RestPostCmdMci(c echo.Context) error {
 
@@ -173,6 +174,7 @@ func RestPostCmdMci(c echo.Context) error {
 // @Success 200 {object} model.MciSshCmdResultForAPI
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/transferFile/mci/{mciId} [post]
 func RestPostFileToMci(c echo.Context) error {
 
@@ -246,6 +248,7 @@ func RestPostFileToMci(c echo.Context) error {
 // @Success 200 {file} file "Downloaded file"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/downloadFile/mci/{mciId}/vm/{vmId} [post]
 func RestPostDownloadFileFromMciVm(c echo.Context) error {
 
@@ -307,6 +310,8 @@ func RestPostDownloadFileFromMciVm(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId} [put]
 func RestSetBastionNodes(c echo.Context) error {
 
@@ -332,6 +337,8 @@ func RestSetBastionNodes(c echo.Context) error {
 // @Success 200 {object} []model.BastionNode
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion [get]
 func RestGetBastionNodes(c echo.Context) error {
 
@@ -356,6 +363,8 @@ func RestGetBastionNodes(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId} [delete]
 func RestRemoveBastionNodes(c echo.Context) error {
 
@@ -382,6 +391,7 @@ func RestRemoveBastionNodes(c echo.Context) error {
 // @Success 200 {object} model.CommandStatusInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index} [get]
 func RestGetVmCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -421,6 +431,7 @@ func RestGetVmCommandStatus(c echo.Context) error {
 // @Success 200 {object} model.CommandStatusListResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus [get]
 func RestListVmCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -490,6 +501,7 @@ func RestListVmCommandStatus(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index} [delete]
 func RestDeleteVmCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -532,6 +544,7 @@ func RestDeleteVmCommandStatus(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus [delete]
 func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -591,6 +604,7 @@ func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatusAll [delete]
 func RestClearAllVmCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -620,6 +634,7 @@ func RestClearAllVmCommandStatus(c echo.Context) error {
 // @Success 200 {object} model.HandlingCommandCountResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount [get]
 func RestGetVmHandlingCommandCount(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -651,6 +666,7 @@ func RestGetVmHandlingCommandCount(c echo.Context) error {
 // @Success 200 {object} model.MciHandlingCommandCountResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/handlingCount [get]
 func RestGetMciHandlingCommandCount(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -682,6 +698,8 @@ func RestGetMciHandlingCommandCount(c echo.Context) error {
 // @Success 200 {object} model.SshHostKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey [get]
 func RestGetVmSshHostKey(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -709,6 +727,8 @@ func RestGetVmSshHostKey(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey [delete]
 func RestDeleteVmSshHostKey(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -739,6 +759,8 @@ func RestDeleteVmSshHostKey(c echo.Context) error {
 // @Param status query string false "Filter by command status (Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses." Enums(Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted)
 // @Success 200 {object} model.ExecutionTaskListResponse
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/cmd/mci/{mciId}/task [get]
 func RestGetMciExecutionTasks(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -774,6 +796,8 @@ func RestGetMciExecutionTasks(c echo.Context) error {
 // @Success 200 {object} model.ExecutionTaskListResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/cmd/mci/{mciId}/task/{taskId} [get]
 func RestGetExecutionTask(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -821,6 +845,8 @@ func RestGetExecutionTask(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/cmd/mci/{mciId}/task/{taskId}/cancel [post]
 func RestCancelExecutionTask(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -872,6 +898,8 @@ func RestCancelExecutionTask(c echo.Context) error {
 // @Param xRequestId query string true "Request ID from async command execution"
 // @Success 200 {object} model.CommandStreamEvent "SSE stream of command events"
 // @Failure 400 {object} model.SimpleMsg "Missing xRequestId"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/stream/cmd/mci/{mciId} [get]
 func RestGetCmdMciStream(c echo.Context) error {
 	xRequestId := c.QueryParam("xRequestId")

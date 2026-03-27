@@ -35,6 +35,8 @@ import (
 // @Success 200 {object} model.SecurityGroupInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup [post]
 func RestPostSecurityGroup(c echo.Context) error {
 
@@ -82,6 +84,8 @@ func RestPostSecurityGroup(c echo.Context) error {
 // @Success 200 {object} model.SecurityGroupUpdateResponse "Updated Security Group info with synchronized firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [put]
 func RestPutSecurityGroup(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -110,6 +114,8 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @Success 200 {object} model.SecurityGroupInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [get]
 func RestGetSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -135,6 +141,8 @@ type RestGetAllSecurityGroupResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSecurityGroupResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup [get]
 func RestGetAllSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -152,6 +160,8 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // @Param securityGroupId path string true "Security Group ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [delete]
 func RestDelSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -169,6 +179,8 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Param securityGroupId path string true "Security Group ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/deregisterResource/securityGroup/{securityGroupId} [delete]
 func RestDeregisterSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -186,6 +198,8 @@ func RestDeregisterSecurityGroup(c echo.Context) error {
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup [delete]
 func RestDelAllSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.

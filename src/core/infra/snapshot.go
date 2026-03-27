@@ -383,7 +383,8 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 	// Step 2: Create MCI with dynamic provisioning
 	log.Info().Msg("Step 1/4: Creating MCI infrastructure...")
 	reqId := common.GenUid() // Generate unique request ID
-	mciInfo, err := CreateMciDynamic(reqId, nsId, &req.SourceMciReq, "")
+	ctx := common.WithRequestID(common.NewDefaultContext(), reqId)
+	mciInfo, err := CreateMciDynamic(ctx, nsId, &req.SourceMciReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create MCI")
 		return result, fmt.Errorf("failed to create MCI: %w", err)

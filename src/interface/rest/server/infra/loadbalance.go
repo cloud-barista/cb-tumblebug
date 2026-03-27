@@ -35,6 +35,8 @@ import (
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb [post]
 func RestPostNLB(c echo.Context) error {
 
@@ -65,6 +67,8 @@ func RestPostNLB(c echo.Context) error {
 // @Success 200 {object} model.McNlbInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/mcSwNlb [post]
 func RestPostMcNLB(c echo.Context) error {
 
@@ -97,6 +101,8 @@ func RestPostMcNLB(c echo.Context) error {
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [put]
 */
 func RestPutNLB(c echo.Context) error {
@@ -119,6 +125,8 @@ func RestPutNLB(c echo.Context) error {
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [get]
 func RestGetNLB(c echo.Context) error {
 
@@ -150,6 +158,8 @@ type RestGetAllNLBResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNLBResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb [get]
 func RestGetAllNLB(c echo.Context) error {
 
@@ -193,6 +203,8 @@ func RestGetAllNLB(c echo.Context) error {
 // @Param nlbId path string true "NLB ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [delete]
 func RestDelNLB(c echo.Context) error {
 
@@ -219,6 +231,8 @@ func RestDelNLB(c echo.Context) error {
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb [delete]
 func RestDelAllNLB(c echo.Context) error {
 
@@ -245,6 +259,8 @@ func RestDelAllNLB(c echo.Context) error {
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/healthz [get]
 func RestGetNLBHealth(c echo.Context) error {
 
@@ -272,6 +288,8 @@ func RestGetNLBHealth(c echo.Context) error {
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [post]
 func RestAddNLBVMs(c echo.Context) error {
 
@@ -300,6 +318,8 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Param nlbAddRemoveVMReq body model.NLBAddRemoveVMReq true "Select VMs to remove from NLB"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [delete]
 func RestRemoveNLBVMs(c echo.Context) error {
 

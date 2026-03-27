@@ -46,6 +46,7 @@ func RestCheckNs(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns [delete]
 func RestDelAllNs(c echo.Context) error {
 
@@ -64,6 +65,7 @@ func RestDelAllNs(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns/{nsId} [delete]
 func RestDelNs(c echo.Context) error {
 
@@ -100,6 +102,7 @@ type RestGetAllNsResponse struct {
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNsResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns [get]
 func RestGetAllNs(c echo.Context) error {
 
@@ -129,6 +132,7 @@ func RestGetAllNs(c echo.Context) error {
 // @Success 200 {object} model.NsInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns/{nsId} [get]
 func RestGetNs(c echo.Context) error {
 
@@ -151,6 +155,7 @@ func RestGetNs(c echo.Context) error {
 // @Success 200 {object} model.NsInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns [post]
 func RestPostNs(c echo.Context) error {
 
@@ -176,6 +181,7 @@ func RestPostNs(c echo.Context) error {
 // @Success 200 {object} model.NsInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns/{nsId} [put]
 func RestPutNs(c echo.Context) error {
 

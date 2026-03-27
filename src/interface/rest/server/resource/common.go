@@ -250,6 +250,8 @@ func RestGetResource(c echo.Context) error {
 // @Param resourceId path string true "Resource ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/checkResource/{resourceType}/{resourceId} [get]
 func RestCheckResource(c echo.Context) error {
 
@@ -331,6 +333,8 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @Param includeAzure query string false "Include Azure images (may take 40+ minutes)" default(false) Enums(true, false)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /loadAssets [get]
 func RestLoadAssets(c echo.Context) error {
 
@@ -357,6 +361,8 @@ func RestLoadAssets(c echo.Context) error {
 // @Param connectionName query string false "connectionName of cloud for designated resource" default()
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/sharedResource [post]
 func RestCreateSharedResource(c echo.Context) error {
 
@@ -381,6 +387,8 @@ func RestCreateSharedResource(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/sharedResources [delete]
 func RestDelAllSharedResources(c echo.Context) error {
 
@@ -405,6 +413,8 @@ type RestRegisterExistingResourcesRequest struct {
 // @Produce  json
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerExistingResources [post]
 func RestRegisterExistingResources(c echo.Context) error {
 

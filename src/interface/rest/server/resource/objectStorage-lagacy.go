@@ -196,6 +196,8 @@ type ListAllMyBucketsResult struct {
 // @Produce xml
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} ListAllMyBucketsResult "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage [get]
 func ListObjectStoragesLagacy(c echo.Context) error {
 
@@ -230,6 +232,8 @@ func ListObjectStoragesLagacy(c echo.Context) error {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName} [put]
 func CreateObjectStorageLagacy(c echo.Context) error {
 
@@ -294,6 +298,8 @@ type ListBucketResult struct {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} ListBucketResult "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName} [get]
 func GetObjectStorageLagacy(c echo.Context) error {
 
@@ -332,6 +338,8 @@ func GetObjectStorageLagacy(c echo.Context) error {
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 "OK"
 // @Failure 404 "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName} [head]
 func ExistObjectStorageLagacy(c echo.Context) error {
 
@@ -386,6 +394,8 @@ type LocationConstraint struct {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} LocationConstraint "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/location [get]
 func GetObjectStorageLocationLagacy(c echo.Context) error {
 
@@ -423,6 +433,8 @@ func GetObjectStorageLocationLagacy(c echo.Context) error {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName} [delete]
 func DeleteObjectStorageLagacy(c echo.Context) error {
 
@@ -489,6 +501,8 @@ type VersioningConfiguration struct {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} VersioningConfiguration "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/versioning [get]
 func GetObjectStorageVersioningLagacy(c echo.Context) error {
 
@@ -540,6 +554,8 @@ func GetObjectStorageVersioningLagacy(c echo.Context) error {
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param reqBody body VersioningConfiguration true "Versioning Configuration"
 // @Success 200 "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/versioning [put]
 func SetObjectStorageVersioningLagacy(c echo.Context) error {
 
@@ -661,6 +677,8 @@ type Version struct {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} ListVersionsResult "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/versions [get]
 func ListObjectVersionsLagacy(c echo.Context) error {
 
@@ -701,6 +719,8 @@ func ListObjectVersionsLagacy(c echo.Context) error {
 // @Param versionId query string true "Version ID" default(yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/versions/{objectKey} [delete]
 func DeleteVersionedObjectLagacy(c echo.Context) error {
 
@@ -833,6 +853,8 @@ type Error struct {
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} CORSConfiguration "OK"
 // @Failure 404 {object} Error "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/cors [get]
 func GetObjectStorageCORSLagacy(c echo.Context) error {
 
@@ -898,6 +920,8 @@ func GetObjectStorageCORSLagacy(c echo.Context) error {
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param reqBody body CORSConfiguration true "CORS Configuration in XML format"
 // @Success 200 "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/cors [put]
 func SetObjectStorageCORSLagacy(c echo.Context) error {
 
@@ -936,6 +960,8 @@ func SetObjectStorageCORSLagacy(c echo.Context) error {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/cors [delete]
 func DeleteObjectStorageCORSLagacy(c echo.Context) error {
 
@@ -982,6 +1008,8 @@ func DeleteObjectStorageCORSLagacy(c echo.Context) error {
 // @Param objectKey path string true "Object Name" default(test-object.txt)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/{objectKey} [head]
 func GetDataObjectInfoLagacy(c echo.Context) error {
 
@@ -1028,6 +1056,8 @@ func GetDataObjectInfoLagacy(c echo.Context) error {
 // @Param objectKey path string true "Object Name" default(test-object.txt)
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName}/{objectKey} [delete]
 func DeleteDataObjectLagacy(c echo.Context) error {
 
@@ -1118,6 +1148,8 @@ type DeleteResult struct {
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param reqBody body Delete true "List of objects to delete"
 // @Success 200 {object} DeleteResult "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/{objectStorageName} [post]
 func DeleteMultipleDataObjectsLagacy(c echo.Context) error {
 
@@ -1189,6 +1221,8 @@ type PresignedURLResult struct {
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
 // @Success 200 {object} PresignedURLResult "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/presigned/download/{objectStorageName}/{objectKey} [get]
 func GeneratePresignedDownloadURLLagacy(c echo.Context) error {
 
@@ -1251,6 +1285,8 @@ func GeneratePresignedDownloadURLLagacy(c echo.Context) error {
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
 // @Success 200 {object} PresignedURLResult "OK"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /resources/objectStorage/presigned/upload/{objectStorageName}/{objectKey} [get]
 func GeneratePresignedUploadURLLagacy(c echo.Context) error {
 

@@ -48,6 +48,8 @@ import (
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or template name"
 // @Failure 409 {object} model.SimpleMsg "Template already exists"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/mci [post]
 func RestPostMciDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -78,6 +80,8 @@ func RestPostMciDynamicTemplate(c echo.Context) error {
 // @Success 200 {object} model.MciDynamicTemplateInfo "Template information"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/mci/{templateId} [get]
 func RestGetMciDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -99,6 +103,8 @@ func RestGetMciDynamicTemplate(c echo.Context) error {
 // @Param filterKeyword query string false "Keyword to filter templates by name or description"
 // @Success 200 {object} model.MciDynamicTemplateListResponse "List of templates"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/mci [get]
 func RestGetAllMciDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -126,6 +132,8 @@ func RestGetAllMciDynamicTemplate(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/mci/{templateId} [put]
 func RestPutMciDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -157,6 +165,8 @@ func RestPutMciDynamicTemplate(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg "Template deleted successfully"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/mci/{templateId} [delete]
 func RestDeleteMciDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -180,6 +190,8 @@ func RestDeleteMciDynamicTemplate(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} model.SimpleMsg "All templates deleted successfully"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/template/mci [delete]
 func RestDeleteAllMciDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -215,9 +227,10 @@ func RestDeleteAllMciDynamicTemplate(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template or namespace not found"
 // @Failure 500 {object} model.SimpleMsg "Internal deployment error"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/template/{templateId} [post]
 func RestPostMciDynamicFromTemplate(c echo.Context) error {
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+	ctx := c.Request().Context()
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
 	option := c.QueryParam("option")
@@ -228,7 +241,7 @@ func RestPostMciDynamicFromTemplate(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CreateMciDynamicFromTemplate(reqID, nsId, templateId, req, option)
+	result, err := infra.CreateMciDynamicFromTemplate(ctx, nsId, templateId, req, option)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create MCI from template")
 		return clientManager.EndRequestWithLog(c, err, nil)

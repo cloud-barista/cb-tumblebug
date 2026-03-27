@@ -41,6 +41,8 @@ import (
 // @Success 200 {object} model.ObjectStorageSupportResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /objectStorage/support [get]
 func RestGetObjectStorageSupport(c echo.Context) error {
 
@@ -71,6 +73,8 @@ func RestGetObjectStorageSupport(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 409 {object} model.SimpleMsg "Conflict"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage [put]
 func RestCreateObjectStorage(c echo.Context) error {
 
@@ -115,6 +119,8 @@ func RestCreateObjectStorage(c echo.Context) error {
 // @Success 200 {object} JSONResult{[DEFAULT]=model.ObjectStorageListResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage [get]
 func RestListObjectStorages(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -133,6 +139,8 @@ func RestListObjectStorages(c echo.Context) error {
 // @Success 200 {object} model.ObjectStorageInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId} [get]
 func RestGetObjectStorage(c echo.Context) error {
 
@@ -170,6 +178,8 @@ func RestGetObjectStorage(c echo.Context) error {
 // @Param osId path string true "Object Storage ID" default(os01)
 // @Success 200 "OK"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId} [head]
 func RestCheckObjectStorageExistance(c echo.Context) error {
 
@@ -212,6 +222,8 @@ func RestCheckObjectStorageExistance(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/location [get]
 func RestGetObjectStorageLocation(c echo.Context) error {
 
@@ -249,6 +261,8 @@ func RestGetObjectStorageLocation(c echo.Context) error {
 // @Success 204 "No Content"
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId} [delete]
 func RestDeleteObjectStorage(c echo.Context) error {
 
@@ -296,6 +310,8 @@ func RestDeleteObjectStorage(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/cors [put]
 func RestSetObjectStorageCORS(c echo.Context) error {
 
@@ -344,6 +360,8 @@ func RestSetObjectStorageCORS(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/cors [get]
 func RestGetObjectStorageCORS(c echo.Context) error {
 
@@ -389,6 +407,8 @@ func RestGetObjectStorageCORS(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/cors [delete]
 func RestDeleteObjectStorageCORS(c echo.Context) error {
 
@@ -440,6 +460,8 @@ func RestDeleteObjectStorageCORS(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/versioning [put]
 func RestSetObjectStorageVersioning(c echo.Context) error {
 
@@ -488,6 +510,8 @@ func RestSetObjectStorageVersioning(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/versioning [get]
 func RestGetObjectStorageVersioning(c echo.Context) error {
 
@@ -530,6 +554,8 @@ func RestGetObjectStorageVersioning(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/versions [get]
 func RestListObjectVersions(c echo.Context) error {
 
@@ -578,6 +604,8 @@ func RestListObjectVersions(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/versions/{objectKey} [delete]
 func RestDeleteVersionedObject(c echo.Context) error {
 
@@ -657,6 +685,8 @@ func RestDeleteVersionedObject(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey} [get]
 func RestGeneratePresignedURL(c echo.Context) error {
 
@@ -725,6 +755,8 @@ func RestGeneratePresignedURL(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/object [get]
 func RestListDataObjects(c echo.Context) error {
 
@@ -783,6 +815,8 @@ func RestListDataObjects(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey} [head]
 func RestGetDataObjectInfo(c echo.Context) error {
 
@@ -840,6 +874,8 @@ func RestGetDataObjectInfo(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey} [delete]
 func RestDeleteDataObject(c echo.Context) error {
 

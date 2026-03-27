@@ -42,6 +42,8 @@ import (
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/image [post]
 func RestPostImage(c echo.Context) error {
 
@@ -98,6 +100,8 @@ func RestPostImage(c echo.Context) error {
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/image/{imageId} [put]
 func RestPutImage(c echo.Context) error {
 
@@ -133,6 +137,8 @@ type RestLookupImageRequest struct {
 // @Success 200 {object} model.SpiderImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /lookupImage [post]
 func RestLookupImage(c echo.Context) error {
 
@@ -158,6 +164,8 @@ func RestLookupImage(c echo.Context) error {
 // @Success 200 {object} model.SpiderImageList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /lookupImages [post]
 func RestLookupImageList(c echo.Context) error {
 
@@ -190,6 +198,8 @@ func RestLookupImageList(c echo.Context) error {
 // @Success 202 {object} resource.FetchImagesAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /fetchImages [post]
 func RestFetchImages(c echo.Context) error {
 	nsId := model.SystemCommonNs
@@ -225,6 +235,8 @@ func RestFetchImages(c echo.Context) error {
 // @Success 202 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /fetchImagesAsync [post]
 func RestFetchImagesAsync(c echo.Context) error {
 	nsId := model.SystemCommonNs
@@ -255,6 +267,8 @@ func RestFetchImagesAsync(c echo.Context) error {
 // @Success 200 {object} resource.FetchImagesAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /fetchImagesResult [get]
 func RestGetFetchImagesAsyncResult(c echo.Context) error {
 	nsId := model.SystemCommonNs
@@ -277,6 +291,8 @@ func RestGetFetchImagesAsyncResult(c echo.Context) error {
 // @Success 202 {object} resource.FetchImagesAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /updateImagesFromAsset [post]
 func RestUpdateImagesFromAsset(c echo.Context) error {
 
@@ -301,6 +317,8 @@ func RestUpdateImagesFromAsset(c echo.Context) error {
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/image/{imageId} [get]
 func RestGetImage(c echo.Context) error {
 	nsId := c.Param("nsId")
@@ -335,6 +353,8 @@ func RestGetImage(c echo.Context) error {
 // @Success 200 {object} JSONResult{[DEFAULT]=model.SearchImageResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/image [get]
 func RestGetAllImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -352,6 +372,8 @@ func RestGetAllImage(c echo.Context) error {
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{cspImageName})"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/image/{imageId} [delete]
 func RestDelImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -369,6 +391,8 @@ func RestDelImage(c echo.Context) error {
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/image [delete]
 func RestDelAllImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -388,6 +412,8 @@ func RestDelAllImage(c echo.Context) error {
 // @Success 200 {object} model.SearchImageResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/searchImage [post]
 func RestSearchImage(c echo.Context) error {
 
@@ -427,6 +453,8 @@ func RestSearchImage(c echo.Context) error {
 // @Success 200 {object} model.SearchImageRequestOptions
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/searchImageOptions [get]
 func RestSearchImageOptions(c echo.Context) error {
 

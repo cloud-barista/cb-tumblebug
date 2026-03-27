@@ -258,7 +258,7 @@ func OrchestrationController() {
 							recommendSpecReq := model.RecommendSpecReq{}
 
 							recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "random"})
-							specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
+							specList, err := RecommendSpec(common.NewDefaultContext(), model.SystemCommonNs, recommendSpecReq)
 							if err != nil {
 								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateMciPolicyInfo(nsId, mciPolicyTmp)
@@ -277,7 +277,7 @@ func OrchestrationController() {
 
 						// ScaleOut MCI according to the VM requirement.
 						log.Debug().Msg("[Generating VM]")
-						result, vmCreateErr := CreateMciSubGroupDynamic(nsId, mciPolicyTmp.Id, &autoAction.SubGroupDynamicReq)
+						result, vmCreateErr := CreateMciSubGroupDynamic(common.NewDefaultContext(), nsId, mciPolicyTmp.Id, &autoAction.SubGroupDynamicReq)
 						if vmCreateErr != nil {
 							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							UpdateMciPolicyInfo(nsId, mciPolicyTmp)

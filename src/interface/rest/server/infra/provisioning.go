@@ -69,6 +69,8 @@ import (
 // @Failure 404 {object} model.SimpleMsg "Namespace not found or specified resources unavailable"
 // @Failure 409 {object} model.SimpleMsg "MCI name already exists in namespace"
 // @Failure 500 {object} model.SimpleMsg "Internal server error during MCI creation or CSP communication failure"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci [post]
 func RestPostMci(c echo.Context) error {
 
@@ -129,6 +131,8 @@ func RestPostMci(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg "Specified VMs not found in target CSP or namespace doesn't exist"
 // @Failure 409 {object} model.SimpleMsg "VM already registered or MCI name conflicts"
 // @Failure 500 {object} model.SimpleMsg "CSP communication error or registration process failure"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerCspVm [post]
 func RestPostRegisterCSPNativeVM(c echo.Context) error {
 
@@ -193,6 +197,8 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid system option or malformed request"
 // @Failure 403 {object} model.SimpleMsg "Insufficient permissions for system MCI creation"
 // @Failure 500 {object} model.SimpleMsg "System MCI creation failed or CSP integration error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /systemMci [post]
 func RestPostSystemMci(c echo.Context) error {
 
@@ -287,6 +293,7 @@ func RestPostSystemMci(c echo.Context) error {
 // @Param mciReq body model.MciDynamicReq true "Dynamic MCI request with common specifications. Must include specId and imageId for each VM group. See description for detailed example."
 // @Param option query string false "Deployment option: 'hold' to create MCI without immediate VM provisioning" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking and correlation across API calls"
+// @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for provisioning (default: system default holder)"
 // @Success 200 {object} model.MciInfo "Successfully created MCI with VM deployment status, resource mappings, and configuration details"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format, missing required fields, or unsupported configuration"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found, specified specs/images unavailable, or CSP resources inaccessible"
@@ -294,7 +301,7 @@ func RestPostSystemMci(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal deployment error, CSP API failures, or resource creation timeouts"
 // @Router /ns/{nsId}/mciDynamic [post]
 func RestPostMciDynamic(c echo.Context) error {
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
@@ -305,7 +312,7 @@ func RestPostMciDynamic(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CreateMciDynamic(reqID, nsId, req, option)
+	result, err := infra.CreateMciDynamic(ctx, nsId, req, option)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create MCI dynamically")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -345,13 +352,14 @@ func RestPostMciDynamic(c echo.Context) error {
 // @Param mciReq body model.MciDynamicReq true "Request body to review MCI dynamic provisioning. Must include specId and imageId info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})"
 // @Param option query string false "Option for MCI creation review (same as actual creation)" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for review (default: system default holder)"
 // @Success 200 {object} model.ReviewMciDynamicReqInfo "Comprehensive review result with validation status, cost estimation, and recommendations"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or parameters"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found or invalid"
 // @Failure 500 {object} model.SimpleMsg "Internal server error during validation"
 // @Router /ns/{nsId}/mciDynamicReview [post]
 func RestPostMciDynamicReview(c echo.Context) error {
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
@@ -362,7 +370,7 @@ func RestPostMciDynamicReview(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ReviewMciDynamicReq(reqID, nsId, req, option)
+	result, err := infra.ReviewMciDynamicReq(ctx, nsId, req, option)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to review MCI dynamic request")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -425,13 +433,16 @@ func RestPostMciDynamicReview(c echo.Context) error {
 // @Param nsId path string true "Namespace ID containing the target MCI" default(default)
 // @Param mciId path string true "MCI ID to which new VMs will be added" default(mci01)
 // @Param vmReq body model.CreateSubGroupDynamicReq true "SubGroup dynamic request specifying specId, imageId, and scaling parameters"
+// @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for provisioning (default: system default holder)"
 // @Success 200 {object} model.MciInfo "Updated MCI information including newly added VMs and current status"
 // @Failure 400 {object} model.SimpleMsg "Invalid VM request or incompatible configuration parameters"
 // @Failure 404 {object} model.SimpleMsg "Target MCI not found or specified resources unavailable"
 // @Failure 409 {object} model.SimpleMsg "Subgroup name conflicts or MCI in incompatible state"
 // @Failure 500 {object} model.SimpleMsg "VM creation failed or network integration error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns/{nsId}/mci/{mciId}/subGroupDynamic [post]
 func RestPostMciSubGroupDynamic(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -441,7 +452,7 @@ func RestPostMciSubGroupDynamic(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CreateMciSubGroupDynamic(nsId, mciId, req)
+	result, err := infra.CreateMciSubGroupDynamic(ctx, nsId, mciId, req)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
@@ -483,13 +494,14 @@ func RestPostMciSubGroupDynamic(c echo.Context) error {
 // @Param mciId path string true "MCI ID to which the VM will be added" default(mci01)
 // @Param vmReq body model.CreateSubGroupDynamicReq true "Request body to review VM dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, subGroupSize: 2})"
 // @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for review (default: system default holder)"
 // @Success 200 {object} model.ReviewSubGroupDynamicReqInfo "Comprehensive VM addition review result with validation status, cost estimation, and recommendations"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or parameters"
 // @Failure 404 {object} model.SimpleMsg "Target MCI not found or namespace not found"
 // @Failure 500 {object} model.SimpleMsg "Internal server error during validation"
 // @Router /ns/{nsId}/mci/{mciId}/subGroupDynamicReview [post]
 func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -507,7 +519,7 @@ func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ReviewSingleSubGroupDynamicReq(reqID, nsId, req)
+	result, err := infra.ReviewSingleSubGroupDynamicReq(ctx, nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to review VM dynamic addition request")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -536,6 +548,7 @@ func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
 // @Success 200 {object} model.SpecImagePairReviewResult "Review result with validation status and details"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 500 {object} model.SimpleMsg "Internal server error"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /specImagePairReview [post]
 func RestPostSpecImagePairReview(c echo.Context) error {
 	req := &model.SpecImagePairReviewReq{}
@@ -618,15 +631,17 @@ func RestPostSpecImagePairReview(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg "Specified common specifications not found in system namespace"
 // @Failure 500 {object} model.SimpleMsg "CSP connectivity issues or internal validation service errors"
 // @Deprecated
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /mciDynamicCheckRequest [post]
 func RestPostMciDynamicCheckRequest(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	req := &model.MciConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CheckMciDynamicReq(req)
+	result, err := infra.CheckMciDynamicReq(ctx, req)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
@@ -693,6 +708,8 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg "Target MCI not found, specified resources unavailable, or namespace inaccessible"
 // @Failure 409 {object} model.SimpleMsg "SubGroup name conflicts, resource allocation conflicts, or MCI state incompatible with expansion"
 // @Failure 500 {object} model.SimpleMsg "VM provisioning failed, network configuration error, or CSP API communication failure"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm [post]
 func RestPostMciVm(c echo.Context) error {
 
@@ -778,6 +795,8 @@ func RestPostMciVm(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg "Target MCI or subgroup not found, or namespace inaccessible"
 // @Failure 409 {object} model.SimpleMsg "SubGroup in incompatible state for scaling or resource conflicts detected"
 // @Failure 500 {object} model.SimpleMsg "VM provisioning failed, network configuration error, or CSP capacity limitations"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [post]
 func RestPostMciSubGroupScaleOut(c echo.Context) error {
 
@@ -828,6 +847,7 @@ func RestPostMciSubGroupScaleOut(c echo.Context) error {
 // @Success 204 "No provisioning history found for the specified VM specification"
 // @Failure 400 {object} model.SimpleMsg "Invalid specification ID format or missing required parameters"
 // @Failure 500 {object} model.SimpleMsg "Internal server error while retrieving provisioning history"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /provisioning/log/{specId} [get]
 func RestGetProvisioningLog(c echo.Context) error {
 	specId := c.Param("specId")
@@ -880,6 +900,7 @@ func RestGetProvisioningLog(c echo.Context) error {
 // @Success 204 "No provisioning history found to delete"
 // @Failure 400 {object} model.SimpleMsg "Invalid specification ID format"
 // @Failure 500 {object} model.SimpleMsg "Internal server error while deleting provisioning history"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /provisioning/log/{specId} [delete]
 func RestDeleteProvisioningLog(c echo.Context) error {
 	specId := c.Param("specId")
@@ -948,6 +969,7 @@ func RestDeleteProvisioningLog(c echo.Context) error {
 // @Success 200 {object} object{riskLevel=string,riskMessage=string,analysis=object} "Risk analysis result with level, message, and detailed analysis"
 // @Failure 400 {object} model.SimpleMsg "Invalid parameters or missing required query parameters"
 // @Failure 500 {object} model.SimpleMsg "Internal server error during risk analysis"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /provisioning/risk/{specId} [get]
 func RestAnalyzeProvisioningRisk(c echo.Context) error {
 	specId := c.Param("specId")
@@ -1049,6 +1071,7 @@ func RestAnalyzeProvisioningRisk(c echo.Context) error {
 // @Success 200 {object} model.RiskAnalysis "Detailed risk analysis with spec, image, and overall risk assessments plus recommendations"
 // @Failure 400 {object} model.SimpleMsg "Bad Request - Missing or invalid parameters"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /tumblebug/provisioning/risk/detailed [get]
 func RestAnalyzeProvisioningRiskDetailed(c echo.Context) error {
 	// Get query parameters
@@ -1112,6 +1135,7 @@ func RestAnalyzeProvisioningRiskDetailed(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg "Provisioning event successfully recorded"
 // @Failure 400 {object} model.SimpleMsg "Invalid event data or missing required fields"
 // @Failure 500 {object} model.SimpleMsg "Internal server error while recording event"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /provisioning/event [post]
 func RestRecordProvisioningEvent(c echo.Context) error {
 	req := &model.ProvisioningEvent{}

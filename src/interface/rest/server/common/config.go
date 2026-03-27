@@ -43,6 +43,7 @@ import (
 // @Success 200 {object} model.ConfigInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /config/{configId} [delete]
 func RestInitConfig(c echo.Context) error {
 
@@ -73,6 +74,7 @@ func RestInitConfig(c echo.Context) error {
 // @Success 200 {object} model.ConfigInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /config/{configId} [get]
 func RestGetConfig(c echo.Context) error {
 
@@ -106,6 +108,7 @@ type RestGetAllConfigResponse struct {
 // @Success 200 {object} RestGetAllConfigResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /config [get]
 func RestGetAllConfig(c echo.Context) error {
 
@@ -127,6 +130,7 @@ func RestGetAllConfig(c echo.Context) error {
 // @Success 200 {object} model.ConfigInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /config [post]
 func RestPostConfig(c echo.Context) error {
 
@@ -150,6 +154,7 @@ func RestPostConfig(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /config [delete]
 func RestInitAllConfig(c echo.Context) error {
 
@@ -170,6 +175,7 @@ func RestInitAllConfig(c echo.Context) error {
 // @Success 200 {object} clientManager.RequestDetails
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /request/{reqId} [get]
 func RestGetRequest(c echo.Context) error {
 	reqId := c.Param("reqId")
@@ -194,6 +200,7 @@ func RestGetRequest(c echo.Context) error {
 // @Param time query string false "Filter by time in minutes from now (to get recent requests)"
 // @Param savefile query string false "Option to save the results to a file (set 'true' to activate)" Enums(true,false) default(false)
 // @Success 200 {object} map[string][]clientManager.RequestDetails
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /requests [get]
 func RestGetAllRequests(c echo.Context) error {
 	// Filter parameters
@@ -275,6 +282,7 @@ func RestGetAllRequests(c echo.Context) error {
 // @Produce  json
 // @Param reqId path string true "Request ID to delete"
 // @Success 200 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /request/{reqId} [delete]
 func RestDeleteRequest(c echo.Context) error {
 	reqId := c.Param("reqId")
@@ -295,6 +303,7 @@ func RestDeleteRequest(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /requests [delete]
 func RestDeleteAllRequests(c echo.Context) error {
 	clientManager.RequestMap.Range(func(key, value interface{}) bool {

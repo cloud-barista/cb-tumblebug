@@ -37,6 +37,7 @@ import (
 // @Success 200 {object} model.SimpleMsg "Label created or updated successfully"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /label/{labelType}/{uid} [put]
 func RestCreateOrUpdateLabel(c echo.Context) error {
 
@@ -73,6 +74,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg "Merged CSP labels successfully"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /mergeCSPLabel/{labelType}/{uid} [put]
 func RestMergeCSPResourceLabel(c echo.Context) error {
 
@@ -104,6 +106,7 @@ func RestMergeCSPResourceLabel(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg "Label removed successfully"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /label/{labelType}/{uid}/{key} [delete]
 func RestRemoveLabel(c echo.Context) error {
 
@@ -132,6 +135,7 @@ func RestRemoveLabel(c echo.Context) error {
 // @Success 200 {object} model.LabelInfo "Labels for the resource"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /label/{labelType}/{uid} [get]
 func RestGetLabels(c echo.Context) error {
 
@@ -170,6 +174,7 @@ type ResourcesResponse struct {
 // @Success 200 {object} ResourcesResponse "Matched resources"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /resources/{labelType} [get]
 func RestGetResourcesByLabelSelector(c echo.Context) error {
 
@@ -199,6 +204,7 @@ func RestGetResourcesByLabelSelector(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} model.SystemLabelInfo "LabelTypes and System labels with example values"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /labelInfo [get]
 func RestGetSystemLabelInfo(c echo.Context) error {
 

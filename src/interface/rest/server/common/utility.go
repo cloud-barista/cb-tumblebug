@@ -84,6 +84,7 @@ func Validate(c echo.Context, params []string) error {
 // @Produce  json
 // @Success 200 {object} model.ReadyzResponse
 // @Failure 503 {object} model.ReadyzResponse
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /readyz [get]
 func RestGetReadyz(c echo.Context) error {
 	response := model.ReadyzResponse{
@@ -115,6 +116,7 @@ func RestGetReadyz(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} model.ReadyzResponse
 // @Failure 503 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /readyz/init [put]
 func RestSetSystemInitialized(c echo.Context) error {
 	if !model.SystemReady {
@@ -142,6 +144,7 @@ func RestSetSystemInitialized(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} model.ReadyzResponse
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /readyz/init [delete]
 func RestUnsetSystemInitialized(c echo.Context) error {
 	model.SystemInitialized = false
@@ -164,6 +167,7 @@ func RestUnsetSystemInitialized(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /httpVersion [get]
 func RestCheckHTTPVersion(c echo.Context) error {
 	// Access the *http.Request object from the echo.Context
@@ -185,6 +189,7 @@ func RestCheckHTTPVersion(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} model.PublicKeyResponse
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /credential/publicKey [get]
 func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 
@@ -203,6 +208,7 @@ func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 // @Success 200 {object} model.CredentialInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /credential [post]
 func RestRegisterCredential(c echo.Context) error {
 
@@ -228,6 +234,7 @@ func RestRegisterCredential(c echo.Context) error {
 // @Success 200 {object} model.ConnConfig
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /connConfig/{connConfigName} [get]
 func RestGetConnConfig(c echo.Context) error {
 
@@ -252,6 +259,7 @@ func RestGetConnConfig(c echo.Context) error {
 // @Success 200 {object} model.ConnConfigList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /connConfig [get]
 func RestGetConnConfigList(c echo.Context) error {
 
@@ -272,6 +280,46 @@ func RestGetConnConfigList(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestGetCredentialHolderList func is a rest api wrapper for GetCredentialHolderList.
+// RestGetCredentialHolderList godoc
+// @ID GetCredentialHolderList
+// @Summary List all credential holders
+// @Description List all credential holders derived from registered connection configs.
+// @Description Each holder includes associated providers, connection counts, and verification status.
+// @Tags [Admin] Cloud Credential Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.CredentialHolderList
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /credentialHolder [get]
+func RestGetCredentialHolderList(c echo.Context) error {
+
+	content, err := common.GetCredentialHolderList()
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestGetCredentialHolder func is a rest api wrapper for GetCredentialHolder.
+// RestGetCredentialHolder godoc
+// @ID GetCredentialHolder
+// @Summary Get a specific credential holder
+// @Description Get credential holder info derived from registered connection configs.
+// @Tags [Admin] Cloud Credential Management
+// @Accept  json
+// @Produce  json
+// @Param holderId path string true "Credential Holder ID" example(admin)
+// @Success 200 {object} model.CredentialHolderInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /credentialHolder/{holderId} [get]
+func RestGetCredentialHolder(c echo.Context) error {
+
+	holderId := c.Param("holderId")
+	content, err := common.GetCredentialHolder(holderId)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 // RestGetProviderList func is a rest api wrapper for GetProviderList.
 // RestGetProviderList godoc
 // @ID GetProviderList
@@ -283,6 +331,7 @@ func RestGetConnConfigList(c echo.Context) error {
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /provider [get]
 func RestGetProviderList(c echo.Context) error {
 
@@ -304,6 +353,7 @@ func RestGetProviderList(c echo.Context) error {
 // @Success 200 {object} model.RegionDetail
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /provider/{providerName}/region/{regionName} [get]
 func RestGetRegion(c echo.Context) error {
 
@@ -326,6 +376,7 @@ func RestGetRegion(c echo.Context) error {
 // @Success 200 {object} model.RegionList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /provider/{providerName}/region [get]
 func RestGetRegions(c echo.Context) error {
 
@@ -346,6 +397,7 @@ func RestGetRegions(c echo.Context) error {
 // @Success 200 {object} model.RetrievedRegionList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /regionFromCsp [get]
 func RestGetRegionListFromCsp(c echo.Context) error {
 
@@ -365,6 +417,7 @@ func RestGetRegionListFromCsp(c echo.Context) error {
 // @Success 200 {object} model.CloudInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /cloudInfo [get]
 func RestGetCloudInfo(c echo.Context) error {
 
@@ -383,6 +436,7 @@ func RestGetCloudInfo(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterAssetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /k8sClusterInfo [get]
 func RestGetK8sClusterInfo(c echo.Context) error {
 
@@ -407,6 +461,7 @@ type ObjectList struct {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /objects [get]
 func RestGetObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -431,6 +486,7 @@ func RestGetObjects(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /object [get]
 func RestGetObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -459,6 +515,7 @@ func RestGetObject(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /object [delete]
 func RestDeleteObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -489,6 +546,7 @@ func RestDeleteObject(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /objects [delete]
 func RestDeleteObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -513,6 +571,7 @@ func RestDeleteObjects(c echo.Context) error {
 // @Success 200 {object} model.InspectResource
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /inspectResources [post]
 func RestInspectResources(c echo.Context) error {
 
@@ -545,6 +604,7 @@ func RestInspectResources(c echo.Context) error {
 // @Success 200 {object} model.InspectResourceAllResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /inspectResourcesOverview [get]
 func RestInspectResourcesOverview(c echo.Context) error {
 
@@ -593,6 +653,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Failure 400 {object} model.SimpleMsg "Invalid request (e.g., region without provider)"
 // @Failure 404 {object} model.SimpleMsg "No connections found"
 // @Failure 500 {object} model.SimpleMsg "Internal server error"
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /registerCspResources [post]
 func RestRegisterCspNativeResources(c echo.Context) error {
 
@@ -696,6 +757,7 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Deprecated
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /registerCspResourcesAll [post]
 func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 
@@ -722,6 +784,7 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 // @Param path path string true "Internal call path to CB-Spider (path without /spider/ prefix) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc] for more details"" default(vmspec)
 // @Param Request body interface{} false "Request body (various formats) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc] for more details"
 // @Success 200 {object} map[string]interface{}
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /forward/{path} [post]
 func RestForwardAnyReqToAny(c echo.Context) error {
 

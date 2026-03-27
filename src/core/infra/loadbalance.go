@@ -99,7 +99,7 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 		recommendSpecReq.Priority.Policy[0].Parameter[0].Val = append(recommendSpecReq.Priority.Policy[0].Parameter[0].Val, regionOfVm)
 	}
 
-	specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
+	specList, err := RecommendSpec(common.NewDefaultContext(), model.SystemCommonNs, recommendSpecReq)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -112,7 +112,7 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 	subGroupDynamicReq := model.CreateSubGroupDynamicReq{Name: subGroupName, SpecId: specId, ImageId: imageId, SubGroupSize: subGroupSize}
 	mciDynamicReq.SubGroups = append(mciDynamicReq.SubGroups, subGroupDynamicReq)
 
-	mciInfo, err := CreateMciDynamic("", nsId, &mciDynamicReq, "")
+	mciInfo, err := CreateMciDynamic(common.NewDefaultContext(), nsId, &mciDynamicReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err

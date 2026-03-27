@@ -37,6 +37,8 @@ import (
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/control/mci/{mciId} [get]
 func RestGetControlMci(c echo.Context) error {
 
@@ -81,6 +83,8 @@ func RestGetControlMci(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/control/mci/{mciId}/vm/{vmId} [get]
 func RestGetControlMciVm(c echo.Context) error {
 
@@ -126,6 +130,8 @@ func RestGetControlMciVm(c echo.Context) error {
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot [post]
 func RestPostMciVmSnapshot(c echo.Context) error {
 
@@ -158,6 +164,8 @@ func RestPostMciVmSnapshot(c echo.Context) error {
 // @Success 200 {object} model.MciSnapshotResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/snapshot [post]
 func RestPostMciSnapshot(c echo.Context) error {
 
@@ -188,6 +196,8 @@ func RestPostMciSnapshot(c echo.Context) error {
 // @Success 200 {object} model.BuildAgnosticImageResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/buildAgnosticImage [post]
 func RestPostBuildAgnosticImage(c echo.Context) error {
 

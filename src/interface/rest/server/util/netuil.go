@@ -30,6 +30,7 @@ type RestPostUtilToDesignVNetReponse struct {
 // @Success 201 {object} RestPostUtilToDesignVNetReponse
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /util/vNet/design [post]
 func RestPostUtilToDesignVNet(c echo.Context) error {
 
@@ -68,6 +69,7 @@ type RestPostUtilToDesignNetworkReponse struct {
 // @Success 201 {object} RestPostUtilToDesignNetworkReponse
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /util/net/design [post]
 func RestPostUtilToDesignNetwork(c echo.Context) error {
 
@@ -103,6 +105,7 @@ type RestPostUtilToValidateNetworkRequest struct {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /util/net/validate [post]
 func RestPostUtilToValidateNetwork(c echo.Context) error {
 
