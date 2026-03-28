@@ -650,12 +650,11 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	UpdateVmInfo(nsId, mciId, temp)
 
 	client := clientManager.NewHttpClient()
-	client.SetTimeout(10 * time.Minute)
+	client.SetTimeout(20 * time.Minute)
 
 	// Set longer timeout for NCP (VPC)
-	if strings.Contains(strings.ToLower(temp.ConnectionConfig.ProviderName), csp.NCP) {
-		// log.Debug().Msgf("Setting longer API request timeout (15m) for %s", csp.NCP)
-		client.SetTimeout(15 * time.Minute)
+	if csp.ResolveCloudPlatform(temp.ConnectionConfig.ProviderName) == csp.NCP {
+		client.SetTimeout(25 * time.Minute)
 	}
 
 	requestBody := model.SpiderConnectionName{}
