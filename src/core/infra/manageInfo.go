@@ -2450,11 +2450,9 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 				return deletedResources, err
 			}
 			// for deletion, need to wait until termination is finished
-			// Sleep for 5 seconds
+			log.Info().Msg("Wait for MCI-VMs termination in 1 second")
 
-			log.Info().Msg("Wait for MCI-VMs termination in 5 seconds")
-
-			time.Sleep(5 * time.Second)
+			time.Sleep(1 * time.Second)
 			mciStatus, _ = GetMciStatus(nsId, mciId)
 		}
 
@@ -2637,9 +2635,8 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 			return err
 		}
 		// for deletion, need to wait until termination is finished
-		// Sleep for 2 seconds
-		log.Info().Msg("Wait for VM termination in 2 seconds")
-		time.Sleep(2 * time.Second)
+		log.Info().Msg("Wait for VM termination in 1 second")
+		time.Sleep(1 * time.Second)
 
 	}
 
