@@ -15973,12 +15973,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /resources/globalDns/hostedZone:
+    get:
+      tags:
+      - "[Utility] Global DNS Management"
+      summary: List Hosted Zones
+      description: List all hosted zones available in Route53
+      operationId: GetHostedZones
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RestGetHostedZonesResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /resources/globalDns/record:
     get:
       tags:
       - "[Utility] Global DNS Management"
       summary: Get GlobalDns Record
-      description: Get DNS records for a domain from Route53
+      description: Get DNS records for a domain from Route53. Includes routing policy
+        and geoproximity info.
       operationId: GetGlobalDnsRecord
       parameters:
       - name: domainName
@@ -16021,12 +16042,12 @@ paths:
       - "[Utility] Global DNS Management"
       summary: Update GlobalDns Record
       description: |-
-        Update (UPSERT) a DNS record for a domain in Route53. (Testing Required / Under Development)
-        Choose at least one of these three IP source methods:
+        Update (UPSERT) a DNS record for a domain in Route53.
+        Supports two routing policies: "simple" (default) and "geoproximity" (location-based).
+        Choose exactly one IP source method in 'setBy':
         1. MCI ID (mciId): Fetch Public IPs of all VMs in the MCI.
         2. Label Selector (labelSelector): Fetch IPs of matching resources.
-        3. Manual IP Values (values): Manually provide IP addresses.
-        If multiple methods are used, IPs will be merged and deduplicated.
+        3. Manual IP Values (values): Manually provide IP addresses (simple routing only).
       operationId: PutGlobalDnsRecord
       requestBody:
         description: Details for record update
@@ -16055,6 +16076,77 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: globalDnsRecordReq
+    delete:
+      tags:
+      - "[Utility] Global DNS Management"
+      summary: Delete GlobalDns Record
+      description: |-
+        Delete DNS record(s) from Route53. If setIdentifier is provided, deletes only that specific record.
+        If setIdentifier is empty, deletes all records matching the name and type.
+      operationId: DeleteGlobalDnsRecord
+      requestBody:
+        description: Details for record deletion
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.GlobalDnsDeleteReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: globalDnsDeleteReq
+  /resources/globalDns/records:
+    delete:
+      tags:
+      - "[Utility] Global DNS Management"
+      summary: Bulk Delete GlobalDns Records
+      description: |-
+        Delete multiple DNS records from Route53 in a single request.
+        Records are grouped by domain and submitted as a single ChangeBatch per domain for efficiency.
+      operationId: BulkDeleteGlobalDnsRecord
+      requestBody:
+        description: List of records to delete
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.GlobalDnsBulkDeleteReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.GlobalDnsBulkDeleteResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: globalDnsBulkDeleteReq
   /resources/objectStorage:
     get:
       tags:
@@ -19273,6 +19365,71 @@ components:
         provider:
           type: string
           example: alibaba
+    model.GlobalDnsBulkDeleteReq:
+      required:
+      - records
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.GlobalDnsDeleteReq'
+    model.GlobalDnsBulkDeleteResponse:
+      type: object
+      properties:
+        failed:
+          type: integer
+          example: 1
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.GlobalDnsBulkDeleteResult'
+        succeeded:
+          type: integer
+          example: 4
+        totalRequested:
+          type: integer
+          example: 5
+    model.GlobalDnsBulkDeleteResult:
+      type: object
+      properties:
+        message:
+          type: string
+          example: deleted successfully
+        recordName:
+          type: string
+          example: mci.example.com
+        recordType:
+          type: string
+          example: A
+        setIdentifier:
+          type: string
+        success:
+          type: boolean
+          example: true
+    model.GlobalDnsDeleteReq:
+      required:
+      - domainName
+      - recordName
+      type: object
+      properties:
+        domainName:
+          type: string
+          example: example.com
+        recordName:
+          type: string
+          example: mci.example.com
+        recordType:
+          type: string
+          example: A
+          enum:
+          - A
+          - AAAA
+          - CNAME
+          - TXT
+        setIdentifier:
+          type: string
+          example: ""
     model.GlobalDnsIPSource:
       type: object
       properties:
@@ -19294,7 +19451,7 @@ components:
       properties:
         labelSelector:
           type: string
-          example: app=nginx
+          example: "sys.mciId=mci-01,app=nginx"
         nsId:
           type: string
           example: default
@@ -19313,9 +19470,21 @@ components:
     model.GlobalDnsRecordInfo:
       type: object
       properties:
+        geoLatitude:
+          type: string
+          example: "37.56"
+        geoLongitude:
+          type: string
+          example: "126.97"
         name:
           type: string
           example: mci.example.com
+        routingPolicy:
+          type: string
+          example: simple
+        setIdentifier:
+          type: string
+          example: ""
         ttl:
           type: integer
           example: 300
@@ -19349,6 +19518,12 @@ components:
           - AAAA
           - CNAME
           - TXT
+        routingPolicy:
+          type: string
+          example: simple
+          enum:
+          - simple
+          - geoproximity
         setBy:
           type: object
           description: '--- IP Source Selection ---'
@@ -19369,6 +19544,18 @@ components:
           type: string
           description: VmId is the VM identifier
           example: g1-1
+    model.HostedZoneInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: example.com.
+        recordCount:
+          type: integer
+          example: 10
+        zoneId:
+          type: string
+          example: /hostedzone/Z1234567890
     model.IID:
       required:
       - NameId
@@ -22175,6 +22362,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.GlobalDnsRecordInfo'
+    model.RestGetHostedZonesResponse:
+      type: object
+      properties:
+        hostedZones:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.HostedZoneInfo'
     model.RestPostSqlDBRequest:
       required:
       - connectionName

@@ -749,6 +749,9 @@ func RunServer() {
 	// Global DNS management (functional only)
 	e.PUT("/tumblebug/resources/globalDns/record", rest_resource.RestPutGlobalDnsRecord)
 	e.GET("/tumblebug/resources/globalDns/record", rest_resource.RestGetGlobalDnsRecord)
+	e.DELETE("/tumblebug/resources/globalDns/record", rest_resource.RestDeleteGlobalDnsRecord)
+	e.DELETE("/tumblebug/resources/globalDns/records", rest_resource.RestBulkDeleteGlobalDnsRecord)
+	e.GET("/tumblebug/resources/globalDns/hostedZone", rest_resource.RestGetHostedZones)
 
 	// #### To be deprecated #### Route for Object Storage
 	objectStorageGroup := e.Group("/tumblebug")
