@@ -18927,9 +18927,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/resources/globalDns/hostedZone": {
+            "get": {
+                "description": "List all hosted zones available in Route53",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Utility] Global DNS Management"
+                ],
+                "summary": "List Hosted Zones",
+                "operationId": "GetHostedZones",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RestGetHostedZonesResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/resources/globalDns/record": {
             "get": {
-                "description": "Get DNS records for a domain from Route53",
+                "description": "Get DNS records for a domain from Route53. Includes routing policy and geoproximity info.",
                 "consumes": [
                     "application/json"
                 ],
@@ -18984,7 +19011,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update (UPSERT) a DNS record for a domain in Route53. (Testing Required / Under Development)\nChoose at least one of these three IP source methods:\n1. MCI ID (mciId): Fetch Public IPs of all VMs in the MCI.\n2. Label Selector (labelSelector): Fetch IPs of matching resources.\n3. Manual IP Values (values): Manually provide IP addresses.\nIf multiple methods are used, IPs will be merged and deduplicated.",
+                "description": "Update (UPSERT) a DNS record for a domain in Route53.\nSupports two routing policies: \"simple\" (default) and \"geoproximity\" (location-based).\nChoose exactly one IP source method in 'setBy':\n1. MCI ID (mciId): Fetch Public IPs of all VMs in the MCI.\n2. Label Selector (labelSelector): Fetch IPs of matching resources.\n3. Manual IP Values (values): Manually provide IP addresses (simple routing only).",
                 "consumes": [
                     "application/json"
                 ],
@@ -19012,6 +19039,98 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete DNS record(s) from Route53. If setIdentifier is provided, deletes only that specific record.\nIf setIdentifier is empty, deletes all records matching the name and type.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Utility] Global DNS Management"
+                ],
+                "summary": "Delete GlobalDns Record",
+                "operationId": "DeleteGlobalDnsRecord",
+                "parameters": [
+                    {
+                        "description": "Details for record deletion",
+                        "name": "globalDnsDeleteReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.GlobalDnsDeleteReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/globalDns/records": {
+            "delete": {
+                "description": "Delete multiple DNS records from Route53 in a single request.\nRecords are grouped by domain and submitted as a single ChangeBatch per domain for efficiency.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Utility] Global DNS Management"
+                ],
+                "summary": "Bulk Delete GlobalDns Records",
+                "operationId": "BulkDeleteGlobalDnsRecord",
+                "parameters": [
+                    {
+                        "description": "List of records to delete",
+                        "name": "globalDnsBulkDeleteReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.GlobalDnsBulkDeleteReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.GlobalDnsBulkDeleteResponse"
                         }
                     },
                     "400": {
@@ -22953,6 +23072,98 @@ const docTemplate = `{
                 }
             }
         },
+        "model.GlobalDnsBulkDeleteReq": {
+            "type": "object",
+            "required": [
+                "records"
+            ],
+            "properties": {
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.GlobalDnsDeleteReq"
+                    }
+                }
+            }
+        },
+        "model.GlobalDnsBulkDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.GlobalDnsBulkDeleteResult"
+                    }
+                },
+                "succeeded": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "totalRequested": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "model.GlobalDnsBulkDeleteResult": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "deleted successfully"
+                },
+                "recordName": {
+                    "type": "string",
+                    "example": "mci.example.com"
+                },
+                "recordType": {
+                    "type": "string",
+                    "example": "A"
+                },
+                "setIdentifier": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.GlobalDnsDeleteReq": {
+            "type": "object",
+            "required": [
+                "domainName",
+                "recordName"
+            ],
+            "properties": {
+                "domainName": {
+                    "type": "string",
+                    "example": "example.com"
+                },
+                "recordName": {
+                    "type": "string",
+                    "example": "mci.example.com"
+                },
+                "recordType": {
+                    "type": "string",
+                    "enum": [
+                        "A",
+                        "AAAA",
+                        "CNAME",
+                        "TXT"
+                    ],
+                    "example": "A"
+                },
+                "setIdentifier": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
         "model.GlobalDnsIPSource": {
             "type": "object",
             "properties": {
@@ -22982,7 +23193,7 @@ const docTemplate = `{
             "properties": {
                 "labelSelector": {
                     "type": "string",
-                    "example": "app=nginx"
+                    "example": "sys.mciId=mci-01,app=nginx"
                 },
                 "nsId": {
                     "type": "string",
@@ -23010,9 +23221,25 @@ const docTemplate = `{
         "model.GlobalDnsRecordInfo": {
             "type": "object",
             "properties": {
+                "geoLatitude": {
+                    "type": "string",
+                    "example": "37.56"
+                },
+                "geoLongitude": {
+                    "type": "string",
+                    "example": "126.97"
+                },
                 "name": {
                     "type": "string",
                     "example": "mci.example.com"
+                },
+                "routingPolicy": {
+                    "type": "string",
+                    "example": "simple"
+                },
+                "setIdentifier": {
+                    "type": "string",
+                    "example": ""
                 },
                 "ttl": {
                     "type": "integer",
@@ -23059,6 +23286,14 @@ const docTemplate = `{
                     ],
                     "example": "A"
                 },
+                "routingPolicy": {
+                    "type": "string",
+                    "enum": [
+                        "simple",
+                        "geoproximity"
+                    ],
+                    "example": "simple"
+                },
                 "setBy": {
                     "description": "--- IP Source Selection ---",
                     "allOf": [
@@ -23085,6 +23320,23 @@ const docTemplate = `{
                     "description": "VmId is the VM identifier",
                     "type": "string",
                     "example": "g1-1"
+                }
+            }
+        },
+        "model.HostedZoneInfo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "example.com."
+                },
+                "recordCount": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "zoneId": {
+                    "type": "string",
+                    "example": "/hostedzone/Z1234567890"
                 }
             }
         },
@@ -26908,6 +27160,17 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.GlobalDnsRecordInfo"
+                    }
+                }
+            }
+        },
+        "model.RestGetHostedZonesResponse": {
+            "type": "object",
+            "properties": {
+                "hostedZones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.HostedZoneInfo"
                     }
                 }
             }
