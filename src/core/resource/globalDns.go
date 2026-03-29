@@ -47,6 +47,7 @@ type vmIPLocation struct {
 func UpdateGlobalDnsRecord(req *model.GlobalDnsRecordReq) (model.SimpleMsg, error) {
 	log.Debug().Str("domainName", req.DomainName).Str("recordName", req.RecordName).Str("recordType", req.RecordType).Int64("ttl", req.TTL).Str("routingPolicy", req.RoutingPolicy).Msg("[DNS] UpdateGlobalDnsRecord called")
 	req.DomainName = strings.TrimSpace(req.DomainName)
+	req.RecordName = strings.TrimSuffix(strings.TrimSpace(req.RecordName), ".")
 
 	if req.RecordName == "" {
 		req.RecordName = req.DomainName
@@ -239,7 +240,7 @@ func GetGlobalDnsRecord(domainName string, recordName string, recordType string)
 				info.GeoLongitude = aws.ToString(rs.GeoProximityLocation.Coordinates.Longitude)
 			}
 		} else if rs.SetIdentifier != nil {
-			info.RoutingPolicy = "weighted" // or other policy with SetIdentifier
+			info.RoutingPolicy = "other"
 		} else {
 			info.RoutingPolicy = "simple"
 		}
@@ -259,7 +260,7 @@ func DeleteGlobalDnsRecord(req *model.GlobalDnsDeleteReq) (model.SimpleMsg, erro
 	log.Debug().Str("domainName", req.DomainName).Str("recordName", req.RecordName).Str("recordType", req.RecordType).Str("setIdentifier", req.SetIdentifier).Msg("[DNS] DeleteGlobalDnsRecord called")
 
 	req.DomainName = strings.TrimSpace(req.DomainName)
-	req.RecordName = strings.TrimSpace(req.RecordName)
+	req.RecordName = strings.TrimSuffix(strings.TrimSpace(req.RecordName), ".")
 
 	if !strings.HasSuffix(req.RecordName, "."+req.DomainName) && req.RecordName != req.DomainName {
 		req.RecordName = req.RecordName + "." + req.DomainName
@@ -358,10 +359,12 @@ func BulkDeleteGlobalDnsRecords(req *model.GlobalDnsBulkDeleteReq) (model.Global
 
 	// Group records by domain
 	domainGroups := make(map[string][]model.GlobalDnsDeleteReq)
+	var skippedCount int
 	for _, rec := range req.Records {
 		rec.DomainName = strings.TrimSpace(rec.DomainName)
 		rec.RecordName = strings.TrimSpace(rec.RecordName)
 		if rec.DomainName == "" {
+			skippedCount++
 			continue
 		}
 		domainGroups[rec.DomainName] = append(domainGroups[rec.DomainName], rec)
@@ -369,6 +372,15 @@ func BulkDeleteGlobalDnsRecords(req *model.GlobalDnsBulkDeleteReq) (model.Global
 
 	resp := model.GlobalDnsBulkDeleteResponse{
 		TotalRequested: len(req.Records),
+	}
+	// Count skipped records (empty domainName) as failures
+	if skippedCount > 0 {
+		resp.Failed += skippedCount
+		for i := 0; i < skippedCount; i++ {
+			resp.Results = append(resp.Results, model.GlobalDnsBulkDeleteResult{
+				Success: false, Message: "domainName is empty",
+			})
+		}
 	}
 
 	for domain, recs := range domainGroups {
@@ -402,7 +414,7 @@ func BulkDeleteGlobalDnsRecords(req *model.GlobalDnsBulkDeleteReq) (model.Global
 		matchedRecs := make(map[int]bool) // track which request records matched
 
 		for i, rec := range recs {
-			recName := rec.RecordName
+			recName := strings.TrimSuffix(rec.RecordName, ".")
 			if !strings.HasSuffix(recName, "."+domain) && recName != domain {
 				recName = recName + "." + domain
 			}
@@ -737,7 +749,6 @@ func upsertGeoproximityRecords(ctx context.Context, r53 *route53.Client, zoneID,
 	type coordGroup struct {
 		lat, lng string
 		ips      []string
-		ids      []string
 	}
 	groupOrder := []coordKey{}
 	groups := map[coordKey]*coordGroup{}
@@ -747,17 +758,20 @@ func upsertGeoproximityRecords(ctx context.Context, r53 *route53.Client, zoneID,
 		key := coordKey{lat, lng}
 		if g, ok := groups[key]; ok {
 			g.ips = append(g.ips, vm.PublicIP)
-			g.ids = append(g.ids, vm.Identifier)
 		} else {
-			groups[key] = &coordGroup{lat: lat, lng: lng, ips: []string{vm.PublicIP}, ids: []string{vm.Identifier}}
+			groups[key] = &coordGroup{lat: lat, lng: lng, ips: []string{vm.PublicIP}}
 			groupOrder = append(groupOrder, key)
 		}
 	}
 
 	var changes []types.Change
+
+	// Build set of new SetIdentifiers to detect stale records
+	newSetIDs := make(map[string]bool)
 	for i, key := range groupOrder {
 		g := groups[key]
 		setId := fmt.Sprintf("%s-geo-%d", name, i+1)
+		newSetIDs[setId] = true
 		var resRecords []types.ResourceRecord
 		for _, ip := range g.ips {
 			resRecords = append(resRecords, types.ResourceRecord{Value: aws.String(ip)})
@@ -783,6 +797,35 @@ func upsertGeoproximityRecords(ctx context.Context, r53 *route53.Client, zoneID,
 			},
 		}
 		changes = append(changes, change)
+	}
+
+	// Delete stale geoproximity records from previous calls
+	fqdn := name
+	if !strings.HasSuffix(fqdn, ".") {
+		fqdn += "."
+	}
+	listOut, listErr := r53.ListResourceRecordSets(ctx, &route53.ListResourceRecordSetsInput{
+		HostedZoneId:    aws.String(zoneID),
+		StartRecordName: aws.String(name),
+		StartRecordType: types.RRType(rtype),
+	})
+	if listErr == nil {
+		for _, rs := range listOut.ResourceRecordSets {
+			rsName := aws.ToString(rs.Name)
+			if rsName != fqdn || rs.Type != types.RRType(rtype) {
+				continue
+			}
+			sid := aws.ToString(rs.SetIdentifier)
+			if rs.GeoProximityLocation != nil && sid != "" && !newSetIDs[sid] {
+				log.Debug().Str("staleSetId", sid).Msg("[DNS] Deleting stale geoproximity record")
+				changes = append(changes, types.Change{
+					Action:            types.ChangeActionDelete,
+					ResourceRecordSet: &rs,
+				})
+			}
+		}
+	} else {
+		log.Warn().Err(listErr).Msg("[DNS] Failed to list existing records for stale cleanup; proceeding with upsert only")
 	}
 
 	log.Debug().Int("changeCount", len(changes)).Msg("[DNS] Sending geoproximity ChangeResourceRecordSets (UPSERT)")
