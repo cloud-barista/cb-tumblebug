@@ -167,13 +167,16 @@ else
     sudo cp "$CONFIG_JS" "${CONFIG_JS}.bak"
 
     # resolution: 1080p
-    sudo sed -i 's|// resolution:.*|resolution: 1080,|' "$CONFIG_JS"
-    if ! grep -q "resolution: 1080" "$CONFIG_JS"; then
-        sudo sed -i "s|^var config = {|var config = {\n    resolution: 1080,|" "$CONFIG_JS"
+    # Replace any existing resolution line (commented or not) to avoid duplicates on reruns.
+    sudo sed -i 's|^[[:space:]]*//\{0,1\}[[:space:]]*resolution:.*|    resolution: 1080,|' "$CONFIG_JS"
+    # If no resolution key exists at all, insert it after the config declaration.
+    if ! grep -Eq "^[[:space:]]*resolution:" "$CONFIG_JS"; then
+        sudo sed -i "s|^[[:space:]]*var config = {|var config = {\n    resolution: 1080,|" "$CONFIG_JS"
     fi
 
     # constraints: 1080p / 30fps
-    if ! grep -q "constraints:" "$CONFIG_JS"; then
+    # Check only uncommented lines to avoid matching '// constraints:' in templates.
+    if ! grep -Eq "^[[:space:]]*constraints:" "$CONFIG_JS"; then
         sudo sed -i "/resolution: 1080,/a\\
     constraints: {\\
         video: {\\
@@ -235,9 +238,10 @@ open('$CONFIG_JS', 'w').write(c)
     fi
 
     # p2p: AV1 preferred for direct 2-person calls (bypass JVB entirely)
+    # Scope the check to the p2p section only — avoids false match from videoQuality.codecPreferenceOrder.
     sudo sed -i 's|// p2p:|p2p:|' "$CONFIG_JS"
-    if ! grep -q "preferredCodec.*AV1" "$CONFIG_JS"; then
-        # Remove old VP9 preferredCodec in p2p if present, then add AV1
+    if ! sed -n '/p2p:[[:space:]]*{/,/^[[:space:]]*}/p' "$CONFIG_JS" | grep -q "preferredCodec.*AV1"; then
+        # Remove any stale preferredCodec inside p2p block, then insert AV1.
         sudo sed -i "/p2p: {/{ n; s|.*preferredCodec.*||; }" "$CONFIG_JS"
         sudo sed -i "/p2p: {/a\\        preferredCodec: 'AV1'," "$CONFIG_JS"
     fi
