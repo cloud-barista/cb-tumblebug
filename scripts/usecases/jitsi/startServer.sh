@@ -157,7 +157,159 @@ if [ $? -ne 0 ]; then
     echo "  echo '$EMAIL' | sudo /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh"
 fi
 
-# ── Step 7: System limits ───────────────────────────────────────────────────
+# ── Step 7: Video quality tuning (config.js) ───────────────────────────────
+step "Applying maximum video quality settings (config.js)..."
+CONFIG_JS="/etc/jitsi/meet/${DNS}-config.js"
+
+if [ ! -f "$CONFIG_JS" ]; then
+    echo "[Warning] Jitsi config not found at $CONFIG_JS — skipping video quality tuning."
+else
+    sudo cp "$CONFIG_JS" "${CONFIG_JS}.bak"
+
+    # resolution: 1080p
+    # Replace any existing resolution line (commented or not) to avoid duplicates on reruns.
+    sudo sed -i 's|^[[:space:]]*//\{0,1\}[[:space:]]*resolution:.*|    resolution: 1080,|' "$CONFIG_JS"
+    # If no resolution key exists at all, insert it after the config declaration.
+    if ! grep -Eq "^[[:space:]]*resolution:" "$CONFIG_JS"; then
+        sudo sed -i "s|^[[:space:]]*var config = {|var config = {\n    resolution: 1080,|" "$CONFIG_JS"
+    fi
+
+    # constraints: 1080p / 30fps
+    # Check only uncommented lines to avoid matching '// constraints:' in templates.
+    if ! grep -Eq "^[[:space:]]*constraints:" "$CONFIG_JS"; then
+        sudo sed -i "/resolution: 1080,/a\\
+    constraints: {\\
+        video: {\\
+            height: { ideal: 1080, max: 1080, min: 240 },\\
+            frameRate: { ideal: 30, max: 30 }\\
+        }\\
+    }," "$CONFIG_JS"
+    fi
+
+    # startBitrate
+    sudo sed -i 's|// startBitrate:.*|startBitrate: '"'"'4000'"'"',|' "$CONFIG_JS"
+    if ! grep -q "startBitrate:" "$CONFIG_JS"; then
+        sudo sed -i "/resolution: 1080,/a\\    startBitrate: '4000'," "$CONFIG_JS"
+    fi
+
+    # videoQuality: AV1 > VP9 > VP8 > H264, per-codec bitrate tiers
+    # AV1/VP9: best compression (30~50% better than VP8 at same bitrate)
+    if grep -q "videoQuality:" "$CONFIG_JS"; then
+        # Replace existing videoQuality block
+        sudo python3 -c "
+import re, sys
+c = open('$CONFIG_JS').read()
+block = \"\"\"    videoQuality: {
+        codecPreferenceOrder: ['AV1', 'VP9', 'VP8', 'H264'],
+        mobileCodecPreferenceOrder: ['VP8', 'VP9', 'H264'],
+        maxBitratesVideo: {
+            AV1:  { low: 100000, standard: 300000, high: 1200000, fullHd: 4000000, ultraHd: 8000000 },
+            VP9:  { low: 100000, standard: 300000, high: 1200000, fullHd: 4000000, ultraHd: 8000000 },
+            VP8:  { low: 200000, standard: 500000, high: 1500000, fullHd: 4000000, ultraHd: 8000000 },
+            H264: { low: 200000, standard: 500000, high: 1500000, fullHd: 4000000, ultraHd: 8000000 },
+        },
+    },\"\"\"
+c = re.sub(r'videoQuality:\s*\{[^}]*(?:\{[^}]*\}[^}]*)?\}[^}]*\},?', block, c, flags=re.DOTALL)
+open('$CONFIG_JS', 'w').write(c)
+"
+    else
+        sudo sed -i "/startBitrate:/a\\
+    videoQuality: {\\
+        codecPreferenceOrder: ['AV1', 'VP9', 'VP8', 'H264'],\\
+        mobileCodecPreferenceOrder: ['VP8', 'VP9', 'H264'],\\
+        maxBitratesVideo: {\\
+            AV1:  { low: 100000, standard: 300000, high: 1200000, fullHd: 4000000, ultraHd: 8000000 },\\
+            VP9:  { low: 100000, standard: 300000, high: 1200000, fullHd: 4000000, ultraHd: 8000000 },\\
+            VP8:  { low: 200000, standard: 500000, high: 1500000, fullHd: 4000000, ultraHd: 8000000 },\\
+            H264: { low: 200000, standard: 500000, high: 1500000, fullHd: 4000000, ultraHd: 8000000 },\\
+        },\\
+    }," "$CONFIG_JS"
+    fi
+
+    # maxFullResolutionParticipants: -1 → no resolution downgrade in tile view
+    if ! grep -q "maxFullResolutionParticipants" "$CONFIG_JS"; then
+        sudo sed -i "/videoQuality:/a\\    maxFullResolutionParticipants: -1," "$CONFIG_JS"
+    fi
+
+    # enableLayerSuspension: suspend unused simulcast layers → saves bandwidth
+    sudo sed -i 's|// enableLayerSuspension:.*|enableLayerSuspension: true,|' "$CONFIG_JS"
+    if ! grep -q "enableLayerSuspension:" "$CONFIG_JS"; then
+        sudo sed -i "/maxFullResolutionParticipants/a\\    enableLayerSuspension: true," "$CONFIG_JS"
+    fi
+
+    # p2p: AV1 preferred for direct 2-person calls (bypass JVB entirely)
+    # Scope the check to the p2p section only — avoids false match from videoQuality.codecPreferenceOrder.
+    sudo sed -i 's|// p2p:|p2p:|' "$CONFIG_JS"
+    if ! sed -n '/p2p:[[:space:]]*{/,/^[[:space:]]*}/p' "$CONFIG_JS" | grep -q "preferredCodec.*AV1"; then
+        # Remove any stale preferredCodec inside p2p block, then insert AV1.
+        sudo sed -i "/p2p: {/{ n; s|.*preferredCodec.*||; }" "$CONFIG_JS"
+        sudo sed -i "/p2p: {/a\\        preferredCodec: 'AV1'," "$CONFIG_JS"
+    fi
+
+    # audioQuality: stereo Opus at 128 kbps
+    # Note: stereo disables echo cancellation / noise suppression
+    if ! grep -q "audioQuality:" "$CONFIG_JS"; then
+        sudo sed -i "/enableLayerSuspension/a\\
+    audioQuality: {\\
+        stereo: true,\\
+        opusMaxAverageBitrate: 128000,\\
+    }," "$CONFIG_JS"
+    fi
+
+    echo "  config.js tuning applied: AV1>VP9>VP8>H264, 1080p, 8Mbps max, stereo audio"
+    echo "  Backup saved at ${CONFIG_JS}.bak"
+fi
+
+# ── Step 8: JVB server-side quality tuning ─────────────────────────────────
+step "Applying JVB server-side quality settings..."
+JVB_CONF="/etc/jitsi/videobridge/jvb.conf"
+
+if [ ! -f "$JVB_CONF" ]; then
+    echo "[Warning] JVB config not found at $JVB_CONF — skipping."
+else
+    sudo cp "$JVB_CONF" "${JVB_CONF}.bak"
+
+    # onstage-preferred-height-px: resolution for the active/on-stage speaker
+    if grep -q "onstage-preferred-height-px" "$JVB_CONF"; then
+        sudo sed -i 's|onstage-preferred-height-px.*=.*|onstage-preferred-height-px = 720|' "$JVB_CONF"
+    else
+        sudo sed -i "/videobridge.cc {/a\\    onstage-preferred-height-px = 720" "$JVB_CONF" 2>/dev/null || \
+        echo "    videobridge.cc.onstage-preferred-height-px = 720" | sudo tee -a "$JVB_CONF" > /dev/null
+    fi
+
+    # default-max-height-px: max resolution for non-stage participants
+    if grep -q "default-max-height-px" "$JVB_CONF"; then
+        sudo sed -i 's|default-max-height-px.*=.*|default-max-height-px = 720|' "$JVB_CONF"
+    else
+        echo "    videobridge.cc.default-max-height-px = 720" | sudo tee -a "$JVB_CONF" > /dev/null
+    fi
+
+    echo "  JVB: onstage/default resolution set to 720p"
+    echo "  Backup saved at ${JVB_CONF}.bak"
+fi
+
+# ── Step 9: UDP buffer tuning (kernel) ─────────────────────────────────────
+# JVB streams video over UDP. Small kernel buffers → packet drops → quality degradation.
+step "Tuning UDP kernel buffers..."
+SYSCTL_CONF="/etc/sysctl.conf"
+declare -A SYSCTL_PARAMS=(
+    ["net.core.rmem_max"]="104857600"
+    ["net.core.wmem_max"]="104857600"
+    ["net.core.netdev_max_backlog"]="100000"
+)
+for KEY in "${!SYSCTL_PARAMS[@]}"; do
+    VAL="${SYSCTL_PARAMS[$KEY]}"
+    if grep -q "^${KEY}" "$SYSCTL_CONF"; then
+        sudo sed -i "s|^${KEY}.*|${KEY} = ${VAL}|" "$SYSCTL_CONF"
+    else
+        echo "${KEY} = ${VAL}" | sudo tee -a "$SYSCTL_CONF" > /dev/null
+    fi
+    echo "  $KEY = $VAL"
+done
+sudo sysctl -p > /dev/null
+echo "  UDP buffers applied."
+
+# ── Step 10: System limits ──────────────────────────────────────────────────
 step "Configuring system limits for large meetings (>100 participants)..."
 # Guard against duplicate entries on re-runs.
 if ! grep -q "DefaultLimitNOFILE=65000" /etc/systemd/system.conf; then
@@ -171,7 +323,7 @@ fi
 # Ref: to add room password authentication
 # https://www.digitalocean.com/community/tutorials/how-to-install-jitsi-meet-on-ubuntu-20-04
 
-# ── Step 8: Restart services ────────────────────────────────────────────────
+# ── Step 11: Restart services ───────────────────────────────────────────────
 step "Restarting Jitsi services..."
 sudo systemctl daemon-reload
 sudo systemctl restart prosody  && echo "  prosody: restarted"
