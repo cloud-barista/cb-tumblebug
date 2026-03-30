@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -104,7 +105,7 @@ func IsValidCspPairForVpn(csp1, csp2 string) (bool, error) {
 }
 
 // GetSiteToSiteVPN returns a site-to-site VPN
-func GetAllSiteToSiteVPN(nsId string, mciId string) (model.VpnInfoList, error) {
+func GetAllSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (model.VpnInfoList, error) {
 
 	var emptyRet model.VpnInfoList
 	var vpnInfoList model.VpnInfoList
@@ -151,7 +152,7 @@ func GetAllSiteToSiteVPN(nsId string, mciId string) (model.VpnInfoList, error) {
 }
 
 // GetAllIDsOfSiteToSiteVPN returns a list of site-to-site VPN IDs
-func GetAllIDsOfSiteToSiteVPN(nsId string, mciId string) (model.VpnIdList, error) {
+func GetAllIDsOfSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (model.VpnIdList, error) {
 
 	var emptyRet model.VpnIdList
 	var vpnIdList model.VpnIdList
@@ -199,7 +200,7 @@ func GetAllIDsOfSiteToSiteVPN(nsId string, mciId string) (model.VpnIdList, error
 }
 
 // CreateSiteToSiteVPN creates a site-to-site VPN via Terrarium
-func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnRequest, retry string) (model.VpnInfo, error) {
+func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq *model.RestPostVpnRequest, retry string) (model.VpnInfo, error) {
 
 	// VPN objects
 	var emptyRet model.VpnInfo
@@ -340,6 +341,12 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 	// Set Terrarium endpoint
 	epTerrarium := model.TerrariumRestUrl
+
+	holder := common.CredentialHolderFromContext(ctx)
+	if holder == "" || strings.EqualFold(holder, "admin") {
+		holder = "admin"
+	}
+	client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	// Set a terrarium ID
 	trName := vpnInfo.Uid
@@ -520,7 +527,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		// An expected completion duration is 15 minutes
 		expectedCompletionDuration := 15 * time.Minute
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Hour)
 		defer cancel()
 
 		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "vpn/aws-to-site", expectedCompletionDuration)
@@ -749,7 +756,7 @@ func processResourceArray(array []interface{}) []model.ResourceDetail {
 }
 
 // GetSiteToSiteVPN returns a site-to-site VPN via Terrarium
-func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string, refresh bool) (model.VpnInfo, error) {
+func GetSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId string, detail string, refresh bool) (model.VpnInfo, error) {
 
 	var emptyRet model.VpnInfo
 	var vpnInfo model.VpnInfo
@@ -806,6 +813,12 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string, re
 
 	// Initialize resty client with basic auth
 	client := clientManager.NewHttpClient()
+
+		holder := common.CredentialHolderFromContext(ctx)
+		if holder == "" || strings.EqualFold(holder, "admin") {
+			holder = "admin"
+		}
+		client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	trId := vpnInfo.Uid
 
@@ -928,7 +941,7 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string, re
 }
 
 // DeleteSiteToSiteVPN deletes a site-to-site VPN via Terrarium
-func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleMsg, error) {
+func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId string) (model.SimpleMsg, error) {
 
 	// VPN objects
 	var emptyRet model.SimpleMsg
@@ -1000,6 +1013,12 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 
 	// Initialize resty client with basic auth
 	client := clientManager.NewHttpClient()
+
+		holder := common.CredentialHolderFromContext(ctx)
+		if holder == "" || strings.EqualFold(holder, "admin") {
+			holder = "admin"
+		}
+		client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	trId := vpnInfo.Uid
 
@@ -1111,8 +1130,8 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	return res, nil
 }
 
-// GetRequestStatusOfSiteToSiteVpn checks the status of a specific request
-func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, reqId string) (model.Response, error) {
+// GetRequestStatusOfSiteToSiteVpn returns the status of a site-to-site VPN request
+func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, mciId string, vpnId string, reqId string) (model.Response, error) {
 
 	var emptyRet model.Response
 	var vpnInfo model.VpnInfo
@@ -1170,6 +1189,12 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 
 	// Initialize resty client with basic auth
 	client := clientManager.NewHttpClient()
+
+		holder := common.CredentialHolderFromContext(ctx)
+		if holder == "" || strings.EqualFold(holder, "admin") {
+			holder = "admin"
+		}
+		client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	trId := vpnInfo.Uid
 

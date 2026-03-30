@@ -331,7 +331,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.CreateSiteToSiteVPN(nsId, mciId, vpnReq, action)
+	resp, err := resource.CreateSiteToSiteVPN(c.Request().Context(), nsId, mciId, vpnReq, action)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -386,14 +386,14 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 
 	switch option {
 	case "InfoList":
-		vpnInfoList, err := resource.GetAllSiteToSiteVPN(nsId, mciId)
+		vpnInfoList, err := resource.GetAllSiteToSiteVPN(c.Request().Context(), nsId, mciId)
 		if err != nil {
 			log.Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 		}
 		return c.JSON(http.StatusOK, vpnInfoList)
 	case "IdList":
-		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(nsId, mciId)
+		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(c.Request().Context(), nsId, mciId)
 		if err != nil {
 			log.Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -461,7 +461,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	// * Only provide the "refined" detail level for now
 	detail := "refined"
-	resp, err := resource.GetSiteToSiteVPN(nsId, mciId, vpnId, detail, refreshBool)
+	resp, err := resource.GetSiteToSiteVPN(c.Request().Context(), nsId, mciId, vpnId, detail, refreshBool)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -516,7 +516,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.DeleteSiteToSiteVPN(nsId, mciId, vpnId)
+	resp, err := resource.DeleteSiteToSiteVPN(c.Request().Context(), nsId, mciId, vpnId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -575,7 +575,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	}
 	reqId = strings.TrimSpace(reqId)
 
-	resp, err := resource.GetRequestStatusOfSiteToSiteVpn(nsId, mciId, vpnId, reqId)
+	resp, err := resource.GetRequestStatusOfSiteToSiteVpn(c.Request().Context(), nsId, mciId, vpnId, reqId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

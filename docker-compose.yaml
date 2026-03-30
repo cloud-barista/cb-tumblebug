@@ -232,7 +232,7 @@ services:
   # Resource extensions (AWS-to-site VPN) for CB-Tumblebug using OpenTofu.
   # CSP credentials are managed by OpenBao (no more env_file injection).
   mc-terrarium:
-    image: cloudbaristaorg/mc-terrarium:0.1.2
+    image: cloudbaristaorg/mc-terrarium:0.1.4
     container_name: mc-terrarium
     # build:
     #   context: ../mc-terrarium
@@ -281,7 +281,15 @@ services:
       - VAULT_ADDR=http://openbao:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-}
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/terrarium/readyz"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://localhost:8055/terrarium/readyz",
+        ]
       interval: 10m
       timeout: 5s
       retries: 3

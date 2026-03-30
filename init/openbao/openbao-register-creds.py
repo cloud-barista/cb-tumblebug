@@ -15,13 +15,13 @@ Usage:
 """
 
 import argparse
+
 # import json
 import os
 import subprocess
 import sys
-from getpass import getpass
-import sys
 import time
+from getpass import getpass
 
 import requests
 import yaml
@@ -131,6 +131,8 @@ KEY_MAP = {
         "private_key": "private_key",
         "private_key_id": "private_key_id",
         "client_id": "client_id",
+        "S3AccessKey": "S3AccessKey",
+        "S3SecretKey": "S3SecretKey",
     },
     "alibaba": {
         "AccessKeyId": "ALIBABA_CLOUD_ACCESS_KEY_ID",
@@ -138,6 +140,8 @@ KEY_MAP = {
     },
     "ibm": {
         "ApiKey": "IC_API_KEY",
+        "S3AccessKey": "S3_ACCESS_KEY",
+        "S3SecretKey": "S3_SECRET_KEY",
     },
     "ncp": {
         "ncloud_access_key": "NCLOUD_ACCESS_KEY",
@@ -146,6 +150,24 @@ KEY_MAP = {
     "tencent": {
         "SecretId": "TENCENTCLOUD_SECRET_ID",
         "SecretKey": "TENCENTCLOUD_SECRET_KEY",
+    },
+    "kt": {
+        "IdentityEndpoint": "KT_IDENTITY_ENDPOINT",
+        "Username": "KT_USERNAME",
+        "Password": "KT_PASSWORD",
+        "DomainName": "KT_DOMAIN_NAME",
+        "ProjectID": "KT_PROJECT_ID",
+        "S3AccessKey": "KT_S3_ACCESS_KEY",
+        "S3SecretKey": "KT_S3_SECRET_KEY",
+    },
+    "nhn": {
+        "IdentityEndpoint": "NHN_IDENTITY_ENDPOINT",
+        "Username": "NHN_USERNAME",
+        "Password": "NHN_PASSWORD",
+        "DomainName": "NHN_DOMAIN_NAME",
+        "TenantId": "NHN_TENANT_ID",
+        "S3AccessKey": "NHN_S3_ACCESS_KEY",
+        "S3SecretKey": "NHN_S3_SECRET_KEY",
     },
     "openstack": {
         "IdentityEndpoint": "OS_AUTH_URL",
@@ -273,8 +295,8 @@ def get_decrypted_content():
     sys.exit(1)
 
 
-def register_credential(provider, credentials):
-    """Register a single CSP credential to OpenBao."""
+def register_credential(holder, provider, credentials):
+    """Register a single CSP credential to OpenBao for a specific holder."""
     # Check if provider has any non-empty values
     has_value = any(v for v in credentials.values() if v)
     if not has_value:
@@ -309,9 +331,17 @@ def register_credential(provider, credentials):
     if not mapped_keys and not placeholder_keys:
         return provider, "skip", "No keys to register"
 
+    # Determine secret prefix based on holder
+    # - 'admin' -> csp/
+    # - others  -> users/{holder}/csp/
+    if holder == "admin":
+        prefix = SECRET_PREFIX
+    else:
+        prefix = f"users/{holder}/{SECRET_PREFIX}"
+
     # Register to OpenBao via KV v2 API
     # KV v2 write path: /v1/{mount}/data/{prefix}/{name}
-    url = f"{VAULT_ADDR}/v1/{KV_MOUNT}/data/{SECRET_PREFIX}/{provider}"
+    url = f"{VAULT_ADDR}/v1/{KV_MOUNT}/data/{prefix}/{provider}"
     headers = {
         "X-Vault-Token": VAULT_TOKEN,
         "Content-Type": "application/json",
@@ -457,7 +487,10 @@ def main():
         # Parse YAML
         try:
             data = yaml.safe_load(decrypted_content)
-            cred_data = data["credentialholder"]["admin"]
+            cred_holders = data.get("credentialholder", {})
+            if not cred_holders:
+                print(Fore.RED + "No 'credentialholder' found in credentials YAML.")
+                sys.exit(1)
         except Exception:
             print(Fore.RED + "Error parsing credentials YAML. Ensure the format is correct.")
             sys.exit(1)
@@ -471,21 +504,30 @@ def main():
         fail_count = 0
         registered_providers = set()
 
-        for provider, credentials in cred_data.items():
-            provider_name, status, message = register_credential(provider, credentials)
-            if status == "ok":
-                print(f"  {Fore.GREEN}OK  {Style.RESET_ALL} {provider_name:12s}  {message}")
-                success_count += 1
-                registered_providers.add(provider_name)
-            elif status == "skip":
-                print(f"  {Fore.YELLOW}SKIP{Style.RESET_ALL} {provider_name:12s}  ({message})")
-                skip_count += 1
-            else:
-                print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {provider_name:12s}  {message}")
-                fail_count += 1
+        # Keep track of registered paths to identify where placeholders are needed for 'admin'
+        admin_registered = set()
 
-        # Register placeholder secrets for CSPs not in the credential file.
-        placeholder_count = register_placeholder_secrets(registered_providers)
+        for holder, holder_creds in cred_holders.items():
+            print(f" Holder: {Fore.MAGENTA}{holder}{Style.RESET_ALL}")
+            for provider, credentials in holder_creds.items():
+                provider_name, status, message = register_credential(holder, provider, credentials)
+                if status == "ok":
+                    print(f"  {Fore.GREEN}OK  {Style.RESET_ALL} {provider_name:12s}  {message}")
+                    success_count += 1
+                    if holder == "admin":
+                        admin_registered.add(provider_name)
+                    registered_providers.add(f"{holder}/{provider_name}")
+                elif status == "skip":
+                    print(f"  {Fore.YELLOW}SKIP{Style.RESET_ALL} {provider_name:12s}  ({message})")
+                    skip_count += 1
+                else:
+                    print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {provider_name:12s}  {message}")
+                    fail_count += 1
+            print()
+
+        # Register placeholder secrets for CSPs not in the 'admin' credential set.
+        # This ensures basic 'tofu plan' works without full credentials.
+        placeholder_count = register_placeholder_secrets(admin_registered)
 
         print()
         print(

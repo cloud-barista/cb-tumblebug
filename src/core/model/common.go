@@ -236,7 +236,7 @@ const (
 	SystemCommonNs string = "system"
 
 	// CredentialHolderHeaderKey is the HTTP header key for specifying credential holder
-	CredentialHolderHeaderKey string = "X-Credential-Holder"
+	CredentialHolderHeaderKey string = "x-credential-holder"
 )
 
 // ContextKey is a typed key for context values to prevent collisions with

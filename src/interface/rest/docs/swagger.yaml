@@ -15980,6 +15980,12 @@ paths:
       summary: List Hosted Zones
       description: List all hosted zones available in Route53
       operationId: GetHostedZones
+      parameters:
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -16018,6 +16024,11 @@ paths:
         description: Record Type
         schema:
           type: string
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -16049,13 +16060,12 @@ paths:
         2. Label Selector (labelSelector): Fetch IPs of matching resources.
         3. Manual IP Values (values): Manually provide IP addresses (simple routing only).
       operationId: PutGlobalDnsRecord
-      requestBody:
-        description: Details for record update
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.GlobalDnsRecordReq'
-        required: true
+      parameters:
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -16075,7 +16085,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: globalDnsRecordReq
     delete:
       tags:
       - "[Utility] Global DNS Management"
@@ -16084,6 +16093,12 @@ paths:
         Delete DNS record(s) from Route53. If setIdentifier is provided, deletes only that specific record.
         If setIdentifier is empty, deletes all records matching the name and type.
       operationId: DeleteGlobalDnsRecord
+      parameters:
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID
+        schema:
+          type: string
       requestBody:
         description: Details for record deletion
         content:
@@ -16120,6 +16135,12 @@ paths:
         Delete multiple DNS records from Route53 in a single request.
         Records are grouped by domain and submitted as a single ChangeBatch per domain for efficiency.
       operationId: BulkDeleteGlobalDnsRecord
+      parameters:
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID
+        schema:
+          type: string
       requestBody:
         description: List of records to delete
         content:
@@ -19430,43 +19451,6 @@ components:
         setIdentifier:
           type: string
           example: ""
-    model.GlobalDnsIPSource:
-      type: object
-      properties:
-        ips:
-          type: array
-          example:
-          - "[\"1.2.3.4\"]"
-          items:
-            type: string
-        label:
-          $ref: '#/components/schemas/model.GlobalDnsLabelSource'
-        mci:
-          $ref: '#/components/schemas/model.GlobalDnsMciSource'
-    model.GlobalDnsLabelSource:
-      required:
-      - labelSelector
-      - nsId
-      type: object
-      properties:
-        labelSelector:
-          type: string
-          example: "sys.mciId=mci-01,app=nginx"
-        nsId:
-          type: string
-          example: default
-    model.GlobalDnsMciSource:
-      required:
-      - mciId
-      - nsId
-      type: object
-      properties:
-        mciId:
-          type: string
-          example: mci-01
-        nsId:
-          type: string
-          example: default
     model.GlobalDnsRecordInfo:
       type: object
       properties:
@@ -19497,41 +19481,6 @@ components:
           - "[\"1.2.3.4\"]"
           items:
             type: string
-    model.GlobalDnsRecordReq:
-      required:
-      - domainName
-      - setBy
-      type: object
-      properties:
-        domainName:
-          type: string
-          description: '--- DNS Record Settings ---'
-          example: example.com
-        recordName:
-          type: string
-          example: mci.example.com
-        recordType:
-          type: string
-          example: A
-          enum:
-          - A
-          - AAAA
-          - CNAME
-          - TXT
-        routingPolicy:
-          type: string
-          example: simple
-          enum:
-          - simple
-          - geoproximity
-        setBy:
-          type: object
-          description: '--- IP Source Selection ---'
-          allOf:
-          - $ref: '#/components/schemas/model.GlobalDnsIPSource'
-        ttl:
-          type: integer
-          example: 300
     model.HandlingCommandCountResponse:
       type: object
       properties:

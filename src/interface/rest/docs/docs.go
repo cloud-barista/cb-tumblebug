@@ -18938,6 +18938,14 @@ const docTemplate = `{
                 ],
                 "summary": "List Hosted Zones",
                 "operationId": "GetHostedZones",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -18987,6 +18995,12 @@ const docTemplate = `{
                         "description": "Record Type",
                         "name": "recordType",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -19025,13 +19039,10 @@ const docTemplate = `{
                 "operationId": "PutGlobalDnsRecord",
                 "parameters": [
                     {
-                        "description": "Details for record update",
-                        "name": "globalDnsRecordReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.GlobalDnsRecordReq"
-                        }
+                        "type": "string",
+                        "description": "Credential holder ID",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -19077,6 +19088,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.GlobalDnsDeleteReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -19124,6 +19141,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.GlobalDnsBulkDeleteReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID",
+                        "name": "x-credential-holder",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -23164,60 +23187,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.GlobalDnsIPSource": {
-            "type": "object",
-            "properties": {
-                "ips": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "[\"1.2.3.4\"]"
-                    ]
-                },
-                "label": {
-                    "$ref": "#/definitions/model.GlobalDnsLabelSource"
-                },
-                "mci": {
-                    "$ref": "#/definitions/model.GlobalDnsMciSource"
-                }
-            }
-        },
-        "model.GlobalDnsLabelSource": {
-            "type": "object",
-            "required": [
-                "labelSelector",
-                "nsId"
-            ],
-            "properties": {
-                "labelSelector": {
-                    "type": "string",
-                    "example": "sys.mciId=mci-01,app=nginx"
-                },
-                "nsId": {
-                    "type": "string",
-                    "example": "default"
-                }
-            }
-        },
-        "model.GlobalDnsMciSource": {
-            "type": "object",
-            "required": [
-                "mciId",
-                "nsId"
-            ],
-            "properties": {
-                "mciId": {
-                    "type": "string",
-                    "example": "mci-01"
-                },
-                "nsId": {
-                    "type": "string",
-                    "example": "default"
-                }
-            }
-        },
         "model.GlobalDnsRecordInfo": {
             "type": "object",
             "properties": {
@@ -23257,54 +23226,6 @@ const docTemplate = `{
                     "example": [
                         "[\"1.2.3.4\"]"
                     ]
-                }
-            }
-        },
-        "model.GlobalDnsRecordReq": {
-            "type": "object",
-            "required": [
-                "domainName",
-                "setBy"
-            ],
-            "properties": {
-                "domainName": {
-                    "description": "--- DNS Record Settings ---",
-                    "type": "string",
-                    "example": "example.com"
-                },
-                "recordName": {
-                    "type": "string",
-                    "example": "mci.example.com"
-                },
-                "recordType": {
-                    "type": "string",
-                    "enum": [
-                        "A",
-                        "AAAA",
-                        "CNAME",
-                        "TXT"
-                    ],
-                    "example": "A"
-                },
-                "routingPolicy": {
-                    "type": "string",
-                    "enum": [
-                        "simple",
-                        "geoproximity"
-                    ],
-                    "example": "simple"
-                },
-                "setBy": {
-                    "description": "--- IP Source Selection ---",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.GlobalDnsIPSource"
-                        }
-                    ]
-                },
-                "ttl": {
-                    "type": "integer",
-                    "example": 300
                 }
             }
         },
