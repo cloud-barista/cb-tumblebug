@@ -365,22 +365,19 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
     ```example
     ### Cloud credentials for credential holders (default: admin)
+    ### Holder naming rules: only lowercase alphanumeric and underscores [a-z0-9_]
     credentialholder:
       admin:
         alibaba:
-          # ClientId(ClientId): client ID of the EIAM application
           # Example: app_mkv7rgt4d7i4u7zqtzev2mxxxx
-          ClientId:
-          # ClientSecret(ClientSecret): client secret of the EIAM application
+          AccessKeyId:
           # Example: CSEHDcHcrUKHw1CuxkJEHPveWRXBGqVqRsxxxx
-          ClientSecret:
+          AccessKeySecret:
         aws:
-          # ClientId(aws_access_key_id)
           # ex: AKIASSSSSSSSSSS56DJH
-          ClientId:
-          # ClientSecret(aws_secret_access_key)
+          aws_access_key_id:
           # ex: jrcy9y0Psejjfeosifj3/yxYcgadklwihjdljMIQ0
-          ClientSecret:
+          aws_secret_access_key:
         ...
     ```
 
