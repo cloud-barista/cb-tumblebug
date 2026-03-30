@@ -5,7 +5,7 @@
 CB-Tumblebug manages **multi-cloud credentials** and **connections** to enable unified infrastructure provisioning across diverse cloud providers. This document explains three core concepts:
 
 - **Credential**: CSP API keys/secrets used to authenticate with cloud providers
-- **Credential Holder**: A logical identity that owns a set of credentials (e.g., `admin`, `team-a`, `role01`)
+- **Credential Holder**: A logical identity that owns a set of credentials (e.g., `admin`, `team_a`, `role01`)
 - **Connection (ConnConfig)**: A fully resolved link between a credential and a specific CSP region, ready for resource operations
 
 These concepts work together to support **multi-tenant credential isolation** — different teams or roles can operate on different sets of cloud accounts through a single CB-Tumblebug instance.
@@ -18,11 +18,16 @@ A **Credential** is a set of CSP-specific API keys required for authentication. 
 
 | CSP | Required Keys |
 |-----|--------------|
-| AWS | `ClientId` (Access Key), `ClientSecret` (Secret Key) |
-| Azure | `ClientId`, `ClientSecret`, `TenantId`, `SubscriptionId` |
-| GCP | `ClientEmail`, `PrivateKey`, `ProjectID`, ... |
-| Alibaba | `ClientId`, `ClientSecret` |
-| NHN | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `TenantId` |
+| AWS | `aws_access_key_id`, `aws_secret_access_key` |
+| Azure | `clientId`, `clientSecret`, `tenantId`, `subscriptionId` |
+| GCP | `client_id`, `client_email`, `private_key_id`, `private_key`, `project_id`, `S3AccessKey`, `S3SecretKey` |
+| Alibaba | `AccessKeyId`, `AccessKeySecret` |
+| IBM | `ApiKey`, `S3AccessKey`, `S3SecretKey` |
+| KT | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `ProjectID`, `S3AccessKey`, `S3SecretKey` |
+| NCP | `ncloud_access_key`, `ncloud_secret_key` |
+| NHN | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `TenantId`, `S3AccessKey`, `S3SecretKey` |
+| OpenStack | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `ProjectID` |
+| Tencent | `SecretId`, `SecretKey` |
 
 **Security:** Credentials are never stored in plaintext. They undergo a hybrid encryption workflow:
 1. Client encrypts credential values with a temporary AES key
@@ -62,11 +67,11 @@ graph TB
         CRED_R1 --> CONN_R2
     end
     
-    subgraph TEAM_A["Credential Holder: team-a"]
+    subgraph TEAM_A["Credential Holder: team_a"]
         CRED_T1[Credential: aws]
         CRED_T2[Credential: gcp]
-        CONN_T1[team-a-aws-ap-northeast-2]
-        CONN_T2[team-a-gcp-us-central1]
+        CONN_T1[team_a-aws-ap-northeast-2]
+        CONN_T2[team_a-gcp-us-central1]
         
         CRED_T1 --> CONN_T1
         CRED_T2 --> CONN_T2
@@ -259,7 +264,7 @@ func ResolveConnectionName(defaultConnectionName string, credentialHolder string
 |-----------------|-------------------|--------|
 | `aws-ap-northeast-2` | `admin` (default) | `aws-ap-northeast-2` |
 | `aws-ap-northeast-2` | `role01` | `role01-aws-ap-northeast-2` |
-| `gcp-us-central1` | `team-a` | `team-a-gcp-us-central1` |
+| `gcp-us-central1` | `team_a` | `team_a-gcp-us-central1` |
 
 ### 4. Context Propagation
 
@@ -356,34 +361,62 @@ Credential holders are defined in `~/.cloud-barista/credentials.yaml`:
 credentialholder:
   admin:                    # Default holder (full access)
     aws:
-      ClientId: AKIA...
-      ClientSecret: wJal...
+      aws_access_key_id: AKIA...
+      aws_secret_access_key: wJal...
     gcp:
-      ClientEmail: svc@project.iam.gserviceaccount.com
-      PrivateKey: "-----BEGIN PRIVATE KEY-----\n..."
-      ProjectID: my-project
+      client_id: "107777777600845725910"
+      client_email: svc@project.iam.gserviceaccount.com
+      private_key_id: f89f5asfsesefsefsfefes0se0fse0f00ef565e33
+      private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqh...iH0ew=\n-----END PRIVATE KEY-----\n"
+      project_id: my-project
+      S3AccessKey: GOOGGOOGLGGOOOSSSSSSSSSSSSSSSSSSSS
+      S3SecretKey: wUsoOOooOO/ooooo3oO3o3o3o4ogo3o+OOo4oOOo
     azure:
-      ClientId: 12345-...
-      ClientSecret: secret...
-      TenantId: tenant-...
-      SubscriptionId: sub-...
+      clientId: 12345-...
+      clientSecret: secret...
+      tenantId: tenant-...
+      subscriptionId: sub-...
 
   role01:                   # Restricted holder (AWS only)
     aws:
-      ClientId: AKIA...     # Different AWS account
-      ClientSecret: xYzA...
+      aws_access_key_id: AKIA...     # Different AWS account
+      aws_secret_access_key: xYzA...
 
-  team-a:                   # Team-specific holder
+  team_a:                   # Team-specific holder (note: use underscore, not hyphen)
     aws:
-      ClientId: AKIA...
-      ClientSecret: bCdE...
+      aws_access_key_id: AKIA...
+      aws_secret_access_key: bCdE...
     gcp:
-      ClientEmail: team-a@project.iam.gserviceaccount.com
-      PrivateKey: "-----BEGIN PRIVATE KEY-----\n..."
-      ProjectID: team-a-project
+      client_id: "207777777600845725911"
+      client_email: team-a@project.iam.gserviceaccount.com
+      private_key_id: a12b3cdfsesefsefsfefes0se0fse0f00ef565e44
+      private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqh...iH0ew=\n-----END PRIVATE KEY-----\n"
+      project_id: team-a-project
+      S3AccessKey: GOOGGOOGLGGOOOSSSSSSSSSSSSSSSSSSTT
+      S3SecretKey: xVtoOOooOO/ooooo3oO3o3o3o4ogo3o+OOo4oOOo
 ```
 
-### 2. Initialization Process
+### 2. Adding a Custom OpenStack-Based CSP
+
+If you use a private cloud based on OpenStack (e.g., a proprietary cloud platform built on OpenStack), you can add it as a new provider by:
+
+1. Adding a credential section in `credentials.yaml` with the same fields as `openstack`:
+
+```yaml
+credentialholder:
+  admin:
+    openstack-new01:
+      IdentityEndpoint: http://your-openstack-endpoint:5000
+      Username:
+      Password:
+      DomainName:
+      ProjectID:
+```
+
+2. Adding a corresponding entry in `cloudinfo.yaml` with `cloudPlatform: openstack`.
+   (See the `openstack-ex01` example in `cloudinfo.yaml` for reference.)
+
+### 3. Initialization Process
 
 ```bash
 # 1. Generate credential template
@@ -413,13 +446,13 @@ graph TB
     subgraph "Registration per holder"
         REG_ADMIN["Register admin:<br/>aws, gcp, azure"]
         REG_ROLE01["Register role01:<br/>aws"]
-        REG_TEAM["Register team-a:<br/>aws, gcp"]
+        REG_TEAM["Register team_a:<br/>aws, gcp"]
     end
-    
+
     subgraph "Auto-generated connections"
         CONN_ADMIN["admin connections:<br/>aws-ap-northeast-2<br/>aws-us-east-1<br/>gcp-asia-northeast3<br/>azure-koreacentral<br/>..."]
         CONN_ROLE01["role01 connections:<br/>role01-aws-ap-northeast-2<br/>role01-aws-us-east-1<br/>..."]
-        CONN_TEAM["team-a connections:<br/>team-a-aws-ap-northeast-2<br/>team-a-gcp-us-central1<br/>..."]
+        CONN_TEAM["team_a connections:<br/>team_a-aws-ap-northeast-2<br/>team_a-gcp-us-central1<br/>..."]
     end
     
     YAML --> INIT
@@ -462,19 +495,19 @@ Different teams use different cloud accounts via separate credential holders:
 graph TB
     subgraph "Team Alpha"
         USER_A[Developer A]
-        USER_A -->|X-Credential-Holder: team-alpha| TB
+        USER_A -->|X-Credential-Holder: team_alpha| TB
     end
-    
+
     subgraph "Team Beta"
         USER_B[Developer B]
-        USER_B -->|X-Credential-Holder: team-beta| TB
+        USER_B -->|X-Credential-Holder: team_beta| TB
     end
-    
+
     TB[CB-Tumblebug]
-    
-    TB -->|team-alpha-aws-us-east-1| AWS_A[AWS Account A]
-    TB -->|team-beta-aws-us-east-1| AWS_B[AWS Account B]
-    TB -->|team-beta-gcp-us-central1| GCP_B[GCP Project B]
+
+    TB -->|team_alpha-aws-us-east-1| AWS_A[AWS Account A]
+    TB -->|team_beta-aws-us-east-1| AWS_B[AWS Account B]
+    TB -->|team_beta-gcp-us-central1| GCP_B[GCP Project B]
     
     style AWS_A fill:#fff4e1
     style AWS_B fill:#e1f5ff
