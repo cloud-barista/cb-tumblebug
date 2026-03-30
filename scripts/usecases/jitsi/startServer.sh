@@ -157,7 +157,64 @@ if [ $? -ne 0 ]; then
     echo "  echo '$EMAIL' | sudo /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh"
 fi
 
-# ── Step 7: System limits ───────────────────────────────────────────────────
+# ── Step 7: Video quality tuning ───────────────────────────────────────────
+step "Applying maximum video quality settings..."
+CONFIG_JS="/etc/jitsi/meet/${DNS}-config.js"
+
+if [ ! -f "$CONFIG_JS" ]; then
+    echo "[Warning] Jitsi config not found at $CONFIG_JS — skipping video quality tuning."
+else
+    # Back up original config
+    sudo cp "$CONFIG_JS" "${CONFIG_JS}.bak"
+
+    # resolution: set to 1080p
+    sudo sed -i 's|// resolution:.*|resolution: 1080,|' "$CONFIG_JS"
+    if ! grep -q "^resolution:" "$CONFIG_JS"; then
+        sudo sed -i "s|^var config = {|var config = {\n    resolution: 1080,|" "$CONFIG_JS"
+    fi
+
+    # constraints: override video height/framerate
+    # Inject after the resolution line if not already present
+    if ! grep -q "constraints:" "$CONFIG_JS"; then
+        sudo sed -i "/resolution: 1080,/a\\
+    constraints: {\\
+        video: {\\
+            height: { ideal: 1080, max: 1080, min: 240 },\\
+            frameRate: { ideal: 30, max: 30 }\\
+        }\\
+    }," "$CONFIG_JS"
+    fi
+
+    # startBitrate
+    sudo sed -i 's|// startBitrate:.*|startBitrate: '"'"'4000'"'"',|' "$CONFIG_JS"
+    if ! grep -q "startBitrate:" "$CONFIG_JS"; then
+        sudo sed -i "/resolution: 1080,/a\\    startBitrate: '4000'," "$CONFIG_JS"
+    fi
+
+    # videoQuality block: inject before closing of config if not present
+    if ! grep -q "videoQuality:" "$CONFIG_JS"; then
+        sudo sed -i "/startBitrate:/a\\
+    videoQuality: {\\
+        preferredCodec: 'VP9',\\
+        maxBitratesVideo: {\\
+            low:      200000,\\
+            standard: 1000000,\\
+            high:     8000000\\
+        }\\
+    }," "$CONFIG_JS"
+    fi
+
+    # p2p block: enable VP9 for P2P (2-person calls bypass JVB entirely)
+    sudo sed -i 's|// p2p:|p2p:|' "$CONFIG_JS"
+    if ! grep -q "preferredCodec.*VP9" "$CONFIG_JS"; then
+        sudo sed -i "/p2p: {/a\\        preferredCodec: 'VP9'," "$CONFIG_JS"
+    fi
+
+    echo "  Video quality settings applied to $CONFIG_JS"
+    echo "  Backup saved at ${CONFIG_JS}.bak"
+fi
+
+# ── Step 8: System limits ───────────────────────────────────────────────────
 step "Configuring system limits for large meetings (>100 participants)..."
 # Guard against duplicate entries on re-runs.
 if ! grep -q "DefaultLimitNOFILE=65000" /etc/systemd/system.conf; then
