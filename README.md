@@ -462,6 +462,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
           └─→ OpenBao KV v2 (← Terrarium's OpenTofu templates)
   ```
 
+  > For a detailed interaction diagram and step-by-step breakdown of the entire `make init` flow, see the **[`make init` Workflow Guide](docs/feature_guide/make-init-workflow.md)**.
   > For full details on OpenBao credential paths, Makefile targets, and troubleshooting, see [init/README.md](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/README.md).
 
 ---
