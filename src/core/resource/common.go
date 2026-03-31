@@ -2188,6 +2188,10 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 
 	var resList []string
 	if resType == "all" {
+		// ORDER MATTERS: SecurityGroup references the VNet by name (reqTmp.VNetId = vNetResourceName).
+		// VNet must be created before SecurityGroup. SSHKey is independent but placed between
+		// them to allow the VNet-to-SecurityGroup dependency to always be satisfied.
+		// Do NOT reorder without updating the SecurityGroup creation logic below.
 		resList = append(resList, model.StrVNet)
 		resList = append(resList, model.StrSSHKey)
 		resList = append(resList, model.StrSecurityGroup)
@@ -2258,51 +2262,77 @@ resTypeLoop:
 			reqTmp.Name = vNetResourceName
 			reqTmp.Description = description
 
-			// Use vNet template if specified, otherwise apply default CIDR generation
+			// Use vNet template if specified, otherwise apply default CIDR generation.
+			// Lookup order: user namespace (nsId) first, then system namespace.
+			// This lets users override system templates with their own.
 			if options != nil && options.VNetTemplateId != "" {
-				tmpl, err := common.GetVNetTemplate(model.SystemCommonNs, options.VNetTemplateId)
-				if err != nil {
-					log.Warn().Err(err).Msgf("VNet template '%s' not found in system namespace, falling back to default CIDR generation", options.VNetTemplateId)
-				} else if tmpl.VNetPolicy != nil {
-					// Policy mode: CSP-agnostic intent → auto-resolve CSP-specific details
-					log.Info().Msgf("Using VNet policy template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
-					explicitZone := ""
-					if options != nil {
-						explicitZone = options.Zone
+				var tmplFound bool
+				var tmpl model.VNetTemplateInfo
+
+				// Try user namespace first
+				if nsId != model.SystemCommonNs {
+					t, err := common.GetVNetTemplate(nsId, options.VNetTemplateId)
+					if err == nil {
+						tmpl = t
+						tmplFound = true
+						log.Info().Msgf("VNet template '%s' found in user namespace '%s'", options.VNetTemplateId, nsId)
 					}
-					if err := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, sliceIndex, explicitZone); err != nil {
-						log.Error().Err(err).Msgf("Failed to apply VNet policy from template '%s'", options.VNetTemplateId)
-						return err
-					}
-					common.PrintJsonPretty(reqTmp)
-					resultInfo, err := CreateVNet(nsId, &reqTmp)
+				}
+				// Fallback to system namespace
+				if !tmplFound {
+					t, err := common.GetVNetTemplate(model.SystemCommonNs, options.VNetTemplateId)
 					if err != nil {
-						log.Error().Err(err).Msgf("Failed to create vNet from policy template '%s'", options.VNetTemplateId)
-						return err
+						log.Warn().Err(err).Msgf("VNet template '%s' not found in namespace '%s' or system namespace; falling back to default CIDR generation",
+							options.VNetTemplateId, nsId)
+					} else {
+						tmpl = t
+						tmplFound = true
+						log.Info().Msgf("VNet template '%s' found in system namespace", options.VNetTemplateId)
 					}
-					common.PrintJsonPretty(resultInfo)
-					continue resTypeLoop
-				} else if tmpl.VNetReq != nil {
-					// Raw mode: use template's explicit network structure as-is
-					log.Info().Msgf("Using VNet raw template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
-					reqTmp.CidrBlock = tmpl.VNetReq.CidrBlock
-					reqTmp.SubnetInfoList = tmpl.VNetReq.SubnetInfoList
-					// Apply explicit zone to subnets that don't already have a zone assigned
-					if options != nil && options.Zone != "" {
-						for i := range reqTmp.SubnetInfoList {
-							if reqTmp.SubnetInfoList[i].Zone == "" {
-								reqTmp.SubnetInfoList[i].Zone = options.Zone
+				}
+
+				if tmplFound {
+					if tmpl.VNetPolicy != nil {
+						// Policy mode: CSP-agnostic intent → auto-resolve CSP-specific details
+						log.Info().Msgf("Using VNet policy template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
+						if err := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, sliceIndex, options.Zone); err != nil {
+							log.Error().Err(err).Msgf("Failed to apply VNet policy from template '%s'", options.VNetTemplateId)
+							return err
+						}
+						common.PrintJsonPretty(reqTmp)
+						resultInfo, err := CreateVNet(nsId, &reqTmp)
+						if err != nil {
+							log.Error().Err(err).Msgf("Failed to create vNet from policy template '%s'", options.VNetTemplateId)
+							return err
+						}
+						common.PrintJsonPretty(resultInfo)
+						continue resTypeLoop
+					} else if tmpl.VNetReq != nil {
+						// Raw mode: use template's explicit network structure as-is
+						log.Info().Msgf("Using VNet raw template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
+						reqTmp.CidrBlock = tmpl.VNetReq.CidrBlock
+						reqTmp.SubnetInfoList = tmpl.VNetReq.SubnetInfoList
+						// Apply explicit zone to subnets that don't already have a zone assigned
+						if options.Zone != "" {
+							for i := range reqTmp.SubnetInfoList {
+								if reqTmp.SubnetInfoList[i].Zone == "" {
+									reqTmp.SubnetInfoList[i].Zone = options.Zone
+								}
 							}
 						}
+						common.PrintJsonPretty(reqTmp)
+						resultInfo, err := CreateVNet(nsId, &reqTmp)
+						if err != nil {
+							log.Error().Err(err).Msgf("Failed to create vNet from raw template '%s'", options.VNetTemplateId)
+							return err
+						}
+						common.PrintJsonPretty(resultInfo)
+						continue resTypeLoop
+					} else {
+						// Template found but neither VNetPolicy nor VNetReq is set — guard against silent fallback
+						log.Warn().Msgf("VNet template '%s' has neither vNetPolicy nor vNetReq defined; falling back to default CIDR generation",
+							options.VNetTemplateId)
 					}
-					common.PrintJsonPretty(reqTmp)
-					resultInfo, err := CreateVNet(nsId, &reqTmp)
-					if err != nil {
-						log.Error().Err(err).Msgf("Failed to create vNet from raw template '%s'", options.VNetTemplateId)
-						return err
-					}
-					common.PrintJsonPretty(resultInfo)
-					continue resTypeLoop
 				}
 			}
 
@@ -2418,14 +2448,37 @@ resTypeLoop:
 			reqTmp.Description = description
 			reqTmp.VNetId = vNetResourceName
 
-			// Use SG template if specified, otherwise apply default all-open firewall rules
+			// Use SG template if specified, otherwise apply default all-open firewall rules.
+			// Lookup order: user namespace (nsId) first, then system namespace.
 			if options != nil && options.SgTemplateId != "" {
-				tmpl, err := common.GetSecurityGroupTemplate(model.SystemCommonNs, options.SgTemplateId)
-				if err != nil {
-					log.Warn().Err(err).Msgf("SecurityGroup template '%s' not found in system namespace, falling back to default all-open rules", options.SgTemplateId)
-				} else {
+				var sgTmplFound bool
+				var sgTmpl model.SecurityGroupTemplateInfo
+
+				// Try user namespace first
+				if nsId != model.SystemCommonNs {
+					t, err := common.GetSecurityGroupTemplate(nsId, options.SgTemplateId)
+					if err == nil {
+						sgTmpl = t
+						sgTmplFound = true
+						log.Info().Msgf("SecurityGroup template '%s' found in user namespace '%s'", options.SgTemplateId, nsId)
+					}
+				}
+				// Fallback to system namespace
+				if !sgTmplFound {
+					t, err := common.GetSecurityGroupTemplate(model.SystemCommonNs, options.SgTemplateId)
+					if err != nil {
+						log.Warn().Err(err).Msgf("SecurityGroup template '%s' not found in namespace '%s' or system namespace; falling back to default all-open rules",
+							options.SgTemplateId, nsId)
+					} else {
+						sgTmpl = t
+						sgTmplFound = true
+						log.Info().Msgf("SecurityGroup template '%s' found in system namespace", options.SgTemplateId)
+					}
+				}
+
+				if sgTmplFound {
 					log.Info().Msgf("Using SecurityGroup template '%s' for connection '%s'", options.SgTemplateId, connectionName)
-					reqTmp.FirewallRules = tmpl.SecurityGroupReq.FirewallRules
+					reqTmp.FirewallRules = sgTmpl.SecurityGroupReq.FirewallRules
 					common.PrintJsonPretty(reqTmp)
 					resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
 					if err != nil {

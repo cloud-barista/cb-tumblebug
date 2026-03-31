@@ -1505,6 +1505,8 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 
 	// Check if vmRequest has elements
 	if len(subGroupReqs) > 0 {
+		// allCreatedResources tracks ALL resources created during the preparation phase,
+		// including those from failed SubGroups. This enables cleanup under rollback policy.
 		var allCreatedResources []CreatedResource
 		var wg sync.WaitGroup
 		var mutex sync.Mutex
@@ -1540,6 +1542,26 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 
 			// Group by connection name
 			connectionGroups[connectionName] = append(connectionGroups[connectionName], subGroupReq)
+		}
+
+		// Warn when the same connection has SubGroups with different VNetTemplateIds.
+		// Different templates result in separate VPCs within the same CSP region, so VMs
+		// in those SubGroups cannot communicate directly without VPC peering.
+		for connName, subGroups := range connectionGroups {
+			if len(subGroups) < 2 {
+				continue
+			}
+			firstTemplate := subGroups[0].VNetTemplateId
+			for _, sg := range subGroups[1:] {
+				if sg.VNetTemplateId != firstTemplate {
+					log.Warn().Msgf(
+						"Connection '%s' has SubGroups with different VNetTemplateIds ('%s' vs '%s'). "+
+							"Each template creates an independent VPC; VMs across these SubGroups cannot communicate directly without VPC peering.",
+						connName, firstTemplate, sg.VNetTemplateId,
+					)
+					break
+				}
+			}
 		}
 
 		log.Info().Msgf("Grouped %d SubGroups into %d connection groups", len(subGroupReqs), len(connectionGroups))
@@ -1596,6 +1618,16 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 				// Add to error history
 				addErrorToHistory("SubGroup Resource Preparation",
 					fmt.Sprintf("Failed to prepare resources for SubGroup '%s': %s", subGroupName, vmRes.err.Error()))
+
+				// Track resources that were partially created before the failure so they can
+				// be cleaned up if rollback policy is in effect.
+				mutex.Lock()
+				if vmRes.result != nil && len(vmRes.result.CreatedResources) > 0 {
+					log.Info().Msgf("SubGroup '%s' failed after creating %d resource(s); tracking for potential rollback",
+						subGroupName, len(vmRes.result.CreatedResources))
+					allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
+				}
+				mutex.Unlock()
 			} else {
 				// Safely append to the shared mciReq.SubGroups slice
 				mutex.Lock()
@@ -1629,6 +1661,19 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 					mciTmp.Status = model.StatusFailed
 					UpdateMciInfo(nsId, mciTmp)
 
+					// Rollback any shared resources (VNet/SshKey/SG) that were partially created
+					// before the failures. These resources are shared-namespace resources so they
+					// will not be automatically cleaned up by MCI deletion.
+					if len(allCreatedResources) > 0 {
+						log.Info().Msgf("All SubGroups failed — rolling back %d partially created shared resource(s)", len(allCreatedResources))
+						if rollbackErr := rollbackCreatedResources(nsId, allCreatedResources); rollbackErr != nil {
+							log.Warn().Err(rollbackErr).Msg("Partial rollback failure during all-SubGroups-failed cleanup; some shared resources may remain")
+							addErrorToHistory("Shared Resource Rollback", fmt.Sprintf("Rollback encountered errors: %s", rollbackErr.Error()))
+						} else {
+							addErrorToHistory("Shared Resource Rollback", fmt.Sprintf("Successfully rolled back %d shared resource(s)", len(allCreatedResources)))
+						}
+					}
+
 					// Build comprehensive error message with complete history
 					errorMsg := fmt.Sprintf("MCI '%s' creation failed - all SubGroups failed resource preparation.\n\n", req.Name)
 
@@ -1648,10 +1693,31 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 					return emptyMci, fmt.Errorf("%s", errorMsg)
 				}
 
-				// If some SubGroups succeeded, update MCI and continue
-				addErrorToHistory("MCI Status Decision",
-					fmt.Sprintf("Partial success: %d SubGroups succeeded, %d failed - continuing with partial MCI creation",
-						len(successfulSubGroups), len(failedSubGroups)))
+				// Partial failure: some SubGroups succeeded, some failed.
+				// Apply PolicyOnPartialFailure to decide whether to rollback or continue.
+				switch req.PolicyOnPartialFailure {
+				case model.PolicyRollback:
+					// Roll back ALL created shared resources (from both successful and failed SubGroups)
+					// because the user requested all-or-nothing semantics.
+					addErrorToHistory("MCI Status Decision",
+						fmt.Sprintf("Partial failure with policy=rollback: rolling back all %d created shared resource(s)", len(allCreatedResources)))
+					log.Warn().Msgf("Partial SubGroup failure with policy=rollback: rolling back %d shared resource(s)", len(allCreatedResources))
+					if len(allCreatedResources) > 0 {
+						if rollbackErr := rollbackCreatedResources(nsId, allCreatedResources); rollbackErr != nil {
+							log.Warn().Err(rollbackErr).Msg("Partial rollback failure; some shared resources may remain")
+						}
+					}
+					if cleanupErr := cleanupPartialMci(nsId, mciId); cleanupErr != nil {
+						log.Error().Err(cleanupErr).Msg("Failed to cleanup partial MCI during rollback")
+					}
+					return emptyMci, fmt.Errorf("MCI '%s' creation aborted: %d SubGroup(s) failed resource preparation and policy=rollback; all created resources have been cleaned up",
+						req.Name, len(failedSubGroups))
+				default:
+					// continue or refine: proceed with the successfully prepared SubGroups
+					addErrorToHistory("MCI Status Decision",
+						fmt.Sprintf("Partial success: %d SubGroups succeeded, %d failed - continuing with partial MCI creation (policy=%s)",
+							len(successfulSubGroups), len(failedSubGroups), req.PolicyOnPartialFailure))
+				}
 				UpdateMciInfo(nsId, mciTmp)
 			}
 		}
@@ -2812,8 +2878,10 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + vNetResourceName, Time: time.Now()})
 
-		// Check if the default vNet exists
-		_, err := resource.GetResource(nsId, model.StrVNet, subGroupReq.ConnectionName)
+		// Check if the target vNet (template-specific or base) already exists (e.g. created
+		// by a concurrent SubGroup for the same connection). Using vNetResourceName here
+		// ensures we check the exact resource we intend to use, not a legacy ID.
+		_, err := resource.GetResource(nsId, model.StrVNet, vNetResourceName)
 		log.Debug().Msg("checked if the default vNet does NOT exist")
 		// Create a new default vNet if it does not exist
 		if err != nil {
@@ -2887,12 +2955,25 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		}
 	} else if req.VNetTemplateId != "" {
 		// Template-based VNet: subnets have custom names defined in the template.
-		// Look up the VNet to find the first available subnet's actual ID.
+		// Look up the VNet to find a subnet. When multiple subnets exist (e.g. multiZone),
+		// distribute VMs across subnets using the SubGroup name as a hash key so placement
+		// is deterministic but not always concentrated on the first subnet.
 		vNetInfo, err := resource.GetVNet(nsId, subGroupReq.VNetId)
 		if err == nil && len(vNetInfo.SubnetInfoList) > 0 {
-			subGroupReq.SubnetId = vNetInfo.SubnetInfoList[0].Id
-			log.Info().Msgf("Selected first subnet '%s' from template-based VNet '%s' for VM '%s'",
-				vNetInfo.SubnetInfoList[0].Id, subGroupReq.VNetId, req.Name)
+			subnetCount := len(vNetInfo.SubnetInfoList)
+			subnetIdx := 0
+			if subnetCount > 1 {
+				// Simple hash over SubGroup name bytes for deterministic distribution
+				var nameHash int
+				for _, c := range req.Name {
+					nameHash += int(c)
+				}
+				subnetIdx = nameHash % subnetCount
+			}
+			selectedSubnet := vNetInfo.SubnetInfoList[subnetIdx]
+			subGroupReq.SubnetId = selectedSubnet.Id
+			log.Info().Msgf("Selected subnet [%d/%d] '%s' (zone: '%s') from template-based VNet '%s' for VM '%s'",
+				subnetIdx+1, subnetCount, selectedSubnet.Id, selectedSubnet.Zone, subGroupReq.VNetId, req.Name)
 		} else {
 			log.Warn().Msgf("Could not retrieve subnets from template-based VNet '%s', falling back to VNet name as SubnetId", subGroupReq.VNetId)
 			subGroupReq.SubnetId = vNetResourceName
@@ -2958,8 +3039,9 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + sgResourceName, Time: time.Now()})
 
-		// Check if the default security group exists
-		_, err := resource.GetResource(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName)
+		// Check if the target SecurityGroup (template-specific or base) already exists.
+		// Using sgResourceName ensures we check the exact resource we intend to use.
+		_, err := resource.GetResource(nsId, model.StrSecurityGroup, sgResourceName)
 		// Create a new default security group if it does not exist
 		log.Debug().Msg("checked if the default security group does NOT exist")
 		if err != nil {
