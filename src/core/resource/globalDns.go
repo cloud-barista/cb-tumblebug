@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
@@ -44,7 +45,7 @@ type vmIPLocation struct {
 }
 
 // UpdateGlobalDnsRecord updates a DNS record in Route53
-func UpdateGlobalDnsRecord(req *model.GlobalDnsRecordReq) (model.SimpleMsg, error) {
+func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (model.SimpleMsg, error) {
 	log.Debug().Str("domainName", req.DomainName).Str("recordName", req.RecordName).Str("recordType", req.RecordType).Int64("ttl", req.TTL).Str("routingPolicy", req.RoutingPolicy).Msg("[DNS] UpdateGlobalDnsRecord called")
 	req.DomainName = strings.TrimSpace(req.DomainName)
 	req.RecordName = strings.TrimSuffix(strings.TrimSpace(req.RecordName), ".")
@@ -143,12 +144,11 @@ func UpdateGlobalDnsRecord(req *model.GlobalDnsRecordReq) (model.SimpleMsg, erro
 	}
 
 	// 3. Fetch AWS credentials from OpenBao
-	r53, err := getRoute53Client()
+	r53, err := getRoute53Client(ctx)
 	if err != nil {
 		return model.SimpleMsg{}, err
 	}
 
-	ctx := context.Background()
 	zoneID, _, err := findHostedZone(ctx, r53, req.DomainName)
 	if err != nil {
 		log.Error().Err(err).Str("domain", req.DomainName).Msg("[DNS] Failed to find hosted zone")
@@ -181,16 +181,15 @@ func UpdateGlobalDnsRecord(req *model.GlobalDnsRecordReq) (model.SimpleMsg, erro
 }
 
 // GetGlobalDnsRecord lists DNS records from Route53
-func GetGlobalDnsRecord(domainName string, recordName string, recordType string) (model.RestGetGlobalDnsRecordResponse, error) {
+func GetGlobalDnsRecord(ctx context.Context, domainName string, recordName string, recordType string) (model.RestGetGlobalDnsRecordResponse, error) {
 	log.Debug().Str("domainName", domainName).Str("recordName", recordName).Str("recordType", recordType).Msg("[DNS] GetGlobalDnsRecord called")
 	domainName = strings.TrimSpace(domainName)
 
-	r53, err := getRoute53Client()
+	r53, err := getRoute53Client(ctx)
 	if err != nil {
 		return model.RestGetGlobalDnsRecordResponse{}, err
 	}
 
-	ctx := context.Background()
 	zoneID, _, err := findHostedZone(ctx, r53, domainName)
 	if err != nil {
 		log.Error().Err(err).Str("domain", domainName).Msg("[DNS] Failed to find hosted zone")
@@ -256,7 +255,7 @@ func GetGlobalDnsRecord(domainName string, recordName string, recordType string)
 }
 
 // DeleteGlobalDnsRecord deletes DNS records from Route53
-func DeleteGlobalDnsRecord(req *model.GlobalDnsDeleteReq) (model.SimpleMsg, error) {
+func DeleteGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsDeleteReq) (model.SimpleMsg, error) {
 	log.Debug().Str("domainName", req.DomainName).Str("recordName", req.RecordName).Str("recordType", req.RecordType).Str("setIdentifier", req.SetIdentifier).Msg("[DNS] DeleteGlobalDnsRecord called")
 
 	req.DomainName = strings.TrimSpace(req.DomainName)
@@ -269,12 +268,11 @@ func DeleteGlobalDnsRecord(req *model.GlobalDnsDeleteReq) (model.SimpleMsg, erro
 		req.RecordType = "A"
 	}
 
-	r53, err := getRoute53Client()
+	r53, err := getRoute53Client(ctx)
 	if err != nil {
 		return model.SimpleMsg{}, err
 	}
 
-	ctx := context.Background()
 	zoneID, _, err := findHostedZone(ctx, r53, req.DomainName)
 	if err != nil {
 		return model.SimpleMsg{}, fmt.Errorf("failed to find hosted zone for %s: %w", req.DomainName, err)
@@ -344,18 +342,17 @@ func DeleteGlobalDnsRecord(req *model.GlobalDnsDeleteReq) (model.SimpleMsg, erro
 
 // BulkDeleteGlobalDnsRecords deletes multiple DNS records in a single batch per domain.
 // Records are grouped by domain and submitted as one ChangeBatch per domain to Route53.
-func BulkDeleteGlobalDnsRecords(req *model.GlobalDnsBulkDeleteReq) (model.GlobalDnsBulkDeleteResponse, error) {
+func BulkDeleteGlobalDnsRecords(ctx context.Context, req *model.GlobalDnsBulkDeleteReq) (model.GlobalDnsBulkDeleteResponse, error) {
 	log.Debug().Int("count", len(req.Records)).Msg("[DNS] BulkDeleteGlobalDnsRecords called")
 
 	if len(req.Records) == 0 {
 		return model.GlobalDnsBulkDeleteResponse{}, fmt.Errorf("no records provided for deletion")
 	}
 
-	r53, err := getRoute53Client()
+	r53, err := getRoute53Client(ctx)
 	if err != nil {
 		return model.GlobalDnsBulkDeleteResponse{}, err
 	}
-	ctx := context.Background()
 
 	// Group records by domain
 	domainGroups := make(map[string][]model.GlobalDnsDeleteReq)
@@ -492,15 +489,14 @@ func BulkDeleteGlobalDnsRecords(req *model.GlobalDnsBulkDeleteReq) (model.Global
 }
 
 // ListHostedZones returns all hosted zones from Route53
-func ListHostedZones() (model.RestGetHostedZonesResponse, error) {
+func ListHostedZones(ctx context.Context) (model.RestGetHostedZonesResponse, error) {
 	log.Debug().Msg("[DNS] ListHostedZones called")
 
-	r53, err := getRoute53Client()
+	r53, err := getRoute53Client(ctx)
 	if err != nil {
 		return model.RestGetHostedZonesResponse{}, err
 	}
 
-	ctx := context.Background()
 	out, err := r53.ListHostedZones(ctx, &route53.ListHostedZonesInput{})
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS] Failed to list hosted zones")
@@ -634,21 +630,32 @@ type awsCreds struct {
 }
 
 // getRoute53Client creates a Route53 client using OpenBao credentials (shared helper).
-func getRoute53Client() (*route53.Client, error) {
+func getRoute53Client(ctx context.Context) (*route53.Client, error) {
 	log.Debug().Str("vaultAddr", model.VaultAddr).Bool("vaultTokenSet", model.VaultToken != "").Msg("[DNS] Checking Vault credentials")
 	if model.VaultToken == "" {
 		log.Error().Msg("[DNS] VAULT_TOKEN is not set")
 		return nil, fmt.Errorf("VAULT_TOKEN is not set")
 	}
 
-	awsCreds, err := fetchAWSCredsFromOpenBao(model.VaultAddr, model.VaultToken)
+	holder := common.CredentialHolderFromContext(ctx)
+	if holder == "" || strings.EqualFold(holder, "admin") {
+		holder = "admin"
+	}
+
+	var path string
+	if holder == "admin" {
+		path = "secret/data/csp/aws"
+	} else {
+		path = fmt.Sprintf("secret/data/users/%s/csp/aws", holder)
+	}
+
+	awsCreds, err := fetchAWSCredsFromOpenBao(ctx, model.VaultAddr, model.VaultToken, path)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS] Failed to fetch AWS credentials from OpenBao")
 		return nil, fmt.Errorf("failed to fetch AWS credentials from OpenBao: %w", err)
 	}
 	log.Debug().Str("region", awsCreds.Region).Msg("[DNS] AWS credentials fetched successfully")
 
-	ctx := context.Background()
 	r53, err := newRoute53Client(ctx, awsCreds)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS] Failed to create Route53 client")
@@ -658,7 +665,7 @@ func getRoute53Client() (*route53.Client, error) {
 	return r53, nil
 }
 
-func fetchAWSCredsFromOpenBao(vaultAddr, vaultToken string) (*awsCreds, error) {
+func fetchAWSCredsFromOpenBao(ctx context.Context, vaultAddr, vaultToken, path string) (*awsCreds, error) {
 	log.Debug().Str("vaultAddr", vaultAddr).Msg("[DNS] Connecting to OpenBao")
 	vaultConfig := api.DefaultConfig()
 	vaultConfig.Address = vaultAddr
@@ -669,15 +676,15 @@ func fetchAWSCredsFromOpenBao(vaultAddr, vaultToken string) (*awsCreds, error) {
 	}
 	client.SetToken(vaultToken)
 
-	log.Debug().Msg("[DNS] Reading secret at secret/data/csp/aws")
-	secret, err := client.Logical().Read("secret/data/csp/aws")
+	log.Debug().Str("path", path).Msg("[DNS] Reading secret from OpenBao")
+	secret, err := client.Logical().Read(path)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS] Failed to read secret from OpenBao")
 		return nil, err
 	}
 	if secret == nil || secret.Data == nil {
-		log.Error().Bool("secretNil", secret == nil).Msg("[DNS] Secret not found at secret/data/csp/aws")
-		return nil, fmt.Errorf("secret not found at secret/data/csp/aws")
+		log.Error().Bool("secretNil", secret == nil).Str("path", path).Msg("[DNS] Secret not found in OpenBao")
+		return nil, fmt.Errorf("secret not found at %s", path)
 	}
 	log.Debug().Msg("[DNS] Secret read successfully from OpenBao")
 

@@ -103,6 +103,9 @@ This means:
 This is the recommended workflow.
 
 ```bash
+# Change directory (Use 'popd' to return to the previous directory)
+pushd src/testclient/test-clis/site-to-site-vpn
+# Run batch test
 go run app.go test vpn
 ```
 

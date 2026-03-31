@@ -58,12 +58,15 @@ func classifyDnsError(err error) int {
 // @Tags [Utility] Global DNS Management
 // @Accept  json
 // @Produce  json
-// @Param globalDnsRecordReq body model.GlobalDnsRecordReq true "Details for record update"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /resources/globalDns/record [put]
 func RestPutGlobalDnsRecord(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	log.Debug().Msg("[DNS-REST] PUT /resources/globalDns/record called")
 	req := &model.GlobalDnsRecordReq{}
 	if err := c.Bind(req); err != nil {
@@ -72,7 +75,7 @@ func RestPutGlobalDnsRecord(c echo.Context) error {
 	}
 	log.Debug().Str("domainName", req.DomainName).Str("recordName", req.RecordName).Str("recordType", req.RecordType).Str("routingPolicy", req.RoutingPolicy).Msg("[DNS-REST] Request parsed")
 
-	resp, err := resource.UpdateGlobalDnsRecord(req)
+	resp, err := resource.UpdateGlobalDnsRecord(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS-REST] UpdateGlobalDnsRecord failed")
 		return c.JSON(classifyDnsError(err), model.SimpleMsg{Message: err.Error()})
@@ -92,11 +95,14 @@ func RestPutGlobalDnsRecord(c echo.Context) error {
 // @Param domainName query string true "Domain Name"
 // @Param recordName query string false "Record Name (Prefix search)"
 // @Param recordType query string false "Record Type"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Success 200 {object} model.RestGetGlobalDnsRecordResponse
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /resources/globalDns/record [get]
 func RestGetGlobalDnsRecord(c echo.Context) error {
+	ctx := c.Request().Context()
 	domainName := c.QueryParam("domainName")
 	recordName := c.QueryParam("recordName")
 	recordType := c.QueryParam("recordType")
@@ -107,7 +113,7 @@ func RestGetGlobalDnsRecord(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: "domainName is required"})
 	}
 
-	resp, err := resource.GetGlobalDnsRecord(domainName, recordName, recordType)
+	resp, err := resource.GetGlobalDnsRecord(ctx, domainName, recordName, recordType)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS-REST] GetGlobalDnsRecord failed")
 		return c.JSON(classifyDnsError(err), model.SimpleMsg{Message: err.Error()})
@@ -126,11 +132,14 @@ func RestGetGlobalDnsRecord(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param globalDnsDeleteReq body model.GlobalDnsDeleteReq true "Details for record deletion"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /resources/globalDns/record [delete]
 func RestDeleteGlobalDnsRecord(c echo.Context) error {
+	ctx := c.Request().Context()
 	log.Debug().Msg("[DNS-REST] DELETE /resources/globalDns/record called")
 	req := &model.GlobalDnsDeleteReq{}
 	if err := c.Bind(req); err != nil {
@@ -139,7 +148,7 @@ func RestDeleteGlobalDnsRecord(c echo.Context) error {
 	}
 	log.Debug().Str("domainName", req.DomainName).Str("recordName", req.RecordName).Str("setIdentifier", req.SetIdentifier).Msg("[DNS-REST] Delete request parsed")
 
-	resp, err := resource.DeleteGlobalDnsRecord(req)
+	resp, err := resource.DeleteGlobalDnsRecord(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS-REST] DeleteGlobalDnsRecord failed")
 		return c.JSON(classifyDnsError(err), model.SimpleMsg{Message: err.Error()})
@@ -155,13 +164,16 @@ func RestDeleteGlobalDnsRecord(c echo.Context) error {
 // @Description List all hosted zones available in Route53
 // @Tags [Utility] Global DNS Management
 // @Produce  json
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Success 200 {object} model.RestGetHostedZonesResponse
 // @Failure 500 {object} model.SimpleMsg
 // @Router /resources/globalDns/hostedZone [get]
 func RestGetHostedZones(c echo.Context) error {
+	ctx := c.Request().Context()
 	log.Debug().Msg("[DNS-REST] GET /resources/globalDns/hostedZone called")
 
-	resp, err := resource.ListHostedZones()
+	resp, err := resource.ListHostedZones(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS-REST] ListHostedZones failed")
 		return c.JSON(classifyDnsError(err), model.SimpleMsg{Message: err.Error()})
@@ -180,11 +192,14 @@ func RestGetHostedZones(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param globalDnsBulkDeleteReq body model.GlobalDnsBulkDeleteReq true "List of records to delete"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Success 200 {object} model.GlobalDnsBulkDeleteResponse
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /resources/globalDns/records [delete]
 func RestBulkDeleteGlobalDnsRecord(c echo.Context) error {
+	ctx := c.Request().Context()
 	log.Debug().Msg("[DNS-REST] DELETE /resources/globalDns/records called")
 	req := &model.GlobalDnsBulkDeleteReq{}
 	if err := c.Bind(req); err != nil {
@@ -196,7 +211,7 @@ func RestBulkDeleteGlobalDnsRecord(c echo.Context) error {
 	}
 	log.Debug().Int("count", len(req.Records)).Msg("[DNS-REST] Bulk delete request parsed")
 
-	resp, err := resource.BulkDeleteGlobalDnsRecords(req)
+	resp, err := resource.BulkDeleteGlobalDnsRecords(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Msg("[DNS-REST] BulkDeleteGlobalDnsRecords failed")
 		return c.JSON(classifyDnsError(err), model.SimpleMsg{Message: err.Error()})
