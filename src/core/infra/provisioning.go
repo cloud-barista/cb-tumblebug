@@ -1428,6 +1428,17 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 	UpdateMciInfo(nsId, mciTmp)
 
 	subGroupReqs := req.SubGroups
+
+	// Propagate MCI-level template IDs to SubGroups that don't specify their own
+	for i := range subGroupReqs {
+		if subGroupReqs[i].VNetTemplateId == "" && req.VNetTemplateId != "" {
+			subGroupReqs[i].VNetTemplateId = req.VNetTemplateId
+		}
+		if subGroupReqs[i].SgTemplateId == "" && req.SgTemplateId != "" {
+			subGroupReqs[i].SgTemplateId = req.SgTemplateId
+		}
+	}
+
 	// Check whether VM names meet requirement.
 	// Use semaphore for parallel processing with concurrency limit
 	const maxConcurrency = 10
@@ -2743,13 +2754,31 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
 	}
 
-	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
-	// If Zone is specified in the request, append zone as postfix for zone-specific shared resources
-	resourceName := nsId + model.StrSharedResourceName + subGroupReq.ConnectionName
+	// Base shared resource name pattern: nsId + "-shared-" + connectionName [+ "-" + zone]
+	baseResourceName := nsId + model.StrSharedResourceName + subGroupReq.ConnectionName
 	if req.Zone != "" {
-		resourceName = resourceName + "-" + req.Zone
-		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s) for VM '%s'", resourceName, req.Zone, req.Name)
+		baseResourceName = baseResourceName + "-" + req.Zone
+		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s) for VM '%s'", baseResourceName, req.Zone, req.Name)
 	}
+
+	// VNet resource name: append templateId suffix when a specific template is requested,
+	// so that different templates result in independent VNets within the same connection.
+	vNetResourceName := baseResourceName
+	if req.VNetTemplateId != "" {
+		vNetResourceName = baseResourceName + "-" + req.VNetTemplateId
+		log.Info().Msgf("Using template-specific VNet resource name: %s (template: %s) for VM '%s'", vNetResourceName, req.VNetTemplateId, req.Name)
+	}
+
+	// SG resource name: append templateId suffix so different SubGroups on the same
+	// connection can independently use different SecurityGroup policies.
+	sgResourceName := baseResourceName
+	if req.SgTemplateId != "" {
+		sgResourceName = baseResourceName + "-" + req.SgTemplateId
+		log.Info().Msgf("Using template-specific SG resource name: %s (template: %s) for VM '%s'", sgResourceName, req.SgTemplateId, req.Name)
+	}
+
+	// SSHKey shares the base resource name (connection-scoped, no template support)
+	resourceName := baseResourceName
 
 	subGroupReq.SpecId = specInfo.Id
 	subGroupReq.ImageId = k.ImageId
@@ -2769,9 +2798,9 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 	// Update ImageId with the registered image ID (handles both regular and custom images)
 	subGroupReq.ImageId = imageInfo.Id
 
-	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + vNetResourceName, Time: time.Now()})
 
-	subGroupReq.VNetId = resourceName
+	subGroupReq.VNetId = vNetResourceName
 	_, err = resource.GetResource(nsId, model.StrVNet, subGroupReq.VNetId)
 	if err != nil {
 		if !onDemand {
@@ -2781,7 +2810,7 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 				req.Name, subGroupReq.VNetId, subGroupReq.ConnectionName)
 			return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
-		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + vNetResourceName, Time: time.Now()})
 
 		// Check if the default vNet exists
 		_, err := resource.GetResource(nsId, model.StrVNet, subGroupReq.ConnectionName)
@@ -2789,8 +2818,11 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		// Create a new default vNet if it does not exist
 		if err != nil {
 			log.Debug().Msg("Not found default vNet: " + err.Error())
-			// Pass Zone and CredentialHolder options
-			sharedResourceOpts := &resource.SharedResourceOptions{CredentialHolder: credentialHolder}
+			// Pass Zone, CredentialHolder, and template options
+			sharedResourceOpts := &resource.SharedResourceOptions{
+				CredentialHolder: credentialHolder,
+				VNetTemplateId:   req.VNetTemplateId,
+			}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating VNet with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
@@ -2838,21 +2870,36 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		}
 	}
 
-	// Select subnet based on user-specified zone
-	// If zone is specified in request, find a subnet matching that zone
-	// Otherwise, use the default (first) subnet
+	// Select subnet based on user-specified zone or VNet template.
+	// - Zone specified: find a subnet matching that zone via FindSubnetByZone
+	// - Template used (no zone): look up VNet to get first subnet's actual ID
+	//   (template subnets may have custom names, not matching vNetResourceName)
+	// - Default (no zone, no template): subnet has same name as VNet (hard-coded convention)
 	if req.Zone != "" {
 		subnetId, subnetZone, err := resource.FindSubnetByZone(nsId, subGroupReq.VNetId, req.Zone)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to find subnet by zone '%s', using default subnet", req.Zone)
-			subGroupReq.SubnetId = resourceName
+			subGroupReq.SubnetId = vNetResourceName
 		} else {
 			subGroupReq.SubnetId = subnetId
 			log.Info().Msgf("Selected subnet '%s' (zone: '%s') for VM '%s' based on requested zone '%s'",
 				subnetId, subnetZone, req.Name, req.Zone)
 		}
+	} else if req.VNetTemplateId != "" {
+		// Template-based VNet: subnets have custom names defined in the template.
+		// Look up the VNet to find the first available subnet's actual ID.
+		vNetInfo, err := resource.GetVNet(nsId, subGroupReq.VNetId)
+		if err == nil && len(vNetInfo.SubnetInfoList) > 0 {
+			subGroupReq.SubnetId = vNetInfo.SubnetInfoList[0].Id
+			log.Info().Msgf("Selected first subnet '%s' from template-based VNet '%s' for VM '%s'",
+				vNetInfo.SubnetInfoList[0].Id, subGroupReq.VNetId, req.Name)
+		} else {
+			log.Warn().Msgf("Could not retrieve subnets from template-based VNet '%s', falling back to VNet name as SubnetId", subGroupReq.VNetId)
+			subGroupReq.SubnetId = vNetResourceName
+		}
 	} else {
-		subGroupReq.SubnetId = resourceName
+		// Default (hard-coded) path: first subnet is named identically to the VNet
+		subGroupReq.SubnetId = vNetResourceName
 	}
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
@@ -2874,7 +2921,7 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		// Create a new default SSHKey if it does not exist
 		if err != nil {
 			log.Debug().Msg("Not found default SSHKey: " + err.Error())
-			// Pass Zone and CredentialHolder options
+			// Pass Zone and CredentialHolder options (SSHKey has no template support)
 			sharedResourceOpts := &resource.SharedResourceOptions{CredentialHolder: credentialHolder}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
@@ -2897,8 +2944,8 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		log.Info().Msg("Found and utilize default SSHKey: " + subGroupReq.SshKeyId)
 	}
 
-	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
-	securityGroup := resourceName
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + sgResourceName, Time: time.Now()})
+	securityGroup := sgResourceName
 	subGroupReq.SecurityGroupIds = append(subGroupReq.SecurityGroupIds, securityGroup)
 	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
 	if err != nil {
@@ -2909,7 +2956,7 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 				req.Name, securityGroup, subGroupReq.ConnectionName)
 			return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 		}
-		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + sgResourceName, Time: time.Now()})
 
 		// Check if the default security group exists
 		_, err := resource.GetResource(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName)
@@ -2917,8 +2964,13 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		log.Debug().Msg("checked if the default security group does NOT exist")
 		if err != nil {
 			log.Debug().Msg("Not found default security group: " + err.Error())
-			// Pass Zone and CredentialHolder options
-			sharedResourceOpts := &resource.SharedResourceOptions{CredentialHolder: credentialHolder}
+			// Pass Zone, CredentialHolder, and template options
+			// VNetTemplateId is needed so the SG's VNetId points to the template-specific VNet name
+			sharedResourceOpts := &resource.SharedResourceOptions{
+				CredentialHolder: credentialHolder,
+				VNetTemplateId:   req.VNetTemplateId,
+				SgTemplateId:     req.SgTemplateId,
+			}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SecurityGroup with explicit zone '%s' for VM '%s'", req.Zone, req.Name)

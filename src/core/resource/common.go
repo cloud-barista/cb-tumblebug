@@ -2048,6 +2048,126 @@ type SharedResourceOptions struct {
 	// CredentialHolder specifies the credential holder for filtering connection configs.
 	// If empty, defaults to model.DefaultCredentialHolder ("admin").
 	CredentialHolder string
+
+	// VNetTemplateId specifies the vNet template ID (from system namespace) to use instead
+	// of the default hard-coded CIDR generation. If the template is not found, falls back
+	// to the default behavior.
+	VNetTemplateId string
+
+	// SgTemplateId specifies the SecurityGroup template ID (from system namespace) to use
+	// instead of the default all-open firewall rules. If the template is not found, falls
+	// back to the default behavior.
+	SgTemplateId string
+}
+
+// applyVNetPolicy converts a CSP-agnostic VNetPolicy into concrete VNetReq fields on reqTmp,
+// applying CSP-specific constraints automatically:
+//
+//   - IBM:  always capped to 1 subnet (VPC Address Prefix limitation in CB-Spider)
+//   - NCP:  all subnets forced to the same zone (K8s cluster requirement)
+//   - GCP:  VPC-level CidrBlock left empty (GCP assigns CIDR at subnet level)
+//   - Others: up to 2 subnets placed in different zones when multiZone=true and the region has ≥ 2 zones
+//
+// CIDR assignment:
+//   - policy.CidrBlock == "auto" → 10.{sliceIndex}.0.0/16 (same algorithm as default hard-coded path)
+//   - explicit CIDR              → used as-is
+//
+// explicitZone overrides zone selection for all subnets (e.g. when a GPU VM requires a specific zone).
+func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolicy, provider, connectionName string, sliceIndex int, explicitZone string) error {
+	resolvedProvider := csp.ResolveCloudPlatform(provider)
+
+	// Determine effective subnet count respecting CSP limits
+	subnetCount := policy.SubnetCount
+	if subnetCount <= 0 {
+		subnetCount = 1
+	}
+	if resolvedProvider == csp.IBM {
+		// IBM VPC requires zone-specific Address Prefix setup; CB-Spider uses the same CIDR for all zones
+		// which causes conflicts when multiple subnets/zones are created.
+		subnetCount = 1
+		log.Info().Msg("IBM VPC: capping subnet count to 1 (Address Prefix limitation)")
+	} else if subnetCount > 2 {
+		subnetCount = 2
+		log.Info().Msgf("Capping subnet count to 2 (requested %d)", policy.SubnetCount)
+	}
+
+	// GCP does not use a VPC-level CIDR block; subnets carry their own CIDRs
+	isGCP := resolvedProvider == csp.GCP
+	if !isGCP {
+		if policy.CidrBlock == "auto" || policy.CidrBlock == "" {
+			reqTmp.CidrBlock = "10." + strconv.Itoa(sliceIndex) + ".0.0/16"
+		} else {
+			reqTmp.CidrBlock = policy.CidrBlock
+		}
+	}
+
+	// NCP: all subnets must reside in the same zone
+	multiZone := policy.MultiZone
+	if resolvedProvider == csp.NCP {
+		multiZone = false
+		log.Info().Msg("NCP: disabling multi-zone (all subnets must be in the same zone)")
+	}
+
+	// Resolve zone(s) for subnet placement
+	zones, zoneCount, _ := GetFirstNZones(connectionName, 2)
+
+	connConfig, err := common.GetConnConfig(connectionName)
+	if err != nil {
+		return fmt.Errorf("failed to get connection config for '%s': %w", connectionName, err)
+	}
+	assignedZone := connConfig.RegionZoneInfo.AssignedZone
+
+	// NCP always needs an explicit zone assignment
+	if resolvedProvider == csp.NCP && explicitZone == "" && assignedZone != "" {
+		explicitZone = assignedZone
+	}
+	if resolvedProvider == csp.NCP && explicitZone == "" && zoneCount > 0 {
+		explicitZone = zones[0]
+	}
+
+	// Build subnets
+	subnetCidrs := []string{
+		"10." + strconv.Itoa(sliceIndex) + ".0.0/18",
+		"10." + strconv.Itoa(sliceIndex) + ".64.0/18",
+	}
+	subnetNames := []string{reqTmp.Name, reqTmp.Name + "-01"}
+
+	for i := 0; i < subnetCount; i++ {
+		subnet := model.SubnetReq{
+			Name:      subnetNames[i],
+			IPv4_CIDR: subnetCidrs[i],
+		}
+		// Zone assignment
+		if explicitZone != "" {
+			if i == 0 || !multiZone {
+				subnet.Zone = explicitZone
+			} else {
+				// Find a zone different from explicitZone for second subnet
+				secondZone := explicitZone
+				for _, z := range zones {
+					if z != explicitZone {
+						secondZone = z
+						break
+					}
+				}
+				subnet.Zone = secondZone
+			}
+		} else if assignedZone != "" {
+			if !multiZone || i == 0 {
+				subnet.Zone = assignedZone
+			} else if zoneCount > 1 {
+				subnet.Zone = zones[1]
+			} else {
+				subnet.Zone = assignedZone
+			}
+		} else if multiZone && zoneCount > 1 {
+			subnet.Zone = zones[i]
+		}
+
+		reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
+	}
+
+	return nil
 }
 
 // CreateSharedResource is to register default resource from asset files (../assets/*.csv)
@@ -2104,138 +2224,220 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 	}
 	sliceIndex = (sliceIndex % 254) + 1
 
-	//resourceName := connectionName
-	// Default resource name has this pattern (nsId + "-shared-" + connectionName)
-	// If Zone is specified, append zone as postfix for zone-specific shared resources
-	resourceName := nsId + model.StrSharedResourceName + connectionName
+	// Base shared resource name: nsId + "-shared-" + connectionName [+ "-" + zone]
+	baseResourceName := nsId + model.StrSharedResourceName + connectionName
 	if options != nil && options.Zone != "" {
-		resourceName = resourceName + "-" + options.Zone
-		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s)", resourceName, options.Zone)
+		baseResourceName = baseResourceName + "-" + options.Zone
+		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s)", baseResourceName, options.Zone)
 	}
+
+	// VNet resource name: append templateId suffix when a specific template is requested
+	vNetResourceName := baseResourceName
+	if options != nil && options.VNetTemplateId != "" {
+		vNetResourceName = baseResourceName + "-" + options.VNetTemplateId
+	}
+
+	// SG resource name: append templateId suffix when a specific template is requested
+	sgResourceName := baseResourceName
+	if options != nil && options.SgTemplateId != "" {
+		sgResourceName = baseResourceName + "-" + options.SgTemplateId
+	}
+
+	// SSHKey uses base resource name (connection-scoped, no template support)
+	resourceName := baseResourceName
+
 	description := "Generated Default Resource"
 
+resTypeLoop:
 	for _, resType := range resList {
 		if strings.EqualFold(resType, model.StrVNet) {
 			log.Debug().Msg(model.StrVNet)
 
 			reqTmp := model.VNetReq{}
 			reqTmp.ConnectionName = connectionName
-			reqTmp.Name = resourceName
+			reqTmp.Name = vNetResourceName
 			reqTmp.Description = description
 
-			// set isolated private address space for each cloud region (10.i.0.0/16)
-			reqTmp.CidrBlock = "10." + strconv.Itoa(sliceIndex) + ".0.0/16"
-
-			// Create subnets based on provider limitations
-			// CSPs with single subnet requirement due to network architecture limitations
-			// IBM: Single subnet to avoid Address Prefix conflicts caused by CB-Spider implementation constraints
-			// ref IBM VPC Network structure: https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc&locale=en
-			// IBM VPC requires zone-specific Address Prefix setup, but CB-Spider uses same CIDR for all zones causing conflicts.
-			// This limitation exists in CB-Spider's IBM VPC driver implementation (VPCHandler.go line 108).
-			singleSubnetProviders := []string{csp.IBM}
-
-			// Check if the connection has an assigned zone
-			// If AssignedZone is empty, skip zone assignment to let CSP auto-select the best zone
-			// This is important for resources like GPU VMs that may only be available in specific zones
-			connConfig, err := common.GetConnConfig(connectionName)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to get connection config")
-				return err
-			}
-			assignedZone := connConfig.RegionZoneInfo.AssignedZone
-			shouldAssignZone := assignedZone != ""
-
-			// NCP special case: Always require zone assignment for K8s cluster subnet consistency
-			// ref: https://github.com/cloud-barista/cb-tumblebug/issues/2136
-			if csp.ResolveCloudPlatform(provider) == csp.NCP {
-				shouldAssignZone = true
-			}
-
-			// If Zone is explicitly specified in options, use that zone for subnet placement
-			// This is useful for GPU VMs or other resources only available in specific zones
-			var explicitZone string
-			if options != nil && options.Zone != "" {
-				explicitZone = options.Zone
-				shouldAssignZone = true
-				log.Info().Msgf("Using explicitly specified zone '%s' for subnet creation", explicitZone)
-			}
-
-			// Others: Create 2 subnets (10.i.0.0/18, 10.i.64.0/18) with tentative space for 2 more (10.i.128.0/18, 10.i.192.0/18)
-			zones, length, _ := GetFirstNZones(connectionName, 2)
-			subnetName := reqTmp.Name
-			subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
-			subnet := model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-			// Use explicit zone if specified, otherwise use first zone from connection
-			if shouldAssignZone {
-				if explicitZone != "" {
-					subnet.Zone = explicitZone
-				} else if length > 0 {
-					subnet.Zone = zones[0]
-				}
-			}
-			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
-
-			// Check if provider requires only single subnet
-			requiresSingleSubnet := slices.Contains(singleSubnetProviders, csp.ResolveCloudPlatform(provider))
-
-			// Create second subnet only if provider supports multiple subnets
-			// When explicit zone is specified, second subnet is placed in a different zone for redundancy
-			// Allow creation even with single zone (length=1) if explicit zone is specified,
-			// as fallback logic below handles placing both subnets in the same zone
-			if !requiresSingleSubnet && (length > 1 || explicitZone != "") {
-				subnetName = reqTmp.Name + "-01"
-				subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
-				subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-				if shouldAssignZone {
-					if explicitZone != "" {
-						// When user specifies a zone, place second subnet in a different zone for redundancy
-						// Find a zone different from the explicitly specified one
-						secondaryZone := ""
-						for _, z := range zones {
-							if z != explicitZone {
-								secondaryZone = z
-								break
+			// Use vNet template if specified, otherwise apply default CIDR generation
+			if options != nil && options.VNetTemplateId != "" {
+				tmpl, err := common.GetVNetTemplate(model.SystemCommonNs, options.VNetTemplateId)
+				if err != nil {
+					log.Warn().Err(err).Msgf("VNet template '%s' not found in system namespace, falling back to default CIDR generation", options.VNetTemplateId)
+				} else if tmpl.VNetPolicy != nil {
+					// Policy mode: CSP-agnostic intent → auto-resolve CSP-specific details
+					log.Info().Msgf("Using VNet policy template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
+					explicitZone := ""
+					if options != nil {
+						explicitZone = options.Zone
+					}
+					if err := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, sliceIndex, explicitZone); err != nil {
+						log.Error().Err(err).Msgf("Failed to apply VNet policy from template '%s'", options.VNetTemplateId)
+						return err
+					}
+					common.PrintJsonPretty(reqTmp)
+					resultInfo, err := CreateVNet(nsId, &reqTmp)
+					if err != nil {
+						log.Error().Err(err).Msgf("Failed to create vNet from policy template '%s'", options.VNetTemplateId)
+						return err
+					}
+					common.PrintJsonPretty(resultInfo)
+					continue resTypeLoop
+				} else if tmpl.VNetReq != nil {
+					// Raw mode: use template's explicit network structure as-is
+					log.Info().Msgf("Using VNet raw template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
+					reqTmp.CidrBlock = tmpl.VNetReq.CidrBlock
+					reqTmp.SubnetInfoList = tmpl.VNetReq.SubnetInfoList
+					// Apply explicit zone to subnets that don't already have a zone assigned
+					if options != nil && options.Zone != "" {
+						for i := range reqTmp.SubnetInfoList {
+							if reqTmp.SubnetInfoList[i].Zone == "" {
+								reqTmp.SubnetInfoList[i].Zone = options.Zone
 							}
 						}
-						if secondaryZone != "" {
-							subnet.Zone = secondaryZone
-							log.Info().Msgf("Second subnet will be placed in zone '%s' (different from explicit zone '%s')", secondaryZone, explicitZone)
-						} else {
-							// Fallback: if no different zone found, use the same explicit zone
-							subnet.Zone = explicitZone
-							log.Warn().Msgf("No different zone available, using same zone '%s' for second subnet", explicitZone)
-						}
-					} else if csp.ResolveCloudPlatform(provider) == csp.NCP {
-						// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
-						// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
+					}
+					common.PrintJsonPretty(reqTmp)
+					resultInfo, err := CreateVNet(nsId, &reqTmp)
+					if err != nil {
+						log.Error().Err(err).Msgf("Failed to create vNet from raw template '%s'", options.VNetTemplateId)
+						return err
+					}
+					common.PrintJsonPretty(resultInfo)
+					continue resTypeLoop
+				}
+			}
+
+			{
+				// set isolated private address space for each cloud region (10.i.0.0/16)
+				reqTmp.CidrBlock = "10." + strconv.Itoa(sliceIndex) + ".0.0/16"
+
+				// Create subnets based on provider limitations
+				// CSPs with single subnet requirement due to network architecture limitations
+				// IBM: Single subnet to avoid Address Prefix conflicts caused by CB-Spider implementation constraints
+				// ref IBM VPC Network structure: https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc&locale=en
+				// IBM VPC requires zone-specific Address Prefix setup, but CB-Spider uses same CIDR for all zones causing conflicts.
+				// This limitation exists in CB-Spider's IBM VPC driver implementation (VPCHandler.go line 108).
+				singleSubnetProviders := []string{csp.IBM}
+
+				// Check if the connection has an assigned zone
+				// If AssignedZone is empty, skip zone assignment to let CSP auto-select the best zone
+				// This is important for resources like GPU VMs that may only be available in specific zones
+				connConfig, err := common.GetConnConfig(connectionName)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to get connection config")
+					return err
+				}
+				assignedZone := connConfig.RegionZoneInfo.AssignedZone
+				shouldAssignZone := assignedZone != ""
+
+				// NCP special case: Always require zone assignment for K8s cluster subnet consistency
+				// ref: https://github.com/cloud-barista/cb-tumblebug/issues/2136
+				if csp.ResolveCloudPlatform(provider) == csp.NCP {
+					shouldAssignZone = true
+				}
+
+				// If Zone is explicitly specified in options, use that zone for subnet placement
+				// This is useful for GPU VMs or other resources only available in specific zones
+				var explicitZone string
+				if options != nil && options.Zone != "" {
+					explicitZone = options.Zone
+					shouldAssignZone = true
+					log.Info().Msgf("Using explicitly specified zone '%s' for subnet creation", explicitZone)
+				}
+
+				// Others: Create 2 subnets (10.i.0.0/18, 10.i.64.0/18) with tentative space for 2 more (10.i.128.0/18, 10.i.192.0/18)
+				zones, length, _ := GetFirstNZones(connectionName, 2)
+				subnetName := reqTmp.Name
+				subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
+				subnet := model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
+				// Use explicit zone if specified, otherwise use first zone from connection
+				if shouldAssignZone {
+					if explicitZone != "" {
+						subnet.Zone = explicitZone
+					} else if length > 0 {
 						subnet.Zone = zones[0]
-					} else {
-						subnet.Zone = zones[1]
 					}
 				}
 				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
-			}
 
-			common.PrintJsonPretty(reqTmp)
+				// Check if provider requires only single subnet
+				requiresSingleSubnet := slices.Contains(singleSubnetProviders, csp.ResolveCloudPlatform(provider))
 
-			resultInfo, err := CreateVNet(nsId, &reqTmp)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to create vNet")
-				return err
+				// Create second subnet only if provider supports multiple subnets
+				// When explicit zone is specified, second subnet is placed in a different zone for redundancy
+				// Allow creation even with single zone (length=1) if explicit zone is specified,
+				// as fallback logic below handles placing both subnets in the same zone
+				if !requiresSingleSubnet && (length > 1 || explicitZone != "") {
+					subnetName = reqTmp.Name + "-01"
+					subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
+					subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
+					if shouldAssignZone {
+						if explicitZone != "" {
+							// When user specifies a zone, place second subnet in a different zone for redundancy
+							// Find a zone different from the explicitly specified one
+							secondaryZone := ""
+							for _, z := range zones {
+								if z != explicitZone {
+									secondaryZone = z
+									break
+								}
+							}
+							if secondaryZone != "" {
+								subnet.Zone = secondaryZone
+								log.Info().Msgf("Second subnet will be placed in zone '%s' (different from explicit zone '%s')", secondaryZone, explicitZone)
+							} else {
+								// Fallback: if no different zone found, use the same explicit zone
+								subnet.Zone = explicitZone
+								log.Warn().Msgf("No different zone available, using same zone '%s' for second subnet", explicitZone)
+							}
+						} else if csp.ResolveCloudPlatform(provider) == csp.NCP {
+							// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
+							// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
+							subnet.Zone = zones[0]
+						} else {
+							subnet.Zone = zones[1]
+						}
+					}
+					reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
+				}
+
+				common.PrintJsonPretty(reqTmp)
+
+				resultInfo, err := CreateVNet(nsId, &reqTmp)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to create vNet")
+					return err
+				}
+				common.PrintJsonPretty(resultInfo)
 			}
-			common.PrintJsonPretty(resultInfo)
 		} else if strings.EqualFold(resType, model.StrSecurityGroup) {
 			log.Debug().Msg(model.StrSecurityGroup)
 
 			reqTmp := model.SecurityGroupReq{}
-
 			reqTmp.ConnectionName = connectionName
-			reqTmp.Name = resourceName
+			reqTmp.Name = sgResourceName
 			reqTmp.Description = description
+			reqTmp.VNetId = vNetResourceName
 
-			reqTmp.VNetId = resourceName
+			// Use SG template if specified, otherwise apply default all-open firewall rules
+			if options != nil && options.SgTemplateId != "" {
+				tmpl, err := common.GetSecurityGroupTemplate(model.SystemCommonNs, options.SgTemplateId)
+				if err != nil {
+					log.Warn().Err(err).Msgf("SecurityGroup template '%s' not found in system namespace, falling back to default all-open rules", options.SgTemplateId)
+				} else {
+					log.Info().Msgf("Using SecurityGroup template '%s' for connection '%s'", options.SgTemplateId, connectionName)
+					reqTmp.FirewallRules = tmpl.SecurityGroupReq.FirewallRules
+					common.PrintJsonPretty(reqTmp)
+					resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
+					if err != nil {
+						log.Error().Err(err).Msgf("Failed to create SecurityGroup from template '%s'", options.SgTemplateId)
+						return err
+					}
+					common.PrintJsonPretty(resultInfo)
+					continue resTypeLoop
+				}
+			}
 
-			// open all firewall for default securityGroup
+			// Default: open all firewall for default securityGroup
 			var ruleList []model.FirewallRuleReq
 			rule := model.FirewallRuleReq{Ports: "1-65535", Protocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 			ruleList = append(ruleList, rule)

@@ -1,0 +1,45 @@
+{
+  "nsId": "system",
+  "resourceType": "securityGroup",
+  "name": "web-sg",
+  "description": "SecurityGroup template for web servers. Opens SSH (22), HTTP (80), HTTPS (443), and common app ports (8080, 8443) inbound.",
+  "securityGroupReq": {
+    "firewallRules": [
+      {
+        "ports": "22",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "80",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "443",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "8080",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "8443",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "protocol": "ICMP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      }
+    ]
+  }
+}

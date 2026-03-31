@@ -1,0 +1,11 @@
+{
+  "nsId": "system",
+  "resourceType": "vNet",
+  "name": "default-vnet",
+  "description": "Default VNet template for MCI dynamic provisioning. Uses a CSP-agnostic policy (2 subnets, multi-zone). CSP-specific constraints are applied automatically at provisioning time: IBM is capped to 1 subnet, NCP subnets are placed in the same zone, GCP omits VPC-level CIDR. CIDR blocks are auto-assigned per connection index to avoid conflicts.",
+  "vNetPolicy": {
+    "cidrBlock": "auto",
+    "subnetCount": 2,
+    "multiZone": true
+  }
+}

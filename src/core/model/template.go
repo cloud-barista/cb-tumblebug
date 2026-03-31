@@ -74,6 +74,28 @@ type MciDynamicTemplateListResponse struct {
 
 // [Template for vNet Resource]
 
+// VNetPolicy defines a CSP-agnostic intent for VNet creation.
+// The policy is converted to a CSP-specific VNetReq at provisioning time,
+// respecting per-CSP constraints automatically (e.g. IBM single-subnet, NCP same-zone).
+type VNetPolicy struct {
+	// CidrBlock for the VPC. Use "auto" to assign a unique /16 block automatically
+	// (based on connection index: 10.{i}.0.0/16), or specify an explicit CIDR.
+	// For CSPs that do not support VPC-level CIDR (e.g. GCP), this field is ignored.
+	CidrBlock string `json:"cidrBlock" example:"auto"`
+
+	// SubnetCount is the desired number of subnets.
+	// CSP-specific caps apply automatically:
+	//   IBM  → always capped to 1 (VPC/subnet architecture limitation)
+	//   Others → up to 2 subnets are supported; values > 2 are capped to 2
+	SubnetCount int `json:"subnetCount" example:"2"`
+
+	// MultiZone requests that subnets be spread across different availability zones
+	// when the region has more than one zone.
+	// Set to false to place all subnets in the same zone (required for some workloads).
+	// NCP → always forced to false (all subnets must reside in the same zone).
+	MultiZone bool `json:"multiZone" example:"true"`
+}
+
 // VNetTemplateInfo is struct for vNet Template information stored in ETCD
 type VNetTemplateInfo struct {
 	// ResourceType is the type of the resource
@@ -98,8 +120,15 @@ type VNetTemplateInfo struct {
 	// UpdatedAt is the last update timestamp
 	UpdatedAt string `json:"updatedAt" example:"2024-01-01T00:00:00Z"`
 
-	// VNetReq is the template body (vNet creation request)
-	VNetReq VNetReq `json:"vNetReq"`
+	// VNetPolicy is a CSP-agnostic VNet intent (policy mode).
+	// Mutually exclusive with VNetReq.
+	// Used for dynamic provisioning where CSP-specific details are auto-resolved.
+	VNetPolicy *VNetPolicy `json:"vNetPolicy,omitempty"`
+
+	// VNetReq is the raw VNet creation request (raw mode).
+	// Mutually exclusive with VNetPolicy.
+	// Used when precise control over CIDR and subnet layout is required.
+	VNetReq *VNetReq `json:"vNetReq,omitempty"`
 }
 
 // VNetTemplateReq is struct for creating/updating a vNet Template
@@ -110,8 +139,13 @@ type VNetTemplateReq struct {
 	// Description of the template
 	Description string `json:"description" example:"Standard 3-subnet VPC template"`
 
-	// VNetReq is the template body (vNet creation request configuration)
-	VNetReq VNetReq `json:"vNetReq" validate:"required"`
+	// VNetPolicy is a CSP-agnostic VNet intent (policy mode).
+	// Mutually exclusive with VNetReq. Exactly one must be provided.
+	VNetPolicy *VNetPolicy `json:"vNetPolicy,omitempty"`
+
+	// VNetReq is the raw VNet creation request (raw mode).
+	// Mutually exclusive with VNetPolicy. Exactly one must be provided.
+	VNetReq *VNetReq `json:"vNetReq,omitempty"`
 }
 
 // VNetTemplateApplyReq is struct for applying a vNet template to create a vNet

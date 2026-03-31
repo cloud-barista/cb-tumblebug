@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"fmt"
 	"net/http"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -244,8 +245,20 @@ func RestPostVNetFromTemplate(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
+	// Policy-mode templates require connection context and are used for dynamic provisioning only
+	if template.VNetPolicy != nil {
+		err := fmt.Errorf("vNet template '%s' uses policy mode and cannot be applied directly; use dynamic provisioning (MCI) instead", templateId)
+		log.Warn().Err(err).Msg("cannot apply policy-mode vNet template directly")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	if template.VNetReq == nil {
+		err := fmt.Errorf("vNet template '%s' has no raw vNetReq defined", templateId)
+		log.Error().Err(err).Msg("invalid vNet template state")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
 	// Build VNetReq from template with overrides
-	vNetReq := template.VNetReq
+	vNetReq := *template.VNetReq
 	vNetReq.Name = req.Name
 	if req.Description != "" {
 		vNetReq.Description = req.Description
