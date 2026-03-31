@@ -11,6 +11,134 @@ After `make init` completes, CB-Tumblebug is fully operational for multi-cloud i
 
 ---
 
+## Step 0 — Docker Compose and `.env`
+
+`make init` requires all services to already be running (`make up`). Before services can start, Docker Compose reads the `.env` file in the project root to inject environment variables into each container.
+
+### How `.env` is loaded
+
+Docker Compose automatically reads `.env` from the project root directory (where `docker-compose.yaml` lives). You do **not** need to reference it explicitly — it is loaded by convention.
+
+```bash
+# Copy the example file and fill in your values
+cp .env.example .env
+# (edit .env)
+make up
+```
+
+### `.env` variable map
+
+The diagram below shows which `.env` variables flow into which containers, and with what behavior if a variable is missing.
+
+```mermaid
+graph TD
+    EnvFile[".env<br/>(project root)"]
+
+    subgraph DockerCompose["Docker Compose — variable injection"]
+        direction TB
+
+        subgraph TB_svc["cb-tumblebug container"]
+            TB_U["TB_API_USERNAME :? required"]
+            TB_P["TB_API_PASSWORD :? required"]
+            TR_U2["TERRARIUM_API_USERNAME :? required"]
+            TR_P2["TERRARIUM_API_PASSWORD :? required"]
+            VT2["VAULT_TOKEN :- optional (empty default)"]
+        end
+
+        subgraph Spider_svc["cb-spider container"]
+            SP_U["SPIDER_USERNAME :? required"]
+            SP_P["SPIDER_PASSWORD :? required"]
+        end
+
+        subgraph Terrarium_svc["mc-terrarium container"]
+            TR_U["TERRARIUM_API_USERNAME :? required"]
+            TR_P["TERRARIUM_API_PASSWORD :? required"]
+            VT3["VAULT_TOKEN :- optional (empty default)"]
+        end
+
+        subgraph OpenBao_svc["openbao container"]
+            note_bao["No .env vars injected<br/>VAULT_TOKEN is written here<br/>by init-openbao.sh after first init"]
+        end
+
+        subgraph Compose_meta["Docker Compose itself"]
+            CF["COMPOSE_FILE<br/>(selects which compose files to merge)"]
+        end
+    end
+
+    EnvFile -->|interpolation| TB_U & TB_P & TR_U2 & TR_P2 & VT2
+    EnvFile -->|interpolation| SP_U & SP_P
+    EnvFile -->|interpolation| TR_U & TR_P & VT3
+    EnvFile -->|compose config| CF
+
+    style EnvFile fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    style TB_svc fill:#fff0e0,stroke:#e07000
+    style Spider_svc fill:#f3e5f5,stroke:#7b1fa2
+    style Terrarium_svc fill:#f3e5f5,stroke:#7b1fa2
+    style OpenBao_svc fill:#fce4ec,stroke:#c62828
+    style Compose_meta fill:#eceff1,stroke:#607d8b
+```
+
+### Variable reference
+
+| Variable | Used by container(s) | Behavior if missing | Set by |
+|---|---|---|---|
+| `COMPOSE_FILE` | Docker Compose (meta) | Defaults to `docker-compose.yaml` only | User (choose Traefik overlay) |
+| `TB_API_USERNAME` | `cb-tumblebug` | **Error — startup fails** | User |
+| `TB_API_PASSWORD` | `cb-tumblebug` | **Error — startup fails** | User |
+| `SPIDER_USERNAME` | `cb-spider` | **Error — startup fails** | User |
+| `SPIDER_PASSWORD` | `cb-spider` | **Error — startup fails** | User |
+| `TERRARIUM_API_USERNAME` | `cb-tumblebug`, `mc-terrarium` | **Error — startup fails** | User |
+| `TERRARIUM_API_PASSWORD` | `cb-tumblebug`, `mc-terrarium` | **Error — startup fails** | User |
+| `VAULT_TOKEN` | `cb-tumblebug`, `mc-terrarium` | Empty string (silent default `:-`) | Auto-written by `init-openbao.sh` after first `make up` |
+| `VAULT_ADDR` | (host-side reference) | `http://localhost:8200` | User (rarely changed) |
+
+> **Note on `VAULT_TOKEN`**: The `:?` variables will abort `docker compose up` with a clear error message if undefined. `VAULT_TOKEN` uses `:-` (empty default) because it is written into `.env` automatically by `init-openbao.sh` during first startup — you do not set it manually.
+
+### `COMPOSE_FILE` — enabling Traefik
+
+`COMPOSE_FILE` is a special Docker Compose variable that controls which compose files are merged at startup:
+
+```bash
+# Default: only core services
+COMPOSE_FILE=docker-compose.yaml
+
+# With Traefik reverse proxy (HTTPS, routing):
+COMPOSE_FILE=docker-compose.yaml:docker-compose.traefik.yaml
+```
+
+### OpenBao and `VAULT_TOKEN` lifecycle
+
+`VAULT_TOKEN` starts empty in `.env.example`. On the first `make up`, `init-openbao.sh` initializes OpenBao, obtains a root token, and **automatically writes it back into `.env`**. Subsequent runs of `make up` and `make init` then pick it up without any manual action.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant EnvFile as .env
+    participant MakeUp as make up<br/>(docker compose up)
+    participant OpenBao as openbao container
+    participant InitScript as init-openbao.sh
+
+    User->>MakeUp: make up (first run)
+    MakeUp->>EnvFile: read VAULT_TOKEN (empty)
+    MakeUp->>OpenBao: start container<br/>(VAULT_TOKEN="" injected)
+    OpenBao-->>MakeUp: container healthy
+
+    MakeUp->>InitScript: auto-run init-openbao.sh
+    InitScript->>OpenBao: POST /v1/sys/init
+    OpenBao-->>InitScript: root_token, unseal_keys
+    InitScript->>OpenBao: PUT /v1/sys/unseal (× 3 keys)
+    OpenBao-->>InitScript: unsealed=true
+    InitScript->>EnvFile: write VAULT_TOKEN=<root_token>
+
+    Note over EnvFile: .env now has VAULT_TOKEN set
+
+    User->>MakeUp: make up (subsequent runs)
+    MakeUp->>EnvFile: read VAULT_TOKEN (set)
+    MakeUp->>OpenBao: start container<br/>(VAULT_TOKEN injected → mc-terrarium can auth)
+```
+
+---
+
 ## Full Interaction Diagram
 
 The diagram below shows how `make init` interacts with each component end-to-end.
