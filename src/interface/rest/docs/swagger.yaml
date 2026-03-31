@@ -18652,6 +18652,12 @@ components:
             \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
           example: gp3
           default: default
+        sgTemplateId:
+          type: string
+          description: |-
+            SgTemplateId overrides the MCI-level SgTemplateId for this SubGroup.
+            If empty, inherits the SgTemplateId from the parent MciDynamicReq.
+          example: ""
         specId:
           type: string
           description: SpecId is field for id of a spec in common namespace
@@ -18661,6 +18667,12 @@ components:
           description: "SubGroupSize is the number of VMs to create in this SubGroup.\
             \ If > 0, subGroup will be generated. Default is 1."
           example: 3
+        vNetTemplateId:
+          type: string
+          description: |-
+            VNetTemplateId overrides the MCI-level VNetTemplateId for this SubGroup.
+            If empty, inherits the VNetTemplateId from the parent MciDynamicReq.
+          example: ""
         vmUserPassword:
           type: string
           example: ""
@@ -20738,6 +20750,13 @@ components:
           description: PostCommand is for the command to bootstrap the VMs
           allOf:
           - $ref: '#/components/schemas/model.MciCmdReq'
+        sgTemplateId:
+          type: string
+          description: |-
+            SgTemplateId specifies the SecurityGroup template ID (from system namespace) to use
+            when auto-creating shared SecurityGroup resources. Propagates to all SubGroups unless
+            overridden at the SubGroup level. If empty, the default all-open behavior is used.
+          example: default-sg
         subGroups:
           type: array
           description: |-
@@ -20776,6 +20795,13 @@ components:
           description: SystemLabel is for describing the mci in a keyword (any string
             can be used) for special System purpose
           example: ""
+        vNetTemplateId:
+          type: string
+          description: |-
+            VNetTemplateId specifies the vNet template ID (from system namespace) to use when
+            auto-creating shared vNet resources. Propagates to all SubGroups unless overridden
+            at the SubGroup level. If empty, the default hard-coded CIDR behavior is used.
+          example: default-vnet
     model.MciDynamicTemplateInfo:
       type: object
       properties:
@@ -24342,6 +24368,32 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+    model.VNetPolicy:
+      type: object
+      properties:
+        cidrBlock:
+          type: string
+          description: |-
+            CidrBlock for the VPC. Use "auto" to assign a unique /16 block automatically
+            (based on connection index: 10.{i}.0.0/16), or specify an explicit CIDR.
+            For CSPs that do not support VPC-level CIDR (e.g. GCP), this field is ignored.
+          example: auto
+        multiZone:
+          type: boolean
+          description: |-
+            MultiZone requests that subnets be spread across different availability zones
+            when the region has more than one zone.
+            Set to false to place all subnets in the same zone (required for some workloads).
+            NCP → always forced to false (all subnets must reside in the same zone).
+          example: true
+        subnetCount:
+          type: integer
+          description: |-
+            SubnetCount is the desired number of subnets.
+            CSP-specific caps apply automatically:
+              IBM  → always capped to 1 (VPC/subnet architecture limitation)
+              Others → up to 2 subnets are supported; values > 2 are capped to 2
+          example: 2
     model.VNetReq:
       required:
       - connectionName
@@ -24411,9 +24463,20 @@ components:
           type: string
           description: UpdatedAt is the last update timestamp
           example: 2024-01-01T00:00:00Z
+        vNetPolicy:
+          type: object
+          description: |-
+            VNetPolicy is a CSP-agnostic VNet intent (policy mode).
+            Mutually exclusive with VNetReq.
+            Used for dynamic provisioning where CSP-specific details are auto-resolved.
+          allOf:
+          - $ref: '#/components/schemas/model.VNetPolicy'
         vNetReq:
           type: object
-          description: VNetReq is the template body (vNet creation request)
+          description: |-
+            VNetReq is the raw VNet creation request (raw mode).
+            Mutually exclusive with VNetPolicy.
+            Used when precise control over CIDR and subnet layout is required.
           allOf:
           - $ref: '#/components/schemas/model.VNetReq'
     model.VNetTemplateListResponse:
@@ -24426,7 +24489,6 @@ components:
     model.VNetTemplateReq:
       required:
       - name
-      - vNetReq
       type: object
       properties:
         description:
@@ -24437,9 +24499,18 @@ components:
           type: string
           description: Name is the template ID and name
           example: my-vnet-template
+        vNetPolicy:
+          type: object
+          description: |-
+            VNetPolicy is a CSP-agnostic VNet intent (policy mode).
+            Mutually exclusive with VNetReq. Exactly one must be provided.
+          allOf:
+          - $ref: '#/components/schemas/model.VNetPolicy'
         vNetReq:
           type: object
-          description: VNetReq is the template body (vNet creation request configuration)
+          description: |-
+            VNetReq is the raw VNet creation request (raw mode).
+            Mutually exclusive with VNetPolicy. Exactly one must be provided.
           allOf:
           - $ref: '#/components/schemas/model.VNetReq'
     model.VmCreationError:

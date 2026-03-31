@@ -325,6 +325,16 @@ type MciDynamicReq struct {
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
+
+	// VNetTemplateId specifies the vNet template ID (from system namespace) to use when
+	// auto-creating shared vNet resources. Propagates to all SubGroups unless overridden
+	// at the SubGroup level. If empty, the default hard-coded CIDR behavior is used.
+	VNetTemplateId string `json:"vNetTemplateId,omitempty" example:"default-vnet"`
+
+	// SgTemplateId specifies the SecurityGroup template ID (from system namespace) to use
+	// when auto-creating shared SecurityGroup resources. Propagates to all SubGroups unless
+	// overridden at the SubGroup level. If empty, the default all-open behavior is used.
+	SgTemplateId string `json:"sgTemplateId,omitempty" example:"default-sg"`
 }
 
 // CreateSubGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
@@ -356,6 +366,14 @@ type CreateSubGroupDynamicReq struct {
 	// If specified, subnet will be created in this zone for resources like GPU VMs
 	// that may only be available in specific zones. If empty, auto-selection applies.
 	Zone string `json:"zone,omitempty" example:"ap-northeast-2a" default:""`
+
+	// VNetTemplateId overrides the MCI-level VNetTemplateId for this SubGroup.
+	// If empty, inherits the VNetTemplateId from the parent MciDynamicReq.
+	VNetTemplateId string `json:"vNetTemplateId,omitempty" example:""`
+
+	// SgTemplateId overrides the MCI-level SgTemplateId for this SubGroup.
+	// If empty, inherits the SgTemplateId from the parent MciDynamicReq.
+	SgTemplateId string `json:"sgTemplateId,omitempty" example:""`
 }
 
 // MciConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCI instance dynamically (with default resource option)

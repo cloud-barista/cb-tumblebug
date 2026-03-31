@@ -22114,6 +22114,11 @@ const docTemplate = `{
                     "default": "default",
                     "example": "gp3"
                 },
+                "sgTemplateId": {
+                    "description": "SgTemplateId overrides the MCI-level SgTemplateId for this SubGroup.\nIf empty, inherits the SgTemplateId from the parent MciDynamicReq.",
+                    "type": "string",
+                    "example": ""
+                },
                 "specId": {
                     "description": "SpecId is field for id of a spec in common namespace",
                     "type": "string",
@@ -22123,6 +22128,11 @@ const docTemplate = `{
                     "description": "SubGroupSize is the number of VMs to create in this SubGroup. If \u003e 0, subGroup will be generated. Default is 1.",
                     "type": "integer",
                     "example": 3
+                },
+                "vNetTemplateId": {
+                    "description": "VNetTemplateId overrides the MCI-level VNetTemplateId for this SubGroup.\nIf empty, inherits the VNetTemplateId from the parent MciDynamicReq.",
+                    "type": "string",
+                    "example": ""
                 },
                 "vmUserPassword": {
                     "type": "string",
@@ -24927,6 +24937,11 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "sgTemplateId": {
+                    "description": "SgTemplateId specifies the SecurityGroup template ID (from system namespace) to use\nwhen auto-creating shared SecurityGroup resources. Propagates to all SubGroups unless\noverridden at the SubGroup level. If empty, the default all-open behavior is used.",
+                    "type": "string",
+                    "example": "default-sg"
+                },
                 "subGroups": {
                     "description": "SubGroups is array of VM requests for multi-cloud infrastructure\nExample: Multiple VM groups across different CSPs\n[\n  {\n    \"name\": \"aws-group\",\n    \"subGroupSize\": \"3\",\n    \"specId\": \"aws+ap-northeast-2+t3.nano\",\n    \"imageId\": \"ami-01f71f215b23ba262\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"worker\", \"csp\": \"aws\"}\n  },\n  {\n    \"name\": \"azure-group\",\n    \"subGroupSize\": \"2\",\n    \"specId\": \"azure+koreasouth+standard_b1s\",\n    \"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"head\", \"csp\": \"azure\"}\n  },\n  {\n    \"name\": \"gcp-group\",\n    \"subGroupSize\": \"1\",\n    \"specId\": \"gcp+asia-northeast3+g1-small\",\n    \"imageId\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"test\", \"csp\": \"gcp\"}\n  }\n]",
                     "type": "array",
@@ -24938,6 +24953,11 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": ""
+                },
+                "vNetTemplateId": {
+                    "description": "VNetTemplateId specifies the vNet template ID (from system namespace) to use when\nauto-creating shared vNet resources. Propagates to all SubGroups unless overridden\nat the SubGroup level. If empty, the default hard-coded CIDR behavior is used.",
+                    "type": "string",
+                    "example": "default-vnet"
                 }
             }
         },
@@ -29807,6 +29827,26 @@ const docTemplate = `{
                 }
             }
         },
+        "model.VNetPolicy": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "description": "CidrBlock for the VPC. Use \"auto\" to assign a unique /16 block automatically\n(based on connection index: 10.{i}.0.0/16), or specify an explicit CIDR.\nFor CSPs that do not support VPC-level CIDR (e.g. GCP), this field is ignored.",
+                    "type": "string",
+                    "example": "auto"
+                },
+                "multiZone": {
+                    "description": "MultiZone requests that subnets be spread across different availability zones\nwhen the region has more than one zone.\nSet to false to place all subnets in the same zone (required for some workloads).\nNCP → always forced to false (all subnets must reside in the same zone).",
+                    "type": "boolean",
+                    "example": true
+                },
+                "subnetCount": {
+                    "description": "SubnetCount is the desired number of subnets.\nCSP-specific caps apply automatically:\n  IBM  → always capped to 1 (VPC/subnet architecture limitation)\n  Others → up to 2 subnets are supported; values \u003e 2 are capped to 2",
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
         "model.VNetReq": {
             "type": "object",
             "required": [
@@ -29894,8 +29934,16 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
                 },
+                "vNetPolicy": {
+                    "description": "VNetPolicy is a CSP-agnostic VNet intent (policy mode).\nMutually exclusive with VNetReq.\nUsed for dynamic provisioning where CSP-specific details are auto-resolved.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.VNetPolicy"
+                        }
+                    ]
+                },
                 "vNetReq": {
-                    "description": "VNetReq is the template body (vNet creation request)",
+                    "description": "VNetReq is the raw VNet creation request (raw mode).\nMutually exclusive with VNetPolicy.\nUsed when precise control over CIDR and subnet layout is required.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.VNetReq"
@@ -29918,8 +29966,7 @@ const docTemplate = `{
         "model.VNetTemplateReq": {
             "type": "object",
             "required": [
-                "name",
-                "vNetReq"
+                "name"
             ],
             "properties": {
                 "description": {
@@ -29932,8 +29979,16 @@ const docTemplate = `{
                     "type": "string",
                     "example": "my-vnet-template"
                 },
+                "vNetPolicy": {
+                    "description": "VNetPolicy is a CSP-agnostic VNet intent (policy mode).\nMutually exclusive with VNetReq. Exactly one must be provided.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.VNetPolicy"
+                        }
+                    ]
+                },
                 "vNetReq": {
-                    "description": "VNetReq is the template body (vNet creation request configuration)",
+                    "description": "VNetReq is the raw VNet creation request (raw mode).\nMutually exclusive with VNetPolicy. Exactly one must be provided.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.VNetReq"

@@ -1,0 +1,27 @@
+{
+  "nsId": "system",
+  "resourceType": "securityGroup",
+  "name": "default-sg",
+  "description": "Default SecurityGroup template for MCI dynamic provisioning. Opens all TCP/UDP ports and ICMP inbound (development/testing use). For production, use a more restrictive template such as web-sg.",
+  "securityGroupReq": {
+    "firewallRules": [
+      {
+        "ports": "1-65535",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "1-65535",
+        "protocol": "UDP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "protocol": "ICMP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      }
+    ]
+  }
+}

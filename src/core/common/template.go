@@ -368,6 +368,14 @@ func CreateVNetTemplate(nsId string, req *model.VNetTemplateReq) (model.VNetTemp
 		return emptyResult, err
 	}
 
+	// Validate: exactly one of VNetPolicy or VNetReq must be provided
+	if req.VNetPolicy == nil && req.VNetReq == nil {
+		return emptyResult, fmt.Errorf("vNet template requires either 'vNetPolicy' or 'vNetReq' (exactly one must be provided)")
+	}
+	if req.VNetPolicy != nil && req.VNetReq != nil {
+		return emptyResult, fmt.Errorf("vNet template requires either 'vNetPolicy' or 'vNetReq', not both")
+	}
+
 	// Check if template already exists
 	key := GenTemplateKey(nsId, "vNet", req.Name)
 	_, exists, err := kvstore.GetKv(key)
@@ -388,6 +396,7 @@ func CreateVNetTemplate(nsId string, req *model.VNetTemplateReq) (model.VNetTemp
 		Source:       "user",
 		CreatedAt:    now,
 		UpdatedAt:    now,
+		VNetPolicy:   req.VNetPolicy,
 		VNetReq:      req.VNetReq,
 	}
 
@@ -525,6 +534,14 @@ func UpdateVNetTemplate(nsId string, templateId string, req *model.VNetTemplateR
 		return emptyResult, err
 	}
 
+	// Validate: exactly one of VNetPolicy or VNetReq must be provided
+	if req.VNetPolicy == nil && req.VNetReq == nil {
+		return emptyResult, fmt.Errorf("vNet template requires either 'vNetPolicy' or 'vNetReq' (exactly one must be provided)")
+	}
+	if req.VNetPolicy != nil && req.VNetReq != nil {
+		return emptyResult, fmt.Errorf("vNet template requires either 'vNetPolicy' or 'vNetReq', not both")
+	}
+
 	// Update fields (Name is not changeable; it is tied to Id and ETCD key)
 	if req.Name != "" && req.Name != templateId {
 		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
@@ -532,6 +549,7 @@ func UpdateVNetTemplate(nsId string, templateId string, req *model.VNetTemplateR
 	now := time.Now().Format(time.RFC3339)
 	existing.Description = req.Description
 	existing.UpdatedAt = now
+	existing.VNetPolicy = req.VNetPolicy
 	existing.VNetReq = req.VNetReq
 
 	key := GenTemplateKey(nsId, "vNet", templateId)

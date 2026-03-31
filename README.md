@@ -255,7 +255,7 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
   ```mermaid
   graph TB
       subgraph "External Access"
-          User[👤 User]
+          User[👤 Client<br/>CLI/Browser]
           AI[🤖 AI Assistant<br/>Claude/VS Code]
       end
 
@@ -268,22 +268,26 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
 
           subgraph "Backend Services"
               TB[CB-Tumblebug<br/>:1323<br/>Multi-Cloud Management]
-              Spider[CB-Spider<br/>:1024<br/>Cloud API Abstraction]
-              Terrarium[MC-Terrarium<br/>:8055<br/>Infrastructure Enrichment]
-              ETCD[ETCD<br/>:2379<br/>Metadata Store]
+              ETCD[ETCD<br/>:2379<br/>Key-Value DB]
               PG[PostgreSQL<br/>:5432<br/>Specs/Images DB]
-          end
-
-          subgraph "Secrets Management"
+              Spider[CB-Spider<br/>:1024<br/>Cloud API Abstraction]
+              Terrarium[MC-Terrarium<br/>:8055<br/>Cloud API Enrichment]
               OpenBao[OpenBao<br/>:8200<br/>CSP Credentials]
           end
       end
 
-      subgraph "Cloud Providers"
+      subgraph CloudProviders["Cloud Providers"]
           AWS[AWS]
           Azure[Azure]
           GCP[GCP]
-          Others[Others...]
+          Alibaba[Alibaba]
+          Tencent[Tencent]
+          IBM[IBM]
+          NCP[NCP]
+          NHN[NHN]
+          KT[KT]
+          OpenStack[OpenStack]
+          Others[CSP]
       end
 
       %% User connections
@@ -296,34 +300,42 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
       Proxy -->|Route| UI
 
       %% Internal service connections
-      UI -.->|API calls| TB
+      UI -->|API calls| TB
       MCP -->|REST API| TB
-      TB -->|REST API| Spider
-      TB -->|REST API| Terrarium
       TB -->|gRPC| ETCD
       TB -->|SQL| PG
+      TB -->|REST API| Spider
+      TB -->|Secrets| OpenBao
       Terrarium -->|Secrets| OpenBao
+      TB -->|REST API| Terrarium
 
       %% Cloud connections
-      Spider -->|Cloud APIs| AWS
-      Spider -->|Cloud APIs| Azure
-      Spider -->|Cloud APIs| GCP
-      Spider -->|Cloud APIs| Others
-      Terrarium -->|OpenTofu| AWS
-      Terrarium -->|OpenTofu| Azure
-      Terrarium -->|OpenTofu| GCP
+      Terrarium -->|OpenTofu| CloudProviders
+      Spider -->|Cloud APIs| CloudProviders
+      TB -->|Direct API<br/>Route53| CloudProviders
+
+      %% Invisible rank constraints: force Cloud Providers below Docker Compose
+      PG ~~~ OpenStack
+      ETCD ~~~ Azure
+      Spider ~~~ GCP
+      Terrarium ~~~ Azure
+      TB ~~~ Others
+      OpenBao ~~~ AWS
 
       %% Styling
       classDef frontend fill:#e3f2fd,stroke:#1976d2
+      classDef core fill:#fff8e1,stroke:#f57f17,stroke-width:2px
       classDef backend fill:#f3e5f5,stroke:#7b1fa2
-      classDef storage fill:#e8f5e8,stroke:#388e3c
-      classDef cloud fill:#fff3e0,stroke:#f57c00
+      classDef datastore fill:#eceff1,stroke:#607d8b
       classDef secrets fill:#fce4ec,stroke:#c62828
+      classDef cloud fill:#fff3e0,stroke:#f57c00
 
       class UI,MCP,Proxy frontend
-      class TB,Spider,Terrarium,ETCD,PG backend
-      class AWS,Azure,GCP,Others cloud
+      class TB core
+      class Spider,Terrarium backend
+      class ETCD,PG datastore
       class OpenBao secrets
+      class AWS,Azure,GCP,Alibaba,Tencent,IBM,NCP,NHN,KT,OpenStack,Others cloud
   ```
 
   ![image](https://github.com/user-attachments/assets/4466b6ff-6566-4ee0-ae60-d57e3d152821)

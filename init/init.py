@@ -811,7 +811,7 @@ if run_load_templates:
                         template_type = "securityGroup"
                     elif "mciDynamicReq" in template_data:
                         template_type = "mci"
-                    elif "vNetReq" in template_data:
+                    elif "vNetReq" in template_data or "vNetPolicy" in template_data:
                         template_type = "vNet"
                     elif "securityGroupReq" in template_data:
                         template_type = "securityGroup"
