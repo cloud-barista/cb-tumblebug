@@ -133,8 +133,8 @@ func RunServer() {
 	e.Use(middlewares.Zerologger(logfilter.APISkipPatterns))
 
 	e.Use(middleware.Recover())
-	// limit the application to 20 requests/sec using the default in-memory store
-	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
+	// limit the application to 50 requests/sec using the default in-memory store
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(50)))
 
 	// Custom middleware for RequestContext
 	// Injects request-scoped metadata (credential holder, request ID, etc.)

@@ -836,9 +836,16 @@ if run_load_templates:
                     except Exception:
                         pass
 
-                    # POST template to appropriate API endpoint based on template type
+                    # POST template to appropriate API endpoint based on template type.
+                    # Small delay to avoid hitting the server-side global rate limiter (20 req/sec).
+                    time.sleep(0.1)
                     url = f"http://{TUMBLEBUG_SERVER}/tumblebug/ns/{ns_id}/template/{template_type}"
                     resp = requests.post(url, json=template_data, headers=HEADERS, timeout=30)
+
+                    # Retry once on rate limit (429)
+                    if resp.status_code == 429:
+                        time.sleep(1)
+                        resp = requests.post(url, json=template_data, headers=HEADERS, timeout=30)
 
                     template_name = template_data.get("name", os.path.basename(tf))
                     if resp.status_code == 200:
