@@ -1,0 +1,110 @@
+{
+  "nsId": "system",
+  "resourceType": "mci",
+  "name": "mc-openstack-template",
+  "description": "Template extracted from MCI: mc-openstack",
+  "mciDynamicReq": {
+    "name": "mc-openstack",
+    "subGroups": [
+      {
+        "name": "g1",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+ap-northeast-2+m5.metal",
+        "imageId": "ami-08a4fd517a4872931",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-ap-northeast-2",
+        "zone": "ap-northeast-2a"
+      },
+      {
+        "name": "g2",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+ap-east-1+m5.metal",
+        "imageId": "ami-0ed4fd6805d8ecb23",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-ap-east-1",
+        "zone": "ap-east-1a"
+      },
+      {
+        "name": "g3",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+eu-north-1+m5.metal",
+        "imageId": "ami-0c33fcb753a7176f6",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-eu-north-1",
+        "zone": "eu-north-1a"
+      },
+      {
+        "name": "g4",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+ca-central-1+m5.metal",
+        "imageId": "ami-0631168b8ae6e1731",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-ca-central-1",
+        "zone": "ca-central-1a"
+      },
+      {
+        "name": "g5",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+us-west-1+m5.metal",
+        "imageId": "ami-072028e29f8a73b88",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-us-west-1",
+        "zone": "us-west-1a"
+      },
+      {
+        "name": "g6",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+sa-east-1+m5.metal",
+        "imageId": "ami-0533a139e02b00be4",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-sa-east-1",
+        "zone": "sa-east-1a"
+      },
+      {
+        "name": "g7",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+af-south-1+m5.metal",
+        "imageId": "ami-0340a8d15d1d11b56",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-af-south-1",
+        "zone": "af-south-1a"
+      },
+      {
+        "name": "g8",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+ap-southeast-2+m5.metal",
+        "imageId": "ami-0c73bd9145b5546f5",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-ap-southeast-2",
+        "zone": "ap-southeast-2a"
+      },
+      {
+        "name": "g9",
+        "subGroupSize": 1,
+        "description": "mapui",
+        "specId": "aws+eu-south-1+m5.metal",
+        "imageId": "ami-036328180182924dd",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 300,
+        "connectionName": "aws-eu-south-1",
+        "zone": "eu-south-1a"
+      }
+    ]
+  }
+}
