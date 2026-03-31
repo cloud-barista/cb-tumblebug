@@ -15981,9 +15981,15 @@ paths:
       description: List all hosted zones available in Route53
       operationId: GetHostedZones
       parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       - name: x-credential-holder
         in: header
-        description: Credential holder ID
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -16024,9 +16030,15 @@ paths:
         description: Record Type
         schema:
           type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       - name: x-credential-holder
         in: header
-        description: Credential holder ID
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -16061,9 +16073,15 @@ paths:
         3. Manual IP Values (values): Manually provide IP addresses (simple routing only).
       operationId: PutGlobalDnsRecord
       parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       - name: x-credential-holder
         in: header
-        description: Credential holder ID
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       responses:
@@ -16094,9 +16112,15 @@ paths:
         If setIdentifier is empty, deletes all records matching the name and type.
       operationId: DeleteGlobalDnsRecord
       parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       - name: x-credential-holder
         in: header
-        description: Credential holder ID
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:
@@ -16136,9 +16160,15 @@ paths:
         Records are grouped by domain and submitted as a single ChangeBatch per domain for efficiency.
       operationId: BulkDeleteGlobalDnsRecord
       parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
       - name: x-credential-holder
         in: header
-        description: Credential holder ID
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
         schema:
           type: string
       requestBody:

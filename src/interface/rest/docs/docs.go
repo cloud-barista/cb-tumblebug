@@ -18941,7 +18941,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Credential holder ID",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
                         "name": "x-credential-holder",
                         "in": "header"
                     }
@@ -18998,7 +19004,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Credential holder ID",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
                         "name": "x-credential-holder",
                         "in": "header"
                     }
@@ -19040,7 +19052,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Credential holder ID",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
                         "name": "x-credential-holder",
                         "in": "header"
                     }
@@ -19091,7 +19109,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Credential holder ID",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
                         "name": "x-credential-holder",
                         "in": "header"
                     }
@@ -19144,7 +19168,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Credential holder ID",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
                         "name": "x-credential-holder",
                         "in": "header"
                     }

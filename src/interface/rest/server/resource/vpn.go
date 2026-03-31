@@ -47,6 +47,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/site [get]
 func RestGetSitesInMci(c echo.Context) error {
+	// ctx := c.Request().Context() // ctx is defined but not used here as ExtractSitesInfoFromMciInfo doesn't take context yet, but following the requested pattern.
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -283,6 +284,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn [post]
 func RestPostSiteToSiteVpn(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -331,7 +333,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.CreateSiteToSiteVPN(c.Request().Context(), nsId, mciId, vpnReq, action)
+	resp, err := resource.CreateSiteToSiteVPN(ctx, nsId, mciId, vpnReq, action)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -360,6 +362,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn [get]
 func RestGetAllSiteToSiteVpn(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -386,14 +389,14 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 
 	switch option {
 	case "InfoList":
-		vpnInfoList, err := resource.GetAllSiteToSiteVPN(c.Request().Context(), nsId, mciId)
+		vpnInfoList, err := resource.GetAllSiteToSiteVPN(ctx, nsId, mciId)
 		if err != nil {
 			log.Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 		}
 		return c.JSON(http.StatusOK, vpnInfoList)
 	case "IdList":
-		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(c.Request().Context(), nsId, mciId)
+		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(ctx, nsId, mciId)
 		if err != nil {
 			log.Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -426,6 +429,7 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [get]
 func RestGetSiteToSiteVpn(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -461,7 +465,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	// * Only provide the "refined" detail level for now
 	detail := "refined"
-	resp, err := resource.GetSiteToSiteVPN(c.Request().Context(), nsId, mciId, vpnId, detail, refreshBool)
+	resp, err := resource.GetSiteToSiteVPN(ctx, nsId, mciId, vpnId, detail, refreshBool)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -491,6 +495,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [delete]
 func RestDeleteSiteToSiteVpn(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -516,7 +521,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.DeleteSiteToSiteVPN(c.Request().Context(), nsId, mciId, vpnId)
+	resp, err := resource.DeleteSiteToSiteVPN(ctx, nsId, mciId, vpnId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -544,6 +549,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId} [get]
 func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -575,7 +581,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	}
 	reqId = strings.TrimSpace(reqId)
 
-	resp, err := resource.GetRequestStatusOfSiteToSiteVpn(c.Request().Context(), nsId, mciId, vpnId, reqId)
+	resp, err := resource.GetRequestStatusOfSiteToSiteVpn(ctx, nsId, mciId, vpnId, reqId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
