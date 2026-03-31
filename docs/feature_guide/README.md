@@ -17,6 +17,7 @@ This directory contains detailed documentation for specific features of CB-Tumbl
 | **[Remote Command & File Transfer](remote-command-and-file-transfer.md)** | Guide for executing remote commands and transferring files to MCI VMs via Bastion Host with TOFU (Trust On First Use) SSH host key verification. |
 | **[Resource Template Management](resource-template-management.md)** | Guide for defining, storing, and applying reusable infrastructure templates (MCI, vNet, SecurityGroup) to enable repeatable multi-cloud provisioning. |
 | **[OpenStack-Type CSP Support](openstack-type-csp-support.md)** | Guide for adding OpenStack-based CSPs with 1:N Cloud Platform mapping (cloudinfo.yaml + credentials.yaml). |
+| **[`make init` Workflow](make-init-workflow.md)** | Detailed walkthrough of the two-phase initialization process: OpenBao credential registration and Tumblebug asset loading, with interaction diagrams for each component. |
 
 ## 🚀 Purpose
 
