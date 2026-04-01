@@ -32,43 +32,19 @@ The diagram below shows which `.env` variables flow into which containers, and w
 
 ```mermaid
 graph TD
-    EnvFile[".env<br/>(project root)"]
+    EnvFile[".env\n(project root)"]
 
-    subgraph DockerCompose["Docker Compose — variable injection"]
-        direction TB
+    TB_svc["cb-tumblebug\nTB_API_USERNAME / TB_API_PASSWORD\nTERRARIUM_API_USERNAME / TERRARIUM_API_PASSWORD\nVAULT_TOKEN"]
+    Spider_svc["cb-spider\nSPIDER_USERNAME / SPIDER_PASSWORD"]
+    Terrarium_svc["mc-terrarium\nTERRARIUM_API_USERNAME / TERRARIUM_API_PASSWORD\nVAULT_TOKEN"]
+    OpenBao_svc["openbao\n(no .env vars injected)\nVAULT_TOKEN written back by init-openbao.sh"]
+    Compose_meta["Docker Compose\nCOMPOSE_FILE"]
 
-        subgraph TB_svc["cb-tumblebug container"]
-            TB_U["TB_API_USERNAME :? required"]
-            TB_P["TB_API_PASSWORD :? required"]
-            TR_U2["TERRARIUM_API_USERNAME :? required"]
-            TR_P2["TERRARIUM_API_PASSWORD :? required"]
-            VT2["VAULT_TOKEN :- optional (empty default)"]
-        end
-
-        subgraph Spider_svc["cb-spider container"]
-            SP_U["SPIDER_USERNAME :? required"]
-            SP_P["SPIDER_PASSWORD :? required"]
-        end
-
-        subgraph Terrarium_svc["mc-terrarium container"]
-            TR_U["TERRARIUM_API_USERNAME :? required"]
-            TR_P["TERRARIUM_API_PASSWORD :? required"]
-            VT3["VAULT_TOKEN :- optional (empty default)"]
-        end
-
-        subgraph OpenBao_svc["openbao container"]
-            note_bao["No .env vars injected<br/>VAULT_TOKEN is written here<br/>by init-openbao.sh after first init"]
-        end
-
-        subgraph Compose_meta["Docker Compose itself"]
-            CF["COMPOSE_FILE<br/>(selects which compose files to merge)"]
-        end
-    end
-
-    EnvFile -->|interpolation| TB_U & TB_P & TR_U2 & TR_P2 & VT2
-    EnvFile -->|interpolation| SP_U & SP_P
-    EnvFile -->|interpolation| TR_U & TR_P & VT3
-    EnvFile -->|compose config| CF
+    EnvFile -->|interpolation| TB_svc
+    EnvFile -->|interpolation| Spider_svc
+    EnvFile -->|interpolation| Terrarium_svc
+    EnvFile -.->|"no injection\n(token written back)"| OpenBao_svc
+    EnvFile -->|compose config| Compose_meta
 
     style EnvFile fill:#fff8e1,stroke:#f57f17,stroke-width:2px
     style TB_svc fill:#fff0e0,stroke:#e07000
