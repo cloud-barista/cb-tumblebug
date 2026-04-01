@@ -32,43 +32,19 @@ The diagram below shows which `.env` variables flow into which containers, and w
 
 ```mermaid
 graph TD
-    EnvFile[".env<br/>(project root)"]
+    EnvFile[".env\n(project root)"]
 
-    subgraph DockerCompose["Docker Compose — variable injection"]
-        direction TB
+    TB_svc["cb-tumblebug\nTB_API_USERNAME / TB_API_PASSWORD\nTERRARIUM_API_USERNAME / TERRARIUM_API_PASSWORD\nVAULT_TOKEN"]
+    Spider_svc["cb-spider\nSPIDER_USERNAME / SPIDER_PASSWORD"]
+    Terrarium_svc["mc-terrarium\nTERRARIUM_API_USERNAME / TERRARIUM_API_PASSWORD\nVAULT_TOKEN"]
+    OpenBao_svc["openbao\n(no .env vars injected)\nVAULT_TOKEN written back by init-openbao.sh"]
+    Compose_meta["Docker Compose\nCOMPOSE_FILE"]
 
-        subgraph TB_svc["cb-tumblebug container"]
-            TB_U["TB_API_USERNAME :? required"]
-            TB_P["TB_API_PASSWORD :? required"]
-            TR_U2["TERRARIUM_API_USERNAME :? required"]
-            TR_P2["TERRARIUM_API_PASSWORD :? required"]
-            VT2["VAULT_TOKEN :- optional (empty default)"]
-        end
-
-        subgraph Spider_svc["cb-spider container"]
-            SP_U["SPIDER_USERNAME :? required"]
-            SP_P["SPIDER_PASSWORD :? required"]
-        end
-
-        subgraph Terrarium_svc["mc-terrarium container"]
-            TR_U["TERRARIUM_API_USERNAME :? required"]
-            TR_P["TERRARIUM_API_PASSWORD :? required"]
-            VT3["VAULT_TOKEN :- optional (empty default)"]
-        end
-
-        subgraph OpenBao_svc["openbao container"]
-            note_bao["No .env vars injected<br/>VAULT_TOKEN is written here<br/>by init-openbao.sh after first init"]
-        end
-
-        subgraph Compose_meta["Docker Compose itself"]
-            CF["COMPOSE_FILE<br/>(selects which compose files to merge)"]
-        end
-    end
-
-    EnvFile -->|interpolation| TB_U & TB_P & TR_U2 & TR_P2 & VT2
-    EnvFile -->|interpolation| SP_U & SP_P
-    EnvFile -->|interpolation| TR_U & TR_P & VT3
-    EnvFile -->|compose config| CF
+    EnvFile -->|interpolation| TB_svc
+    EnvFile -->|interpolation| Spider_svc
+    EnvFile -->|interpolation| Terrarium_svc
+    EnvFile -.->|"no injection\n(token written back)"| OpenBao_svc
+    EnvFile -->|compose config| Compose_meta
 
     style EnvFile fill:#fff8e1,stroke:#f57f17,stroke-width:2px
     style TB_svc fill:#fff0e0,stroke:#e07000
@@ -217,6 +193,15 @@ sequenceDiagram
             TB-->>Script: namespace ready
             Script->>PG: pg_restore assets/assets.dump.gz<br/>(specs + images + pricing)
             PG-->>Script: Restore complete
+        else Option A+ – Restore from backup + patch CSV (~2 min)
+            Script->>TB: POST /tumblebug/ns  (ensure 'system' namespace)
+            TB-->>Script: namespace ready
+            Script->>PG: pg_restore assets/assets.dump.gz<br/>(specs + images + pricing)
+            PG-->>Script: Restore complete
+            Script->>TB: POST /tumblebug/updateImagesFromAsset<br/>(apply latest cloudimage.csv on top)
+            TB->>PG: Upsert images from CSV
+            PG-->>TB: Updated
+            TB-->>Script: patch complete
         else Option B – Fetch from CSPs, skip Azure (~20 min)
             Script->>TB: GET /tumblebug/loadAssets
             TB->>Spider: Fetch VM specs per region (parallel)
@@ -337,11 +322,13 @@ flowchart TD
         subgraph AssetLoad["Asset Loading"]
             Choice{User choice}
             OptA["Option A: Restore from backup\n~1 min\npg_restore assets.dump.gz\n→ specs + images + pricing"]
+            OptAPlus["Option A+: Restore from backup + patch CSV\n~2 min\npg_restore assets.dump.gz\n→ POST /tumblebug/updateImagesFromAsset\n(apply latest cloudimage.csv on top)"]
             OptB["Option B: Fetch from CSPs\n~20 min (no Azure)\nGET /tumblebug/loadAssets"]
             OptC["Option C: Fetch ALL CSPs\n~40+ min (incl. Azure)\nGET /tumblebug/loadAssets?includeAzure=true"]
             Price["POST /tumblebug/fetchPrice\n~10 min (B/C only, cancellable)"]
 
-            Choice -->|backup exists| OptA
+            Choice -->|backup only| OptA
+            Choice -->|backup + CSV patch| OptAPlus
             Choice -->|fresh fetch| OptB
             Choice -->|fresh + Azure| OptC
             OptB --> Price
@@ -424,6 +411,7 @@ flowchart LR
 | Phase 1 (OpenBao) | ~1 min | CSP credentials in KV v2 |
 | Phase 2 – Credential registration | ~1–2 min | All credential holders × CSPs × regions |
 | Phase 2 – Asset restore (Option A) | ~1 min | Specs + images + pricing (from backup) |
+| Phase 2 – Asset restore + CSV patch (Option A+) | ~2 min | Specs + images + pricing (from backup) + latest cloudimage.csv applied on top |
 | Phase 2 – Asset fetch, no Azure (Option B) | ~20 min | Specs + images (live from CSPs) |
 | Phase 2 – Asset fetch, all CSPs (Option C) | ~40+ min | Specs + images incl. Azure (live) |
 | Phase 2 – Price fetch (Options B/C only) | ~10 min | Pricing for all specs |

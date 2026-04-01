@@ -48,15 +48,15 @@ cloud:
         zone:
         - ap-northeast-2a
         - ap-northeast-2b
-      ap-south-1:
-        description: Mumbai
-        location:
-          display: India (Mumbai)
-          latitude: 19.08
-          longitude: 72.88
-        zone:
-        - ap-south-1a
-        - ap-south-1b
+      # ap-south-1:
+      #   description: Mumbai
+      #   location:
+      #     display: India (Mumbai)
+      #     latitude: 19.08
+      #     longitude: 72.88
+      #   zone:
+      #   - ap-south-1a
+      #   - ap-south-1b
       ap-southeast-1:
         description: Singapore
         location:
@@ -67,15 +67,15 @@ cloud:
         - ap-southeast-1a
         - ap-southeast-1b
         - ap-southeast-1c
-      ap-southeast-2:
-        description: Australia (Sydney)
-        location:
-          display: Australia (Sydney)
-          latitude: -33.86
-          longitude: 151.2
-        zone:
-        - ap-southeast-2a
-        - ap-southeast-2b
+      # ap-southeast-2:
+      #   description: Australia (Sydney)
+      #   location:
+      #     display: Australia (Sydney)
+      #     latitude: -33.86
+      #     longitude: 151.2
+      #   zone:
+      #   - ap-southeast-2a
+      #   - ap-southeast-2b
       ap-southeast-3:
         description: Malaysia (Kuala Lumpur)
         location:
@@ -498,16 +498,16 @@ cloud:
         - eu-west-3a
         - eu-west-3b
         - eu-west-3c
-      me-south-1:
-        description: Middle East (Bahrain)
-        location:
-          display: Middle East (Bahrain)
-          latitude: 25.0
-          longitude: 49.6
-        zone:
-        - me-south-1a
-        - me-south-1b
-        - me-south-1c
+      # me-south-1:
+      #   description: Middle East (Bahrain)
+      #   location:
+      #     display: Middle East (Bahrain)
+      #     latitude: 25.0
+      #     longitude: 49.6
+      #   zone:
+      #   - me-south-1a
+      #   - me-south-1b
+      #   - me-south-1c
       sa-east-1:
         description: South America (Sao Paulo)
         location:
@@ -996,13 +996,13 @@ cloud:
         - '1'
         - '2'
         - '3'
-      jioindiawest:
-        description: Jio India West
-        location:
-          display: Jio India West
-          latitude: 19.86858
-          longitude: 73.10469
-        zone: []
+      # jioindiawest:
+      #   description: Jio India West
+      #   location:
+      #     display: Jio India West
+      #     latitude: 19.86858
+      #     longitude: 73.10469
+      #   zone: []
       # jioindiacentral:
       #  description: Jio India Central - DR region (No VM support)
       #  location:
@@ -1811,15 +1811,15 @@ cloud:
         zone:
         - jp-pub-a
         - jp-pub-b
-      US1:
-        id: US1
-        desc: US West (California)
-        location:
-          display: California, USA
-          latitude: 37.7749
-          longitude: -122.4194
-        zone:
-        - us-pub-a
+      # US1:
+      #   id: US1
+      #   desc: US West (California)
+      #   location:
+      #     display: California, USA
+      #     latitude: 37.7749
+      #     longitude: -122.4194
+      #   zone:
+      #   - us-pub-a
   openstack:
     description: OpenStack
     driver: openstack-driver-v1.0.so
@@ -1914,15 +1914,15 @@ cloud:
         zone:
         - ap-jakarta-1
         - ap-jakarta-2
-      ap-mumbai:
-        description: Mumbai
-        location:
-          display: India (Mumbai)
-          latitude: 19.075983
-          longitude: 72.877655
-        zone:
-        - ap-mumbai-1
-        - ap-mumbai-2
+      # ap-mumbai:
+      #   description: Mumbai
+      #   location:
+      #     display: India (Mumbai)
+      #     latitude: 19.075983
+      #     longitude: 72.877655
+      #   zone:
+      #   - ap-mumbai-1
+      #   - ap-mumbai-2
       ap-nanjing:
         description: Nanjing
         location:
@@ -1980,13 +1980,13 @@ cloud:
         zone:
         - eu-frankfurt-1
         - eu-frankfurt-2
-      eu-moscow:
-        description: Moscow
-        location:
-          display: Europe (Moscow)
-          latitude: 55.755826
-          longitude: 37.6173
-        zone: []
+      # eu-moscow:
+      #   description: Moscow
+      #   location:
+      #     display: Europe (Moscow)
+      #     latitude: 55.755826
+      #     longitude: 37.6173
+      #   zone: []
       na-ashburn:
         description: Virginia
         location:
@@ -2005,14 +2005,14 @@ cloud:
         zone:
         - na-siliconvalley-1
         - na-siliconvalley-2
-      na-toronto:
-        description: Toronto
-        location:
-          display: North America (Toronto)
-          latitude: 43.653226
-          longitude: -79.383184
-        zone:
-        - na-toronto-1
+      # na-toronto:
+      #   description: Toronto
+      #   location:
+      #     display: North America (Toronto)
+      #     latitude: 43.653226
+      #     longitude: -79.383184
+      #   zone:
+      #   - na-toronto-1
       sa-saopaulo:
         description: Sao Paulo
         location:

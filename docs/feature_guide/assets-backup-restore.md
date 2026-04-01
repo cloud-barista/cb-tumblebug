@@ -4,11 +4,12 @@ CB-Tumblebug stores VM specs, OS images, and pricing data in PostgreSQL. Fetchin
 
 ## Time Comparison
 
-| Method | Time |
-|--------|------|
-| **Restore from backup** | **~1 min** |
-| Fetch from CSPs (no Azure) | ~20–30 min |
-| Fetch from ALL CSPs | ~40–50 min |
+| Method (`make init` option) | Time | Notes |
+|--------|------|-------|
+| **a. Restore from backup** | **~1 min** | Backup data only; `cloudimage.csv` not re-applied |
+| **a+. Restore from backup + patch CSV** | **~2 min** | Backup data + latest `cloudimage.csv` applied on top |
+| b. Fetch from CSPs (no Azure) | ~20–30 min | Live fetch; `cloudimage.csv` merged at the end |
+| c. Fetch from ALL CSPs | ~40–50 min | Live fetch incl. Azure; `cloudimage.csv` merged at the end |
 
 ---
 
@@ -18,7 +19,12 @@ CB-Tumblebug stores VM specs, OS images, and pricing data in PostgreSQL. Fetchin
 # Backup current database
 make backup-assets
 
-# Restore from backup
+# Restore from backup (via make init — recommended)
+# Select option a  : restore only       (~1 min)
+# Select option a+ : restore + CSV patch (~2 min, useful when cloudimage.csv was updated)
+make init
+
+# Restore directly from backup file (bypasses init menu)
 make restore-assets
 
 # Restore from specific file
@@ -105,6 +111,28 @@ flowchart LR
 **Included (PostgreSQL):** VM specs, OS images, pricing, region info
 
 **Not included (stored in etcd):** Running MCIs, namespaces, credentials
+
+---
+
+## `cloudimage.csv` and the Backup
+
+`assets/cloudimage.csv` is a hand-curated list of images that are difficult to obtain via CSP APIs — images that change too frequently, take too long to fetch, or are not exposed through standard APIs (e.g., Azure marketplace images, AWS/GCP Kubernetes node type identifiers).
+
+During `make init` with options **b** or **c**, `cloudimage.csv` is automatically merged into the database *after* the CSP fetch completes. The backup (`assets.dump.gz`) captures whatever state was current *at backup time*, including any previously applied CSV data.
+
+If `cloudimage.csv` has been updated since the backup was created, use **option a+** to restore the backup and immediately re-apply the latest CSV on top — without a full CSP fetch.
+
+```
+Option a  → pg_restore only
+            (cloudimage.csv state as of backup time)
+
+Option a+ → pg_restore
+            + POST /tumblebug/updateImagesFromAsset
+            (cloudimage.csv re-applied from current file)
+
+Option b/c → live CSP fetch
+            + cloudimage.csv merged at the end
+```
 
 ---
 
