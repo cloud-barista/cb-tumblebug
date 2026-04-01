@@ -86,6 +86,25 @@ wait_for_apt() {
 wait_for_apt
 
 # ============================================================
+# Retry helper for transient network failures
+# ============================================================
+retry() {
+    local max_attempts=3
+    local delay=15
+    local attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        if "$@"; then
+            return 0
+        fi
+        echo "Attempt $attempt/$max_attempts failed. Retrying in ${delay}s..."
+        sleep $delay
+        attempt=$((attempt + 1))
+    done
+    echo "ERROR: Command failed after $max_attempts attempts: $*"
+    return 1
+}
+
+# ============================================================
 # Pre-flight checks
 # ============================================================
 echo ""
@@ -128,13 +147,13 @@ echo "  All pre-flight checks passed."
 # ============================================================
 echo ""
 echo "[1/5] Updating system packages..."
-sudo apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq \
+retry sudo apt-get update -qq
+retry sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq \
     -o Dpkg::Options::="--force-confdef" \
     -o Dpkg::Options::="--force-confold"
 
 echo "Installing prerequisites..."
-sudo apt-get install -y -qq git python3-pip python3-venv net-tools curl jq
+retry sudo apt-get install -y -qq git python3-pip python3-venv net-tools curl jq
 
 # ============================================================
 # Step 2: Create stack user (DevStack requirement)
@@ -156,15 +175,25 @@ echo "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/stack > /dev/null
 echo ""
 echo "[3/5] Cloning DevStack ($OPENSTACK_BRANCH)..."
 
-sudo -u stack OPENSTACK_BRANCH="$OPENSTACK_BRANCH" bash <<'DEVSTACK_CLONE'
+# Pre-configure git for the stack user to handle large repos over GnuTLS reliably.
+# - http.version HTTP/1.1: avoids GnuTLS TLS-layer errors that occur with HTTP/2 GOAWAY
+#   frames on large repo clones (the "TLS connection was non-properly terminated" error).
+# - http.postBuffer: increases curl send buffer to 500 MiB for large pack transfers.
+# - http.lowSpeedLimit/Time: prevents git from aborting slow-but-progressing clones.
+sudo -u stack git config --global http.version HTTP/1.1
+sudo -u stack git config --global http.postBuffer 524288000
+sudo -u stack git config --global http.lowSpeedLimit 1000
+sudo -u stack git config --global http.lowSpeedTime 60
+
+retry sudo -u stack bash -c "OPENSTACK_BRANCH='$OPENSTACK_BRANCH'
     cd /opt/stack
     if [ -d devstack ]; then
         echo 'DevStack directory exists, pulling latest...'
-        cd devstack && git checkout "$OPENSTACK_BRANCH" && git pull
+        cd devstack && git checkout \"\$OPENSTACK_BRANCH\" && git pull
     else
-        git clone https://opendev.org/openstack/devstack -b "$OPENSTACK_BRANCH"
+        git clone https://opendev.org/openstack/devstack -b \"\$OPENSTACK_BRANCH\"
     fi
-DEVSTACK_CLONE
+"
 
 # ============================================================
 # Step 4: Configure DevStack (local.conf)
