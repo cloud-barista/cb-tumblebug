@@ -307,7 +307,7 @@ if run_load_assets:
     if use_backup:
         operations.append(f"Load assets from backup ({backup_size_mb:.1f} MB - includes specs, images, pricing)")
         if patch_after_restore:
-            operations.append("Patch images from cloudimage.csv (POST /updateImagesFromAsset)")
+            operations.append("Patch images from cloudimage.csv (POST /tumblebug/updateImagesFromAsset)")
     else:
         operations.append("Load assets (fetch from CSPs)")
 if run_fetch_price and not use_backup:
@@ -321,10 +321,10 @@ for i, op in enumerate(operations, 1):
 
 if use_backup and patch_after_restore:
     print("")
-    print(Fore.GREEN + "  ℹ️  Using backup + CSV patch - Steps 2 & 3 completed in ~2 minutes")
+    print(Fore.GREEN + "  ℹ️  Using backup + CSV patch - Steps 2 & 3 are expected to complete in ~2 minutes")
 elif use_backup:
     print("")
-    print(Fore.GREEN + "  ℹ️  Using backup - Steps 2 & 3 completed in ~1 minute")
+    print(Fore.GREEN + "  ℹ️  Using backup - Steps 2 & 3 are expected to complete in ~1 minute")
 elif run_load_assets and not backup_available:
     print("")
     print(Fore.YELLOW + "  ⚠️  No backup found - will fetch from CSPs (~20 minutes)")
@@ -700,6 +700,7 @@ if run_load_assets:
                         spinner_idx = 0
                         patch_elapsed = 0
                         is_tty = sys.stdout.isatty()
+                        last_print_sec = -1
                         while not patch_event.is_set():
                             time.sleep(0.08)
                             patch_elapsed += 0.08
@@ -708,6 +709,12 @@ if run_load_assets:
                             time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
                             if is_tty:
                                 print(f"\r   {spinner_chars[spinner_idx]} Patching... {time_str}", end="", flush=True)
+                            else:
+                                current_sec = int(patch_elapsed)
+                                if current_sec > last_print_sec:
+                                    last_print_sec = current_sec
+                                    if current_sec % 30 == 0:
+                                        print(f"   Patching cloudimage.csv... {time_str}", flush=True)
                         if is_tty:
                             print(f"\r{' ' * 60}\r", end="")
 
