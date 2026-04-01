@@ -193,6 +193,7 @@ backup_available = os.path.isfile(backup_db_path)
 backup_size_mb = 0
 backup_age_days = 0
 use_backup = False  # Decision variable
+patch_after_restore = False  # Decision variable: patch CSV assets after backup restore
 include_azure = False  # Decision variable for Azure image fetch
 
 if backup_available:
@@ -236,6 +237,11 @@ if run_load_assets and backup_available and not args.yes:
     print(Fore.WHITE + "     Contains: Specs, Images, and Pricing data")
     print(Fore.WHITE + "     → Steps 2 & 3 will be skipped")
     print("")
+    print(Fore.GREEN + "  a+. ⏩ Restore from backup + patch CSV assets (~2 minutes)")
+    print(Fore.WHITE + f"     Location: ./assets/assets.dump.gz ({backup_size_mb:.1f} MB, {backup_age_days} days old)")
+    print(Fore.WHITE + "     → Restores backup, then applies latest cloudimage.csv on top")
+    print(Fore.WHITE + "     → Useful when cloudimage.csv has been updated since the backup was created")
+    print("")
     print(Fore.YELLOW + "  b. 🔄 Fetch fresh from CSPs (~10-20 minutes)")
     print(Fore.WHITE + "     → Fetches latest specs, images from cloud providers (excluding Azure)")
     print(Fore.WHITE + "     → Step 3 (pricing) will run separately if requested")
@@ -246,9 +252,15 @@ if run_load_assets and backup_available and not args.yes:
     print("")
 
     while True:
-        choice = input(Fore.CYAN + "Select option (a/b/c): " + Fore.RESET).lower()
+        choice = input(Fore.CYAN + "Select option (a/a+/b/c): " + Fore.RESET).lower()
         if choice in ["a"]:
             use_backup = True
+            patch_after_restore = False
+            include_azure = False
+            break
+        elif choice in ["a+"]:
+            use_backup = True
+            patch_after_restore = True
             include_azure = False
             break
         elif choice in ["b"]:
@@ -260,7 +272,7 @@ if run_load_assets and backup_available and not args.yes:
             include_azure = True
             break
         else:
-            print(Fore.RED + "Invalid input. Please enter 'a', 'b', or 'c'.")
+            print(Fore.RED + "Invalid input. Please enter 'a', 'a+', 'b', or 'c'.")
     print("")
 elif run_load_assets and backup_available and args.yes:
     # Auto-yes mode: use backup by default
@@ -294,6 +306,8 @@ if run_credentials:
 if run_load_assets:
     if use_backup:
         operations.append(f"Load assets from backup ({backup_size_mb:.1f} MB - includes specs, images, pricing)")
+        if patch_after_restore:
+            operations.append("Patch images from cloudimage.csv (POST /updateImagesFromAsset)")
     else:
         operations.append("Load assets (fetch from CSPs)")
 if run_fetch_price and not use_backup:
@@ -305,7 +319,10 @@ print(Fore.YELLOW + "=" * 80)
 for i, op in enumerate(operations, 1):
     print(Fore.CYAN + f"  {i}. {op}")
 
-if use_backup:
+if use_backup and patch_after_restore:
+    print("")
+    print(Fore.GREEN + "  ℹ️  Using backup + CSV patch - Steps 2 & 3 completed in ~2 minutes")
+elif use_backup:
     print("")
     print(Fore.GREEN + "  ℹ️  Using backup - Steps 2 & 3 completed in ~1 minute")
 elif run_load_assets and not backup_available:
@@ -655,6 +672,53 @@ if run_load_assets:
                             print(Fore.GREEN + "   ✅ 'system' namespace already exists")
                     except Exception as ns_err:
                         print(Fore.YELLOW + f"   ⚠️  Namespace check failed: {str(ns_err)}")
+
+                    # Patch with latest cloudimage.csv if requested (Option a+)
+                    if patch_after_restore:
+                        print(Fore.YELLOW + "\n   Patching with latest cloudimage.csv assets...")
+                        patch_response_holder = {}
+                        patch_event = threading.Event()
+
+                        def do_patch():
+                            try:
+                                r = requests.post(
+                                    f"http://{TUMBLEBUG_SERVER}/tumblebug/updateImagesFromAsset",
+                                    headers=HEADERS,
+                                    timeout=600,
+                                )
+                                patch_response_holder["status"] = r.status_code
+                                patch_response_holder["text"] = r.text[:200]
+                            except Exception as e:
+                                patch_response_holder["error"] = str(e)
+                            finally:
+                                patch_event.set()
+
+                        patch_thread = threading.Thread(target=do_patch)
+                        patch_thread.start()
+
+                        spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+                        spinner_idx = 0
+                        patch_elapsed = 0
+                        is_tty = sys.stdout.isatty()
+                        while not patch_event.is_set():
+                            time.sleep(0.08)
+                            patch_elapsed += 0.08
+                            spinner_idx = (spinner_idx + 1) % len(spinner_chars)
+                            mins, secs = divmod(int(patch_elapsed), 60)
+                            time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
+                            if is_tty:
+                                print(f"\r   {spinner_chars[spinner_idx]} Patching... {time_str}", end="", flush=True)
+                        if is_tty:
+                            print(f"\r{' ' * 60}\r", end="")
+
+                        patch_thread.join()
+
+                        if "error" in patch_response_holder:
+                            print(Fore.YELLOW + f"   ⚠️  Patch failed (non-critical): {patch_response_holder['error']}")
+                        elif patch_response_holder.get("status") in (200, 202):
+                            print(Fore.GREEN + f"   ✅ cloudimage.csv patch applied successfully (elapsed: {int(patch_elapsed)}s)")
+                        else:
+                            print(Fore.YELLOW + f"   ⚠️  Patch returned HTTP {patch_response_holder.get('status')}: {patch_response_holder.get('text', '')}")
 
                     # Skip the load_resources call since DB is already populated
                     run_load_assets = False  # Mark as completed
