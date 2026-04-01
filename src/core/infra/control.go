@@ -584,6 +584,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	url := ""
 	method := ""
+	// timeout is set per-action below; terminate needs extra time for bare-metal instances
+	timeout := 20 * time.Minute
 	switch action {
 	case model.ActionTerminate:
 
@@ -593,6 +595,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 		url = model.SpiderRestUrl + "/vm/" + cspResourceName
 		method = "DELETE"
+		// Bare-metal instances (e.g. AWS m5.metal) can take significantly longer to terminate
+		timeout = 40 * time.Minute
 
 		// Cancel any active SSH commands for this VM to prevent hanging sessions
 		CancelActiveCommandsForVm(vmId)
@@ -628,7 +632,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 		url = model.SpiderRestUrl + "/controlvm/" + cspResourceName + "?action=resume"
 		method = "GET"
 	default:
-		callResult.Error = fmt.Errorf(action + " is invalid actionType")
+		callResult.Error = fmt.Errorf("%s is invalid actionType", action)
 		results <- callResult
 		return
 	}
@@ -650,18 +654,15 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	UpdateVmInfo(nsId, mciId, temp)
 
 	client := clientManager.NewHttpClient()
-	client.SetTimeout(20 * time.Minute)
-
-	// Set longer timeout for NCP (VPC)
+	// NCP requires a slightly longer timeout due to its control plane characteristics
 	if csp.ResolveCloudPlatform(temp.ConnectionConfig.ProviderName) == csp.NCP {
-		client.SetTimeout(25 * time.Minute)
+		client.SetTimeout(timeout + 10*time.Minute)
+	} else {
+		client.SetTimeout(timeout)
 	}
 
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = temp.ConnectionName
-
-	// log.Debug().Msgf("[ControlVmAsync] VM %s: Calling CB-Spider control API - URL: %s, ConnectionName: %s, Action: %s",
-	// 	vmId, url, temp.ConnectionName, action)
 
 	_, err = clientManager.ExecuteHttpRequest(
 		client,

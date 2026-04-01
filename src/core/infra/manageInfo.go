@@ -44,12 +44,6 @@ var mciInfoMutex sync.Mutex
 // ListMciId is func to list MCI ID
 func ListMciId(nsId string) ([]string, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
 	var mciList []string
 
 	// Check MCI exists
@@ -216,17 +210,6 @@ func ListVmBySubGroup(nsId string, mciId string, groupId string) ([]string, erro
 // GetSubGroup is func to return list of SubGroups in a given MCI
 func GetSubGroup(nsId string, mciId string, subGroupId string) (model.SubGroupInfo, error) {
 	subGroupInfo := model.SubGroupInfo{}
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return subGroupInfo, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return subGroupInfo, err
-	}
 
 	key := common.GenMciSubGroupKey(nsId, mciId, subGroupId)
 	keyValue, _, err := kvstore.GetKv(key)
@@ -245,18 +228,6 @@ func GetSubGroup(nsId string, mciId string, subGroupId string) (model.SubGroupIn
 
 // ListSubGroupId is func to return list of SubGroups in a given MCI
 func ListSubGroupId(nsId string, mciId string) ([]string, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
 
 	//log.Debug().Msg("[ListSubGroupId]")
 	key := common.GenMciKey(nsId, mciId, "")
@@ -2461,7 +2432,14 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	// Check MCI status is Terminated (not Partial)
 	// Allow deletion for: Terminated, Undefined, Failed, Preparing, Prepared, Empty
 	if mciStatus.Id != "" && !(!strings.Contains(mciStatus.Status, "Partial-") && (strings.Contains(mciStatus.Status, model.StatusTerminated) || strings.Contains(mciStatus.Status, model.StatusUndefined) || strings.Contains(mciStatus.Status, model.StatusFailed) || strings.Contains(mciStatus.Status, model.StatusPreparing) || strings.Contains(mciStatus.Status, model.StatusPrepared) || strings.Contains(mciStatus.Status, model.StatusEmpty))) {
-		err := fmt.Errorf("MCI %s is %s, which is not a deletable status (Terminated/Undefined/Failed/Preparing/Prepared/Empty). Use option=force for forced deletion", mciId, mciStatus.Status)
+		var err error
+		if strings.Contains(mciStatus.Status, model.StatusTerminating) {
+			// Termination is still in progress (e.g. bare-metal instances take several minutes).
+			// The caller should retry deletion after a while.
+			err = fmt.Errorf("MCI %s is still %s — termination is in progress. Please retry deletion in a few minutes", mciId, mciStatus.Status)
+		} else {
+			err = fmt.Errorf("MCI %s is %s, which is not a deletable status (Terminated/Undefined/Failed/Preparing/Prepared/Empty). Use option=force for forced deletion", mciId, mciStatus.Status)
+		}
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err
@@ -2703,24 +2681,6 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 // The actual CSP VM resource remains intact and can be re-registered later
 func DeregisterMciVm(nsId string, mciId string, vmId string) error {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	err = common.CheckString(vmId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
 	log.Debug().Msg("[Deregister VM] " + vmId)
 
 	// get vm info
@@ -2840,12 +2800,6 @@ func DeregisterMciVm(nsId string, mciId string, vmId string) error {
 
 // DelAllMci is func to delete all MCI objects in parallel
 func DelAllMci(nsId string, option string) (string, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return "", err
-	}
 
 	mciList, err := ListMciId(nsId)
 	if err != nil {
