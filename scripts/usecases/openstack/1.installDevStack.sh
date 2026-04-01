@@ -197,13 +197,39 @@ sudo tee /usr/local/bin/git > /dev/null << GITWRAP
 # Using $(which git) would cause infinite recursion on re-runs of this script.
 REAL_GIT="/usr/bin/git"
 if [[ "\$1" == "clone" ]]; then
-    # Identify the destination directory (last non-option argument).
-    # A partial clone leaves the directory behind on failure; git refuses to
-    # clone into an existing directory, so we must remove it before each retry.
+    # Identify the destination directory for cleanup on retry.
+    # git clone syntax: git clone [options] <repository> [<directory>]
+    # Strategy: skip 'clone' itself and any option flags with their values,
+    # leaving only positional args (repository and optional directory).
+    # The last positional arg is <directory> if given; otherwise derive it
+    # from the repository basename (strip .git suffix).
+    # Safety: only remove the directory if it contains a .git entry (i.e. it
+    # is actually a partial clone, not an unrelated directory that happens to
+    # share the name).
     dest_dir=""
+    skip_next=false
+    positional=()
     for arg in "\$@"; do
-        [[ "\$arg" != -* ]] && dest_dir="\$arg"
+        if \$skip_next; then
+            skip_next=false
+            continue
+        fi
+        case "\$arg" in
+            # Options that consume the next argument as their value
+            -b|--branch|-o|--origin|-u|--upload-pack|--reference|--depth| \
+            --shallow-since|--shallow-exclude|-j|--jobs|--filter|--recurse-submodules)
+                skip_next=true ;;
+            -*) ;;  # other flags, no value consumed
+            *) positional+=("\$arg") ;;
+        esac
     done
+    # positional[0] = 'clone' (shift it out), positional[1] = repo, positional[2] = dir
+    if [ \${#positional[@]} -ge 3 ]; then
+        dest_dir="\${positional[2]}"
+    elif [ \${#positional[@]} -ge 2 ]; then
+        # Derive from repo URL: strip trailing .git and take basename
+        dest_dir="\$(basename "\${positional[1]}" .git)"
+    fi
 
     max_attempts=3
     delay=30
@@ -213,7 +239,9 @@ if [[ "\$1" == "clone" ]]; then
         if [ \$attempt -lt \$max_attempts ]; then
             echo "git clone failed (attempt \$attempt/\$max_attempts, exit: \$exit_code). Retrying in \${delay}s..." >&2
             # Remove partial clone so the next attempt starts clean.
-            if [ -n "\$dest_dir" ] && [ -d "\$dest_dir" ]; then
+            # Only remove if it contains .git — guard against accidental deletion
+            # of an unrelated directory that shares the name.
+            if [ -n "\$dest_dir" ] && [ -d "\$dest_dir" ] && [ -e "\$dest_dir/.git" ]; then
                 rm -rf "\$dest_dir"
             fi
             sleep \$delay
@@ -325,7 +353,7 @@ LOCALCONF
 echo "Generated local.conf with HOST_IP=$HOST_IP"
 
 # ============================================================
-# Step 5: Run DevStack installation (with retry on failure)
+# Step 5: Run DevStack installation (git clone retries via wrapper)
 # ============================================================
 echo ""
 echo "[5/5] Running stack.sh (this takes 20-40 minutes with Octavia/Manila)..."

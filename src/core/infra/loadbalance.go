@@ -558,18 +558,6 @@ func GenNLBKey(nsId string, mciId string, resourceId string) string {
 // ListNLBId returns the list of TB NLB object IDs of given nsId
 func ListNLBId(nsId string, mciId string) ([]string, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
 	log.Debug().Msg("[ListNLBId] ns: " + nsId)
 	// key := "/ns/" + nsId + "/"
 	key := fmt.Sprintf("/ns/%s/mci/%s/", nsId, mciId)
@@ -780,18 +768,6 @@ func DelAllNLB(nsId string, mciId string, subString string, forceFlag string) (m
 
 	deletedResources := model.IdList{}
 	deleteStatus := ""
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return deletedResources, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return deletedResources, err
-	}
 
 	resourceIdList, err := ListNLBId(nsId, mciId)
 	if err != nil {
