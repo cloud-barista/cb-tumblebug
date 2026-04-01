@@ -175,15 +175,55 @@ echo "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/stack > /dev/null
 echo ""
 echo "[3/5] Cloning DevStack ($OPENSTACK_BRANCH)..."
 
-# Pre-configure git for the stack user to handle large repos over GnuTLS reliably.
-# - http.version HTTP/1.1: avoids GnuTLS TLS-layer errors that occur with HTTP/2 GOAWAY
-#   frames on large repo clones (the "TLS connection was non-properly terminated" error).
+# Configure git for reliable large-repo cloning over GnuTLS.
+# Ubuntu ships git linked against GnuTLS (not OpenSSL), which is more sensitive to
+# server-side TLS anomalies on opendev.org (HAProxy backend failovers, etc.).
+# - http.version HTTP/1.1: avoids curl 56 (HTTP/2 GOAWAY frames mishandled by GnuTLS).
 # - http.postBuffer: increases curl send buffer to 500 MiB for large pack transfers.
-# - http.lowSpeedLimit/Time: prevents git from aborting slow-but-progressing clones.
+# Note: http.lowSpeedLimit/lowSpeedTime are intentionally NOT set.
+#   GIT_TIMEOUT=300 in local.conf lets DevStack's timeout(1) handle stalled connections,
+#   and setting lowSpeedLimit would trigger curl 28 on temporarily slow connections
+#   (nova is a large repo; brief throughput dips below any fixed threshold are common).
 sudo -u stack git config --global http.version HTTP/1.1
 sudo -u stack git config --global http.postBuffer 524288000
-sudo -u stack git config --global http.lowSpeedLimit 1000
-sudo -u stack git config --global http.lowSpeedTime 60
+
+# Install a git wrapper at /usr/local/bin/git (takes PATH precedence over /usr/bin/git).
+# This intercepts every 'git clone' call — including those fired by stack.sh's internal
+# git_timed() — and retries on transient TLS/network failures (curl 35, curl 56, exit 128).
+# Non-clone subcommands are passed through to the real git immediately.
+sudo tee /usr/local/bin/git > /dev/null << GITWRAP
+#!/bin/bash
+# Always point to the real git binary, never to this wrapper itself.
+# Using $(which git) would cause infinite recursion on re-runs of this script.
+REAL_GIT="/usr/bin/git"
+if [[ "\$1" == "clone" ]]; then
+    # Identify the destination directory (last non-option argument).
+    # A partial clone leaves the directory behind on failure; git refuses to
+    # clone into an existing directory, so we must remove it before each retry.
+    dest_dir=""
+    for arg in "\$@"; do
+        [[ "\$arg" != -* ]] && dest_dir="\$arg"
+    done
+
+    max_attempts=3
+    delay=30
+    for attempt in \$(seq 1 \$max_attempts); do
+        "\$REAL_GIT" "\$@" && exit 0
+        exit_code=\$?
+        if [ \$attempt -lt \$max_attempts ]; then
+            echo "git clone failed (attempt \$attempt/\$max_attempts, exit: \$exit_code). Retrying in \${delay}s..." >&2
+            # Remove partial clone so the next attempt starts clean.
+            if [ -n "\$dest_dir" ] && [ -d "\$dest_dir" ]; then
+                rm -rf "\$dest_dir"
+            fi
+            sleep \$delay
+        fi
+    done
+    exit \$exit_code
+fi
+exec "\$REAL_GIT" "\$@"
+GITWRAP
+sudo chmod +x /usr/local/bin/git
 
 retry sudo -u stack bash -c "OPENSTACK_BRANCH='$OPENSTACK_BRANCH'
     cd /opt/stack
@@ -233,6 +273,15 @@ HOST_IP=${HOST_IP}
 RECLONE=yes
 
 # -------------------------------------------------------
+# Git clone timeout and retry
+# -------------------------------------------------------
+# GIT_TIMEOUT: per-operation timeout in seconds.
+# DevStack's git_timed() retries up to 3x on timeout (exit 124).
+# Default is 0 (no timeout = no retry). Setting a value activates
+# the built-in retry mechanism for slow/stalled connections.
+GIT_TIMEOUT=300
+
+# -------------------------------------------------------
 # Disable Tempest (test framework, not needed for operation)
 # -------------------------------------------------------
 disable_service tempest
@@ -276,19 +325,18 @@ LOCALCONF
 echo "Generated local.conf with HOST_IP=$HOST_IP"
 
 # ============================================================
-# Step 5: Run DevStack installation
+# Step 5: Run DevStack installation (with retry on failure)
 # ============================================================
 echo ""
 echo "[5/5] Running stack.sh (this takes 20-40 minutes with Octavia/Manila)..."
 echo "      Logs: /opt/stack/logs/stack.sh.log"
 
-# Temporarily disable 'exit on error' so we can capture stack.sh's exit code
+# Git clone retries are handled transparently by /usr/local/bin/git (installed above).
+# PATH is explicitly prepended to ensure the wrapper takes precedence over /usr/bin/git
+# even when sudo resets the environment (Ubuntu default: env_reset in /etc/sudoers).
 set +e
-sudo -u stack bash -c '
-    cd /opt/stack/devstack && ./stack.sh
-'
+sudo -u stack bash -c 'export PATH=/usr/local/bin:$PATH; cd /opt/stack/devstack && ./stack.sh'
 STACK_EXIT=$?
-# Re-enable 'exit on error' for the remainder of the script
 set -e
 
 echo ""
