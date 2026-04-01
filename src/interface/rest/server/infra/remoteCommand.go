@@ -320,7 +320,69 @@ func RestSetBastionNodes(c echo.Context) error {
 	targetVmId := c.Param("targetVmId")
 	bastionVmId := c.Param("bastionVmId")
 
-	content, err := infra.SetBastionNodes(nsId, mciId, targetVmId, bastionVmId)
+	content, err := infra.SetBastionNodes(nsId, mciId, targetVmId, "", "", bastionVmId)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestSetBastionNodesWithMci godoc
+// @ID SetBastionNodesWithMci
+// @Summary Set bastion nodes for a VM using a bastion from another MCI (same namespace)
+// @Description Set bastion nodes for a target VM, specifying a bastion VM that belongs to a different MCI within the same namespace (cross-MCI bastion). This allows, for example, an AWS VM to serve as a bastion for an OpenStack VM.
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "Target MCI ID" default(mci01)
+// @Param targetVmId path string true "Target VM ID" default(g1-1)
+// @Param bastionMciId path string true "Bastion MCI ID (may differ from target MCI)" default(mci-bastion)
+// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionMciId}/{bastionVmId} [put]
+func RestSetBastionNodesWithMci(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	targetVmId := c.Param("targetVmId")
+	bastionMciId := c.Param("bastionMciId")
+	bastionVmId := c.Param("bastionVmId")
+
+	content, err := infra.SetBastionNodes(nsId, mciId, targetVmId, "", bastionMciId, bastionVmId)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestSetBastionNodesWithNs godoc
+// @ID SetBastionNodesWithNs
+// @Summary Set bastion nodes for a VM using a bastion from a different namespace and MCI
+// @Description Set bastion nodes for a target VM, specifying a bastion VM that belongs to a different namespace and MCI (cross-namespace bastion). This allows, for example, a VM in a shared-services namespace to act as a bastion for VMs in other namespaces.
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Target Namespace ID" default(default)
+// @Param mciId path string true "Target MCI ID" default(mci01)
+// @Param targetVmId path string true "Target VM ID" default(g1-1)
+// @Param bastionNsId path string true "Bastion Namespace ID (may differ from target namespace)" default(ns-bastion)
+// @Param bastionMciId path string true "Bastion MCI ID" default(mci-bastion)
+// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionNsId}/{bastionMciId}/{bastionVmId} [put]
+func RestSetBastionNodesWithNs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	targetVmId := c.Param("targetVmId")
+	bastionNsId := c.Param("bastionNsId")
+	bastionMciId := c.Param("bastionMciId")
+	bastionVmId := c.Param("bastionVmId")
+
+	content, err := infra.SetBastionNodes(nsId, mciId, targetVmId, bastionNsId, bastionMciId, bastionVmId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -372,7 +434,63 @@ func RestRemoveBastionNodes(c echo.Context) error {
 	mciId := c.Param("mciId")
 	bastionVmId := c.Param("bastionVmId")
 
-	content, err := infra.RemoveBastionNodes(nsId, mciId, bastionVmId)
+	content, err := infra.RemoveBastionNodes(nsId, mciId, "", "", bastionVmId)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestRemoveBastionNodesWithMci godoc
+// @ID RemoveBastionNodesWithMci
+// @Summary Remove a bastion VM (cross-MCI) from all vNets
+// @Description Remove a specific cross-MCI bastion from all vNets of the target MCI
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "Target MCI ID" default(mci01)
+// @Param bastionMciId path string true "Bastion MCI ID"
+// @Param bastionVmId path string true "Bastion VM ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/mci/{mciId}/bastion/{bastionMciId}/{bastionVmId} [delete]
+func RestRemoveBastionNodesWithMci(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	bastionMciId := c.Param("bastionMciId")
+	bastionVmId := c.Param("bastionVmId")
+
+	content, err := infra.RemoveBastionNodes(nsId, mciId, "", bastionMciId, bastionVmId)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestRemoveBastionNodesWithNs godoc
+// @ID RemoveBastionNodesWithNs
+// @Summary Remove a bastion VM (cross-namespace) from all vNets
+// @Description Remove a specific cross-namespace bastion from all vNets of the target MCI
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "Target MCI ID" default(mci01)
+// @Param bastionNsId path string true "Bastion Namespace ID"
+// @Param bastionMciId path string true "Bastion MCI ID"
+// @Param bastionVmId path string true "Bastion VM ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/mci/{mciId}/bastion/{bastionNsId}/{bastionMciId}/{bastionVmId} [delete]
+func RestRemoveBastionNodesWithNs(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	bastionNsId := c.Param("bastionNsId")
+	bastionMciId := c.Param("bastionMciId")
+	bastionVmId := c.Param("bastionVmId")
+
+	content, err := infra.RemoveBastionNodes(nsId, mciId, bastionNsId, bastionMciId, bastionVmId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

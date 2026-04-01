@@ -502,7 +502,11 @@ func RunServer() {
 	g.POST("/:nsId/cmd/mci/:mciId/task/:taskId/cancel", rest_infra.RestCancelExecutionTask)
 
 	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionVmId", rest_infra.RestSetBastionNodes)
+	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionMciId/:bastionVmId", rest_infra.RestSetBastionNodesWithMci)
+	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionNsId/:bastionMciId/:bastionVmId", rest_infra.RestSetBastionNodesWithNs)
 	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionVmId", rest_infra.RestRemoveBastionNodes)
+	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionMciId/:bastionVmId", rest_infra.RestRemoveBastionNodesWithMci)
+	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionNsId/:bastionMciId/:bastionVmId", rest_infra.RestRemoveBastionNodesWithNs)
 	g.GET("/:nsId/mci/:mciId/vm/:targetVmId/bastion", rest_infra.RestGetBastionNodes)
 
 	g.POST("/:nsId/installBenchmarkAgent/mci/:mciId", rest_infra.RestPostInstallBenchmarkAgentToMci)

@@ -522,6 +522,59 @@ func mapToString(m map[int]string) string {
 	return result
 }
 
+// resolveTargetIpForBastion returns the IP that should be used as the SSH tunnel
+// destination for the given target VM.
+//
+// For same-MCI/same-NS bastions the target's privateIP is returned unchanged, because
+// the bastion is on the same network and can reach it directly.
+//
+// For cross-MCI or cross-NS bastions the bastion host likely cannot route to the target's
+// private network (e.g. OpenStack Neutron subnet). In that case the function prefers the
+// public IP (e.g. OpenStack floating IP) retrieved first from the stored VM record and,
+// if that is empty, via a live CSP fetch (same path as GetMciAccessInfo).
+//
+// nsId/mciId/vmId identify the *target* VM; bastionNode identifies the bastion.
+func resolveTargetIpForBastion(nsId, mciId, vmId string, bastionNode model.BastionNode) string {
+	bastionNsId := bastionNode.NsId
+	if bastionNsId == "" {
+		bastionNsId = nsId
+	}
+
+	isCrossMci := bastionNode.MciId != mciId || bastionNsId != nsId
+	if !isCrossMci {
+		// Same MCI/NS — the bastion can reach the private IP directly.
+		_, privateIP, _, err := GetVmIp(nsId, mciId, vmId)
+		if err != nil {
+			return ""
+		}
+		return privateIP
+	}
+
+	// Cross-MCI/cross-NS: prefer public IP.
+	publicIP, privateIP, _, err := GetVmIp(nsId, mciId, vmId)
+	if err != nil {
+		return ""
+	}
+	if publicIP == "" {
+		// publicIP not in etcd — do a live CSP fetch (same path as GetMciAccessInfo).
+		if liveInfo, liveErr := GetVmCurrentPublicIp(nsId, mciId, vmId); liveErr == nil && liveInfo.PublicIp != "" {
+			log.Info().
+				Str("vmId", vmId).
+				Str("publicIP", liveInfo.PublicIp).
+				Msg("Cross-MCI bastion: retrieved publicIP from CSP (not in stored VM info)")
+			publicIP = liveInfo.PublicIp
+		}
+	}
+	if publicIP != "" {
+		log.Info().
+			Str("privateIP", privateIP).
+			Str("publicIP", publicIP).
+			Msg("Cross-MCI bastion: using publicIP as tunnel target (privateIP may not be routable from bastion)")
+		return publicIP
+	}
+	return privateIP
+}
+
 // RunRemoteCommandWithContext executes SSH commands to a VM with context-based timeout and cancellation
 // This is the enhanced version that properly propagates context for cancellation support
 func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
@@ -533,7 +586,8 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 	default:
 	}
 
-	// use private IP of the target VM
+	// Get the private IP and SSH port; public IP resolution (for cross-MCI bastions) is
+	// deferred until after the bastion node is known (see resolveTargetIpForBastion below).
 	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -564,7 +618,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 		log.Error().Err(err).Msg("")
 
 		// Assign a Bastion if none (randomly)
-		_, err = SetBastionNodes(nsId, mciId, vmId, "")
+		_, err = SetBastionNodes(nsId, mciId, vmId, "", "", "")
 		if err != nil {
 			log.Error().Err(err).Msg("no bastion nodes available")
 			return map[int]string{}, map[int]string{}, err
@@ -590,8 +644,21 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 		return map[int]string{}, map[int]string{}, err
 	}
 
+	// Resolve bastion namespace: fall back to the target's namespace if not set
+	bastionNsId := bastionNode.NsId
+	if bastionNsId == "" {
+		bastionNsId = nsId
+	}
+
+	// For cross-MCI/cross-NS bastions the bastion may not be able to route to the target's
+	// private network (e.g. OpenStack Neutron). resolveTargetIpForBastion handles this by
+	// preferring the public IP (with a live CSP fetch fallback if etcd has no public IP).
+	if resolved := resolveTargetIpForBastion(nsId, mciId, vmId, bastionNode); resolved != "" {
+		targetVmIP = resolved
+	}
+
 	// use public IP of the bastion VM
-	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
+	bastionIp, _, bastionSshPort, err := GetVmIp(bastionNsId, bastionNode.MciId, bastionNode.VmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
@@ -611,7 +678,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 		return map[int]string{}, map[int]string{}, err
 	}
 
-	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
+	bastionUserName, bastionSshKey, err := VerifySshUserName(bastionNsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
@@ -649,7 +716,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 
 	// Set TOFU context for bastion and target VMs
 	bastionTofuCtx := tofuContext{
-		NsId:  nsId,
+		NsId:  bastionNsId,
 		MciId: bastionNode.MciId,
 		VmId:  bastionNode.VmId,
 	}
@@ -1803,12 +1870,24 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 	}
 
 	bastionNode := bastionNodes[0]
-	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
+	bastionNsId := bastionNode.NsId
+	if bastionNsId == "" {
+		bastionNsId = nsId
+	}
+	bastionIp, _, bastionSshPort, err := GetVmIp(bastionNsId, bastionNode.MciId, bastionNode.VmId)
 	if err != nil {
 		return fmt.Errorf("failed to get bastion VM IP and SSH port: %v", err)
 	}
 
-	bastionUserName, bastionPrivateKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
+	// For cross-MCI/cross-NS bastions, override the target endpoint with the public IP.
+	_, _, targetSshPort, ipErr := GetVmIp(nsId, mciId, vmId)
+	if ipErr == nil {
+		if resolved := resolveTargetIpForBastion(nsId, mciId, vmId, bastionNode); resolved != "" {
+			targetSshInfo.EndPoint = fmt.Sprintf("%s:%d", resolved, targetSshPort)
+		}
+	}
+
+	bastionUserName, bastionPrivateKey, err := VerifySshUserName(bastionNsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
 	if err != nil {
 		return fmt.Errorf("failed to verify SSH username for bastion: %v", err)
 	}
@@ -1821,7 +1900,7 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 
 	// Set TOFU context for bastion and target VMs
 	bastionCtx := tofuContext{
-		NsId:  nsId,
+		NsId:  bastionNsId,
 		MciId: bastionNode.MciId,
 		VmId:  bastionNode.VmId,
 	}
@@ -2022,12 +2101,24 @@ func downloadFileFromVmViaBastion(nsId string, mciId string, vmId string, target
 	}
 
 	bastionNode := bastionNodes[0]
-	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
+	bastionNsId := bastionNode.NsId
+	if bastionNsId == "" {
+		bastionNsId = nsId
+	}
+	bastionIp, _, bastionSshPort, err := GetVmIp(bastionNsId, bastionNode.MciId, bastionNode.VmId)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to get bastion VM IP and SSH port: %v", err)
 	}
 
-	bastionUserName, bastionPrivateKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
+	// For cross-MCI/cross-NS bastions, override the target endpoint with the public IP.
+	_, _, targetSshPort, ipErr := GetVmIp(nsId, mciId, vmId)
+	if ipErr == nil {
+		if resolved := resolveTargetIpForBastion(nsId, mciId, vmId, bastionNode); resolved != "" {
+			targetSshInfo.EndPoint = fmt.Sprintf("%s:%d", resolved, targetSshPort)
+		}
+	}
+
+	bastionUserName, bastionPrivateKey, err := VerifySshUserName(bastionNsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to verify SSH username for bastion: %v", err)
 	}
@@ -2040,7 +2131,7 @@ func downloadFileFromVmViaBastion(nsId string, mciId string, vmId string, target
 
 	// Set TOFU context for bastion and target VMs
 	bastionCtx := tofuContext{
-		NsId:  nsId,
+		NsId:  bastionNsId,
 		MciId: bastionNode.MciId,
 		VmId:  bastionNode.VmId,
 	}
@@ -2239,7 +2330,15 @@ func runSCPDownloadWithBastion(bastionInfo model.SshInfo, targetInfo model.SshIn
 }
 
 // SetBastionNodes func sets bastion nodes
-func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId string) (string, error) {
+func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionNsId string, bastionMciId string, bastionVmId string) (string, error) {
+
+	// Default bastionNsId/bastionMciId to the target's values when not specified
+	if bastionNsId == "" {
+		bastionNsId = nsId
+	}
+	if bastionMciId == "" {
+		bastionMciId = mciId
+	}
 
 	// Check if bastion node already exists for the target VM (for random assignment)
 	currentBastion, err := GetBastionNodes(nsId, mciId, targetVmId)
@@ -2275,60 +2374,83 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId s
 		if subnetInfo.Id == vmObj.SubnetId {
 
 			if bastionVmId == "" {
-				vmIdsInSubnet, err := ListVmByFilter(nsId, mciId, "SubnetId", subnetInfo.Id)
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					return "", fmt.Errorf("failed to list VMs in subnet (ID: %s): %w", subnetInfo.Id, err)
+				// Auto-select: find a VM with a public IP.
+				// For same-MCI, prefer VMs in the same subnet (original behaviour).
+				// For cross-MCI/cross-NS, search all VMs in bastionNsId/bastionMciId.
+				isSameMci := bastionNsId == nsId && bastionMciId == mciId
+				var candidateVms []string
+				var listErr error
+				if isSameMci {
+					candidateVms, listErr = ListVmByFilter(nsId, mciId, "subnetId", vmObj.SubnetId)
+					if listErr != nil || len(candidateVms) == 0 {
+						// Fall back to all VMs in the MCI if no VM found in the subnet
+						candidateVms, listErr = ListVmByFilter(nsId, mciId, "", "")
+					}
+				} else {
+					candidateVms, listErr = ListVmByFilter(bastionNsId, bastionMciId, "", "")
+				}
+				if listErr != nil {
+					log.Error().Err(listErr).Msg("")
+					return "", fmt.Errorf("failed to list VMs in MCI (ID: %s): %w", bastionMciId, listErr)
 				}
 
 				// Find a VM with public IP to use as bastion
-				for _, v := range vmIdsInSubnet {
-					tmpPublicIp, _, _, err := GetVmIp(nsId, mciId, v)
+				for _, v := range candidateVms {
+					tmpPublicIp, _, _, err := GetVmIp(bastionNsId, bastionMciId, v)
 					if err != nil {
 						log.Error().Err(err).Msgf("failed to get IP for VM %s", v)
 						continue
 					}
 					if tmpPublicIp != "" {
 						bastionVmId = v
-						log.Info().Msgf("Selected VM %s as bastion (public IP: %s)", v, tmpPublicIp)
+						log.Info().Msgf("Selected VM %s in NS %s / MCI %s as bastion (public IP: %s)", v, bastionNsId, bastionMciId, tmpPublicIp)
 						break
 					}
 				}
 
 				// If no suitable bastion VM found, return error
 				if bastionVmId == "" {
-					return "", fmt.Errorf("no VM with public IP found in subnet (ID: %s) to use as bastion", subnetInfo.Id)
+					return "", fmt.Errorf("no VM with public IP found in NS (ID: %s) MCI (ID: %s) to use as bastion", bastionNsId, bastionMciId)
 				}
 			} else {
-				for _, existingId := range subnetInfo.BastionNodes {
-					if existingId.VmId == bastionVmId {
-						return fmt.Sprintf("Bastion (ID: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
-							bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
+				// Validate that the specified bastion VM exists in bastionNsId/bastionMciId
+				_, err := GetVmObject(bastionNsId, bastionMciId, bastionVmId)
+				if err != nil {
+					return "", fmt.Errorf("bastion VM (ID: %s) not found in NS (ID: %s) MCI (ID: %s): %w", bastionVmId, bastionNsId, bastionMciId, err)
+				}
+
+				// Duplicate check: normalize legacy BastionNode entries that have empty NsId
+				// (they were stored before cross-namespace support was added and implicitly
+				// belong to the target namespace).
+				for _, existingNode := range subnetInfo.BastionNodes {
+					effectiveNsId := existingNode.NsId
+					if effectiveNsId == "" {
+						effectiveNsId = nsId
+					}
+					if effectiveNsId == bastionNsId && existingNode.MciId == bastionMciId && existingNode.VmId == bastionVmId {
+						return fmt.Sprintf("Bastion (NS: %s, MCI: %s, VM: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
+							bastionNsId, bastionMciId, bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
 					}
 				}
 			}
 
-			// Validate that we have a valid bastion VM ID before creating the node
-			if bastionVmId == "" {
-				return "", fmt.Errorf("failed to find a suitable bastion VM in subnet (ID: %s)", subnetInfo.Id)
-			}
-
-			bastionCandidate := model.BastionNode{MciId: mciId, VmId: bastionVmId}
-			// Append bastionVmId only if it doesn't already exist.
+			bastionCandidate := model.BastionNode{NsId: bastionNsId, MciId: bastionMciId, VmId: bastionVmId}
 			subnetInfo.BastionNodes = append(subnetInfo.BastionNodes, bastionCandidate)
 			tempVNetInfo.SubnetInfoList[i] = subnetInfo
 			resource.UpdateResourceObject(nsId, model.StrVNet, tempVNetInfo)
 
-			return fmt.Sprintf("Successfully set the bastion (ID: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in MCI (ID: %s).",
-				bastionVmId, subnetInfo.Id, vmObj.VNetId, targetVmId, mciId), nil
+			return fmt.Sprintf("Successfully set the bastion (NS: %s, MCI: %s, VM: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in MCI (ID: %s).",
+				bastionNsId, bastionMciId, bastionVmId, subnetInfo.Id, vmObj.VNetId, targetVmId, mciId), nil
 		}
 	}
 	return "", fmt.Errorf("failed to set bastion. Subnet (ID: %s) not found in VNet (ID: %s) for VM (ID: %s) in MCI (ID: %s) under namespace (ID: %s)",
 		vmObj.SubnetId, vmObj.VNetId, targetVmId, mciId, nsId)
 }
 
-// RemoveBastionNodes func removes existing bastion nodes info
-func RemoveBastionNodes(nsId string, mciId string, bastionVmId string) (string, error) {
+// RemoveBastionNodes func removes existing bastion nodes info.
+// bastionNsId and bastionMciId narrow the match to a specific bastion identity;
+// pass empty strings to match by bastionVmId alone (legacy / cleanup on VM deletion).
+func RemoveBastionNodes(nsId string, mciId string, bastionNsId string, bastionMciId string, bastionVmId string) (string, error) {
 	resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "mciId", mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -2339,10 +2461,28 @@ func RemoveBastionNodes(nsId string, mciId string, bastionVmId string) (string, 
 			removed := false
 			for i, subnet := range vNet.SubnetInfoList {
 				for j := len(subnet.BastionNodes) - 1; j >= 0; j-- {
-					if subnet.BastionNodes[j].VmId == bastionVmId {
-						subnet.BastionNodes = append(subnet.BastionNodes[:j], subnet.BastionNodes[j+1:]...)
-						removed = true
+					node := subnet.BastionNodes[j]
+					if node.VmId != bastionVmId {
+						continue
 					}
+					// When bastionNsId/bastionMciId are provided, also match on them
+					// so that two bastions with the same VmId but different MCIs are
+					// not accidentally conflated.
+					if bastionMciId != "" {
+						effectiveNsId := node.NsId
+						if effectiveNsId == "" {
+							effectiveNsId = nsId
+						}
+						effectiveBastionNsId := bastionNsId
+						if effectiveBastionNsId == "" {
+							effectiveBastionNsId = nsId
+						}
+						if node.MciId != bastionMciId || effectiveNsId != effectiveBastionNsId {
+							continue
+						}
+					}
+					subnet.BastionNodes = append(subnet.BastionNodes[:j], subnet.BastionNodes[j+1:]...)
+					removed = true
 				}
 				vNet.SubnetInfoList[i] = subnet
 			}
