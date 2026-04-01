@@ -217,6 +217,15 @@ sequenceDiagram
             TB-->>Script: namespace ready
             Script->>PG: pg_restore assets/assets.dump.gz<br/>(specs + images + pricing)
             PG-->>Script: Restore complete
+        else Option A+ – Restore from backup + patch CSV (~2 min)
+            Script->>TB: POST /tumblebug/ns  (ensure 'system' namespace)
+            TB-->>Script: namespace ready
+            Script->>PG: pg_restore assets/assets.dump.gz<br/>(specs + images + pricing)
+            PG-->>Script: Restore complete
+            Script->>TB: POST /tumblebug/updateImagesFromAsset<br/>(apply latest cloudimage.csv on top)
+            TB->>PG: Upsert images from CSV
+            PG-->>TB: Updated
+            TB-->>Script: patch complete
         else Option B – Fetch from CSPs, skip Azure (~20 min)
             Script->>TB: GET /tumblebug/loadAssets
             TB->>Spider: Fetch VM specs per region (parallel)
@@ -337,11 +346,13 @@ flowchart TD
         subgraph AssetLoad["Asset Loading"]
             Choice{User choice}
             OptA["Option A: Restore from backup\n~1 min\npg_restore assets.dump.gz\n→ specs + images + pricing"]
+            OptAPlus["Option A+: Restore from backup + patch CSV\n~2 min\npg_restore assets.dump.gz\n→ POST /tumblebug/updateImagesFromAsset\n(apply latest cloudimage.csv on top)"]
             OptB["Option B: Fetch from CSPs\n~20 min (no Azure)\nGET /tumblebug/loadAssets"]
             OptC["Option C: Fetch ALL CSPs\n~40+ min (incl. Azure)\nGET /tumblebug/loadAssets?includeAzure=true"]
             Price["POST /tumblebug/fetchPrice\n~10 min (B/C only, cancellable)"]
 
-            Choice -->|backup exists| OptA
+            Choice -->|backup only| OptA
+            Choice -->|backup + CSV patch| OptAPlus
             Choice -->|fresh fetch| OptB
             Choice -->|fresh + Azure| OptC
             OptB --> Price
@@ -424,6 +435,7 @@ flowchart LR
 | Phase 1 (OpenBao) | ~1 min | CSP credentials in KV v2 |
 | Phase 2 – Credential registration | ~1–2 min | All credential holders × CSPs × regions |
 | Phase 2 – Asset restore (Option A) | ~1 min | Specs + images + pricing (from backup) |
+| Phase 2 – Asset restore + CSV patch (Option A+) | ~2 min | Specs + images + pricing (from backup) + latest cloudimage.csv applied on top |
 | Phase 2 – Asset fetch, no Azure (Option B) | ~20 min | Specs + images (live from CSPs) |
 | Phase 2 – Asset fetch, all CSPs (Option C) | ~40+ min | Specs + images incl. Azure (live) |
 | Phase 2 – Price fetch (Options B/C only) | ~10 min | Pricing for all specs |
