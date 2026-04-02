@@ -4976,6 +4976,142 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: securityGroupInfo
+  /ns/{nsId}/mci/{mciId}/bastion/{bastionMciId}/{bastionVmId}:
+    delete:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Remove a bastion VM (cross-MCI) from all vNets
+      description: Remove a specific cross-MCI bastion from all vNets of the target
+        MCI
+      operationId: RemoveBastionNodesWithMci
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: Target MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: bastionMciId
+        in: path
+        description: Bastion MCI ID
+        required: true
+        schema:
+          type: string
+      - name: bastionVmId
+        in: path
+        description: Bastion VM ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/bastion/{bastionNsId}/{bastionMciId}/{bastionVmId}:
+    delete:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Remove a bastion VM (cross-namespace) from all vNets
+      description: Remove a specific cross-namespace bastion from all vNets of the
+        target MCI
+      operationId: RemoveBastionNodesWithNs
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: Target MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: bastionNsId
+        in: path
+        description: Bastion Namespace ID
+        required: true
+        schema:
+          type: string
+      - name: bastionMciId
+        in: path
+        description: Bastion MCI ID
+        required: true
+        schema:
+          type: string
+      - name: bastionVmId
+        in: path
+        description: Bastion VM ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}:
     delete:
       tags:

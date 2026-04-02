@@ -6127,6 +6127,173 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/bastion/{bastionMciId}/{bastionVmId}": {
+            "delete": {
+                "description": "Remove a specific cross-MCI bastion from all vNets of the target MCI",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Remove a bastion VM (cross-MCI) from all vNets",
+                "operationId": "RemoveBastionNodesWithMci",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "Target MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bastion MCI ID",
+                        "name": "bastionMciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bastion VM ID",
+                        "name": "bastionVmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mci/{mciId}/bastion/{bastionNsId}/{bastionMciId}/{bastionVmId}": {
+            "delete": {
+                "description": "Remove a specific cross-namespace bastion from all vNets of the target MCI",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Remove a bastion VM (cross-namespace) from all vNets",
+                "operationId": "RemoveBastionNodesWithNs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "Target MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bastion Namespace ID",
+                        "name": "bastionNsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bastion MCI ID",
+                        "name": "bastionMciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bastion VM ID",
+                        "name": "bastionVmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}": {
             "delete": {
                 "description": "Remove a bastion VM from all vNets",
