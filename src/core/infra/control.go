@@ -602,7 +602,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 		CancelActiveCommandsForVm(vmId)
 
 		// Remove Bastion Info from all vNets if the terminating VM is a Bastion
-		_, err := RemoveBastionNodes(nsId, mciId, vmId)
+		_, err := RemoveBastionNodes(nsId, mciId, "", "", vmId)
 		if err != nil {
 			log.Info().Msg(err.Error())
 		}

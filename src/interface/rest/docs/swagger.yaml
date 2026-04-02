@@ -6493,6 +6493,166 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionMciId}/{bastionVmId}:
+    put:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Set bastion nodes for a VM using a bastion from another MCI (same namespace)
+      description: "Set bastion nodes for a target VM, specifying a bastion VM that\
+        \ belongs to a different MCI within the same namespace (cross-MCI bastion).\
+        \ This allows, for example, an AWS VM to serve as a bastion for an OpenStack\
+        \ VM."
+      operationId: SetBastionNodesWithMci
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: Target MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: targetVmId
+        in: path
+        description: Target VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: bastionMciId
+        in: path
+        description: Bastion MCI ID (may differ from target MCI)
+        required: true
+        schema:
+          type: string
+          default: mci-bastion
+      - name: bastionVmId
+        in: path
+        description: Bastion VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionNsId}/{bastionMciId}/{bastionVmId}:
+    put:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Set bastion nodes for a VM using a bastion from a different namespace
+        and MCI
+      description: "Set bastion nodes for a target VM, specifying a bastion VM that\
+        \ belongs to a different namespace and MCI (cross-namespace bastion). This\
+        \ allows, for example, a VM in a shared-services namespace to act as a bastion\
+        \ for VMs in other namespaces."
+      operationId: SetBastionNodesWithNs
+      parameters:
+      - name: nsId
+        in: path
+        description: Target Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: Target MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: targetVmId
+        in: path
+        description: Target VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: bastionNsId
+        in: path
+        description: Bastion Namespace ID (may differ from target namespace)
+        required: true
+        schema:
+          type: string
+          default: ns-bastion
+      - name: bastionMciId
+        in: path
+        description: Bastion MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci-bastion
+      - name: bastionVmId
+        in: path
+        description: Bastion VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId}:
     put:
       tags:
@@ -18075,6 +18235,8 @@ components:
       type: object
       properties:
         mciId:
+          type: string
+        nsId:
           type: string
         vmId:
           type: string

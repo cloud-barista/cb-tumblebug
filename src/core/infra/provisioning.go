@@ -3733,7 +3733,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 
 	// Assign a Bastion if none (randomly)
 	UpdateVmInfo(nsId, mciId, *vmInfoData)
-	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "")
+	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "", "", "")
 	if err != nil {
 		// just log error and continue
 		log.Debug().Msg(err.Error())
