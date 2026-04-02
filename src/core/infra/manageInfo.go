@@ -2420,11 +2420,29 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 				log.Error().Err(err).Msg("")
 				return deletedResources, err
 			}
-			// for deletion, need to wait until termination is finished
-			log.Info().Msg("Wait for MCI-VMs termination in 1 second")
-
-			time.Sleep(1 * time.Second)
-			mciStatus, _ = GetMciStatus(nsId, mciId)
+			// Poll until all VMs reach Terminated (or a non-Terminating state),
+			// because ControlMciAsync returns immediately while the CSP processes
+			// the termination request in the background (can take several minutes
+			// for bare-metal instances, but typically 10-30 s for regular VMs).
+			const terminateWaitInterval = 5 * time.Second
+			const terminateWaitTimeout = 10 * time.Minute
+			log.Info().Msgf("Waiting for MCI %s to become Terminated (polling every %s, timeout %s)", mciId, terminateWaitInterval, terminateWaitTimeout)
+			deadline := time.Now().Add(terminateWaitTimeout)
+			for time.Now().Before(deadline) {
+				time.Sleep(terminateWaitInterval)
+				mciStatus, _ = GetMciStatus(nsId, mciId)
+				if mciStatus == nil {
+					break
+				}
+				log.Info().Msgf("MCI %s status: %s", mciId, mciStatus.Status)
+				// Exit the loop once every VM has left the Terminating state
+				if !strings.Contains(mciStatus.Status, model.StatusTerminating) {
+					break
+				}
+			}
+			if mciStatus != nil && strings.Contains(mciStatus.Status, model.StatusTerminating) {
+				log.Warn().Msgf("MCI %s is still %s after %s — proceeding with deletion anyway", mciId, mciStatus.Status, terminateWaitTimeout)
+			}
 		}
 
 	}
