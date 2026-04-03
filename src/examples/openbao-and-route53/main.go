@@ -14,6 +14,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -21,7 +22,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"bufio"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -297,15 +297,22 @@ func loadEnv() {
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
+		line = strings.TrimPrefix(line, "export ")
 		key, value, ok := strings.Cut(line, "=")
 		if !ok {
 			continue
 		}
 		key = strings.TrimSpace(key)
 		value = strings.Trim(strings.TrimSpace(value), `"'`)
-		if os.Getenv(key) == "" {
-			os.Setenv(key, value)
+		if _, exists := os.LookupEnv(key); !exists {
+			if err := os.Setenv(key, value); err != nil {
+				fmt.Printf("[WARN] Could not set environment variable %q from %s: %v\n", key, path, err)
+			}
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("[WARN] Error reading %s: %v\n", path, err)
+		return
 	}
 	fmt.Printf("[INFO] Loaded environment from: %s\n", path)
 }
