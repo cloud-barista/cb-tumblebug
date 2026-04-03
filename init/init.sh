@@ -47,7 +47,7 @@ SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 pushd "$SCRIPT_DIR" > /dev/null
 
 # Python version check
-REQUIRED_VERSION="3.8.0"
+REQUIRED_VERSION="3.10.0"
 
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
 echo "Detected Python version: $PYTHON_VERSION"
@@ -55,9 +55,9 @@ PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
 PYTHON_PATCH=$(echo $PYTHON_VERSION | cut -d. -f3)
 
-# Check if the Python3 version is 3.8.0 or higher
+# Check if the Python3 version is 3.10.0 or higher
 REQUIRED_MAJOR=3
-REQUIRED_MINOR=8
+REQUIRED_MINOR=10
 REQUIRED_PATCH=0
 
 if [[ $PYTHON_MAJOR -gt $REQUIRED_MAJOR ]] || \
