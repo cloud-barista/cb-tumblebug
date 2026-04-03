@@ -14,6 +14,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -26,7 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	"github.com/joho/godotenv"
 	"github.com/openbao/openbao/api/v2"
 )
 
@@ -285,8 +285,33 @@ func loadEnv() {
 		fmt.Println("[INFO] No .env file found; relying on process environment.")
 		return
 	}
-	if err := godotenv.Load(path); err != nil {
+	f, err := os.Open(path)
+	if err != nil {
 		fmt.Printf("[WARN] Could not load %s: %v\n", path, err)
+		return
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		value = strings.Trim(strings.TrimSpace(value), `"'`)
+		if _, exists := os.LookupEnv(key); !exists {
+			if err := os.Setenv(key, value); err != nil {
+				fmt.Printf("[WARN] Could not set environment variable %q from %s: %v\n", key, path, err)
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("[WARN] Error reading %s: %v\n", path, err)
 		return
 	}
 	fmt.Printf("[INFO] Loaded environment from: %s\n", path)

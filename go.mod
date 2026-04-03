@@ -1,6 +1,6 @@
 module github.com/cloud-barista/cb-tumblebug
 
-go 1.25.0
+go 1.26.1
 
 // Uncomment the following line to use local mc-terrarium module for development.
 // replace github.com/cloud-barista/mc-terrarium v0.1.2 => ../mc-terrarium
@@ -53,7 +53,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
