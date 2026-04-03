@@ -166,7 +166,7 @@ func setupAndWaitForInternalServices() {
 	}
 
 	// Build PostgreSQL DSN
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Seoul",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		strings.Split(model.DBUrl, ":")[0],
 		model.DBUser,
 		model.DBPassword,
@@ -197,10 +197,15 @@ func setupAndWaitForInternalServices() {
 						model.ORM = db
 						log.Info().Msgf("setup: PostgreSQL is ready (attempt %d)", i+1)
 						return
+					} else {
+						log.Warn().Err(pingErr).Msgf("setup: PostgreSQL ping failed, retrying (%d/%d)", i+1, maxRetries)
 					}
+				} else {
+					log.Warn().Err(sqlErr).Msgf("setup: PostgreSQL get DB failed, retrying (%d/%d)", i+1, maxRetries)
 				}
+			} else {
+				log.Warn().Err(dbErr).Msgf("setup: PostgreSQL not ready, retrying (%d/%d)", i+1, maxRetries)
 			}
-			log.Warn().Msgf("setup: PostgreSQL not ready, retrying (%d/%d)", i+1, maxRetries)
 			time.Sleep(retryInterval)
 		}
 		errChan <- fmt.Errorf("PostgreSQL connection failed after %d retries", maxRetries)
