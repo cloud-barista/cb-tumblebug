@@ -18,6 +18,9 @@ on:
       - "src/testclient/scripts/**"
       - "docs/**"
 
+permissions:
+  contents: read
+
 jobs:
   # The job key (i.e., ID) is "build-source-code"
   build-source-code:

@@ -61,7 +61,7 @@ cd ./init && uv run init.py -y
 
 ## Prerequisites
 
-- Python 3.8.0 or higher is installed
+- Python 3.10.0 or higher is installed
 - uv 0.6.16 or higher is installed
   - uv is an emerging Python package and project manager
 - Python packages listed in `pyproject.toml`
@@ -107,7 +107,7 @@ uv run init.py
 
 The `init.sh` script is provided to automate the setup of a Python virtual environment and running the `init.py` script. This is the recommended way to run the script.
 
-Requires Python3.8 and above.
+Requires Python3.10 and above.
 
 ```bash
 init.sh

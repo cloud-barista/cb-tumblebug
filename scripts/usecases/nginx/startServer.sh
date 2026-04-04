@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # README
-# This script sets up an nginx web server, updates the default web page, and optionally uses a provided IP address.
+# This script sets up an nginx web server, updates the default web page,
+# and optionally uses a provided IP address.
 #
 # Usage:
 #   ./script.sh [--ip IP_ADDRESS]
@@ -40,6 +41,9 @@ if [ -z "${HOST_IP}" ]; then
     HOST_IP=$(curl -s https://api.ipify.org)
 fi
 
+# Suppress debconf warnings in non-interactive sessions
+export DEBIAN_FRONTEND=noninteractive
+
 # Update and install nginx
 echo "Updating package lists..."
 sudo apt-get update > /dev/null
@@ -67,14 +71,14 @@ sudo service nginx start
 
 # Function to update the HTML file
 update_html_file() {
-    local file=$1
-    local host_ip=$2
+    local file="$1"
+    local host_ip="$2"
     
-    sudo sed -i "s/<\/title>/<\/title><meta http-equiv=\"refresh\" content=\"1\">/g" $file
-    sudo sed -i "s/<h1>Welcome to nginx!/<h1><br><br>Welcome to Cloud-Barista<br><br>Host IP is<br>$host_ip<br><br>/g" $file
-    sudo sed -i "s/Commercial support is available at/<h2>Check CB-Tumblebug MCI VM Location<\/h2>/g" $file
-    sudo sed -i "s/Thank you for using nginx/Thank you for using Cloud-Barista and CB-Tumblebug/g" $file
-    sudo sed -i "s|<a href=\"http://nginx.com/\">nginx.com</a>.</p>|<a href=\"https://www.geolocation.com/?ip=$host_ip#ipresult\">Check the Location of NGINX HOST</a>.</p>|g" $file
+    sudo sed -i "s/<\/title>/<\/title><meta http-equiv=\"refresh\" content=\"2\">/g" "$file"
+    sudo sed -i "s/<h1>Welcome to nginx!/<h1><br><br>Welcome to Cloud-Barista<br><br>Host IP is<br>$host_ip<br><br>/g" "$file"
+    sudo sed -i "s/Commercial support is available at/<h2>Check CB-Tumblebug MCI VM Location<\/h2>/g" "$file"
+    sudo sed -i "s/Thank you for using nginx/Thank you for using Cloud-Barista and CB-Tumblebug/g" "$file"
+    sudo sed -i "s|<a href=\"http://nginx.com/\">nginx.com</a>.</p>|<a href=\"https://www.geolocation.com/?ip=$host_ip#ipresult\">Check the Location of NGINX HOST</a>.</p>|g" "$file"
 }
 
 # HTML file path
@@ -82,7 +86,7 @@ HTML_FILE="/var/www/html/index.nginx-debian.html"
 
 # Update the HTML file
 echo "Updating HTML file at $HTML_FILE..."
-update_html_file $HTML_FILE $HOST_IP
+update_html_file "$HTML_FILE" "$HOST_IP"
 
 # Print the access URL
 echo "WebServer is ready."

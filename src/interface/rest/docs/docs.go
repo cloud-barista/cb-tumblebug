@@ -17428,6 +17428,105 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/transferFileAndCmd/mci/{mciId}": {
+            "post": {
+                "description": "Transfer a file to all targeted VMs in MCI via SCP, then optionally run a shell command on each VM where the transfer succeeded.\nUseful for deploying files directly to privileged locations (e.g., nginx document root) in a single API call.\nExample: upload index.html to /tmp and run \"sudo mv /tmp/index.html /var/www/html/\" as the post-transfer command.\nThe file size should be less than 50MB.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Transfer a file to MCI and optionally execute a command after transfer",
+                "operationId": "PostFileAndCmdToMci",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SubGroup ID to limit file transfer scope to VMs in a subGroup",
+                        "name": "subGroupId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID to limit file transfer scope to a single VM",
+                        "name": "vmId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "/tmp",
+                        "description": "Target directory path on the VM where the file will be stored",
+                        "name": "path",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "The file to be uploaded (Max 50MB)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Shell command to execute on each VM after successful file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)",
+                        "name": "command",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciFileTransferAndCmdResultForAPI"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/updateExistingSpecListByAvailableRegionZones": {
             "post": {
                 "description": "Query all specs for a specific provider across all regions, check their availability, and remove specs that are not available in their respective regions",
@@ -25402,6 +25501,17 @@ const docTemplate = `{
                     "description": "Name is the template ID and name",
                     "type": "string",
                     "example": "my-template"
+                }
+            }
+        },
+        "model.MciFileTransferAndCmdResultForAPI": {
+            "type": "object",
+            "properties": {
+                "cmdResults": {
+                    "$ref": "#/definitions/model.MciSshCmdResultForAPI"
+                },
+                "fileTransferResults": {
+                    "$ref": "#/definitions/model.MciSshCmdResultForAPI"
                 }
             }
         },

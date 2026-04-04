@@ -232,6 +232,85 @@ func RestPostFileToMci(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
+// RestPostFileAndCmdToMci godoc
+// @ID PostFileAndCmdToMci
+// @Summary Transfer a file to MCI and optionally execute a command after transfer
+// @Description Transfer a file to all targeted VMs in MCI via SCP, then optionally run a shell command on each VM where the transfer succeeded.
+// @Description Useful for deploying files directly to privileged locations (e.g., nginx document root) in a single API call.
+// @Description Example: upload index.html to /tmp and run "sudo mv /tmp/index.html /var/www/html/" as the post-transfer command.
+// @Description The file size should be less than 50MB.
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  multipart/form-data
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param subGroupId query string false "SubGroup ID to limit file transfer scope to VMs in a subGroup"
+// @Param vmId query string false "VM ID to limit file transfer scope to a single VM"
+// @Param path formData string true "Target directory path on the VM where the file will be stored" default(/tmp)
+// @Param file formData file true "The file to be uploaded (Max 50MB)"
+// @Param command formData string false "Shell command to execute on each VM after successful file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)"
+// @Param x-request-id header string false "Custom request ID"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Success 200 {object} model.MciFileTransferAndCmdResultForAPI
+// @Failure 400 {object} model.SimpleMsg "Invalid request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/transferFileAndCmd/mci/{mciId} [post]
+func RestPostFileAndCmdToMci(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	subGroupId := c.QueryParam("subGroupId")
+	vmId := c.QueryParam("vmId")
+	targetPath := c.FormValue("path")
+	command := c.FormValue("command")
+
+	if targetPath == "" {
+		err := fmt.Errorf("target path is required")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		err = fmt.Errorf("failed to read the file: %v", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	fileSizeLimit := int64(50 * 1024 * 1024) // 50MB
+	if file.Size > fileSizeLimit {
+		err := fmt.Errorf("file too large, max size is %v bytes", fileSizeLimit)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		err = fmt.Errorf("failed to open the file: %v", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	defer src.Close()
+
+	fileBytes, err := io.ReadAll(src)
+	if err != nil {
+		err = fmt.Errorf("failed to read the file: %v", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	output, err := infra.TransferFileAndCmdToMci(nsId, mciId, subGroupId, vmId, fileBytes, file.Filename, targetPath, command)
+	if err != nil {
+		err = fmt.Errorf("failed to transfer file to mci: %v", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	apiResult := model.MciFileTransferAndCmdResultForAPI{
+		FileTransferResults: convertSshCmdResultForAPI(output.FileTransferResults),
+	}
+	if len(output.CmdResults) > 0 {
+		cmdResult := convertSshCmdResultForAPI(output.CmdResults)
+		apiResult.CmdResults = &cmdResult
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, apiResult)
+}
+
 // RestPostDownloadFileFromMciVm godoc
 // @ID PostDownloadFileFromMciVm
 // @Summary Download a file from a VM in MCI
