@@ -472,6 +472,7 @@ func RunServer() {
 
 	g.POST("/:nsId/cmd/mci/:mciId", rest_infra.RestPostCmdMci)
 	g.POST("/:nsId/transferFile/mci/:mciId", rest_infra.RestPostFileToMci)
+	g.POST("/:nsId/transferFileAndCmd/mci/:mciId", rest_infra.RestPostFileAndCmdToMci)
 	g.POST("/:nsId/downloadFile/mci/:mciId/vm/:vmId", rest_infra.RestPostDownloadFileFromMciVm)
 
 	// SSE stream for real-time command execution log streaming

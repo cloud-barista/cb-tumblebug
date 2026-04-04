@@ -14564,6 +14564,95 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/transferFileAndCmd/mci/{mciId}:
+    post:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Transfer a file to MCI and optionally execute a command after transfer
+      description: |-
+        Transfer a file to all targeted VMs in MCI via SCP, then optionally run a shell command on each VM where the transfer succeeded.
+        Useful for deploying files directly to privileged locations (e.g., nginx document root) in a single API call.
+        Example: upload index.html to /tmp and run "sudo mv /tmp/index.html /var/www/html/" as the post-transfer command.
+        The file size should be less than 50MB.
+      operationId: PostFileAndCmdToMci
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: subGroupId
+        in: query
+        description: SubGroup ID to limit file transfer scope to VMs in a subGroup
+        schema:
+          type: string
+      - name: vmId
+        in: query
+        description: VM ID to limit file transfer scope to a single VM
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              - path
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: Target directory path on the VM where the file will
+                    be stored
+                  default: /tmp
+                file:
+                  type: string
+                  description: The file to be uploaded (Max 50MB)
+                  format: binary
+                command:
+                  type: string
+                  description: "Shell command to execute on each VM after successful\
+                    \ file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciFileTransferAndCmdResultForAPI'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/updateExistingSpecListByAvailableRegionZones:
     post:
       tags:
@@ -21165,6 +21254,13 @@ components:
           type: string
           description: Name is the template ID and name
           example: my-template
+    model.MciFileTransferAndCmdResultForAPI:
+      type: object
+      properties:
+        cmdResults:
+          $ref: '#/components/schemas/model.MciSshCmdResultForAPI'
+        fileTransferResults:
+          $ref: '#/components/schemas/model.MciSshCmdResultForAPI'
     model.MciHandlingCommandCountResponse:
       type: object
       properties:

@@ -1362,6 +1362,18 @@ type MciSshCmdResultForAPI struct {
 	Results []SshCmdResultForAPI `json:"results"`
 }
 
+// MciFileTransferAndCmdResult is struct for combined file transfer and optional command execution result (internal)
+type MciFileTransferAndCmdResult struct {
+	FileTransferResults []SshCmdResult `json:"fileTransferResults"`
+	CmdResults          []SshCmdResult `json:"cmdResults,omitempty"`
+}
+
+// MciFileTransferAndCmdResultForAPI is the API-friendly version of MciFileTransferAndCmdResult
+type MciFileTransferAndCmdResultForAPI struct {
+	FileTransferResults MciSshCmdResultForAPI  `json:"fileTransferResults"`
+	CmdResults          *MciSshCmdResultForAPI `json:"cmdResults,omitempty"`
+}
+
 // FileDownloadReq is struct for file download request from a VM
 type FileDownloadReq struct {
 	SourcePath string `json:"sourcePath" validate:"required" example:"/home/cb-user/result.json"` // Full path of the file on the remote VM

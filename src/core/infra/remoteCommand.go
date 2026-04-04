@@ -28,6 +28,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -41,6 +42,38 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/ssh"
 )
+
+// bastionMaxConcurrency is the maximum number of concurrent SSH connections
+// allowed per bastion host. It matches the OpenSSH default MaxStartups value (10)
+// so that parallel file transfers and remote commands do not exceed the bastion's
+// built-in limit and trigger "unexpected packet in response to channel open" errors.
+// Override with the TB_BASTION_MAX_CONCURRENCY environment variable.
+var bastionMaxConcurrency = func() int {
+	if v := os.Getenv("TB_BASTION_MAX_CONCURRENCY"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 10 // matches OpenSSH default MaxStartups
+}()
+
+// bastionSemaphores holds one channel-based semaphore per bastion endpoint.
+// Key: bastionEndpoint (host:port string), Value: chan struct{}
+var bastionSemaphores sync.Map
+
+// acquireBastionSlot acquires a concurrency slot for the given bastion endpoint.
+// It creates the semaphore channel on first use. Call releaseBastionSlot when done.
+func acquireBastionSlot(bastionEndpoint string) {
+	sem, _ := bastionSemaphores.LoadOrStore(bastionEndpoint, make(chan struct{}, bastionMaxConcurrency))
+	sem.(chan struct{}) <- struct{}{}
+}
+
+// releaseBastionSlot releases a previously acquired concurrency slot.
+func releaseBastionSlot(bastionEndpoint string) {
+	if sem, ok := bastionSemaphores.Load(bastionEndpoint); ok {
+		<-sem.(chan struct{})
+	}
+}
 
 // sshLogMeta carries streaming context for SSE log publishing.
 // It is stored in the context via sshLogMetaKey so that runSSHWithContext
@@ -1416,6 +1449,9 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 
 	log.Info().Msgf("Attempting to connect to target host %s:%s via bastion", targetHost, targetPort)
 
+	acquireBastionSlot(bastionInfo.EndPoint)
+	defer releaseBastionSlot(bastionInfo.EndPoint)
+
 	retryCount := 3
 	initialTimeout := 20 * time.Second
 	maxTimeout := 60 * time.Second
@@ -1861,6 +1897,61 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 	return resultArray, nil
 }
 
+// TransferFileAndCmdToMci transfers a file to all VMs in MCI and optionally runs a shell command
+// on each VM where the file transfer succeeded.
+func TransferFileAndCmdToMci(nsId string, mciId string, subGroupId string, vmId string, fileData []byte, fileName string, targetPath string, command string) (model.MciFileTransferAndCmdResult, error) {
+	result := model.MciFileTransferAndCmdResult{}
+
+	// Step 1: transfer file to all targeted VMs
+	transferResults, err := TransferFileToMci(nsId, mciId, subGroupId, vmId, fileData, fileName, targetPath)
+	if err != nil {
+		return result, err
+	}
+	result.FileTransferResults = transferResults
+
+	if command == "" {
+		return result, nil
+	}
+
+	// Step 2: run command on VMs where file transfer succeeded
+	var wg sync.WaitGroup
+	var cmdResultArray []model.SshCmdResult
+	var mu sync.Mutex
+
+	for _, tr := range transferResults {
+		if tr.Err != nil {
+			continue // skip VMs where transfer failed
+		}
+		wg.Add(1)
+		go func(vmId string, vmIp string) {
+			defer wg.Done()
+			stdout, stderr, cmdErr := RunRemoteCommand(nsId, mciId, vmId, "", []string{command})
+			if stdout == nil {
+				stdout = map[int]string{}
+			}
+			if stderr == nil {
+				stderr = map[int]string{}
+			}
+			cmdResult := model.SshCmdResult{
+				MciId:   mciId,
+				VmId:    vmId,
+				VmIp:    vmIp,
+				Command: map[int]string{0: command},
+				Stdout:  stdout,
+				Stderr:  stderr,
+				Err:     cmdErr,
+			}
+			mu.Lock()
+			cmdResultArray = append(cmdResultArray, cmdResult)
+			mu.Unlock()
+		}(tr.VmId, tr.VmIp)
+	}
+	wg.Wait()
+	result.CmdResults = cmdResultArray
+
+	return result, nil
+}
+
 // transferFileToVmViaBastion is a function to transfer a file to a specific VM via Bastion Host
 func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSshInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
 
@@ -1910,9 +2001,27 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 		VmId:  vmId,
 	}
 
-	err = runSCPWithBastion(bastionSshInfo, targetSshInfo, fileData, fileName, targetPath, bastionCtx, targetCtx)
-	if err != nil {
-		return fmt.Errorf("failed to transfer file to VM via bastion: %v", err)
+	scpRetryCount := 3
+	for attempt := range scpRetryCount {
+		acquireBastionSlot(bastionSshInfo.EndPoint)
+		err = runSCPWithBastion(bastionSshInfo, targetSshInfo, fileData, fileName, targetPath, bastionCtx, targetCtx)
+		releaseBastionSlot(bastionSshInfo.EndPoint)
+
+		if err == nil {
+			break
+		}
+
+		isTransient := strings.Contains(err.Error(), "unexpected packet") ||
+			strings.Contains(err.Error(), "handshake failed") ||
+			strings.Contains(err.Error(), "EOF")
+
+		if !isTransient || attempt == scpRetryCount-1 {
+			return fmt.Errorf("failed to transfer file to VM via bastion: %v", err)
+		}
+
+		waitTime := time.Duration(3*(attempt+1)) * time.Second
+		log.Warn().Err(err).Msgf("SCP transient failure to VM %s, retrying in %v (attempt %d/%d)", vmId, waitTime, attempt+1, scpRetryCount)
+		time.Sleep(waitTime)
 	}
 
 	log.Info().Msgf("File successfully transferred to VM %s via bastion", vmId)
