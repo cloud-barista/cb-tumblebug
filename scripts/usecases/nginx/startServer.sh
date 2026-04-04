@@ -46,13 +46,13 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Update and install nginx
 echo "Updating package lists..."
-sudo apt-get update > /dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null
 
 echo "Installing nginx..."
-sudo apt-get -y install nginx > /dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nginx > /dev/null
 
 # Check nginx version
-nginx -v
+nginx -v 2>&1
 
 # Disable IPv6 settings in nginx configuration
 FILE="/etc/nginx/sites-enabled/default"
