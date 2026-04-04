@@ -48,11 +48,10 @@ export DEBIAN_FRONTEND=noninteractive
 echo "Updating package lists..."
 sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null
 
-echo "Installing nginx..."
+echo "Installing Web Server..."
 sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nginx > /dev/null
 
-# Check nginx version
-nginx -v 2>&1
+
 
 # Disable IPv6 settings in nginx configuration
 FILE="/etc/nginx/sites-enabled/default"
@@ -66,7 +65,7 @@ else
 fi
 
 # Start nginx service
-echo "Starting nginx service..."
+echo "Starting Web Server..."
 sudo service nginx start
 
 # Function to update the HTML file
