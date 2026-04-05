@@ -562,7 +562,7 @@ func RestPostSpecImagePairReview(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ReviewSpecImagePair(req.SpecId, req.ImageId)
+	result, err := infra.ReviewSpecImagePair(c.Request().Context(), req.SpecId, req.ImageId)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to review spec-image pair")
 		return clientManager.EndRequestWithLog(c, err, nil)

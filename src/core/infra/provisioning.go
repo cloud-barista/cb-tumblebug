@@ -28,6 +28,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	azure "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -2053,7 +2054,7 @@ func reviewSingleSubGroupDynamicReq(ctx context.Context, subGroupDynamicReq mode
 }
 
 // ReviewSpecImagePair reviews spec and image pair compatibility for provisioning
-func ReviewSpecImagePair(specId, imageId string) (*model.SpecImagePairReviewResult, error) {
+func ReviewSpecImagePair(ctx context.Context, specId, imageId string) (*model.SpecImagePairReviewResult, error) {
 	log.Debug().Msgf("Reviewing spec-image pair: spec=%s, image=%s", specId, imageId)
 
 	result := &model.SpecImagePairReviewResult{
@@ -2086,15 +2087,47 @@ func ReviewSpecImagePair(specId, imageId string) (*model.SpecImagePairReviewResu
 		result.RegionName = specInfo.RegionName
 
 		// Check if spec is available in CSP
-		cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
-		if err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", specId, err))
+		specAvailable := false
+		var specCheckErr error
+
+		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
+			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
+			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check")
+			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
+			if azErr == nil {
+				specAvailable = specResult.Available
+				if !specAvailable {
+					// Azure positively reported the spec as unavailable; treat as authoritative.
+					specCheckErr = fmt.Errorf("%s", specResult.Reason)
+				}
+			} else {
+				// Fall back to CB-Spider LookupSpec on Azure check errors to preserve existing behavior.
+				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
+				_, specCheckErr = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+				if specCheckErr == nil {
+					specAvailable = true
+				}
+			}
+		} else {
+			// Other providers: use CB-Spider LookupSpec
+			_, specCheckErr = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+			if specCheckErr == nil {
+				specAvailable = true
+			}
+		}
+
+		if specCheckErr != nil || !specAvailable {
+			errMsg := "spec not available in CSP"
+			if specCheckErr != nil {
+				errMsg = specCheckErr.Error()
+			}
+			result.Errors = append(result.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %s", specId, errMsg))
 			result.SpecValidation = model.ReviewResourceValidation{
 				ResourceId:    specId,
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   false,
 				Status:        "Unavailable",
-				Message:       err.Error(),
+				Message:       errMsg,
 				CspResourceId: specInfo.CspSpecName,
 			}
 			result.IsValid = false
@@ -2106,7 +2139,7 @@ func ReviewSpecImagePair(specId, imageId string) (*model.SpecImagePairReviewResu
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
 				Status:        "Available",
-				CspResourceId: cspSpec.Name,
+				CspResourceId: specInfo.CspSpecName,
 			}
 
 			// Add cost estimation if available
