@@ -322,6 +322,20 @@ func GetMciInfo(nsId string, mciId string) (*model.MciInfo, error) {
 	return &mciObj, nil
 }
 
+// filterOutSystemLabels returns a copy of labels excluding system-managed keys (prefixed with "sys.").
+func filterOutSystemLabels(labels map[string]string) map[string]string {
+	if len(labels) == 0 {
+		return labels
+	}
+	filtered := make(map[string]string)
+	for k, v := range labels {
+		if !strings.HasPrefix(k, model.LabelSystemPrefix) {
+			filtered[k] = v
+		}
+	}
+	return filtered
+}
+
 // ExtractMciDynamicReqFromMciInfo reconstructs an MciDynamicReq from a running MCI's info.
 // This returns a dynamic creation request (resources like vNet, subnet, SG, sshKey are auto-created)
 // so that users can easily clone or recreate a similar MCI configuration.
@@ -358,7 +372,7 @@ func ExtractMciDynamicReqFromMciInfo(nsId string, mciId string) (*model.MciDynam
 		sg := model.CreateSubGroupDynamicReq{
 			Name:           sgId,
 			SubGroupSize:   len(vms),
-			Label:          rep.Label,
+			Label:          filterOutSystemLabels(rep.Label),
 			Description:    rep.Description,
 			ConnectionName: rep.ConnectionName,
 			SpecId:         rep.SpecId,
@@ -373,7 +387,7 @@ func ExtractMciDynamicReqFromMciInfo(nsId string, mciId string) (*model.MciDynam
 	mciDynamicReq := &model.MciDynamicReq{
 		Name:            mciInfo.Name,
 		InstallMonAgent: mciInfo.InstallMonAgent,
-		Label:           mciInfo.Label,
+		Label:           filterOutSystemLabels(mciInfo.Label),
 		SystemLabel:     mciInfo.SystemLabel,
 		Description:     mciInfo.Description,
 		SubGroups:       subGroups,

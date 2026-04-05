@@ -1308,9 +1308,11 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	mciResult.TargetStatus = model.StatusComplete
 	mciResult.TargetAction = model.ActionComplete
 	UpdateMciInfo(nsId, *mciResult)
-	*mciResult, _, err = GetMciObject(nsId, mciId)
+
+	// Re-read with labels properly loaded from the label store
+	mciResult, err = GetMciInfo(nsId, mciId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
+		return nil, fmt.Errorf("failed to get MCI info after VM creation: %w", err)
 	}
 	return mciResult, nil
 }
@@ -1879,15 +1881,53 @@ func reviewSingleSubGroupDynamicReq(ctx context.Context, subGroupDynamicReq mode
 		vmReview.RegionName = specInfo.RegionName
 
 		// Check if spec is available in CSP
-		cspSpec, err := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
-		if err != nil {
-			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", subGroupDynamicReq.SpecId, err))
+		specAvailable := false
+		var specCheckErr error
+		cspSpecName := specInfo.CspSpecName
+
+		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
+			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
+			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check for MCI review")
+			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
+			if azErr == nil {
+				specAvailable = specResult.Available
+				if !specAvailable {
+					specCheckErr = fmt.Errorf("%s", specResult.Reason)
+				}
+			} else {
+				// Fall back to CB-Spider LookupSpec on Azure check errors
+				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
+				cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
+				if lookupErr == nil {
+					specAvailable = true
+					cspSpecName = cspSpec.Name
+				} else {
+					specCheckErr = lookupErr
+				}
+			}
+		} else {
+			// Other providers: use CB-Spider LookupSpec
+			cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
+			if lookupErr == nil {
+				specAvailable = true
+				cspSpecName = cspSpec.Name
+			} else {
+				specCheckErr = lookupErr
+			}
+		}
+
+		if specCheckErr != nil || !specAvailable {
+			errMsg := "spec not available in CSP"
+			if specCheckErr != nil {
+				errMsg = specCheckErr.Error()
+			}
+			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %s", subGroupDynamicReq.SpecId, errMsg))
 			vmReview.SpecValidation = model.ReviewResourceValidation{
 				ResourceId:    subGroupDynamicReq.SpecId,
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   false,
 				Status:        "Unavailable",
-				Message:       err.Error(),
+				Message:       errMsg,
 				CspResourceId: specInfo.CspSpecName,
 			}
 			vmReview.CanCreate = false
@@ -1898,7 +1938,7 @@ func reviewSingleSubGroupDynamicReq(ctx context.Context, subGroupDynamicReq mode
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
 				Status:        "Available",
-				CspResourceId: cspSpec.Name,
+				CspResourceId: cspSpecName,
 			}
 
 			// Add cost estimation if available
