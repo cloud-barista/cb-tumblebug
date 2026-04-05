@@ -492,7 +492,8 @@ func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, con
 	if cspResourceId != "" {
 		cc, err := getConnConfigFromConnectionName(connectionName)
 		if err == nil {
-			handled, batchErr := cspdirect.TryBatchUpsertTags(context.Background(), cc.ProviderName, cc.RegionZoneInfo.AssignedRegion, cc.RegionZoneInfo.AssignedZone, cspResourceId, labelType, labels)
+			ctx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, cc.CredentialHolder)
+			handled, batchErr := cspdirect.TryBatchUpsertTags(ctx, cc.ProviderName, cc.RegionZoneInfo.AssignedRegion, cc.RegionZoneInfo.AssignedZone, cspResourceId, labelType, labels)
 			if batchErr != nil {
 				log.Warn().Err(batchErr).Str("provider", cc.ProviderName).Str("connectionName", connectionName).Msg("[Label] Direct CSP batch tag failed, falling back to CB-Spider")
 			}

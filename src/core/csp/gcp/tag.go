@@ -127,6 +127,41 @@ func prioritizeLabels(tags map[string]string) map[string]string {
 	return result
 }
 
+// truncateLabels reduces merged labels to maxCount by keeping new (non-sys) labels
+// and dropping sys.* labels first, then oldest keys alphabetically.
+func truncateLabels(merged map[string]string, maxCount int) map[string]string {
+	if len(merged) <= maxCount {
+		return merged
+	}
+
+	type kv struct{ key, value string }
+	var user, sys []kv
+	for k, v := range merged {
+		if strings.HasPrefix(k, "sys_") || strings.HasPrefix(k, "l_sys_") {
+			sys = append(sys, kv{k, v})
+		} else {
+			user = append(user, kv{k, v})
+		}
+	}
+	sort.Slice(user, func(i, j int) bool { return user[i].key < user[j].key })
+	sort.Slice(sys, func(i, j int) bool { return sys[i].key < sys[j].key })
+
+	result := make(map[string]string, maxCount)
+	for _, l := range user {
+		if len(result) >= maxCount {
+			break
+		}
+		result[l.key] = l.value
+	}
+	for _, l := range sys {
+		if len(result) >= maxCount {
+			break
+		}
+		result[l.key] = l.value
+	}
+	return result
+}
+
 // BatchUpsertTags sets labels on a GCP Compute resource (VM instance or disk).
 // Labels are sanitized to meet GCP naming rules (lowercase, no special chars).
 // Only "vm" and "dataDisk" resource types are supported; others return an error
@@ -182,6 +217,11 @@ func upsertVMLabels(svc *compute.Service, projectID, zone, instanceName string, 
 		merged[k] = v
 	}
 
+	// Enforce GCP's 64-label limit after merge
+	if len(merged) > gcpMaxLabels {
+		merged = truncateLabels(merged, gcpMaxLabels)
+	}
+
 	req := &compute.InstancesSetLabelsRequest{
 		LabelFingerprint: instance.LabelFingerprint,
 		Labels:           merged,
@@ -217,6 +257,11 @@ func upsertDiskLabels(svc *compute.Service, projectID, zone, diskName string, la
 	}
 	for k, v := range labels {
 		merged[k] = v
+	}
+
+	// Enforce GCP's 64-label limit after merge
+	if len(merged) > gcpMaxLabels {
+		merged = truncateLabels(merged, gcpMaxLabels)
 	}
 
 	req := &compute.ZoneSetLabelsRequest{
