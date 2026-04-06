@@ -637,12 +637,17 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 				nsId, provider, len(connConfigList))
 
 			// Adjust parallel connections for specific providers
+			// Parallel spec fetch capacity test results (2026-04-06, cb-spider vmspec API):
+			//   AWS     (28 conns): 28/28 OK at full parallel (~8.8s)  -> no limit needed
+			//   GCP     (42 conns): 42/42 OK at full parallel (~3.2s)  -> no limit needed
+			//   Azure   (46 conns): 46/46 OK at full parallel (~100s)  -> no limit needed
+			//   Tencent (16 conns): 16/16 OK at full parallel (~11.0s) -> no limit needed
+			//   IBM     (11 conns): 11/11 OK at full parallel (~8.5s)  -> no limit needed
+			//   Alibaba (29 conns): 5/5 OK (100%), 10+ causes ~90% timeout -> limit to 5
 			providerParallelConn := parallelConnPerProvider
-			// if provider == csp.AWS {
-			// 	providerParallelConn = 3 // AWS can handle more parallel connections
-			// } else if provider == csp.Azure {
-			// 	providerParallelConn = 2 // Azure moderate parallelism
-			// }
+			if provider == csp.Alibaba {
+				providerParallelConn = 3 // Alibaba API times out at 10+ concurrent requests
+			}
 
 			// Set up semaphore for controlled parallelism
 			semaphore := make(chan struct{}, providerParallelConn)
