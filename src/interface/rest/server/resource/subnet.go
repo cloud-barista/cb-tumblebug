@@ -42,6 +42,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [post]
 func RestPostSubnet(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	// [Input]
 	nsId := c.Param("nsId")
@@ -65,7 +66,7 @@ func RestPostSubnet(c echo.Context) error {
 	}
 
 	// [Process]
-	resp, err := resource.CreateSubnet(nsId, vNetId, reqt)
+	resp, err := resource.CreateSubnet(ctx, nsId, vNetId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -319,6 +320,7 @@ func RestDelAllSubnet(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerCspResource/vNet/{vNetId}/subnet [post]
 func RestPostRegisterSubnet(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	// [Input]
 	nsId := c.Param("nsId")
@@ -342,7 +344,7 @@ func RestPostRegisterSubnet(c echo.Context) error {
 	}
 
 	// [Process]
-	resp, err := resource.RegisterSubnet(nsId, vNetId, reqt)
+	resp, err := resource.RegisterSubnet(ctx, nsId, vNetId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

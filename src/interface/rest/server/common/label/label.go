@@ -40,6 +40,7 @@ import (
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /label/{labelType}/{uid} [put]
 func RestCreateOrUpdateLabel(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	labelType := c.Param("labelType")
 	uid := c.Param("uid")
@@ -54,7 +55,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	resourceKey := fmt.Sprintf("/%s/%s", labelType, uid)
 
 	// Create or update the label in the KV store
-	err := label.CreateOrUpdateLabel(labelType, uid, resourceKey, labelReq.Labels)
+	err := label.CreateOrUpdateLabel(ctx, labelType, uid, resourceKey, labelReq.Labels)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -77,6 +78,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /mergeCSPLabel/{labelType}/{uid} [put]
 func RestMergeCSPResourceLabel(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	labelType := c.Param("labelType")
 	uid := c.Param("uid")
@@ -85,7 +87,7 @@ func RestMergeCSPResourceLabel(c echo.Context) error {
 	resourceKey := fmt.Sprintf("/%s/%s", labelType, uid)
 
 	// Create or update the label in the KV store
-	err := label.MergeCSPResourceLabel(labelType, uid, resourceKey)
+	err := label.MergeCSPResourceLabel(ctx, labelType, uid, resourceKey)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -109,13 +111,14 @@ func RestMergeCSPResourceLabel(c echo.Context) error {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /label/{labelType}/{uid}/{key} [delete]
 func RestRemoveLabel(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	labelType := c.Param("labelType")
 	uid := c.Param("uid")
 	key := c.Param("key")
 
 	// Remove the label from the KV store
-	err := label.RemoveLabel(labelType, uid, key)
+	err := label.RemoveLabel(ctx, labelType, uid, key)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

@@ -612,7 +612,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 		model.LabelStatus:      vpnInfo.Status,
 		model.LabelDescription: vpnInfo.Description,
 	}
-	err = label.CreateOrUpdateLabel(model.StrVPN, vpnInfo.Uid, vpnKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrVPN, vpnInfo.Uid, vpnKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

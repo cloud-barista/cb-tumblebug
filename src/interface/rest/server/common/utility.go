@@ -656,6 +656,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /registerCspResources [post]
 func RestRegisterCspNativeResources(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	u := &RestRegisterCspNativeResourcesRequest{}
 	if err := c.Bind(u); err != nil {
@@ -696,14 +697,14 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	} else {
 		// Priority 3: Empty - process all connections
 		log.Info().Msg("No filter specified, registering resources from all connections")
-		content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciNamePrefix, option, mciFlag)
+		content, err := infra.RegisterCspNativeResourcesAll(ctx, u.NsId, u.MciNamePrefix, option, mciFlag)
 		return clientManager.EndRequestWithLog(c, err, content)
 	}
 
 	// Process single connection
 	if len(connectionNames) == 1 {
 		log.Info().Msgf("Registering resources from single connection: %s", connectionNames[0])
-		content, err := infra.RegisterCspNativeResources(u.NsId, connectionNames[0], u.MciNamePrefix, option, mciFlag)
+		content, err := infra.RegisterCspNativeResources(ctx, u.NsId, connectionNames[0], u.MciNamePrefix, option, mciFlag)
 		return clientManager.EndRequestWithLog(c, err, content)
 	}
 
@@ -716,7 +717,7 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	startTime := time.Now()
 	for _, connName := range connectionNames {
 		log.Info().Msgf("Processing connection: %s", connName)
-		connResult, err := infra.RegisterCspNativeResources(u.NsId, connName, u.MciNamePrefix, option, mciFlag)
+		connResult, err := infra.RegisterCspNativeResources(ctx, u.NsId, connName, u.MciNamePrefix, option, mciFlag)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to register resources for connection: %s", connName)
 			connResult.SystemMessage = fmt.Sprintf("Error: %v", err)
@@ -760,6 +761,7 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /registerCspResourcesAll [post]
 func RestRegisterCspNativeResourcesAll(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	u := &RestRegisterCspNativeResourcesRequestAll{}
 	if err := c.Bind(u); err != nil {
@@ -770,7 +772,7 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 
 	log.Warn().Msg("[DEPRECATED] /registerCspResourcesAll is deprecated. Use /registerCspResources with empty connectionName instead.")
 
-	content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciNamePrefix, option, mciFlag)
+	content, err := infra.RegisterCspNativeResourcesAll(ctx, u.NsId, u.MciNamePrefix, option, mciFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

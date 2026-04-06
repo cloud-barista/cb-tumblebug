@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -88,7 +89,7 @@ func IsValidCspForSqlDB(csp string) (bool, error) {
 // }
 
 // CreateSqlDB creates a SQL database via Terrarium
-func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string) (model.SqlDBInfo, error) {
+func CreateSqlDB(ctx context.Context, nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string) (model.SqlDBInfo, error) {
 
 	// SQL DB objects
 	var emptyRet model.SqlDBInfo
@@ -553,7 +554,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 		model.LabelStatus:          sqlDBInfo.Status,
 		model.LabelDescription:     sqlDBInfo.Description,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSqlDB, sqlDBInfo.Uid, sqlDBKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrSqlDB, sqlDBInfo.Uid, sqlDBKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

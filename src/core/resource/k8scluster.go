@@ -17,6 +17,7 @@ package resource
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -210,7 +211,7 @@ func deleteK8sClusterInfo(nsId, k8sClusterId string) error {
 }
 
 // CreateK8sCluster create a k8s cluster
-func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
+func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq, option string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
 	log.Info().Msg("CreateK8sCluster")
 
 	emptyObj := &model.K8sClusterInfo{}
@@ -562,7 +563,7 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 		labels[key] = value
 	}
 	k8sClusterKey := common.GenK8sClusterKey(nsId, k8sClusterId)
-	labelErr := label.CreateOrUpdateLabel(model.StrK8s, uid, k8sClusterKey, labels)
+	labelErr := label.CreateOrUpdateLabel(ctx, model.StrK8s, uid, k8sClusterKey, labels)
 	if labelErr != nil {
 		// Label creation failure should not fail the entire cluster creation
 		// Log the error but continue with the cluster creation
@@ -1488,7 +1489,7 @@ func DeleteAllK8sCluster(nsId, subString, option string) (*model.IdList, error) 
 }
 
 // UpgradeK8sCluster upgrades an existing k8s cluster to the specified version
-func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClusterReq, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
+func UpgradeK8sCluster(ctx context.Context, nsId string, k8sClusterId string, u *model.UpgradeK8sClusterReq, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
 	log.Info().Msg("UpgradeK8sCluster")
 
 	emptyObj := &model.K8sClusterInfo{}
@@ -1584,7 +1585,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClus
 		model.LabelCreatedTime: tbK8sCInfo.CreatedTime.String(),
 	}
 	k8sClusterKey := common.GenK8sClusterKey(nsId, k8sClusterId)
-	err = label.CreateOrUpdateLabel(model.StrK8s, storedTbK8sCInfo.Uid, k8sClusterKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrK8s, storedTbK8sCInfo.Uid, k8sClusterKey, labels)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Upgrade a K8sCluster(%s)", k8sClusterId)
 		return emptyObj, err

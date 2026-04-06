@@ -166,6 +166,7 @@ func RestGetRequiredK8sSubnetCount(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster [post]
 func RestPostK8sCluster(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 
@@ -180,7 +181,7 @@ func RestPostK8sCluster(c echo.Context) error {
 
 	log.Debug().Msg("[POST K8sCluster]")
 
-	content, err := resource.CreateK8sCluster(nsId, u, optionFlag, skipVersionCheck)
+	content, err := resource.CreateK8sCluster(ctx, nsId, u, optionFlag, skipVersionCheck)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -584,6 +585,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/upgrade [put]
 func RestPutUpgradeK8sCluster(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
@@ -598,7 +600,7 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 
 	log.Debug().Msg("[PUT Upgrade K8sCluster]")
 
-	content, err := resource.UpgradeK8sCluster(nsId, k8sClusterId, u, skipVersionCheck)
+	content, err := resource.UpgradeK8sCluster(ctx, nsId, k8sClusterId, u, skipVersionCheck)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")

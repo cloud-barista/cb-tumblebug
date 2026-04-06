@@ -77,6 +77,7 @@ func RestGetObjectStorageSupport(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage [put]
 func RestCreateObjectStorage(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	// [Input]
 	nsId := c.Param("nsId")
@@ -94,7 +95,7 @@ func RestCreateObjectStorage(c echo.Context) error {
 
 	// [Process]
 	// Perform the operation
-	result, err := resource.CreateObjectStorage(nsId, req)
+	result, err := resource.CreateObjectStorage(ctx, nsId, req)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return c.JSON(http.StatusConflict, model.SimpleMsg{Message: err.Error()})

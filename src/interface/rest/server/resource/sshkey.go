@@ -38,6 +38,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sshKey [post]
 func RestPostSshKey(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 
@@ -48,7 +49,7 @@ func RestPostSshKey(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.CreateSshKey(nsId, u, optionFlag)
+	content, err := resource.CreateSshKey(ctx, nsId, u, optionFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

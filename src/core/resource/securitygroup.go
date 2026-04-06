@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -134,7 +135,7 @@ func parsePortsToFromTo(ports string) (string, string) {
 }
 
 // CreateSecurityGroup accepts SG creation request, creates and returns an TB SG object
-func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) (model.SecurityGroupInfo, error) {
+func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGroupReq, option string) (model.SecurityGroupInfo, error) {
 
 	resourceType := model.StrSecurityGroup
 
@@ -381,7 +382,7 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 		model.LabelDescription:     content.Description,
 		model.LabelConnectionName:  content.ConnectionName,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSecurityGroup, uid, Key, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrSecurityGroup, uid, Key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err

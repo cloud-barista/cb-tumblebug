@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -728,7 +729,7 @@ func getRegisterRateLimitsForCSP(providerName string) (maxConns int, delayMinMs 
 // RegisterCspNativeResourcesAll registers all CSP-native resources into CB-TB
 // using hierarchical rate limiting: global cap → per-CSP cap → per-connection processing.
 // Results are collected via a channel to avoid data races.
-func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
+func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
 	if _, err := getValidatedOptionMap(option); err != nil {
@@ -801,7 +802,7 @@ func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option str
 					mciNameForRegister := mciNamePrefix + "-" + k.ConfigName
 
 					log.Debug().Msgf("Registering resources for connection %s (CSP: %s)", k.ConfigName, providerName)
-					registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mciNameForRegister, option, mciFlag)
+					registerResult, err := RegisterCspNativeResources(ctx, nsId, k.ConfigName, mciNameForRegister, option, mciFlag)
 					if err != nil {
 						log.Error().Err(err).Msgf("Failed to register resources for connection %s", k.ConfigName)
 					}
@@ -862,7 +863,7 @@ func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option str
 }
 
 // RegisterCspNativeResources registers specified CSP native resources from a target connection.
-func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceResult, error) {
+func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
 	optionFlag := "register"
 	result := model.RegisterResourceResult{}
@@ -904,7 +905,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed VNet (registered to CB-TB)",
 				}
-				_, err = resource.RegisterVNet(nsId, &req)
+				_, err = resource.RegisterVNet(ctx, nsId, &req)
 				appendResult(&result, model.StrVNet, req.Name, err, &result.RegisterationOverview.VNet)
 			}
 		}
@@ -920,7 +921,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 					VNetId: "unknown", Description: "Ref name: " + r.RefNameOrId + ". CSP managed Security Group (registered to CB-TB)",
 				}
-				_, err = resource.CreateSecurityGroup(nsId, &req, optionFlag)
+				_, err = resource.CreateSecurityGroup(ctx, nsId, &req, optionFlag)
 				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegisterationOverview.SecurityGroup)
 			}
 		}
@@ -937,7 +938,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 					Username: "unknown", Fingerprint: "unknown", PublicKey: "unknown", PrivateKey: "unknown",
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed SSH Key (registered to CB-TB)",
 				}
-				_, err = resource.CreateSshKey(nsId, &req, optionFlag)
+				_, err = resource.CreateSshKey(ctx, nsId, &req, optionFlag)
 				appendResult(&result, model.StrSSHKey, req.Name, err, &result.RegisterationOverview.SshKey)
 			}
 		}
@@ -1000,7 +1001,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 						ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
 						SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 					}
-					mciInfo, err := CreateMciGroupVm(nsId, mciName, subGroupReq, true)
+					mciInfo, err := CreateMciGroupVm(ctx, nsId, mciName, subGroupReq, true)
 					appendResult(&result, model.StrVM, tempSubGroupName, err, &result.RegisterationOverview.Vm)
 					if err == nil {
 						registeredMcis[mciName] = true
@@ -1022,7 +1023,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 							SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 						}},
 					}
-					mciInfo, err := CreateMci(nsId, &req, optionFlag, false)
+					mciInfo, err := CreateMci(ctx, nsId, &req, optionFlag, false)
 					appendResult(&result, model.StrVM, tempSubGroupName, err, &result.RegisterationOverview.Vm)
 
 					if err == nil {
@@ -1138,7 +1139,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed Data Disk (registered to CB-TB)",
 				}
-				_, err = resource.CreateDataDisk(nsId, &req, optionFlag)
+				_, err = resource.CreateDataDisk(ctx, nsId, &req, optionFlag)
 				appendResult(&result, model.StrDataDisk, req.Name, err, &result.RegisterationOverview.DataDisk)
 			}
 		}

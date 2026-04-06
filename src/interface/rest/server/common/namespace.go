@@ -158,13 +158,14 @@ func RestGetNs(c echo.Context) error {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns [post]
 func RestPostNs(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	u := &model.NsReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := common.CreateNs(u)
+	content, err := common.CreateNs(ctx, u)
 	return clientManager.EndRequestWithLog(c, err, content)
 
 }

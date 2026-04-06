@@ -41,6 +41,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet [post]
 func RestPostVNet(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	// [Input]
 	nsId := c.Param("nsId")
@@ -66,7 +67,7 @@ func RestPostVNet(c echo.Context) error {
 	}
 
 	// [Process] Create new vNet
-	resp, err := resource.CreateVNet(nsId, reqt)
+	resp, err := resource.CreateVNet(ctx, nsId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -277,6 +278,7 @@ func RestDelAllVNet(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerCspResource/vNet [post]
 func RestPostRegisterVNet(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	// [Input]
 	nsId := c.Param("nsId")
@@ -305,7 +307,7 @@ func RestPostRegisterVNet(c echo.Context) error {
 	}
 
 	// [Process] Register the VNet created externally
-	resp, err := resource.RegisterVNet(nsId, reqt)
+	resp, err := resource.RegisterVNet(ctx, nsId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

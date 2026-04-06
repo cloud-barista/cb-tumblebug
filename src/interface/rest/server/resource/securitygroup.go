@@ -39,6 +39,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup [post]
 func RestPostSecurityGroup(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 
@@ -49,7 +50,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.CreateSecurityGroup(nsId, u, optionFlag)
+	content, err := resource.CreateSecurityGroup(ctx, nsId, u, optionFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -188,7 +189,7 @@ type spiderSubnetInfo struct {
 }
 
 // CreateSubnet creates and returns the vNet object
-func CreateSubnet(nsId string, vNetId string, subnetReq *model.SubnetReq) (model.SubnetInfo, error) {
+func CreateSubnet(ctx context.Context, nsId string, vNetId string, subnetReq *model.SubnetReq) (model.SubnetInfo, error) {
 	log.Info().Msg("CreateSubnet")
 
 	log.Debug().Msgf("nsId: %s", nsId)
@@ -446,7 +447,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.SubnetReq) (model
 		model.LabelDescription:     subnetInfo.Description,
 		model.LabelConnectionName:  subnetInfo.ConnectionName,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, subnetKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrSubnet, uid, subnetKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1036,7 +1037,7 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	return ret, nil
 }
 
-func RegisterSubnet(nsId string, vNetId string, subnetReq *model.RegisterSubnetReq) (model.SubnetInfo, error) {
+func RegisterSubnet(ctx context.Context, nsId string, vNetId string, subnetReq *model.RegisterSubnetReq) (model.SubnetInfo, error) {
 	log.Info().Msg("RegisterSubnet")
 
 	// subnet objects
@@ -1269,7 +1270,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.RegisterSubnetR
 		model.LabelDescription:     subnetInfo.Description,
 		model.LabelConnectionName:  subnetInfo.ConnectionName,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, vNetKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrSubnet, uid, vNetKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

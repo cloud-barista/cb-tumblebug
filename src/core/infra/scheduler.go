@@ -699,6 +699,7 @@ func (job *ScheduledJob) execute() {
 			} else {
 				// Priority 3: Empty - process all connections
 				result, err = RegisterCspNativeResourcesAll(
+					context.Background(),
 					job.NsId,
 					job.MciNamePrefix,
 					job.Option,
@@ -710,6 +711,7 @@ func (job *ScheduledJob) execute() {
 			// Process single connection
 			if len(connectionNames) == 1 {
 				result, err = RegisterCspNativeResources(
+					context.Background(),
 					job.NsId,
 					connectionNames[0],
 					job.MciNamePrefix,
@@ -723,6 +725,7 @@ func (job *ScheduledJob) execute() {
 				}
 				for _, connName := range connectionNames {
 					connResult, connErr := RegisterCspNativeResources(
+						context.Background(),
 						job.NsId,
 						connName,
 						job.MciNamePrefix,
@@ -741,6 +744,7 @@ func (job *ScheduledJob) execute() {
 
 		case JobTypeRegisterCspResourcesAll:
 			result, err = RegisterCspNativeResourcesAll(
+				context.Background(),
 				job.NsId,
 				job.MciNamePrefix,
 				job.Option,

@@ -365,6 +365,7 @@ func RestLoadAssets(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/sharedResource [post]
 func RestCreateSharedResource(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	resType := c.QueryParam("option")
@@ -372,7 +373,7 @@ func RestCreateSharedResource(c echo.Context) error {
 	// default of connectionConfig is empty string. with empty string, register all resources.
 	connectionName := c.QueryParam("connectionName")
 
-	err := resource.CreateSharedResource(nsId, resType, connectionName)
+	err := resource.CreateSharedResource(ctx, nsId, resType, connectionName)
 	content := map[string]string{"message": "Done"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }

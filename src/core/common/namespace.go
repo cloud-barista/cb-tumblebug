@@ -15,6 +15,7 @@ limitations under the License.
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,7 +54,7 @@ func NsValidation() echo.MiddlewareFunc {
 	}
 }
 
-func CreateNs(u *model.NsReq) (model.NsInfo, error) {
+func CreateNs(ctx context.Context, u *model.NsReq) (model.NsInfo, error) {
 	err := CheckString(u.Name)
 	if err != nil {
 		temp := model.NsInfo{}
@@ -98,7 +99,7 @@ func CreateNs(u *model.NsReq) (model.NsInfo, error) {
 		model.LabelUid:         content.Uid,
 		model.LabelDescription: content.Description,
 	}
-	err = label.CreateOrUpdateLabel(model.StrNamespace, content.Uid, key, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrNamespace, content.Uid, key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err

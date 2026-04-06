@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -2114,7 +2115,7 @@ func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedRe
 }
 
 // ProvisionDataDisk is func to provision DataDisk to VM (create and attach to VM)
-func ProvisionDataDisk(nsId string, mciId string, vmId string, u *model.DataDiskVmReq) (model.VmInfo, error) {
+func ProvisionDataDisk(ctx context.Context, nsId string, mciId string, vmId string, u *model.DataDiskVmReq) (model.VmInfo, error) {
 	vm, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -2129,7 +2130,7 @@ func ProvisionDataDisk(nsId string, mciId string, vmId string, u *model.DataDisk
 		Description:    u.Description,
 	}
 
-	newDataDisk, err := resource.CreateDataDisk(nsId, &createDiskReq, "")
+	newDataDisk, err := resource.CreateDataDisk(ctx, nsId, &createDiskReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.VmInfo{}, err

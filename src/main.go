@@ -135,7 +135,7 @@ func init() {
 	if err != nil {
 		if model.DefaultNamespace != "" {
 			defaultNS := model.NsReq{Name: model.DefaultNamespace, Description: "Default Namespace"}
-			_, err := common.CreateNs(&defaultNS)
+			_, err := common.CreateNs(context.Background(), &defaultNS)
 			if err != nil {
 				log.Error().Err(err).Msg("init: failed to create default namespace")
 				panic(err)

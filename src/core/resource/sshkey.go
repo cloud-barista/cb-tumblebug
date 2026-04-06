@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -77,7 +78,7 @@ func SshKeyReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // CreateSshKey accepts SSH key creation request, creates and returns an TB sshKey object
-func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyInfo, error) {
+func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option string) (model.SshKeyInfo, error) {
 
 	emptyObj := model.SshKeyInfo{}
 
@@ -253,7 +254,7 @@ func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyI
 		model.LabelDescription:     content.Description,
 		model.LabelConnectionName:  content.ConnectionName,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSSHKey, uid, Key, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrSSHKey, uid, Key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
@@ -267,7 +268,7 @@ func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyI
 // CreateSshKey (Spider abstracts SSH key API even for GCP), then modifies the
 // returned object to mark it as a placeholder. The user can later update this
 // SSH key via ComplementSshKey API to set username and privateKey.
-func CreatePlaceholderSshKey(nsId string, connectionName string, vmName string, vmUid string) (model.SshKeyInfo, error) {
+func CreatePlaceholderSshKey(ctx context.Context, nsId string, connectionName string, vmName string, vmUid string) (model.SshKeyInfo, error) {
 	emptyObj := model.SshKeyInfo{}
 	resourceType := model.StrSSHKey
 
@@ -303,7 +304,7 @@ func CreatePlaceholderSshKey(nsId string, connectionName string, vmName string, 
 		ConnectionName: connectionName,
 		Description:    fmt.Sprintf("Auto-generated placeholder for GCP VM '%s'. Update via ComplementSshKey API.", vmName),
 	}
-	content, err := CreateSshKey(nsId, &req, "")
+	content, err := CreateSshKey(ctx, nsId, &req, "")
 	if err != nil {
 		// Handle race condition: another goroutine may have created the same placeholder concurrently
 		if strings.Contains(err.Error(), "already exists") {
@@ -338,7 +339,7 @@ func CreatePlaceholderSshKey(nsId string, connectionName string, vmName string, 
 		model.LabelPlaceholder:        "true",
 		model.LabelRequiresComplement: "true",
 	}
-	if err := label.CreateOrUpdateLabel(model.StrSSHKey, content.Uid, Key, placeholderLabels); err != nil {
+	if err := label.CreateOrUpdateLabel(ctx, model.StrSSHKey, content.Uid, Key, placeholderLabels); err != nil {
 		log.Warn().Err(err).Msgf("Failed to add placeholder labels for SSH key '%s'", placeholderName)
 	}
 
