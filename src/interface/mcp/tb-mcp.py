@@ -124,6 +124,7 @@ if log_level_value > logging.DEBUG:
 TUMBLEBUG_API_BASE_URL = os.environ.get("TUMBLEBUG_API_BASE_URL", "http://localhost:1323/tumblebug")
 TUMBLEBUG_USERNAME = os.environ.get("TUMBLEBUG_USERNAME", "default")
 TUMBLEBUG_PASSWORD = os.environ.get("TUMBLEBUG_PASSWORD", "default")
+TUMBLEBUG_CREDENTIAL_HOLDER = os.environ.get("TUMBLEBUG_CREDENTIAL_HOLDER", "")
 host = os.environ.get("MCP_SERVER_HOST", "0.0.0.0") 
 port = int(os.environ.get("MCP_SERVER_PORT", "8000"))
 
@@ -140,7 +141,7 @@ mcp = FastMCP("cb-tumblebug")
 # mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
 
 # Helper function: API request wrapper
-def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None, timeout_override=None):
+def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None, timeout_override=None, credential_holder=None):
     url = f"{TUMBLEBUG_API_BASE_URL}{endpoint}"
     
     # Enhanced request configuration with improved timeout handling
@@ -168,8 +169,19 @@ def api_request(method, endpoint, json_data=None, params=None, files=None, heade
         request_config["json"] = json_data
     if files:
         request_config["files"] = files
+    
+    # Build headers with credential holder support
+    request_headers = {}
     if headers:
-        request_config["headers"] = headers
+        request_headers.update(headers)
+    
+    # Add x-credential-holder header (per-request override > env default)
+    effective_holder = credential_holder or TUMBLEBUG_CREDENTIAL_HOLDER
+    if effective_holder:
+        request_headers["x-credential-holder"] = effective_holder
+    
+    if request_headers:
+        request_config["headers"] = request_headers
     
     logger.debug(f"Request: {method} {url}")
     if json_data and logger.isEnabledFor(logging.DEBUG):
@@ -2064,14 +2076,18 @@ def _internal_review_mci_dynamic(
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
-    hold: bool = False
+    hold: bool = False,
+    policy_on_partial_failure: str = "continue",
+    vnet_template_id: str = "",
+    sg_template_id: str = ""
 ) -> Dict:
     """Internal helper function to review MCI dynamic configuration"""
     # Build request data according to model.MciDynamicReq spec
     data = {
         "name": name,
         "description": description,
-        "subGroups": vm_configurations
+        "subGroups": vm_configurations,
+        "policyOnPartialFailure": policy_on_partial_failure
     }
     
     # Add optional parameters
@@ -2083,6 +2099,10 @@ def _internal_review_mci_dynamic(
         data["postCommand"] = post_command
     if hold:
         data["hold"] = hold
+    if vnet_template_id:
+        data["vNetTemplateId"] = vnet_template_id
+    if sg_template_id:
+        data["sgTemplateId"] = sg_template_id
     
     # Make API request to review endpoint
     url = f"/ns/{ns_id}/mciDynamicReview"
@@ -2371,7 +2391,10 @@ def review_mci_dynamic_request(
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
-    hold: bool = False
+    hold: bool = False,
+    policy_on_partial_failure: str = "continue",
+    vnet_template_id: str = "",
+    sg_template_id: str = ""
 ) -> Dict:
     """
     🔍 MANDATORY FIRST STEP: Review and validate MCI Dynamic Request before creation.
@@ -2415,7 +2438,7 @@ def review_mci_dynamic_request(
     - ✅ Risk assessment and optimization recommendations
     
     **COST & VM COUNT CALCULATION:**
-    - Total VM count considers SubGroup sizes (e.g., subGroupSize="3" = 3 VMs)
+    - Total VM count considers SubGroup sizes (e.g., subGroupSize: 3 = 3 VMs)
     - Cost estimation multiplied by actual VM count per SubGroup
     - Example: SubGroup with 3 VMs @ $0.10/hour = $0.30/hour total
     
@@ -2427,11 +2450,14 @@ def review_mci_dynamic_request(
             - imageId: CSP-specific image identifier (optional - auto-mapped if omitted)
             - name: VM or subGroup name (optional)
             - description: VM description (optional)
-            - subGroupSize: Number of VMs in subgroup (default "1") - affects total VM count and cost
+            - subGroupSize: Number of VMs in subgroup (int, default 1) - affects total VM count and cost
             - connectionName: Specific connection name (optional)
-            - rootDiskSize: Root disk size in GB (optional)
+            - rootDiskSize: Root disk size in GB (int, 0 for CSP default) (optional)
             - rootDiskType: Root disk type (optional)
             - vmUserPassword: VM user password (optional)
+            - zone: Availability zone (optional, e.g., "ap-northeast-2a")
+            - vNetTemplateId: VNet template ID for subgroup (optional)
+            - sgTemplateId: Security group template ID for subgroup (optional)
             - label: Key-value pairs for VM labeling (optional)
         description: MCI description
         system_label: System label for special purposes
@@ -2439,6 +2465,9 @@ def review_mci_dynamic_request(
         post_command: Post-deployment command configuration with format:
             {"command": ["command1", "command2"], "userName": "username"}
         hold: Whether to hold provisioning for review
+        policy_on_partial_failure: Policy when some VMs fail ("continue", "rollback", "refine"), default "continue"
+        vnet_template_id: VNet template ID for MCI-level default (optional)
+        sg_template_id: Security group template ID for MCI-level default (optional)
     
     Returns:
         **🎯 COMPREHENSIVE VALIDATION RESULTS:**
@@ -2524,7 +2553,10 @@ def review_mci_dynamic_request(
         system_label=system_label,
         label=label,
         post_command=post_command,
-        hold=hold
+        hold=hold,
+        policy_on_partial_failure=policy_on_partial_failure,
+        vnet_template_id=vnet_template_id,
+        sg_template_id=sg_template_id
     )
 
 # # Tool: Create MCI (Traditional method)
@@ -2582,7 +2614,10 @@ def create_mci_dynamic(
     post_command: Optional[Dict] = None,
     hold: bool = False,
     skip_confirmation: bool = False,
-    force_create: bool = False
+    force_create: bool = False,
+    policy_on_partial_failure: str = "continue",
+    vnet_template_id: str = "",
+    sg_template_id: str = ""
 ) -> Dict:
     """
     🚨 CRITICAL: MANDATORY TWO-STEP WORKFLOW - Review THEN Create
@@ -2627,7 +2662,7 @@ def create_mci_dynamic(
             "specId": spec_id,                    # 🚨 REQUIRED
             "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
             "name": f"vm-{spec['providerName']}-{i+1}",
-            "subGroupSize": "1"
+            "subGroupSize": 1
         })
     
     # STEP 3: 🔍 MANDATORY REVIEW STEP - Always review first!
@@ -2718,7 +2753,7 @@ def create_mci_dynamic(
             "specId": spec_id,                      # CSP-specific spec
             "name": f"vm-{spec['providerName']}-{i+1}",
             "description": f"VM on {spec['providerName']} in {spec['regionName']}",
-            "subGroupSize": "1"
+            "subGroupSize": 1
         })
     
     # 6. Create MCI with properly mapped images
@@ -2755,11 +2790,14 @@ def create_mci_dynamic(
             **Other Configuration Options:**
             - name: VM name or subGroup name (optional)
             - description: VM description (optional)
-            - subGroupSize: Number of VMs in subgroup, default "1" (optional)
+            - subGroupSize: Number of VMs in subgroup (int, default 1) (optional)
             - connectionName: Specific connection name to use (optional)
-            - rootDiskSize: Root disk size in GB, default "default" (optional)
+            - rootDiskSize: Root disk size in GB (int, 0 for CSP default) (optional)
             - rootDiskType: Root disk type, default "default" (optional)
             - vmUserPassword: VM user password (optional)
+            - zone: Availability zone (optional, e.g., "ap-northeast-2a")
+            - vNetTemplateId: VNet template ID for subgroup-level override (optional)
+            - sgTemplateId: Security group template ID for subgroup-level override (optional)
             - label: Key-value pairs for VM labeling (optional)
             - os_requirements: Dict with os_type, use_case for auto image selection (optional)
         
@@ -2778,6 +2816,9 @@ def create_mci_dynamic(
         hold: Whether to hold provisioning for review (optional)
         skip_confirmation: Skip user confirmation step (for automated workflows, default: False)
         force_create: Bypass confirmation and create MCI immediately (default: False)
+        policy_on_partial_failure: Policy when some VMs fail ("continue", "rollback", "refine"), default "continue"
+        vnet_template_id: VNet template ID for MCI-level default (optional)
+        sg_template_id: Security group template ID for MCI-level default (optional)
     
     Returns:
         **REVIEW ENFORCEMENT (default behavior):**
@@ -3055,7 +3096,8 @@ if review_result.get("overallStatus") == "Ready":
     # Build request data according to model.MciDynamicReq spec
     data = {
         "name": name,
-        "subGroups": processed_vm_configs  # Use processed configs with auto-mapped images
+        "subGroups": processed_vm_configs,  # Use processed configs with auto-mapped images
+        "policyOnPartialFailure": policy_on_partial_failure
     }
     
     # Add optional fields
@@ -3068,6 +3110,10 @@ if review_result.get("overallStatus") == "Ready":
         data["label"] = label
     if post_command:
         data["postCommand"] = post_command
+    if vnet_template_id:
+        data["vNetTemplateId"] = vnet_template_id
+    if sg_template_id:
+        data["sgTemplateId"] = sg_template_id
     
     url = f"/ns/{ns_id}/mciDynamic"
     if hold:
@@ -3124,6 +3170,193 @@ if review_result.get("overallStatus") == "Ready":
 
 # Note: create_mci_with_namespace_management has been removed.
 # Use create_mci_dynamic with namespace management workflow as described in prompts.
+
+# Tool: Review Spec-Image Pair
+@mcp.tool()
+def review_spec_image_pair(
+    spec_id: str,
+    image_id: str
+) -> Dict:
+    """
+    Lightweight validation of a specId + imageId pair without creating any infrastructure.
+    
+    Use this to quickly check if a spec and image combination is valid and available
+    before building full MCI configurations. Much faster than review_mci_dynamic_request().
+    
+    **Workflow:**
+    ```python
+    # Quick check before building full MCI config
+    result = review_spec_image_pair(
+        spec_id="aws+ap-northeast-2+t3.nano",
+        image_id="ami-01f71f215b23ba262"
+    )
+    if result.get("isAvailable"):
+        # Proceed to build full MCI configuration
+        ...
+    ```
+    
+    Args:
+        spec_id: VM specification ID (e.g., "aws+ap-northeast-2+t3.nano") (REQUIRED)
+        image_id: CSP-specific image ID (e.g., "ami-01f71f215b23ba262") (REQUIRED)
+    
+    Returns:
+        Validation result including:
+        - isAvailable: Whether the spec+image pair is valid and available
+        - specInfo: Spec details (vCPU, memory, cost)
+        - imageInfo: Image details (OS, architecture)
+        - compatibility: Compatibility analysis
+        - estimatedCost: Cost estimation for this spec
+    """
+    data = {
+        "specId": spec_id,
+        "imageId": image_id
+    }
+    return api_request("POST", "/specImagePairReview", json_data=data)
+
+# Tool: Add SubGroup to existing MCI dynamically
+@mcp.tool()
+def add_subgroup_dynamic(
+    ns_id: str,
+    mci_id: str,
+    spec_id: str,
+    image_id: str,
+    name: str = "",
+    sub_group_size: int = 1,
+    description: str = "",
+    root_disk_type: str = "",
+    root_disk_size: int = 0,
+    vm_user_password: str = "",
+    connection_name: str = "",
+    zone: str = "",
+    vnet_template_id: str = "",
+    sg_template_id: str = "",
+    label: Optional[Dict[str, str]] = None
+) -> Dict:
+    """
+    Add a new SubGroup of VMs to an existing MCI dynamically.
+    
+    Use this to scale out an existing MCI by adding more VMs with a new spec/image.
+    The SubGroup will be added to the existing MCI without affecting other VMs.
+    
+    **Example:**
+    ```python
+    # Add 3 worker VMs to existing MCI
+    result = add_subgroup_dynamic(
+        ns_id="default",
+        mci_id="my-mci",
+        spec_id="aws+ap-northeast-2+t3.medium",
+        image_id="ami-0c02fb55956c7d316",
+        name="worker-group",
+        sub_group_size=3,
+        description="Worker nodes"
+    )
+    ```
+    
+    Args:
+        ns_id: Namespace ID (REQUIRED)
+        mci_id: MCI ID to add the subgroup to (REQUIRED)
+        spec_id: VM specification ID from recommend_vm_spec() (REQUIRED)
+        image_id: CSP-specific image ID from search_images() (REQUIRED)
+        name: SubGroup name (optional)
+        sub_group_size: Number of VMs in the subgroup (int, default 1)
+        description: SubGroup description (optional)
+        root_disk_type: Root disk type (optional)
+        root_disk_size: Root disk size in GB (int, 0 for CSP default)
+        vm_user_password: VM user password (optional)
+        connection_name: Specific connection name (optional)
+        zone: Availability zone (optional, e.g., "ap-northeast-2a")
+        vnet_template_id: VNet template ID (optional)
+        sg_template_id: Security group template ID (optional)
+        label: Key-value pairs for labeling (optional)
+    
+    Returns:
+        Updated MCI information including the newly added SubGroup
+    """
+    data = {
+        "specId": spec_id,
+        "imageId": image_id,
+        "subGroupSize": sub_group_size
+    }
+    if name:
+        data["name"] = name
+    if description:
+        data["description"] = description
+    if root_disk_type:
+        data["rootDiskType"] = root_disk_type
+    if root_disk_size:
+        data["rootDiskSize"] = root_disk_size
+    if vm_user_password:
+        data["vmUserPassword"] = vm_user_password
+    if connection_name:
+        data["connectionName"] = connection_name
+    if zone:
+        data["zone"] = zone
+    if vnet_template_id:
+        data["vNetTemplateId"] = vnet_template_id
+    if sg_template_id:
+        data["sgTemplateId"] = sg_template_id
+    if label:
+        data["label"] = label
+    
+    return api_request("POST", f"/ns/{ns_id}/mci/{mci_id}/subGroupDynamic", json_data=data)
+
+# Tool: Review SubGroup Dynamic Request
+@mcp.tool()
+def review_subgroup_dynamic(
+    ns_id: str,
+    mci_id: str,
+    spec_id: str,
+    image_id: str,
+    name: str = "",
+    sub_group_size: int = 1,
+    description: str = "",
+    root_disk_type: str = "",
+    root_disk_size: int = 0,
+    connection_name: str = "",
+    zone: str = ""
+) -> Dict:
+    """
+    Review/validate a SubGroup configuration before adding it to an existing MCI.
+    
+    Similar to review_mci_dynamic_request but for a single SubGroup being added
+    to an already-running MCI. Use this before add_subgroup_dynamic().
+    
+    Args:
+        ns_id: Namespace ID (REQUIRED)
+        mci_id: MCI ID (REQUIRED)
+        spec_id: VM specification ID (REQUIRED)
+        image_id: CSP-specific image ID (REQUIRED)
+        name: SubGroup name (optional)
+        sub_group_size: Number of VMs (int, default 1)
+        description: SubGroup description (optional)
+        root_disk_type: Root disk type (optional)
+        root_disk_size: Root disk size in GB (int, 0 for CSP default)
+        connection_name: Specific connection name (optional)
+        zone: Availability zone (optional)
+    
+    Returns:
+        Validation result including spec/image availability, cost estimation,
+        and compatibility with the existing MCI
+    """
+    data = {
+        "specId": spec_id,
+        "imageId": image_id,
+        "subGroupSize": sub_group_size
+    }
+    if name:
+        data["name"] = name
+    if description:
+        data["description"] = description
+    if root_disk_type:
+        data["rootDiskType"] = root_disk_type
+    if root_disk_size:
+        data["rootDiskSize"] = root_disk_size
+    if connection_name:
+        data["connectionName"] = connection_name
+    if zone:
+        data["zone"] = zone
+    
+    return api_request("POST", f"/ns/{ns_id}/mci/{mci_id}/subGroupDynamicReview", json_data=data)
 
 # Tool: Delete MCI
 @mcp.tool()
@@ -5102,7 +5335,7 @@ def mci_management_prompt() -> str:
             "imageId": best_image["cspImageName"],      # Intelligently selected image
             "name": f"vm-{provider}-{len(vm_configs)+1}",
             "description": f"VM on {provider} in {region}",
-            "subGroupSize": "1"
+            "subGroupSize": 1
         })
     
     # Step 6: Create MCI with properly mapped configurations
@@ -5543,7 +5776,7 @@ def mci_management_prompt() -> str:
             "imageId": images["imageList"][0]["cspImageName"],  # Optional
             "name": f"vm-{provider}-{vm_index}",
             "description": f"VM on {provider} in {region}",
-            "subGroupSize": "1"
+            "subGroupSize": 1
         }
         vm_configs.append(vm_config)
     ```
@@ -6023,7 +6256,7 @@ def image_mci_workflow_prompt() -> str:
         "specId": spec["id"],  # Exact specId: "aws+us-east-1+t3.medium"
         "imageId": images["images"][0]["cspImageName"],  # Exact cspImageName: "ami-12345"
         "name": "web-server-vm",
-        "subGroupSize": "1"
+        "subGroupSize": 1
     }
     
     # Use in MCI creation
@@ -8580,7 +8813,7 @@ def deploy_ollama_pull_with_models(
                     "specId": specs["recommended_specs"][i % len(specs["recommended_specs"])]["id"],
                     "name": f"ollama-vm-{i+1}",
                     "description": f"Ollama VM {i+1} for LLM models",
-                    "subGroupSize": "1"
+                    "subGroupSize": 1
                 })
         
         # Create the MCI first
@@ -10169,7 +10402,7 @@ def _provision_compute_infrastructure(namespace: str, task_analysis: Dict, workf
                         "imageId": image.get("cspImageName"),
                         "name": f"compute-vm-{workflow_id}",
                         "description": f"Compute VM for task execution - {workflow_id}",
-                        "subGroupSize": "1"
+                        "subGroupSize": 1
                     }]
                     
                     # Attempt MCI creation
@@ -10585,6 +10818,152 @@ def quick_compute(
     )
 
 
+# ===== Label Management Tools =====
+
+# Tool: Create or Update Labels
+@mcp.tool()
+def create_or_update_labels(
+    label_type: str,
+    uid: str,
+    labels: Dict[str, str]
+) -> Dict:
+    """
+    Create or update labels on a resource (MCI, VM, namespace, etc.).
+    
+    Labels are key-value string pairs used to organize and select resources.
+    If a label key already exists, its value will be updated.
+    
+    Args:
+        label_type: Resource type (e.g., "mci", "vm", "ns", "spec", "image")
+        uid: Resource UID (unique identifier of the resource)
+        labels: Dictionary of label key-value pairs to set
+            Example: {"env": "production", "team": "backend", "app": "web-server"}
+    
+    Returns:
+        Updated label information for the resource
+    """
+    data = {"labels": labels}
+    return api_request("PUT", f"/label/{label_type}/{uid}", json_data=data)
+
+# Tool: Get Labels
+@mcp.tool()
+def get_labels(
+    label_type: str,
+    uid: str
+) -> Dict:
+    """
+    Get all labels for a specific resource.
+    
+    Args:
+        label_type: Resource type (e.g., "mci", "vm", "ns", "spec", "image")
+        uid: Resource UID (unique identifier of the resource)
+    
+    Returns:
+        Labels attached to the resource as key-value pairs
+    """
+    return api_request("GET", f"/label/{label_type}/{uid}")
+
+# Tool: Remove a Label
+@mcp.tool()
+def remove_label(
+    label_type: str,
+    uid: str,
+    key: str
+) -> Dict:
+    """
+    Remove a specific label from a resource by its key.
+    
+    Args:
+        label_type: Resource type (e.g., "mci", "vm", "ns")
+        uid: Resource UID
+        key: Label key to remove
+    
+    Returns:
+        Updated label information after removal
+    """
+    return api_request("DELETE", f"/label/{label_type}/{uid}/{key}")
+
+# Tool: Get Resources by Label Selector
+@mcp.tool()
+def get_resources_by_label(
+    label_type: str,
+    labels: str
+) -> Dict:
+    """
+    Find resources matching label selector criteria.
+    
+    Use this to discover resources by their labels across a resource type.
+    
+    Args:
+        label_type: Resource type to search (e.g., "mci", "vm", "ns")
+        labels: Comma-separated label selector (e.g., "env=production,team=backend")
+    
+    Returns:
+        List of resources matching the label selector
+    """
+    return api_request("GET", f"/resources/{label_type}", params={"labels": labels})
+
+# Tool: Merge CSP Resource Labels
+@mcp.tool()
+def merge_csp_resource_labels(
+    label_type: str,
+    uid: str
+) -> Dict:
+    """
+    Merge labels from the actual CSP resource into the CB-Tumblebug resource record.
+    
+    This syncs labels/tags that may have been set directly on the CSP resource
+    (e.g., via AWS Console, Azure Portal) back into CB-Tumblebug's label store.
+    
+    Args:
+        label_type: Resource type (e.g., "mci", "vm")
+        uid: Resource UID
+    
+    Returns:
+        Merged label information
+    """
+    return api_request("PUT", f"/mergeCSPLabel/{label_type}/{uid}")
+
+
+# ===== Credential Management Tools =====
+
+# Tool: List Credential Holders
+@mcp.tool()
+def list_credential_holders() -> Dict:
+    """
+    List all credential holders registered in the system.
+    
+    A credential holder represents a set of CSP credentials (e.g., for different teams,
+    environments, or users). Each holder can have credentials for multiple cloud providers.
+    
+    Use this to discover available credential holders before setting the
+    x-credential-holder header via the credential_holder parameter in API calls.
+    
+    Returns:
+        List of credential holders with:
+        - credentialHolder: Holder identifier (e.g., "admin", "dev-team")
+        - providers: List of cloud providers with credentials (e.g., ["aws", "gcp", "azure"])
+        - connectionCount: Total connection configurations
+        - verifiedConnectionCount: Number of verified connections
+        - isDefault: Whether this is the system default holder
+    """
+    return api_request("GET", "/credentialHolder")
+
+# Tool: Get Credential Holder Details
+@mcp.tool()
+def get_credential_holder(holder_id: str) -> Dict:
+    """
+    Get detailed information about a specific credential holder.
+    
+    Args:
+        holder_id: Credential holder identifier
+    
+    Returns:
+        Detailed credential holder information including providers and connection counts
+    """
+    return api_request("GET", f"/credentialHolder/{holder_id}")
+
+
 # ===== MCP Server Prompts =====
 # These prompts help users understand and effectively use the TB-MCP server capabilities
 # Based on MapUI patterns for comprehensive cloud infrastructure management
@@ -10675,7 +11054,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         "specId": spec_id,                    # MUST use exact ID from API
         "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
         "name": f"vm-{spec['providerName']}-{i+1}",
-        "subGroupSize": "1"
+        "subGroupSize": 1
     })
 
 # 1.3: 🔍 MANDATORY REVIEW - Always do this first!
@@ -10869,7 +11248,7 @@ vm_configuration = {
     "specId": "aws+ap-northeast-2+t2.small",      # From recommend_vm_spec() - REQUIRED
     "imageId": "ami-0c02fb55956c7d316",           # From search_images() - REQUIRED
     "name": "my-vm-1",                            # VM name - REQUIRED
-    "subGroupSize": "1"                           # Number of VMs - REQUIRED
+    "subGroupSize": 1                           # Number of VMs - REQUIRED
 }
 ```
 
@@ -11246,7 +11625,7 @@ vm_configurations = [{
     "specId": spec["id"],
     "name": f"vm-{app_name}-1",
     "description": f"VM for {app_name}",
-    "subGroupSize": "1"
+    "subGroupSize": 1
 }]
 ```
 
@@ -11444,7 +11823,7 @@ Error: "rollback completed successfully after errors in resource preparation"
    # Reduce VM count or specs
    vm_configurations = [{
        "specId": "smaller_spec_id",  # Use smaller instance
-       "subGroupSize": "1"               # Start with single VM
+       "subGroupSize": 1               # Start with single VM
    }]
    ```
 
@@ -11481,7 +11860,7 @@ Error: "Request timeout - operation took longer than 10 minutes"
    # Start with single region/provider
    vm_configurations = [{
        "specId": single_region_spec,
-       "subGroupSize": "1"
+       "subGroupSize": 1
    }]
    ```
 
@@ -11599,7 +11978,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         "specId": spec["id"],  # Use exact spec ID from API
         "name": f"app-vm-{i+1}",
         "description": f"VM for {application_name} in {spec['regionName']}",
-        "subGroupSize": "1"
+        "subGroupSize": 1
         # imageId: Auto-mapped based on spec
     })
 ```
@@ -11996,7 +12375,7 @@ for region in regions:
         vm_configurations=[{
             "imageId": selected_image,
             "specId": f"{region}+standard-instance",
-            "subGroupSize": "3"
+            "subGroupSize": 3
         }]
     )
 ```
@@ -12027,7 +12406,7 @@ specs = recommend_vm_spec(
 # Use spot instances or burstable types
 vm_config = {
     "specId": "aws+ap-northeast-2+t3.micro",
-    "subGroupSize": "5"
+    "subGroupSize": 5
 }
 ```
 
@@ -12127,7 +12506,7 @@ User: "Set up development infrastructure with Docker and monitoring"
 
 Workflow:
 1. create_namespace("dev-team")
-2. create_mci_dynamic("dev-team", "dev-servers", [{"imageId": ubuntu_image, "specId": "t3.large", "name": f"dev-vm-{i}", "subGroupSize": "1"} for i in range(1, 6)])
+2. create_mci_dynamic("dev-team", "dev-servers", [{"imageId": ubuntu_image, "specId": "t3.large", "name": f"dev-vm-{i}", "subGroupSize": 1} for i in range(1, 6)])
 3. execute_remote_commands_enhanced(script_name="docker_install")
 4. execute_remote_commands_enhanced(script_name="monitoring_setup") 
 5. execute_remote_commands_enhanced(script_name="security_hardening")
@@ -12263,7 +12642,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         "specId": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
         "name": f"vm-{spec['providerName']}-{i+1}",
         "description": f"VM in {spec['regionName']}",
-        "subGroupSize": "1"
+        "subGroupSize": 1
         # imageId: Optional - auto-mapped if omitted
     })
 
@@ -12699,6 +13078,143 @@ Before calling recommend_vm_spec(), verify:
 6. **Handle errors gracefully** by re-checking options
 
 This workflow ensures reliable VM specification recommendations and prevents API failures.
+"""
+
+@mcp.prompt()
+def infrastructure_scaling_and_management_guide():
+    """
+    Guide for scaling MCI infrastructure, managing labels, and using credential holders.
+    Covers SubGroup management, label-based resource organization, and multi-tenant credentials.
+    """
+    return """# Infrastructure Scaling, Labels & Credential Management
+
+## 🔄 Scaling an Existing MCI with SubGroups
+
+### Adding VMs to an Existing MCI
+Use `add_subgroup_dynamic()` to add a new SubGroup to a running MCI:
+
+```python
+# Step 1: Review the SubGroup configuration first
+review = review_subgroup_dynamic(
+    ns_id="default",
+    mci_id="my-mci",
+    spec_id="aws+ap-northeast-2+t3.medium",
+    image_id="ami-0c02fb55956c7d316",
+    sub_group_size=3,
+    name="worker-nodes"
+)
+
+# Step 2: If review passes, add the SubGroup
+if review.get("isAvailable") or review.get("canCreate"):
+    result = add_subgroup_dynamic(
+        ns_id="default",
+        mci_id="my-mci",
+        spec_id="aws+ap-northeast-2+t3.medium",
+        image_id="ami-0c02fb55956c7d316",
+        sub_group_size=3,
+        name="worker-nodes",
+        description="Worker nodes for batch processing"
+    )
+```
+
+### Quick Spec-Image Validation
+Use `review_spec_image_pair()` for fast validation without full MCI review:
+
+```python
+# Lightweight check if a spec+image pair works
+check = review_spec_image_pair(
+    spec_id="aws+ap-northeast-2+t3.nano",
+    image_id="ami-01f71f215b23ba262"
+)
+if check.get("isAvailable"):
+    print("Spec and image are compatible and available")
+```
+
+### SubGroup Configuration Options
+Each SubGroup supports:
+- `specId` / `imageId`: Required spec and image (from recommend_vm_spec / search_images)
+- `subGroupSize`: Number of VMs (int, e.g., 3)
+- `zone`: Specific availability zone (e.g., "ap-northeast-2a")
+- `connectionName`: Specific CSP connection
+- `rootDiskSize`: Disk size in GB (int, 0 for default)
+- `vNetTemplateId` / `sgTemplateId`: Network/security templates
+- `label`: Key-value labels for the SubGroup
+
+### MCI-Level Configuration
+When creating an MCI:
+- `policyOnPartialFailure`: "continue" (default), "rollback", or "refine"
+  - continue: Keep successfully created VMs even if some fail
+  - rollback: Delete all VMs if any fail
+  - refine: Retry failed VMs with alternative specs
+- `vNetTemplateId` / `sgTemplateId`: MCI-level defaults (SubGroup values override)
+
+## 🏷️ Label Management
+
+Labels are key-value string pairs for organizing and filtering resources.
+
+### Setting Labels
+```python
+# Add labels to an MCI
+create_or_update_labels(
+    label_type="mci",
+    uid="my-mci-uid",
+    labels={"env": "production", "team": "backend", "app": "web-server"}
+)
+
+# Add labels to a VM
+create_or_update_labels(
+    label_type="vm",
+    uid="vm-uid-123",
+    labels={"role": "worker", "tier": "compute"}
+)
+```
+
+### Finding Resources by Labels
+```python
+# Find all production MCIs
+production_resources = get_resources_by_label(
+    label_type="mci",
+    labels="env=production"
+)
+
+# Find worker VMs in the backend team
+workers = get_resources_by_label(
+    label_type="vm",
+    labels="role=worker,team=backend"
+)
+```
+
+### Syncing CSP Labels
+```python
+# Pull labels set directly on CSP resources (e.g., via AWS Console)
+merge_csp_resource_labels(label_type="vm", uid="vm-uid-123")
+```
+
+## 🔐 Credential Holder Management
+
+Credential holders represent different sets of cloud provider credentials,
+enabling multi-tenant or multi-environment deployments.
+
+### Listing Available Credential Holders
+```python
+holders = list_credential_holders()
+# Returns list of holders with their providers and connection counts
+```
+
+### Using a Specific Credential Holder
+Set the `TUMBLEBUG_CREDENTIAL_HOLDER` environment variable, or use per-request override:
+```python
+# Environment variable (applies to all requests)
+os.environ["TUMBLEBUG_CREDENTIAL_HOLDER"] = "dev-team"
+
+# Per-request (not yet exposed as tool parameter - use env var)
+```
+
+### Workflow: Multi-Tenant Deployment
+1. List available credential holders: `list_credential_holders()`
+2. Choose the appropriate holder for your deployment
+3. Set `TUMBLEBUG_CREDENTIAL_HOLDER` env var
+4. Proceed with MCI creation workflow as normal
 """
 
 if __name__ == "__main__":
