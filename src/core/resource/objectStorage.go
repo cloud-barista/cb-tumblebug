@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -332,7 +333,7 @@ func GetObjectStorageSupport(cspType string) (model.ObjectStorageSupportResponse
  */
 
 // CreateObjectStorage creates a new object storage (bucket) in the specified namespace
-func CreateObjectStorage(nsId string, req model.ObjectStorageCreateRequest) (model.ObjectStorageInfo, error) {
+func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStorageCreateRequest) (model.ObjectStorageInfo, error) {
 
 	var emptyRet model.ObjectStorageInfo
 	var objStrgInfo model.ObjectStorageInfo
@@ -577,7 +578,7 @@ func CreateObjectStorage(nsId string, req model.ObjectStorageCreateRequest) (mod
 		model.LabelConnectionName:  objStrgInfo.ConnectionName,
 	}
 
-	err = label.CreateOrUpdateLabel(model.StrObjectStorage, objStrgInfo.Uid, objStrgKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrObjectStorage, objStrgInfo.Uid, objStrgKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

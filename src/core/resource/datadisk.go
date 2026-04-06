@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -43,7 +44,7 @@ func DataDiskReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // CreateDataDisk accepts DataDisk creation request, creates and returns an TB dataDisk object
-func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.DataDiskInfo, error) {
+func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, option string) (model.DataDiskInfo, error) {
 
 	resourceType := model.StrDataDisk
 
@@ -183,7 +184,7 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 		model.LabelCreatedTime:     content.CreatedTime.String(),
 		model.LabelConnectionName:  content.ConnectionName,
 	}
-	err = label.CreateOrUpdateLabel(model.StrDataDisk, uid, Key, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrDataDisk, uid, Key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err

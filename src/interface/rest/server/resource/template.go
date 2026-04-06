@@ -229,6 +229,8 @@ func RestDeleteAllVNetTemplate(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/template/{templateId} [post]
 func RestPostVNetFromTemplate(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
 
@@ -265,7 +267,7 @@ func RestPostVNetFromTemplate(c echo.Context) error {
 	}
 
 	// Create vNet using the template-derived request
-	result, err := resource.CreateVNet(nsId, &vNetReq)
+	result, err := resource.CreateVNet(ctx, nsId, &vNetReq)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create vNet from template")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -480,6 +482,8 @@ func RestDeleteAllSecurityGroupTemplate(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/securityGroup/template/{templateId} [post]
 func RestPostSecurityGroupFromTemplate(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
 
@@ -504,7 +508,7 @@ func RestPostSecurityGroupFromTemplate(c echo.Context) error {
 	}
 
 	// Create SecurityGroup using the template-derived request
-	result, err := resource.CreateSecurityGroup(nsId, &sgReq, "")
+	result, err := resource.CreateSecurityGroup(ctx, nsId, &sgReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create SecurityGroup from template")
 		return clientManager.EndRequestWithLog(c, err, nil)

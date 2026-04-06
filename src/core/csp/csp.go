@@ -19,9 +19,7 @@ package csp
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/openbao/openbao/api/v2"
 	"github.com/rs/zerolog/log"
@@ -64,9 +62,10 @@ func ReadOpenBaoSecret(ctx context.Context, path string) (map[string]interface{}
 // For "admin" holder: "secret/data/csp/{provider}"
 // For other holders:  "secret/data/users/{holder}/csp/{provider}"
 func BuildSecretPath(ctx context.Context, provider string) string {
-	holder := common.CredentialHolderFromContext(ctx)
-	if holder == "" || strings.EqualFold(holder, "admin") {
-		holder = "admin"
+	// Inline credential holder extraction to avoid importing common (prevents import cycle)
+	holder := model.DefaultCredentialHolder
+	if v, ok := ctx.Value(model.CtxKeyCredentialHolder).(string); ok && v != "" {
+		holder = v
 	}
 
 	if holder == "admin" {

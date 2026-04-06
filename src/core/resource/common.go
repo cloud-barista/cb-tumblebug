@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1952,7 +1953,7 @@ func LoadAssets(includeAzure bool) (*model.IdList, error) {
 		nsReq := model.NsReq{}
 		nsReq.Name = model.SystemCommonNs
 		nsReq.Description = "Namespace for common resources"
-		_, nsErr := common.CreateNs(&nsReq)
+		_, nsErr := common.CreateNs(context.Background(), &nsReq)
 		if nsErr != nil {
 			log.Error().Err(nsErr).Msg("")
 			return regiesteredIds, nsErr
@@ -2172,12 +2173,12 @@ func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolic
 
 // CreateSharedResource is to register default resource from asset files (../assets/*.csv)
 // This is a wrapper function that maintains backward compatibility
-func CreateSharedResource(nsId string, resType string, connectionName string) error {
-	return CreateSharedResourceWithOptions(nsId, resType, connectionName, nil)
+func CreateSharedResource(ctx context.Context, nsId string, resType string, connectionName string) error {
+	return CreateSharedResourceWithOptions(ctx, nsId, resType, connectionName, nil)
 }
 
 // CreateSharedResourceWithOptions creates shared resources with optional parameters
-func CreateSharedResourceWithOptions(nsId string, resType string, connectionName string, options *SharedResourceOptions) error {
+func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType string, connectionName string, options *SharedResourceOptions) error {
 
 	// Check 'nsId' namespace.
 	_, err := common.GetNs(nsId)
@@ -2300,7 +2301,7 @@ resTypeLoop:
 							return err
 						}
 						common.PrintJsonPretty(reqTmp)
-						resultInfo, err := CreateVNet(nsId, &reqTmp)
+						resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
 						if err != nil {
 							log.Error().Err(err).Msgf("Failed to create vNet from policy template '%s'", options.VNetTemplateId)
 							return err
@@ -2321,7 +2322,7 @@ resTypeLoop:
 							}
 						}
 						common.PrintJsonPretty(reqTmp)
-						resultInfo, err := CreateVNet(nsId, &reqTmp)
+						resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
 						if err != nil {
 							log.Error().Err(err).Msgf("Failed to create vNet from raw template '%s'", options.VNetTemplateId)
 							return err
@@ -2432,7 +2433,7 @@ resTypeLoop:
 
 				common.PrintJsonPretty(reqTmp)
 
-				resultInfo, err := CreateVNet(nsId, &reqTmp)
+				resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to create vNet")
 					return err
@@ -2480,7 +2481,7 @@ resTypeLoop:
 					log.Info().Msgf("Using SecurityGroup template '%s' for connection '%s'", options.SgTemplateId, connectionName)
 					reqTmp.FirewallRules = sgTmpl.SecurityGroupReq.FirewallRules
 					common.PrintJsonPretty(reqTmp)
-					resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
+					resultInfo, err := CreateSecurityGroup(ctx, nsId, &reqTmp, "")
 					if err != nil {
 						log.Error().Err(err).Msgf("Failed to create SecurityGroup from template '%s'", options.SgTemplateId)
 						return err
@@ -2507,7 +2508,7 @@ resTypeLoop:
 
 			common.PrintJsonPretty(reqTmp)
 
-			resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
+			resultInfo, err := CreateSecurityGroup(ctx, nsId, &reqTmp, "")
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to create SecurityGroup")
 				return err
@@ -2525,7 +2526,7 @@ resTypeLoop:
 
 			common.PrintJsonPretty(reqTmp)
 
-			_, err := CreateSshKey(nsId, &reqTmp, "")
+			_, err := CreateSshKey(ctx, nsId, &reqTmp, "")
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to create SshKey")
 				return err

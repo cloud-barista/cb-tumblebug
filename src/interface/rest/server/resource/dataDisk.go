@@ -42,6 +42,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/dataDisk [post]
 func RestPostDataDisk(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 
@@ -52,7 +53,7 @@ func RestPostDataDisk(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.CreateDataDisk(nsId, u, optionFlag)
+	content, err := resource.CreateDataDisk(ctx, nsId, u, optionFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -261,6 +262,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [post]
 func RestPostVmDataDisk(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -271,7 +273,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ProvisionDataDisk(nsId, mciId, vmId, u)
+	result, err := infra.ProvisionDataDisk(ctx, nsId, mciId, vmId, u)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

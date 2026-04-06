@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -492,7 +493,7 @@ type spiderVPCInfo struct {
 }
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
-func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
+func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 	log.Info().Msg("CreateVNet")
 
 	// vNet objects
@@ -775,7 +776,7 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 			model.LabelVNetId:          vNetInfo.Id,
 			model.LabelConnectionName:  vNetInfo.ConnectionName,
 		}
-		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.CspResourceName, subnetKey, labels)
+		err = label.CreateOrUpdateLabel(ctx, model.StrSubnet, subnetInfo.CspResourceName, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -814,7 +815,7 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 		model.LabelDescription:     vNetInfo.Description,
 		model.LabelConnectionName:  vNetInfo.ConnectionName,
 	}
-	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1332,7 +1333,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 }
 
 // RegisterVNet accepts vNet registration request, register and returns an TB vNet object
-func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VNetInfo, error) {
+func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VNetInfo, error) {
 	log.Info().Msg("RegisterVNet")
 
 	// vNet objects
@@ -1551,7 +1552,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 			model.LabelVNetId:          vNetInfo.Id,
 			model.LabelConnectionName:  vNetInfo.ConnectionName,
 		}
-		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.CspResourceName, subnetKey, labels)
+		err = label.CreateOrUpdateLabel(ctx, model.StrSubnet, subnetInfo.CspResourceName, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -1617,7 +1618,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 		model.LabelDescription:     vNetInfo.Description,
 		model.LabelConnectionName:  vNetInfo.ConnectionName,
 	}
-	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

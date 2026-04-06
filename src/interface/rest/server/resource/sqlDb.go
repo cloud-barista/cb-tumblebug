@@ -308,6 +308,7 @@ func RestGetAllSqlDB(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/sqlDb [post]
 func RestPostSqlDB(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -350,7 +351,7 @@ func RestPostSqlDB(c echo.Context) error {
 	}
 
 	var resp model.SqlDBInfo
-	resp, err = resource.CreateSqlDB(nsId, sqlDbReq, action)
+	resp, err = resource.CreateSqlDB(ctx, nsId, sqlDbReq, action)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

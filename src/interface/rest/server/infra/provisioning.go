@@ -73,6 +73,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci [post]
 func RestPostMci(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 
@@ -82,7 +83,7 @@ func RestPostMci(c echo.Context) error {
 	}
 
 	option := "create"
-	result, err := infra.CreateMci(nsId, req, option, false)
+	result, err := infra.CreateMci(ctx, nsId, req, option, false)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
@@ -135,6 +136,7 @@ func RestPostMci(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerCspVm [post]
 func RestPostRegisterCSPNativeVM(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 
@@ -144,7 +146,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 	}
 
 	option := "register"
-	result, err := infra.CreateMci(nsId, req, option, false)
+	result, err := infra.CreateMci(ctx, nsId, req, option, false)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
@@ -551,6 +553,8 @@ func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /specImagePairReview [post]
 func RestPostSpecImagePairReview(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	req := &model.SpecImagePairReviewReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request for spec-image pair review")
@@ -562,7 +566,7 @@ func RestPostSpecImagePairReview(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ReviewSpecImagePair(c.Request().Context(), req.SpecId, req.ImageId)
+	result, err := infra.ReviewSpecImagePair(ctx, req.SpecId, req.ImageId)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to review spec-image pair")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -712,6 +716,7 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/vm [post]
 func RestPostMciVm(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -720,7 +725,7 @@ func RestPostMciVm(c echo.Context) error {
 	if err := c.Bind(vmInfoData); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
-	result, err := infra.CreateMciGroupVm(nsId, mciId, vmInfoData, true)
+	result, err := infra.CreateMciGroupVm(ctx, nsId, mciId, vmInfoData, true)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
@@ -799,6 +804,7 @@ func RestPostMciVm(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [post]
 func RestPostMciSubGroupScaleOut(c echo.Context) error {
+	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -809,7 +815,7 @@ func RestPostMciSubGroupScaleOut(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ScaleOutMciSubGroup(nsId, mciId, subgroupId, scaleOutReq.NumVMsToAdd)
+	result, err := infra.ScaleOutMciSubGroup(ctx, nsId, mciId, subgroupId, scaleOutReq.NumVMsToAdd)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 

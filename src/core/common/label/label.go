@@ -15,11 +15,16 @@ limitations under the License.
 package label
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/aws"   // register AWS batch tag handler
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure" // register Azure batch tag handler
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/gcp"   // register GCP batch tag handler
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -44,7 +49,6 @@ var cspSyncSkipConfig = CSPSyncConfig{
 	CSPGlobalSkip: map[string]bool{
 		// csp.NCP:       true,
 		csp.NHN: true,
-		csp.GCP: true, // GCP supports tags, but there are some restrictions on naming conventions
 		csp.NCP: true, // Not supported by CB-Spider
 	},
 	CSPSpecificSkipConfig: map[string]map[string]bool{
@@ -57,15 +61,17 @@ var cspSyncSkipConfig = CSPSyncConfig{
 			model.StrSubnet:     true,
 			model.StrKubernetes: true,
 		},
-		// csp.GCP: {
-		// 	model.StrVNet:          true,
-		// 	model.StrSubnet:        true,
-		// 	model.StrSecurityGroup: true,
-		// 	model.StrSSHKey:        true,
-		// 	model.StrCustomImage:   true,
-		// 	model.StrNLB:           true,
-		// 	// currently there is some restriction on tags for GCP resources because of naming conventions
-		// },
+		csp.GCP: {
+			model.StrVNet:          true,
+			model.StrSubnet:        true,
+			model.StrSecurityGroup: true,
+			model.StrSSHKey:        true,
+			model.StrCustomImage:   true,
+			model.StrNLB:           true,
+			model.StrKubernetes:    true,
+			// GCP Labels have naming restrictions (lowercase, no dots/special chars, 63 char limit).
+			// VM and dataDisk are supported via batch handler with label sanitization.
+		},
 		// csp.NCP: {
 		// 	model.StrVNet:          true,
 		// 	model.StrSubnet:        true,
@@ -124,31 +130,38 @@ func isCSPSyncEnabled(labelType string, connectionName string) bool {
 
 	return true
 } // getProviderNameFromConnectionName extracts provider name from connection configuration
-func getProviderNameFromConnectionName(connectionName string) (string, error) {
-	// Generate connection key
+func getConnConfigFromConnectionName(connectionName string) (model.ConnConfig, error) {
 	key := "/connection/" + connectionName
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return "", err
+		return model.ConnConfig{}, err
 	}
 	if !exists {
-		return "", fmt.Errorf("no connection config found for %s", key)
+		return model.ConnConfig{}, fmt.Errorf("no connection config found for %s", key)
 	}
 
 	var connConfig model.ConnConfig
 	err = json.Unmarshal([]byte(keyValue.Value), &connConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return "", err
+		return model.ConnConfig{}, err
 	}
 
-	return connConfig.ProviderName, nil
+	return connConfig, nil
+}
+
+func getProviderNameFromConnectionName(connectionName string) (string, error) {
+	cc, err := getConnConfigFromConnectionName(connectionName)
+	if err != nil {
+		return "", err
+	}
+	return cc.ProviderName, nil
 }
 
 // CreateOrUpdateLabel adds a new label or updates an existing label for the given resource,
 // and then persists the updated label information in the Key-Value store.
-func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[string]string) error {
+func CreateOrUpdateLabel(ctx context.Context, labelType, uid string, resourceKey string, labels map[string]string) error {
 	// Construct the labelKey
 	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
@@ -188,7 +201,7 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 	// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
 	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
 		if isCSPSyncEnabled(labelType, connectionName) { // Note: In the case of VPN or specific CSP combinations, label synchronization with CSP is skipped.
-			lbs := ListCSPResourceLabel(labelType, uid, connectionName)
+			lbs := ListCSPResourceLabel(ctx, labelType, uid, connectionName)
 			// log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
 
 			// Merge CSP labels with existing labels (existing labels have priority)
@@ -215,7 +228,8 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
 	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
 		if isCSPSyncEnabled(labelType, connectionName) { // Note: In the case of VPN or specific CSP combinations, label synchronization with CSP is skipped.
-			UpdateCSPResourceLabel(labelType, uid, labels, connectionName)
+			cspResourceId := labelInfo.Labels[model.LabelCspResourceId]
+			UpdateCSPResourceLabel(ctx, labelType, uid, labels, connectionName, cspResourceId)
 		}
 	}
 	return nil
@@ -238,7 +252,7 @@ func DeleteLabelObject(labelType, uid string) error {
 }
 
 // RemoveLabel removes a label from a resource identified by its uid.
-func RemoveLabel(labelType, uid, key string) error {
+func RemoveLabel(ctx context.Context, labelType, uid, key string) error {
 	// Construct the labelKey
 	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
@@ -271,7 +285,7 @@ func RemoveLabel(labelType, uid, key string) error {
 
 	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
 	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
-		RemoveCSPResourceLabel(labelType, uid, key, connectionName)
+		RemoveCSPResourceLabel(ctx, labelType, uid, key, connectionName)
 	}
 
 	// Save the updated model.LabelInfo back to the Key-Value store
@@ -469,9 +483,27 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 	return matchedResources, nil
 }
 
-// UpdateCSPResourceLabel best-effort updates the labels of a resource in the CSP
-func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, connectionName string) {
+// UpdateCSPResourceLabel best-effort updates the labels of a resource in the CSP.
+// It first tries a batch upsert via direct CSP API (AWS CreateTags, Azure ARM Tags, etc.).
+// If batch is not supported for the CSP or fails, it falls back to CB-Spider's tag API (one call per tag).
+func UpdateCSPResourceLabel(ctx context.Context, labelType, uid string, labels map[string]string, connectionName string, cspResourceId string) {
 
+	// Try batch upsert via direct CSP API first
+	if cspResourceId != "" {
+		cc, err := getConnConfigFromConnectionName(connectionName)
+		if err == nil {
+			ctx = context.WithValue(ctx, model.CtxKeyCredentialHolder, cc.CredentialHolder)
+			handled, batchErr := cspdirect.TryBatchUpsertTags(ctx, cc.ProviderName, cc.RegionZoneInfo.AssignedRegion, cc.RegionZoneInfo.AssignedZone, cspResourceId, labelType, labels)
+			if batchErr != nil {
+				log.Warn().Err(batchErr).Str("provider", cc.ProviderName).Str("connectionName", connectionName).Msg("[Label] Direct CSP batch tag failed, falling back to CB-Spider")
+			}
+			if handled {
+				return
+			}
+		}
+	}
+
+	// Fallback: CB-Spider tag API (one call per tag)
 	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/tag"
 	method := "POST"
@@ -508,7 +540,7 @@ func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, con
 }
 
 // RemoveCSPResourceLabel best-effort removes the labels of a resource in the CSP
-func RemoveCSPResourceLabel(labelType, uid string, key string, connectionName string) {
+func RemoveCSPResourceLabel(ctx context.Context, labelType, uid string, key string, connectionName string) {
 
 	client := clientManager.NewHttpClient()
 	url := fmt.Sprintf("%s/tag/%s", model.SpiderRestUrl, key)
@@ -533,7 +565,7 @@ func RemoveCSPResourceLabel(labelType, uid string, key string, connectionName st
 }
 
 // MergeCSPResourceLabel merges the labels of a resource in the CSP with the existing labels
-func MergeCSPResourceLabel(labelType, uid string, resourceKey string) error {
+func MergeCSPResourceLabel(ctx context.Context, labelType, uid string, resourceKey string) error {
 	// Construct the labelKey
 	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
@@ -559,7 +591,7 @@ func MergeCSPResourceLabel(labelType, uid string, resourceKey string) error {
 
 	// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
 	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
-		lbs := ListCSPResourceLabel(labelType, uid, connectionName)
+		lbs := ListCSPResourceLabel(ctx, labelType, uid, connectionName)
 		log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
 
 		// Merge CSP labels with existing labels (CSP labels have priority)
@@ -582,18 +614,19 @@ func MergeCSPResourceLabel(labelType, uid string, resourceKey string) error {
 	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
 	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
 		if isCSPSyncEnabled(labelType, connectionName) {
-			UpdateCSPResourceLabel(labelType, uid, labelInfo.Labels, connectionName)
+			cspResourceId := labelInfo.Labels[model.LabelCspResourceId]
+			UpdateCSPResourceLabel(ctx, labelType, uid, labelInfo.Labels, connectionName, cspResourceId)
 		}
 	}
 	return nil
 }
 
 // ListCSPResourceLabel best-effort lists the labels of a resource in the CSP
-func ListCSPResourceLabel(labelType, uid string, connectionName string) (labels map[string]string) {
+func ListCSPResourceLabel(ctx context.Context, labelType, uid string, connectionName string) (labels map[string]string) {
 	labels = make(map[string]string)
 
 	// Skip if CSP synchronization is not enabled for this label type and connection name
-	if isCSPSyncEnabled(labelType, connectionName) {
+	if !isCSPSyncEnabled(labelType, connectionName) {
 		log.Debug().Msgf("CSP tag is not supported for labelType: %s, connectionName: %s", labelType, connectionName)
 		return labels
 	}

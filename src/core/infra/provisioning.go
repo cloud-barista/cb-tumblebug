@@ -99,7 +99,7 @@ func contains(slice []string, item string) bool {
 }
 
 // createSubGroup creates a subGroup with proper error handling
-func createSubGroup(nsId, mciId string, vmRequest *model.CreateSubGroupReq, subGroupSize, vmStartIndex int, uid string, req *model.MciReq) error {
+func createSubGroup(ctx context.Context, nsId, mciId string, vmRequest *model.CreateSubGroupReq, subGroupSize, vmStartIndex int, uid string, req *model.MciReq) error {
 	log.Info().Msgf("Creating MCI subGroup object for '%s'", vmRequest.Name)
 	key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
 
@@ -140,11 +140,11 @@ func createSubGroup(nsId, mciId string, vmRequest *model.CreateSubGroupReq, subG
 		model.LabelMciDescription: req.Description,
 	}
 
-	return label.CreateOrUpdateLabel(model.StrSubGroup, uid, key, labels)
+	return label.CreateOrUpdateLabel(ctx, model.StrSubGroup, uid, key, labels)
 }
 
 // createMciObject creates the MCI object with proper error handling
-func createMciObject(nsId, mciId string, req *model.MciReq, uid string) error {
+func createMciObject(ctx context.Context, nsId, mciId string, req *model.MciReq, uid string) error {
 	log.Info().Msg("Creating MCI object")
 	key := common.GenMciKey(nsId, mciId, "")
 
@@ -185,7 +185,7 @@ func createMciObject(nsId, mciId string, req *model.MciReq, uid string) error {
 		labels[key] = value
 	}
 
-	return label.CreateOrUpdateLabel(model.StrMCI, uid, key, labels)
+	return label.CreateOrUpdateLabel(ctx, model.StrMCI, uid, key, labels)
 }
 
 // handleHoldOption handles the hold option logic
@@ -443,7 +443,7 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 // MCI and VM Provisioning
 
 // ScaleOutMciSubGroup is func to create MCI groupVM
-func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd int) (*model.MciInfo, error) {
+func ScaleOutMciSubGroup(ctx context.Context, nsId string, mciId string, subGroupId string, numVMsToAdd int) (*model.MciInfo, error) {
 	vmIdList, err := ListVmBySubGroup(nsId, mciId, subGroupId)
 	if err != nil {
 		temp := &model.MciInfo{}
@@ -474,7 +474,7 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 
 	vmSubGroupReqTemplate.SubGroupSize = numVMsToAdd
 
-	result, err := CreateMciGroupVm(nsId, mciId, vmSubGroupReqTemplate, true)
+	result, err := CreateMciGroupVm(ctx, nsId, mciId, vmSubGroupReqTemplate, true)
 	if err != nil {
 		temp := &model.MciInfo{}
 		return temp, err
@@ -484,7 +484,7 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 }
 
 // CreateMciGroupVm is func to create MCI groupVM
-func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroupReq, newSubGroup bool) (*model.MciInfo, error) {
+func CreateMciGroupVm(ctx context.Context, nsId string, mciId string, vmRequest *model.CreateSubGroupReq, newSubGroup bool) (*model.MciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -697,7 +697,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 
 	// Create VMs with hierarchical rate limiting
 	log.Info().Msgf("Creating %d VMs with rate limiting", len(vmInfoList))
-	err = CreateVmsInParallel(nsId, mciId, vmInfoList, option)
+	err = CreateVmsInParallel(ctx, nsId, mciId, vmInfoList, option)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create VMs in parallel")
 		return nil, err
@@ -809,7 +809,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 }
 
 // CreateMci is func to create MCI object and deploy requested VMs (register CSP native VM with option=register)
-func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic bool) (*model.MciInfo, error) {
+func CreateMci(ctx context.Context, nsId string, req *model.MciReq, option string, isReqFromDynamic bool) (*model.MciInfo, error) {
 	// Input validation
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
@@ -906,7 +906,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		if !exists {
 			log.Debug().Msgf("MCI '%s' does not exist, creating new one", mciId)
 			// Create MCI object first
-			if err := createMciObject(nsId, mciId, req, uid); err != nil {
+			if err := createMciObject(ctx, nsId, mciId, req, uid); err != nil {
 				return nil, fmt.Errorf("failed to create MCI object: %w", err)
 			}
 		} else {
@@ -939,7 +939,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		if subGroupSize > 0 {
 			subGroupName := common.ToLower(subGroupReq.Name)
 			if !contains(subGroupsCreated, subGroupName) {
-				if err := createSubGroup(nsId, mciId, &subGroupReq, subGroupSize, vmStartIndex, uid, req); err != nil {
+				if err := createSubGroup(ctx, nsId, mciId, &subGroupReq, subGroupSize, vmStartIndex, uid, req); err != nil {
 					return nil, fmt.Errorf("failed to create subGroup '%s': %w", subGroupName, err)
 				}
 				subGroupsCreated = append(subGroupsCreated, subGroupName)
@@ -1087,7 +1087,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	}
 
 	// Create VMs with hierarchical rate limiting
-	err = CreateVmsInParallel(nsId, mciId, vmInfoList, option)
+	err = CreateVmsInParallel(ctx, nsId, mciId, vmInfoList, option)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create VMs in parallel")
 
@@ -1308,9 +1308,11 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	mciResult.TargetStatus = model.StatusComplete
 	mciResult.TargetAction = model.ActionComplete
 	UpdateMciInfo(nsId, *mciResult)
-	*mciResult, _, err = GetMciObject(nsId, mciId)
+
+	// Re-read with labels properly loaded from the label store
+	mciResult, err = GetMciInfo(nsId, mciId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
+		return nil, fmt.Errorf("failed to get MCI info after VM creation: %w", err)
 	}
 	return mciResult, nil
 }
@@ -1414,7 +1416,7 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 	uid := common.GenUid()
 	mciId := req.Name
 
-	if err := createMciObject(nsId, mciId, &mciReq, uid); err != nil {
+	if err := createMciObject(ctx, nsId, mciId, &mciReq, uid); err != nil {
 		addErrorToHistory("MCI Object Creation", err.Error())
 		return emptyMci, err
 	}
@@ -1785,7 +1787,7 @@ func CreateMciDynamic(ctx context.Context, nsId string, req *model.MciDynamicReq
 	if deployOption == "hold" {
 		option = "hold"
 	}
-	result, err := CreateMci(nsId, &mciReq, option, true)
+	result, err := CreateMci(ctx, nsId, &mciReq, option, true)
 
 	// If CreateMci fails, build comprehensive error message with history
 	if err != nil {
@@ -1879,15 +1881,53 @@ func reviewSingleSubGroupDynamicReq(ctx context.Context, subGroupDynamicReq mode
 		vmReview.RegionName = specInfo.RegionName
 
 		// Check if spec is available in CSP
-		cspSpec, err := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
-		if err != nil {
-			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", subGroupDynamicReq.SpecId, err))
+		specAvailable := false
+		var specCheckErr error
+		cspSpecName := specInfo.CspSpecName
+
+		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
+			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
+			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check for MCI review")
+			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
+			if azErr == nil {
+				specAvailable = specResult.Available
+				if !specAvailable {
+					specCheckErr = fmt.Errorf("%s", specResult.Reason)
+				}
+			} else {
+				// Fall back to CB-Spider LookupSpec on Azure check errors
+				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
+				cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
+				if lookupErr == nil {
+					specAvailable = true
+					cspSpecName = cspSpec.Name
+				} else {
+					specCheckErr = lookupErr
+				}
+			}
+		} else {
+			// Other providers: use CB-Spider LookupSpec
+			cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
+			if lookupErr == nil {
+				specAvailable = true
+				cspSpecName = cspSpec.Name
+			} else {
+				specCheckErr = lookupErr
+			}
+		}
+
+		if specCheckErr != nil || !specAvailable {
+			errMsg := "spec not available in CSP"
+			if specCheckErr != nil {
+				errMsg = specCheckErr.Error()
+			}
+			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %s", subGroupDynamicReq.SpecId, errMsg))
 			vmReview.SpecValidation = model.ReviewResourceValidation{
 				ResourceId:    subGroupDynamicReq.SpecId,
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   false,
 				Status:        "Unavailable",
-				Message:       err.Error(),
+				Message:       errMsg,
 				CspResourceId: specInfo.CspSpecName,
 			}
 			vmReview.CanCreate = false
@@ -1898,7 +1938,7 @@ func reviewSingleSubGroupDynamicReq(ctx context.Context, subGroupDynamicReq mode
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
 				Status:        "Available",
-				CspResourceId: cspSpec.Name,
+				CspResourceId: cspSpecName,
 			}
 
 			// Add cost estimation if available
@@ -2680,7 +2720,7 @@ func CreateMciSubGroupDynamic(ctx context.Context, nsId string, mciId string, re
 		return emptyMci, err
 	}
 
-	return CreateMciGroupVm(nsId, mciId, vmReqResult.VmReq, true)
+	return CreateMciGroupVm(ctx, nsId, mciId, vmReqResult.VmReq, true)
 }
 
 // checkCommonResAvailableForSubGroupDynamicReq is func to check common resources availability for SubGroupDynamicReq
@@ -2706,11 +2746,42 @@ func checkCommonResAvailableForSubGroupDynamicReq(ctx context.Context, req *mode
 
 	// Check spec availability in parallel
 	go func() {
-		_, err := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
-		if err != nil {
-			log.Error().Err(err).Msgf("Spec validation failed for %s", specInfo.CspSpecName)
-			errorChan <- fmt.Errorf("spec '%s' is not available in connection '%s': %w",
-				specInfo.CspSpecName, resolvedConnectionName, err)
+		var specAvailable bool
+		var specCheckErr error
+
+		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
+			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
+			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check")
+			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
+			if azErr == nil {
+				specAvailable = specResult.Available
+				if !specAvailable {
+					specCheckErr = fmt.Errorf("%s", specResult.Reason)
+				}
+			} else {
+				// Fall back to CB-Spider LookupSpec on Azure check errors
+				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
+				_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
+				if specCheckErr == nil {
+					specAvailable = true
+				}
+			}
+		} else {
+			// Other providers: use CB-Spider LookupSpec
+			_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
+			if specCheckErr == nil {
+				specAvailable = true
+			}
+		}
+
+		if specCheckErr != nil || !specAvailable {
+			errMsg := "spec not available in CSP"
+			if specCheckErr != nil {
+				errMsg = specCheckErr.Error()
+			}
+			log.Error().Msgf("Spec validation failed for %s: %s", specInfo.CspSpecName, errMsg)
+			errorChan <- fmt.Errorf("spec '%s' is not available in connection '%s': %s",
+				specInfo.CspSpecName, resolvedConnectionName, errMsg)
 		} else {
 			log.Debug().Msgf("Spec validation successful: %s", specInfo.CspSpecName)
 			errorChan <- nil
@@ -2928,7 +2999,7 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating VNet with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
-			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrVNet, subGroupReq.ConnectionName, sharedResourceOpts)
+			err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrVNet, subGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default VNet for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or network configuration issues",
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
@@ -3041,7 +3112,7 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SSHKey with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
-			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrSSHKey, subGroupReq.ConnectionName, sharedResourceOpts)
+			err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSSHKey, subGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SSHKey for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or key generation issues",
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
@@ -3090,7 +3161,7 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SecurityGroup with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
-			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName, sharedResourceOpts)
+			err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSecurityGroup, subGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SecurityGroup for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or firewall rule configuration issues",
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
@@ -3170,7 +3241,7 @@ type VmCreateInfo struct {
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
 // Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
-func CreateVmsInParallel(nsId, mciId string, vmInfoList []*model.VmInfo, option string) error {
+func CreateVmsInParallel(ctx context.Context, nsId, mciId string, vmInfoList []*model.VmInfo, option string) error {
 	if len(vmInfoList) == 0 {
 		return nil
 	}
@@ -3249,7 +3320,7 @@ func CreateVmsInParallel(nsId, mciId string, vmInfoList []*model.VmInfo, option 
 							// Create VM using the existing CreateVm function
 							var createWg sync.WaitGroup
 							createWg.Add(1)
-							err := CreateVm(&createWg, nsId, mciId, vmInfo, option)
+							err := CreateVm(ctx, &createWg, nsId, mciId, vmInfo, option)
 							if err != nil {
 								log.Error().Err(err).Msgf("Failed to create VM %s", vmInfo.Name)
 								vmMutex.Lock()
@@ -3311,7 +3382,7 @@ func CreateVmsInParallel(nsId, mciId string, vmInfoList []*model.VmInfo, option 
 }
 
 // CreateVm is func to create VM (option = "register" for register existing VM)
-func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.VmInfo, option string) error {
+func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.VmInfo, option string) error {
 	log.Info().Msgf("Start to create VM: %s", vmInfoData.Name)
 	//goroutin
 	defer wg.Done()
@@ -3677,7 +3748,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 			providerName := strings.ToLower(vmInfoData.ConnectionConfig.ProviderName)
 			if csp.ResolveCloudPlatform(providerName) == csp.GCP {
 				log.Info().Msgf("GCP detected: creating placeholder SSH key for VM '%s' (GCP does not manage SSH keys as independent resources)", vmInfoData.Name)
-				placeholderSshKey, placeholderErr := resource.CreatePlaceholderSshKey(nsId, requestBody.ConnectionName, vmInfoData.Name, vmInfoData.Uid)
+				placeholderSshKey, placeholderErr := resource.CreatePlaceholderSshKey(ctx, nsId, requestBody.ConnectionName, vmInfoData.Name, vmInfoData.Uid)
 				if placeholderErr != nil {
 					log.Error().Err(placeholderErr).Msgf("Failed to create placeholder SSH key for GCP VM '%s'", vmInfoData.Name)
 				} else {
@@ -3719,7 +3790,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 			CspResourceId:  v.SystemId,
 		}
 
-		dataDisk, err := resource.CreateDataDisk(nsId, &tbDataDiskReq, "register")
+		dataDisk, err := resource.CreateDataDisk(ctx, nsId, &tbDataDiskReq, "register")
 		if err != nil {
 			err = fmt.Errorf("after starting VM %s, failed to register dataDisk %s. \n", vmInfoData.Name, v.NameId)
 			log.Err(err).Msg("")
@@ -3823,7 +3894,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	for key, value := range vmInfoData.Label {
 		labels[key] = value
 	}
-	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uid, vmKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrVM, vmInfoData.Uid, vmKey, labels)
 	if err != nil {
 		err = fmt.Errorf("cannot create label object: %v", err)
 		vmInfoData.Status = model.StatusFailed
@@ -4103,7 +4174,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 
-		err2 := resource.CreateSharedResource(nsId, model.StrVNet, k8sReq.ConnectionName)
+		err2 := resource.CreateSharedResource(ctx, nsId, model.StrVNet, k8sReq.ConnectionName)
 		if err2 != nil {
 			log.Err(err2).Msg("Failed to create new default vNet " + k8sReq.VNetId + " from " + k8sReq.ConnectionName)
 			return emptyK8sReq, err2
@@ -4129,7 +4200,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
-		err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, k8sReq.ConnectionName)
+		err2 := resource.CreateSharedResource(ctx, nsId, model.StrSSHKey, k8sReq.ConnectionName)
 		if err2 != nil {
 			log.Err(err2).Msg("Failed to create new default SSHKey " + k8sngReq.SshKeyId + " from " + k8sReq.ConnectionName)
 			return emptyK8sReq, err2
@@ -4154,7 +4225,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 
-		err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, k8sReq.ConnectionName)
+		err2 := resource.CreateSharedResource(ctx, nsId, model.StrSecurityGroup, k8sReq.ConnectionName)
 		if err2 != nil {
 			log.Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + k8sReq.ConnectionName)
 			return emptyK8sReq, err2
@@ -4275,7 +4346,7 @@ func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.K8sCl
 	}
 
 	// skipVersionCheck parameter is passed from function argument
-	return resource.CreateK8sCluster(nsId, k8sReq, option, skipVersionCheck)
+	return resource.CreateK8sCluster(ctx, nsId, k8sReq, option, skipVersionCheck)
 }
 
 // getK8sNodeGroupReqFromDynamicReq is func to get K8sNodeGroupReq from K8sNodeGroupDynamicReq
