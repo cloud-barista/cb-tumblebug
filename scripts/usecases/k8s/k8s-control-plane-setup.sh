@@ -9,6 +9,7 @@
 #   Standard:  Basic K8s control plane with Flannel CNI
 #   llm-d:     Adds Gateway API, LeaderWorkerSet, Helm, NVIDIA GPU Operator
 #              for distributed LLM inference deployments
+#              Ref: https://llm-d.ai/docs/guide/Installation/prerequisites
 #
 # Remote execution (CB-MapUI / CB-Tumblebug API):
 #   This script is designed for non-interactive SSH execution.
@@ -265,7 +266,7 @@ if [ -f /etc/kubernetes/admin.conf ]; then
     echo "Kubernetes cluster already initialized!"
     echo "=========================================="
     K8S_ALREADY_INITIALIZED=true
-    
+
     # Ensure kubeconfig is set up
     if [ ! -f "$HOME/.kube/config" ]; then
         echo "Setting up kubeconfig..."
@@ -273,7 +274,7 @@ if [ -f /etc/kubernetes/admin.conf ]; then
         sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
         sudo chown $(id -u):$(id -g) $HOME/.kube/config
     fi
-    
+
     # Check cluster status
     if kubectl get nodes &>/dev/null; then
         echo "Cluster is accessible. Current nodes:"
@@ -282,7 +283,7 @@ if [ -f /etc/kubernetes/admin.conf ]; then
         echo "Warning: Cluster exists but kubectl cannot connect"
     fi
     echo ""
-    
+
     if [ "$LLMD_MODE" = true ]; then
         echo "Proceeding to install llm-d components on existing cluster..."
     else
@@ -341,16 +342,29 @@ fi  # End of K8S_ALREADY_INITIALIZED check
 # ============================================================
 # llm-d Mode: Install additional components
 # Reference: https://llm-d.ai/docs/guide/Installation/prerequisites
+# Reference: https://llm-d.ai/docs/guide/Installation/quickstart
 # ============================================================
 if [ "$LLMD_MODE" = true ]; then
     echo ""
     echo "=========================================="
     echo "Installing llm-d infrastructure components..."
     echo "=========================================="
-    
+
     LLMD_INSTALL_ERRORS=0
 
     # ---- Tool Dependencies ----
+
+    # Ensure git is installed (required for cloning llm-d repo)
+    echo "Checking git..."
+    if ! command -v git &>/dev/null; then
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git > /dev/null
+    fi
+    if command -v git &>/dev/null; then
+        echo "  ✓ git $(git --version 2>/dev/null)"
+    else
+        echo "  ✗ git installation failed"
+        LLMD_INSTALL_ERRORS=$((LLMD_INSTALL_ERRORS + 1))
+    fi
 
     # Install Helm (v3.12+ required by llm-d)
     echo "Installing Helm..."
@@ -413,10 +427,8 @@ if [ "$LLMD_MODE" = true ]; then
     GATEWAY_API_VERSION="v1.4.0"
     GATEWAY_API_URL="https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
     echo "Installing Gateway API CRDs (${GATEWAY_API_VERSION})..."
-    GATEWAY_INSTALLED=false
     for attempt in 1 2 3; do
         if kubectl apply -f "$GATEWAY_API_URL" 2>&1; then
-            GATEWAY_INSTALLED=true
             break
         fi
         echo "  Retry ${attempt}/3..."
@@ -431,13 +443,11 @@ if [ "$LLMD_MODE" = true ]; then
 
     # Install Gateway API Inference Extension CRDs v1.3.0 (InferencePool, etc.)
     # Ref: https://gateway-api-inference-extension.sigs.k8s.io/
-    # Note: The Istio install step below may also install these via install-gateway-provider-dependencies.sh
+    # Note: install-gateway-provider-dependencies.sh (below) may also install these as a side effect.
     GAIE_VERSION="v1.3.0"
     echo "Installing Gateway API Inference Extension CRDs (${GAIE_VERSION})..."
-    GAIE_INSTALLED=false
     for attempt in 1 2 3; do
         if kubectl apply -k "https://github.com/kubernetes-sigs/gateway-api-inference-extension/config/crd?ref=${GAIE_VERSION}" 2>&1; then
-            GAIE_INSTALLED=true
             break
         fi
         echo "  Retry ${attempt}/3..."
@@ -447,17 +457,16 @@ if [ "$LLMD_MODE" = true ]; then
         echo "  ✓ Gateway API Inference Extension CRDs verified (InferencePool)"
     else
         echo "  ⚠ Inference Extension CRDs not found yet (may be installed by gateway setup below)"
-        LLMD_INSTALL_ERRORS=$((LLMD_INSTALL_ERRORS + 1))
+        # Not counted as a hard error here: install-gateway-provider-dependencies.sh may resolve this.
     fi
 
     # Install LeaderWorkerSet CRD v0.7.0+ (for multi-host inference)
+    # Ref: https://llm-d.ai/docs/guide/Installation/prerequisites
     LWS_VERSION="v0.7.0"
     LWS_URL="https://github.com/kubernetes-sigs/lws/releases/download/${LWS_VERSION}/manifests.yaml"
     echo "Installing LeaderWorkerSet CRD (${LWS_VERSION})..."
-    LWS_INSTALLED=false
     for attempt in 1 2 3; do
         if kubectl apply --server-side -f "$LWS_URL" 2>&1; then
-            LWS_INSTALLED=true
             break
         fi
         echo "  Retry ${attempt}/3..."
@@ -509,8 +518,9 @@ if [ "$LLMD_MODE" = true ]; then
     fi
 
     # ---- Gateway Control Plane (Istio) ----
-    # llm-d requires a Gateway implementation. Install Istio as the default.
-    # Ref: https://github.com/llm-d/llm-d/blob/main/guides/prereq/gateway-provider/README.md
+    # llm-d requires a Gateway implementation.
+    # Recommended: Istio or AgentGateway (kgateway is deprecated as of llm-d docs).
+    # Ref: https://llm-d.ai/docs/guide/Installation/quickstart
 
     echo "Installing Istio Gateway control plane..."
     ISTIO_ALREADY_RUNNING=false
@@ -519,34 +529,36 @@ if [ "$LLMD_MODE" = true ]; then
         echo "  ✓ Istio already running in istio-system"
     else
         # Use llm-d's provided gateway installation if repo is cloned
-        LLM_D_REPO=~/llm-d
+        LLM_D_REPO=$HOME/llm-d
         if [ ! -d "$LLM_D_REPO/.git" ]; then
             echo "  Cloning llm-d repo for gateway setup..."
             git clone --depth 1 https://github.com/llm-d/llm-d.git "$LLM_D_REPO" 2>&1 || true
         fi
 
-        if [ -f "$LLM_D_REPO/guides/prereq/gateway-provider/install-gateway-provider-dependencies.sh" ]; then
+        GATEWAY_PREREQ_DIR="$LLM_D_REPO/guides/prereq/gateway-provider"
+
+        if [ -f "$GATEWAY_PREREQ_DIR/install-gateway-provider-dependencies.sh" ]; then
             echo "  Installing gateway dependencies via llm-d script..."
-            cd "$LLM_D_REPO/guides/prereq/gateway-provider"
-            bash install-gateway-provider-dependencies.sh 2>&1 || true
-            cd - > /dev/null
+            # Use subshell to avoid polluting working directory in remote (curl|bash) execution
+            (cd "$GATEWAY_PREREQ_DIR" && bash install-gateway-provider-dependencies.sh 2>&1) || true
         fi
 
-        if [ -f "$LLM_D_REPO/guides/prereq/gateway-provider/istio.helmfile.yaml" ]; then
+        if [ -f "$GATEWAY_PREREQ_DIR/istio.helmfile.yaml" ]; then
             echo "  Installing Istio via helmfile..."
-            cd "$LLM_D_REPO/guides/prereq/gateway-provider"
-            helmfile apply -f istio.helmfile.yaml 2>&1 || {
+            # Use subshell to avoid working directory side effects in remote execution
+            (cd "$GATEWAY_PREREQ_DIR" && helmfile apply -f istio.helmfile.yaml 2>&1) || {
                 echo "  ⚠ Istio helmfile installation may have issues"
             }
-            cd - > /dev/null
         else
-            # Fallback: install Istio directly
+            # Fallback: install Istio directly via istioctl
+            # Copy istioctl to /usr/local/bin so PATH persists across subshells and remote execution
             echo "  llm-d repo not available, installing Istio via istioctl..."
             if ! command -v istioctl &>/dev/null; then
                 curl -fsSL https://istio.io/downloadIstio | sh - 2>/dev/null || true
-                ISTIO_DIR=$(ls -d istio-* 2>/dev/null | sort -V | tail -1)
-                if [ -n "$ISTIO_DIR" ]; then
-                    export PATH="$PWD/$ISTIO_DIR/bin:$PATH"
+                ISTIO_BIN=$(ls -d $HOME/istio-*/bin/istioctl 2>/dev/null | sort -V | tail -1)
+                if [ -n "$ISTIO_BIN" ]; then
+                    sudo cp "$ISTIO_BIN" /usr/local/bin/istioctl
+                    sudo chmod +x /usr/local/bin/istioctl
                 fi
             fi
             if command -v istioctl &>/dev/null; then
@@ -574,58 +586,66 @@ if [ "$LLMD_MODE" = true ]; then
     fi
 
     # ---- NVIDIA GPU Operator ----
+    # Note: driver.enabled=false assumes NVIDIA driver is pre-installed on GPU worker nodes.
+    # GPU workers are expected to join the cluster after this control plane setup completes.
+    # The GPU Operator validator pods will not be fully healthy until GPU workers join —
+    # this is expected and not treated as a hard error here.
 
     echo "Installing NVIDIA GPU Operator..."
     helm repo add nvidia https://helm.ngc.nvidia.com/nvidia 2>&1 || true
     helm repo update 2>&1 || true
-    
+
     kubectl create namespace gpu-operator --dry-run=client -o yaml | kubectl apply -f - > /dev/null 2>&1
-    
-    # Install GPU Operator (driver.enabled=false assumes driver is pre-installed on GPU nodes)
-    helm upgrade --install gpu-operator nvidia/gpu-operator \
+
+    # driver.enabled=false: NVIDIA driver is managed externally (pre-installed on GPU nodes).
+    # GPU Operator will not be fully operational until GPU worker nodes join the cluster.
+    if helm upgrade --install gpu-operator nvidia/gpu-operator \
         --namespace gpu-operator \
         --set driver.enabled=false \
         --set toolkit.enabled=true \
         --set devicePlugin.enabled=true \
         --set mig.strategy=single \
-        --wait --timeout 5m 2>&1 || {
-            echo "  ⚠ GPU Operator installation in progress (may take a few minutes)"
-        }
-    echo "  ✓ NVIDIA GPU Operator configured"
-    
-    # ---- Final Re-verification ----
-    # Some components may have been installed as side effects
-    # (e.g., install-gateway-provider-dependencies.sh installs GAIE CRDs)
-    # Re-check and correct the error count.
-
-    if [ "$LLMD_INSTALL_ERRORS" -gt 0 ]; then
-        echo ""
-        echo "Running final re-verification of all components..."
-        FINAL_ERRORS=0
-
-        command -v helm &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-        command -v helmfile &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-        command -v yq &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-
-        kubectl get crd gateways.gateway.networking.k8s.io &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-        kubectl get crd inferencepools.inference.networking.k8s.io &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-        kubectl get crd leaderworkersets.leaderworkerset.x-k8s.io &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-        kubectl get crd podmonitors.monitoring.coreos.com &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-        kubectl get crd servicemonitors.monitoring.coreos.com &>/dev/null || FINAL_ERRORS=$((FINAL_ERRORS + 1))
-
-        if kubectl get pods -n istio-system 2>/dev/null | grep -q "Running"; then
-            : # ok
-        elif kubectl get pods -n kgateway 2>/dev/null | grep -q "Running"; then
-            : # ok
-        else
-            FINAL_ERRORS=$((FINAL_ERRORS + 1))
-        fi
-
-        if [ "$FINAL_ERRORS" -lt "$LLMD_INSTALL_ERRORS" ]; then
-            echo "  Some previously failed components were resolved by subsequent steps."
-        fi
-        LLMD_INSTALL_ERRORS=$FINAL_ERRORS
+        --wait --timeout 5m 2>&1; then
+        echo "  ✓ NVIDIA GPU Operator installed"
+    else
+        echo "  ⚠ GPU Operator install timed out or had warnings."
+        echo "    This is expected if no GPU nodes have joined yet."
+        echo "    GPU Operator will become healthy after GPU workers join the cluster."
     fi
+
+    # ---- Final Re-verification ----
+    # Re-check all components after all installation steps complete.
+    # Some CRDs (e.g., GAIE) may have been installed as side effects of the gateway setup step.
+
+    echo ""
+    echo "Running final verification of all components..."
+    FINAL_ERRORS=0
+
+    command -v git &>/dev/null      || { echo "  ✗ git missing";      FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+    command -v helm &>/dev/null     || { echo "  ✗ helm missing";     FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+    command -v helmfile &>/dev/null || { echo "  ✗ helmfile missing"; FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+    command -v yq &>/dev/null       || { echo "  ✗ yq missing";       FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+
+    kubectl get crd gateways.gateway.networking.k8s.io &>/dev/null \
+        || { echo "  ✗ Gateway API CRD missing";          FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+    kubectl get crd inferencepools.inference.networking.k8s.io &>/dev/null \
+        || { echo "  ✗ Inference Extension CRD missing";  FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+    kubectl get crd leaderworkersets.leaderworkerset.x-k8s.io &>/dev/null \
+        || { echo "  ✗ LeaderWorkerSet CRD missing";      FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+    kubectl get crd podmonitors.monitoring.coreos.com &>/dev/null \
+        || { echo "  ✗ PodMonitor CRD missing";           FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+    kubectl get crd servicemonitors.monitoring.coreos.com &>/dev/null \
+        || { echo "  ✗ ServiceMonitor CRD missing";       FINAL_ERRORS=$((FINAL_ERRORS + 1)); }
+
+    # Gateway: only Istio is supported (kgateway is deprecated per llm-d docs)
+    if kubectl get pods -n istio-system 2>/dev/null | grep -q "Running"; then
+        echo "  ✓ Istio gateway running"
+    else
+        echo "  ✗ Gateway control plane (Istio) not running"
+        FINAL_ERRORS=$((FINAL_ERRORS + 1))
+    fi
+
+    LLMD_INSTALL_ERRORS=$FINAL_ERRORS
 
     # ---- Summary ----
 
@@ -640,12 +660,12 @@ if [ "$LLMD_MODE" = true ]; then
         echo "llm-d infrastructure components installed successfully."
         echo ""
         echo "Installed components:"
-        echo "  - Helm, helmfile, yq (client tools)"
+        echo "  - git, Helm, helmfile, yq (client tools)"
         echo "  - Gateway API CRDs v1.4.0"
         echo "  - Gateway API Inference Extension CRDs v1.3.0 (InferencePool)"
         echo "  - LeaderWorkerSet CRD v0.7.0"
         echo "  - Istio Gateway control plane"
-        echo "  - NVIDIA GPU Operator"
+        echo "  - NVIDIA GPU Operator (active after GPU workers join)"
     fi
 fi
 
