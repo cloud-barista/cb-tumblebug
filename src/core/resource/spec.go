@@ -33,6 +33,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	gcpPricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/gcp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	validator "github.com/go-playground/validator/v10"
@@ -1268,126 +1269,185 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 	connConfigCount = uint(len(connConfigs.Connectionconfig))
 	log.Info().Msgf("Starting parallel price fetching for %d connections", connConfigCount)
 
-	// Sort connections by CSP rotation for optimal parallel processing
-	sortConnectionsByCSPRotation(connConfigs.Connectionconfig)
-
 	startTime := time.Now()
 
-	// Control concurrency with semaphore - limit concurrent connections
-	maxConcurrent := 15 // Reduced from unlimited to 15 concurrent connections
-	semaphore := make(chan struct{}, maxConcurrent)
-
-	// Function to fetch prices for a single connection with retry
-	fetchPricesWithRetry := func(config model.ConnConfig) error {
-		// First attempt
-		err := FetchPriceForConnConfig(config)
-
-		// If failed, retry once after random sleep
-		if err != nil {
-			log.Warn().Err(err).Msgf("First attempt failed for connection %s, will retry",
-				config.ConfigName)
-
-			// if err message contains "not support", skip retry
-			if strings.Contains(err.Error(), "not support") {
-				log.Warn().Msgf("Skipping retry for connection %s due to unsupported error",
-					config.ConfigName)
-				return err
-			}
-
-			// Random sleep before retry
-			common.RandomSleep(2*1000, 5*1000)
-			err = FetchPriceForConnConfig(config)
+	// Separate GCP connections from others.
+	// GCP prices are fetched directly from Google's pricing pages (bypassing cb-spider)
+	// because cb-spider's GCP pricing scraper is broken due to Google's page restructuring.
+	var gcpConfigs []model.ConnConfig
+	var otherConfigs []model.ConnConfig
+	for _, c := range connConfigs.Connectionconfig {
+		if strings.EqualFold(c.ProviderName, csp.GCP) {
+			gcpConfigs = append(gcpConfigs, c)
+		} else {
+			otherConfigs = append(otherConfigs, c)
 		}
-
-		// If still failed after retry
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed to fetch prices for connection %s after retry",
-				config.ConfigName)
-			return err
-		}
-
-		return nil
 	}
 
-	// Process all connections in parallel with controlled concurrency
-	var wg sync.WaitGroup
-	resultChan := make(chan struct {
-		ConnConfig model.ConnConfig
-		Err        error
-	}, len(connConfigs.Connectionconfig))
+	var totalSuccessCount uint
+	var allErrors []string
 
-	for _, connConfig := range connConfigs.Connectionconfig {
-		wg.Add(1)
-
-		// Acquire semaphore slot before starting goroutine
-		semaphore <- struct{}{}
-
-		go func(config model.ConnConfig) {
-			defer wg.Done()
-			defer func() { <-semaphore }() // Release semaphore slot when done
-
-			// Simulate random sleep to avoid overwhelming the API
-			common.RandomSleep(0, 10*1000)
-
-			// Fetch with retry
-			err := fetchPricesWithRetry(config)
-
-			// Force garbage collection after each connection to manage memory
-			runtime.GC()
-
-			// Send result back through channel
-			resultChan <- struct {
-				ConnConfig model.ConnConfig
-				Err        error
-			}{
-				ConnConfig: config,
-				Err:        err,
-			}
-		}(connConfig)
+	// --- GCP: fetch prices directly from Google's pricing pages ---
+	if len(gcpConfigs) > 0 {
+		gcpSuccess, gcpErrors := fetchGCPPricesDirect(gcpConfigs)
+		totalSuccessCount += gcpSuccess
+		allErrors = append(allErrors, gcpErrors...)
 	}
 
-	// Wait for all goroutines to complete and close the channel
-	go func() {
-		wg.Wait()
-		close(resultChan)
-	}()
+	// --- Other CSPs: fetch via cb-spider (existing path) ---
+	if len(otherConfigs) > 0 {
+		// Sort connections by CSP rotation for optimal parallel processing
+		sortConnectionsByCSPRotation(otherConfigs)
 
-	// Process results
-	var finalErrors []string
-	var successCount uint
-
-	for result := range resultChan {
-		if result.Err != nil {
-			errMsg := fmt.Sprintf("Error fetching prices for connection %s: %v",
-				result.ConnConfig.ConfigName, result.Err)
-			finalErrors = append(finalErrors, errMsg)
-			continue
-		}
-
-		// Mark as successful and collect prices
-		successCount++
-		// log.Debug().Msgf("Successfully processed connection: %s", result.ConnConfig.ConfigName)
+		otherSuccess, otherErrors := fetchPricesViaSpider(otherConfigs)
+		totalSuccessCount += otherSuccess
+		allErrors = append(allErrors, otherErrors...)
 	}
 
 	// Report any errors
-	if len(finalErrors) > 0 {
-		log.Warn().Msgf("Encountered %d errors while fetching prices after retries", len(finalErrors))
-		if len(finalErrors) == len(connConfigs.Connectionconfig) {
+	if len(allErrors) > 0 {
+		log.Warn().Msgf("Encountered %d errors while fetching prices after retries", len(allErrors))
+		if len(allErrors) == int(connConfigCount) {
 			return connConfigCount, priceCount, fmt.Errorf("all connections failed: %s",
-				finalErrors[0])
+				allErrors[0])
 		}
 	}
 
 	// Final cleanup
 	runtime.GC()
 
-	log.Info().Msgf("Completed price fetching in %s. Successfully fetched prices from %d/%d connections with max %d concurrent workers",
+	log.Info().Msgf("Completed price fetching in %s. Successfully fetched prices from %d/%d connections",
 		time.Since(startTime),
-		successCount,
-		connConfigCount,
-		maxConcurrent)
+		totalSuccessCount,
+		connConfigCount)
 
 	return connConfigCount, priceCount, nil
+}
+
+// fetchGCPPricesDirect fetches GCP VM pricing directly from Google's pricing pages
+// and updates spec prices in bulk for all GCP connection configs.
+// This bypasses cb-spider, which has a broken GCP pricing scraper.
+func fetchGCPPricesDirect(gcpConfigs []model.ConnConfig) (successCount uint, errors []string) {
+	log.Info().Msgf("GCP: directly fetching pricing from Google for %d connections", len(gcpConfigs))
+	gcpStart := time.Now()
+
+	// Fetch all GCP prices at once (5 HTTP requests for 5 sub-pages)
+	priceCache, err := gcpPricing.FetchAllGCPPrices()
+	if err != nil {
+		errMsg := fmt.Sprintf("GCP direct pricing fetch failed: %v", err)
+		log.Error().Msg(errMsg)
+		for _, c := range gcpConfigs {
+			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %s", c.ConfigName, errMsg))
+		}
+		return 0, errors
+	}
+
+	// Process each GCP connection using the cached price data
+	for _, config := range gcpConfigs {
+		region := config.RegionDetail.RegionName
+
+		priceData := priceCache.GetPriceForRegion(region)
+		if len(priceData.PriceList) == 0 {
+			errors = append(errors, fmt.Sprintf("No GCP prices found for region %s (connection %s)", region, config.ConfigName))
+			continue
+		}
+
+		// Build batch updates (same logic as FetchPriceForConnConfig)
+		batchUpdates := make(map[string]float32, len(priceData.PriceList))
+		for i := range priceData.PriceList {
+			price := priceData.PriceList[i]
+			priceFloat, parseErr := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+			if parseErr != nil {
+				log.Warn().Msgf("GCP direct: failed to parse price %q for spec %s: %v",
+					price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecName, parseErr)
+				continue
+			}
+			priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+			specKey := GetProviderRegionZoneResourceKey(
+				config.ProviderName,
+				config.RegionDetail.RegionName,
+				"",
+				price.ProductInfo.VMSpecName)
+			batchUpdates[specKey] = float32(priceFloat)
+		}
+
+		if len(batchUpdates) > 0 {
+			_, dbErr := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
+			if dbErr != nil {
+				errors = append(errors, fmt.Sprintf("Error updating GCP prices for %s: %v", config.ConfigName, dbErr))
+				continue
+			}
+		}
+
+		successCount++
+		log.Debug().Msgf("GCP direct: updated %d prices for %s (%s)", len(batchUpdates), config.ConfigName, region)
+	}
+
+	log.Info().Msgf("GCP direct pricing completed in %s: %d/%d connections succeeded",
+		time.Since(gcpStart), successCount, len(gcpConfigs))
+	return successCount, errors
+}
+
+// fetchPricesViaSpider fetches prices for non-GCP connections via cb-spider.
+func fetchPricesViaSpider(configs []model.ConnConfig) (successCount uint, errors []string) {
+	maxConcurrent := 15
+	semaphore := make(chan struct{}, maxConcurrent)
+
+	fetchPricesWithRetry := func(config model.ConnConfig) error {
+		err := FetchPriceForConnConfig(config)
+		if err != nil {
+			log.Warn().Err(err).Msgf("First attempt failed for connection %s, will retry",
+				config.ConfigName)
+			if strings.Contains(err.Error(), "not support") {
+				log.Warn().Msgf("Skipping retry for connection %s due to unsupported error",
+					config.ConfigName)
+				return err
+			}
+			common.RandomSleep(2*1000, 5*1000)
+			err = FetchPriceForConnConfig(config)
+		}
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to fetch prices for connection %s after retry",
+				config.ConfigName)
+			return err
+		}
+		return nil
+	}
+
+	var wg sync.WaitGroup
+	type connResult struct {
+		ConfigName string
+		Err        error
+	}
+	resultChan := make(chan connResult, len(configs))
+
+	for _, connConfig := range configs {
+		wg.Add(1)
+		semaphore <- struct{}{}
+		go func(config model.ConnConfig) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+			common.RandomSleep(0, 10*1000)
+			err := fetchPricesWithRetry(config)
+			runtime.GC()
+			resultChan <- connResult{ConfigName: config.ConfigName, Err: err}
+		}(connConfig)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	for result := range resultChan {
+		if result.Err != nil {
+			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v",
+				result.ConfigName, result.Err))
+			continue
+		}
+		successCount++
+	}
+	return successCount, errors
 }
 
 // FetchPriceForConnConfig lookups all Price for region of conn config, processes them in batch
