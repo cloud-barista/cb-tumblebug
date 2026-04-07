@@ -302,14 +302,39 @@ else
     PREREQ_FAILED=true
 fi
 
-# Check GPU resources
-GPU_COUNT=$(kubectl get nodes -o jsonpath='{.items[*].status.allocatable.nvidia\.com/gpu}' 2>/dev/null | tr ' ' '\n' | grep -v '^$' | awk '{sum+=$1} END {print sum}')
-if [ -n "$GPU_COUNT" ] && [ "$GPU_COUNT" -gt 0 ] 2>/dev/null; then
-    echo "  ✓ GPU resources available: ${GPU_COUNT} GPU(s)"
-else
-    echo "  ⚠ No NVIDIA GPU resources detected (may still work if GPUs are pending)"
-    echo "    Check: kubectl describe nodes | grep nvidia.com/gpu"
+# Check GPU resources — resource name depends on hardware backend
+HARDWARE_LOWER=$(echo "${HARDWARE:-cuda}" | tr '[:upper:]' '[:lower:]')
+if [ "$HARDWARE_LOWER" = "amd" ]; then
+    # AMD GPUs are exposed as amd.com/gpu (via ROCm device plugin)
+    GPU_COUNT=$(kubectl get nodes -o jsonpath='{.items[*].status.allocatable.amd\.com/gpu}' 2>/dev/null | tr ' ' '\n' | grep -v '^$' | awk '{sum+=$1} END {print sum}')
+    if [ -n "$GPU_COUNT" ] && [ "$GPU_COUNT" -gt 0 ] 2>/dev/null; then
+        echo "  ✓ AMD GPU resources available: ${GPU_COUNT} GPU(s) (amd.com/gpu)"
+    else
+        echo "  ✗ No AMD GPU resources detected (amd.com/gpu)"
+        echo "    AMD GPU nodes require:"
+        echo "      1. ROCm driver installed on nodes"
+        echo "      2. AMD GPU device plugin deployed (amd/k8s-device-plugin)"
+        echo "    Check: kubectl describe nodes | grep amd.com/gpu"
+        PREREQ_FAILED=true
+    fi
+elif [ "$HARDWARE_LOWER" = "cpu" ]; then
+    echo "  ⚠ CPU-only mode requested — inference will be very slow"
     PREREQ_WARNINGS=$((PREREQ_WARNINGS + 1))
+else
+    # Default: NVIDIA (cuda, or unspecified)
+    GPU_COUNT=$(kubectl get nodes -o jsonpath='{.items[*].status.allocatable.nvidia\.com/gpu}' 2>/dev/null | tr ' ' '\n' | grep -v '^$' | awk '{sum+=$1} END {print sum}')
+    if [ -n "$GPU_COUNT" ] && [ "$GPU_COUNT" -gt 0 ] 2>/dev/null; then
+        echo "  ✓ NVIDIA GPU resources available: ${GPU_COUNT} GPU(s) (nvidia.com/gpu)"
+    else
+        echo "  ✗ No NVIDIA GPU resources detected (nvidia.com/gpu)"
+        echo "    llm-d modelservice pods require NVIDIA GPUs"
+        echo "    Options:"
+        echo "      1. Add GPU worker nodes with NVIDIA drivers + GPU Operator"
+        echo "      2. Use --hardware amd for AMD GPU nodes"
+        echo "      3. Use --hardware cpu for CPU-only inference (very slow, for testing only)"
+        echo "    Check: kubectl describe nodes | grep nvidia.com/gpu"
+        PREREQ_FAILED=true
+    fi
 fi
 
 # Check HuggingFace token secret
@@ -566,25 +591,44 @@ if [ -n "$NODEPORT" ]; then
     echo ""
     echo "Applying NodePort exposure to gateway service..."
 
-    # Find the gateway service
+    # Find the gateway service (Istio names it *-inference-gateway-istio)
     NP_SVC=$(kubectl get svc -n "$LLM_D_NAMESPACE" -o name 2>/dev/null | grep -i "gateway-istio\|gateway-kgateway\|gateway" | head -1 | sed 's|service/||')
     if [ -n "$NP_SVC" ]; then
-        # Patch service type to NodePort and add nodePort to the first port
-        # Use JSON patch to avoid overwriting the entire ports array
-        kubectl patch svc "$NP_SVC" -n "$LLM_D_NAMESPACE" --type=json \
-            -p "[{\"op\":\"replace\",\"path\":\"/spec/type\",\"value\":\"NodePort\"},{\"op\":\"add\",\"path\":\"/spec/ports/0/nodePort\",\"value\":${NODEPORT}}]" 2>&1 || {
-            echo "  ⚠ JSON patch failed, trying merge patch on type only..."
-            kubectl patch svc "$NP_SVC" -n "$LLM_D_NAMESPACE" --type=merge \
-                -p "{\"spec\":{\"type\":\"NodePort\"}}" 2>&1 || true
-        }
+        # Istio manages the gateway Service and reconciles spec.type back to ClusterIP
+        # when the Service is owned by a Gateway resource.  We need to annotate the
+        # Service to keep our changes, OR patch it and immediately remove the ownerReference
+        # loop.  The simplest portable approach: apply a full replacement manifest that
+        # explicitly sets NodePort, which survives Istio reconciliation on most versions.
+        CURRENT_JSON=$(kubectl get svc "$NP_SVC" -n "$LLM_D_NAMESPACE" -o json 2>/dev/null)
+        if [ -n "$CURRENT_JSON" ]; then
+            # Build patched manifest: set type=NodePort and inject nodePort on each HTTP port
+            echo "$CURRENT_JSON" | \
+                jq --argjson np "$NODEPORT" '
+                  .spec.type = "NodePort" |
+                  .spec.ports = (.spec.ports | map(
+                    if (.name == "default" or .name == "http" or .name == "http2" or .protocol == "TCP") and (.nodePort == null or .nodePort == 0)
+                    then .nodePort = $np
+                    else .
+                    end
+                  ))
+                ' 2>/dev/null | kubectl apply -f - 2>&1 || {
+                # jq not available — fall back to plain merge patch
+                kubectl patch svc "$NP_SVC" -n "$LLM_D_NAMESPACE" --type=merge \
+                    -p "{\"spec\":{\"type\":\"NodePort\"}}" 2>&1 || true
+            }
+        fi
 
-        # Verify
+        # Verify (allow a moment for API server to propagate)
+        sleep 2
         ACTUAL_TYPE=$(kubectl get svc "$NP_SVC" -n "$LLM_D_NAMESPACE" -o jsonpath='{.spec.type}' 2>/dev/null)
         ACTUAL_NODEPORT=$(kubectl get svc "$NP_SVC" -n "$LLM_D_NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null)
         if [ "$ACTUAL_TYPE" = "NodePort" ]; then
             echo "  ✓ Gateway service exposed as NodePort (port: ${ACTUAL_NODEPORT:-$NODEPORT})"
         else
-            echo "  ⚠ Gateway service type is still $ACTUAL_TYPE (NodePort patch may not have applied)"
+            echo "  ⚠ Gateway service type is still $ACTUAL_TYPE"
+            echo "    Istio may reconcile this back to ClusterIP automatically."
+            echo "    To expose externally, use port-forward instead:"
+            echo "      kubectl port-forward svc/$NP_SVC -n $LLM_D_NAMESPACE ${NODEPORT}:80 --address 0.0.0.0"
         fi
     else
         echo "  ⚠ Gateway service not found yet (NodePort will need manual patching)"
@@ -601,6 +645,7 @@ DEPLOY_TIMEOUT=600  # 10 minutes
 ELAPSED=0
 INTERVAL=10
 
+UNSCHEDULABLE_STREAK=0
 while [ $ELAPSED -lt $DEPLOY_TIMEOUT ]; do
     # Get pod status (exclude Completed jobs from totals)
     TOTAL_PODS=$(kubectl get pods -n "$LLM_D_NAMESPACE" --no-headers 2>/dev/null | grep -cv "Completed" 2>/dev/null) || TOTAL_PODS=0
@@ -616,6 +661,26 @@ while [ $ELAPSED -lt $DEPLOY_TIMEOUT ]; do
     if [ "$FAILED_PODS" -gt 0 ]; then
         echo "  ⚠ $FAILED_PODS pod(s) in error state"
         kubectl get pods -n "$LLM_D_NAMESPACE" --no-headers 2>/dev/null | grep -E "Error|CrashLoopBackOff|ImagePullBackOff" | head -3
+    fi
+
+    # Detect Unschedulable pods — if pods are stuck due to resource shortage, exit early
+    UNSCHED_COUNT=$(kubectl get events -n "$LLM_D_NAMESPACE" --field-selector reason=FailedScheduling 2>/dev/null | grep -c "Insufficient" 2>/dev/null) || UNSCHED_COUNT=0
+    if [ "$UNSCHED_COUNT" -gt 0 ] && [ "$PENDING_PODS" -gt 0 ] && [ "$READY_PODS" -eq 0 ]; then
+        UNSCHEDULABLE_STREAK=$((UNSCHEDULABLE_STREAK + 1))
+        if [ "$UNSCHEDULABLE_STREAK" -ge 3 ]; then
+            echo ""
+            echo "  ✗ Pods are Unschedulable — cluster does not have sufficient resources"
+            kubectl get events -n "$LLM_D_NAMESPACE" --field-selector reason=FailedScheduling 2>/dev/null | tail -3
+            echo ""
+            echo "  Common causes:"
+            echo "    - Insufficient nvidia.com/gpu: add NVIDIA GPU worker nodes (default)"
+            echo "    - Insufficient amd.com/gpu:   add AMD GPU worker nodes and use --hardware amd"
+            echo "    - Insufficient cpu/memory:     larger instance type needed"
+            echo "  Add GPU workers and re-run, or use --hardware cpu for testing."
+            break
+        fi
+    else
+        UNSCHEDULABLE_STREAK=0
     fi
 
     if [ $((ELAPSED % 30)) -eq 0 ]; then
