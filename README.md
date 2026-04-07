@@ -39,7 +39,7 @@
 - [📖 Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview) | [✨ Features](https://github.com/cloud-barista/cb-tumblebug/tree/main/docs/feature_guide) | [🏗️ Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
 - [☁️ Supported Cloud Providers & Resources](https://docs.google.com/spreadsheets/d/1idBoaTxEMzuVACKUIMIE9OY1rPO-7yZ0y7Rs1dBG0og/edit?usp=sharing)
 
-  ![Multi-Cloud Support Matrix](https://github.com/user-attachments/assets/0fb86a02-cb71-440d-a5bd-5cdcad72c022)
+  ![Multi-Cloud Support Matrix](https://github.com/user-attachments/assets/84077ba7-ebff-4bf4-97b2-2621df35a8dd)
 
   > 📌 **Note**: Reference only - functionality not guaranteed. Regular updates are made.  
   > Kubernetes support is currently WIP with limited features available.
