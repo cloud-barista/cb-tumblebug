@@ -51,6 +51,8 @@ HF_TOKEN_NAME="llm-d-hf-token" # Secret name for HF token
 GATEWAY_PROVIDER=""             # Gateway provider: istio (default), kgateway, gke, etc.
 HARDWARE=""                     # Hardware backend: cuda (default), amd, xpu, cpu, etc.
 NODEPORT=""                     # NodePort number to expose gateway (e.g., 30080). Empty = ClusterIP.
+CPU_LIMIT=""                    # Override CPU limit for decode pod (default: 32 from chart)
+MEMORY_LIMIT=""                 # Override memory limit for decode pod (default: 100Gi from chart)
 CHECK_ONLY=false
 UNINSTALL=false
 LLM_D_REPO_DIR=""               # Will be set to cloned repo path
@@ -96,6 +98,14 @@ while [[ $# -gt 0 ]]; do
             LLM_D_GUIDE="$2"
             shift 2
             ;;
+        --cpu)
+            CPU_LIMIT="$2"
+            shift 2
+            ;;
+        --memory|--mem)
+            MEMORY_LIMIT="$2"
+            shift 2
+            ;;
         --nodeport)
             # If next arg looks like another flag or is missing, use default
             if [ -z "$2" ] || [[ "$2" == -* ]]; then
@@ -129,6 +139,8 @@ while [[ $# -gt 0 ]]; do
             echo "      --gateway PROVIDER    Gateway: istio (default), kgateway, gke, digitalocean"
             echo "      --hardware HW         Hardware: cuda (default), amd, xpu, cpu, hpu, tpu"
             echo "      --guide GUIDE         Guide to deploy (default: inference-scheduling)"
+            echo "      --cpu N               Override decode pod CPU limit (default: 32 from chart)"
+            echo "      --memory SIZE         Override decode pod memory limit (default: 100Gi from chart)"
             echo "      --nodeport [PORT]     Expose gateway via NodePort (default: 30080)"
             echo "      --check               Check prerequisites only, don't deploy"
             echo "      --uninstall           Remove llm-d deployment"
@@ -137,6 +149,7 @@ while [[ $# -gt 0 ]]; do
             echo "Examples:"
             echo "  $0                                         # Deploy with guide defaults"
             echo "  $0 --replicas 1 --tp 1                     # Minimal 1-GPU deployment"
+            echo "  $0 --replicas 1 --tp 1 --cpu 8 --memory 32Gi  # Minimal with resource limits"
             echo "  $0 --hf-token hf_xxxxx                     # Provide HF token"
             echo "  $0 --model Qwen/Qwen3-0.6B --replicas 1 --tp 1  # Small model, 1 GPU"
             echo "  $0 --gateway kgateway                      # Use kgateway instead of istio"
@@ -182,6 +195,12 @@ if [ -n "$GATEWAY_PROVIDER" ]; then
 fi
 if [ -n "$HARDWARE" ]; then
     echo "Hardware: $HARDWARE"
+fi
+if [ -n "$CPU_LIMIT" ]; then
+    echo "CPU Limit Override: $CPU_LIMIT"
+fi
+if [ -n "$MEMORY_LIMIT" ]; then
+    echo "Memory Limit Override: $MEMORY_LIMIT"
 fi
 if [ -n "$NODEPORT" ]; then
     echo "Gateway Exposure: NodePort ($NODEPORT)"
@@ -247,6 +266,15 @@ if ! command -v git &>/dev/null; then
     PREREQ_FAILED=true
 else
     echo "  ✓ git available"
+fi
+
+# Check python3 (used for node resource parsing)
+if ! command -v python3 &>/dev/null; then
+    echo "  ⚠ python3 not found (resource adequacy check will be skipped)"
+    PREREQ_WARNINGS=$((PREREQ_WARNINGS + 1))
+    PYTHON3_AVAILABLE=false
+else
+    PYTHON3_AVAILABLE=true
 fi
 
 # Check Gateway API CRDs (v1.4.0+)
@@ -347,6 +375,149 @@ else
     echo "    Provide with --hf-token or create manually:"
     echo "    kubectl create secret generic $HF_TOKEN_NAME --from-literal=HF_TOKEN=<token> -n $LLM_D_NAMESPACE"
     PREREQ_WARNINGS=$((PREREQ_WARNINGS + 1))
+fi
+
+# ---- Resource adequacy check ----
+# Determine effective values (user overrides or llm-d guide defaults)
+EFF_TP=${TENSOR_PARALLEL:-2}
+EFF_REPLICAS=${REPLICAS:-8}
+EFF_CPU=${CPU_LIMIT:-32}
+EFF_MEM=${MEMORY_LIMIT:-100Gi}
+
+# Validate CPU: must be a positive integer (cores)
+if ! echo "$EFF_CPU" | grep -qE '^[0-9]+$'; then
+    echo "  ✗ Invalid --cpu value '$EFF_CPU': must be a positive integer (cores)"
+    echo "    Examples: --cpu 8, --cpu 32"
+    PREREQ_FAILED=true
+fi
+
+# Parse memory to GiB for comparison
+# Accepts: 100Gi, 100G, 51200Mi, 51200M, 1Ti
+EFF_MEM_NUM=$(echo "$EFF_MEM" | sed 's/[A-Za-z]*$//')
+EFF_MEM_UNIT=$(echo "$EFF_MEM" | sed 's/^[0-9]*//')
+case "$EFF_MEM_UNIT" in
+    Gi) EFF_MEM_GI="$EFF_MEM_NUM" ;;
+    G)  EFF_MEM_GI=$(( EFF_MEM_NUM * 1000 / 1024 )) ;;  # decimal GB → GiB approximation
+    Mi) EFF_MEM_GI=$(( EFF_MEM_NUM / 1024 )) ;;
+    M)  EFF_MEM_GI=$(( EFF_MEM_NUM * 1000 / 1024 / 1024 )) ;;
+    Ti) EFF_MEM_GI=$(( EFF_MEM_NUM * 1024 )) ;;
+    T)  EFF_MEM_GI=$(( EFF_MEM_NUM * 1000 * 1000 / 1024 / 1024 )) ;;
+    *)  if echo "$EFF_MEM_NUM" | grep -qE '^[0-9]+$'; then
+            EFF_MEM_GI="$EFF_MEM_NUM"  # assume GiB if no unit
+        else
+            echo "  ✗ Invalid --memory value '$EFF_MEM': use Gi/Mi/Ti suffix"
+            echo "    Examples: --memory 100Gi, --memory 51200Mi"
+            PREREQ_FAILED=true
+            EFF_MEM_GI=0
+        fi ;;
+esac
+
+# Per-pod requirements
+GPUS_PER_POD=$EFF_TP
+TOTAL_GPUS_NEEDED=$(( EFF_TP * EFF_REPLICAS ))
+
+echo ""
+echo "  Resource requirements (per decode pod):"
+echo "    CPU: ${EFF_CPU} cores | Memory: ${EFF_MEM} | GPU: ${GPUS_PER_POD}"
+echo "    Replicas: ${EFF_REPLICAS} | Total GPUs needed: ${TOTAL_GPUS_NEEDED}"
+
+# Check worker node capacity (exclude control-plane / master nodes)
+if [ "$PYTHON3_AVAILABLE" = true ]; then
+    NODE_INFO=$(kubectl get nodes -o json 2>/dev/null)
+else
+    NODE_INFO=""
+fi
+if [ -n "$NODE_INFO" ]; then
+    BEST_CPU=0
+    BEST_MEM_GI=0
+    BEST_NODE=""
+    FIT_NODE=""  # node that satisfies both CPU and memory
+    WORKER_COUNT=0
+
+    while IFS='|' read -r node_name node_cpu node_mem node_taints; do
+        [ -z "$node_name" ] && continue
+        # Skip control-plane / master nodes
+        if echo "$node_taints" | grep -qE "node-role.kubernetes.io/(control-plane|master):NoSchedule"; then
+            continue
+        fi
+        WORKER_COUNT=$((WORKER_COUNT + 1))
+
+        # Parse CPU: cores or millicores
+        if echo "$node_cpu" | grep -q 'm$'; then
+            ncpu=$(( $(echo "$node_cpu" | sed 's/m$//') / 1000 ))
+        else
+            ncpu=$node_cpu
+        fi
+
+        # Parse memory: handle Ki, Mi, Gi suffixes
+        case "$node_mem" in
+            *Ki) nmem_val=$(echo "$node_mem" | sed 's/Ki$//'); nmem_gi=$(( nmem_val / 1048576 )) ;;
+            *Mi) nmem_val=$(echo "$node_mem" | sed 's/Mi$//'); nmem_gi=$(( nmem_val / 1024 )) ;;
+            *Gi) nmem_gi=$(echo "$node_mem" | sed 's/Gi$//') ;;
+            *)   nmem_gi=$(( $(echo "$node_mem" | sed 's/[A-Za-z]*$//') / 1073741824 )) ;;  # bytes
+        esac
+
+        # Check if this node satisfies both CPU and memory requirements
+        if [ "$ncpu" -ge "$EFF_CPU" ] 2>/dev/null && [ "$nmem_gi" -ge "$EFF_MEM_GI" ] 2>/dev/null; then
+            if [ -z "$FIT_NODE" ]; then
+                FIT_NODE=$node_name
+                BEST_CPU=$ncpu
+                BEST_MEM_GI=$nmem_gi
+                BEST_NODE=$node_name
+            fi
+        fi
+
+        # Track largest node for reporting (by CPU+memory combined)
+        if [ -z "$FIT_NODE" ]; then
+            if [ "$ncpu" -gt "$BEST_CPU" ] 2>/dev/null || \
+               { [ "$ncpu" -eq "$BEST_CPU" ] 2>/dev/null && [ "$nmem_gi" -gt "$BEST_MEM_GI" ] 2>/dev/null; }; then
+                BEST_CPU=$ncpu
+                BEST_MEM_GI=$nmem_gi
+                BEST_NODE=$node_name
+            fi
+        fi
+    done <<< "$(echo "$NODE_INFO" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for n in data.get('items', []):
+    name = n['metadata']['name']
+    alloc = n['status'].get('allocatable', {})
+    cpu = alloc.get('cpu', '0')
+    mem = alloc.get('memory', '0')
+    taints = '|'.join([t.get('key','') + ':' + t.get('effect','') for t in n['spec'].get('taints', [])])
+    print(f'{name}|{cpu}|{mem}|{taints}')
+" 2>/dev/null)"
+
+    if [ "$WORKER_COUNT" -eq 0 ]; then
+        echo ""
+        echo "  ✗ No schedulable worker nodes found (all nodes have control-plane taint)"
+        PREREQ_FAILED=true
+    elif [ -n "$FIT_NODE" ]; then
+        echo "    Suitable worker node: $FIT_NODE (${BEST_CPU} CPU, ${BEST_MEM_GI}Gi RAM)"
+    elif [ -n "$BEST_NODE" ]; then
+        echo "    Best worker node: $BEST_NODE (${BEST_CPU} CPU, ${BEST_MEM_GI}Gi RAM)"
+        echo ""
+        echo "  ✗ No worker node satisfies both CPU and memory requirements"
+        echo "    Required per pod: CPU ${EFF_CPU}, Memory ${EFF_MEM}"
+        echo "    Best worker has:  CPU ${BEST_CPU}, Memory ${BEST_MEM_GI}Gi"
+        echo ""
+        echo "    Options:"
+        echo "      1. Use larger VM instances (recommended for Qwen3-32B: ≥32 vCPU, ≥100Gi RAM, 2× A100)"
+        echo "      2. Override resources: --cpu <N> --memory <SIZE>"
+        echo "         Example: --cpu 12 --memory 48Gi (fit to your node size)"
+        echo "      3. Use a smaller model: --model Qwen/Qwen3-8B --replicas 1 --tp 1 --cpu 8 --memory 32Gi"
+        PREREQ_FAILED=true
+    fi
+
+    # Check total GPU count
+    if [ -n "$GPU_COUNT" ] && [ "$TOTAL_GPUS_NEEDED" -gt "$GPU_COUNT" ] 2>/dev/null; then
+        echo ""
+        echo "  ✗ Not enough GPUs: need ${TOTAL_GPUS_NEEDED} (${EFF_REPLICAS} replicas × ${EFF_TP} TP), cluster has ${GPU_COUNT}"
+        echo "    Options:"
+        echo "      1. Add more GPU worker nodes"
+        echo "      2. Reduce replicas: --replicas $(( GPU_COUNT / EFF_TP ))"
+        PREREQ_FAILED=true
+    fi
 fi
 
 echo ""
@@ -486,7 +657,7 @@ fi
 # Apply overrides to values file
 OVERRIDES_APPLIED=false
 
-if [ -n "$REPLICAS" ] || [ -n "$TENSOR_PARALLEL" ] || [ -n "$MODEL_NAME" ]; then
+if [ -n "$REPLICAS" ] || [ -n "$TENSOR_PARALLEL" ] || [ -n "$MODEL_NAME" ] || [ -n "$CPU_LIMIT" ] || [ -n "$MEMORY_LIMIT" ]; then
     OVERRIDES_APPLIED=true
 fi
 
@@ -509,6 +680,18 @@ if [ "$OVERRIDES_APPLIED" = true ] && [ -f "$VALUES_FILE" ]; then
     if [ -n "$TENSOR_PARALLEL" ]; then
         yq eval -i ".decode.parallelism.tensor = ${TENSOR_PARALLEL}" "$VALUES_FILE" 2>/dev/null || true
         echo "  Tensor parallelism override: $TENSOR_PARALLEL"
+    fi
+
+    if [ -n "$CPU_LIMIT" ]; then
+        yq eval -i ".decode.resources.limits.cpu = \"${CPU_LIMIT}\"" "$VALUES_FILE" 2>/dev/null || true
+        yq eval -i ".decode.resources.requests.cpu = \"${CPU_LIMIT}\"" "$VALUES_FILE" 2>/dev/null || true
+        echo "  CPU limit override: $CPU_LIMIT"
+    fi
+
+    if [ -n "$MEMORY_LIMIT" ]; then
+        yq eval -i ".decode.resources.limits.memory = \"${MEMORY_LIMIT}\"" "$VALUES_FILE" 2>/dev/null || true
+        yq eval -i ".decode.resources.requests.memory = \"${MEMORY_LIMIT}\"" "$VALUES_FILE" 2>/dev/null || true
+        echo "  Memory limit override: $MEMORY_LIMIT"
     fi
 else
     echo "  Using guide defaults (no overrides)"
