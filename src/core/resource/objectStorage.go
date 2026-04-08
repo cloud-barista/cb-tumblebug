@@ -65,119 +65,132 @@ const (
 
 // ========== Resource APIs: Object Storage ==========
 
-// spiderListBucketRes represents the response structure from Spider for listing S3 buckets
+// spiderListBucketRes represents the JSON response from Spider for listing S3 buckets
+// Matches Spider's ListAllMyBucketsResultJSON
 type spiderListBucketRes struct {
-	Owner   spiderOwner   `xml:"Owner" json:"owner"`
-	Buckets spiderBuckets `xml:"Buckets" json:"buckets"`
+	Owner   spiderOwner   `json:"Owner"`
+	Buckets spiderBuckets `json:"Buckets"`
 }
 
 // spiderOwner represents the owner information in S3 bucket list response
 type spiderOwner struct {
-	ID          string `xml:"ID" json:"ID" example:"aws-ap-northeast-2"`
-	DisplayName string `xml:"DisplayName" json:"DisplayName" example:"aws-ap-northeast-2"`
+	ID          string `json:"ID" example:"aws-ap-northeast-2"`
+	DisplayName string `json:"DisplayName" example:"aws-ap-northeast-2"`
 }
 
-// spiderBucket represents a single bucket in S3 bucket list response
+// spiderBucket represents a single bucket in the JSON bucket list response
+// Matches Spider's BucketJSON (IId-based, not Name-based)
 type spiderBucket struct {
-	Name         string `xml:"Name" json:"Name" example:"spider-test-bucket"`
-	CreationDate string `xml:"CreationDate" json:"CreationDate" example:"2025-09-04T04:18:06Z"`
+	IId          spiderBucketIID `json:"IId"`
+	CreationDate string          `json:"CreationDate" example:"2025-09-04T04:18:06Z"`
 }
 
 // spiderBuckets represents the collection of buckets in S3 bucket list response
 type spiderBuckets struct {
-	Bucket []spiderBucket `xml:"Bucket" json:"Bucket"`
+	Bucket []spiderBucket `json:"Bucket"`
 }
 
-// spiderGetBucketInfoRes represents a single bucket in S3 bucket list response
+type spiderBucketIID struct {
+	NameId   string `json:"NameId"`
+	SystemId string `json:"SystemId"`
+}
+
+// spiderGetBucketInfoRes represents the JSON response from Spider for a single bucket
+// Matches Spider's ListBucketResultJSON (no Name, no CreationDate in JSON schema)
 type spiderGetBucketInfoRes struct {
-	Name         string         `xml:"Name" json:"Name" example:"spider-test-bucket"`
-	Prefix       string         `xml:"Prefix" json:"Prefix" example:""`
-	Marker       string         `xml:"Marker" json:"Marker" example:""`
-	MaxKeys      int            `xml:"MaxKeys" json:"MaxKeys" example:"1000"`
-	IsTruncated  bool           `xml:"IsTruncated" json:"IsTruncated" example:"false"`
-	CreationDate string         `xml:"CreationDate" json:"CreationDate" example:"2025-09-04T04:18:06Z"`
-	Contents     []spiderObject `xml:"Contents" json:"Contents"`
+	IId         spiderBucketIID `json:"IId"`
+	Prefix      string          `json:"Prefix" example:""`
+	Marker      string          `json:"Marker" example:""`
+	MaxKeys     int             `json:"MaxKeys" example:"1000"`
+	IsTruncated bool            `json:"IsTruncated" example:"false"`
+	Contents    []spiderObject  `json:"Contents"`
 }
 
 // spiderObjectStorageCreateRequest represents the request structure to create an S3 bucket in Spider
 type spiderObjectStorageCreateRequest struct {
-	BucketName     string `xml:"BucketName" json:"BucketName" validate:"required" example:"globally-unique-bucket-name-12345"`
-	ConnectionName string `xml:"ConnectionName" json:"ConnectionName" validate:"required" example:"aws-ap-northeast-2"`
+	BucketName     string `json:"BucketName" validate:"required" example:"globally-unique-bucket-name-12345"`
+	ConnectionName string `json:"ConnectionName" validate:"required" example:"aws-ap-northeast-2"`
 }
 
 type spiderObjectStorageLocationResponse struct {
-	LocationConstraint string `xml:"LocationConstraint" json:"LocationConstraint" example:"ap-northeast-2"`
+	LocationConstraint string `json:"LocationConstraint" example:"ap-northeast-2"`
 }
 
 // spiderObject represents a single object in the S3 bucket
 type spiderObject struct {
-	Key          string `xml:"Key" json:"Key" example:"test-object.txt"`
-	LastModified string `xml:"LastModified" json:"LastModified" example:"2025-09-04T04:18:06Z"`
-	ETag         string `xml:"ETag" json:"ETag" example:"9b2cf535f27731c974343645a3985328"`
-	Size         int64  `xml:"Size" json:"Size" example:"1024"`
-	StorageClass string `xml:"StorageClass" json:"StorageClass" example:"STANDARD"`
+	Key          string `json:"Key" example:"test-object.txt"`
+	LastModified string `json:"LastModified" example:"2025-09-04T04:18:06Z"`
+	ETag         string `json:"ETag" example:"9b2cf535f27731c974343645a3985328"`
+	Size         int64  `json:"Size" example:"1024"`
+	StorageClass string `json:"StorageClass" example:"STANDARD"`
 }
 
 // spiderPreSignedUrlResponse represents the response structure from Spider for generating a presigned URL
 type spiderPreSignedUrlResponse struct {
-	Expires      int64  `xml:"Expires" json:"Expires" example:"1693824000"`
-	Method       string `xml:"Method" json:"Method" example:"GET"`
-	PreSignedURL string `xml:"PresignedURL" json:"PreSignedURL" example:"https://example.com/presigned-url"`
+	Expires      int64  `json:"Expires" example:"1693824000"`
+	Method       string `json:"Method" example:"GET"`
+	PreSignedURL string `json:"PreSignedURL" example:"https://example.com/presigned-url"`
 }
 
 // spiderGetCORSResponse represents the CORS rules for an S3 bucket
 type spiderGetCORSResponse struct {
-	CORSRule []spiderCorsRule `xml:"CORSRule" json:"CORSRule"`
+	CORSRule []spiderCorsRule `json:"CORSRule"`
 }
 
 // spiderSetCorsRequest represents the request structure to set CORS configuration for an S3 bucket in Spider
 type spiderSetCorsRequest struct {
-	CORSRule []spiderCorsRule `xml:"CORSRule" json:"CORSRule" validate:"required"`
+	CORSRule []spiderCorsRule `json:"CORSRule" validate:"required"`
 }
 
 // spiderCorsRule represents a single CORS rule in the set CORS request
 type spiderCorsRule struct {
-	AllowedOrigin []string `xml:"AllowedOrigin" json:"AllowedOrigin" example:"*"`
-	AllowedMethod []string `xml:"AllowedMethod" json:"AllowedMethod" example:"GET"`
-	AllowedHeader []string `xml:"AllowedHeader" json:"AllowedHeader" example:"*"`
-	ExposeHeader  []string `xml:"ExposeHeader" json:"ExposeHeader" example:"ETag"`
-	MaxAgeSeconds int      `xml:"MaxAgeSeconds" json:"MaxAgeSeconds" example:"3000"`
+	AllowedOrigin []string `json:"AllowedOrigin" example:"*"`
+	AllowedMethod []string `json:"AllowedMethod" example:"GET"`
+	AllowedHeader []string `json:"AllowedHeader" example:"*"`
+	ExposeHeader  []string `json:"ExposeHeader" example:"ETag"`
+	MaxAgeSeconds int      `json:"MaxAgeSeconds" example:"3000"`
 }
 
 // spiderSetVersioningRequest represents the request structure to set versioning configuration for an S3 bucket in Spider
 type spiderSetVersioningRequest struct {
-	Status string `xml:"Status" json:"Status" validate:"required" example:"Enabled"` // Possible values: "Enabled", "Suspended"
+	Status string `json:"Status" validate:"required" example:"Enabled"` // Possible values: "Enabled", "Suspended"
 }
 
 // spiderGetVersioningResponse represents the response structure from Spider for versioning configuration
 type spiderGetVersioningResponse struct {
-	Status string `xml:"Status" json:"Status" example:"Enabled"` // Possible values: "Enabled", "Suspended"
+	Status string `json:"Status" example:"Enabled"` // Possible values: "Enabled", "Suspended"
 }
 
-// spiderListObjectsVersionsResponse represents the response structure from Spider for listing object versions in a bucket
+// spiderListObjectsVersionsResponse represents the JSON response from Spider for listing object versions
+// Matches Spider's ListVersionsResultJSON (no Name in JSON schema)
 type spiderListObjectsVersionsResponse struct {
-	Name                string                `xml:"Name" json:"Name" example:"spider-test-bucket"`
-	Prefix              string                `xml:"Prefix" json:"Prefix" example:""`
-	KeyMarker           string                `xml:"KeyMarker" json:"KeyMarker" example:""`
-	VersionIdMarker     string                `xml:"VersionIdMarker" json:"VersionIdMarker" example:""`
-	NextKeyMarker       string                `xml:"NextKeyMarker" json:"NextKeyMarker" example:""`
-	NextVersionIdMarker string                `xml:"NextVersionIdMarker" json:"NextVersionIdMarker" example:""`
-	MaxKeys             int                   `xml:"MaxKeys" json:"MaxKeys" example:"1000"`
-	IsTruncated         bool                  `xml:"IsTruncated" json:"IsTruncated" example:"false"`
-	Version             []spiderObjectVersion `xml:"Version" json:"Version"`
-	DeleteMarker        []spiderObjectVersion `xml:"DeleteMarker" json:"DeleteMarker"`
+	IId                 spiderBucketIID       `json:"IId"`
+	Prefix              string                `json:"Prefix" example:""`
+	KeyMarker           string                `json:"KeyMarker" example:""`
+	VersionIdMarker     string                `json:"VersionIdMarker" example:""`
+	NextKeyMarker       string                `json:"NextKeyMarker" example:""`
+	NextVersionIdMarker string                `json:"NextVersionIdMarker" example:""`
+	MaxKeys             int                   `json:"MaxKeys" example:"1000"`
+	IsTruncated         bool                  `json:"IsTruncated" example:"false"`
+	Version             []spiderObjectVersion `json:"Version"`
+	DeleteMarker        []spiderObjectVersion `json:"DeleteMarker"`
 }
 
 // spiderObjectVersion represents a single object version in the S3 bucket
 type spiderObjectVersion struct {
-	Key          string      `xml:"Key" json:"Key,omitempty" example:"test-object.txt"`
-	VersionId    string      `xml:"VersionId" json:"VersionId,omitempty" example:"3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC"`
-	IsLatest     bool        `xml:"IsLatest" json:"IsLatest,omitempty" example:"true"`
-	LastModified string      `xml:"LastModified" json:"LastModified,omitempty" example:"2025-09-04T04:18:06Z"`
-	ETag         string      `xml:"ETag" json:"ETag,omitempty" example:"9b2cf535f27731c974343645a3985328"`
-	Size         int64       `xml:"Size" json:"Size,omitempty" example:"1024"`
-	StorageClass string      `xml:"StorageClass" json:"StorageClass,omitempty" example:"STANDARD"`
-	Owner        spiderOwner `xml:"Owner" json:"Owner,omitempty"`
+	Key          string      `json:"Key,omitempty" example:"test-object.txt"`
+	VersionId    string      `json:"VersionId,omitempty" example:"3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC"`
+	IsLatest     bool        `json:"IsLatest,omitempty" example:"true"`
+	LastModified string      `json:"LastModified,omitempty" example:"2025-09-04T04:18:06Z"`
+	ETag         string      `json:"ETag,omitempty" example:"9b2cf535f27731c974343645a3985328"`
+	Size         int64       `json:"Size,omitempty" example:"1024"`
+	StorageClass string      `json:"StorageClass,omitempty" example:"STANDARD"`
+	Owner        spiderOwner `json:"Owner,omitempty"`
+}
+
+// spiderS3JSONHeaders sets Accept header to ensure Spider returns JSON responses (not XML)
+var spiderS3JSONHeaders = map[string]string{
+	"Accept": "application/json",
 }
 
 // checkObjectKey validates the object key (file name) for S3 operations
@@ -453,7 +466,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 			client,
 			method,
 			url,
-			nil,
+			spiderS3JSONHeaders,
 			clientManager.SetUseBody(spReq),
 			&spReq,
 			&spResp,
@@ -496,7 +509,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spGetBucketInfoReq),
 		&spGetBucketInfoReq,
 		&spGetBucketInfoRes,
@@ -511,16 +524,14 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	log.Debug().Msgf("[Response from Spider] Getting the created object storage info: %+v", spGetBucketInfoRes)
 
 	// 9. Set the object storage info
-	// TODO: Set CspResourceName and CspResourceId if available from Spider response
-	// objStrgInfo.CspResourceName = spGetBucketInfoRes.IId.NameId
-	// objStrgInfo.CspResourceId = spGetBucketInfoRes.IId.SystemId
+	objStrgInfo.CspResourceName = spGetBucketInfoRes.IId.NameId
+	objStrgInfo.CspResourceId = spGetBucketInfoRes.IId.SystemId
 	objStrgInfo.Prefix = spGetBucketInfoRes.Prefix
 	objStrgInfo.Marker = spGetBucketInfoRes.Marker
 	objStrgInfo.MaxKeys = spGetBucketInfoRes.MaxKeys
 	objStrgInfo.IsTruncated = spGetBucketInfoRes.IsTruncated
-	objStrgInfo.CreationDate = spGetBucketInfoRes.CreationDate
 
-	var contents []model.Object
+	contents := make([]model.Object, 0)
 	for _, spObj := range spGetBucketInfoRes.Contents {
 		obj := model.Object{
 			Key:          spObj.Key,
@@ -636,7 +647,7 @@ func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -658,13 +669,14 @@ func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
 	_ = json.Unmarshal(data, &newObjStrgInfo)
 
 	// Set the retrieved values
+	newObjStrgInfo.CspResourceName = spResp.IId.NameId
+	newObjStrgInfo.CspResourceId = spResp.IId.SystemId
 	newObjStrgInfo.Prefix = spResp.Prefix
 	newObjStrgInfo.Marker = spResp.Marker
 	newObjStrgInfo.MaxKeys = spResp.MaxKeys
 	newObjStrgInfo.IsTruncated = spResp.IsTruncated
-	newObjStrgInfo.CreationDate = spResp.CreationDate
 
-	var contents []model.Object
+	contents := make([]model.Object, 0)
 	for _, spObj := range spResp.Contents {
 		obj := model.Object{
 			Key:          spObj.Key,
@@ -699,6 +711,12 @@ func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
 }
 
 func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo) bool {
+	if oldObjStrgInfo.CspResourceName != newObjStrgInfo.CspResourceName {
+		return true
+	}
+	if oldObjStrgInfo.CspResourceId != newObjStrgInfo.CspResourceId {
+		return true
+	}
 	if oldObjStrgInfo.Prefix != newObjStrgInfo.Prefix {
 		return true
 	}
@@ -730,8 +748,9 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 	return false
 }
 
-// DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace
-func DeleteObjectStorage(nsId, osId string) error {
+// DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace.
+// If empty is true, it first empties bucket contents. If force is true, Spider force-deletes bucket with contents.
+func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 
 	// 1. Validate input parameters
 	err := common.CheckString(nsId)
@@ -788,6 +807,11 @@ func DeleteObjectStorage(nsId, osId string) error {
 	spResp := clientManager.NoBody
 
 	url := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+	if force {
+		url = url + "&force=true"
+	} else if empty {
+		url = url + "&empty=true"
+	}
 
 	maxRetries := 2
 	t := uint64(3)
@@ -799,7 +823,7 @@ func DeleteObjectStorage(nsId, osId string) error {
 			client,
 			method,
 			url,
-			nil,
+			spiderS3JSONHeaders,
 			clientManager.SetUseBody(spReq),
 			&spReq,
 			&spResp,
@@ -892,7 +916,7 @@ func CheckObjectStorageExistence(nsId, osId string) (bool, error) {
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -960,7 +984,7 @@ func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationRes
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1046,7 +1070,7 @@ func SetObjectStorageCorsConfigurations(nsId, osId string, req model.ObjectStora
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1111,7 +1135,7 @@ func GetObjectStorageCorsConfigurations(nsId, osId string) (model.ObjectStorageG
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1132,7 +1156,7 @@ func GetObjectStorageCorsConfigurations(nsId, osId string) (model.ObjectStorageG
 	log.Debug().Msgf("[Response from Spider] Getting the object storage CORS configuration: %+v", spResp)
 
 	// 4. Set and return the object storage CORS configuration
-	var corsRules []model.CorsRule
+	corsRules := make([]model.CorsRule, 0)
 	for _, spRule := range spResp.CORSRule {
 		rule := model.CorsRule{
 			AllowedOrigin: spRule.AllowedOrigin,
@@ -1198,7 +1222,7 @@ func DeleteObjectStorageCorsConfigurations(nsId, osId string) error {
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1271,7 +1295,7 @@ func SetObjectStorageVersioning(nsId, osId string, req model.ObjectStorageSetVer
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1337,7 +1361,7 @@ func GetObjectStorageVersioning(nsId, osId string) (model.ObjectStorageGetVersio
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1408,7 +1432,7 @@ func ListObjectVersions(nsId, osId string) (model.ObjectStorageListObjectVersion
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1424,7 +1448,7 @@ func ListObjectVersions(nsId, osId string) (model.ObjectStorageListObjectVersion
 
 	// 4. Set and return the list of object versions
 	ret := model.ObjectStorageListObjectVersionsResponse{
-		Name:                spResp.Name,
+		Name:                objStrgInfo.Name,
 		Prefix:              spResp.Prefix,
 		KeyMarker:           spResp.KeyMarker,
 		VersionIdMarker:     spResp.VersionIdMarker,
@@ -1434,7 +1458,7 @@ func ListObjectVersions(nsId, osId string) (model.ObjectStorageListObjectVersion
 		IsTruncated:         spResp.IsTruncated,
 	}
 
-	var versions []model.ObjectVersion
+	versions := make([]model.ObjectVersion, 0)
 	for _, spVer := range spResp.Version {
 		ver := model.ObjectVersion{
 			Key:          spVer.Key,
@@ -1456,7 +1480,7 @@ func ListObjectVersions(nsId, osId string) (model.ObjectStorageListObjectVersion
 	}
 	ret.Version = versions
 
-	var deleteMarkers []model.ObjectVersion
+	deleteMarkers := make([]model.ObjectVersion, 0)
 	for _, spDelMarker := range spResp.DeleteMarker {
 		delMarker := model.ObjectVersion{
 			Key:          spDelMarker.Key,
@@ -1558,7 +1582,7 @@ func DeleteVersionedObject(nsId, osId, objectKey, versionId string) error {
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1643,7 +1667,7 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expires time.Duration, o
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1755,7 +1779,7 @@ func GetDataObject(nsId, osId, objectKey string) (model.Object, error) {
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1834,7 +1858,7 @@ func DeleteDataObject(nsId, osId, objectKey string) error {
 		client,
 		method,
 		url,
-		nil,
+		spiderS3JSONHeaders,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,

@@ -10358,6 +10358,16 @@ paths:
         schema:
           type: string
           default: os01
+      - name: force
+        in: query
+        description: Force delete bucket including all contents
+        schema:
+          type: boolean
+      - name: empty
+        in: query
+        description: Force empty bucket before delete
+        schema:
+          type: boolean
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -10375,6 +10385,12 @@ paths:
           content: {}
         "400":
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
           content:
             application/json:
               schema:
@@ -10718,100 +10734,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey}:
-    get:
-      tags:
-      - "[Infra Resource] Object Storage Management"
-      summary: Generate a presigned URL for uploading or downloading an object
-      description: |-
-        Generate a presigned URL for uploading  or downloading an object to an object storage (bucket)
-
-        **Important Notes:**
-        - The generated presigned URL can be used to upload the object directly without further authentication
-        - The expiration time is specified in seconds (default: 3600 seconds)
-
-        **Example Usage: Upload**
-        ```bash
-        # Using the presigned URL to upload a file
-        curl -i -H "Content-Type: text/plain" -X PUT "<PRESIGNED_URL>" --data-binary "@local-file.txt"
-        ```
-
-        **Example Usage: download**
-        ```bash
-        # Using the presigned URL to download a file
-        curl -X GET "<PRESIGNED_URL>" -o downloaded-file.txt
-        ```
-      operationId: GeneratePresignedURL
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: osId
-        in: path
-        description: Object Storage ID
-        required: true
-        schema:
-          type: string
-          default: os01
-      - name: objectKey
-        in: path
-        description: Object Key
-        required: true
-        schema:
-          type: string
-      - name: operation
-        in: query
-        description: Operation type
-        schema:
-          type: string
-          enum:
-          - upload
-          - download
-      - name: expires
-        in: query
-        description: Expiration time in seconds
-        schema:
-          type: integer
-          default: 3600
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.ObjectStoragePresignedUrlResponse'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
     delete:
       tags:
       - "[Infra Resource] Object Storage Management"
@@ -10919,6 +10841,101 @@ paths:
         "200":
           description: OK - Object metadata returned in headers
           content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey}/presignedUrl:
+    post:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Generate a presigned URL for uploading or downloading an object
+      description: |-
+        Generate a presigned URL for uploading  or downloading an object to an object storage (bucket)
+
+        **Important Notes:**
+        - The generated presigned URL can be used to upload the object directly without further authentication
+        - The expiration time is specified in seconds (default: 3600 seconds)
+
+        **Example Usage: Upload**
+        ```bash
+        # Using the presigned URL to upload a file
+        curl -i -H "Content-Type: text/plain" -X PUT "<PRESIGNED_URL>" --data-binary "@local-file.txt"
+        ```
+
+        **Example Usage: download**
+        ```bash
+        # Using the presigned URL to download a file
+        curl -X GET "<PRESIGNED_URL>" -o downloaded-file.txt
+        ```
+      operationId: GeneratePresignedURL
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      - name: objectKey
+        in: path
+        description: Object Key
+        required: true
+        schema:
+          type: string
+      - name: operation
+        in: query
+        description: Operation type
+        schema:
+          type: string
+          enum:
+          - upload
+          - download
+      - name: expires
+        in: query
+        description: Expiration time in seconds
+        schema:
+          type: integer
+          default: 3600
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStoragePresignedUrlResponse'
         "400":
           description: Bad Request
           content:
