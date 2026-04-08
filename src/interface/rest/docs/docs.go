@@ -12331,6 +12331,18 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "boolean",
+                        "description": "Force delete bucket including all contents",
+                        "name": "force",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Force empty bucket before delete",
+                        "name": "empty",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Custom request ID for tracking",
                         "name": "x-request-id",
@@ -12349,6 +12361,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -12777,100 +12795,6 @@ const docTemplate = `{
             }
         },
         "/ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey}": {
-            "get": {
-                "description": "Generate a presigned URL for uploading  or downloading an object to an object storage (bucket)\n\n**Important Notes:**\n- The generated presigned URL can be used to upload the object directly without further authentication\n- The expiration time is specified in seconds (default: 3600 seconds)\n\n**Example Usage: Upload**\n` + "`" + `` + "`" + `` + "`" + `bash\n# Using the presigned URL to upload a file\ncurl -i -H \"Content-Type: text/plain\" -X PUT \"\u003cPRESIGNED_URL\u003e\" --data-binary \"@local-file.txt\"\n` + "`" + `` + "`" + `` + "`" + `\n\n**Example Usage: download**\n` + "`" + `` + "`" + `` + "`" + `bash\n# Using the presigned URL to download a file\ncurl -X GET \"\u003cPRESIGNED_URL\u003e\" -o downloaded-file.txt\n` + "`" + `` + "`" + `` + "`" + `",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Object Storage Management"
-                ],
-                "summary": "Generate a presigned URL for uploading or downloading an object",
-                "operationId": "GeneratePresignedURL",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "os01",
-                        "description": "Object Storage ID",
-                        "name": "osId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Object Key",
-                        "name": "objectKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "upload",
-                            "download"
-                        ],
-                        "type": "string",
-                        "description": "Operation type",
-                        "name": "operation",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 3600,
-                        "description": "Expiration time in seconds",
-                        "name": "expires",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ObjectStoragePresignedUrlResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "description": "Delete an object from an object storage (bucket)",
                 "consumes": [
@@ -12998,6 +12922,102 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK - Object metadata returned in headers"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey}/presignedUrl": {
+            "post": {
+                "description": "Generate a presigned URL for uploading  or downloading an object to an object storage (bucket)\n\n**Important Notes:**\n- The generated presigned URL can be used to upload the object directly without further authentication\n- The expiration time is specified in seconds (default: 3600 seconds)\n\n**Example Usage: Upload**\n` + "`" + `` + "`" + `` + "`" + `bash\n# Using the presigned URL to upload a file\ncurl -i -H \"Content-Type: text/plain\" -X PUT \"\u003cPRESIGNED_URL\u003e\" --data-binary \"@local-file.txt\"\n` + "`" + `` + "`" + `` + "`" + `\n\n**Example Usage: download**\n` + "`" + `` + "`" + `` + "`" + `bash\n# Using the presigned URL to download a file\ncurl -X GET \"\u003cPRESIGNED_URL\u003e\" -o downloaded-file.txt\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Generate a presigned URL for uploading or downloading an object",
+                "operationId": "GeneratePresignedURL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Object Key",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "upload",
+                            "download"
+                        ],
+                        "type": "string",
+                        "description": "Operation type",
+                        "name": "operation",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 3600,
+                        "description": "Expiration time in seconds",
+                        "name": "expires",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStoragePresignedUrlResponse"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",

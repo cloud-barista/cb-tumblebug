@@ -746,7 +746,7 @@ func RunServer() {
 	g.DELETE("/:nsId/resources/objectStorage/:osId/versions/:objectKey", rest_resource.RestDeleteVersionedObject)
 
 	// Object operations within Object Storage
-	g.GET("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestGeneratePresignedURL)
+	g.POST("/:nsId/resources/objectStorage/:osId/object/:objectKey/presignedUrl", rest_resource.RestGeneratePresignedURL)
 	g.HEAD("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestGetDataObjectInfo)
 	g.GET("/:nsId/resources/objectStorage/:osId/object", rest_resource.RestListDataObjects)
 	g.DELETE("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestDeleteDataObject)
