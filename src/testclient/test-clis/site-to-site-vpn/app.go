@@ -185,12 +185,11 @@ type TestCase struct {
 }
 
 type TestResult struct {
-	TestCase   TestCase
-	CreateRes  string
-	PingRes    string
-	PingStatus string
-	DeleteRes  string
-	ApiLogs    []ApiLog
+	TestCase          TestCase
+	CreateRes         string
+	HealthCheckStatus string
+	DeleteRes         string
+	ApiLogs           []ApiLog
 }
 
 type ApiLog struct {
@@ -533,9 +532,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// Prepare information needed to configure VPN tunnel
 	awsVNetId := ""
-	awsVmId := ""
 	targetVNetId := ""
-	targetPrivateIp := ""
 
 	// Extract info from mciInfo
 	targetCspLower := strings.ToLower(targetCsp)
@@ -543,10 +540,8 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
 		if providerName == "aws" {
 			awsVNetId = vm.VNetId
-			awsVmId = vm.Id
 		} else if providerName == targetCspLower {
 			targetVNetId = vm.VNetId
-			targetPrivateIp = vm.PrivateIP
 		}
 	}
 
@@ -675,33 +670,38 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// Ping test
+	// VPN Health Check (bidirectional ping test)
 
-	if awsVmId != "" && targetPrivateIp != "" {
-		urlCmdMci := fmt.Sprintf("%s/ns/%s/cmd/mci/%s", tbApiBase, nsId, mciId)
+	urlHealthCheck := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s/health", tbApiBase, nsId, mciId, vpnId)
+	reqHealth := map[string]interface{}{
+		"userName":    "cb-user",
+		"pingCount":   4,
+		"intervalSec": 15,
+		"maxAttempts": 20,
+	}
 
-		reqCmd := map[string]interface{}{
-			"command": []string{
-				fmt.Sprintf("ping %s -c 1", targetPrivateIp),
-			},
-			"userName": "cb-user",
-		}
-
-		urlCmdMciWithVm := urlCmdMci + "?vmId=" + awsVmId
-
-		log.Info().Msgf("Testing ping from AWS VM (%s) to Target VM private IP (%s)", awsVmId, targetPrivateIp)
-
-		respBytes, err = callApi("POST", urlCmdMciWithVm, tbAuth, reqCmd, nil, "Ping Test")
-		if err != nil {
-			log.Error().Err(err).Msg(string(respBytes))
-		} else {
-			var cmdResult map[string]interface{}
-			json.Unmarshal(respBytes, &cmdResult)
-			prettyCmdResult, _ := json.MarshalIndent(cmdResult, "", "   ")
-			log.Debug().Msgf("[Ping test Response] \n%s", string(prettyCmdResult))
-		}
+	log.Info().Msgf("Running VPN health check for %s (bidirectional ping test)", vpnId)
+	respBytes, err = callApi("POST", urlHealthCheck, tbAuth, reqHealth, nil, "VPN Health Check")
+	if err != nil {
+		log.Error().Err(err).Msg(string(respBytes))
 	} else {
-		log.Error().Msg("AWS VM ID or Target VM Private IP is missing, skipping ping test")
+		var healthResp model.VpnHealthCheckResponse
+		if jsonErr := json.Unmarshal(respBytes, &healthResp); jsonErr != nil {
+			log.Error().Err(jsonErr).Msg("Failed to parse health check response")
+		} else {
+			prettyResp, _ := json.MarshalIndent(healthResp, "", "   ")
+			log.Debug().Msgf("[VPN Health Check Response] \n%s", string(prettyResp))
+
+			if healthResp.Reachable {
+				log.Info().Msgf("VPN health check succeeded: %s", healthResp.Message)
+			} else {
+				log.Warn().Msgf("VPN health check failed: %s", healthResp.Message)
+				for _, r := range healthResp.Results {
+					log.Warn().Msgf("  [%s] reachable=%v, attempts=%d, packetLoss=%s",
+						r.Direction, r.Reachable, r.Attempts, r.PingStats.PacketLoss)
+				}
+			}
+		}
 	}
 
 }
@@ -1177,24 +1177,20 @@ func batchTestVpn(cmd *cobra.Command, args []string) {
 
 func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbAuth map[string]string, result *TestResult) error {
 	awsVNetId := ""
-	awsVmId := ""
 	targetVNetId := ""
-	targetPrivateIp := ""
 
 	for _, vm := range mciInfo.Vm {
 		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
 		if providerName == "aws" {
 			awsVNetId = vm.VNetId
-			awsVmId = vm.Id
 		} else if providerName == strings.ToLower(tc.Site2) {
 			targetVNetId = vm.VNetId
-			targetPrivateIp = vm.PrivateIP
 		}
 	}
 
-	if awsVNetId == "" || targetVNetId == "" || awsVmId == "" || targetPrivateIp == "" {
-		result.CreateRes = "Failed: Missing Info (VNet or IP)"
-		return fmt.Errorf("missing VNets or VM IPs for %s to %s", tc.Site1, tc.Site2)
+	if awsVNetId == "" || targetVNetId == "" {
+		result.CreateRes = "Failed: Missing VNet Info"
+		return fmt.Errorf("missing VNets for %s to %s", tc.Site1, tc.Site2)
 	}
 
 	// 1. POST VPN
@@ -1237,22 +1233,44 @@ func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbA
 	callApi("GET", urlListVpnInfo, tbAuth, nil, &result.ApiLogs, "List VPN Infos")
 
 	// Wait for BGP propagation
-	log.Info().Msg("Waiting 60 seconds before Ping test... (e.g., waiting for BGP propagation)")
+	log.Info().Msg("Waiting 60 seconds before health check... (e.g., waiting for BGP propagation)")
 	time.Sleep(60 * time.Second)
 
-	// 4. Ping Test
-	urlCmdMci := fmt.Sprintf("%s/ns/%s/cmd/mci/%s?vmId=%s", tbApiBase, nsId, mciId, awsVmId)
-	reqCmd := map[string]interface{}{
-		"command":  []string{fmt.Sprintf("ping %s -c 1", targetPrivateIp)},
-		"userName": "cb-user",
+	// 4. VPN Health Check (bidirectional ping test via health API)
+	urlHealthCheck := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s/health", tbApiBase, nsId, mciId, tc.VpnId)
+	reqHealth := map[string]interface{}{
+		"userName":    "cb-user",
+		"pingCount":   4,
+		"intervalSec": 15,
+		"maxAttempts": 20,
 	}
-	respBytes, err := callApi("POST", urlCmdMci, tbAuth, reqCmd, &result.ApiLogs, "Ping Test")
+
+	log.Info().Msgf("Running VPN health check for %s (bidirectional ping test)", tc.VpnId)
+	respBytes, err := callApi("POST", urlHealthCheck, tbAuth, reqHealth, &result.ApiLogs, "VPN Health Check")
 	if err != nil {
-		result.PingStatus = "Failed"
-	} else if strings.Contains(string(respBytes), "1 packets transmitted, 1 received") {
-		result.PingStatus = "Success"
+		result.HealthCheckStatus = "Failed"
+		log.Error().Err(err).Msg("VPN health check API call failed")
 	} else {
-		result.PingStatus = "Failed"
+		var healthResp model.VpnHealthCheckResponse
+		if jsonErr := json.Unmarshal(respBytes, &healthResp); jsonErr != nil {
+			result.HealthCheckStatus = "Failed"
+			log.Error().Err(jsonErr).Msg("Failed to parse health check response")
+		} else {
+			prettyResp, _ := json.MarshalIndent(healthResp, "", "  ")
+			log.Debug().Msgf("[VPN Health Check Response]\n%s", string(prettyResp))
+
+			if healthResp.Reachable {
+				result.HealthCheckStatus = "Success"
+				log.Info().Msgf("VPN health check succeeded: %s", healthResp.Message)
+			} else {
+				result.HealthCheckStatus = "Failed"
+				log.Warn().Msgf("VPN health check failed: %s", healthResp.Message)
+				for _, r := range healthResp.Results {
+					log.Warn().Msgf("  [%s] reachable=%v, attempts=%d, packetLoss=%s",
+						r.Direction, r.Reachable, r.Attempts, r.PingStats.PacketLoss)
+				}
+			}
+		}
 	}
 
 	// 5. DELETE VPN
@@ -1272,8 +1290,8 @@ func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbA
 	log.Info().Msgf("Verifying deletion of VPN: %s", tc.VpnId)
 	time.Sleep(15 * time.Second)
 	urlGetVpn = fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, tc.VpnId)
-	respBytes, err = callApi("GET", urlGetVpn, tbAuth, nil, nil, "Verify individual VPN deletion")
-	if !isDeleted(err, respBytes) {
+	delCheckResp, err := callApi("GET", urlGetVpn, tbAuth, nil, nil, "Verify individual VPN deletion")
+	if !isDeleted(err, delCheckResp) {
 		log.Warn().Msgf("VPN %s deletion verification failed or timed out", tc.VpnId)
 		result.DeleteRes = "Timeout/Failed"
 		if err != nil {
@@ -1318,7 +1336,7 @@ func generateSummaryReport(filename string, results []TestResult, interrupted bo
 	md := "# VPN Batch Test Summary\n\n"
 	md += "## Test Workflow\n\n"
 	md += "1. **Phase 1: Infrastructure Provisioning** (MCI creation with multi-cloud VMs)\n"
-	md += "2. **Phase 2: VPN Tests** (Sequential VPN creation > View > PING test > Deletion)\n"
+	md += "2. **Phase 2: VPN Tests** (Sequential VPN creation > View > Health Check (ping) > Deletion)\n"
 	md += "3. **Phase 3: Cleanup** (MCI termination and Shared Resource deletion)\n\n"
 	md += "--- \n\n"
 
@@ -1327,14 +1345,14 @@ func generateSummaryReport(filename string, results []TestResult, interrupted bo
 	}
 
 	md += "## Step-by-Step VPN Test Results\n\n"
-	md += "| Test Case | Create | Ping | Delete | Result |\n"
+	md += "| Test Case | Create | Health Check (ping) | Delete | Result |\n"
 	md += "| --- | --- | --- | --- | --- |\n"
 	for _, res := range results {
 		status := "✅"
-		if res.CreateRes != "Success" || res.PingStatus != "Success" || res.DeleteRes != "Success" {
+		if res.CreateRes != "Success" || res.HealthCheckStatus != "Success" || res.DeleteRes != "Success" {
 			status = "❌"
 		}
-		md += fmt.Sprintf("| %s to %s | %s | %s | %s | %s |\n", res.TestCase.Site1, res.TestCase.Site2, res.CreateRes, res.PingStatus, res.DeleteRes, status)
+		md += fmt.Sprintf("| %s to %s | %s | %s | %s | %s |\n", res.TestCase.Site1, res.TestCase.Site2, res.CreateRes, res.HealthCheckStatus, res.DeleteRes, status)
 	}
 	md += "\n---\n\n"
 	md += "### Detailed Logs\n\n"

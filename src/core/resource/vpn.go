@@ -295,7 +295,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 		err := fmt.Errorf("failed to check if the site-to-site VPN (%s) exists or not", vpnInfo.Id)
 		return emptyRet, err
 	}
-	
+
 	// For retry, read the stored VPN info if exists
 	if exists {
 		if !retried {
@@ -551,14 +551,24 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 
 		log.Debug().Msgf("trVpnInfo: %v", trVpnInfo)
 
+		// Map CSP names to Terrarium keys (Terrarium uses "dcs" for OpenStack)
+		site1TrKey := site1CspName
+		if site1TrKey == csp.OpenStack {
+			site1TrKey = "dcs"
+		}
+		site2TrKey := site2CspName
+		if site2TrKey == csp.OpenStack {
+			site2TrKey = "dcs"
+		}
+
 		// Extract the detail of CSPs' resources (NOTE: currently Terrarium supports AWS-to-site VPN)
-		cspResources, exists := trVpnInfo[site1CspName].(map[string]interface{})
+		cspResources, exists := trVpnInfo[site1TrKey].(map[string]interface{})
 		if !exists {
-			log.Error().Msgf("AWS resources not found in VPN info")
+			log.Error().Msgf("%s resources not found in VPN info", site1CspName)
 		}
 		vpnInfo.VpnSites[0].ResourceDetails = extractResourceDetails(cspResources)
 
-		cspResources2, exists2 := trVpnInfo[site2CspName].(map[string]interface{})
+		cspResources2, exists2 := trVpnInfo[site2TrKey].(map[string]interface{})
 		if !exists2 {
 			log.Error().Msgf("%s resources not found in VPN info", site2CspName)
 		}
@@ -814,11 +824,11 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId stri
 	// Initialize resty client with basic auth
 	client := clientManager.NewHttpClient()
 
-		holder := common.CredentialHolderFromContext(ctx)
-		if holder == "" || strings.EqualFold(holder, "admin") {
-			holder = "admin"
-		}
-		client.SetHeader(model.CredentialHolderHeaderKey, holder)
+	holder := common.CredentialHolderFromContext(ctx)
+	if holder == "" || strings.EqualFold(holder, "admin") {
+		holder = "admin"
+	}
+	client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	trId := vpnInfo.Uid
 
@@ -1014,11 +1024,11 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId s
 	// Initialize resty client with basic auth
 	client := clientManager.NewHttpClient()
 
-		holder := common.CredentialHolderFromContext(ctx)
-		if holder == "" || strings.EqualFold(holder, "admin") {
-			holder = "admin"
-		}
-		client.SetHeader(model.CredentialHolderHeaderKey, holder)
+	holder := common.CredentialHolderFromContext(ctx)
+	if holder == "" || strings.EqualFold(holder, "admin") {
+		holder = "admin"
+	}
+	client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	trId := vpnInfo.Uid
 
@@ -1190,11 +1200,11 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, mciId str
 	// Initialize resty client with basic auth
 	client := clientManager.NewHttpClient()
 
-		holder := common.CredentialHolderFromContext(ctx)
-		if holder == "" || strings.EqualFold(holder, "admin") {
-			holder = "admin"
-		}
-		client.SetHeader(model.CredentialHolderHeaderKey, holder)
+	holder := common.CredentialHolderFromContext(ctx)
+	if holder == "" || strings.EqualFold(holder, "admin") {
+		holder = "admin"
+	}
+	client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	trId := vpnInfo.Uid
 

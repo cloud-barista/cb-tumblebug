@@ -530,6 +530,7 @@ func RunServer() {
 	// g.PUT("/:vpnId", rest_resource.RestPutSiteToSiteVpn)
 	vpnGroup.DELETE("/:vpnId", rest_resource.RestDeleteSiteToSiteVpn)
 	vpnGroup.GET("/:vpnId/request/:requestId", rest_resource.RestGetRequestStatusOfSiteToSiteVpn)
+	vpnGroup.POST("/:vpnId/health", rest_infra.RestPostVpnHealthCheck)
 	// TBD
 	// g.POST("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPostVpnGcpToAws)
 	// g.PUT("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPutVpnGcpToAws)

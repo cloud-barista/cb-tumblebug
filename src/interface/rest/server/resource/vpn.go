@@ -97,7 +97,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	sitesInAlibaba := []model.SiteDetail{}
 	sitesInTencent := []model.SiteDetail{}
 	sitesInIbm := []model.SiteDetail{}
-
+	sitesInOpenStack := []model.SiteDetail{}
 	for _, vm := range mciInfo.Vm {
 
 		vNetId := vm.VNetId
@@ -239,6 +239,15 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 			site.ConnectionName = vm.ConnectionName
 			sitesInIbm = append(sitesInIbm, site)
 
+		case csp.OpenStack:
+			// Set vNet ID
+			site.VNetId = vm.VNetId
+			site.SubnetId = vm.SubnetId
+
+			// Set connection name
+			site.ConnectionName = vm.ConnectionName
+			sitesInOpenStack = append(sitesInOpenStack, site)
+
 		default:
 			log.Warn().Msgf("Unsupported provider name: %s", providerName)
 		}
@@ -252,6 +261,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	sitesInfo.Sites.Alibaba = sitesInAlibaba
 	sitesInfo.Sites.Tencent = sitesInTencent
 	sitesInfo.Sites.Ibm = sitesInIbm
+	sitesInfo.Sites.OpenStack = sitesInOpenStack
 
 	return sitesInfo, nil
 }

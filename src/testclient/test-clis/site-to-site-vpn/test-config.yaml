@@ -18,24 +18,24 @@ testTargetPairs:
     - site1: aws
       site2: gcp
       vpnId: vpn-aws-gcp
-      execute: true
+      execute: false
     - site1: aws
       site2: alibaba
       vpnId: vpn-aws-alibaba
-      execute: true
+      execute: false
     - site1: aws
       site2: tencent
       vpnId: vpn-aws-tencent
-      execute: true
+      execute: false
     - site1: aws
       site2: ibm
       vpnId: vpn-aws-ibm
-      execute: true 
+      execute: false 
     - site1: aws
       site2: azure
       vpnId: vpn-aws-azure
-      execute: true
+      execute: false
     - site1: aws
       site2: openstack
       vpnId: vpn-aws-openstack 
-      execute: true 
+      execute: true

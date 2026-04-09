@@ -8150,6 +8150,81 @@ paths:
             application/x-json-stream:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/health:
+    post:
+      tags:
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
+      summary: Check the health of a site-to-site VPN by bidirectional ping test
+      description: |-
+        Perform a bidirectional ping test on a site-to-site VPN using existing MCI VMs and return the results.
+
+        It finds VMs that belong to the VPN's two sites and runs ping tests
+        in both directions (site1→site2 and site2→site1) via private IP.
+        The VPN is considered healthy only when both directions succeed.
+
+        A retry strategy is used with configurable interval and max attempts
+        (default: 15s interval, 20 attempts).
+      operationId: PostVpnHealthCheck
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vpnId
+        in: path
+        description: VPN ID
+        required: true
+        schema:
+          type: string
+          default: vpn01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Health check options
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.VpnHealthCheckRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VpnHealthCheckResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: healthCheckReq
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId}:
     get:
       tags:
@@ -19259,6 +19334,13 @@ components:
           $ref: '#/components/schemas/model.AzureSpecificProperty'
         gcp:
           $ref: '#/components/schemas/model.GcpSpecificProperty'
+        openstack:
+          type: object
+          description: |-
+            Tencent *TencentSpecificProperty `json:"tencent,omitempty"`
+            Ibm     *IbmSpecificProperty     `json:"ibm,omitempty"`
+          allOf:
+          - $ref: '#/components/schemas/model.OpenStackSpecificProperty'
     model.CustomImageReq:
       required:
       - name
@@ -22126,6 +22208,13 @@ components:
         versionId:
           type: string
           example: 3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC
+    model.OpenStackSpecificProperty:
+      type: object
+      properties:
+        bgpAsn:
+          type: string
+          example: "65000"
+          default: "65000"
     model.Operation:
       type: object
       properties:
@@ -23573,8 +23662,6 @@ components:
           example: aws
         gatewaySubnetCidr:
           type: string
-          description: "SubnetId          string `json:\"subnet,omitempty\" example:\"\
-            subnet-xxxxx\"`"
           example: xxx.xxx.xxx.xxx/xx
         region:
           type: string
@@ -23582,6 +23669,9 @@ components:
         resourceGroup:
           type: string
           example: rg-xxxxx
+        subnet:
+          type: string
+          example: subnet-xxxxx
         vnet:
           type: string
           description: "Zone              string `json:\"zone,omitempty\" example:\"\
@@ -25158,6 +25248,69 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+    model.VpnHealthCheckRequest:
+      type: object
+      properties:
+        intervalSec:
+          type: integer
+          description: "IntervalSec is the interval in seconds between ping attempts\
+            \ (default: 15, min: 3, max: 120)"
+          example: 15
+        maxAttempts:
+          type: integer
+          description: "MaxAttempts is the maximum number of ping attempts (default:\
+            \ 20, min: 1, max: 50)"
+          example: 20
+        pingCount:
+          type: integer
+          description: "PingCount is the number of ping packets to send per attempt\
+            \ (default: 4, min: 1, max: 10)"
+          example: 4
+        userName:
+          type: string
+          description: "UserName is the SSH username (default: cb-user)"
+          example: cb-user
+          default: cb-user
+    model.VpnHealthCheckResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Bidirectional VPN health check succeeded
+        reachable:
+          type: boolean
+          example: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.VpnPingDirectionResult'
+        vpnId:
+          type: string
+          example: vpn01
+    model.VpnHealthCheckSourceVmInfo:
+      type: object
+      properties:
+        csp:
+          type: string
+          example: aws
+        privateIp:
+          type: string
+          example: 10.1.0.4
+        vmId:
+          type: string
+          example: aws-ap-northeast-2-1
+    model.VpnHealthCheckTargetVmInfo:
+      type: object
+      properties:
+        csp:
+          type: string
+          example: gcp
+        privateIp:
+          type: string
+          example: 10.2.0.4
+        vmId:
+          type: string
+          example: gcp-asia-northeast3-1
     model.VpnIdList:
       type: object
       properties:
@@ -25199,6 +25352,42 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.VpnInfo'
+    model.VpnPingDirectionResult:
+      type: object
+      properties:
+        attempts:
+          type: integer
+          example: 3
+        direction:
+          type: string
+          example: site1→site2
+        message:
+          type: string
+          example: Ping succeeded on attempt 3/20
+        pingStats:
+          $ref: '#/components/schemas/model.VpnPingStats'
+        reachable:
+          type: boolean
+          example: true
+        sourceVm:
+          $ref: '#/components/schemas/model.VpnHealthCheckSourceVmInfo'
+        targetVm:
+          $ref: '#/components/schemas/model.VpnHealthCheckTargetVmInfo'
+    model.VpnPingStats:
+      type: object
+      properties:
+        avgRtt:
+          type: string
+          example: 2.345 ms
+        maxRtt:
+          type: string
+          example: 3.456 ms
+        minRtt:
+          type: string
+          example: 1.234 ms
+        packetLoss:
+          type: string
+          example: 0%
     model.VpnSiteDetail:
       type: object
       properties:
@@ -25249,6 +25438,10 @@ components:
           items:
             $ref: '#/components/schemas/model.SiteDetail'
         ibm:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SiteDetail'
+        openstack:
           type: array
           items:
             $ref: '#/components/schemas/model.SiteDetail'
