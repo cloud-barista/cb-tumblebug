@@ -3026,45 +3026,95 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 		)
 	}
 
-	// Step 5: Extract zones from verified connection configs
-	var verifiedZones []string
-	zoneSet := make(map[string]bool)
-	hasEmptyZone := false
+	// Step 5: Get zone list from cloudinfo.yaml (authoritative source)
+	// Connection configs are registered per-region (one conn config per region, not per zone),
+	// so extracting zones from conn configs yields only the representative zone.
+	// cloudinfo.yaml contains the complete zone list for each region.
+	//
+	// NOTE: "verified" in the variable name below refers only to the region being accessible
+	// via at least one verified connection config (confirmed in Steps 3-4 above).
+	// It does NOT mean every individual zone was independently verified against the CSP.
+	// When cloudinfo.yaml is available, this slice contains the full known zone list
+	// for the region; for Alibaba, Step 6 further filters it via CSP API.
 
-	for _, cc := range regionConfigs {
-		zoneName := cc.RegionZoneInfo.AssignedZone
-		if zoneName == "" {
-			hasEmptyZone = true
-			continue
-		}
-		if !zoneSet[zoneName] {
-			zoneSet[zoneName] = true
-			verifiedZones = append(verifiedZones, zoneName)
+	// Check whether this CSP uses empty representative zone (e.g., Azure).
+	// When useEmptyRepresentativeZone is true, callers must NOT specify a zone —
+	// doing so can cause OverconstrainedZonalAllocationRequest errors for GPU VMs.
+	// Return auto-selection (HasZoneConcept: false) for such providers regardless
+	// of whether cloudinfo.yaml lists zones for the region.
+	cloudInfo, cloudInfoErr := common.GetCloudInfo()
+	if cloudInfoErr == nil {
+		if cspDetail, ok := cloudInfo.CSPs[strings.ToLower(specInfo.ProviderName)]; ok {
+			if cspDetail.UseEmptyRepresentativeZone {
+				log.Info().
+					Str("specId", specId).
+					Str("provider", specInfo.ProviderName).
+					Str("region", specInfo.RegionName).
+					Msg("CSP uses empty representative zone (useEmptyRepresentativeZone=true), returning auto-selection")
+				return &model.AvailableZonesInfo{
+					SpecId:           specId,
+					ProviderName:     specInfo.ProviderName,
+					RegionName:       specInfo.RegionName,
+					CspSpecName:      specInfo.CspSpecName,
+					CredentialHolder: credentialHolder,
+					AvailableZones:   []string{},
+					HasZoneConcept:   false,
+					QueryDurationMs:  time.Since(startTime).Milliseconds(),
+				}, nil
+			}
 		}
 	}
 
-	// Sort zones for consistent output
-	sort.Strings(verifiedZones)
-
-	// Check if the provider/region has zone concept
-	if len(verifiedZones) == 0 && hasEmptyZone {
-		// Zone concept might not exist for this provider/region
-		log.Info().
-			Str("specId", specId).
+	regionDetail, err := common.GetRegion(specInfo.ProviderName, specInfo.RegionName)
+	if err != nil {
+		log.Warn().Err(err).
 			Str("provider", specInfo.ProviderName).
 			Str("region", specInfo.RegionName).
-			Msg("No zone concept for this provider/region, auto-selection will be used")
+			Msg("Failed to get region detail from cloudinfo, falling back to conn config zones")
+	}
 
-		return &model.AvailableZonesInfo{
-			SpecId:           specId,
-			ProviderName:     specInfo.ProviderName,
-			RegionName:       specInfo.RegionName,
-			CspSpecName:      specInfo.CspSpecName,
-			CredentialHolder: credentialHolder,
-			AvailableZones:   []string{}, // Empty array means auto-selection
-			HasZoneConcept:   false,
-			QueryDurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
+	var verifiedZones []string
+	if err == nil && len(regionDetail.Zones) > 0 {
+		// Use the complete known zone list for the verified region from cloudinfo.yaml.
+		verifiedZones = make([]string, len(regionDetail.Zones))
+		copy(verifiedZones, regionDetail.Zones)
+		sort.Strings(verifiedZones)
+	} else {
+		// Fallback: derive zones from verified region-level conn configs (legacy behavior).
+		zoneSet := make(map[string]bool)
+		hasEmptyZone := false
+		for _, cc := range regionConfigs {
+			zoneName := cc.RegionZoneInfo.AssignedZone
+			if zoneName == "" {
+				hasEmptyZone = true
+				continue
+			}
+			if !zoneSet[zoneName] {
+				zoneSet[zoneName] = true
+				verifiedZones = append(verifiedZones, zoneName)
+			}
+		}
+		sort.Strings(verifiedZones)
+
+		if len(verifiedZones) == 0 && hasEmptyZone {
+			// Zone concept might not exist for this provider/region
+			log.Info().
+				Str("specId", specId).
+				Str("provider", specInfo.ProviderName).
+				Str("region", specInfo.RegionName).
+				Msg("No zone concept for this provider/region, auto-selection will be used")
+
+			return &model.AvailableZonesInfo{
+				SpecId:           specId,
+				ProviderName:     specInfo.ProviderName,
+				RegionName:       specInfo.RegionName,
+				CspSpecName:      specInfo.CspSpecName,
+				CredentialHolder: credentialHolder,
+				AvailableZones:   []string{}, // Empty array means auto-selection
+				HasZoneConcept:   false,
+				QueryDurationMs:  time.Since(startTime).Milliseconds(),
+			}, nil
+		}
 	}
 
 	if len(verifiedZones) == 0 {
