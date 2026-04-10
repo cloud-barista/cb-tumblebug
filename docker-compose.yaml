@@ -281,15 +281,7 @@ services:
       - VAULT_ADDR=http://openbao:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-}
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "-O",
-          "/dev/null",
-          "http://localhost:8055/terrarium/readyz",
-        ]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/terrarium/readyz"]
       interval: 10m
       timeout: 5s
       retries: 3

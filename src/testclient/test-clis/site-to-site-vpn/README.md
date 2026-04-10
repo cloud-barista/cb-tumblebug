@@ -35,13 +35,22 @@ make up
 make init
 ```
 
-3. Create local authentication file for this test CLI.
+3. Create the test configuration file.
+
+```bash
+cp template-test-config.yaml test-config.yaml
+```
+
+Edit `test-config.yaml` to set the Tumblebug endpoint and enable the test cases you want to run (`execute: true`).  
+`test-config.yaml` is git-ignored, so your local changes will not be committed.
+
+4. Create local authentication file for this test CLI.
 
 ```bash
 cp .env.example .env
 ```
 
-4. Edit `.env` with your Tumblebug API credentials.
+5. Edit `.env` with your Tumblebug API credentials.
 
 ```env
 TB_API_USERNAME=your-username
@@ -165,6 +174,7 @@ site-to-site-vpn/
 ├── app.go
 ├── mciDynamic.json
 ├── README.md
-├── test-config.yaml
+├── template-test-config.yaml
+├── test-config.yaml          # git-ignored, created from template
 └── test-results/
 ```

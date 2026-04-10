@@ -9798,6 +9798,89 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/vpn/{vpnId}/health": {
+            "post": {
+                "description": "Perform a bidirectional ping test on a site-to-site VPN using existing MCI VMs and return the results.\n\nIt finds VMs that belong to the VPN's two sites and runs ping tests\nin both directions (site1→site2 and site2→site1) via private IP.\nThe VPN is considered healthy only when both directions succeed.\n\nA retry strategy is used with configurable interval and max attempts\n(default: 15s interval, 20 attempts).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
+                ],
+                "summary": "Check the health of a site-to-site VPN by bidirectional ping test",
+                "operationId": "PostVpnHealthCheck",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Health check options",
+                        "name": "healthCheckReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.VpnHealthCheckRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.VpnHealthCheckResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId}": {
             "get": {
                 "description": "Check the status of a specific request by its ID",
@@ -22831,6 +22914,14 @@ const docTemplate = `{
                 },
                 "gcp": {
                     "$ref": "#/definitions/model.GcpSpecificProperty"
+                },
+                "openstack": {
+                    "description": "Tencent *TencentSpecificProperty ` + "`" + `json:\"tencent,omitempty\"` + "`" + `\nIbm     *IbmSpecificProperty     ` + "`" + `json:\"ibm,omitempty\"` + "`" + `",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OpenStackSpecificProperty"
+                        }
+                    ]
                 }
             }
         },
@@ -26691,6 +26782,16 @@ const docTemplate = `{
                 }
             }
         },
+        "model.OpenStackSpecificProperty": {
+            "type": "object",
+            "properties": {
+                "bgpAsn": {
+                    "type": "string",
+                    "default": "65000",
+                    "example": "65000"
+                }
+            }
+        },
         "model.Operation": {
             "type": "object",
             "properties": {
@@ -28639,7 +28740,6 @@ const docTemplate = `{
                     "example": "aws"
                 },
                 "gatewaySubnetCidr": {
-                    "description": "SubnetId          string ` + "`" + `json:\"subnet,omitempty\" example:\"subnet-xxxxx\"` + "`" + `",
                     "type": "string",
                     "example": "xxx.xxx.xxx.xxx/xx"
                 },
@@ -28650,6 +28750,10 @@ const docTemplate = `{
                 "resourceGroup": {
                     "type": "string",
                     "example": "rg-xxxxx"
+                },
+                "subnet": {
+                    "type": "string",
+                    "example": "subnet-xxxxx"
                 },
                 "vnet": {
                     "description": "Zone              string ` + "`" + `json:\"zone,omitempty\" example:\"ap-northeast-2a\"` + "`" + `",
@@ -30806,6 +30910,92 @@ const docTemplate = `{
                 }
             }
         },
+        "model.VpnHealthCheckRequest": {
+            "type": "object",
+            "properties": {
+                "intervalSec": {
+                    "description": "IntervalSec is the interval in seconds between ping attempts (default: 15, min: 3, max: 120)",
+                    "type": "integer",
+                    "default": 15,
+                    "example": 15
+                },
+                "maxAttempts": {
+                    "description": "MaxAttempts is the maximum number of ping attempts (default: 20, min: 1, max: 50)",
+                    "type": "integer",
+                    "default": 20,
+                    "example": 20
+                },
+                "pingCount": {
+                    "description": "PingCount is the number of ping packets to send per attempt (default: 4, min: 1, max: 10)",
+                    "type": "integer",
+                    "default": 4,
+                    "example": 4
+                },
+                "userName": {
+                    "description": "UserName is the SSH username (default: cb-user)",
+                    "type": "string",
+                    "default": "cb-user",
+                    "example": "cb-user"
+                }
+            }
+        },
+        "model.VpnHealthCheckResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Bidirectional VPN health check succeeded"
+                },
+                "reachable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VpnPingDirectionResult"
+                    }
+                },
+                "vpnId": {
+                    "type": "string",
+                    "example": "vpn01"
+                }
+            }
+        },
+        "model.VpnHealthCheckSourceVmInfo": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "privateIp": {
+                    "type": "string",
+                    "example": "10.1.0.4"
+                },
+                "vmId": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2-1"
+                }
+            }
+        },
+        "model.VpnHealthCheckTargetVmInfo": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "type": "string",
+                    "example": "gcp"
+                },
+                "privateIp": {
+                    "type": "string",
+                    "example": "10.2.0.4"
+                },
+                "vmId": {
+                    "type": "string",
+                    "example": "gcp-asia-northeast3-1"
+                }
+            }
+        },
         "model.VpnIdList": {
             "type": "object",
             "properties": {
@@ -30861,6 +31051,57 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.VpnInfo"
                     }
+                }
+            }
+        },
+        "model.VpnPingDirectionResult": {
+            "type": "object",
+            "properties": {
+                "attempts": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "direction": {
+                    "type": "string",
+                    "example": "site1→site2"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Ping succeeded on attempt 3/20"
+                },
+                "pingStats": {
+                    "$ref": "#/definitions/model.VpnPingStats"
+                },
+                "reachable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "sourceVm": {
+                    "$ref": "#/definitions/model.VpnHealthCheckSourceVmInfo"
+                },
+                "targetVm": {
+                    "$ref": "#/definitions/model.VpnHealthCheckTargetVmInfo"
+                }
+            }
+        },
+        "model.VpnPingStats": {
+            "type": "object",
+            "properties": {
+                "avgRtt": {
+                    "type": "string",
+                    "example": "2.345 ms"
+                },
+                "maxRtt": {
+                    "type": "string",
+                    "example": "3.456 ms"
+                },
+                "minRtt": {
+                    "type": "string",
+                    "example": "1.234 ms"
+                },
+                "packetLoss": {
+                    "type": "string",
+                    "example": "0%"
                 }
             }
         },
@@ -30936,6 +31177,12 @@ const docTemplate = `{
                     }
                 },
                 "ibm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
+                "openstack": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.SiteDetail"
