@@ -85,6 +85,9 @@ venv/
 uv.lock
 .env
 
+# VPN test config (local only)
+src/testclient/test-clis/site-to-site-vpn/test-config.yaml
+
 # VPN test results (local only)
 src/testclient/test-clis/site-to-site-vpn/test-results/*
 !src/testclient/test-clis/site-to-site-vpn/test-results/.gitkeep

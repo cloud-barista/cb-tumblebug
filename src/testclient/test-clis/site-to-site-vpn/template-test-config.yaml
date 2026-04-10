@@ -13,6 +13,8 @@ tumblebug:
       reqBody: mciDynamic.json
 
 # Site-to-site VPN test cases
+# Copy this file to test-config.yaml and modify the test cases as needed.
+# Set 'execute: true' for the test cases you want to run.
 testTargetPairs:
   testCases:
     - site1: aws
@@ -30,12 +32,12 @@ testTargetPairs:
     - site1: aws
       site2: ibm
       vpnId: vpn-aws-ibm
-      execute: false 
+      execute: false
     - site1: aws
       site2: azure
       vpnId: vpn-aws-azure
       execute: false
     - site1: aws
       site2: openstack
-      vpnId: vpn-aws-openstack 
-      execute: true
+      vpnId: vpn-aws-openstack
+      execute: false
