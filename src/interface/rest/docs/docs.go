@@ -5165,6 +5165,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/kubeconfig": {
+            "get": {
+                "description": "Get a CSP native kubeconfig for the specified K8sCluster.\nReturns a kubeconfig using CSP native auth plugins (e.g., aws-iam-authenticator for EKS, gke-gcloud-auth-plugin for GKE).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Get CSP native kubeconfig for K8sCluster",
+                "operationId": "GetK8sClusterKubeconfig",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "k8scluster01",
+                        "description": "K8sCluster ID",
+                        "name": "k8sClusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterKubeconfigResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/k8sCluster/{k8sClusterId}/token": {
             "get": {
                 "description": "Get an access token for the specified K8sCluster.\nOnly applicable to CSPs that use exec-based authentication (e.g., GCP GKE, AWS EKS).",
@@ -24637,6 +24703,15 @@ const docTemplate = `{
                     "description": "Version is for kubernetes version",
                     "type": "string",
                     "example": "1.30.1"
+                }
+            }
+        },
+        "model.K8sClusterKubeconfigResponse": {
+            "type": "object",
+            "properties": {
+                "kubeconfig": {
+                    "type": "string",
+                    "example": "apiVersion: v1\nkind: Config\n..."
                 }
             }
         },

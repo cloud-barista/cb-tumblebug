@@ -4190,6 +4190,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: k8sNodeGroupDynamicReq
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/kubeconfig:
+    get:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Get CSP native kubeconfig for K8sCluster
+      description: |-
+        Get a CSP native kubeconfig for the specified K8sCluster.
+        Returns a kubeconfig using CSP native auth plugins (e.g., aws-iam-authenticator for EKS, gke-gcloud-auth-plugin for GKE).
+      operationId: GetK8sClusterKubeconfig
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterKubeconfigResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/k8sCluster/{k8sClusterId}/token:
     get:
       tags:
@@ -20606,6 +20660,15 @@ components:
           type: string
           description: Version is for kubernetes version
           example: 1.30.1
+    model.K8sClusterKubeconfigResponse:
+      type: object
+      properties:
+        kubeconfig:
+          type: string
+          example: |-
+            apiVersion: v1
+            kind: Config
+            ...
     model.K8sClusterNetworkInfo:
       type: object
       properties:
