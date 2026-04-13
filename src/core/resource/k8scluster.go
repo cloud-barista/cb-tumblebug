@@ -1226,7 +1226,7 @@ func GetK8sClusterToken(nsId string, k8sClusterId string) (*model.K8sClusterToke
 	return fetchSpiderClusterToken(tbK8sCInfo.CspResourceName, tbK8sCInfo.ConnectionName)
 }
 
-// fetchSpiderClusterKubeconfig calls Spider's GetCluster API with KubeconfigType=native
+// fetchSpiderClusterKubeconfig calls Spider's kubeconfig query API with KubeconfigType=native
 // and returns the CSP native kubeconfig YAML string.
 func fetchSpiderClusterKubeconfig(cspResourceName, connectionName string) (*model.K8sClusterKubeconfigResponse, error) {
 	client := clientManager.NewHttpClient()
