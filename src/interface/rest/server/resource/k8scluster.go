@@ -439,6 +439,31 @@ func RestGetK8sClusterToken(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, res)
 }
 
+// RestGetK8sClusterKubeconfig func is a rest api wrapper for GetK8sClusterKubeconfig.
+// RestGetK8sClusterKubeconfig godoc
+// @ID GetK8sClusterKubeconfig
+// @Summary Get CSP native kubeconfig for K8sCluster
+// @Description Get a CSP native kubeconfig for the specified K8sCluster.
+// @Description Returns a kubeconfig using CSP native auth plugins (e.g., aws-iam-authenticator for EKS, gke-gcloud-auth-plugin for GKE).
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
+// @Success 200 {object} model.K8sClusterKubeconfigResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/kubeconfig [get]
+func RestGetK8sClusterKubeconfig(c echo.Context) error {
+	nsId := c.Param("nsId")
+	k8sClusterId := c.Param("k8sClusterId")
+
+	res, err := resource.GetK8sClusterKubeconfig(nsId, k8sClusterId)
+	return clientManager.EndRequestWithLog(c, err, res)
+}
+
 // Response structure for RestGetAllK8sCluster
 type RestGetAllK8sClusterResponse struct {
 	K8sCluster []model.K8sClusterInfo `json:"K8sClusterInfo"`

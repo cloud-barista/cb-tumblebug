@@ -569,6 +569,9 @@ func RunServer() {
 	g.GET("/:nsId/k8sCluster/:k8sClusterId/token", rest_resource.RestGetK8sClusterToken,
 		middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
+	g.GET("/:nsId/k8sCluster/:k8sClusterId/kubeconfig", rest_resource.RestGetK8sClusterKubeconfig,
+		middleware.TimeoutWithConfig(timeoutConfig),
+		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
 
 	e.POST("/tumblebug/k8sClusterRecommendNode", rest_resource.RestRecommendK8sNode)
 	e.POST("/tumblebug/k8sClusterDynamicCheckRequest", rest_resource.RestPostK8sClusterDynamicCheckRequest)

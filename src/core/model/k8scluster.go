@@ -483,6 +483,11 @@ type K8sClusterTokenResponse struct {
 	ExecCredential ExecCredential `json:"execCredential"`
 }
 
+// K8sClusterKubeconfigResponse is the response struct for the K8sCluster kubeconfig API.
+type K8sClusterKubeconfigResponse struct {
+	Kubeconfig string `json:"kubeconfig" example:"apiVersion: v1\nkind: Config\n..."`
+}
+
 // K8sClusterConnectionConfigCandidatesReq is struct for a request to check requirements to create a new K8sCluster instance dynamically (with default resource option)
 type K8sClusterConnectionConfigCandidatesReq struct {
 	// SpecId is field for id of a spec in common namespace

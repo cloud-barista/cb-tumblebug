@@ -1226,6 +1226,67 @@ func GetK8sClusterToken(nsId string, k8sClusterId string) (*model.K8sClusterToke
 	return fetchSpiderClusterToken(tbK8sCInfo.CspResourceName, tbK8sCInfo.ConnectionName)
 }
 
+// fetchSpiderClusterKubeconfig calls Spider's kubeconfig query API with KubeconfigType=native
+// and returns the CSP native kubeconfig YAML string.
+func fetchSpiderClusterKubeconfig(cspResourceName, connectionName string) (*model.K8sClusterKubeconfigResponse, error) {
+	client := clientManager.NewHttpClient()
+	client.SetTimeout(30 * time.Second)
+
+	spiderUrl := fmt.Sprintf("%s/cluster/%s?KubeconfigType=native",
+		model.SpiderRestUrl,
+		url.PathEscape(cspResourceName),
+	)
+
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	requestBody := JsonTemplate{
+		ConnectionName: connectionName,
+	}
+
+	var spClusterRes model.SpiderClusterRes
+	_, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		spiderUrl,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&spClusterRes,
+		0,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get native kubeconfig from CB-Spider (cluster=%s): %w", cspResourceName, err)
+	}
+
+	kubeconfig := spClusterRes.AccessInfo.Kubeconfig
+	if kubeconfig == "" {
+		return nil, fmt.Errorf("CB-Spider returned empty kubeconfig for cluster(%s)", cspResourceName)
+	}
+
+	return &model.K8sClusterKubeconfigResponse{Kubeconfig: kubeconfig}, nil
+}
+
+// GetK8sClusterKubeconfig resolves nsId/k8sClusterId and returns a CSP native kubeconfig.
+func GetK8sClusterKubeconfig(nsId string, k8sClusterId string) (*model.K8sClusterKubeconfigResponse, error) {
+	log.Info().Msgf("GetK8sClusterKubeconfig: nsId=%s, k8sClusterId=%s", nsId, k8sClusterId)
+
+	check, err := CheckK8sCluster(nsId, k8sClusterId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check K8sCluster(%s): %w", k8sClusterId, err)
+	}
+	if !check {
+		return nil, fmt.Errorf("K8sCluster(%s) not found", k8sClusterId)
+	}
+
+	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get K8sCluster info(%s): %w", k8sClusterId, err)
+	}
+
+	return fetchSpiderClusterKubeconfig(tbK8sCInfo.CspResourceName, tbK8sCInfo.ConnectionName)
+}
+
 // CheckK8sCluster returns the existence of the TB K8sCluster object in bool form.
 func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
 
