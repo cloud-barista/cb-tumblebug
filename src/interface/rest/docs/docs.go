@@ -15705,7 +15705,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete VNet\n- withsubnets: delete VNet and its subnets\n- refine: delete information of VNet and its subnets if there's no info/resource in Spider/CSP\n- force: delete VNet and its subnets regardless of the status of info/resource in Spider/CSP",
+                "description": "Delete VNet\n---\n**action options:**\n\n**withsubnets** – Delete the VNet together with all its subnets in a single call.\n\n**reconcile** – Synchronize Tumblebug metadata with the actual CSP state.\nChecks whether the VNet/Subnet resource still exists on CSP (via Spider).\nIf the CSP resource is gone, removes the orphaned Tumblebug metadata.\nIf the CSP resource still exists, keeps the metadata intact.\nUse this to clean up stale metadata after system errors or partial failures.\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=reconcile` + "`" + `)\n\n**force** – Force-delete the VNet and its subnets on CSP (passes ` + "`" + `?force=true` + "`" + ` to Spider).\nUse this when normal deletion fails due to CSP-side constraints (e.g., resource in use).\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=force` + "`" + `)",
                 "consumes": [
                     "application/json"
                 ],
@@ -15715,7 +15715,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Delete VNet (supporting actions: withsubnet, refine, force)",
+                "summary": "Delete VNet (supporting actions: withsubnet, reconcile, force)",
                 "operationId": "DelVNet",
                 "parameters": [
                     {
@@ -15736,7 +15736,7 @@ const docTemplate = `{
                     {
                         "enum": [
                             "withsubnets",
-                            "refine",
+                            "reconcile",
                             "force"
                         ],
                         "type": "string",
@@ -15982,7 +15982,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete Subnet\n- refine: delete a subnet ` + "`" + `object` + "`" + ` if there's no resource on CSP or no inforamation on Spider\n- force: force: delete a subnet ` + "`" + `resource` + "`" + ` on a CSP regardless of the current resource status (e.g., attempt to delete even if in use)",
+                "description": "Delete Subnet\n---\n**action options:**\n\n**reconcile** – Synchronize Tumblebug metadata with the actual CSP state.\nChecks whether the Subnet resource still exists on CSP (via Spider).\nIf the CSP resource is gone, removes the orphaned Tumblebug metadata.\nIf the CSP resource still exists, keeps the metadata intact.\nUse this to clean up stale metadata after system errors or partial failures.\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile` + "`" + `)\n\n**force** – Force-delete the Subnet on CSP (passes ` + "`" + `?force=true` + "`" + ` to Spider).\nUse this when normal deletion fails due to CSP-side constraints (e.g., resource in use).\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=force` + "`" + `)",
                 "consumes": [
                     "application/json"
                 ],
@@ -15992,7 +15992,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Delete Subnet (supporting actions: refine, force)",
+                "summary": "Delete Subnet (supporting actions: reconcile, force)",
                 "operationId": "DelSubnet",
                 "parameters": [
                     {
@@ -16019,7 +16019,7 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "refine",
+                            "reconcile",
                             "force"
                         ],
                         "type": "string",
@@ -22568,6 +22568,52 @@ const docTemplate = `{
                 "EventCommandStatus",
                 "EventCommandLog",
                 "EventCommandDone"
+            ]
+        },
+        "model.Condition": {
+            "type": "object",
+            "properties": {
+                "lastTransitionTime": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.ConditionStatus"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.ConditionType"
+                }
+            }
+        },
+        "model.ConditionStatus": {
+            "type": "string",
+            "enum": [
+                "True",
+                "False",
+                "Unknown"
+            ],
+            "x-enum-varnames": [
+                "ConditionTrue",
+                "ConditionFalse",
+                "ConditionUnknown"
+            ]
+        },
+        "model.ConditionType": {
+            "type": "string",
+            "enum": [
+                "Ready",
+                "Synced",
+                "ChildrenReady"
+            ],
+            "x-enum-varnames": [
+                "ConditionReady",
+                "ConditionSynced",
+                "ConditionChildrenReady"
             ]
         },
         "model.ConfigInfo": {
@@ -30228,6 +30274,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/model.BastionNode"
                     }
                 },
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
                 },
@@ -30281,6 +30333,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "systemMessage": {
                     "type": "string"
                 },
                 "uid": {
@@ -30431,6 +30486,12 @@ const docTemplate = `{
                 "cidrBlock": {
                     "type": "string"
                 },
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
                 },
@@ -30486,6 +30547,9 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "type": "string"
                 },
                 "uid": {
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
@@ -31085,6 +31149,12 @@ const docTemplate = `{
         "model.VpnInfo": {
             "type": "object",
             "properties": {
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -31103,6 +31173,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "systemMessage": {
                     "type": "string"
                 },
                 "uid": {
