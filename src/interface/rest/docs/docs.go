@@ -26657,6 +26657,12 @@ const docTemplate = `{
         "model.ObjectStorageInfo": {
             "type": "object",
             "properties": {
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
                 },
@@ -26720,6 +26726,9 @@ const docTemplate = `{
                     "example": "ObjectStorage"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "systemMessage": {
                     "type": "string"
                 },
                 "uid": {
