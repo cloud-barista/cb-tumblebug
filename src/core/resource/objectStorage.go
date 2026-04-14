@@ -406,9 +406,6 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	}
 	objStrgInfo.Description = req.Description
 
-	// todo ? restore the tag list later
-	// objStrgInfo.TagList = req.TagList
-
 	// 4. Set a objectStorageKey for the object storage info
 	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
 

@@ -20,8 +20,6 @@ type SubnetReq struct { // Tumblebug
 	IPv4_CIDR   string `json:"ipv4_CIDR" validate:"required" example:"10.0.1.0/24"`
 	Zone        string `json:"zone,omitempty" default:""`
 	Description string `json:"description,omitempty" example:"subnet00 managed by CB-Tumblebug"`
-	// todo: restore the tag list later
-	// TagList     []KeyValue `json:"tagList,omitempty"`
 }
 
 type RegisterSubnetReq struct {
@@ -54,13 +52,14 @@ type SubnetInfo struct { // Tumblebug
 	// CspVNetName is identifier to handle CSP vNet resource
 	CspVNetName string `json:"cspVNetName,omitempty" example:"we12fawefadf1221edcf"`
 	// CspVNetId is vNet resource identifier managed by CSP
-	CspVNetId    string        `json:"cspVNetId,omitempty" example:"csp-45eb41e14121c550a"`
-	Status       string        `json:"status"`
-	IPv4_CIDR    string        `json:"ipv4_CIDR"`
-	Zone         string        `json:"zone,omitempty"`
-	BastionNodes []BastionNode `json:"bastionNodes,omitempty"`
-	KeyValueList []KeyValue    `json:"keyValueList,omitempty"`
-	Description  string        `json:"description"`
-	// todo: restore the tag list later
-	// TagList        []KeyValue    `json:"tagList,omitempty"`
+	CspVNetId     string        `json:"cspVNetId,omitempty" example:"csp-45eb41e14121c550a"`
+	Status        string        `json:"status"`
+	SystemMessage string        `json:"systemMessage,omitempty"`
+	Conditions    []Condition   `json:"conditions,omitempty"`
+	IPv4_CIDR     string        `json:"ipv4_CIDR"`
+	Zone          string        `json:"zone,omitempty"`
+	BastionNodes  []BastionNode `json:"bastionNodes,omitempty"`
+	KeyValueList  []KeyValue    `json:"keyValueList,omitempty"`
+	Description   string        `json:"description"`
+
 }

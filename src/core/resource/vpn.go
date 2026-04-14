@@ -317,8 +317,11 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 		}
 	}
 
-	// [Set and store status]
-	vpnInfo.Status = string(NetworkOnConfiguring)
+	// [Conditions] Mark VPN as not ready (creating) before calling Terrarium API
+	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreating, "VPN creation in progress")
+	model.SetCondition(&vpnInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonCreating, "")
+	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.SystemMessage = ""
 	val, err := json.Marshal(vpnInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -380,6 +383,14 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 
 			if err != nil {
 				log.Err(err).Msg("")
+				// [Conditions] Terrarium creation failed → mark as Failed to prevent stuck state
+				model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
+				vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+				vpnInfo.SystemMessage = err.Error()
+				failVal, marshalErr := json.Marshal(vpnInfo)
+				if marshalErr == nil {
+					_ = kvstore.Put(vpnKey, string(failVal))
+				}
 				return emptyRet, err
 			}
 
@@ -517,6 +528,14 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 
 		if err != nil {
 			log.Err(err).Msg("")
+			// [Conditions] Creation failed → mark as Failed to prevent stuck state
+			model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
+			vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+			vpnInfo.SystemMessage = err.Error()
+			failVal, marshalErr := json.Marshal(vpnInfo)
+			if marshalErr == nil {
+				_ = kvstore.Put(vpnKey, string(failVal))
+			}
 			return emptyRet, err
 		}
 		log.Debug().Msgf("resVpnCreation: %+v", resInfracode.Message)
@@ -578,8 +597,11 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 		log.Warn().Msgf("invalid CSP set: %s and %s", site1CspName, site2CspName)
 	}
 
-	// [Set and store status]
-	vpnInfo.Status = string(NetworkAvailable)
+	// [Conditions] VPN creation succeeded → mark as ready and synced
+	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+	model.SetCondition(&vpnInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.SystemMessage = ""
 
 	log.Debug().Msgf("vpnInfo(final): %+v", vpnInfo)
 
@@ -619,7 +641,6 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 		model.LabelId:          vpnInfo.Id,
 		model.LabelName:        vpnInfo.Name,
 		model.LabelUid:         vpnInfo.Uid,
-		model.LabelStatus:      vpnInfo.Status,
 		model.LabelDescription: vpnInfo.Description,
 	}
 	err = label.CreateOrUpdateLabel(ctx, model.StrVPN, vpnInfo.Uid, vpnKey, labels)
@@ -1008,8 +1029,10 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId s
 		return emptyRet, err
 	}
 
-	// [Set and store status]
-	vpnInfo.Status = string(NetworkOnDeleting)
+	// [Conditions] Mark VPN as not ready (deleting) before calling Terrarium API
+	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "VPN deletion in progress")
+	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.SystemMessage = ""
 	val, err := json.Marshal(vpnInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1054,6 +1077,14 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId s
 
 	if err != nil {
 		log.Err(err).Msg("")
+		// [Conditions] Failed to get terrarium info → mark as Failed to prevent stuck state
+		model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+		vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+		vpnInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(vpnInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(vpnKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 
@@ -1083,6 +1114,14 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId s
 
 	if err != nil {
 		log.Err(err).Msg("")
+		// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+		model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+		vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+		vpnInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(vpnInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(vpnKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 

@@ -34,45 +34,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// NetworkStatus represents the status of a network resource.
-type NetworkStatus string
-
-const (
-
-	// CRUD operations
-	NetworkOnConfiguring NetworkStatus = "Configuring" // Resources are being configured.
-	NetworkOnReading     NetworkStatus = "Reading"     // The network information is being read.
-	NetworkOnUpdating    NetworkStatus = "Updating"    // The network is being updated.
-	NetworkOnDeleting    NetworkStatus = "Deleting"    // The network is being deleted.
-	// NetworkOnRefinining  NetworkStatus = "Refining"    // The network is being refined.
-
-	// Register/deregister operations
-	NetworkOnRegistering   NetworkStatus = "Registering"  // The network is being registered.
-	NetworkOnDeregistering NetworkStatus = "Dergistering" // The network is being registered.
-
-	// NetworkAvailable status
-	NetworkAvailable NetworkStatus = "Available" // The network is fully created and ready for use.
-
-	// In Use status
-	NetworkInUse NetworkStatus = "InUse" // The network is currently in use.
-
-	// Unknwon status
-	NetworkUnknown NetworkStatus = "Unknown" // The network status is unknown.
-
-	// NetworkError Handling
-	NetworkError              NetworkStatus = "Error"              // An error occurred during a CRUD operation.
-	NetworkErrorOnConfiguring NetworkStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
-	NetworkErrorOnReading     NetworkStatus = "ErrorOnReading"     // An error occurred during the reading operation.
-	NetworkErrorOnUpdating    NetworkStatus = "ErrorOnUpdating"    // An error occurred during the updating operation.
-	NetworkErrorOnDeleting    NetworkStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
-	NetworkErrorOnRegistering NetworkStatus = "ErrorOnRegistering" // An error occurred during the registering operation.
-)
-
 type NetworkAction string
 
 const (
 	ActionNone        NetworkAction = ""
-	ActionRefine      NetworkAction = "refine"
+	ActionReconcile   NetworkAction = "reconcile"
 	ActionForce       NetworkAction = "force"
 	ActionWithSubnets NetworkAction = "withsubnets"
 	// add additional actions here
@@ -81,19 +47,19 @@ const (
 var (
 	stringToNetworkAction = map[string]NetworkAction{
 		"":            ActionNone,
-		"refine":      ActionRefine,
+		"reconcile":   ActionReconcile,
 		"force":       ActionForce,
 		"withsubnets": ActionWithSubnets,
 	}
 
 	actionsToDeleteSubnet = map[NetworkAction]bool{
-		ActionRefine: true,
-		ActionForce:  true,
+		ActionReconcile: true,
+		ActionForce:     true,
 		// add additional actions here
 	}
 
 	actionsToDeleteVNet = map[NetworkAction]bool{
-		ActionRefine:      true,
+		ActionReconcile:   true,
 		ActionForce:       true,
 		ActionWithSubnets: true,
 		// add additional actions here
@@ -546,8 +512,6 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	}
 	vNetInfo.ConnectionConfig = connConfig
 	vNetInfo.Description = vNetReq.Description
-	// todo: restore the tag list later
-	// vNetInfo.TagList = vNetReq.TagList
 
 	// Note: Set subnetInfoList in vNetInfo in advance
 	//       since each subnet uid must be consistent
@@ -560,8 +524,6 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 			IPv4_CIDR:        subnetInfo.IPv4_CIDR,
 			Zone:             subnetInfo.Zone,
 			ConnectionConfig: connConfig,
-			// todo: restore the tag list later
-			// TagList:   subnetInfo.TagList,
 		})
 	}
 
@@ -586,8 +548,11 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	 *	Create vNet with at least one subnet
 	 */
 
-	// [Set and store status]
-	vNetInfo.Status = string(NetworkOnConfiguring)
+	// [Conditions] Mark VNet as not ready (creating) before calling Spider API
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreating, "VNet creation in progress")
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonCreating, "")
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionFalse, model.ReasonNoChildren, "")
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -615,8 +580,6 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 			Name:      subnetInfo.Uid,
 			IPv4_CIDR: subnetInfo.IPv4_CIDR,
 			Zone:      subnetInfo.Zone,
-			// todo: restore the tag list later
-			// TagList:   subnetInfo.TagList,
 		})
 	}
 
@@ -634,7 +597,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	// Cleanup object when something goes wrong
 	defer func() {
 		// Only if this operation fails, the vNet will be deleted
-		if err != nil && vNetInfo.Status == string(NetworkOnConfiguring) {
+		if err != nil && vNetInfo.Status == model.NetworkStatusCreating {
 			if vNetInfo.CspResourceId == "" { // Delete the saved the subnet info
 				log.Warn().Msgf("failed to create vNet, cleaning up the vNet: %v", vNetInfo.Id)
 				// Delete the subnets associated with the vNet
@@ -694,8 +657,6 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	} else {
 		vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	}
-	// todo: restore the tag list later
-	// vNetInfo.TagList = spResp.TagList
 
 	// Note: Check one by one and update the vNet object with the response from the Spider
 	//       since the order may differ different between slices
@@ -706,27 +667,31 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 				vNetInfo.SubnetInfoList[i].ConnectionName = vNetInfo.ConnectionName
 				vNetInfo.SubnetInfoList[i].CspVNetId = spResp.IId.SystemId
 				vNetInfo.SubnetInfoList[i].CspVNetName = spResp.IId.NameId
-				vNetInfo.SubnetInfoList[i].Status = string(NetworkAvailable)
 				vNetInfo.SubnetInfoList[i].CspResourceId = spSubnetInfo.IId.SystemId
 				vNetInfo.SubnetInfoList[i].CspResourceName = spSubnetInfo.IId.NameId
 				vNetInfo.SubnetInfoList[i].KeyValueList = spSubnetInfo.KeyValueList
 				vNetInfo.SubnetInfoList[i].Zone = spSubnetInfo.Zone
 				vNetInfo.SubnetInfoList[i].IPv4_CIDR = spSubnetInfo.IPv4_CIDR
-				// todo: restore the tag list later
-				// vNetInfo.SubnetInfoList[i].TagList = spSubnetInfo.TagList
+
+				// [Conditions] Subnet created successfully → mark as ready and synced
+				model.SetCondition(&vNetInfo.SubnetInfoList[i].Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+				model.SetCondition(&vNetInfo.SubnetInfoList[i].Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+				vNetInfo.SubnetInfoList[i].Status = model.DeriveSubnetStatus(vNetInfo.SubnetInfoList[i].Conditions)
 			}
 		}
 	}
 
-	// [Set and store status]
-	if len(vNetInfo.SubnetInfoList) == 0 {
-		vNetInfo.Status = string(NetworkAvailable)
-	} else if len(vNetInfo.SubnetInfoList) > 0 {
-		vNetInfo.Status = string(NetworkInUse)
+	// [Conditions] VNet creation succeeded → mark as ready, synced, and update children status
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+	hasSubnets := len(vNetInfo.SubnetInfoList) > 0
+	if hasSubnets {
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonAllReady, "")
 	} else {
-		vNetInfo.Status = string(NetworkUnknown)
-		log.Warn().Msgf("The status of the vNet (%s) is unknown", vNetInfo.Id)
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
 	}
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.SystemMessage = ""
 
 	log.Debug().Msgf("vNetInfo(filled): %+v", vNetInfo)
 
@@ -770,7 +735,6 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 			model.LabelCspResourceId:   subnetInfo.CspResourceId,
 			model.LabelCspResourceName: subnetInfo.CspResourceName,
 			model.LabelCidr:            subnetInfo.IPv4_CIDR,
-			model.LabelStatus:          subnetInfo.Status,
 			model.LabelDescription:     subnetInfo.Description,
 			model.LabelZone:            subnetInfo.Zone,
 			model.LabelVNetId:          vNetInfo.Id,
@@ -811,7 +775,6 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 		model.LabelCspResourceId:   vNetInfo.CspResourceId,
 		model.LabelCspResourceName: vNetInfo.CspResourceName,
 		model.LabelCidr:            vNetInfo.CidrBlock,
-		model.LabelStatus:          vNetInfo.Status,
 		model.LabelDescription:     vNetInfo.Description,
 		model.LabelConnectionName:  vNetInfo.ConnectionName,
 	}
@@ -914,8 +877,6 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 	// Intentionally use the user-provided vNet CIDR block managed by Tumblebug for multi-cloud network management purpose
 	// vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
-	// todo: restore the tag list later
-	// vNetInfo.TagList = spResp.TagList
 
 	// TODO: Check if it's required or not to save the vNet object
 	// val, err := json.Marshal(vNetInfo)
@@ -979,7 +940,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 
 	// normal case: action == ""
 	if action == ActionNone && len(subnetsKv) > 0 {
-		err := fmt.Errorf("the vNet (%s) is in-use, may have subnets", vNetId)
+		err := fmt.Errorf("cannot delete vNet (%s): has %d subnet(s); use action=withSubnets or action=force", vNetId, len(subnetsKv))
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
@@ -1036,8 +997,10 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		return emptyRet, err
 	}
 
-	// [Set and store status]
-	vNetInfo.Status = string(NetworkOnDeleting)
+	// [Conditions] Mark VNet as not ready (deleting) before calling Spider API
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "VNet deletion in progress")
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.SystemMessage = ""
 	// Store the status
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
@@ -1110,11 +1073,27 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	// Finally, check if the vNet deletion was successful
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+		vNetInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(vNetInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(vNetKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 	if !ok {
 		err := fmt.Errorf("failed to delete the vNet (%s)", vNetId)
 		log.Error().Err(err).Msg("")
+		// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+		vNetInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(vNetInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(vNetKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 
@@ -1143,14 +1122,14 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	return ret, nil
 }
 
-func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
-	log.Info().Msg("RefineVNet")
+func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
+	log.Info().Msg("ReconcileVNet")
 
 	/*
 	 *	[NOTE]
-	 *	"Refine" operates based on information managed by Tumblebug.
-	 *	Based on this information, it checks whether there is information/resource in Spider/CSP.
-	 *	It removes the information managed by Tumblebug if there's no information/resource.
+	 *	"Reconcile" checks whether the CSP/Spider resource still exists.
+	 *	If the resource is gone, it removes orphaned Tumblebug metadata.
+	 *	If the resource still exists, it keeps the metadata intact.
 	 */
 
 	// vNet object
@@ -1200,7 +1179,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	}
 
 	/*
-	 *	Check and refine the info of vNet and associated subnets
+	 *	Check and reconcile the info of vNet and associated subnets
 	 */
 
 	// [Via Spider] Get a vNet
@@ -1214,7 +1193,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
 	url += queryParams
 
-	log.Debug().Msgf("[Request to Spider] Refining VPC (url: %s, request body: %+v)", url, spReqt)
+	log.Debug().Msgf("[Request to Spider] Reconciling VPC (url: %s, request body: %+v)", url, spReqt)
 
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
@@ -1227,7 +1206,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		clientManager.MediumDuration,
 	)
 
-	log.Debug().Msgf("[Response from Spider] Refining VPC (response body: %+v)", spResp)
+	log.Debug().Msgf("[Response from Spider] Reconciling VPC (response body: %+v)", spResp)
 
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
@@ -1235,9 +1214,9 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	// }
 
 	if err == nil {
-		err = fmt.Errorf("may not be refined, vNet info (id: %s) exists", vNetId)
+		err = fmt.Errorf("may not be reconciled, vNet info (id: %s) exists", vNetId)
 		log.Warn().Err(err).Msg("")
-		log.Info().Msgf("try to refine subnets once")
+		log.Info().Msgf("try to reconcile subnets once")
 
 		// Read the stored subnets
 		subnetKvList, err2 := kvstore.GetKvList(vNetKey + "/subnet")
@@ -1255,7 +1234,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 			}
 			log.Debug().Msgf("subnetInfo: %+v", subnetInfo)
 
-			_, err2 := RefineSubnet(nsId, vNetId, subnetInfo.Id)
+			_, err2 := ReconcileSubnet(nsId, vNetId, subnetInfo.Id)
 			if err2 != nil {
 				log.Warn().Err(err2).Msg("")
 				// return emptyRet, err
@@ -1320,15 +1299,15 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		// return emptyRet, err
 	}
 	if exists {
-		err := fmt.Errorf("fail to refine the vNet info (%s)", vNetKv)
+		err := fmt.Errorf("fail to reconcile the vNet info (%s)", vNetKv)
 		ret.Message = err.Error()
 		return ret, err
 	}
 
 	// [Output] the message
-	ret.Message = fmt.Sprintf("the vNet info (%s) has been refined", vNetId)
+	ret.Message = fmt.Sprintf("the vNet info (%s) has been reconciled", vNetId)
 
-	log.Info().Msgf("vNet (%s) has been refined", vNetId)
+	log.Info().Msgf("vNet (%s) has been reconciled", vNetId)
 	return ret, nil
 }
 
@@ -1397,8 +1376,11 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 	 *	Register vNet in the CSP, which has not been created by Tumblebug
 	 */
 
-	// [Set and store status]
-	vNetInfo.Status = string(NetworkOnRegistering)
+	// [Conditions] Mark VNet as not ready (registering) before calling Spider API
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonRegistering, "VNet registration in progress")
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonRegistering, "")
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionFalse, model.ReasonNoChildren, "")
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
 	// Save the current operation status and the vNet object
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
@@ -1437,7 +1419,7 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 	// Clean up the vNet object when something goes wrong
 	defer func() {
 		// Only if this operation fails, the vNet will be deleted
-		if err != nil && vNetInfo.Status == string(NetworkOnRegistering) {
+		if err != nil && vNetInfo.Status == model.NetworkStatusRegistering {
 			if vNetInfo.CspResourceId == "" { // Delete the saved the vNet info
 				log.Warn().Msgf("failed to create vNet, cleaning up the vNet info: %v, with associated subnets info", vNetInfo.Id)
 				// Delete the subnets associated with the vNet
@@ -1491,8 +1473,6 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 	vNetInfo.CspResourceName = spResp.IId.NameId
 	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
-	// todo: restore the tag list later
-	// vNetInfo.TagList = spResp.TagList
 
 	if vNetRegisterReq.CspResourceId != "" {
 		vNetInfo.SystemLabel = "Registered from CSP resource"
@@ -1503,13 +1483,18 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 	// Note: Check one by one and update the vNet object with the response from the Spider
 	//       since the order may differ different between slices
 	for _, spSubnetInfo := range spResp.SubnetInfoList {
+		// [Conditions] Initialize subnet conditions as ready and synced for registered subnet
+		subnetConditions := []model.Condition{}
+		model.SetCondition(&subnetConditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+		model.SetCondition(&subnetConditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
 		subnetInfo := model.SubnetInfo{
 			ResourceType:    model.StrSubnet,
 			Id:              fmt.Sprintf("%s", spSubnetInfo.IId.NameId),
 			Name:            fmt.Sprintf("%s", spSubnetInfo.IId.NameId),
 			Uid:             common.GenUid(),
 			ConnectionName:  vNetInfo.ConnectionName,
-			Status:          string(NetworkAvailable),
+			Status:          model.NetworkStatusAvailable,
+			Conditions:      subnetConditions,
 			CspResourceId:   spSubnetInfo.IId.SystemId,
 			CspResourceName: spSubnetInfo.IId.NameId,
 			CspVNetId:       spResp.IId.SystemId,
@@ -1517,8 +1502,6 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 			KeyValueList:    spSubnetInfo.KeyValueList,
 			Zone:            spSubnetInfo.Zone,
 			IPv4_CIDR:       spSubnetInfo.IPv4_CIDR,
-			// todo: restore the tag list later
-			// TagList:        spSubnetInfo.TagList,
 		}
 		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, subnetInfo)
 
@@ -1546,7 +1529,6 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 			model.LabelCspResourceId:   subnetInfo.CspResourceId,
 			model.LabelCspResourceName: subnetInfo.CspResourceName,
 			model.LabelCidr:            subnetInfo.IPv4_CIDR,
-			model.LabelStatus:          subnetInfo.Status,
 			model.LabelDescription:     subnetInfo.Description,
 			model.LabelZone:            subnetInfo.Zone,
 			model.LabelVNetId:          vNetInfo.Id,
@@ -1562,15 +1544,17 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 
 	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
 
-	// [Set and store status]
-	if len(vNetInfo.SubnetInfoList) == 0 {
-		vNetInfo.Status = string(NetworkAvailable)
-	} else if len(vNetInfo.SubnetInfoList) > 0 {
-		vNetInfo.Status = string(NetworkInUse)
+	// [Conditions] VNet registration succeeded → mark as ready, synced, and update children status
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+	hasSubnets := len(vNetInfo.SubnetInfoList) > 0
+	if hasSubnets {
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonAllReady, "")
 	} else {
-		vNetInfo.Status = string(NetworkUnknown)
-		log.Warn().Msgf("The status of the vNet (%s) is unknown", vNetInfo.Id)
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
 	}
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.SystemMessage = ""
 
 	// Put vNet object into the key-value store
 	value, err := json.Marshal(vNetInfo)
@@ -1614,7 +1598,6 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 		model.LabelCspResourceId:   vNetInfo.CspResourceId,
 		model.LabelCspResourceName: vNetInfo.CspResourceName,
 		model.LabelCidr:            vNetInfo.CidrBlock,
-		model.LabelStatus:          vNetInfo.Status,
 		model.LabelDescription:     vNetInfo.Description,
 		model.LabelConnectionName:  vNetInfo.ConnectionName,
 	}
@@ -1676,7 +1659,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	log.Debug().Msgf("subnetsKv: %+v", subnetsKv)
 
 	if withSubnets == "false" && len(subnetsKv) > 0 {
-		err := fmt.Errorf("the vNet (%s) is in-use, may have subnets", vNetId)
+		err := fmt.Errorf("cannot deregister vNet (%s): has %d subnet(s); set withSubnets=true", vNetId, len(subnetsKv))
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
@@ -1720,8 +1703,10 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		return emptyRet, err
 	}
 
-	// Set status to 'Deleting'
-	vNetInfo.Status = string(NetworkOnDeleting)
+	// [Conditions] Mark VNet as not ready (deregistering) before calling Spider API
+	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregistering, "VNet deregistration in progress")
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.SystemMessage = ""
 	// Save the status
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
@@ -1763,16 +1748,40 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
+		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+		vNetInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(vNetInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(vNetKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 	ok, err := strconv.ParseBool(spResp.Result)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
+		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+		vNetInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(vNetInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(vNetKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 	if !ok {
 		err := fmt.Errorf("failed to deregister the vNet (%s)", vNetId)
 		log.Error().Err(err).Msg("")
+		// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
+		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+		vNetInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(vNetInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(vNetKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 

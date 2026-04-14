@@ -2862,7 +2862,7 @@ func waitForVNetReady(ctx context.Context, nsId string, vNetId string) error {
 		}
 
 		// Check if VNet is ready
-		if vNetInfo.Status == string(resource.NetworkAvailable) || vNetInfo.Status == string(resource.NetworkInUse) {
+		if vNetInfo.Status == model.NetworkStatusAvailable {
 			log.Info().Msgf("VNet '%s' is ready with status: %s", vNetId, vNetInfo.Status)
 			// Final success progress update
 			clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
@@ -3031,7 +3031,7 @@ func getSubGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.C
 		}
 
 		// Check if VNet is ready, if not wait for it
-		if vNetInfo.Status != string(resource.NetworkAvailable) && vNetInfo.Status != string(resource.NetworkInUse) {
+		if vNetInfo.Status != model.NetworkStatusAvailable {
 			log.Info().Msgf("VNet '%s' exists but not ready (status: %s), waiting for ready state", subGroupReq.VNetId, vNetInfo.Status)
 			err = waitForVNetReady(ctx, nsId, subGroupReq.VNetId)
 			if err != nil {

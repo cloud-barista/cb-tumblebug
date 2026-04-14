@@ -155,10 +155,12 @@ type VpnInfo struct {
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
 
 	// Name is human-readable string to represent the object
-	Name        string          `json:"name" example:"vpn01"`
-	Description string          `json:"description"`
-	Status      string          `json:"status"`
-	VpnSites    []VpnSiteDetail `json:"vpnSites"`
+	Name          string          `json:"name" example:"vpn01"`
+	Description   string          `json:"description"`
+	Status        string          `json:"status"`
+	SystemMessage string          `json:"systemMessage,omitempty"`
+	Conditions    []Condition     `json:"conditions,omitempty"`
+	VpnSites      []VpnSiteDetail `json:"vpnSites"`
 }
 
 type VpnSiteDetail struct {
