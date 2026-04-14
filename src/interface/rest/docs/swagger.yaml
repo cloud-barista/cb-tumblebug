@@ -13076,12 +13076,24 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Network Management"
-      summary: "Delete VNet (supporting actions: withsubnet, refine, force)"
+      summary: "Delete VNet (supporting actions: withsubnet, reconcile, force)"
       description: |-
         Delete VNet
-        - withsubnets: delete VNet and its subnets
-        - refine: delete information of VNet and its subnets if there's no info/resource in Spider/CSP
-        - force: delete VNet and its subnets regardless of the status of info/resource in Spider/CSP
+        ---
+        **action options:**
+
+        **withsubnets** – Delete the VNet together with all its subnets in a single call.
+
+        **reconcile** – Synchronize Tumblebug metadata with the actual CSP state.
+        Checks whether the VNet/Subnet resource still exists on CSP (via Spider).
+        If the CSP resource is gone, removes the orphaned Tumblebug metadata.
+        If the CSP resource still exists, keeps the metadata intact.
+        Use this to clean up stale metadata after system errors or partial failures.
+        (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=reconcile`)
+
+        **force** – Force-delete the VNet and its subnets on CSP (passes `?force=true` to Spider).
+        Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
+        (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=force`)
       operationId: DelVNet
       parameters:
       - name: nsId
@@ -13104,7 +13116,7 @@ paths:
           type: string
           enum:
           - withsubnets
-          - refine
+          - reconcile
           - force
       - name: x-request-id
         in: header
@@ -13299,11 +13311,22 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Network Management"
-      summary: "Delete Subnet (supporting actions: refine, force)"
+      summary: "Delete Subnet (supporting actions: reconcile, force)"
       description: |-
         Delete Subnet
-        - refine: delete a subnet `object` if there's no resource on CSP or no inforamation on Spider
-        - force: force: delete a subnet `resource` on a CSP regardless of the current resource status (e.g., attempt to delete even if in use)
+        ---
+        **action options:**
+
+        **reconcile** – Synchronize Tumblebug metadata with the actual CSP state.
+        Checks whether the Subnet resource still exists on CSP (via Spider).
+        If the CSP resource is gone, removes the orphaned Tumblebug metadata.
+        If the CSP resource still exists, keeps the metadata intact.
+        Use this to clean up stale metadata after system errors or partial failures.
+        (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile`)
+
+        **force** – Force-delete the Subnet on CSP (passes `?force=true` to Spider).
+        Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
+        (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=force`)
       operationId: DelSubnet
       parameters:
       - name: nsId
@@ -13331,7 +13354,7 @@ paths:
         schema:
           type: string
           enum:
-          - refine
+          - reconcile
           - force
       - name: x-request-id
         in: header
@@ -19059,6 +19082,39 @@ components:
       - EventCommandStatus
       - EventCommandLog
       - EventCommandDone
+    model.Condition:
+      type: object
+      properties:
+        lastTransitionTime:
+          type: string
+        message:
+          type: string
+        reason:
+          type: string
+        status:
+          $ref: '#/components/schemas/model.ConditionStatus'
+        type:
+          $ref: '#/components/schemas/model.ConditionType'
+    model.ConditionStatus:
+      type: string
+      enum:
+      - "True"
+      - "False"
+      - Unknown
+      x-enum-varnames:
+      - ConditionTrue
+      - ConditionFalse
+      - ConditionUnknown
+    model.ConditionType:
+      type: string
+      enum:
+      - Ready
+      - Synced
+      - ChildrenReady
+      x-enum-varnames:
+      - ConditionReady
+      - ConditionSynced
+      - ConditionChildrenReady
     model.ConfigInfo:
       type: object
       properties:
@@ -24739,6 +24795,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.BastionNode'
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Condition'
         connectionConfig:
           $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
@@ -24780,6 +24840,8 @@ components:
           type: string
           description: ResourceType is the type of the resource
         status:
+          type: string
+        systemMessage:
           type: string
         uid:
           type: string
@@ -24884,6 +24946,10 @@ components:
             type: string
         cidrBlock:
           type: string
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Condition'
         connectionConfig:
           $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
@@ -24927,6 +24993,8 @@ components:
           description: SystemLabel is for describing the Resource in a keyword (any
             string can be used) for special System purpose
           example: Managed by CB-Tumblebug
+        systemMessage:
+          type: string
         uid:
           type: string
           description: "Uid is universally unique identifier for the object, used\
@@ -25384,6 +25452,10 @@ components:
     model.VpnInfo:
       type: object
       properties:
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Condition'
         description:
           type: string
         id:
@@ -25398,6 +25470,8 @@ components:
           type: string
           description: ResourceType is the type of the resource
         status:
+          type: string
+        systemMessage:
           type: string
         uid:
           type: string
