@@ -208,17 +208,28 @@ type RestGetAllSubnetResponse struct {
 
 // RestDelSubnet godoc
 // @ID DelSubnet
-// @Summary Delete Subnet (supporting actions: refine, force)
+// @Summary Delete Subnet (supporting actions: reconcile, force)
 // @Description Delete Subnet
-// @Description - refine: delete a subnet `object` if there's no resource on CSP or no inforamation on Spider
-// @Description - force: force: delete a subnet `resource` on a CSP regardless of the current resource status (e.g., attempt to delete even if in use)
+// @Description ---
+// @Description **action options:**
+// @Description
+// @Description **reconcile** – Synchronize Tumblebug metadata with the actual CSP state.
+// @Description Checks whether the Subnet resource still exists on CSP (via Spider).
+// @Description If the CSP resource is gone, removes the orphaned Tumblebug metadata.
+// @Description If the CSP resource still exists, keeps the metadata intact.
+// @Description Use this to clean up stale metadata after system errors or partial failures.
+// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile`)
+// @Description
+// @Description **force** – Force-delete the Subnet on CSP (passes `?force=true` to Spider).
+// @Description Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
+// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=force`)
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
-// @Param action query string false "Action" Enums(refine, force)
+// @Param action query string false "Action" Enums(reconcile, force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -266,9 +277,9 @@ func RestDelSubnet(c echo.Context) error {
 			log.Error().Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 		}
-	case resource.ActionRefine:
+	case resource.ActionReconcile:
 		// [Process]
-		resp, err = resource.RefineSubnet(nsId, vNetId, subnetId)
+		resp, err = resource.ReconcileSubnet(nsId, vNetId, subnetId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

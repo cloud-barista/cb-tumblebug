@@ -173,17 +173,29 @@ func RestGetAllVNet(c echo.Context) error {
 
 // RestDelVNet godoc
 // @ID DelVNet
-// @Summary Delete VNet (supporting actions: withsubnet, refine, force)
+// @Summary Delete VNet (supporting actions: withsubnet, reconcile, force)
 // @Description Delete VNet
-// @Description - withsubnets: delete VNet and its subnets
-// @Description - refine: delete information of VNet and its subnets if there's no info/resource in Spider/CSP
-// @Description - force: delete VNet and its subnets regardless of the status of info/resource in Spider/CSP
+// @Description ---
+// @Description **action options:**
+// @Description
+// @Description **withsubnets** – Delete the VNet together with all its subnets in a single call.
+// @Description
+// @Description **reconcile** – Synchronize Tumblebug metadata with the actual CSP state.
+// @Description Checks whether the VNet/Subnet resource still exists on CSP (via Spider).
+// @Description If the CSP resource is gone, removes the orphaned Tumblebug metadata.
+// @Description If the CSP resource still exists, keeps the metadata intact.
+// @Description Use this to clean up stale metadata after system errors or partial failures.
+// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=reconcile`)
+// @Description
+// @Description **force** – Force-delete the VNet and its subnets on CSP (passes `?force=true` to Spider).
+// @Description Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
+// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=force`)
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Param action query string false "Action" Enums(withsubnets,refine,force)
+// @Param action query string false "Action" Enums(withsubnets,reconcile,force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -226,9 +238,9 @@ func RestDelVNet(c echo.Context) error {
 			log.Error().Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 		}
-	case resource.ActionRefine:
+	case resource.ActionReconcile:
 		// [Process]
-		resp, err = resource.RefineVNet(nsId, vNetId)
+		resp, err = resource.ReconcileVNet(nsId, vNetId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
