@@ -67,18 +67,45 @@ const (
 	ReasonSubnetInProgress = "SubnetInProgress"
 )
 
-// Network resource status constants.
-// These are the single source of truth for network resource status values.
-// All values are literal strings, intentionally decoupled from MCI status
-// constants (mci.go) to prevent unintended side effects when either domain evolves.
+// ---------------------------------------------------------------------------
+// Resource Status Constants
+// ---------------------------------------------------------------------------
+// Common status values shared across all resource types (VNet, Subnet, VPN,
+// ObjectStorage, SqlDB, etc.). Each resource domain re-exports these as
+// domain-specific aliases so that (1) code reads naturally in its own context,
+// (2) a domain can introduce unique statuses without affecting others, and
+// (3) existing code remains unchanged.
 const (
-	NetworkStatusAvailable     = "Available"
-	NetworkStatusCreating      = "Creating"
-	NetworkStatusDeleting      = "Deleting"
-	NetworkStatusFailed        = "Failed"
-	NetworkStatusRegistering   = "Registering"
-	NetworkStatusDeregistering = "Deregistering"
-	NetworkStatusUnknown       = "Unknown"
+	ResourceStatusAvailable     = "Available"
+	ResourceStatusCreating      = "Creating"
+	ResourceStatusDeleting      = "Deleting"
+	ResourceStatusFailed        = "Failed"
+	ResourceStatusRegistering   = "Registering"
+	ResourceStatusDeregistering = "Deregistering"
+	ResourceStatusUnknown       = "Unknown"
+)
+
+// -- Network resource status aliases --
+// Network resources (VNet, Subnet, VPN) use all common statuses.
+// VPN does not use Registering/Deregistering but the aliases are kept for consistency.
+const (
+	NetworkStatusAvailable     = ResourceStatusAvailable
+	NetworkStatusCreating      = ResourceStatusCreating
+	NetworkStatusDeleting      = ResourceStatusDeleting
+	NetworkStatusFailed        = ResourceStatusFailed
+	NetworkStatusRegistering   = ResourceStatusRegistering
+	NetworkStatusDeregistering = ResourceStatusDeregistering
+	NetworkStatusUnknown       = ResourceStatusUnknown
+)
+
+// -- Storage/DB resource status aliases --
+// Storage resources (ObjectStorage, SqlDB) do not support Register/Deregister operations.
+const (
+	StorageStatusAvailable = ResourceStatusAvailable
+	StorageStatusCreating  = ResourceStatusCreating
+	StorageStatusDeleting  = ResourceStatusDeleting
+	StorageStatusFailed    = ResourceStatusFailed
+	StorageStatusUnknown   = ResourceStatusUnknown
 )
 
 // Condition represents an observation about a resource's state
@@ -206,4 +233,25 @@ func DeriveVpnStatus(conditions []Condition) string {
 	}
 
 	return NetworkStatusAvailable
+}
+
+// DeriveObjectStorageStatus derives the ObjectStorage status from its Conditions.
+func DeriveObjectStorageStatus(conditions []Condition) string {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status == ConditionUnknown {
+		return StorageStatusUnknown
+	}
+
+	if ready.Status == ConditionFalse {
+		switch ready.Reason {
+		case ReasonCreating:
+			return StorageStatusCreating
+		case ReasonDeleting:
+			return StorageStatusDeleting
+		default:
+			return StorageStatusFailed
+		}
+	}
+
+	return StorageStatusAvailable
 }

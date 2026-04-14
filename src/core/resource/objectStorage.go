@@ -39,22 +39,6 @@ import (
 // - Functions for object storages (buckets) versioning configuration
 // - Functions for objects (files) in the object storages (buckets)
 
-type ObjectStorageStatus string
-
-const (
-	// CRUD operations
-	ObjectStorageOnConfiguring ObjectStorageStatus = "Configuring" // The object storage is being configured.
-	ObjectStorageOnDeleting    ObjectStorageStatus = "Deleting"    // The object storage is being deleted.
-
-	// Available status
-	ObjectStorageAvailable ObjectStorageStatus = "Available" // The object storage is fully created and ready for use.
-
-	// Error Handling
-	ObjectStorageError              ObjectStorageStatus = "Error"              // An error occurred during a CRUD operation.
-	ObjectStorageErrorOnConfiguring ObjectStorageStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
-	ObjectStorageErrorOnDeleting    ObjectStorageStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
-)
-
 type ObjectStorageVersioningOption string
 
 const (
@@ -422,8 +406,10 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		return emptyRet, err
 	}
 
-	// 6. Set and store status to the key-value store
-	objStrgInfo.Status = string(ObjectStorageOnConfiguring)
+	// 6. [Conditions] Mark as not ready (creating) before calling Spider API
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreating, "Object storage creation in progress")
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonCreating, "")
+	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
 	val, err := json.Marshal(objStrgInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -476,12 +462,28 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 				if retryCount >= maxRetries {
 					err = fmt.Errorf("failed to create object storage after %d retries", maxRetries)
 					log.Error().Err(err).Msg("")
+					// [Conditions] Creation failed → mark as Failed to prevent stuck state
+					model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
+					objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+					objStrgInfo.SystemMessage = err.Error()
+					failVal, marshalErr := json.Marshal(objStrgInfo)
+					if marshalErr == nil {
+						_ = kvstore.Put(objStrgKey, string(failVal))
+					}
 					return emptyRet, err
 				}
 				log.Warn().Msgf("Conflict detected for bucket name %s, retrying... (%d/%d)", spReq.BucketName, retryCount, maxRetries)
 				continue
 			} else {
 				log.Error().Err(err).Msg("")
+				// [Conditions] Creation failed → mark as Failed to prevent stuck state
+				model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
+				objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+				objStrgInfo.SystemMessage = err.Error()
+				failVal, marshalErr := json.Marshal(objStrgInfo)
+				if marshalErr == nil {
+					_ = kvstore.Put(objStrgKey, string(failVal))
+				}
 				return emptyRet, err
 			}
 		}
@@ -515,6 +517,14 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		// [Conditions] Creation failed (GET after PUT) → mark as Failed to prevent stuck state
+		model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
+		objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+		objStrgInfo.SystemMessage = err.Error()
+		failVal, marshalErr := json.Marshal(objStrgInfo)
+		if marshalErr == nil {
+			_ = kvstore.Put(objStrgKey, string(failVal))
+		}
 		return emptyRet, err
 	}
 
@@ -541,8 +551,11 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	}
 	objStrgInfo.Contents = contents
 
-	// 10. Store the object storage info to the key-value store
-	objStrgInfo.Status = string(ObjectStorageAvailable)
+	// 10. [Conditions] Creation succeeded → mark as ready and synced
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+	objStrgInfo.SystemMessage = ""
 	val, err = json.Marshal(objStrgInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -581,7 +594,6 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		model.LabelUid:             objStrgInfo.Uid,
 		model.LabelCspResourceId:   objStrgInfo.CspResourceId,
 		model.LabelCspResourceName: objStrgInfo.CspResourceName,
-		model.LabelStatus:          objStrgInfo.Status,
 		model.LabelDescription:     objStrgInfo.Description,
 		model.LabelConnectionName:  objStrgInfo.ConnectionName,
 	}
@@ -780,8 +792,10 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		return err
 	}
 
-	// 4. Set and store status
-	objStrgInfo.Status = string(ObjectStorageOnDeleting)
+	// 4. [Conditions] Mark as not ready (deleting) before calling Spider API
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "Object storage deletion in progress")
+	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+	objStrgInfo.SystemMessage = ""
 	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
 	val, err := json.Marshal(objStrgInfo)
 	if err != nil {
@@ -837,6 +851,14 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 			time.Sleep(time.Duration(t) * time.Second)
 		} else {
 			log.Error().Err(err).Msgf("Failed to delete object storage after %d retries", maxRetries)
+			// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+			objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+			objStrgInfo.SystemMessage = err.Error()
+			failVal, marshalErr := json.Marshal(objStrgInfo)
+			if marshalErr == nil {
+				_ = kvstore.Put(objStrgKey, string(failVal))
+			}
 			return err
 		}
 	}

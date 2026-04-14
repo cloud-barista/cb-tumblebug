@@ -68,8 +68,10 @@ type ObjectStorageInfo struct {
 	// Variables for management of Object Storage resource in CB-Tumblebug
 	ConnectionName   string     `json:"connectionName"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
-	Description      string     `json:"description" example:"this object storage is managed by CB-Tumblebug"`
-	Status           string     `json:"status"`
+	Description      string      `json:"description" example:"this object storage is managed by CB-Tumblebug"`
+	Status           string      `json:"status"`
+	SystemMessage    string      `json:"systemMessage,omitempty"`
+	Conditions       []Condition `json:"conditions,omitempty"`
 
 	// Name is human-readable string to represent the object
 	Name         string   `json:"name" example:"globally-unique-bucket-name-12345"`

@@ -22152,6 +22152,10 @@ components:
     model.ObjectStorageInfo:
       type: object
       properties:
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Condition'
         connectionConfig:
           $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
@@ -22201,6 +22205,8 @@ components:
           description: ResourceType is the type of this resource
           example: ObjectStorage
         status:
+          type: string
+        systemMessage:
           type: string
         uid:
           type: string
