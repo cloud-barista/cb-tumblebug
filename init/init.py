@@ -578,6 +578,58 @@ def fetch_price():
         return {"error": error_msg}
 
 
+def print_assets_summary(ns_id="system"):
+    try:
+        response = requests.get(
+            f"http://{TUMBLEBUG_SERVER}/tumblebug/assetsSummary",
+            params={"nsId": ns_id},
+            headers=HEADERS,
+            timeout=30,
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+        providers = payload.get("providers", [])
+        if not providers:
+            print(Fore.YELLOW + "\nNo asset summary data found.")
+            return
+
+        print(Fore.CYAN + "\nAsset Summary (DB-backed, by CSP)")
+
+        rows = []
+        for p in providers:
+            rows.append(
+                [
+                    p.get("providerName", ""),
+                    p.get("specCount", 0),
+                    p.get("pricedSpecCount", 0),
+                    p.get("unpricedSpecCount", 0),
+                    p.get("imageCount", 0),
+                ]
+            )
+
+        print(
+            tabulate(
+                rows,
+                headers=["Provider", "Specs", "Specs(priced)", "Specs(cost=-1)", "Images"],
+                tablefmt="simple",
+            )
+        )
+
+        print(
+            Fore.CYAN
+            + "Totals: "
+            + f"specs={payload.get('totalSpecCount', 0)}, "
+            + f"priced={payload.get('pricedSpecCount', 0)}, "
+            + f"cost=-1={payload.get('unpricedSpecCount', 0)}, "
+            + f"images={payload.get('totalImageCount', 0)}"
+        )
+    except requests.RequestException as e:
+        print(Fore.YELLOW + f"\nCould not fetch asset summary from CB-TB API: {str(e)}")
+    except Exception as e:
+        print(Fore.YELLOW + f"\nFailed to render asset summary: {str(e)}")
+
+
 # Register credentials to Tumblebug if requested
 if run_credentials:
     # all_holders was already parsed before health check to ensure all user inputs complete first
@@ -931,6 +983,10 @@ if run_load_templates:
             print(Fore.CYAN + f"\nNo template files found in {templates_dir}")
     else:
         print(Fore.CYAN + f"\nTemplates directory not found: {templates_dir}")
+
+# Print final DB-backed summary for fetched common assets.
+if run_all or run_load_assets or run_fetch_price:
+    print_assets_summary("system")
 
 # Final message and set initialization status
 if run_all or (run_credentials and run_load_assets):

@@ -17,6 +17,10 @@ init: ## Run initialization sequence (credential registration for OpenBao and Tu
 	@chmod +x ./init/multi-init.sh 2>/dev/null || true
 	@./init/multi-init.sh
 
+init-profile: ## Maintainer-only: run make init with elapsed/memory profiling outputs under tmp/init-profile/
+	@chmod +x ./scripts/misc/init-profile.sh 2>/dev/null || true
+	@./scripts/misc/init-profile.sh
+
 # ===== Docker Compose Commands =====
 # docker-compose.yaml includes all services + OpenBao.
 #
@@ -166,7 +170,7 @@ help: ## Display this help screen
 	@echo "  \033[36mlogs\033[0m                   Follow service logs (docker compose logs -f)"
 	@echo ""
 	@echo "⚙️  Initialization:"
-	@grep -E '^(init|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^(init|init-profile|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🔐 OpenBao (Secrets Management):"
 	@echo "  \033[36minit-openbao\033[0m           Initialize OpenBao (one-time setup)"
@@ -194,4 +198,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help

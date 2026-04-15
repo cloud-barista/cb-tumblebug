@@ -34,6 +34,25 @@ type ReadyzResponse struct {
 	Initialized bool   `json:"initialized" example:"false"`
 }
 
+// ProviderAssetSummary is a provider-level summary of fetched assets.
+type ProviderAssetSummary struct {
+	ProviderName      string `json:"providerName" example:"aws"`
+	SpecCount         int64  `json:"specCount" example:"11234"`
+	PricedSpecCount   int64  `json:"pricedSpecCount" example:"11000"`
+	UnpricedSpecCount int64  `json:"unpricedSpecCount" example:"234"`
+	ImageCount        int64  `json:"imageCount" example:"5234"`
+}
+
+// AssetsSummaryResponse is a namespace-level summary of specs and images.
+type AssetsSummaryResponse struct {
+	NamespaceID       string                 `json:"namespaceId" example:"system"`
+	TotalSpecCount    int64                  `json:"totalSpecCount" example:"45000"`
+	PricedSpecCount   int64                  `json:"pricedSpecCount" example:"43000"`
+	UnpricedSpecCount int64                  `json:"unpricedSpecCount" example:"2000"`
+	TotalImageCount   int64                  `json:"totalImageCount" example:"18000"`
+	Providers         []ProviderAssetSummary `json:"providers"`
+}
+
 // KeyValue is struct for key-value pair
 type KeyValue struct {
 	Key   string `json:"key"`

@@ -1,0 +1,78 @@
+# Azure Publisher Filtering Configuration
+# This file controls which Azure publishers are included/excluded when fetching VM images
+# Enables performance optimization by filtering out test/unofficial publishers
+
+# Enable/Disable publisher filtering globally
+publisherFiltering:
+  enabled: true
+  # Strategy: "whitelist" (only include specified) or "blacklist" (exclude specified)
+  strategy: "whitelist"
+
+# Official Microsoft and Partner Publishers (from Microsoft Learn)
+# Reference: https://learn.microsoft.com/en-us/azure/virtual-machines/linux/endorsed-distros
+# Additional reference (HPC Ubuntu image):
+# https://learn.microsoft.com/ko-kr/azure/virtual-machines/configure#ubuntu-hpc-vm-images
+# Additional reference (default/popular image publisher examples):
+# https://learn.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
+# https://learn.microsoft.com/en-us/azure/virtual-machines/windows/cli-ps-findimage
+whitelistedPublishers:
+  # Microsoft Official
+  - "Microsoft"
+  - "MicrosoftWindowsServer"
+  - "MicrosoftWindowsDesktop"
+  - "Microsoft-DSVM"            # Ubuntu-HPC official doc example
+  - "MicrosoftVisualStudio"     # Windows default image doc example
+  - "microsoft-ads"             # Data Science VM (Windows) doc example
+  - "MicrosoftSQLServer"
+  - "MicrosoftSharePoint"
+  - "MicrosoftDynamicsAX"
+  
+  # Linux Distributions - Official Partners
+  - "Canonical"                 # Ubuntu
+  - "RedHat"                     # Red Hat Enterprise Linux
+  - "SUSE"                       # SUSE Linux Enterprise Server
+  - "CIQ"                        # Rocky Linux
+  - "Credativ"                   # Debian
+  - "AlmaLinux"                  # AlmaLinux OS
+  - "Oracle"                     # Oracle Linux
+  - "Kinvolk"                    # Flatcar Container Linux
+  - "OpenLogic"                  # CentOS (legacy)
+  - "RockyLinux"                 # Rocky (alternative publisher)
+  - "Debian"                     # Debian (if exists as publisher)
+  - "Ubuntu"                     # Ubuntu (alternative forms)
+  
+  # Additional recognized publishers
+  - "Citrix"                     # Citrix solutions
+  - "Bitnami"                    # Application stacks
+  - "Canonical.UbuntuAdvantaged" # Ubuntu Advantage variant
+
+# Test/Unofficial publishers to explicitly exclude
+# Used for reference and debugging
+blacklistedPatterns:
+  - "*test*"
+  - "*local*"
+  - "*demo*"
+  - "*vincenttest*"
+  - "*workloadinsights*"
+  - "*timestamp*"               # Publishers with timestamps in names (personal tests)
+  - "*corp*ai*"                 # Corporation AI test images
+  - "*inc*"                     # Individual/startup test publishers
+
+# Publisher inclusion rules (if using pattern matching)
+# These can be enabled in code as fallback when publisher not in whitelist
+inclusionRules:
+  # Allow publishers that have significant image count
+  minImageCountThreshold: 1  # require at least 1 image
+  
+  # Allow well-known prefixes
+  wellKnownPrefixes:
+    - "Microsoft"
+    - "Canonical"
+    - "RedHat"
+    - "SUSE"
+    - "Oracle"
+
+# Debug settings
+debug:
+  logFilteredPublishers: false   # Log publishers that are filtered out
+  logIncludedPublishers: false   # Log publishers that are included
