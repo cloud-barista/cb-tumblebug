@@ -737,7 +737,7 @@ func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
 			defer cancel()
 
 			if connCfg.CredentialHolder != "" {
-				ctx = context.WithValue(ctx, model.CtxKeyCredentialHolder, connCfg.CredentialHolder)
+				ctx = common.WithCredentialHolder(ctx, connCfg.CredentialHolder)
 			}
 
 			images, err := azurecsp.ListImages(ctx, region)
@@ -817,6 +817,10 @@ func LookupPublicImageOnly(connConfig string, imageId string) (model.SpiderImage
 		// Create context with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Minute)
 		defer cancel()
+
+		if connCfg.CredentialHolder != "" {
+			ctx = common.WithCredentialHolder(ctx, connCfg.CredentialHolder)
+		}
 
 		// Call direct Azure SDK
 		image, azureErr := azurecsp.GetImage(ctx, region, imageId)

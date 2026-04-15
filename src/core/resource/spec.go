@@ -418,13 +418,17 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 
 	var specsInConnection model.SpiderSpecList
 	if csp.ResolveCloudPlatform(connConfig.ProviderName) == csp.Alibaba {
-		directCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		baseCtx := context.Background()
+		if connConfig.CredentialHolder != "" {
+			baseCtx = common.WithCredentialHolder(baseCtx, connConfig.CredentialHolder)
+		}
+		directCtx, cancel := context.WithTimeout(baseCtx, 5*time.Minute)
+		defer cancel()
 		specsInConnection, err = alibabaPricing.FetchAvailableSpecListByRegion(
 			directCtx,
 			connConfig.RegionDetail.RegionName,
 			connConfig.RegionZoneInfo.AssignedZone,
 		)
-		cancel()
 		if err != nil {
 			log.Error().Err(err).Msgf("Cannot fetch Alibaba available specs directly in %s", connConfigName)
 			return 0, err

@@ -102,7 +102,7 @@ func loadPublisherFilters() (*PublisherFilterConfig, error) {
 
 	publisherFilterMutex.Lock()
 	publisherFilterCache = config
-	publisherFilterErr = err
+	publisherFilterErr = nil
 	publisherFilterMutex.Unlock()
 
 	return config, nil
