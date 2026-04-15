@@ -719,6 +719,99 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 	return output, err
 }
 
+// GetAssetsSummary returns provider-level summary of spec/image assets for a namespace.
+func GetAssetsSummary(nsId string) (model.AssetsSummaryResponse, error) {
+	nsId = strings.TrimSpace(nsId)
+	if nsId == "" {
+		nsId = model.SystemCommonNs
+	}
+
+	result := model.AssetsSummaryResponse{
+		NamespaceID: nsId,
+		Providers:   make([]model.ProviderAssetSummary, 0),
+	}
+
+	type specAggRow struct {
+		ProviderName      string
+		SpecCount         int64
+		PricedSpecCount   int64
+		UnpricedSpecCount int64
+	}
+
+	var specAgg []specAggRow
+	err := model.ORM.Model(&model.SpecInfo{}).
+		Select(`provider_name as provider_name,
+			COUNT(*) as spec_count,
+			SUM(CASE WHEN cost_per_hour <> -1 THEN 1 ELSE 0 END) as priced_spec_count,
+			SUM(CASE WHEN cost_per_hour = -1 THEN 1 ELSE 0 END) as unpriced_spec_count`).
+		Where("namespace = ?", nsId).
+		Group("provider_name").
+		Scan(&specAgg).Error
+	if err != nil {
+		return model.AssetsSummaryResponse{}, fmt.Errorf("failed to summarize specs for namespace %s: %w", nsId, err)
+	}
+
+	type imageAggRow struct {
+		ProviderName string
+		ImageCount   int64
+	}
+
+	var imageAgg []imageAggRow
+	err = model.ORM.Model(&model.ImageInfo{}).
+		Select("provider_name as provider_name, COUNT(*) as image_count").
+		Where("namespace = ? AND resource_type = ?", nsId, model.StrImage).
+		Group("provider_name").
+		Scan(&imageAgg).Error
+	if err != nil {
+		return model.AssetsSummaryResponse{}, fmt.Errorf("failed to summarize images for namespace %s: %w", nsId, err)
+	}
+
+	providerMap := make(map[string]*model.ProviderAssetSummary)
+
+	for _, row := range specAgg {
+		providerName := strings.TrimSpace(row.ProviderName)
+		if providerName == "" {
+			providerName = "unknown"
+		}
+
+		providerMap[providerName] = &model.ProviderAssetSummary{
+			ProviderName:      providerName,
+			SpecCount:         row.SpecCount,
+			PricedSpecCount:   row.PricedSpecCount,
+			UnpricedSpecCount: row.UnpricedSpecCount,
+		}
+
+		result.TotalSpecCount += row.SpecCount
+		result.PricedSpecCount += row.PricedSpecCount
+		result.UnpricedSpecCount += row.UnpricedSpecCount
+	}
+
+	for _, row := range imageAgg {
+		providerName := strings.TrimSpace(row.ProviderName)
+		if providerName == "" {
+			providerName = "unknown"
+		}
+
+		if providerMap[providerName] == nil {
+			providerMap[providerName] = &model.ProviderAssetSummary{ProviderName: providerName}
+		}
+		providerMap[providerName].ImageCount = row.ImageCount
+		result.TotalImageCount += row.ImageCount
+	}
+
+	providerNames := make([]string, 0, len(providerMap))
+	for name := range providerMap {
+		providerNames = append(providerNames, name)
+	}
+	sort.Strings(providerNames)
+
+	for _, name := range providerNames {
+		result.Providers = append(result.Providers, *providerMap[name])
+	}
+
+	return result, nil
+}
+
 // getRegisterRateLimitsForCSP returns rate limiting config for resource registration.
 // Uses centralized CSP config from csp.GetRateLimitConfig() with built-in fallback for unknown CSPs.
 func getRegisterRateLimitsForCSP(providerName string) (maxConns int, delayMinMs int, delayMaxMs int) {

@@ -33,6 +33,9 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	alibabaPricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba"
+	awsPricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/aws"
+	azurePricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
 	gcpPricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/gcp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -413,10 +416,25 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 		return 0, err
 	}
 
-	specsInConnection, err := LookupSpecList(connConfigName)
-	if err != nil {
-		log.Error().Err(err).Msgf("Cannot LookupSpecList in %s", connConfigName)
-		return 0, err
+	var specsInConnection model.SpiderSpecList
+	if csp.ResolveCloudPlatform(connConfig.ProviderName) == csp.Alibaba {
+		directCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		specsInConnection, err = alibabaPricing.FetchAvailableSpecListByRegion(
+			directCtx,
+			connConfig.RegionDetail.RegionName,
+			connConfig.RegionZoneInfo.AssignedZone,
+		)
+		cancel()
+		if err != nil {
+			log.Error().Err(err).Msgf("Cannot fetch Alibaba available specs directly in %s", connConfigName)
+			return 0, err
+		}
+	} else {
+		specsInConnection, err = LookupSpecList(connConfigName)
+		if err != nil {
+			log.Error().Err(err).Msgf("Cannot LookupSpecList in %s", connConfigName)
+			return 0, err
+		}
 	}
 
 	if len(specsInConnection.Vmspec) == 0 {
@@ -428,6 +446,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 	totalSpecs := len(specsInConnection.Vmspec)
 	filteredSpecs := make([]model.SpiderSpecInfo, 0, totalSpecs)
 	ignoredCount := 0
+	skipIgnoreFilter := csp.ResolveCloudPlatform(connConfig.ProviderName) == csp.Alibaba
 
 	// log.Debug().
 	// 	Str("connection", connConfigName).
@@ -440,7 +459,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 	for i := range specsInConnection.Vmspec {
 		spiderSpec := specsInConnection.Vmspec[i]
 
-		if shouldIgnoreSpec(spiderSpec.Name, connConfig.ProviderName, connConfig.RegionDetail.RegionName) {
+		if !skipIgnoreFilter && shouldIgnoreSpec(spiderSpec.Name, connConfig.ProviderName, connConfig.RegionDetail.RegionName) {
 			// log.Debug().
 			// 	Str("spec", spiderSpec.Name).
 			// 	Str("provider", connConfig.ProviderName).
@@ -647,7 +666,7 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 			//   Alibaba (29 conns): 5/5 OK (100%), 10+ causes ~90% timeout -> limit to 5
 			providerParallelConn := parallelConnPerProvider
 			if provider == csp.Alibaba {
-				providerParallelConn = 3 // Alibaba API times out at 10+ concurrent requests
+				providerParallelConn = 5 // Direct ECS API (DescribeAvailableResource): 0 failures at concurrency=5;
 			}
 
 			// Set up semaphore for controlled parallelism
@@ -1271,15 +1290,27 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 	startTime := time.Now()
 
-	// Separate GCP connections from others.
-	// GCP prices are fetched directly from Google's pricing pages (bypassing cb-spider)
-	// because cb-spider's GCP pricing scraper is broken due to Google's page restructuring.
+	// Separate CSPs that have a direct pricing path from the Spider-based fallback.
+	// GCP: direct because Spider's GCP pricing scraper is broken.
+	// Azure: direct because it is faster and avoids Spider's per-region HTTP overhead.
+	// AWS: direct because a single global Pricing API query covers all regions at once,
+	//      eliminating the N×Spider round-trips that dominate the legacy path.
 	var gcpConfigs []model.ConnConfig
+	var azureConfigs []model.ConnConfig
+	var awsConfigs []model.ConnConfig
+	var alibabaConfigs []model.ConnConfig
 	var otherConfigs []model.ConnConfig
 	for _, c := range connConfigs.Connectionconfig {
-		if strings.EqualFold(c.ProviderName, csp.GCP) {
+		switch {
+		case strings.EqualFold(c.ProviderName, csp.GCP):
 			gcpConfigs = append(gcpConfigs, c)
-		} else {
+		case strings.EqualFold(c.ProviderName, csp.Azure):
+			azureConfigs = append(azureConfigs, c)
+		case strings.EqualFold(c.ProviderName, csp.AWS):
+			awsConfigs = append(awsConfigs, c)
+		case strings.EqualFold(c.ProviderName, csp.Alibaba):
+			alibabaConfigs = append(alibabaConfigs, c)
+		default:
 			otherConfigs = append(otherConfigs, c)
 		}
 	}
@@ -1287,21 +1318,114 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 	var totalSuccessCount uint
 	var allErrors []string
 
-	// --- GCP: fetch prices directly from Google's pricing pages ---
-	if len(gcpConfigs) > 0 {
-		gcpSuccess, gcpErrors := fetchGCPPricesDirect(gcpConfigs)
-		totalSuccessCount += gcpSuccess
-		allErrors = append(allErrors, gcpErrors...)
+	// Run provider groups concurrently (up to 3 at a time) and aggregate results safely.
+	type providerTask struct {
+		name string
+		run  func() (uint, []string)
+	}
+	type providerFetchResult struct {
+		provider string
+		success  uint
+		errors   []string
+		elapsed  time.Duration
 	}
 
-	// --- Other CSPs: fetch via cb-spider (existing path) ---
+	tasks := make([]providerTask, 0, 5)
+	// Alibaba is placed first: it has the strictest API rate limits and takes the
+	// longest per-region due to mandatory inter-call intervals. Starting it immediately
+	// (in the initial semaphore burst) avoids it becoming the tail that extends the
+	// overall price-fetch duration.
+	if len(alibabaConfigs) > 0 {
+		tasks = append(tasks, providerTask{
+			name: csp.Alibaba,
+			run: func() (uint, []string) {
+				return fetchAlibabaPricesDirect(alibabaConfigs)
+			},
+		})
+	}
+	if len(gcpConfigs) > 0 {
+		tasks = append(tasks, providerTask{
+			name: csp.GCP,
+			run: func() (uint, []string) {
+				return fetchGCPPricesDirect(gcpConfigs)
+			},
+		})
+	}
+	if len(azureConfigs) > 0 {
+		tasks = append(tasks, providerTask{
+			name: csp.Azure,
+			run: func() (uint, []string) {
+				return fetchAzurePricesDirect(azureConfigs)
+			},
+		})
+	}
+	if len(awsConfigs) > 0 {
+		tasks = append(tasks, providerTask{
+			name: csp.AWS,
+			run: func() (uint, []string) {
+				return fetchAWSPricesDirect(awsConfigs)
+			},
+		})
+	}
 	if len(otherConfigs) > 0 {
-		// Sort connections by CSP rotation for optimal parallel processing
-		sortConnectionsByCSPRotation(otherConfigs)
+		tasks = append(tasks, providerTask{
+			name: "OTHER(SPIDER)",
+			run: func() (uint, []string) {
+				// Keep existing behavior for Spider path.
+				sortConnectionsByCSPRotation(otherConfigs)
+				return fetchPricesViaSpider(otherConfigs)
+			},
+		})
+	}
 
-		otherSuccess, otherErrors := fetchPricesViaSpider(otherConfigs)
-		totalSuccessCount += otherSuccess
-		allErrors = append(allErrors, otherErrors...)
+	if len(tasks) > 0 {
+		maxProviderConcurrent := 3
+		semaphore := make(chan struct{}, maxProviderConcurrent)
+		resultChan := make(chan providerFetchResult, len(tasks))
+		var wg sync.WaitGroup
+
+		for _, task := range tasks {
+			t := task
+			wg.Add(1)
+			semaphore <- struct{}{}
+			go func() {
+				defer wg.Done()
+				defer func() { <-semaphore }()
+
+				startedAt := time.Now()
+				result := providerFetchResult{provider: t.name}
+
+				defer func() {
+					if r := recover(); r != nil {
+						result.errors = append(result.errors, fmt.Sprintf("provider task panic: %v", r))
+					}
+					result.elapsed = time.Since(startedAt)
+					resultChan <- result
+				}()
+
+				success, errs := t.run()
+				result.success = success
+				if len(errs) > 0 {
+					prefixed := make([]string, 0, len(errs))
+					for _, e := range errs {
+						prefixed = append(prefixed, fmt.Sprintf("[%s] %s", t.name, e))
+					}
+					result.errors = append(result.errors, prefixed...)
+				}
+			}()
+		}
+
+		go func() {
+			wg.Wait()
+			close(resultChan)
+		}()
+
+		for result := range resultChan {
+			totalSuccessCount += result.success
+			allErrors = append(allErrors, result.errors...)
+			log.Info().Msgf("Provider price fetch completed: provider=%s success=%d errors=%d elapsed=%s",
+				result.provider, result.success, len(result.errors), result.elapsed)
+		}
 	}
 
 	// Report any errors
@@ -1330,6 +1454,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 func fetchGCPPricesDirect(gcpConfigs []model.ConnConfig) (successCount uint, errors []string) {
 	log.Info().Msgf("GCP: directly fetching pricing from Google for %d connections", len(gcpConfigs))
 	gcpStart := time.Now()
+	maxConcurrent := 8
 
 	// Fetch all GCP prices at once (5 HTTP requests for 5 sub-pages)
 	priceCache, err := gcpPricing.FetchAllGCPPrices()
@@ -1342,49 +1467,385 @@ func fetchGCPPricesDirect(gcpConfigs []model.ConnConfig) (successCount uint, err
 		return 0, errors
 	}
 
-	// Process each GCP connection using the cached price data
-	for _, config := range gcpConfigs {
-		region := config.RegionDetail.RegionName
+	semaphore := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	type connResult struct {
+		ConnName string
+		Err      error
+	}
+	resultChan := make(chan connResult, len(gcpConfigs))
 
-		priceData := priceCache.GetPriceForRegion(region)
-		if len(priceData.PriceList) == 0 {
-			errors = append(errors, fmt.Sprintf("No GCP prices found for region %s (connection %s)", region, config.ConfigName))
+	for _, connConfig := range gcpConfigs {
+		wg.Add(1)
+		semaphore <- struct{}{}
+		go func(config model.ConnConfig) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+
+			region := config.RegionDetail.RegionName
+			priceData := priceCache.GetPriceForRegion(region)
+			if len(priceData.PriceList) == 0 {
+				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("No GCP prices found for region %s", region)}
+				return
+			}
+
+			// Build batch updates (same logic as FetchPriceForConnConfig)
+			batchUpdates := make(map[string]float32, len(priceData.PriceList))
+			for i := range priceData.PriceList {
+				price := priceData.PriceList[i]
+				priceFloat, parseErr := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+				if parseErr != nil {
+					log.Warn().Msgf("GCP direct: failed to parse price %q for spec %s: %v",
+						price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecName, parseErr)
+					continue
+				}
+				priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+				specKey := GetProviderRegionZoneResourceKey(
+					config.ProviderName,
+					config.RegionDetail.RegionName,
+					"",
+					price.ProductInfo.VMSpecName)
+				batchUpdates[specKey] = float32(priceFloat)
+			}
+
+			if len(batchUpdates) > 0 {
+				_, dbErr := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
+				if dbErr != nil {
+					resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error updating GCP prices for %s: %w", config.ConfigName, dbErr)}
+					return
+				}
+			}
+
+			log.Debug().Msgf("GCP direct: updated %d prices for %s (%s)", len(batchUpdates), config.ConfigName, region)
+			resultChan <- connResult{ConnName: config.ConfigName, Err: nil}
+		}(connConfig)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	for result := range resultChan {
+		if result.Err != nil {
+			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
 			continue
 		}
-
-		// Build batch updates (same logic as FetchPriceForConnConfig)
-		batchUpdates := make(map[string]float32, len(priceData.PriceList))
-		for i := range priceData.PriceList {
-			price := priceData.PriceList[i]
-			priceFloat, parseErr := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
-			if parseErr != nil {
-				log.Warn().Msgf("GCP direct: failed to parse price %q for spec %s: %v",
-					price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecName, parseErr)
-				continue
-			}
-			priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
-			specKey := GetProviderRegionZoneResourceKey(
-				config.ProviderName,
-				config.RegionDetail.RegionName,
-				"",
-				price.ProductInfo.VMSpecName)
-			batchUpdates[specKey] = float32(priceFloat)
-		}
-
-		if len(batchUpdates) > 0 {
-			_, dbErr := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
-			if dbErr != nil {
-				errors = append(errors, fmt.Sprintf("Error updating GCP prices for %s: %v", config.ConfigName, dbErr))
-				continue
-			}
-		}
-
 		successCount++
-		log.Debug().Msgf("GCP direct: updated %d prices for %s (%s)", len(batchUpdates), config.ConfigName, region)
 	}
 
 	log.Info().Msgf("GCP direct pricing completed in %s: %d/%d connections succeeded",
 		time.Since(gcpStart), successCount, len(gcpConfigs))
+	return successCount, errors
+}
+
+// fetchAzurePricesDirect fetches Azure VM pricing directly from Azure Retail Prices API
+// and updates spec prices in bulk for all Azure connection configs.
+func fetchAzurePricesDirect(azureConfigs []model.ConnConfig) (successCount uint, errors []string) {
+	log.Info().Msgf("Azure: directly fetching pricing from Azure Retail Prices API for %d connections", len(azureConfigs))
+	azureStart := time.Now()
+	maxConcurrent := 8
+	semaphore := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	type connResult struct {
+		ConnName string
+		Err      error
+	}
+	resultChan := make(chan connResult, len(azureConfigs))
+
+	for _, connConfig := range azureConfigs {
+		wg.Add(1)
+		semaphore <- struct{}{}
+		go func(config model.ConnConfig) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+
+			region := config.RegionDetail.RegionName
+			priceData, fetchErr := azurePricing.FetchVMPricesByRegion(region)
+			if fetchErr != nil {
+				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error fetching Azure prices for connection %s: %w", config.ConfigName, fetchErr)}
+				return
+			}
+			if len(priceData.PriceList) == 0 {
+				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("No Azure prices found for region %s", region)}
+				return
+			}
+
+			batchUpdates := make(map[string]float32, len(priceData.PriceList))
+			for i := range priceData.PriceList {
+				price := priceData.PriceList[i]
+				priceFloat, parseErr := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+				if parseErr != nil {
+					log.Warn().Msgf("Azure direct: failed to parse price %q for spec %s: %v",
+						price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecName, parseErr)
+					continue
+				}
+				priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+				specKey := GetProviderRegionZoneResourceKey(
+					config.ProviderName,
+					config.RegionDetail.RegionName,
+					"",
+					price.ProductInfo.VMSpecName)
+				batchUpdates[specKey] = float32(priceFloat)
+			}
+
+			if len(batchUpdates) > 0 {
+				_, dbErr := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
+				if dbErr != nil {
+					resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error updating Azure prices for %s: %w", config.ConfigName, dbErr)}
+					return
+				}
+			}
+
+			log.Debug().Msgf("Azure direct: updated %d prices for %s (%s)", len(batchUpdates), config.ConfigName, region)
+			resultChan <- connResult{ConnName: config.ConfigName, Err: nil}
+		}(connConfig)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	for result := range resultChan {
+		if result.Err != nil {
+			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
+			continue
+		}
+		successCount++
+	}
+
+	log.Info().Msgf("Azure direct pricing completed in %s: %d/%d connections succeeded",
+		time.Since(azureStart), successCount, len(azureConfigs))
+	return successCount, errors
+}
+
+// fetchAWSPricesDirect fetches AWS EC2 VM pricing directly from the AWS Pricing API
+// using a single global query (no per-region filter), then distributes the results to
+// all AWS connection configs via BulkUpdateSpec.
+//
+// Compared to the Spider path this eliminates:
+//   - N×HTTP round-trips to cb-spider (one per region/connection)
+//   - Spider's JSON marshaling/unmarshaling overhead
+//   - Competition for the shared Spider concurrency pool
+func fetchAWSPricesDirect(awsConfigs []model.ConnConfig) (successCount uint, errors []string) {
+	log.Info().Msgf("AWS: directly fetching pricing from AWS Pricing API for %d connections", len(awsConfigs))
+	awsStart := time.Now()
+	maxConcurrent := 8
+
+	// One global API call fetches pricing for ALL AWS regions at once.
+	priceMap, err := awsPricing.FetchAllVMPrices(context.Background())
+	if err != nil {
+		errMsg := fmt.Sprintf("AWS direct pricing fetch failed: %v", err)
+		log.Error().Msg(errMsg)
+		for _, c := range awsConfigs {
+			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %s", c.ConfigName, errMsg))
+		}
+		return 0, errors
+	}
+
+	// Distribute cached results to each AWS connection config in parallel.
+	semaphore := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	type connResult struct {
+		ConnName string
+		Err      error
+	}
+	resultChan := make(chan connResult, len(awsConfigs))
+
+	for _, connConfig := range awsConfigs {
+		wg.Add(1)
+		semaphore <- struct{}{}
+		go func(config model.ConnConfig) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+
+			region := config.RegionDetail.RegionName
+			priceData, found := priceMap[region]
+			if !found || len(priceData.PriceList) == 0 {
+				log.Warn().Msgf("AWS direct: no prices found for region %s (connection %s)", region, config.ConfigName)
+				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("No AWS prices found for region %s", region)}
+				return
+			}
+
+			batchUpdates := make(map[string]float32, len(priceData.PriceList))
+			for i := range priceData.PriceList {
+				price := priceData.PriceList[i]
+				priceFloat, parseErr := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+				if parseErr != nil {
+					log.Warn().Msgf("AWS direct: failed to parse price %q for spec %s: %v",
+						price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecName, parseErr)
+					continue
+				}
+				priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+				specKey := GetProviderRegionZoneResourceKey(
+					config.ProviderName,
+					config.RegionDetail.RegionName,
+					"",
+					price.ProductInfo.VMSpecName)
+				batchUpdates[specKey] = float32(priceFloat)
+			}
+
+			if len(batchUpdates) > 0 {
+				_, dbErr := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
+				if dbErr != nil {
+					resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error updating AWS prices for %s: %w", config.ConfigName, dbErr)}
+					return
+				}
+			}
+
+			log.Debug().Msgf("AWS direct: updated %d prices for %s (%s)", len(batchUpdates), config.ConfigName, region)
+			resultChan <- connResult{ConnName: config.ConfigName, Err: nil}
+		}(connConfig)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	for result := range resultChan {
+		if result.Err != nil {
+			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
+			continue
+		}
+		successCount++
+	}
+
+	log.Info().Msgf("AWS direct pricing completed in %s: %d/%d connections succeeded",
+		time.Since(awsStart), successCount, len(awsConfigs))
+	return successCount, errors
+}
+
+// fetchAlibabaPricesDirect fetches Alibaba VM pricing directly from Alibaba ECS API.
+// It intentionally focuses on spec cost/hour only, avoiding Spider's disk-category sweep path.
+func fetchAlibabaPricesDirect(alibabaConfigs []model.ConnConfig) (successCount uint, errors []string) {
+	log.Info().Msgf("Alibaba: directly fetching pricing from Alibaba ECS API for %d connections", len(alibabaConfigs))
+	alibabaStart := time.Now()
+
+	maxConcurrent := 10
+	if v := strings.TrimSpace(os.Getenv("TB_ALIBABA_REGION_CONCURRENCY")); v != "" {
+		if n, parseErr := strconv.Atoi(v); parseErr == nil && n > 0 {
+			maxConcurrent = n
+		}
+	}
+	log.Info().Msgf("Alibaba direct pricing: regionConcurrency=%d", maxConcurrent)
+
+	semaphore := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	type connResult struct {
+		ConnName string
+		Err      error
+	}
+	resultChan := make(chan connResult, len(alibabaConfigs))
+
+	for _, connConfig := range alibabaConfigs {
+		wg.Add(1)
+		semaphore <- struct{}{}
+		go func(config model.ConnConfig) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+
+			region := config.RegionDetail.RegionName
+
+			// Fetch only for spec names that actually exist in TB DB for this provider+region.
+			// This avoids querying Alibaba prices for thousands of irrelevant instance types.
+			var regionSpecs []model.SpecInfo
+			specQueryErr := model.ORM.Select("csp_spec_name").
+				Where("namespace = ? AND provider_name = ? AND region_name = ?",
+					model.SystemCommonNs, config.ProviderName, region).
+				Find(&regionSpecs).Error
+			if specQueryErr != nil {
+				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error querying Alibaba spec names for connection %s: %w", config.ConfigName, specQueryErr)}
+				return
+			}
+
+			targetSpecNames := make(map[string]struct{}, len(regionSpecs))
+			for i := range regionSpecs {
+				specName := strings.TrimSpace(regionSpecs[i].CspSpecName)
+				if specName == "" {
+					continue
+				}
+				targetSpecNames[specName] = struct{}{}
+			}
+
+			if len(targetSpecNames) == 0 {
+				log.Info().Msgf("Alibaba direct: no target spec names found in TB DB for %s (%s), skipping", config.ConfigName, region)
+				resultChan <- connResult{ConnName: config.ConfigName, Err: nil}
+				return
+			}
+
+			priceData, fetchErr := alibabaPricing.FetchVMPricesByRegionFiltered(context.Background(), region, targetSpecNames)
+			if fetchErr != nil {
+				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error fetching Alibaba prices for connection %s: %w", config.ConfigName, fetchErr)}
+				return
+			}
+			if len(priceData.PriceList) == 0 {
+				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("No Alibaba prices found for region %s", region)}
+				return
+			}
+
+			batchUpdates := make(map[string]float32, len(priceData.PriceList))
+			for i := range priceData.PriceList {
+				price := priceData.PriceList[i]
+				priceFloat, parseErr := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+				if parseErr != nil {
+					log.Warn().Msgf("Alibaba direct: failed to parse price %q for spec %s: %v",
+						price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecName, parseErr)
+					continue
+				}
+
+				priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+				specKey := GetProviderRegionZoneResourceKey(
+					config.ProviderName,
+					config.RegionDetail.RegionName,
+					"",
+					price.ProductInfo.VMSpecName)
+				batchUpdates[specKey] = float32(priceFloat)
+			}
+
+			if len(batchUpdates) > 0 {
+				_, dbErr := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
+				if dbErr != nil {
+					resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error updating Alibaba prices for %s: %w", config.ConfigName, dbErr)}
+					return
+				}
+			}
+
+			log.Debug().Msgf("Alibaba direct: updated %d prices for %s (%s)", len(batchUpdates), config.ConfigName, region)
+			resultChan <- connResult{ConnName: config.ConfigName, Err: nil}
+		}(connConfig)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	totalCount := len(alibabaConfigs)
+	doneCount := 0
+	for result := range resultChan {
+		doneCount++
+		if result.Err != nil {
+			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
+		} else {
+			successCount++
+		}
+
+		if doneCount%5 == 0 || doneCount == totalCount {
+			elapsed := time.Since(alibabaStart)
+			avgPerConn := elapsed / time.Duration(doneCount)
+			remaining := totalCount - doneCount
+			eta := avgPerConn * time.Duration(remaining)
+			log.Info().Msgf(
+				"Alibaba direct pricing progress: done=%d/%d success=%d errors=%d elapsed=%s eta=%s",
+				doneCount, totalCount, successCount, len(errors), elapsed, eta,
+			)
+		}
+	}
+
+	log.Info().Msgf("Alibaba direct pricing completed in %s: %d/%d connections succeeded",
+		time.Since(alibabaStart), successCount, len(alibabaConfigs))
 	return successCount, errors
 }
 

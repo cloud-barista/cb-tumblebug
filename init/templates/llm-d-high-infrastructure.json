@@ -1,0 +1,37 @@
+{
+  "resourceType": "mci",
+  "name": "llm-d-high",
+  "description": "llm-d-high",
+  "mciDynamicReq": {
+    "subGroups": [
+      {
+        "name": "control",
+        "subGroupSize": 1,
+        "label": {
+          "role": "control"
+        },
+        "description": "Dynamically added via CB-MapUI Scale Out MCI",
+        "specId": "azure+australiaeast+standard_b8als_v2",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202602250",
+        "rootDiskType": "PremiumSSD",
+        "rootDiskSize": 500,
+        "connectionName": "azure-australiaeast"
+      },
+      {
+        "name": "node-gpu",
+        "subGroupSize": 1,
+        "label": {
+          "accelerator": "gpu",
+          "role": "node"
+        },
+        "description": "mapui",
+        "specId": "azure+australiaeast+standard_nc40ads_h100_v5",
+        "imageId": "microsoft-dsvm:ubuntu-hpc:2204:22.04.2026033001",
+        "rootDiskType": "PremiumSSD",
+        "rootDiskSize": 500,
+        "connectionName": "azure-australiaeast"
+      }
+    ],
+    "description": "Made via cb-mapui"
+  }
+}

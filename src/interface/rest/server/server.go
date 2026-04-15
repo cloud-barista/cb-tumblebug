@@ -335,6 +335,7 @@ func RunServer() {
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
 	e.GET("/tumblebug/inspectResourcesOverview", rest_common.RestInspectResourcesOverview)
+	e.GET("/tumblebug/assetsSummary", rest_common.RestGetAssetsSummary)
 
 	e.POST("/tumblebug/registerCspResources", rest_common.RestRegisterCspNativeResources)
 	e.POST("/tumblebug/registerCspResourcesAll", rest_common.RestRegisterCspNativeResourcesAll)

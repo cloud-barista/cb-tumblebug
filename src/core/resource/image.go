@@ -31,10 +31,12 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	azurecsp "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -195,10 +197,26 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	return tumblebugImage, nil
 }
 
-// GetImageInfoFromLookupImage
-func GetImageInfoFromLookupImage(nsId string, u model.ImageReq) (model.ImageInfo, error) {
+// GetImageInfoFromLookupImage looks up image from Spider and converts to TumblebugImage
+// allowCustomImage: if false, only looks up public images (used for enrichment); if true, also checks custom images
+func GetImageInfoFromLookupImage(nsId string, u model.ImageReq, allowCustomImage ...bool) (model.ImageInfo, error) {
 	content := model.ImageInfo{}
-	res, err := LookupImage(u.ConnectionName, u.CspImageName)
+
+	// Default to true for backward compatibility (check both public and custom images)
+	checkCustom := true
+	if len(allowCustomImage) > 0 {
+		checkCustom = allowCustomImage[0]
+	}
+
+	var res model.SpiderImageInfo
+	var err error
+
+	if checkCustom {
+		res, err = LookupImage(u.ConnectionName, u.CspImageName)
+	} else {
+		res, err = LookupPublicImageOnly(u.ConnectionName, u.CspImageName)
+	}
+
 	if err != nil {
 		log.Trace().Err(err).Msg("")
 		return content, err
@@ -456,23 +474,38 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 		}
 		batch := dedupedImageList[i:end]
 
-		tx := model.ORM.Begin()
-		if tx.Error != nil {
-			log.Error().Err(tx.Error).Msg("Failed to begin transaction")
-			return tx.Error
-		}
+		// Batch processing with deadlock retry (max 2 attempts)
+		maxRetries := 2
+		var result *gorm.DB
+		var lastErr error
 
-		// Use UPSERT approach - update on duplicate
-		result := tx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "namespace"}, {Name: "provider_name"}, {Name: "csp_image_name"}},
-			UpdateAll: true,
-		}).CreateInBatches(&batch, len(batch))
+		for attempt := 0; attempt < maxRetries; attempt++ {
+			tx := model.ORM.Begin()
+			if tx.Error != nil {
+				log.Error().Err(tx.Error).Msg("Failed to begin transaction")
+				return tx.Error
+			}
 
-		if result.Error != nil {
-			tx.Rollback()
+			// Use UPSERT approach - update on duplicate
+			result = tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "namespace"}, {Name: "provider_name"}, {Name: "csp_image_name"}},
+				UpdateAll: true,
+			}).CreateInBatches(&batch, len(batch))
 
-			// Switch to individual processing if duplicate key error occurs
-			if strings.Contains(result.Error.Error(), "duplicate key value") {
+			if result.Error != nil {
+				tx.Rollback()
+
+				// Check for deadlock (SQLSTATE 40P01)
+				if strings.Contains(result.Error.Error(), "40P01") || strings.Contains(result.Error.Error(), "deadlock") {
+					if attempt < maxRetries-1 {
+						log.Warn().Msgf("Deadlock detected in batch %d-%d, retrying (attempt %d/%d)...", i, end-1, attempt+1, maxRetries)
+						continue
+					}
+					lastErr = result.Error
+				}
+
+				// Switch to individual processing if duplicate key error occurs
+				if strings.Contains(result.Error.Error(), "duplicate key value") {
 				log.Warn().Msg("Falling back to individual record processing due to duplicate key issue")
 
 				// Process individual records
@@ -505,16 +538,24 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 				}
 
 				log.Info().Msgf("Individual processing completed for batch %d-%d", i, end-1)
-				continue
+				break
+			}
+
+			if lastErr != nil {
+				log.Error().Err(lastErr).Msgf("Failed after %d deadlock retry attempts for batch %d-%d", maxRetries, i, end-1)
+				return lastErr
 			}
 
 			log.Error().Err(result.Error).Msg("Error inserting images in bulk")
 			return result.Error
+		} else {
+			// Success - commit and exit retry loop
+			if err := tx.Commit().Error; err != nil {
+				log.Error().Err(err).Msg("Failed to commit transaction")
+				return err
+			}
+			break
 		}
-
-		if err := tx.Commit().Error; err != nil {
-			log.Error().Err(err).Msg("Failed to commit transaction")
-			return err
 		}
 
 		//log.Info().Msgf("Bulk insert/update success: %d records affected", result.RowsAffected)
@@ -679,8 +720,39 @@ func RegisterImageWithInfo(nsId string, content *model.ImageInfo, update bool) (
 // lookups and returns the list of all images in the region of conn config
 // in the form of the list of Spider image objects
 func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
-
+	startTime := time.Now()
 	var callResult model.SpiderImageList
+
+	// For Azure, fetch images directly via Azure SDK in cb-tb to avoid Spider dependency.
+	if connCfg, cfgErr := common.GetConnConfig(connConfigName); cfgErr == nil {
+		if strings.EqualFold(csp.ResolveCloudPlatform(connCfg.ProviderName), csp.Azure) {
+			region := connCfg.RegionDetail.RegionName
+			if region == "" {
+				region = connCfg.RegionZoneInfo.AssignedRegion
+			}
+
+			log.Debug().Str("connConfig", connConfigName).Str("region", region).Msg("[AzureImage] LookupImageList using direct Azure SDK")
+
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Minute)
+			defer cancel()
+
+			if connCfg.CredentialHolder != "" {
+				ctx = context.WithValue(ctx, model.CtxKeyCredentialHolder, connCfg.CredentialHolder)
+			}
+
+			images, err := azurecsp.ListImages(ctx, region)
+			if err != nil {
+				log.Error().Err(err).Str("connConfig", connConfigName).Str("region", region).Msg("Failed direct Azure image listing")
+				return callResult, err
+			}
+
+			callResult.Image = images
+			elapsed := time.Since(startTime)
+			log.Info().Str("connConfig", connConfigName).Str("region", region).Int("imageCount", len(images)).Dur("totalDuration", elapsed).Msg("[AzureImage] LookupImageList completed via direct SDK")
+			return callResult, nil
+		}
+	}
+
 	client := clientManager.NewHttpClient()
 	client.SetTimeout(100 * time.Minute)
 
@@ -704,6 +776,85 @@ func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
 		log.Err(err).Msg("Failed to Lookup Image List from Spider")
 		return callResult, err
 	}
+	return callResult, nil
+}
+
+// LookupPublicImageOnly accepts Spider conn config and CSP image ID, lookups public image only (no custom image fallback)
+// Used for enrichment during asset loading to avoid unnecessary custom image checks
+// For Azure, uses direct Azure SDK instead of Spider API
+func LookupPublicImageOnly(connConfig string, imageId string) (model.SpiderImageInfo, error) {
+	startTime := time.Now()
+	if connConfig == "" {
+		content := model.SpiderImageInfo{}
+		err := fmt.Errorf("lookupPublicImageOnly() called with empty connConfig")
+		log.Error().Err(err).Msg("")
+		return content, err
+	} else if imageId == "" {
+		content := model.SpiderImageInfo{}
+		err := fmt.Errorf("lookupPublicImageOnly() called with empty imageId")
+		log.Error().Err(err).Msg("")
+		return content, err
+	}
+
+	// For Azure, use direct SDK instead of Spider
+	connCfg, err := common.GetConnConfig(connConfig)
+	if err == nil && strings.EqualFold(csp.ResolveCloudPlatform(connCfg.ProviderName), csp.Azure) {
+		// Extract region from connection config
+		region := connCfg.RegionDetail.RegionName
+		if region == "" {
+			region = connCfg.RegionZoneInfo.AssignedRegion
+		}
+
+		if strings.TrimSpace(region) == "" {
+			content := model.SpiderImageInfo{}
+			err := fmt.Errorf("lookupPublicImageOnly() failed to determine Azure region from connConfig '%s'", connConfig)
+			log.Error().Err(err).Msg("")
+			return content, err
+		}
+
+		log.Debug().Str("connConfig", connConfig).Str("imageId", imageId).Str("region", region).Msg("[AzureImage] LookupPublicImageOnly using direct Azure SDK")
+
+		// Create context with timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Minute)
+		defer cancel()
+
+		// Call direct Azure SDK
+		image, azureErr := azurecsp.GetImage(ctx, region, imageId)
+		if azureErr != nil {
+			log.Trace().Err(azureErr).Str("connConfig", connConfig).Str("imageId", imageId).Msg("Azure image lookup failed (using direct SDK)")
+			return model.SpiderImageInfo{}, azureErr
+		}
+
+		elapsed := time.Since(startTime)
+		log.Debug().Str("connConfig", connConfig).Str("imageId", imageId).Dur("duration", elapsed).Msg("[AzureImage] LookupPublicImageOnly completed via direct SDK")
+		return image, nil
+	}
+
+	// For non-Azure CSPs, use Spider API (existing behavior)
+	client := clientManager.NewHttpClient()
+	client.SetTimeout(2 * time.Minute)
+	apiUrl := model.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
+	method := "GET"
+	requestBody := model.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig
+	callResult := model.SpiderImageInfo{}
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		apiUrl,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
+
+	if err != nil {
+		log.Trace().Err(err).Msg("Public image lookup failed (no custom image fallback for enrichment)")
+		return callResult, err
+	}
+
 	return callResult, nil
 }
 
@@ -996,6 +1147,9 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 			if csp.ResolveCloudPlatform(provider) == csp.AWS {
 				providerParallelConn = 3 // to handle more parallel connections
 			}
+			if csp.ResolveCloudPlatform(provider) == csp.Alibaba {
+				providerParallelConn = 2 // reduced to mitigate deadlock pressure
+			}
 
 			// Set up semaphore for controlled parallelism
 			semaphore := make(chan struct{}, providerParallelConn)
@@ -1270,8 +1424,10 @@ func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, c
 }
 
 // enrichImageInfoFromCSP enriches ImageInfo with additional details from CSP lookup
+// Uses public image lookup only (no custom image fallback) to avoid unnecessary Spider calls during asset loading
 func enrichImageInfoFromCSP(imageInfo *model.ImageInfo, imageReq model.ImageReq, regionName string, connectionList model.ConnConfigList) bool {
 	// Try to get additional details from CSP lookup (optional)
+	// Use public image only (false parameter) during enrichment to avoid custom image checks
 	if strings.EqualFold(regionName, model.StrCommon) {
 		// If region is common, try to lookup from any region for this provider
 		for _, connConfig := range connectionList.Connectionconfig {
@@ -1279,7 +1435,8 @@ func enrichImageInfoFromCSP(imageInfo *model.ImageInfo, imageReq model.ImageReq,
 				lookupReq := imageReq
 				lookupReq.ConnectionName = imageInfo.ProviderName + "-" + connConfig.RegionDetail.RegionName
 
-				if detailedInfo, err := GetImageInfoFromLookupImage(model.SystemCommonNs, lookupReq); err == nil {
+				// Pass false to use public image lookup only (no custom image fallback)
+				if detailedInfo, err := GetImageInfoFromLookupImage(model.SystemCommonNs, lookupReq, false); err == nil {
 					mergeCSPDetails(imageInfo, &detailedInfo)
 					log.Info().Msgf("Successfully looked up image details from CSP: %s", imageReq.CspImageName)
 					return true
@@ -1287,7 +1444,8 @@ func enrichImageInfoFromCSP(imageInfo *model.ImageInfo, imageReq model.ImageReq,
 			}
 		}
 	} else {
-		if detailedInfo, err := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReq); err == nil {
+		// Pass false to use public image lookup only (no custom image fallback)
+		if detailedInfo, err := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReq, false); err == nil {
 			mergeCSPDetails(imageInfo, &detailedInfo)
 			log.Info().Msgf("Successfully looked up image details from CSP: %s", imageReq.CspImageName)
 			return true

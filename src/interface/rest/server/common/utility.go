@@ -612,6 +612,28 @@ func RestInspectResourcesOverview(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestGetAssetsSummary godoc
+// @ID GetAssetsSummary
+// @Summary Get fetched asset summary (spec/image)
+// @Description Returns CSP-wise summary of specs and images in DB for a namespace, including priced/unpriced spec counts.
+// @Tags [Admin] System Management
+// @Accept  json
+// @Produce  json
+// @Param nsId query string false "Namespace ID (default: system)"
+// @Success 200 {object} model.AssetsSummaryResponse
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /assetsSummary [get]
+func RestGetAssetsSummary(c echo.Context) error {
+	nsId := c.QueryParam("nsId")
+	if nsId == "" {
+		nsId = model.SystemCommonNs
+	}
+
+	content, err := infra.GetAssetsSummary(nsId)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"` // (Deprecated) Optional: if empty or omitted, registers resources from all connections. Use Provider/Region/Zone instead
