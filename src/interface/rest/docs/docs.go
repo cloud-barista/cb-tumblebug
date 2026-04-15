@@ -23,6 +23,50 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/assetsSummary": {
+            "get": {
+                "description": "Returns CSP-wise summary of specs and images in DB for a namespace, including priced/unpriced spec counts.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System Management"
+                ],
+                "summary": "Get fetched asset summary (spec/image)",
+                "operationId": "GetAssetsSummary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID (default: system)",
+                        "name": "nsId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.AssetsSummaryResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/test": {
             "get": {
                 "security": [
@@ -21664,6 +21708,37 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AssetsSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "namespaceId": {
+                    "type": "string",
+                    "example": "system"
+                },
+                "pricedSpecCount": {
+                    "type": "integer",
+                    "example": 43000
+                },
+                "providers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ProviderAssetSummary"
+                    }
+                },
+                "totalImageCount": {
+                    "type": "integer",
+                    "example": 18000
+                },
+                "totalSpecCount": {
+                    "type": "integer",
+                    "example": 45000
+                },
+                "unpricedSpecCount": {
+                    "type": "integer",
+                    "example": 2000
+                }
+            }
+        },
         "model.AttachDetachDataDiskReq": {
             "type": "object",
             "required": [
@@ -27181,6 +27256,31 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.ParameterOptionsInfo"
                         }
                     ]
+                }
+            }
+        },
+        "model.ProviderAssetSummary": {
+            "type": "object",
+            "properties": {
+                "imageCount": {
+                    "type": "integer",
+                    "example": 5234
+                },
+                "pricedSpecCount": {
+                    "type": "integer",
+                    "example": 11000
+                },
+                "providerName": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "specCount": {
+                    "type": "integer",
+                    "example": 11234
+                },
+                "unpricedSpecCount": {
+                    "type": "integer",
+                    "example": 234
                 }
             }
         },

@@ -70,6 +70,38 @@ tags:
 - name: "[Test] Stream Response"
   description: Test endpoints for streaming responses
 paths:
+  /assetsSummary:
+    get:
+      tags:
+      - "[Admin] System Management"
+      summary: Get fetched asset summary (spec/image)
+      description: "Returns CSP-wise summary of specs and images in DB for a namespace,\
+        \ including priced/unpriced spec counts."
+      operationId: GetAssetsSummary
+      parameters:
+      - name: nsId
+        in: query
+        description: "Namespace ID (default: system)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.AssetsSummaryResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /auth/test:
     get:
       tags:
@@ -18410,6 +18442,28 @@ components:
           type: string
           example: "65532"
           default: "65532"
+    model.AssetsSummaryResponse:
+      type: object
+      properties:
+        namespaceId:
+          type: string
+          example: system
+        pricedSpecCount:
+          type: integer
+          example: 43000
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ProviderAssetSummary'
+        totalImageCount:
+          type: integer
+          example: 18000
+        totalSpecCount:
+          type: integer
+          example: 45000
+        unpricedSpecCount:
+          type: integer
+          example: 2000
     model.AttachDetachDataDiskReq:
       required:
       - dataDiskId
@@ -22524,6 +22578,24 @@ components:
           description: Parameter options for location and latency metrics
           allOf:
           - $ref: '#/components/schemas/model.ParameterOptionsInfo'
+    model.ProviderAssetSummary:
+      type: object
+      properties:
+        imageCount:
+          type: integer
+          example: 5234
+        pricedSpecCount:
+          type: integer
+          example: 11000
+        providerName:
+          type: string
+          example: aws
+        specCount:
+          type: integer
+          example: 11234
+        unpricedSpecCount:
+          type: integer
+          example: 234
     model.ProvisioningEvent:
       type: object
       properties:
