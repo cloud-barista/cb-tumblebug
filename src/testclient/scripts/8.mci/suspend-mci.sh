@@ -1,23 +1,23 @@
 #!/bin/bash
 
-#function suspend_mci() {
+#function suspend_infra() {
 
 echo "####################################################################"
-echo "## 8. VM: Suspend MCI"
+echo "## 8. VM: Suspend Infra"
 echo "####################################################################"
 
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 else
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-echo "${MCIID}"
+echo "${InfraID}"
 
 ControlCmd=suspend
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq '.'
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/infra/${InfraID}?action=${ControlCmd} | jq '.'
 
 
-#suspend_mci
+#suspend_infra

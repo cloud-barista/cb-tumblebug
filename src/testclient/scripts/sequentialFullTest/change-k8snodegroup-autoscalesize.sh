@@ -40,7 +40,7 @@ function test_sequence_change_k8snodegroup_autoscale_size_allcsp() {
 
 	../13.k8scluster/change-k8snodegroup-autoscalesize.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM
 	#dozing 1
-	#../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCIPREFIX
+	#../8.infra/status-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $InfraPREFIX
 	#../13.k8scluster/get-k8scluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	echo ""

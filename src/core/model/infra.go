@@ -82,7 +82,7 @@ const (
 	// StatusUndefined is const for Undefined
 	StatusUndefined string = "Undefined"
 
-	// StatusEmpty is const for Empty (MCI has no VMs)
+	// StatusEmpty is const for Empty (Infra has no VMs)
 	StatusEmpty string = "Empty"
 
 	// StatusComplete is const for Complete
@@ -91,10 +91,10 @@ const (
 
 // Provisioning failure handling policies
 const (
-	// PolicyContinue continues with partial MCI creation when some VMs fail
+	// PolicyContinue continues with partial Infra creation when some VMs fail
 	PolicyContinue string = "continue"
 
-	// PolicyRollback cleans up entire MCI when any VM creation fails
+	// PolicyRollback cleans up entire Infra when any VM creation fails
 	PolicyRollback string = "rollback"
 
 	// PolicyRefine marks failed VMs for refinement when creation fails
@@ -112,9 +112,9 @@ type RegionInfo struct {
 	Zone   string `json:"zone,omitempty" example:"us-east-1a"`
 }
 
-// MciReq is struct for requirements to create MCI
-type MciReq struct {
-	Name string `json:"name" validate:"required" example:"mci01"`
+// InfraReq is struct for requirements to create Infra
+type InfraReq struct {
+	Name string `json:"name" validate:"required" example:"infra01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
@@ -122,20 +122,20 @@ type MciReq struct {
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
 
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
 
 	PlacementAlgo string `json:"placementAlgo,omitempty"`
 	Description   string `json:"description" example:"Made in CB-TB"`
 
-	SubGroups []CreateSubGroupReq `json:"subGroups" validate:"required"`
+	NodeGroups []CreateNodeGroupReq `json:"nodeGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the VMs
-	PostCommand MciCmdReq `json:"postCommand" validate:"omitempty"`
+	PostCommand InfraCmdReq `json:"postCommand" validate:"omitempty"`
 
 	// PolicyOnPartialFailure determines how to handle VM creation failures
-	// - "continue": Continue with partial MCI creation (default)
-	// - "rollback": Cleanup entire MCI when any VM fails
+	// - "continue": Continue with partial Infra creation (default)
+	// - "rollback": Cleanup entire Infra when any VM fails
 	// - "refine": Mark failed VMs for refinement
 	PolicyOnPartialFailure string `json:"policyOnPartialFailure" example:"continue" default:"continue" enums:"continue,rollback,refine"`
 }
@@ -147,8 +147,8 @@ type ResourceStatusInfo struct {
 	TargetAction string `json:"targetAction"`
 }
 
-// MciInfo is struct for MCI info
-type MciInfo struct {
+// InfraInfo is struct for Infra info
+type InfraInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -174,7 +174,7 @@ type MciInfo struct {
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
 
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
 	// Latest system message such as error message
@@ -188,17 +188,17 @@ type MciInfo struct {
 	NewVmList []string `json:"newVmList"`
 
 	// PostCommand is for the command to bootstrap the VMs
-	PostCommand MciCmdReq `json:"postCommand"`
+	PostCommand InfraCmdReq `json:"postCommand"`
 
 	// PostCommandResult is the result of the command for bootstraping the VMs
-	PostCommandResult MciSshCmdResult `json:"postCommandResult"`
+	PostCommandResult InfraSshCmdResult `json:"postCommandResult"`
 
 	// CreationErrors contains information about VM creation failures (if any)
-	CreationErrors *MciCreationErrors `json:"creationErrors,omitempty"`
+	CreationErrors *InfraCreationErrors `json:"creationErrors,omitempty"`
 }
 
-// MciCreationErrors represents errors that occurred during MCI creation
-type MciCreationErrors struct {
+// InfraCreationErrors represents errors that occurred during Infra creation
+type InfraCreationErrors struct {
 	// VmObjectCreationErrors contains errors from VM object creation phase
 	VmObjectCreationErrors []VmCreationError `json:"vmObjectCreationErrors,omitempty"`
 
@@ -233,16 +233,16 @@ type VmCreationError struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// CreateSubGroupReq is struct to get requirements to create a new server instance
-type CreateSubGroupReq struct {
-	// SubGroup name of VMs. Actual VM name will be generated with -N postfix.
+// CreateNodeGroupReq is struct to get requirements to create a new server instance
+type CreateNodeGroupReq struct {
+	// NodeGroup name of VMs. Actual VM name will be generated with -N postfix.
 	Name string `json:"name" validate:"required" example:"g1-1"`
 
 	// CspResourceId is resource identifier managed by CSP (required for option=register)
 	CspResourceId string `json:"cspResourceId,omitempty" example:"i-014fa6ede6ada0b2c"`
 
-	// SubGroupSize is the number of VMs to create in this SubGroup. If > 0, subGroup will be generated.
-	SubGroupSize int `json:"subGroupSize" example:"3"`
+	// NodeGroupSize is the number of VMs to create in this NodeGroup. If > 0, nodeGroup will be generated.
+	NodeGroupSize int `json:"nodeGroupSize" example:"3"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
@@ -264,33 +264,33 @@ type CreateSubGroupReq struct {
 	DataDiskIds      []string `json:"dataDiskIds"`
 }
 
-// CreateSubGroupReq is struct to get requirements to create a new server instance
-type ScaleOutSubGroupReq struct {
+// CreateNodeGroupReq is struct to get requirements to create a new server instance
+type ScaleOutNodeGroupReq struct {
 	// Define addtional VMs to scaleOut
 	NumVMsToAdd int `json:"numVMsToAdd" validate:"required" example:"2"`
 
 	//tobe added accoring to new future capability
 }
 
-// MciDynamicReq is struct for requirements to create MCI dynamically (with default resource option)
-type MciDynamicReq struct {
-	Name string `json:"name" validate:"required" example:"mci01"`
+// InfraDynamicReq is struct for requirements to create Infra dynamically (with default resource option)
+type InfraDynamicReq struct {
+	Name string `json:"name" validate:"required" example:"infra01"`
 
 	// PolicyOnPartialFailure determines how to handle VM creation failures
-	// - "continue": Continue with partial MCI creation (default)
-	// - "rollback": Cleanup entire MCI when any VM fails
+	// - "continue": Continue with partial Infra creation (default)
+	// - "rollback": Cleanup entire Infra when any VM fails
 	// - "refine": Mark failed VMs for refinement
 	PolicyOnPartialFailure string `json:"policyOnPartialFailure" example:"continue" default:"continue" enums:"continue,rollback,refine"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
-	// SubGroups is array of VM requests for multi-cloud infrastructure
+	// NodeGroups is array of VM requests for multi-cloud infrastructure
 	// Example: Multiple VM groups across different CSPs
 	// [
 	//   {
 	//     "name": "aws-group",
-	//     "subGroupSize": "3",
+	//     "nodeGroupSize": "3",
 	//     "specId": "aws+ap-northeast-2+t3.nano",
 	//     "imageId": "ami-01f71f215b23ba262",
 	//     "rootDiskSize": "50",
@@ -298,7 +298,7 @@ type MciDynamicReq struct {
 	//   },
 	//   {
 	//     "name": "azure-group",
-	//     "subGroupSize": "2",
+	//     "nodeGroupSize": "2",
 	//     "specId": "azure+koreasouth+standard_b1s",
 	//     "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
 	//     "rootDiskSize": "50",
@@ -306,19 +306,19 @@ type MciDynamicReq struct {
 	//   },
 	//   {
 	//     "name": "gcp-group",
-	//     "subGroupSize": "1",
+	//     "nodeGroupSize": "1",
 	//     "specId": "gcp+asia-northeast3+g1-small",
 	//     "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
 	//     "rootDiskSize": "50",
 	//     "label": {"role": "test", "csp": "gcp"}
 	//   }
 	// ]
-	SubGroups []CreateSubGroupDynamicReq `json:"subGroups" validate:"required"`
+	NodeGroups []CreateNodeGroupDynamicReq `json:"nodeGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the VMs
-	PostCommand MciCmdReq `json:"postCommand"`
+	PostCommand InfraCmdReq `json:"postCommand"`
 
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
 
 	Description string `json:"description" example:"Made in CB-TB"`
@@ -327,23 +327,23 @@ type MciDynamicReq struct {
 	Label map[string]string `json:"label"`
 
 	// VNetTemplateId specifies the vNet template ID (from system namespace) to use when
-	// auto-creating shared vNet resources. Propagates to all SubGroups unless overridden
-	// at the SubGroup level. If empty, the default hard-coded CIDR behavior is used.
+	// auto-creating shared vNet resources. Propagates to all NodeGroups unless overridden
+	// at the NodeGroup level. If empty, the default hard-coded CIDR behavior is used.
 	VNetTemplateId string `json:"vNetTemplateId,omitempty" example:"default-vnet"`
 
 	// SgTemplateId specifies the SecurityGroup template ID (from system namespace) to use
-	// when auto-creating shared SecurityGroup resources. Propagates to all SubGroups unless
-	// overridden at the SubGroup level. If empty, the default all-open behavior is used.
+	// when auto-creating shared SecurityGroup resources. Propagates to all NodeGroups unless
+	// overridden at the NodeGroup level. If empty, the default all-open behavior is used.
 	SgTemplateId string `json:"sgTemplateId,omitempty" example:"default-sg"`
 }
 
-// CreateSubGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
-type CreateSubGroupDynamicReq struct {
-	// SubGroup name, actual VM name will be generated with -N postfix.
+// CreateNodeGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
+type CreateNodeGroupDynamicReq struct {
+	// NodeGroup name, actual VM name will be generated with -N postfix.
 	Name string `json:"name" example:"g1"`
 
-	// SubGroupSize is the number of VMs to create in this SubGroup. If > 0, subGroup will be generated. Default is 1.
-	SubGroupSize int `json:"subGroupSize" example:"3"`
+	// NodeGroupSize is the number of VMs to create in this NodeGroup. If > 0, nodeGroup will be generated. Default is 1.
+	NodeGroupSize int `json:"nodeGroupSize" example:"3"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label" example:"{\"role\":\"worker\",\"env\":\"test\"}"`
@@ -367,28 +367,28 @@ type CreateSubGroupDynamicReq struct {
 	// that may only be available in specific zones. If empty, auto-selection applies.
 	Zone string `json:"zone,omitempty" example:"ap-northeast-2a" default:""`
 
-	// VNetTemplateId overrides the MCI-level VNetTemplateId for this SubGroup.
-	// If empty, inherits the VNetTemplateId from the parent MciDynamicReq.
+	// VNetTemplateId overrides the Infra-level VNetTemplateId for this NodeGroup.
+	// If empty, inherits the VNetTemplateId from the parent InfraDynamicReq.
 	VNetTemplateId string `json:"vNetTemplateId,omitempty" example:""`
 
-	// SgTemplateId overrides the MCI-level SgTemplateId for this SubGroup.
-	// If empty, inherits the SgTemplateId from the parent MciDynamicReq.
+	// SgTemplateId overrides the Infra-level SgTemplateId for this NodeGroup.
+	// If empty, inherits the SgTemplateId from the parent InfraDynamicReq.
 	SgTemplateId string `json:"sgTemplateId,omitempty" example:""`
 }
 
-// MciConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCI instance dynamically (with default resource option)
-type MciConnectionConfigCandidatesReq struct {
+// InfraConnectionConfigCandidatesReq is struct for a request to check requirements to create a new Infra instance dynamically (with default resource option)
+type InfraConnectionConfigCandidatesReq struct {
 	// SpecId is field for id of a spec in common namespace
 	SpecIds []string `json:"specId" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1-small"`
 }
 
-// CheckMciDynamicReqInfo is struct to check requirements to create a new MCI instance dynamically (with default resource option)
-type CheckMciDynamicReqInfo struct {
-	ReqCheck []CheckSubGroupDynamicReqInfo `json:"reqCheck" validate:"required"`
+// CheckInfraDynamicReqInfo is struct to check requirements to create a new Infra instance dynamically (with default resource option)
+type CheckInfraDynamicReqInfo struct {
+	ReqCheck []CheckNodeGroupDynamicReqInfo `json:"reqCheck" validate:"required"`
 }
 
-// CheckSubGroupDynamicReqInfo is struct to check requirements to create a new server instance dynamically (with default resource option)
-type CheckSubGroupDynamicReqInfo struct {
+// CheckNodeGroupDynamicReqInfo is struct to check requirements to create a new server instance dynamically (with default resource option)
+type CheckNodeGroupDynamicReqInfo struct {
 
 	// ConnectionConfigCandidates will provide ConnectionConfig options
 	ConnectionConfigCandidates []string `json:"connectionConfigCandidates" default:""`
@@ -404,25 +404,25 @@ type CheckSubGroupDynamicReqInfo struct {
 
 }
 
-// ReviewMciDynamicReqInfo is struct for review result of MCI dynamic request
-type ReviewMciDynamicReqInfo struct {
-	// Overall assessment of the MCI request
+// ReviewInfraDynamicReqInfo is struct for review result of Infra dynamic request
+type ReviewInfraDynamicReqInfo struct {
+	// Overall assessment of the Infra request
 	OverallStatus  string `json:"overallStatus" example:"Ready/Warning/Error"`
 	OverallMessage string `json:"overallMessage" example:"All VMs can be created successfully"`
 	CreationViable bool   `json:"creationViable"`
 	EstimatedCost  string `json:"estimatedCost,omitempty" example:"$0.50/hour"`
 
-	// MCI-level information
-	MciName      string `json:"mciName"`
+	// Infra-level information
+	InfraName    string `json:"infraName"`
 	TotalVmCount int    `json:"totalVmCount"`
 
 	// Failure policy analysis
 	PolicyOnPartialFailure string `json:"policyOnPartialFailure" example:"continue"`
-	PolicyDescription      string `json:"policyDescription" example:"If some VMs fail during creation, MCI will be created with successfully provisioned VMs only"`
+	PolicyDescription      string `json:"policyDescription" example:"If some VMs fail during creation, Infra will be created with successfully provisioned VMs only"`
 	PolicyRecommendation   string `json:"policyRecommendation,omitempty" example:"Consider 'refine' policy for automatic cleanup of failed VMs"`
 
 	// VM-level validation results
-	VmReviews []ReviewSubGroupDynamicReqInfo `json:"vmReviews"`
+	VmReviews []ReviewNodeGroupDynamicReqInfo `json:"vmReviews"`
 
 	// Resource availability summary
 	ResourceSummary ReviewResourceSummary `json:"resourceSummary"`
@@ -431,11 +431,11 @@ type ReviewMciDynamicReqInfo struct {
 	Recommendations []string `json:"recommendations,omitempty"`
 }
 
-// ReviewSubGroupDynamicReqInfo is struct for review result of individual VM in MCI dynamic request
-type ReviewSubGroupDynamicReqInfo struct {
+// ReviewNodeGroupDynamicReqInfo is struct for review result of individual VM in Infra dynamic request
+type ReviewNodeGroupDynamicReqInfo struct {
 	// VM request information
-	VmName       string `json:"vmName"`
-	SubGroupSize int    `json:"subGroupSize"`
+	VmName        string `json:"vmName"`
+	NodeGroupSize int    `json:"nodeGroupSize"`
 
 	// Validation status
 	Status    string `json:"status" example:"Ready/Warning/Error"`
@@ -599,8 +599,8 @@ type SpiderVMInfo struct {
 	KeyValueList      []KeyValue
 }
 
-// SubGroupInfo is struct to define an object that includes homogeneous VMs
-type SubGroupInfo struct {
+// NodeGroupInfo is struct to define an object that includes homogeneous VMs
+type NodeGroupInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -611,21 +611,21 @@ type SubGroupInfo struct {
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	VmId         []string `json:"vmId"`
-	SubGroupSize int      `json:"subGroupSize"`
+	VmId          []string `json:"vmId"`
+	NodeGroupSize int      `json:"nodeGroupSize"`
 }
 
-// MciAssociatedResourceList is struct for associated resource IDs of an MCI
-type MciAssociatedResourceList struct {
+// InfraAssociatedResourceList is struct for associated resource IDs of an Infra
+type InfraAssociatedResourceList struct {
 	ConnectionNames []string `json:"connectionNames"`
 	ProviderNames   []string `json:"providerNames"`
 
-	SubGroupIds []string `json:"subGroupIds"`
-	VmIds       []string `json:"vmIds"`
-	CspVmNames  []string `json:"cspVmNames"`
-	CspVmIds    []string `json:"cspVmIds"`
-	ImageIds    []string `json:"imageIds"`
-	SpecIds     []string `json:"specIds"`
+	NodeGroupIds []string `json:"nodeGroupIds"`
+	VmIds        []string `json:"vmIds"`
+	CspVmNames   []string `json:"cspVmNames"`
+	CspVmIds     []string `json:"cspVmIds"`
+	ImageIds     []string `json:"imageIds"`
+	SpecIds      []string `json:"specIds"`
 
 	VNetIds          []string `json:"vNetIds"`
 	CspVNetIds       []string `json:"cspVNetIds"`
@@ -653,7 +653,7 @@ type VmInfo struct {
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
 	// defined if the VM is in a group
-	SubGroupId string `json:"subGroupId"`
+	NodeGroupId string `json:"nodeGroupId"`
 
 	Location Location `json:"location"`
 
@@ -716,23 +716,23 @@ type VmInfo struct {
 	AddtionalDetails []KeyValue `json:"addtionalDetails,omitempty"`
 }
 
-// MciAccessInfo is struct to retrieve overall access information of a MCI
-type MciAccessInfo struct {
-	MciId                 string
-	MciNlbListener        *MciAccessInfo `json:"mciNlbListener,omitempty"`
-	MciSubGroupAccessInfo []MciSubGroupAccessInfo
+// InfraAccessInfo is struct to retrieve overall access information of a Infra
+type InfraAccessInfo struct {
+	InfraId                  string
+	InfraNlbListener         *InfraAccessInfo `json:"infraNlbListener,omitempty"`
+	InfraNodeGroupAccessInfo []InfraNodeGroupAccessInfo
 }
 
-// MciSubGroupAccessInfo is struct for MciSubGroupAccessInfo
-type MciSubGroupAccessInfo struct {
-	SubGroupId      string
-	NlbListener     *NLBListenerInfo `json:"nlbListener,omitempty"`
-	BastionVmId     string
-	MciVmAccessInfo []MciVmAccessInfo
+// InfraNodeGroupAccessInfo is struct for InfraNodeGroupAccessInfo
+type InfraNodeGroupAccessInfo struct {
+	NodeGroupId       string
+	NlbListener       *NLBListenerInfo `json:"nlbListener,omitempty"`
+	BastionVmId       string
+	InfraVmAccessInfo []InfraVmAccessInfo
 }
 
-// MciVmAccessInfo is struct for MciVmAccessInfo
-type MciVmAccessInfo struct {
+// InfraVmAccessInfo is struct for InfraVmAccessInfo
+type InfraVmAccessInfo struct {
 	VmId             string     `json:"vmId"`
 	PublicIP         string     `json:"publicIP"`
 	PrivateIP        string     `json:"privateIP"`
@@ -803,8 +803,8 @@ type StatusCountInfo struct {
 	CountUndefined int `json:"countUndefined"`
 }
 
-// MciRecommendReq is struct for MciRecommendReq
-type MciRecommendReq struct {
+// InfraRecommendReq is struct for InfraRecommendReq
+type InfraRecommendReq struct {
 	VmReq          []VmRecommendReq `json:"vmReq"`
 	PlacementAlgo  string           `json:"placementAlgo"`
 	PlacementParam []KeyValue       `json:"placementParam"`
@@ -839,8 +839,8 @@ type VmRecommendInfo struct {
 	PlacementParam []KeyValue     `json:"placementParam"`
 }
 
-// MciStatusInfo is struct to define simple information of MCI with updated status of all VMs
-type MciStatusInfo struct {
+// InfraStatusInfo is struct to define simple information of Infra with updated status of all VMs
+type InfraStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 
@@ -859,7 +859,7 @@ type MciStatusInfo struct {
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
 
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
 	Vm []VmStatusInfo `json:"vm"`
@@ -913,7 +913,7 @@ type VmStatusInfo struct {
 	Location Location `json:"location"`
 }
 
-// Status for mci automation
+// Status for infra automation
 const (
 	// AutoStatusReady is const for "Ready" status.
 	AutoStatusReady string = "Ready"
@@ -940,7 +940,7 @@ const (
 	AutoStatusSuspended string = "Suspended"
 )
 
-// Action for mci automation
+// Action for infra automation
 const (
 	// AutoActionScaleOut is const for "ScaleOut" action.
 	AutoActionScaleOut string = "ScaleOut"
@@ -949,7 +949,7 @@ const (
 	AutoActionScaleIn string = "ScaleIn"
 )
 
-// AutoCondition is struct for MCI auto-control condition.
+// AutoCondition is struct for Infra auto-control condition.
 type AutoCondition struct {
 	Metric           string   `json:"metric" example:"cpu"`
 	Operator         string   `json:"operator" example:">=" enums:"<,<=,>,>="`
@@ -960,35 +960,35 @@ type AutoCondition struct {
 	//Duration	   string 	  `json:"duration"`  // duration for checking
 }
 
-// AutoAction is struct for MCI auto-control action.
+// AutoAction is struct for Infra auto-control action.
 type AutoAction struct {
-	ActionType         string                   `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
-	SubGroupDynamicReq CreateSubGroupDynamicReq `json:"subGroupDynamicReq"`
+	ActionType          string                    `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
+	NodeGroupDynamicReq CreateNodeGroupDynamicReq `json:"nodeGroupDynamicReq"`
 
 	// PostCommand is field for providing command to VMs after its creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
-	PostCommand   MciCmdReq `json:"postCommand"`
-	PlacementAlgo string    `json:"placementAlgo" example:"random"`
+	PostCommand   InfraCmdReq `json:"postCommand"`
+	PlacementAlgo string      `json:"placementAlgo" example:"random"`
 }
 
-// Policy is struct for MCI auto-control Policy request that includes AutoCondition, AutoAction, Status.
+// Policy is struct for Infra auto-control Policy request that includes AutoCondition, AutoAction, Status.
 type Policy struct {
 	AutoCondition AutoCondition `json:"autoCondition"`
 	AutoAction    AutoAction    `json:"autoAction"`
 	Status        string        `json:"status"`
 }
 
-// MciPolicyInfo is struct for MCI auto-control Policy object.
-type MciPolicyInfo struct {
-	Name   string   `json:"Name"` //MCI Name (for request)
-	Id     string   `json:"Id"`   //MCI Id (generated ID by the Name)
+// InfraPolicyInfo is struct for Infra auto-control Policy object.
+type InfraPolicyInfo struct {
+	Name   string   `json:"Name"` //Infra Name (for request)
+	Id     string   `json:"Id"`   //Infra Id (generated ID by the Name)
 	Policy []Policy `json:"policy"`
 
 	ActionLog   string `json:"actionLog"`
 	Description string `json:"description" example:"Description"`
 }
 
-// MciPolicyReq is struct for MCI auto-control Policy Request.
-type MciPolicyReq struct {
+// InfraPolicyReq is struct for Infra auto-control Policy Request.
+type InfraPolicyReq struct {
 	Policy      []Policy `json:"policy"`
 	Description string   `json:"description" example:"Description"`
 }
@@ -1011,8 +1011,8 @@ const (
 	SSHCommandMinTimeoutMinutes = 1
 )
 
-// MciCmdReq is struct for remote command
-type MciCmdReq struct {
+// InfraCmdReq is struct for remote command
+type InfraCmdReq struct {
 	// UserName is the SSH username to use for command execution
 	UserName string `json:"userName" example:"cb-user" default:""`
 
@@ -1026,7 +1026,7 @@ type MciCmdReq struct {
 
 // GetEffectiveTimeout returns the effective timeout duration for command execution
 // It validates and normalizes the timeout value within allowed bounds
-func (req *MciCmdReq) GetEffectiveTimeout() int {
+func (req *InfraCmdReq) GetEffectiveTimeout() int {
 	if req.TimeoutMinutes <= 0 {
 		return SSHCommandDefaultTimeoutMinutes
 	}
@@ -1052,8 +1052,8 @@ type ExecutionTask struct {
 	// NsId is the namespace ID
 	NsId string `json:"nsId" example:"default"`
 
-	// MciId is the MCI ID
-	MciId string `json:"mciId" example:"mci01"`
+	// InfraId is the Infra ID
+	InfraId string `json:"infraId" example:"infra01"`
 
 	// VmId is the target VM ID
 	VmId string `json:"vmId,omitempty" example:"g1-1"`
@@ -1061,8 +1061,8 @@ type ExecutionTask struct {
 	// CommandIndex is the index of this command in the VM's command history
 	CommandIndex int `json:"commandIndex,omitempty" example:"1"`
 
-	// SubGroupId is the target subgroup ID (empty if not specified)
-	SubGroupId string `json:"subGroupId,omitempty" example:"g1"`
+	// NodeGroupId is the target nodegroup ID (empty if not specified)
+	NodeGroupId string `json:"nodeGroupId,omitempty" example:"g1"`
 
 	// Command is the command being executed
 	Command []string `json:"command" example:"apt update && apt install -y docker.io"`
@@ -1250,15 +1250,15 @@ type HandlingCommandCountResponse struct {
 	HandlingCount int `json:"handlingCount" example:"3"`
 }
 
-// MciHandlingCommandCountResponse represents the response for MCI handling command count queries
-type MciHandlingCommandCountResponse struct {
-	// MciId is the MCI identifier
-	MciId string `json:"mciId" example:"mci01"`
+// InfraHandlingCommandCountResponse represents the response for Infra handling command count queries
+type InfraHandlingCommandCountResponse struct {
+	// InfraId is the Infra identifier
+	InfraId string `json:"infraId" example:"infra01"`
 
 	// VmHandlingCounts is a map of VM ID to handling command count
 	VmHandlingCounts map[string]int `json:"vmHandlingCounts"`
 
-	// TotalHandlingCount is the total number of handling commands across all VMs in the MCI
+	// TotalHandlingCount is the total number of handling commands across all VMs in the Infra
 	TotalHandlingCount int `json:"totalHandlingCount" example:"3"`
 }
 
@@ -1332,7 +1332,7 @@ type CommandDoneSummary struct {
 
 // SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
-	MciId   string         `json:"mciId"`
+	InfraId string         `json:"infraId"`
 	VmId    string         `json:"vmId"`
 	VmIp    string         `json:"vmIp"`
 	Command map[int]string `json:"command"`
@@ -1341,14 +1341,14 @@ type SshCmdResult struct { // Tumblebug
 	Err     error          `json:"err"`
 }
 
-// MciSshCmdResult is struct for Set of SshCmd Results in terms of MCI
-type MciSshCmdResult struct {
+// InfraSshCmdResult is struct for Set of SshCmd Results in terms of Infra
+type InfraSshCmdResult struct {
 	Results []SshCmdResult `json:"results"`
 }
 
 // SshCmdResultForAPI is struct for SshCmd Result with string error for API response
 type SshCmdResultForAPI struct { // For REST API response
-	MciId   string         `json:"mciId"`
+	InfraId string         `json:"infraId"`
 	VmId    string         `json:"vmId"`
 	VmIp    string         `json:"vmIp"`
 	Command map[int]string `json:"command"`
@@ -1357,21 +1357,21 @@ type SshCmdResultForAPI struct { // For REST API response
 	Error   string         `json:"error"` // String representation of error for JSON serialization
 }
 
-// MciSshCmdResultForAPI is struct for Set of SshCmd Results in terms of MCI for API response
-type MciSshCmdResultForAPI struct {
+// InfraSshCmdResultForAPI is struct for Set of SshCmd Results in terms of Infra for API response
+type InfraSshCmdResultForAPI struct {
 	Results []SshCmdResultForAPI `json:"results"`
 }
 
-// MciFileTransferAndCmdResult is struct for combined file transfer and optional command execution result (internal)
-type MciFileTransferAndCmdResult struct {
+// InfraFileTransferAndCmdResult is struct for combined file transfer and optional command execution result (internal)
+type InfraFileTransferAndCmdResult struct {
 	FileTransferResults []SshCmdResult `json:"fileTransferResults"`
 	CmdResults          []SshCmdResult `json:"cmdResults,omitempty"`
 }
 
-// MciFileTransferAndCmdResultForAPI is the API-friendly version of MciFileTransferAndCmdResult
-type MciFileTransferAndCmdResultForAPI struct {
-	FileTransferResults MciSshCmdResultForAPI  `json:"fileTransferResults"`
-	CmdResults          *MciSshCmdResultForAPI `json:"cmdResults,omitempty"`
+// InfraFileTransferAndCmdResultForAPI is the API-friendly version of InfraFileTransferAndCmdResult
+type InfraFileTransferAndCmdResultForAPI struct {
+	FileTransferResults InfraSshCmdResultForAPI  `json:"fileTransferResults"`
+	CmdResults          *InfraSshCmdResultForAPI `json:"cmdResults,omitempty"`
 }
 
 // FileDownloadReq is struct for file download request from a VM
@@ -1485,10 +1485,10 @@ type AgentInstallContentWrapper struct {
 
 // AgentInstallContent ...
 type AgentInstallContent struct {
-	MciId  string `json:"mciId"`
-	VmId   string `json:"vmId"`
-	VmIp   string `json:"vmIp"`
-	Result string `json:"result"`
+	InfraId string `json:"infraId"`
+	VmId    string `json:"vmId"`
+	VmIp    string `json:"vmIp"`
+	Result  string `json:"result"`
 }
 
 // ProvisioningLog represents provisioning history for a specific VM spec
@@ -1553,8 +1553,8 @@ type ProvisioningEvent struct {
 	// VmName is the name of the VM that was being provisioned
 	VmName string `json:"vmName"`
 
-	// MciId is the MCI ID that this VM belongs to
-	MciId string `json:"mciId"`
+	// InfraId is the Infra ID that this VM belongs to
+	InfraId string `json:"infraId"`
 }
 
 // RiskAnalysis represents detailed risk analysis for provisioning

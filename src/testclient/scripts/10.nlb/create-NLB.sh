@@ -7,7 +7,7 @@ echo "####################################################################"
 source ../init.sh
 
 resp=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/nlb -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}/nlb -H 'Content-Type: application/json' -d @- <<EOF
 	{
 		"type": "PUBLIC",
 		"scope": "REGION",
@@ -18,7 +18,7 @@ resp=$(
 		"targetGroup": {
 			"Protocol" : "TCP",
 			"Port" : "22",
-			"subGroupId": "${CONN_CONFIG[$INDEX,$REGION]}"
+			"nodeGroupId": "${CONN_CONFIG[$INDEX,$REGION]}"
 		},
 		"HealthChecker": {
 			"Interval" : "default",

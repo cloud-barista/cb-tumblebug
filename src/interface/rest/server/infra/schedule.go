@@ -36,8 +36,8 @@ import (
 // @Description - If `connectionName` is empty or omitted: Registers resources from **all available connections**
 // @Description
 // @Description **Usage Examples:**
-// @Description - Single connection: `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "connectionName": "aws-ap-northeast-2", "mciNamePrefix": "mci-01"}`
-// @Description - All connections: `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "connectionName": "", "mciNamePrefix": "mci-all"}` or `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "mciNamePrefix": "mci-all"}`
+// @Description - Single connection: `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "connectionName": "aws-ap-northeast-2", "infraNamePrefix": "infra-01"}`
+// @Description - All connections: `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "connectionName": "", "infraNamePrefix": "infra-all"}` or `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "infraNamePrefix": "infra-all"}`
 // @Description
 // @Description **Job Status Values:**
 // @Description - `Scheduled`: Job is scheduled and waiting for the next execution time
@@ -65,7 +65,7 @@ import (
 // @Description
 // @Description **Duplicate Prevention:**
 // @Description - System checks for existing jobs with same configuration
-// @Description - Configuration uniqueness based on: jobType + nsId + connectionName + mciNamePrefix + option + mciFlag
+// @Description - Configuration uniqueness based on: jobType + nsId + connectionName + infraNamePrefix + option + infraFlag
 // @Description - Returns 409 Conflict if duplicate job exists with existing job ID
 // @Tags [Job Scheduler] (WIP) CSP Resource Registration
 // @Accept json

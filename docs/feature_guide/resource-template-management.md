@@ -20,7 +20,7 @@ Comprehensive guide for managing reusable resource templates and template-based 
 
 ### What is Resource Template Management?
 
-Resource Template Management is a system in CB-Tumblebug that enables users to **define, store, share, and reuse** infrastructure configurations as templates. Templates capture the full specification of cloud resources — MCI (Multi-Cloud Infrastructure), vNet (Virtual Network), and SecurityGroup — so that identical or similar environments can be reproduced with a single API call.
+Resource Template Management is a system in CB-Tumblebug that enables users to **define, store, share, and reuse** infrastructure configurations as templates. Templates capture the full specification of cloud resources — Infra (Multi-Cloud Infrastructure), vNet (Virtual Network), and SecurityGroup — so that identical or similar environments can be reproduced with a single API call.
 
 ### Why Use Templates?
 
@@ -32,16 +32,16 @@ Resource Template Management is a system in CB-Tumblebug that enables users to *
 
 **Solution:**
 - **Define Once, Deploy Many**: Save a working configuration as a template and reuse it across namespaces
-- **Extract from Running Infrastructure**: Capture the exact configuration of a live MCI into a template
+- **Extract from Running Infrastructure**: Capture the exact configuration of a live Infra into a template
 - **Pre-built Templates**: Ship common configurations (web servers, GPU clusters, VPC layouts) as JSON files
 - **One-Click Provisioning**: Apply a template with just a name to create real resources
 
 ### Key Highlights
 
-✅ **Three Resource Types**: Templates for MCI, vNet, and SecurityGroup  
+✅ **Three Resource Types**: Templates for Infra, vNet, and SecurityGroup  
 ✅ **Full CRUD**: Create, Read, Update, Delete operations for all template types  
 ✅ **Apply Workflow**: Provision real resources directly from a template  
-✅ **Extract from MCI**: Capture a running MCI's configuration as a reusable template  
+✅ **Extract from Infra**: Capture a running Infra's configuration as a reusable template  
 ✅ **File-based Loading**: Pre-built templates loaded from `init/templates/*.json` during initialization  
 ✅ **Namespace Scoped**: Templates are organized within namespaces for logical isolation  
 ✅ **Label Preservation**: User-defined labels (e.g., `accelerator: gpu`) are preserved in templates  
@@ -59,7 +59,7 @@ Define → Store → Share → Apply → Provision
 
 Templates follow a simple lifecycle:
 
-1. **Define**: Specify resource configuration (manually, from JSON files, or extracted from a running MCI)
+1. **Define**: Specify resource configuration (manually, from JSON files, or extracted from a running Infra)
 2. **Store**: Save to ETCD within a namespace scope
 3. **Share**: Templates in the `system` namespace serve as a shared catalog (copy to target namespace before applying)
 4. **Apply**: Create real cloud resources from a template with a single API call
@@ -70,12 +70,12 @@ Templates follow a simple lifecycle:
 A unique capability that bridges the gap between ad-hoc provisioning and repeatable deployments:
 
 ```
-Running MCI → Extract Configuration → Save as Template → Redeploy Anywhere
+Running Infra → Extract Configuration → Save as Template → Redeploy Anywhere
 ```
 
 - Captures spec IDs, image IDs, disk configurations, connection names, and user labels
 - Strips runtime-specific data (UIDs, IPs, CSP resource IDs, system labels)
-- Records the source as `"mci:{nsId}/{mciId}"` for traceability
+- Records the source as `"infra:{nsId}/{infraId}"` for traceability
 
 ### 3. Apply with Override
 
@@ -84,7 +84,7 @@ When applying a template, only the **name** and optionally the **description** a
 ```jsonc
 // Apply request — minimal input
 {
-  "name": "my-new-mci",
+  "name": "my-new-infra",
   "description": "Production deployment from template"
 }
 ```
@@ -97,8 +97,8 @@ CB-Tumblebug ships with ready-to-use template files in `init/templates/`:
 
 | File | Type | Description |
 |------|------|-------------|
-| `aws-small-web.json` | MCI | Single t3.small web server in AWS Seoul |
-| `llm-bench-gpu.json` | MCI | Multi-cloud GPU cluster (NVIDIA L4, L40S, AMD V710) |
+| `aws-small-web.json` | Infra | Single t3.small web server in AWS Seoul |
+| `llm-bench-gpu.json` | Infra | Multi-cloud GPU cluster (NVIDIA L4, L40S, AMD V710) |
 | `aws-standard-vpc.json` | vNet | Standard 3-subnet VPC layout |
 | `aws-web-sg.json` | SecurityGroup | Web server firewall rules (SSH, HTTP, HTTPS) |
 
@@ -115,7 +115,7 @@ graph TB
     subgraph Sources["Template Sources"]
         Files["init/templates/*.json"]
         API["REST API (Manual)"]
-        Extract["Extract from MCI"]
+        Extract["Extract from Infra"]
         MapUI["CB-MapUI"]
     end
 
@@ -126,13 +126,13 @@ graph TB
     end
 
     subgraph ApplyEngine["Apply Engine"]
-        MciApply["MCI Provisioner<br/>(infra/template.go)"]
+        InfraApply["Infra Provisioner<br/>(infra/template.go)"]
         VNetApply["vNet Provisioner<br/>(resource handler)"]
         SGApply["SG Provisioner<br/>(resource handler)"]
     end
 
     subgraph CloudResources["Provisioned Resources"]
-        MCI["MCI (VMs)"]
+        Infra["Infra (VMs)"]
         VNet["Virtual Networks"]
         SG["Security Groups"]
     end
@@ -143,7 +143,7 @@ graph TB
     MapUI --> API
     CRUD --> Validate --> Store
 
-    Store -->|Apply| MciApply --> MCI
+    Store -->|Apply| InfraApply --> Infra
     Store -->|Apply| VNetApply --> VNet
     Store -->|Apply| SGApply --> SG
 
@@ -163,7 +163,7 @@ Templates are stored in ETCD with the following key structure:
 
 **Examples:**
 ```
-/ns/system/template/mci/aws-small-web
+/ns/system/template/infra/aws-small-web
 /ns/default/template/vNet/aws-standard-vpc
 /ns/default/template/securityGroup/aws-web-sg
 ```
@@ -182,29 +182,29 @@ sequenceDiagram
     participant Spider as CB-Spider
     participant CSP as Cloud Providers
 
-    User->>API: POST /ns/{nsId}/mci/template/{templateId}<br/>{ "name": "my-mci" }
+    User->>API: POST /ns/{nsId}/infra/template/{templateId}<br/>{ "name": "my-infra" }
 
     rect rgb(230, 240, 255)
         Note over API,ETCD: Phase 1: Load Template
-        API->>TplMgr: GetMciDynamicTemplate(nsId, templateId)
-        TplMgr->>ETCD: GET /ns/{nsId}/template/mci/{templateId}
+        API->>TplMgr: GetInfraDynamicTemplate(nsId, templateId)
+        TplMgr->>ETCD: GET /ns/{nsId}/template/infra/{templateId}
         ETCD-->>TplMgr: Template JSON
-        TplMgr-->>API: MciDynamicTemplateInfo
+        TplMgr-->>API: InfraDynamicTemplateInfo
     end
 
     rect rgb(255, 245, 230)
         Note over API,Provisioner: Phase 2: Override & Provision
-        API->>API: Copy MciDynamicReq from template
-        API->>API: Override name → "my-mci"
-        API->>Provisioner: CreateMciDynamic(nsId, mciReq)
+        API->>API: Copy InfraDynamicReq from template
+        API->>API: Override name → "my-infra"
+        API->>Provisioner: CreateInfraDynamic(nsId, infraReq)
         Provisioner->>Spider: Create VMs
         Spider->>CSP: Provision resources
         CSP-->>Spider: Resource details
         Spider-->>Provisioner: VM info
-        Provisioner-->>API: MCI created
+        Provisioner-->>API: Infra created
     end
 
-    API-->>User: 200 OK (MCI details)
+    API-->>User: 200 OK (Infra details)
 ```
 
 ### Extract Workflow
@@ -217,22 +217,22 @@ sequenceDiagram
     participant TplMgr as Template Manager
     participant ETCD as ETCD Store
 
-    User->>API: GET /ns/{nsId}/mci/{mciId}/configCopy<br/>?template=my-template
+    User->>API: GET /ns/{nsId}/infra/{infraId}/configCopy<br/>?template=my-template
 
     rect rgb(230, 240, 255)
         Note over API,Infra: Phase 1: Extract Configuration
-        API->>Infra: ExtractMciDynamicReqFromMciInfo(nsId, mciId)
-        Infra->>ETCD: Get MCI info + VM details
-        ETCD-->>Infra: MCI data
-        Infra-->>API: MciDynamicReq (cleaned)
+        API->>Infra: ExtractInfraDynamicReqFromInfraInfo(nsId, infraId)
+        Infra->>ETCD: Get Infra info + VM details
+        ETCD-->>Infra: Infra data
+        Infra-->>API: InfraDynamicReq (cleaned)
     end
 
     rect rgb(255, 245, 230)
         Note over API,ETCD: Phase 2: Save as Template
-        API->>TplMgr: ExtractAndCreateTemplate()<br/>source = "mci:default/my-mci"
-        TplMgr->>ETCD: PUT /ns/{nsId}/template/mci/{templateId}
+        API->>TplMgr: ExtractAndCreateTemplate()<br/>source = "infra:default/my-infra"
+        TplMgr->>ETCD: PUT /ns/{nsId}/template/infra/{templateId}
         ETCD-->>TplMgr: Stored
-        TplMgr-->>API: MciDynamicTemplateInfo
+        TplMgr-->>API: InfraDynamicTemplateInfo
     end
 
     API-->>User: 200 OK (Template details)
@@ -242,25 +242,25 @@ sequenceDiagram
 
 ## Template Types
 
-### 1. MCI Template (Multi-Cloud Infrastructure)
+### 1. Infra Template (Multi-Cloud Infrastructure)
 
 Captures a complete multi-cloud VM deployment specification:
 
 ```json
 {
-  "resourceType": "mci",
+  "resourceType": "infra",
   "id": "llm-bench-gpu",
   "name": "llm-bench-gpu",
-  "description": "LLM benchmarking MCI with GPU VMs",
+  "description": "LLM benchmarking Infra with GPU VMs",
   "source": "user",
   "createdAt": "2026-03-10T09:00:00Z",
   "updatedAt": "2026-03-10T09:00:00Z",
-  "mciDynamicReq": {
+  "infraDynamicReq": {
     "installMonAgent": "no",
-    "subGroups": [
+    "nodeGroups": [
       {
         "name": "nvidial4",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "label": { "accelerator": "gpu" },
         "description": "NVIDIA L4 GPU node",
         "specId": "aws+us-east-2+g6.2xlarge",
@@ -274,12 +274,12 @@ Captures a complete multi-cloud VM deployment specification:
 }
 ```
 
-**Key fields in `mciDynamicReq.subGroups[]`:**
+**Key fields in `infraDynamicReq.nodeGroups[]`:**
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | SubGroup name (VM name prefix) |
-| `subGroupSize` | No | Number of VMs in this group (default: 1) |
+| `name` | Yes | NodeGroup name (VM name prefix) |
+| `nodeGroupSize` | No | Number of VMs in this group (default: 1) |
 | `specId` | Yes | VM spec ID (e.g., `aws+us-east-2+g6.2xlarge`) |
 | `imageId` | Yes | OS image ID (e.g., AMI for AWS) |
 | `label` | No | User-defined labels (e.g., `{"accelerator": "gpu"}`) |
@@ -338,23 +338,23 @@ Captures firewall rules:
 
 ## API Reference
 
-### MCI Template CRUD
+### Infra Template CRUD
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/ns/{nsId}/template/mci` | Create MCI template |
-| `GET` | `/ns/{nsId}/template/mci` | List all MCI templates (`?filterKeyword=` optional) |
-| `GET` | `/ns/{nsId}/template/mci/{templateId}` | Get MCI template |
-| `PUT` | `/ns/{nsId}/template/mci/{templateId}` | Update MCI template |
-| `DELETE` | `/ns/{nsId}/template/mci/{templateId}` | Delete MCI template |
-| `DELETE` | `/ns/{nsId}/template/mci` | Delete all MCI templates |
+| `POST` | `/ns/{nsId}/template/infra` | Create Infra template |
+| `GET` | `/ns/{nsId}/template/infra` | List all Infra templates (`?filterKeyword=` optional) |
+| `GET` | `/ns/{nsId}/template/infra/{templateId}` | Get Infra template |
+| `PUT` | `/ns/{nsId}/template/infra/{templateId}` | Update Infra template |
+| `DELETE` | `/ns/{nsId}/template/infra/{templateId}` | Delete Infra template |
+| `DELETE` | `/ns/{nsId}/template/infra` | Delete all Infra templates |
 
-### MCI Template Apply & Extract
+### Infra Template Apply & Extract
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/ns/{nsId}/mci/template/{templateId}` | Apply template → create MCI (`?option=hold` optional) |
-| `GET` | `/ns/{nsId}/mci/{mciId}/configCopy` | Extract MCI config (`?template={name}` to save as template) |
+| `POST` | `/ns/{nsId}/infra/template/{templateId}` | Apply template → create Infra (`?option=hold` optional) |
+| `GET` | `/ns/{nsId}/infra/{infraId}/configCopy` | Extract Infra config (`?template={name}` to save as template) |
 
 ### vNet Template CRUD
 
@@ -392,21 +392,21 @@ Captures firewall rules:
 
 **Total: 21 template-related REST endpoints**
 
-### Example: Create and Apply an MCI Template
+### Example: Create and Apply an Infra Template
 
 **Step 1: Create Template**
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/template/mci" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/template/infra" \
   -u default:default \
   -H "Content-Type: application/json" \
   -d '{
     "name": "my-web-server",
     "description": "Simple web server template",
-    "mciDynamicReq": {
+    "infraDynamicReq": {
       "installMonAgent": "no",
-      "subGroups": [{
+      "nodeGroups": [{
         "name": "web",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "specId": "aws+ap-northeast-2+t3.small",
         "imageId": "ami-01f71f215b23ba262",
         "rootDiskType": "gp3",
@@ -416,9 +416,9 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/template/mci" \
   }'
 ```
 
-**Step 2: Apply Template (Provision MCI)**
+**Step 2: Apply Template (Provision Infra)**
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/mci/template/my-web-server" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/infra/template/my-web-server" \
   -u default:default \
   -H "Content-Type: application/json" \
   -d '{
@@ -427,14 +427,14 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci/template/my-web-ser
   }'
 ```
 
-### Example: Extract Template from Running MCI
+### Example: Extract Template from Running Infra
 
 ```bash
-curl -X GET "http://localhost:1323/tumblebug/ns/default/mci/llm-bench/configCopy?template=llm-bench-saved" \
+curl -X GET "http://localhost:1323/tumblebug/ns/default/infra/llm-bench/configCopy?template=llm-bench-saved" \
   -u default:default
 ```
 
-The resulting template will have `source: "mci:default/llm-bench"` to trace its origin.
+The resulting template will have `source: "infra:default/llm-bench"` to trace its origin.
 
 ---
 
@@ -469,11 +469,11 @@ New users start with pre-built templates shipped in `init/templates/`:
 # Load all pre-built templates
 ./init/init.sh --load-templates-only
 
-# List available MCI templates in the system namespace
-curl -X GET "http://localhost:1323/tumblebug/ns/system/template/mci" -u default:default
+# List available Infra templates in the system namespace
+curl -X GET "http://localhost:1323/tumblebug/ns/system/template/infra" -u default:default
 
 # Deploy directly from the system namespace
-curl -X POST "http://localhost:1323/tumblebug/ns/system/mci/template/aws-small-web" \
+curl -X POST "http://localhost:1323/tumblebug/ns/system/infra/template/aws-small-web" \
   -u default:default \
   -d '{"name": "quick-start-web"}'
 ```
@@ -482,8 +482,8 @@ curl -X POST "http://localhost:1323/tumblebug/ns/system/mci/template/aws-small-w
 
 CB-MapUI provides a visual interface for template management:
 
-- **📄 Save Template**: Extracts the current MCI configuration and saves it as a template
-- **Template Management Panel**: Browse, create, apply, and delete templates for MCI, vNet, and SecurityGroup
+- **📄 Save Template**: Extracts the current Infra configuration and saves it as a template
+- **Template Management Panel**: Browse, create, apply, and delete templates for Infra, vNet, and SecurityGroup
 - **Apply with Preview**: Review the template contents before provisioning
 
 ---
@@ -495,7 +495,7 @@ Template JSON files in `init/templates/` follow a simple convention:
 ```json
 {
   "nsId": "system",
-  "resourceType": "mci",
+  "resourceType": "infra",
   "name": "template-name",
   "description": "Human-readable description",
   "<bodyKey>": { ... }
@@ -504,15 +504,15 @@ Template JSON files in `init/templates/` follow a simple convention:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `resourceType` | Yes | One of: `"mci"`, `"vNet"`, `"securityGroup"` |
+| `resourceType` | Yes | One of: `"infra"`, `"vNet"`, `"securityGroup"` |
 | `name` | Yes | Template identifier (becomes the template ID) |
 | `description` | No | Human-readable description |
 | `nsId` | No | Target namespace (default: `"system"`) |
-| `mciDynamicReq` | * | MCI body (required if `resourceType` is `"mci"`) |
+| `infraDynamicReq` | * | Infra body (required if `resourceType` is `"infra"`) |
 | `vNetReq` | * | vNet body (required if `resourceType` is `"vNet"`) |
 | `securityGroupReq` | * | SecurityGroup body (required if `resourceType` is `"securityGroup"`) |
 
-**Type detection fallback**: If `resourceType` is absent, the loader detects the type by the presence of `mciDynamicReq`, `vNetReq`, or `securityGroupReq` keys.
+**Type detection fallback**: If `resourceType` is absent, the loader detects the type by the presence of `infraDynamicReq`, `vNetReq`, or `securityGroupReq` keys.
 
 ### Adding a New Template File
 
@@ -549,7 +549,7 @@ flowchart TD
     DetectNs --> DetectType{"Detect type:<br/>resourceType field?"}
 
     DetectType -->|Yes| UseField[Use resourceType value]
-    DetectType -->|No| CheckBody{"Check body key:<br/>mciDynamicReq?<br/>vNetReq?<br/>securityGroupReq?"}
+    DetectType -->|No| CheckBody{"Check body key:<br/>infraDynamicReq?<br/>vNetReq?<br/>securityGroupReq?"}
     CheckBody --> UseField
 
     UseField --> Strip["Strip non-Req fields:<br/>id, uid, source, createdAt,<br/>updatedAt, systemLabel"]
@@ -584,7 +584,7 @@ Templates in the `system` namespace serve as organization-wide blueprints:
 ```json
 {
   "nsId": "system",
-  "resourceType": "mci",
+  "resourceType": "infra",
   "name": "standard-web-server",
   ...
 }
@@ -621,11 +621,11 @@ Template names become IDs and cannot be changed after creation:
 
 ### 4. Extract Before Deleting
 
-Before deleting a complex MCI that was carefully configured:
+Before deleting a complex Infra that was carefully configured:
 
 1. Click **📄 Save Template** in CB-MapUI (or call the extract API)
 2. Verify the template was saved
-3. Then safely delete the MCI — the configuration is preserved
+3. Then safely delete the Infra — the configuration is preserved
 
 ### 5. Version Through Naming
 
@@ -643,7 +643,7 @@ Template specs and images are point-in-time references. Before applying an older
 
 - Verify that the spec IDs are still available in the target region
 - Verify that the image IDs haven't been deprecated by the CSP
-- Consider using the MCI review API (`?option=hold`) to validate before full provisioning
+- Consider using the Infra review API (`?option=hold`) to validate before full provisioning
 
 ---
 
@@ -653,8 +653,8 @@ Template specs and images are point-in-time references. Before applying an older
 |------|---------|
 | `src/core/model/template.go` | Template data structures (Info, Req, ApplyReq, ListResponse) |
 | `src/core/common/template.go` | CRUD business logic (18 functions for 3 types) |
-| `src/core/infra/template.go` | MCI Apply and Extract logic |
-| `src/interface/rest/server/infra/template.go` | MCI template REST handlers |
+| `src/core/infra/template.go` | Infra Apply and Extract logic |
+| `src/interface/rest/server/infra/template.go` | Infra template REST handlers |
 | `src/interface/rest/server/resource/template.go` | vNet and SecurityGroup template REST handlers |
 | `src/interface/rest/server/server.go` | Route registration |
 | `init/templates/*.json` | Pre-built template files |

@@ -921,19 +921,19 @@ if run_load_templates:
 
                     # Determine template type from resourceType field or content-based auto-detection.
                     # Detection priority:
-                    # 1. 'resourceType' field (e.g., "mci", "vNet")
+                    # 1. 'resourceType' field (e.g., "infra", "vNet")
                     #    - Consistent with Go model's ResourceType field
                     #    - Works for both hand-crafted files and GET API response saved as file
-                    # 2. Content-based detection (presence of 'mciDynamicReq' or 'vNetReq' key)
+                    # 2. Content-based detection (presence of 'infraDynamicReq' or 'vNetReq' key)
                     resource_type = template_data.pop("resourceType", None)
-                    if resource_type == "mci":
-                        template_type = "mci"
+                    if resource_type == "infra":
+                        template_type = "infra"
                     elif resource_type == "vNet":
                         template_type = "vNet"
                     elif resource_type == "securityGroup":
                         template_type = "securityGroup"
-                    elif "mciDynamicReq" in template_data:
-                        template_type = "mci"
+                    elif "infraDynamicReq" in template_data:
+                        template_type = "infra"
                     elif "vNetReq" in template_data or "vNetPolicy" in template_data:
                         template_type = "vNet"
                     elif "securityGroupReq" in template_data:

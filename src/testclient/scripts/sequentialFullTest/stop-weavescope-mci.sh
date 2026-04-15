@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function command_mci() {
+#function command_infra() {
 
 
 	TestSetFile=${4:-../testSet.env}
@@ -12,7 +12,7 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## Command (SSH) to MCI "
+	echo "## Command (SSH) to Infra "
 	echo "####################################################################"
 
 	CSP=${1}
@@ -23,17 +23,17 @@
 	getCloudIndex $CSP
 
 
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 	if [ "${INDEX}" == "0" ]; then
-		# MCIPREFIX=avengers
-		MCIID=${POSTFIX}
+		# InfraPREFIX=avengers
+		InfraID=${POSTFIX}
 	fi
 
     LAUNCHCMD="sudo scope stop"
     
     echo "Launching Weavescope for the other nodes..."
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$InfraID -H 'Content-Type: application/json' -d @- <<EOF
     {
     "command"        : "[${LAUNCHCMD}]"
     }
@@ -41,4 +41,4 @@ EOF
 
 #}
 
-#command_mci
+#command_infra

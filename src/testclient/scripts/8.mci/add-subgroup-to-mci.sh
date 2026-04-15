@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#function add-vm-to-mci() {
+#function add-vm-to-infra() {
 
 	echo "####################################################################"
-	echo "## 9. Create vm on MCI"
+	echo "## 9. Create vm on Infra"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -35,9 +35,9 @@
 	echo "Designated Subnet ID (for testing only): $SUBNETID"
 
 	
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci/$MCIID/vm -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/infra/$InfraID/vm -H 'Content-Type: application/json' -d \
 		'{
-			"subGroupSize": "'${NUMVM}'",
+			"nodeGroupSize": "'${NUMVM}'",
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vmUserName": "cb-user",
@@ -56,4 +56,4 @@
 		}' | jq '.' 
 #}
 
-#add-vm-to-mci
+#add-vm-to-infra

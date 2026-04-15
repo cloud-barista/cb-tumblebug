@@ -122,9 +122,9 @@ type DataDiskInfo struct {
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 
 	DiskType             string     `json:"diskType" example:"standard"`
-	DiskSize             int        `json:"diskSize" example:"77"` // Disk size in GB
+	DiskSize             int        `json:"diskSize" example:"77"`      // Disk size in GB
 	Status               DiskStatus `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
-	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"`
+	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/infra/infra01/vm/aws-ap-southeast-1-1"`
 	CreatedTime          time.Time  `json:"createdTime,omitempty" example:"2022-10-12T05:09:51.05Z"`
 	KeyValueList         []KeyValue `json:"keyValueList,omitempty"`
 	Description          string     `json:"description,omitempty" example:"Available"`

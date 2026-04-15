@@ -71,18 +71,18 @@ type CustomImageReq struct {
 
 // VmSnapshotResult represents the result of creating a snapshot for a single VM
 type VmSnapshotResult struct {
-	SubGroupId string    `json:"subGroupId" example:"g1"`
-	VmId       string    `json:"vmId" example:"g1-1"`
-	VmName     string    `json:"vmName" example:"aws-ap-northeast-2-g1-1"`
-	Status     string    `json:"status" example:"Success" enums:"Success,Failed"`
-	ImageId    string    `json:"imageId,omitempty" example:"custom-image-g1"`
-	ImageInfo  ImageInfo `json:"imageInfo,omitempty"`
-	Error      string    `json:"error,omitempty"`
+	NodeGroupId string    `json:"nodeGroupId" example:"g1"`
+	VmId        string    `json:"vmId" example:"g1-1"`
+	VmName      string    `json:"vmName" example:"aws-ap-northeast-2-g1-1"`
+	Status      string    `json:"status" example:"Success" enums:"Success,Failed"`
+	ImageId     string    `json:"imageId,omitempty" example:"custom-image-g1"`
+	ImageInfo   ImageInfo `json:"imageInfo,omitempty"`
+	Error       string    `json:"error,omitempty"`
 }
 
-// MciSnapshotResult represents the result of creating snapshots for an entire MCI
-type MciSnapshotResult struct {
-	MciId        string             `json:"mciId" example:"mci01"`
+// InfraSnapshotResult represents the result of creating snapshots for an entire Infra
+type InfraSnapshotResult struct {
+	InfraId      string             `json:"infraId" example:"infra01"`
 	Namespace    string             `json:"namespace" example:"default"`
 	SuccessCount int                `json:"successCount" example:"3"`
 	FailCount    int                `json:"failCount" example:"0"`
@@ -90,30 +90,30 @@ type MciSnapshotResult struct {
 }
 
 // BuildAgnosticImageReq is a struct to handle 'Build Agnostic Image' request
-// This combines MCI creation and snapshot creation into a single workflow
+// This combines Infra creation and snapshot creation into a single workflow
 type BuildAgnosticImageReq struct {
-	// MCI configuration for creating the infrastructure
-	SourceMciReq MciDynamicReq `json:"sourceMciReq" validate:"required"`
+	// Infra configuration for creating the infrastructure
+	SourceInfraReq InfraDynamicReq `json:"sourceInfraReq" validate:"required"`
 
 	// Snapshot configuration for creating custom images
 	SnapshotReq SnapshotReq `json:"snapshotReq" validate:"required"`
 
-	// Whether to cleanup (terminate) MCI after snapshot creation
-	CleanupMciAfterSnapshot bool `json:"cleanupMciAfterSnapshot" example:"true" default:"true"`
+	// Whether to cleanup (terminate) Infra after snapshot creation
+	CleanupInfraAfterSnapshot bool `json:"cleanupInfraAfterSnapshot" example:"true" default:"true"`
 }
 
 // BuildAgnosticImageResult represents the result of building agnostic images
 type BuildAgnosticImageResult struct {
-	// MCI information
-	MciId        string `json:"mciId" example:"mci01"`
-	Namespace    string `json:"namespace" example:"default"`
-	MciStatus    string `json:"mciStatus" example:"Running"`
-	MciCleanedUp bool   `json:"mciCleanedUp" example:"true"`
+	// Infra information
+	InfraId        string `json:"infraId" example:"infra01"`
+	Namespace      string `json:"namespace" example:"default"`
+	InfraStatus    string `json:"infraStatus" example:"Running"`
+	InfraCleanedUp bool   `json:"infraCleanedUp" example:"true"`
 
 	// Snapshot results
-	SnapshotResult MciSnapshotResult `json:"snapshotResult"`
+	SnapshotResult InfraSnapshotResult `json:"snapshotResult"`
 
 	// Overall summary
 	TotalDuration string `json:"totalDuration" example:"15m30s"`
-	Message       string `json:"message" example:"Successfully created 3 custom images from MCI"`
+	Message       string `json:"message" example:"Successfully created 3 custom images from Infra"`
 }

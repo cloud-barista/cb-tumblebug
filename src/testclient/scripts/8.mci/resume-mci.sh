@@ -1,24 +1,24 @@
 #!/bin/bash
 
-#function resume_mci() {
+#function resume_infra() {
 
 echo "####################################################################"
-echo "## 8. VM: Resume from suspended MCI"
+echo "## 8. VM: Resume from suspended Infra"
 echo "####################################################################"
 
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 else
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-echo "${MCIID}"
+echo "${InfraID}"
 
 ControlCmd=resume
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq '.'
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/infra/${InfraID}?action=${ControlCmd} | jq '.'
 
 #}
 
-#resume_mci
+#resume_infra

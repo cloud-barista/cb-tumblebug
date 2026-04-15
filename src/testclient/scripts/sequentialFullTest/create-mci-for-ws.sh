@@ -21,15 +21,15 @@ function test_sequence() {
 	../5.sshKey/create-sshKey.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../6.image/registerImageWithId.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../7.spec/register-spec.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	../8.mci/create-mci-no-agent.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.infra/create-infra-no-agent.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 1
-	../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.infra/status-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] (ResourceS(${SECONDS}s)) ${_self} (MCI) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[CMD] (ResourceS(${SECONDS}s)) ${_self} (Infra) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
@@ -53,7 +53,7 @@ source ../conf.env
 source ../../../../conf/credentials.conf
 
 echo "####################################################################"
-echo "## Create MCI from Zero Base"
+echo "## Create Infra from Zero Base"
 echo "####################################################################"
 
 CSP=${1}
@@ -68,7 +68,7 @@ test_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
 
 echo "[Deploy WeaveScope]"
 dozing 60
-./deploy-weavescope-to-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+./deploy-weavescope-to-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 #}
 

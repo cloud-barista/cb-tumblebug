@@ -1,6 +1,6 @@
 # Remote Command Execution and File Transfer
 
-Comprehensive guide for executing remote commands and transferring files to MCI VMs via secure SSH with TOFU (Trust On First Use) verification.
+Comprehensive guide for executing remote commands and transferring files to Infra VMs via secure SSH with TOFU (Trust On First Use) verification.
 
 ## 📑 Table of Contents
 
@@ -18,7 +18,7 @@ Comprehensive guide for executing remote commands and transferring files to MCI 
 
 ### What is Remote Command Execution?
 
-**Remote Command Execution** is a core feature of CB-Tumblebug that allows users to execute shell commands on VMs within an MCI (Multi-Cloud Infrastructure). Commands are sent via SSH through a **Bastion Host** for security, supporting parallel execution across multiple VMs.
+**Remote Command Execution** is a core feature of CB-Tumblebug that allows users to execute shell commands on VMs within an Infra (Multi-Cloud Infrastructure). Commands are sent via SSH through a **Bastion Host** for security, supporting parallel execution across multiple VMs.
 
 ### What is File Transfer?
 
@@ -48,14 +48,14 @@ Tumblebug supports **multi-level target selection** for precise command executio
 ```mermaid
 graph TB
     subgraph "Selection Levels"
-        L1[Level 1: Entire MCI]
-        L2[Level 2: SubGroup]
+        L1[Level 1: Entire Infra]
+        L2[Level 2: NodeGroup]
         L3[Level 3: Specific VM]
         L4[Level 4: Label Selector]
     end
     
     L1 --> |"All VMs"| ALL[g1-1, g1-2, g2-1, g2-2, g3-1]
-    L2 --> |"subGroupId=g1"| SG[g1-1, g1-2]
+    L2 --> |"nodeGroupId=g1"| SG[g1-1, g1-2]
     L3 --> |"vmId=g1-1"| VM[g1-1]
     L4 --> |"role=worker"| LBL[g1-2, g2-1, g3-1]
     
@@ -67,8 +67,8 @@ graph TB
 
 | Level | Parameter | Example | Target VMs |
 |-------|-----------|---------|------------|
-| **MCI** | (none) | `/cmd/mci/mci01` | All VMs in MCI |
-| **SubGroup** | `subGroupId` | `?subGroupId=g1` | All VMs in SubGroup g1 |
+| **Infra** | (none) | `/cmd/infra/infra01` | All VMs in Infra |
+| **NodeGroup** | `nodeGroupId` | `?nodeGroupId=g1` | All VMs in NodeGroup g1 |
 | **VM** | `vmId` | `?vmId=g1-1` | Only VM g1-1 |
 | **Label** | `labelSelector` | `?labelSelector=role=worker` | VMs with matching label |
 
@@ -79,11 +79,11 @@ graph TB
 
 ### Bastion Host (Jump Host)
 
-A **Bastion Host** is a VM with a public IP that acts as a gateway for SSH connections to other VMs in the MCI. All remote commands and file transfers are routed through the Bastion.
+A **Bastion Host** is a VM with a public IP that acts as a gateway for SSH connections to other VMs in the Infra. All remote commands and file transfers are routed through the Bastion.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                           MCI                                   │
+│                           Infra                                   │
 │  ┌─────────────────┐                                            │
 │  │  Bastion Host   │◄─────── Public IP (SSH Entry Point)        │
 │  │  (Jump Host)    │                                            │
@@ -98,8 +98,8 @@ A **Bastion Host** is a VM with a public IP that acts as a gateway for SSH conne
 ```
 
 **Key Points:**
-- Each VM in an MCI is assigned a Bastion Host automatically.
-- The Bastion can be any VM in the MCI with a public IP.
+- Each VM in an Infra is assigned a Bastion Host automatically.
+- The Bastion can be any VM in the Infra with a public IP.
 - SSH connections: `User → Bastion (Public IP) → Target VM (Private IP)`
 
 ### Command Execution Flow
@@ -124,7 +124,7 @@ sequenceDiagram
     participant Target as Target VM
     participant KV as KV Store
     
-    User->>API: POST /cmd/mci/{mciId}
+    User->>API: POST /cmd/infra/{infraId}
     
     Note over API,KV: Resolve Bastion & Target Info
     API->>KV: Get VM Info
@@ -156,7 +156,7 @@ sequenceDiagram
     participant Bastion as Bastion Host
     participant Target as Target VM
     
-    User->>API: POST /file/mci/{mciId}
+    User->>API: POST /file/infra/{infraId}
     Note right of User: multipart/form-data<br/>(file + targetPath)
     
     API->>Bastion: SSH Connect (TOFU)
@@ -183,7 +183,7 @@ graph TB
         G3[Goroutine 3]
     end
     
-    subgraph "MCI VMs"
+    subgraph "Infra VMs"
         VM1[VM-1]
         VM2[VM-2]
         VM3[VM-3]
@@ -237,15 +237,15 @@ sequenceDiagram
     participant Broker as CommandLogBroker
     participant VMs as Target VMs
     
-    Client->>API: POST /cmd/mci/{mciId}?async=true
-    Note right of Client: x-request-id: cmd-mci01-1234
+    Client->>API: POST /cmd/infra/{infraId}?async=true
+    Note right of Client: x-request-id: cmd-infra01-1234
     API-->>Client: 202 Accepted {xRequestId}
     
     Note over API,VMs: Background Execution
     API->>Broker: Create session (xRequestId)
     API->>VMs: SSH Connect & Execute (parallel)
     
-    Client->>API: GET /stream/cmd/mci/{mciId}?xRequestId=cmd-mci01-1234
+    Client->>API: GET /stream/cmd/infra/{infraId}?xRequestId=cmd-infra01-1234
     API->>Broker: Subscribe(xRequestId)
     Broker-->>API: Replay buffered events
     API-->>Client: SSE: CommandStatus (Queued)
@@ -280,7 +280,7 @@ Sent when a VM's command execution status changes (e.g., Queued → Handling →
   "commandIndex": 1,
   "timestamp": "2024-01-15T10:30:01Z",
   "status": {
-    "mciId": "mci01",
+    "infraId": "infra01",
     "vmId": "g1-1",
     "status": "Handling",
     "command": "echo hello && hostname"
@@ -352,7 +352,7 @@ If the command failed before reaching any VMs (e.g., preprocessing error), the `
     "completedVms": 0,
     "failedVms": 0,
     "elapsedSeconds": 0,
-    "error": "built-in function GetPublicIP error: no VM found (ID: /ns/default/mci/mci01/vm/g1-1)"
+    "error": "built-in function GetPublicIP error: no VM found (ID: /ns/default/infra/infra01/vm/g1-1)"
   }
 }
 ```
@@ -435,7 +435,7 @@ sequenceDiagram
     
     Note over User,VM: After VM Recreation
     
-    User->>API: POST /cmd/mci/{mciId}
+    User->>API: POST /cmd/infra/{infraId}
     API->>VM: SSH Connect
     VM-->>API: New Host Key
     API-->>User: Error: Host Key Mismatch
@@ -445,7 +445,7 @@ sequenceDiagram
     User->>API: DELETE /vm/{vmId}/sshHostKey
     API-->>User: Key Reset Success
     
-    User->>API: POST /cmd/mci/{mciId}
+    User->>API: POST /cmd/infra/{infraId}
     API->>VM: SSH Connect
     VM-->>API: Host Key
     Note over API: TOFU: Store new key
@@ -472,18 +472,18 @@ This ensures:
 
 ## API Reference
 
-### Execute Command on MCI
+### Execute Command on Infra
 
-Execute commands on VMs within an MCI.
+Execute commands on VMs within an Infra.
 
 ```
-POST /tumblebug/ns/{nsId}/cmd/mci/{mciId}
+POST /tumblebug/ns/{nsId}/cmd/infra/{infraId}
 ```
 
 **Query Parameters:**
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `subGroupId` | string | Target specific subgroup only |
+| `nodeGroupId` | string | Target specific nodegroup only |
 | `vmId` | string | Target specific VM only |
 | `labelSelector` | string | Filter VMs by label (e.g., `role=worker`) |
 | `async` | bool | Set to `true` for async mode with SSE streaming |
@@ -501,7 +501,7 @@ POST /tumblebug/ns/{nsId}/cmd/mci/{mciId}
 {
   "results": [
     {
-      "mciId": "mci01",
+      "infraId": "infra01",
       "vmId": "g1-1",
       "vmIp": "10.0.1.5",
       "command": {
@@ -526,8 +526,8 @@ POST /tumblebug/ns/{nsId}/cmd/mci/{mciId}
 Returns `HTTP 202 Accepted` immediately:
 ```json
 {
-  "xRequestId": "cmd-mci01-1234567890",
-  "message": "Command execution started. Use GET /tumblebug/ns/{nsId}/stream/cmd/mci/{mciId}?xRequestId={xRequestId} for real-time streaming."
+  "xRequestId": "cmd-infra01-1234567890",
+  "message": "Command execution started. Use GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={xRequestId} for real-time streaming."
 }
 ```
 
@@ -536,13 +536,13 @@ Returns `HTTP 202 Accepted` immediately:
 Subscribe to real-time command execution events via Server-Sent Events.
 
 ```
-GET /tumblebug/ns/{nsId}/stream/cmd/mci/{mciId}?xRequestId={xRequestId}
+GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={xRequestId}
 ```
 
 **Query Parameters:**
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `xRequestId` | string | **Required.** The request ID returned from `POST /cmd/mci/{mciId}?async=true` |
+| `xRequestId` | string | **Required.** The request ID returned from `POST /cmd/infra/{infraId}?async=true` |
 
 **Response:** `Content-Type: text/event-stream`
 
@@ -562,12 +562,12 @@ The stream ends after the `CommandDone` event is sent. A keepalive comment (`: k
 - Standard `EventSource` API does not support custom headers; use `fetch()` with `ReadableStream` for browser clients
 - If the client connects after execution has started, buffered events are replayed first
 
-### Transfer File to MCI
+### Transfer File to Infra
 
-Upload a file to VMs within an MCI.
+Upload a file to VMs within an Infra.
 
 ```
-POST /tumblebug/ns/{nsId}/file/mci/{mciId}
+POST /tumblebug/ns/{nsId}/file/infra/{infraId}
 Content-Type: multipart/form-data
 ```
 
@@ -576,7 +576,7 @@ Content-Type: multipart/form-data
 |-------|------|-------------|
 | `file` | file | File to upload |
 | `targetPath` | string | Destination directory on VM |
-| `subGroupId` | string | Target specific subgroup (optional) |
+| `nodeGroupId` | string | Target specific nodegroup (optional) |
 | `vmId` | string | Target specific VM (optional) |
 
 **Response:**
@@ -584,7 +584,7 @@ Content-Type: multipart/form-data
 {
   "results": [
     {
-      "mciId": "mci01",
+      "infraId": "infra01",
       "vmId": "g1-1",
       "vmIp": "10.0.1.5",
       "stdout": {
@@ -602,7 +602,7 @@ Content-Type: multipart/form-data
 Retrieve stored SSH host key information for a VM.
 
 ```
-GET /tumblebug/ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey
+GET /tumblebug/ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey
 ```
 
 **Response (key exists):**
@@ -625,7 +625,7 @@ GET /tumblebug/ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey
 Reset the stored SSH host key for a VM. Use when a VM has been legitimately recreated.
 
 ```
-DELETE /tumblebug/ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey
+DELETE /tumblebug/ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey
 ```
 
 **Response:**
@@ -642,7 +642,7 @@ DELETE /tumblebug/ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey
 ### Example 1: Execute Command on All VMs
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01" \
   -H "Content-Type: application/json" \
   -d '{
     "userName": "cb-user",
@@ -653,7 +653,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01" \
 ### Example 2: Execute Command on Specific VM
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?vmId=g1-1" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?vmId=g1-1" \
   -H "Content-Type: application/json" \
   -d '{
     "userName": "cb-user",
@@ -664,7 +664,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?vmId=g1-1
 ### Example 3: Execute Command on VMs with Label
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?labelSelector=role=worker" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?labelSelector=role=worker" \
   -H "Content-Type: application/json" \
   -d '{
     "userName": "cb-user",
@@ -675,7 +675,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?labelSele
 ### Example 4: Transfer File to All VMs
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/file/mci/mci01" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/file/infra/infra01" \
   -F "file=@./config.yaml" \
   -F "targetPath=/home/cb-user/"
 ```
@@ -693,12 +693,12 @@ This could indicate a MITM attack or the VM was recreated.
 
 **Step 2:** Reset the host key
 ```bash
-curl -X DELETE "http://localhost:1323/tumblebug/ns/default/mci/mci01/vm/g1-1/sshHostKey"
+curl -X DELETE "http://localhost:1323/tumblebug/ns/default/infra/infra01/vm/g1-1/sshHostKey"
 ```
 
 **Step 3:** Retry the command (new key will be stored via TOFU)
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?vmId=g1-1" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?vmId=g1-1" \
   -H "Content-Type: application/json" \
   -d '{
     "userName": "cb-user",
@@ -709,7 +709,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?vmId=g1-1
 ### Example 6: Check Stored Host Key
 
 ```bash
-curl -X GET "http://localhost:1323/tumblebug/ns/default/mci/mci01/vm/g1-1/sshHostKey"
+curl -X GET "http://localhost:1323/tumblebug/ns/default/infra/infra01/vm/g1-1/sshHostKey"
 ```
 
 ### Example 7: Async Command with SSE Streaming
@@ -717,7 +717,7 @@ curl -X GET "http://localhost:1323/tumblebug/ns/default/mci/mci01/vm/g1-1/sshHos
 **Step 1:** Start command execution in async mode
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?async=true" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?async=true" \
   -H "Content-Type: application/json" \
   -H "x-request-id: my-cmd-001" \
   -u default:default \
@@ -731,14 +731,14 @@ Response:
 ```json
 {
   "xRequestId": "my-cmd-001",
-  "message": "Command execution started. Use GET /tumblebug/ns/{nsId}/stream/cmd/mci/{mciId}?xRequestId={xRequestId} for real-time streaming."
+  "message": "Command execution started. Use GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={xRequestId} for real-time streaming."
 }
 ```
 
 **Step 2:** Connect to SSE stream for real-time logs
 
 ```bash
-curl -N "http://localhost:1323/tumblebug/ns/default/stream/cmd/mci/mci01?xRequestId=my-cmd-001" \
+curl -N "http://localhost:1323/tumblebug/ns/default/stream/cmd/infra/infra01?xRequestId=my-cmd-001" \
   -H "Accept: text/event-stream" \
   -u default:default
 ```
@@ -764,7 +764,7 @@ data: {"type":"CommandDone","timestamp":"...","summary":{"totalVms":3,"completed
 
 ```javascript
 // Step 1: Start async command
-const response = await fetch('http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?async=true', {
+const response = await fetch('http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?async=true', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -781,7 +781,7 @@ const { xRequestId } = await response.json();
 
 // Step 2: Connect to SSE stream (using fetch + ReadableStream for BasicAuth support)
 const sseResponse = await fetch(
-  `http://localhost:1323/tumblebug/ns/default/stream/cmd/mci/mci01?xRequestId=${xRequestId}`,
+  `http://localhost:1323/tumblebug/ns/default/stream/cmd/infra/infra01?xRequestId=${xRequestId}`,
   {
     headers: {
       'Accept': 'text/event-stream',

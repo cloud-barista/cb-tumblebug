@@ -24,13 +24,13 @@ This document provides a comprehensive guide for migrating from CB-Tumblebug v0.
 type TbMciReq struct {
     Name        string               `json:"name"`
     Description string               `json:"description"`
-    SubGroups   []TbCreateSubGroupReq `json:"subGroups"`
+    NodeGroups   []TbCreateNodeGroupReq `json:"subGroups"`
     // ... other fields
 }
 
-type TbCreateSubGroupReq struct {
+type TbCreateNodeGroupReq struct {
     Name         string `json:"name"`
-    SubGroupSize string `json:"subGroupSize"`
+    NodeGroupSize string `json:"subGroupSize"`
     // ... other fields
 }
 ```
@@ -40,13 +40,13 @@ type TbCreateSubGroupReq struct {
 type MciReq struct {
     Name        string              `json:"name"`
     Description string              `json:"description"`
-    SubGroups   []CreateSubGroupReq `json:"subGroups"`
+    NodeGroups   []CreateNodeGroupReq `json:"subGroups"`
     // ... other fields
 }
 
-type CreateSubGroupReq struct {
+type CreateNodeGroupReq struct {
     Name         string `json:"name"`
-    SubGroupSize string `json:"subGroupSize"`
+    NodeGroupSize string `json:"subGroupSize"`
     // ... other fields
 }
 ```
@@ -130,7 +130,7 @@ curl -X DELETE "/ns/default/mci/my-mci/vm/vm-001/commandStatus/clear"
 | `TbSshKeyInfo` | `SshKeyInfo` | SSH Key Responses |
 | `TbSecurityGroupInfo` | `SecurityGroupInfo` | Security Group Responses |
 | `TbVNetInfo` | `VNetInfo` | VNet Responses |
-| `TbCreateSubGroupReq` | `CreateSubGroupReq` | SubGroup Creation |
+| `TbCreateNodeGroupReq` | `CreateNodeGroupReq` | NodeGroup Creation |
 
 ## New Features
 
@@ -225,7 +225,7 @@ GET /ns/default/mci/my-mci/vm/vm-001/commandStatus?page=1&size=10
 ```http
 POST /mciDynamicCheckRequest                                  # Check MCI configuration
 POST /ns/{nsId}/mciDynamicReview                             # Review MCI configuration  
-POST /ns/{nsId}/mci/{mciId}/subGroupDynamicReview            # Review SubGroup configuration
+POST /ns/{nsId}/mci/{mciId}/subGroupDynamicReview            # Review NodeGroup configuration
 POST /ns/{nsId}/mciDynamic                                   # Create MCI dynamically (enhanced)
 POST /ns/{nsId}/mci/{mciId}/vmDynamic                        # Add VM dynamically (enhanced)
 ```
@@ -386,7 +386,7 @@ curl -X GET "http://localhost:1323/ns/default/mci/my-mci/vm/vm-001/handlingCount
 type TbMciReq struct {
     Name        string               `json:"name"`
     Description string               `json:"description"`
-    SubGroups   []TbCreateSubGroupReq `json:"subGroups"`
+    NodeGroups   []TbCreateNodeGroupReq `json:"subGroups"`
     InstallMonAgent string           `json:"installMonAgent"`
     Label       map[string]string    `json:"label"`
 }
@@ -397,7 +397,7 @@ type TbMciReq struct {
 type MciReq struct {
     Name        string              `json:"name"`
     Description string              `json:"description"`
-    SubGroups   []CreateSubGroupReq `json:"subGroups"`
+    NodeGroups   []CreateNodeGroupReq `json:"subGroups"`
     InstallMonAgent string          `json:"installMonAgent"`
     Label       map[string]string   `json:"label"`
 }
@@ -593,7 +593,7 @@ var vm model.VmInfo            // instead of model.TbVmInfo
 
 // Update MCI creation requests
 mciReq := model.MciReq{        // instead of model.TbMciReq
-    SubGroups: []model.CreateSubGroupReq{  // instead of []model.TbCreateSubGroupReq
+    NodeGroups: []model.CreateNodeGroupReq{  // instead of []model.TbCreateNodeGroupReq
         // ... configuration
     },
 }
@@ -1057,7 +1057,7 @@ if err != nil {
 
 ### 2. Test Enhanced Features
 
-- ✅ **Test SubGroup request review functionality**
+- ✅ **Test NodeGroup request review functionality**
 - ✅ **Verify Object Storage bucket and object operations**
 - ✅ **Test enhanced command status tracking and management**
 - ✅ **Verify Alibaba Cloud spec availability updates**  

@@ -65,7 +65,7 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 
 	// 1. Validate mutual exclusivity of IP sources
 	count := 0
-	if req.SetBy.Mci != nil {
+	if req.SetBy.Infra != nil {
 		count++
 	}
 	if req.SetBy.Label != nil {
@@ -76,24 +76,24 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 	}
 
 	if count == 0 {
-		return model.SimpleMsg{}, fmt.Errorf("at least one IP source (Mci, Label, or Ips) must be provided in 'setBy'")
+		return model.SimpleMsg{}, fmt.Errorf("at least one IP source (Infra, Label, or Ips) must be provided in 'setBy'")
 	}
 	if count > 1 {
-		return model.SimpleMsg{}, fmt.Errorf("only one IP source (Mci, Label, or Ips) can be provided at a time in 'setBy'")
+		return model.SimpleMsg{}, fmt.Errorf("only one IP source (Infra, Label, or Ips) can be provided at a time in 'setBy'")
 	}
 
-	// Geoproximity requires MCI or Label (need location data)
+	// Geoproximity requires Infra or Label (need location data)
 	if req.RoutingPolicy == "geoproximity" && len(req.SetBy.Ips) > 0 {
-		return model.SimpleMsg{}, fmt.Errorf("geoproximity routing requires MCI or Label source (location data needed); manual IPs are not supported")
+		return model.SimpleMsg{}, fmt.Errorf("geoproximity routing requires Infra or Label source (location data needed); manual IPs are not supported")
 	}
 
 	// 2. Resolve IPs (and locations for geoproximity)
 	var ips []string
 	var vmLocs []vmIPLocation
 
-	if req.SetBy.Mci != nil {
+	if req.SetBy.Infra != nil {
 		if req.RoutingPolicy == "geoproximity" {
-			locs, err := getVmIPLocsByMci(req.SetBy.Mci.NsId, req.SetBy.Mci.MciId)
+			locs, err := getVmIPLocsByInfra(req.SetBy.Infra.NsId, req.SetBy.Infra.InfraId)
 			if err != nil {
 				return model.SimpleMsg{}, err
 			}
@@ -102,11 +102,11 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 				ips = append(ips, loc.PublicIP)
 			}
 		} else {
-			mciIps, err := getVmIpsByMci(req.SetBy.Mci.NsId, req.SetBy.Mci.MciId)
+			infraIps, err := getVmIpsByInfra(req.SetBy.Infra.NsId, req.SetBy.Infra.InfraId)
 			if err != nil {
 				return model.SimpleMsg{}, err
 			}
-			ips = append(ips, mciIps...)
+			ips = append(ips, infraIps...)
 		}
 	} else if req.SetBy.Label != nil {
 		if req.RoutingPolicy == "geoproximity" {
@@ -530,8 +530,8 @@ func uniqueStringSlice(slice []string) []string {
 	return list
 }
 
-func getVmIpsByMci(nsId, mciId string) ([]string, error) {
-	key := "/ns/" + nsId + "/mci/" + mciId + "/vm/"
+func getVmIpsByInfra(nsId, infraId string) ([]string, error) {
+	key := "/ns/" + nsId + "/infra/" + infraId + "/vm/"
 	kvList, err := kvstore.GetKvList(key)
 	if err != nil {
 		return nil, err
@@ -548,8 +548,8 @@ func getVmIpsByMci(nsId, mciId string) ([]string, error) {
 	return ips, nil
 }
 
-func getVmIPLocsByMci(nsId, mciId string) ([]vmIPLocation, error) {
-	key := "/ns/" + nsId + "/mci/" + mciId + "/vm/"
+func getVmIPLocsByInfra(nsId, infraId string) ([]vmIPLocation, error) {
+	key := "/ns/" + nsId + "/infra/" + infraId + "/vm/"
 	kvList, err := kvstore.GetKvList(key)
 	if err != nil {
 		return nil, err

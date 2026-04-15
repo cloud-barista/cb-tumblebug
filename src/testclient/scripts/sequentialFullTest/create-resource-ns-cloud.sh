@@ -23,9 +23,9 @@ function test_sequence() {
 	../5.sshKey/create-sshKey.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../6.image/registerImageWithId.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../7.spec/register-spec.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	# ../8.mci/create-mci.sh $CSP $REGION $POSTFIX $NUMVM $TestSetFile
+	# ../8.infra/create-infra.sh $CSP $REGION $POSTFIX $NUMVM $TestSetFile
 	# dozing 1
-	# ../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	# ../8.infra/status-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
@@ -112,13 +112,13 @@ if [ "${INDEX}" == "0" ]; then
 	wait
 
 
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 
 
 else
 	echo ""
 	TOTALVM=$((1 * 1 * NUMVM))
-	echo "[Create MCI] VMs($TOTALVM) = Cloud(1) * Region(1) * subGroup($NUMVM)"
+	echo "[Create Infra] VMs($TOTALVM) = Cloud(1) * Region(1) * nodeGroup($NUMVM)"
 	ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 	test_sequence $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/}

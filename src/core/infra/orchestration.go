@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -26,7 +26,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// OrchestrationController is responsible for executing MCI automation policy.
+// OrchestrationController is responsible for executing Infra automation policy.
 // OrchestrationController will be periodically involked by a time.NewTicker in main.go.
 func OrchestrationController() {
 
@@ -39,15 +39,15 @@ func OrchestrationController() {
 
 	for _, nsId := range nsList {
 
-		mciPolicyList := ListMciPolicyId(nsId)
+		infraPolicyList := ListInfraPolicyId(nsId)
 
-		for _, m := range mciPolicyList {
-			log.Debug().Msg("mciPolicyList: NS[" + nsId + "]" + "MciPolicy[" + m + "]")
+		for _, m := range infraPolicyList {
+			log.Debug().Msg("infraPolicyList: NS[" + nsId + "]" + "InfraPolicy[" + m + "]")
 		}
 
-		for _, v := range mciPolicyList {
+		for _, v := range infraPolicyList {
 
-			key := common.GenMciPolicyKey(nsId, v, "")
+			key := common.GenInfraPolicyKey(nsId, v, "")
 			keyValue, exists, err := kvstore.GetKv(key)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -59,8 +59,8 @@ func OrchestrationController() {
 			if !exists {
 				log.Debug().Msg("keyValue is nil")
 			}
-			mciPolicyTmp := model.MciPolicyInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &mciPolicyTmp)
+			infraPolicyTmp := model.InfraPolicyInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &infraPolicyTmp)
 
 			/* FYI
 			const model.AutoStatusReady string = "Ready"
@@ -72,55 +72,55 @@ func OrchestrationController() {
 			const model.AutoStatusSuspend string = "Suspend"
 			*/
 
-			for policyIndex := range mciPolicyTmp.Policy {
-				log.Debug().Msg("\n[MCI-Policy-StateMachine] mciPolicyTmp.Policy[policyIndex],[" + v + "]")
+			for policyIndex := range infraPolicyTmp.Policy {
+				log.Debug().Msg("\n[Infra-Policy-StateMachine] infraPolicyTmp.Policy[policyIndex],[" + v + "]")
 
 				switch {
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusReady):
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusReady):
 					log.Debug().Msg("- PolicyStatus[" + model.AutoStatusReady + "],[" + v + "]")
-					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusChecking
-					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+					infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusChecking
+					UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 
-					log.Debug().Msg("[Check MCI Policy] " + mciPolicyTmp.Id)
-					check, err := CheckMci(nsId, mciPolicyTmp.Id)
-					log.Debug().Msg("[Check existence of MCI] " + mciPolicyTmp.Id)
-					//keyValueMci, _ := common.Ckvstore.GetKv(common.GenMciKey(nsId, mciPolicyTmp.Id, ""))
+					log.Debug().Msg("[Check Infra Policy] " + infraPolicyTmp.Id)
+					check, err := CheckInfra(nsId, infraPolicyTmp.Id)
+					log.Debug().Msg("[Check existence of Infra] " + infraPolicyTmp.Id)
+					//keyValueInfra, _ := common.Ckvstore.GetKv(common.GenInfraKey(nsId, infraPolicyTmp.Id, ""))
 
 					if !check || err != nil {
-						mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-						UpdateMciPolicyInfo(nsId, mciPolicyTmp)
-						log.Debug().Msg("[MCI is not exist] " + mciPolicyTmp.Id)
+						infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+						UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
+						log.Debug().Msg("[Infra is not exist] " + infraPolicyTmp.Id)
 						break
 					} else { // need to enhance : loop for each policies and realize metric
 
 						//Checking (measuring)
-						mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusChecking
-						UpdateMciPolicyInfo(nsId, mciPolicyTmp)
-						log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+						infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusChecking
+						UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
+						log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
-						log.Debug().Msg("[MCI is exist] " + mciPolicyTmp.Id)
-						content, err := GetMonitoringData(nsId, mciPolicyTmp.Id, mciPolicyTmp.Policy[policyIndex].AutoCondition.Metric)
+						log.Debug().Msg("[Infra is exist] " + infraPolicyTmp.Id)
+						content, err := GetMonitoringData(nsId, infraPolicyTmp.Id, infraPolicyTmp.Policy[policyIndex].AutoCondition.Metric)
 						if err != nil {
 							log.Error().Err(err).Msg("")
-							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							break
 						}
 
 						//Statistic
-						sumMci := 0.0
-						for _, monData := range content.MciMonitoring {
+						sumInfra := 0.0
+						for _, monData := range content.InfraMonitoring {
 							monDataValue, _ := strconv.ParseFloat(monData.Value, 64)
-							sumMci += monDataValue
+							sumInfra += monDataValue
 						}
-						averMci := (sumMci / float64(len(content.MciMonitoring)))
-						fmt.Printf("[monData.Value] AverMci: %f,  SumMci: %f \n", averMci, sumMci)
+						averInfra := (sumInfra / float64(len(content.InfraMonitoring)))
+						fmt.Printf("[monData.Value] AverInfra: %f,  SumInfra: %f \n", averInfra, sumInfra)
 
 						// Before adding new value, ensure the list doesn't exceed evaluationPeriod length
-						evaluationPeriod := mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationPeriod
-						evaluationValue := mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue
+						evaluationPeriod := infraPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationPeriod
+						evaluationValue := infraPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue
 
 						// Add new value to the beginning of the list
-						evaluationValue = append([]string{fmt.Sprintf("%f", averMci)}, evaluationValue...)
+						evaluationValue = append([]string{fmt.Sprintf("%f", averInfra)}, evaluationValue...)
 
 						// If the list exceeds evaluationPeriod, truncate it
 						if len(evaluationValue) > evaluationPeriod {
@@ -129,7 +129,7 @@ func OrchestrationController() {
 						}
 
 						// Update the evaluationValue in the policy
-						mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue = evaluationValue
+						infraPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue = evaluationValue
 
 						sum := 0.0
 						aver := -0.1
@@ -151,84 +151,84 @@ func OrchestrationController() {
 						fmt.Printf("\n[Evaluation] Aver: %f,  Period: %v \n", aver, evaluationPeriod)
 
 						//Detecting
-						operator := mciPolicyTmp.Policy[policyIndex].AutoCondition.Operator
-						operand := mciPolicyTmp.Policy[policyIndex].AutoCondition.Operand
+						operator := infraPolicyTmp.Policy[policyIndex].AutoCondition.Operator
+						operand := infraPolicyTmp.Policy[policyIndex].AutoCondition.Operand
 
 						if evaluationPeriod == 0 {
 							log.Debug().Msg("[Checking] Not available evaluationPeriod ")
-							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-							UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							break
 						}
 						// not enough evaluationPeriod
 						if aver == -0.1 {
 							log.Debug().Msg("[Checking] Not enough evaluationPeriod ")
-							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
-							UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							break
 						}
 						switch {
 						case operator == ">=":
 							if aver >= operand {
 								fmt.Printf("[Detected] Aver: %f >=  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
 							} else {
 								fmt.Printf("[Not Detected] Aver: %f >=  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
 							}
 						case operator == ">":
 							if aver > operand {
 								fmt.Printf("[Detected] Aver: %f >  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
 
 							} else {
 								fmt.Printf("[Not Detected] Aver: %f >  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
 							}
 						case operator == "<=":
 							if aver <= operand {
 								fmt.Printf("[Detected] Aver: %f <=  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
 
 							} else {
 								fmt.Printf("[Not Detected] Aver: %f <=  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
 							}
 						case operator == "<":
 							if aver < operand {
 								fmt.Printf("[Detected] Aver: %f <  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
 
 							} else {
 								fmt.Printf("[Not Detected] Aver: %f <  Operand: %f \n", aver, operand)
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
 							}
 						default:
 							log.Debug().Msg("[Checking] Not available operator " + operator)
-							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 						}
 					}
-					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+					UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusChecking):
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
-					//mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusChecking):
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+					//infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
 
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusDetected):
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
-					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusOperating
-					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusDetected):
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+					infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusOperating
+					UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
 					//Action
 					/*
-						// Actions for mci automation
+						// Actions for infra automation
 						const model.AutoActionScaleOut string = "ScaleOut"
 						const model.AutoActionScaleIn string = "ScaleIn"
 					*/
 
-					autoAction := mciPolicyTmp.Policy[policyIndex].AutoAction
+					autoAction := infraPolicyTmp.Policy[policyIndex].AutoAction
 					log.Debug().Msg("[autoAction] " + autoAction.ActionType)
 
 					switch {
@@ -237,116 +237,116 @@ func OrchestrationController() {
 						labels := map[string]string{
 							model.LabelDeploymentType: model.StrAutoGen,
 						}
-						autoAction.SubGroupDynamicReq.Label = labels
+						autoAction.NodeGroupDynamicReq.Label = labels
 						// append uid to given vm name to avoid duplicated vm ID.
-						autoAction.SubGroupDynamicReq.Name = common.ToLower(autoAction.SubGroupDynamicReq.Name) + "-" + common.GenUid()
+						autoAction.NodeGroupDynamicReq.Name = common.ToLower(autoAction.NodeGroupDynamicReq.Name) + "-" + common.GenUid()
 						//vmReqTmp := autoAction.Vm
-						// autoAction.SubGroupDynamicReq.SubGroupSize = "1"
+						// autoAction.NodeGroupDynamicReq.NodeGroupSize = "1"
 
 						if strings.EqualFold(autoAction.PlacementAlgo, "random") {
 							log.Debug().Msg("[autoAction.PlacementAlgo] " + autoAction.PlacementAlgo)
 							// var vmTmpErr error
-							// existingVm, vmTmpErr := GetVmTemplate(nsId, mciPolicyTmp.Id, autoAction.PlacementAlgo)
+							// existingVm, vmTmpErr := GetVmTemplate(nsId, infraPolicyTmp.Id, autoAction.PlacementAlgo)
 							// if vmTmpErr != nil {
-							// 	mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-							// 	UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+							// 	infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+							// 	UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							// }
 
-							autoAction.SubGroupDynamicReq.ImageId = "ubuntu18.04"                // temporal default value. will be changed
-							autoAction.SubGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
+							autoAction.NodeGroupDynamicReq.ImageId = "ubuntu18.04"                // temporal default value. will be changed
+							autoAction.NodeGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
 							recommendSpecReq := model.RecommendSpecReq{}
 
 							recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "random"})
 							specList, err := RecommendSpec(common.NewDefaultContext(), model.SystemCommonNs, recommendSpecReq)
 							if err != nil {
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-								UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+								UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							}
 							if len(specList) != 0 {
 								recommendedSpec := specList[0].Id
-								autoAction.SubGroupDynamicReq.SpecId = recommendedSpec
+								autoAction.NodeGroupDynamicReq.SpecId = recommendedSpec
 							}
 
-							// autoAction.SubGroupDynamicReq.Name = autoAction.SubGroupDynamicReq.Name + "-random"
-							// autoAction.SubGroupDynamicReq.Label = model.LabelAutoGen
+							// autoAction.NodeGroupDynamicReq.Name = autoAction.NodeGroupDynamicReq.Name + "-random"
+							// autoAction.NodeGroupDynamicReq.Label = model.LabelAutoGen
 						}
 
-						common.PrintJsonPretty(autoAction.SubGroupDynamicReq)
+						common.PrintJsonPretty(autoAction.NodeGroupDynamicReq)
 						log.Debug().Msg("[Action] " + autoAction.ActionType)
 
-						// ScaleOut MCI according to the VM requirement.
+						// ScaleOut Infra according to the VM requirement.
 						log.Debug().Msg("[Generating VM]")
-						result, vmCreateErr := CreateMciSubGroupDynamic(common.NewDefaultContext(), nsId, mciPolicyTmp.Id, &autoAction.SubGroupDynamicReq)
+						result, vmCreateErr := CreateInfraNodeGroupDynamic(common.NewDefaultContext(), nsId, infraPolicyTmp.Id, &autoAction.NodeGroupDynamicReq)
 						if vmCreateErr != nil {
-							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-							UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 						}
 						common.PrintJsonPretty(result)
 
 						if len(autoAction.PostCommand.Command) != 0 {
 
 							log.Debug().Msgf("[Post Command to VM] %v", autoAction.PostCommand.Command)
-							_, cmdErr := RemoteCommandToMci(nsId, mciPolicyTmp.Id, common.ToLower(autoAction.SubGroupDynamicReq.Name), "", "", &autoAction.PostCommand, "")
+							_, cmdErr := RemoteCommandToInfra(nsId, infraPolicyTmp.Id, common.ToLower(autoAction.NodeGroupDynamicReq.Name), "", "", &autoAction.PostCommand, "")
 							if cmdErr != nil {
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-								UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+								UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							}
 						}
 
 					case strings.EqualFold(autoAction.ActionType, model.AutoActionScaleIn):
 						log.Debug().Msg("[Action] " + autoAction.ActionType)
 
-						// ScaleIn MCI.
+						// ScaleIn Infra.
 						log.Debug().Msg("[Removing VM]")
-						vmList, vmListErr := ListVmByLabel(nsId, mciPolicyTmp.Id, model.StrAutoGen)
+						vmList, vmListErr := ListVmByLabel(nsId, infraPolicyTmp.Id, model.StrAutoGen)
 						if vmListErr != nil {
-							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-							UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 						}
 						if len(vmList) != 0 {
 							removeTargetVm := vmList[len(vmList)-1]
 							log.Debug().Msg("[Removing VM ID] " + removeTargetVm)
-							delVmErr := DelMciVm(nsId, mciPolicyTmp.Id, removeTargetVm, "")
+							delVmErr := DelInfraVm(nsId, infraPolicyTmp.Id, removeTargetVm, "")
 							if delVmErr != nil {
-								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
-								UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
+								UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							}
 						}
 
 					default:
 					}
 
-					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusStabilizing
-					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+					infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusStabilizing
+					UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusStabilizing):
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusStabilizing):
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
 					//initialize Evaluation history so that controller does not act too early.
-					//with this we can stablize MCI by init previously measures.
+					//with this we can stablize Infra by init previously measures.
 					//Will invoke [Checking] Not enough evaluationPeriod
-					mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue = nil
+					infraPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue = nil
 
-					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
-					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+					infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+					UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusOperating):
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
-					//mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
-					//UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusOperating):
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+					//infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+					//UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusTimeout):
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusTimeout):
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusError):
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
-					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
-					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusError):
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+					infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
+					UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 
-				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusSuspended):
-					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
+				case strings.EqualFold(infraPolicyTmp.Policy[policyIndex].Status, model.AutoStatusSuspended):
+					log.Debug().Msg("- PolicyStatus[" + infraPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
 				default:
 				}
@@ -358,39 +358,39 @@ func OrchestrationController() {
 
 }
 
-// UpdateMciPolicyInfo updates model.MciPolicyInfo object in DB.
-func UpdateMciPolicyInfo(nsId string, mciPolicyInfoData model.MciPolicyInfo) {
-	key := common.GenMciPolicyKey(nsId, mciPolicyInfoData.Id, "")
-	val, _ := json.Marshal(mciPolicyInfoData)
+// UpdateInfraPolicyInfo updates model.InfraPolicyInfo object in DB.
+func UpdateInfraPolicyInfo(nsId string, infraPolicyInfoData model.InfraPolicyInfo) {
+	key := common.GenInfraPolicyKey(nsId, infraPolicyInfoData.Id, "")
+	val, _ := json.Marshal(infraPolicyInfoData)
 	err := kvstore.Put(key, string(val))
 	if err != nil && !strings.Contains(err.Error(), model.ErrStrKeyNotFound) {
 		log.Error().Err(err).Msg("")
 	}
 }
 
-// CreateMciPolicy create model.MciPolicyInfo object in DB according to user's requirements.
-func CreateMciPolicy(nsId string, mciId string, u *model.MciPolicyReq) (model.MciPolicyInfo, error) {
+// CreateInfraPolicy create model.InfraPolicyInfo object in DB according to user's requirements.
+func CreateInfraPolicy(nsId string, infraId string, u *model.InfraPolicyReq) (model.InfraPolicyInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := model.MciPolicyInfo{}
+		temp := model.InfraPolicyInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
-		temp := model.MciPolicyInfo{}
+		temp := model.InfraPolicyInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckMciPolicy(nsId, mciId)
+	check, _ := CheckInfraPolicy(nsId, infraId)
 
 	//u.Status = model.AutoStatusReady
 
 	if check {
-		temp := model.MciPolicyInfo{}
-		err := fmt.Errorf("The MCI Policy Obj " + mciId + " already exists.")
+		temp := model.InfraPolicyInfo{}
+		err := fmt.Errorf("The Infra Policy Obj " + infraId + " already exists.")
 		return temp, err
 	}
 
@@ -399,14 +399,14 @@ func CreateMciPolicy(nsId string, mciId string, u *model.MciPolicyReq) (model.Mc
 	}
 
 	req := *u
-	obj := model.MciPolicyInfo{}
-	obj.Name = mciId
-	obj.Id = mciId
+	obj := model.InfraPolicyInfo{}
+	obj.Name = infraId
+	obj.Id = infraId
 	obj.Policy = req.Policy
 	obj.Description = req.Description
 
 	// kvstore
-	Key := common.GenMciPolicyKey(nsId, obj.Id, "")
+	Key := common.GenInfraPolicyKey(nsId, obj.Id, "")
 	Val, _ := json.Marshal(obj)
 
 	err = kvstore.Put(Key, string(Val))
@@ -417,7 +417,7 @@ func CreateMciPolicy(nsId string, mciId string, u *model.MciPolicyReq) (model.Mc
 	keyValue, _, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CreateMciPolicy(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In CreateInfraPolicy(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -427,46 +427,46 @@ func CreateMciPolicy(nsId string, mciId string, u *model.MciPolicyReq) (model.Mc
 	return obj, nil
 }
 
-// GetMciPolicyObject returns model.MciPolicyInfo object.
-func GetMciPolicyObject(nsId string, mciId string) (model.MciPolicyInfo, error) {
-	log.Debug().Msg("[GetMciPolicyObject]" + mciId)
+// GetInfraPolicyObject returns model.InfraPolicyInfo object.
+func GetInfraPolicyObject(nsId string, infraId string) (model.InfraPolicyInfo, error) {
+	log.Debug().Msg("[GetInfraPolicyObject]" + infraId)
 
-	key := common.GenMciPolicyKey(nsId, mciId, "")
+	key := common.GenInfraPolicyKey(nsId, infraId, "")
 	log.Debug().Msgf("Key: %v", key)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.MciPolicyInfo{}, err
+		return model.InfraPolicyInfo{}, err
 	}
 	if !exists {
-		return model.MciPolicyInfo{}, err
+		return model.InfraPolicyInfo{}, err
 	}
 
 	log.Debug().Msg("<KEY>\n" + keyValue.Key + "\n<VAL>\n" + keyValue.Value)
 
-	mciPolicyTmp := model.MciPolicyInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mciPolicyTmp)
-	return mciPolicyTmp, nil
+	infraPolicyTmp := model.InfraPolicyInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &infraPolicyTmp)
+	return infraPolicyTmp, nil
 }
 
-// GetAllMciPolicyObject returns all model.MciPolicyInfo objects.
-func GetAllMciPolicyObject(nsId string) ([]model.MciPolicyInfo, error) {
+// GetAllInfraPolicyObject returns all model.InfraPolicyInfo objects.
+func GetAllInfraPolicyObject(nsId string) ([]model.InfraPolicyInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	Mci := []model.MciPolicyInfo{}
-	mciList := ListMciPolicyId(nsId)
+	Infra := []model.InfraPolicyInfo{}
+	infraList := ListInfraPolicyId(nsId)
 
-	for _, v := range mciList {
+	for _, v := range infraList {
 
-		key := common.GenMciPolicyKey(nsId, v, "")
+		key := common.GenInfraPolicyKey(nsId, v, "")
 		keyValue, exists, err := kvstore.GetKv(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			err = fmt.Errorf("In GetAllMciPolicyObject(); kvstore.GetKv() returned an error.")
+			err = fmt.Errorf("In GetAllInfraPolicyObject(); kvstore.GetKv() returned an error.")
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
@@ -474,16 +474,16 @@ func GetAllMciPolicyObject(nsId string) ([]model.MciPolicyInfo, error) {
 		if !exists {
 			return nil, fmt.Errorf("Cannot find " + key)
 		}
-		mciTmp := model.MciPolicyInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &mciTmp)
-		Mci = append(Mci, mciTmp)
+		infraTmp := model.InfraPolicyInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &infraTmp)
+		Infra = append(Infra, infraTmp)
 	}
 
-	return Mci, nil
+	return Infra, nil
 }
 
-// ListMciPolicyId returns a list of Ids for all model.MciPolicyInfo objects .
-func ListMciPolicyId(nsId string) []string {
+// ListInfraPolicyId returns a list of Ids for all model.InfraPolicyInfo objects .
+func ListInfraPolicyId(nsId string) []string {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -491,26 +491,26 @@ func ListMciPolicyId(nsId string) []string {
 		return nil
 	}
 
-	key := "/ns/" + nsId + "/policy/mci"
+	key := "/ns/" + nsId + "/policy/infra"
 	keyValue, err := kvstore.GetKvList(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In ListMciPolicyId(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In ListInfraPolicyId(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
-	var mciList []string
+	var infraList []string
 	for _, v := range keyValue {
 		if !strings.Contains(v.Key, "vm") {
-			mciList = append(mciList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/policy/mci/"))
+			infraList = append(infraList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/policy/infra/"))
 		}
 	}
-	return mciList
+	return infraList
 }
 
-// DelMciPolicy deletes model.MciPolicyInfo object by mciId.
-func DelMciPolicy(nsId string, mciId string) error {
+// DelInfraPolicy deletes model.InfraPolicyInfo object by infraId.
+func DelInfraPolicy(nsId string, infraId string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -518,24 +518,24 @@ func DelMciPolicy(nsId string, mciId string) error {
 		return err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	check, _ := CheckMciPolicy(nsId, mciId)
+	check, _ := CheckInfraPolicy(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The mci Policy " + mciId + " does not exist.")
+		err := fmt.Errorf("The infra Policy " + infraId + " does not exist.")
 		return err
 	}
 
-	log.Debug().Msg("[Delete MCI Policy] " + mciId)
+	log.Debug().Msg("[Delete Infra Policy] " + infraId)
 
-	key := common.GenMciPolicyKey(nsId, mciId, "")
+	key := common.GenInfraPolicyKey(nsId, infraId, "")
 	log.Debug().Msg(key)
 
-	// delete mci Policy info
+	// delete infra Policy info
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -545,25 +545,25 @@ func DelMciPolicy(nsId string, mciId string) error {
 	return nil
 }
 
-// DelAllMciPolicy deletes all model.MciPolicyInfo objects.
-func DelAllMciPolicy(nsId string) (string, error) {
+// DelAllInfraPolicy deletes all model.InfraPolicyInfo objects.
+func DelAllInfraPolicy(nsId string) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	mciList := ListMciPolicyId(nsId)
-	if len(mciList) == 0 {
-		return "No MCI Policy to delete", nil
+	infraList := ListInfraPolicyId(nsId)
+	if len(infraList) == 0 {
+		return "No Infra Policy to delete", nil
 	}
-	for _, v := range mciList {
-		err := DelMciPolicy(nsId, v)
+	for _, v := range infraList {
+		err := DelInfraPolicy(nsId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 
-			return "", fmt.Errorf("Failed to delete All MCI Policies")
+			return "", fmt.Errorf("Failed to delete All Infra Policies")
 		}
 	}
-	return "All MCI Policies has been deleted", nil
+	return "All Infra Policies has been deleted", nil
 }

@@ -188,9 +188,9 @@ services:
   cb-mapui:
     image: cloudbaristaorg/cb-mapui:0.12.24
     container_name: cb-mapui
-    # build:
-    #   context: ../cb-mapui
-    #   dockerfile: Dockerfile
+    build:
+      context: ../cb-mapui
+      dockerfile: Dockerfile
     networks:
       - internal_network
       - external_network # Keep this for the time being to support legacy access methods (http://localhost:1324)

@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -31,10 +31,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// MCI Control
+// Infra Control
 
-// HandleMciAction is func to handle actions to MCI
-func HandleMciAction(nsId string, mciId string, action string, force bool) (string, error) {
+// HandleInfraAction is func to handle actions to Infra
+func HandleInfraAction(nsId string, infraId string, action string, force bool) (string, error) {
 	action = common.ToLower(action)
 
 	// err := common.CheckString(nsId)
@@ -43,91 +43,91 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 	// 	return "", err
 	// }
 
-	// err = common.CheckString(mciId)
+	// err = common.CheckString(infraId)
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
 	// 	return "", err
 	// }
-	check, _ := CheckMci(nsId, mciId)
+	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The mci " + mciId + " does not exist.")
+		err := fmt.Errorf("The infra " + infraId + " does not exist.")
 		return err.Error(), err
 	}
 
-	log.Info().Msgf("Action requested for MCI %s: Action=%s", mciId, action)
+	log.Info().Msgf("Action requested for Infra %s: Action=%s", infraId, action)
 
 	if action == "suspend" {
 
-		err := ControlMciAsync(nsId, mciId, model.ActionSuspend, force)
+		err := ControlInfraAsync(nsId, infraId, model.ActionSuspend, force)
 		if err != nil {
 			return "", err
 		}
 
-		return "Suspending the MCI", nil
+		return "Suspending the Infra", nil
 
 	} else if action == "resume" {
 
-		err := ControlMciAsync(nsId, mciId, model.ActionResume, force)
+		err := ControlInfraAsync(nsId, infraId, model.ActionResume, force)
 		if err != nil {
 			return "", err
 		}
 
-		return "Resuming the MCI", nil
+		return "Resuming the Infra", nil
 
 	} else if action == "reboot" {
 
-		err := ControlMciAsync(nsId, mciId, model.ActionReboot, force)
+		err := ControlInfraAsync(nsId, infraId, model.ActionReboot, force)
 		if err != nil {
 			return "", err
 		}
 
-		return "Rebooting the MCI", nil
+		return "Rebooting the Infra", nil
 
 	} else if action == "terminate" {
 
-		vmList, err := ListVmId(nsId, mciId)
+		vmList, err := ListVmId(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return "", err
 		}
 
 		if len(vmList) == 0 {
-			return "No VM to terminate in the MCI", nil
+			return "No VM to terminate in the Infra", nil
 		}
 
-		err = ControlMciAsync(nsId, mciId, model.ActionTerminate, force)
+		err = ControlInfraAsync(nsId, infraId, model.ActionTerminate, force)
 		if err != nil {
 			return "", err
 		}
 
-		return "Terminated the MCI", nil
+		return "Terminated the Infra", nil
 
 	} else if action == "continue" {
-		key := common.GenMciKey(nsId, mciId, "")
-		holdingMciMap.Store(key, action)
+		key := common.GenInfraKey(nsId, infraId, "")
+		holdingInfraMap.Store(key, action)
 
-		return "Continue the holding MCI", nil
+		return "Continue the holding Infra", nil
 
 	} else if action == "withdraw" {
-		key := common.GenMciKey(nsId, mciId, "")
-		holdingMciMap.Store(key, action)
+		key := common.GenInfraKey(nsId, infraId, "")
+		holdingInfraMap.Store(key, action)
 
-		return "Withdraw the holding MCI", nil
+		return "Withdraw the holding Infra", nil
 
 	} else if action == "refine" { // refine delete VMs in model.StatusFailed or model.StatusUndefined
 
-		vmList, err := ListVmId(nsId, mciId)
+		vmList, err := ListVmId(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return "", err
 		}
 
 		if len(vmList) == 0 {
-			return "No VM in the MCI", nil
+			return "No VM in the Infra", nil
 		}
 
-		mciStatus, err := GetMciStatus(nsId, mciId)
+		infraStatus, err := GetInfraStatus(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return "", err
@@ -136,12 +136,12 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 		var deletedCount int
 		var remainingVmIds []string
 
-		for _, v := range mciStatus.Vm {
+		for _, v := range infraStatus.Vm {
 			// Remove VMs in model.StatusFailed or model.StatusUndefined
 			log.Debug().Msgf("[vmInfo.Status] %v", v.Status)
 			if strings.EqualFold(v.Status, model.StatusFailed) || strings.EqualFold(v.Status, model.StatusUndefined) {
 				// Delete VM sequentially for safety (for performance, need to use goroutine)
-				err := DelMciVm(nsId, mciId, v.Id, "force")
+				err := DelInfraVm(nsId, infraId, v.Id, "force")
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return "", err
@@ -152,9 +152,9 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 			}
 		}
 
-		// Update MCI object to reflect the current VM list after refine
+		// Update Infra object to reflect the current VM list after refine
 		if deletedCount > 0 {
-			mciTmp, _, err := GetMciObject(nsId, mciId)
+			infraTmp, _, err := GetInfraObject(nsId, infraId)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return "", err
@@ -163,7 +163,7 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 			// Rebuild VM list with only remaining VMs
 			var remainingVms []model.VmInfo
 			for _, vmId := range remainingVmIds {
-				vmInfo, err := GetVmObject(nsId, mciId, vmId)
+				vmInfo, err := GetVmObject(nsId, infraId, vmId)
 				if err != nil {
 					log.Warn().Err(err).Msgf("Failed to get VM info for %s during refine update", vmId)
 					continue
@@ -171,21 +171,21 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 				remainingVms = append(remainingVms, vmInfo)
 			}
 
-			mciTmp.Vm = remainingVms
-			UpdateMciInfo(nsId, mciTmp)
+			infraTmp.Vm = remainingVms
+			UpdateInfraInfo(nsId, infraTmp)
 
 			log.Info().Msgf("Refine completed: deleted %d VMs, %d VMs remaining", deletedCount, len(remainingVmIds))
 		}
 
-		return "Refined the MCI", nil
+		return "Refined the Infra", nil
 
 	} else {
 		return "", fmt.Errorf(action + " not supported")
 	}
 }
 
-// HandleMciVmAction is func to Get MciVm Action
-func HandleMciVmAction(nsId string, mciId string, vmId string, action string, force bool) (string, error) {
+// HandleInfraVmAction is func to Get InfraVm Action
+func HandleInfraVmAction(nsId string, infraId string, vmId string, action string, force bool) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -193,7 +193,7 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 		return "", err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
@@ -204,7 +204,7 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	check, _ := CheckVm(nsId, mciId, vmId)
+	check, _ := CheckVm(nsId, infraId, vmId)
 
 	if !check {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
@@ -213,22 +213,22 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 
 	log.Info().Msg("[VM control request] " + action)
 
-	mci, err := GetMciStatus(nsId, mciId)
+	infra, err := GetInfraStatus(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
-	// Check if MCI is under an action (individual VM action cannot be executed while MCI is under an action)
-	if mci.TargetAction != "" && mci.TargetAction != model.ActionComplete {
-		err = fmt.Errorf("MCI %s is under %s, please try later", mciId, mci.TargetAction)
+	// Check if Infra is under an action (individual VM action cannot be executed while Infra is under an action)
+	if infra.TargetAction != "" && infra.TargetAction != model.ActionComplete {
+		err = fmt.Errorf("Infra %s is under %s, please try later", infraId, infra.TargetAction)
 		if !force {
 			log.Info().Msg(err.Error())
 			return "", err
 		}
 	}
 
-	err = CheckAllowedTransition(nsId, mciId, model.OptionalParameter{Set: true, Value: vmId}, action)
+	err = CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: vmId}, action)
 	if err != nil {
 		if !force {
 			log.Info().Msg(err.Error())
@@ -238,7 +238,7 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 
 	// If VM is already terminated, treat terminate as a completed no-op
 	if strings.EqualFold(action, model.ActionTerminate) {
-		vmStatus, statusErr := GetMciVmStatus(nsId, mciId, vmId, false)
+		vmStatus, statusErr := GetInfraVmStatus(nsId, infraId, vmId, false)
 		if statusErr == nil && strings.EqualFold(vmStatus.Status, model.StatusTerminated) {
 			log.Info().Msgf("[VM %s] already terminated, skipping", vmId)
 			return "Already terminated", nil
@@ -249,13 +249,13 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 	results := make(chan model.ControlVmResult, 1)
 	wg.Add(1)
 	if strings.EqualFold(action, model.ActionSuspend) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionSuspend, results)
+		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionSuspend, results)
 	} else if strings.EqualFold(action, model.ActionResume) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionResume, results)
+		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionResume, results)
 	} else if strings.EqualFold(action, model.ActionReboot) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionReboot, results)
+		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionReboot, results)
 	} else if strings.EqualFold(action, model.ActionTerminate) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionTerminate, results)
+		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionTerminate, results)
 	} else {
 		close(results)
 		wg.Done()
@@ -269,32 +269,32 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 	return "Working on " + action, nil
 }
 
-// ControlMciAsync is func to control MCI async
-func ControlMciAsync(nsId string, mciId string, action string, force bool) error {
+// ControlInfraAsync is func to control Infra async
+func ControlInfraAsync(nsId string, infraId string, action string, force bool) error {
 
-	mci, _, err := GetMciObject(nsId, mciId)
+	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	// Check if MCI is under an action (new action cannot be executed while MCI is under an action)
-	if mci.TargetAction != "" && mci.TargetAction != model.ActionComplete {
-		err = fmt.Errorf("MCI %s is under %s, please try later", mciId, mci.TargetAction)
+	// Check if Infra is under an action (new action cannot be executed while Infra is under an action)
+	if infra.TargetAction != "" && infra.TargetAction != model.ActionComplete {
+		err = fmt.Errorf("Infra %s is under %s, please try later", infraId, infra.TargetAction)
 		if !force {
 			log.Info().Msg(err.Error())
 			return err
 		}
 	}
 
-	err = CheckAllowedTransition(nsId, mciId, model.OptionalParameter{Set: false}, action)
+	err = CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: false}, action)
 	if err != nil {
 		if !force {
 			return err
 		}
 	}
 
-	vmList, err := ListVmId(nsId, mciId)
+	vmList, err := ListVmId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -306,43 +306,43 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 	switch action {
 	case model.ActionTerminate:
 
-		mci.TargetAction = model.ActionTerminate
-		mci.TargetStatus = model.StatusTerminated
-		mci.Status = model.StatusTerminating
+		infra.TargetAction = model.ActionTerminate
+		infra.TargetStatus = model.StatusTerminated
+		infra.Status = model.StatusTerminating
 
 	case model.ActionReboot:
 
-		mci.TargetAction = model.ActionReboot
-		mci.TargetStatus = model.StatusRunning
-		mci.Status = model.StatusRebooting
+		infra.TargetAction = model.ActionReboot
+		infra.TargetStatus = model.StatusRunning
+		infra.Status = model.StatusRebooting
 
 	case model.ActionSuspend:
 
-		mci.TargetAction = model.ActionSuspend
-		mci.TargetStatus = model.StatusSuspended
-		mci.Status = model.StatusSuspending
+		infra.TargetAction = model.ActionSuspend
+		infra.TargetStatus = model.StatusSuspended
+		infra.Status = model.StatusSuspending
 
 	case model.ActionResume:
 
-		mci.TargetAction = model.ActionResume
-		mci.TargetStatus = model.StatusRunning
-		mci.Status = model.StatusResuming
+		infra.TargetAction = model.ActionResume
+		infra.TargetStatus = model.StatusRunning
+		infra.Status = model.StatusResuming
 
 	default:
 		return errors.New(action + " is invalid actionType")
 	}
-	UpdateMciInfo(nsId, mci)
+	UpdateInfraInfo(nsId, infra)
 
 	// Apply CSP-aware rate limiting for VM control operations
-	err = ControlVmsInParallel(nsId, mciId, vmList, action, force)
+	err = ControlVmsInParallel(nsId, infraId, vmList, action, force)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to control VMs in parallel for action %s", action)
 		return err
 	}
 
-	// Update MCI TargetAction to Complete after all VM operations are done
-	// This ensures proper completion handling for large MCIs
-	mci, _, err = GetMciObject(nsId, mciId)
+	// Update Infra TargetAction to Complete after all VM operations are done
+	// This ensures proper completion handling for large Infras
+	infra, _, err = GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -350,11 +350,11 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 
 	// Mark as complete regardless of individual VM failures
 	// Similar to Create action, some VMs may fail but the action itself is complete
-	mci.TargetAction = model.ActionComplete
-	mci.TargetStatus = model.StatusComplete
-	UpdateMciInfo(nsId, mci)
+	infra.TargetAction = model.ActionComplete
+	infra.TargetStatus = model.StatusComplete
+	UpdateInfraInfo(nsId, infra)
 
-	log.Info().Msgf("MCI %s action %s completed successfully", mciId, action)
+	log.Info().Msgf("Infra %s action %s completed successfully", infraId, action)
 	return nil
 }
 
@@ -369,7 +369,7 @@ type VmControlInfo struct {
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
 // Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
-func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, force bool) error {
+func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, force bool) error {
 	if len(vmList) == 0 {
 		return nil
 	}
@@ -380,13 +380,13 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 
 	for _, vmId := range vmList {
 		// Skip if control is not needed
-		err := CheckAllowedTransition(nsId, mciId, model.OptionalParameter{Set: true, Value: vmId}, action)
+		err := CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: vmId}, action)
 		if err != nil && !force {
 			log.Debug().Msgf("Skipping VM %s for action %s: %v", vmId, action, err)
 			continue
 		}
 
-		vmInfo, err := GetVmObject(nsId, mciId, vmId)
+		vmInfo, err := GetVmObject(nsId, infraId, vmId)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", vmId)
 			continue
@@ -470,7 +470,7 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 							// Add delay to avoid overwhelming CSP APIs
 							common.RandomSleep(0, 1000)
 
-							go ControlVmAsync(&controlWg, nsId, mciId, vmId, action, results)
+							go ControlVmAsync(&controlWg, nsId, infraId, vmId, action, results)
 
 							result := <-results
 							close(results)
@@ -534,7 +534,7 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 }
 
 // ControlVmAsync is func to control VM async
-func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, action string, results chan<- model.ControlVmResult) {
+func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string, action string, results chan<- model.ControlVmResult) {
 	defer wg.Done() //goroutine sync done
 
 	var err error
@@ -544,7 +544,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	callResult.Status = ""
 
 	// Use GetVmObject to get VM information
-	temp, err := GetVmObject(nsId, mciId, vmId)
+	temp, err := GetVmObject(nsId, infraId, vmId)
 	if err != nil {
 		callResult.Error = fmt.Errorf("GetVmObject() Err in ControlVmAsync: %v", err)
 		log.Error().Err(callResult.Error).Msg("Error in ControlVmAsync")
@@ -553,7 +553,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	}
 
 	// Generate key for resource updates
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, vmId)
 
 	// If VM is already terminated, return early without UpdateVmInfo
 	if temp.Status == model.StatusTerminated {
@@ -571,7 +571,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 		callResult.Error = fmt.Errorf("Not valid requested CSPNativeVmId: [" + cspResourceName + "]")
 		// temp.Status = model.StatusFailed
 		temp.SystemMessage = callResult.Error.Error()
-		UpdateVmInfo(nsId, mciId, temp)
+		UpdateVmInfo(nsId, infraId, temp)
 		results <- callResult
 		return
 	}
@@ -602,7 +602,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 		CancelActiveCommandsForVm(vmId)
 
 		// Remove Bastion Info from all vNets if the terminating VM is a Bastion
-		_, err := RemoveBastionNodes(nsId, mciId, "", "", vmId)
+		_, err := RemoveBastionNodes(nsId, infraId, "", "", vmId)
 		if err != nil {
 			log.Info().Msg(err.Error())
 		}
@@ -651,7 +651,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	log.Info().Msgf("[ControlVm] VM %s: Status transition - %s -> %s (Target: %s)",
 		vmId, currentStatusBeforeUpdating, temp.Status, temp.TargetStatus)
 
-	UpdateVmInfo(nsId, mciId, temp)
+	UpdateVmInfo(nsId, infraId, temp)
 
 	client := clientManager.NewHttpClient()
 	// NCP requires a slightly longer timeout due to its control plane characteristics
@@ -689,7 +689,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	// Fetch actual VM status from CSP after successful control operation
 	// This ensures we have the most accurate status in our database
-	vmStatusInfo, err := FetchVmStatus(nsId, mciId, vmId)
+	vmStatusInfo, err := FetchVmStatus(nsId, infraId, vmId)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to fetch VM status after %s operation for VM %s", action, vmId)
 	} else {
@@ -699,7 +699,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	if action != model.ActionTerminate {
 		//When VM is restarted, temporal PublicIP will be changed. Need update.
-		UpdateVmPublicIp(nsId, mciId, temp)
+		UpdateVmPublicIp(nsId, infraId, temp)
 	} else { // if action == model.ActionTerminate
 		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, temp.ImageId, model.StrDelete, key)
 		if err != nil {
@@ -723,7 +723,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
-func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParameter, action string) error {
+func CheckAllowedTransition(nsId string, infraId string, vmId model.OptionalParameter, action string) error {
 
 	targetStatus := ""
 	switch {
@@ -740,7 +740,7 @@ func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParame
 	}
 
 	if vmId.Set {
-		vm, err := GetMciVmStatus(nsId, mciId, vmId.Value, false)
+		vm, err := GetInfraVmStatus(nsId, infraId, vmId.Value, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
@@ -781,41 +781,41 @@ func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParame
 			}
 		}
 	} else {
-		mci, err := GetMciStatus(nsId, mciId)
+		infra, err := GetInfraStatus(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		// duplicated action
-		if strings.EqualFold(mci.Status, targetStatus) {
+		if strings.EqualFold(infra.Status, targetStatus) {
 			if strings.EqualFold(action, model.ActionTerminate) {
 				return nil
 			}
-			return errors.New(action + " is not allowed for MCI under " + mci.Status)
+			return errors.New(action + " is not allowed for Infra under " + infra.Status)
 		}
 		// redundant action
-		if strings.EqualFold(mci.Status, model.StatusTerminated) {
+		if strings.EqualFold(infra.Status, model.StatusTerminated) {
 			if strings.EqualFold(action, model.ActionTerminate) {
 				return nil
 			}
-			return errors.New(action + " is not allowed for MCI under " + mci.Status)
+			return errors.New(action + " is not allowed for Infra under " + infra.Status)
 		}
 		// under transitional status
-		if strings.Contains(mci.Status, model.StatusCreating) ||
-			strings.Contains(mci.Status, model.StatusTerminating) ||
-			strings.Contains(mci.Status, model.StatusResuming) ||
-			strings.Contains(mci.Status, model.StatusSuspending) ||
-			strings.Contains(mci.Status, model.StatusRebooting) {
+		if strings.Contains(infra.Status, model.StatusCreating) ||
+			strings.Contains(infra.Status, model.StatusTerminating) ||
+			strings.Contains(infra.Status, model.StatusResuming) ||
+			strings.Contains(infra.Status, model.StatusSuspending) ||
+			strings.Contains(infra.Status, model.StatusRebooting) {
 
-			return errors.New(action + " is not allowed for MCI under " + mci.Status)
+			return errors.New(action + " is not allowed for Infra under " + infra.Status)
 		}
 		// under conditional status
-		if strings.EqualFold(mci.Status, model.StatusSuspended) {
+		if strings.EqualFold(infra.Status, model.StatusSuspended) {
 			if strings.EqualFold(action, model.ActionResume) || strings.EqualFold(action, model.ActionTerminate) {
 				return nil
 			} else {
-				return errors.New(action + " is not allowed for MCI under " + mci.Status)
+				return errors.New(action + " is not allowed for Infra under " + infra.Status)
 			}
 		}
 	}

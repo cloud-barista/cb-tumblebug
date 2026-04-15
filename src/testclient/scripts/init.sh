@@ -12,7 +12,7 @@ source $TestSetFile
 source $TB_ROOT_PATH/src/testclient/scripts/conf.env
 
 getCloudIndex $CSP
-MCIID=${POSTFIX}
+InfraID=${POSTFIX}
 K8SCLUSTERID_PREFIX=${POSTFIX}
 
 #install jq and puttygen

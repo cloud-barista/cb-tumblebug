@@ -50,10 +50,10 @@ func setConfig() {
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "./app",
-		Short: "[Demo] VPN tunnel on MCI",
+		Short: "[Demo] VPN tunnel on Infra",
 		Long: `
 ########################################################################
-## [Demo] This program demonstrates VPN tunnel configuration on MCI. ##
+## [Demo] This program demonstrates VPN tunnel configuration on Infra. ##
 ########################################################################`,
 	}
 
@@ -62,15 +62,15 @@ func main() {
 		Short: "Create resources",
 	}
 
-	var createMciDynamicCmd = &cobra.Command{
-		Use:   "mci",
-		Short: "Create MCI dynamically",
-		Run:   createMci,
+	var createInfraDynamicCmd = &cobra.Command{
+		Use:   "infra",
+		Short: "Create Infra dynamically",
+		Run:   createInfra,
 	}
 	// Command-line flags with shorthand
-	createMciDynamicCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	createMciDynamicCmd.Flags().StringP("mciId", "m", "", "MCI ID")
-	createMciDynamicCmd.Flags().StringP("file", "f", "", "Specify the JSON file for the request body")
+	createInfraDynamicCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
+	createInfraDynamicCmd.Flags().StringP("infraId", "m", "", "Infra ID")
+	createInfraDynamicCmd.Flags().StringP("file", "f", "", "Specify the JSON file for the request body")
 
 	var createVpnCmd = &cobra.Command{
 		Use:   "vpn",
@@ -78,12 +78,12 @@ func main() {
 		Run:   createVpnTunnel,
 	}
 	createVpnCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	createVpnCmd.Flags().StringP("mciId", "m", "", "MCI ID")
+	createVpnCmd.Flags().StringP("infraId", "m", "", "Infra ID")
 	createVpnCmd.Flags().StringP("vpnId", "v", "", "VPN ID")
 	createVpnCmd.Flags().StringP("targetCsp", "t", "gcp", "Target CSP (e.g., azure, gcp, alibaba, tencent, ibm, dcs)")
 
 	createCmd.AddCommand(
-		createMciDynamicCmd,
+		createInfraDynamicCmd,
 		createVpnCmd,
 	)
 
@@ -98,7 +98,7 @@ func main() {
 		Run:   getVpnTunnel,
 	}
 	getVpnCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	getVpnCmd.Flags().StringP("mciId", "m", "", "MCI ID")
+	getVpnCmd.Flags().StringP("infraId", "m", "", "Infra ID")
 	getVpnCmd.Flags().StringP("vpnId", "v", "", "VPN ID")
 
 	getCmd.AddCommand(
@@ -110,14 +110,14 @@ func main() {
 		Short: "Delete resources",
 	}
 
-	var terminateMciCmd = &cobra.Command{
-		Use:   "mci",
-		Short: "Suspend and terminate MCI",
-		Run:   terminateMci,
+	var terminateInfraCmd = &cobra.Command{
+		Use:   "infra",
+		Short: "Suspend and terminate Infra",
+		Run:   terminateInfra,
 	}
-	terminateMciCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	terminateMciCmd.Flags().StringP("mciId", "m", "", "MCI ID")
-	terminateMciCmd.Flags().StringP("option", "o", "terminate", "Option for delete MCI (terminate, force)")
+	terminateInfraCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
+	terminateInfraCmd.Flags().StringP("infraId", "m", "", "Infra ID")
+	terminateInfraCmd.Flags().StringP("option", "o", "terminate", "Option for delete Infra (terminate, force)")
 
 	var destroyVpnCmd = &cobra.Command{
 		Use:   "vpn",
@@ -126,7 +126,7 @@ func main() {
 	}
 	// Command-line flags with shorthand
 	destroyVpnCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	destroyVpnCmd.Flags().StringP("mciId", "m", "", "MCI ID")
+	destroyVpnCmd.Flags().StringP("infraId", "m", "", "Infra ID")
 	destroyVpnCmd.Flags().StringP("vpnId", "v", "", "VPN ID")
 
 	var cleanupSharedCmd = &cobra.Command{
@@ -137,7 +137,7 @@ func main() {
 	cleanupSharedCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
 
 	deleteCmd.AddCommand(
-		terminateMciCmd,
+		terminateInfraCmd,
 		destroyVpnCmd,
 		cleanupSharedCmd,
 	)
@@ -153,7 +153,7 @@ func main() {
 		Run:   batchTestVpn,
 	}
 	testVpnCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	testVpnCmd.Flags().StringP("mciId", "m", "", "MCI ID")
+	testVpnCmd.Flags().StringP("infraId", "m", "", "Infra ID")
 	testVpnCmd.Flags().StringP("file", "f", "test-target-pairs.json", "Test target pairs JSON file")
 
 	testCmd.AddCommand(
@@ -228,18 +228,18 @@ func getEnabledCSPs(testPairs TestTargetPairs) map[string]bool {
 	return enabled
 }
 
-func createMci(cmd *cobra.Command, args []string) {
+func createInfra(cmd *cobra.Command, args []string) {
 	var err error
 	var respBytes []byte
 
-	// Set namespace ID, MCI ID, and request body file
+	// Set namespace ID, Infra ID, and request body file
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mciId, _ := cmd.Flags().GetString("mciId")
+	infraId, _ := cmd.Flags().GetString("infraId")
 	filePath, _ := cmd.Flags().GetString("file")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("File path", filePath).
 		Msg("[args]")
 
@@ -247,31 +247,31 @@ func createMci(cmd *cobra.Command, args []string) {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
 
-	if mciId == "" {
-		mciId = viper.GetString("tumblebug.demo.mciId")
+	if infraId == "" {
+		infraId = viper.GetString("tumblebug.demo.infraId")
 	}
 
 	if filePath == "" {
-		filePath = viper.GetString("tumblebug.api.mciDynamic.reqBody")
+		filePath = viper.GetString("tumblebug.api.infraDynamic.reqBody")
 	}
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("File path", filePath).
 		Msg("[config.yaml]")
 
-	if nsId == "" || mciId == "" || filePath == "" {
-		err = fmt.Errorf("bad request: nsId, mciId, or file path is not set")
+	if nsId == "" || infraId == "" || filePath == "" {
+		err = fmt.Errorf("bad request: nsId, infraId, or file path is not set")
 		log.Fatal().Err(err).
 			Str("Namespace ID", nsId).
-			Str("MCI ID", mciId).
+			Str("Infra ID", infraId).
 			Str("File path", filePath).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
 	}
 
-	log.Info().Msg("Starting creating an MCI dynamically...")
+	log.Info().Msg("Starting creating an Infra dynamically...")
 
 	tbAuth := map[string]string{
 		"username": viper.GetString("TB_API_USERNAME"),
@@ -308,43 +308,43 @@ func createMci(cmd *cobra.Command, args []string) {
 	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: mciDynamic
+	// Tumblebug API: infraDynamic
 
-	mciInfo, err := createMciInternal(nsId, mciId, filePath, tbAuth, nil, nil)
+	infraInfo, err := createInfraInternal(nsId, infraId, filePath, tbAuth, nil, nil)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create MCI")
+		log.Fatal().Err(err).Msg("Failed to create Infra")
 		return
 	}
 
-	prettyMciInfo, _ := json.MarshalIndent(mciInfo, "", "   ")
-	log.Debug().Msgf("[Response] %+v", string(prettyMciInfo))
+	prettyInfraInfo, _ := json.MarshalIndent(infraInfo, "", "   ")
+	log.Debug().Msgf("[Response] %+v", string(prettyInfraInfo))
 }
 
-func createMciInternal(nsId, mciId, filePath string, tbAuth map[string]string, logs *[]ApiLog, enabledCSPs map[string]bool) (*model.MciInfo, error) {
+func createInfraInternal(nsId, infraId, filePath string, tbAuth map[string]string, logs *[]ApiLog, enabledCSPs map[string]bool) (*model.InfraInfo, error) {
 	// Set the API path
-	urlPostMciDynamic := fmt.Sprintf("%s/ns/%s/mciDynamic", tbApiBase, nsId)
+	urlPostInfraDynamic := fmt.Sprintf("%s/ns/%s/infraDynamic", tbApiBase, nsId)
 
-	// Read the request body written in mciDynamic.json
-	mciDynamicFile, err := os.Open(filePath)
+	// Read the request body written in infraDynamic.json
+	infraDynamicFile, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open %s: %v", filePath, err)
 	}
-	defer mciDynamicFile.Close()
+	defer infraDynamicFile.Close()
 
-	mciDynamicData, err := io.ReadAll(mciDynamicFile)
+	infraDynamicData, err := io.ReadAll(infraDynamicFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read %s: %v", filePath, err)
 	}
 
-	reqMciDynamic := new(model.MciDynamicReq)
-	err = json.Unmarshal(mciDynamicData, &reqMciDynamic)
+	reqInfraDynamic := new(model.InfraDynamicReq)
+	err = json.Unmarshal(infraDynamicData, &reqInfraDynamic)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s: %v", filePath, err)
 	}
 
 	if len(enabledCSPs) > 0 {
-		filtered := make([]model.CreateSubGroupDynamicReq, 0, len(reqMciDynamic.SubGroups))
-		for _, sg := range reqMciDynamic.SubGroups {
+		filtered := make([]model.CreateNodeGroupDynamicReq, 0, len(reqInfraDynamic.NodeGroups))
+		for _, sg := range reqInfraDynamic.NodeGroups {
 			provider := providerFromSpecID(sg.SpecId)
 			if enabledCSPs[provider] {
 				filtered = append(filtered, sg)
@@ -352,29 +352,29 @@ func createMciInternal(nsId, mciId, filePath string, tbAuth map[string]string, l
 		}
 
 		if len(filtered) == 0 {
-			return nil, fmt.Errorf("no subGroups matched enabled CSPs: %v", enabledCSPs)
+			return nil, fmt.Errorf("no nodeGroups matched enabled CSPs: %v", enabledCSPs)
 		}
 
-		log.Info().Msgf("Filtered MCI subGroups by enabled CSPs: %d -> %d", len(reqMciDynamic.SubGroups), len(filtered))
-		reqMciDynamic.SubGroups = filtered
+		log.Info().Msgf("Filtered Infra nodeGroups by enabled CSPs: %d -> %d", len(reqInfraDynamic.NodeGroups), len(filtered))
+		reqInfraDynamic.NodeGroups = filtered
 	}
 
-	// Set MCI ID
-	reqMciDynamic.Name = mciId
+	// Set Infra ID
+	reqInfraDynamic.Name = infraId
 
-	respBytes, err := callApi("POST", urlPostMciDynamic, tbAuth, reqMciDynamic, logs, "Provision MCI")
+	respBytes, err := callApi("POST", urlPostInfraDynamic, tbAuth, reqInfraDynamic, logs, "Provision Infra")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create MCI: %s", string(respBytes))
+		return nil, fmt.Errorf("failed to create Infra: %s", string(respBytes))
 	}
 
-	mciInfo := new(model.MciInfo)
-	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal MCI info: %v", err)
+	infraInfo := new(model.InfraInfo)
+	if err := json.Unmarshal(respBytes, infraInfo); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal Infra info: %v", err)
 	}
 
 	// Check if all VMs reached Running state and have IPs
 	allRunning := true
-	for _, vm := range mciInfo.Vm {
+	for _, vm := range infraInfo.Vm {
 		if strings.ToLower(vm.Status) != "running" {
 			log.Error().Msgf("VM %s is in state %s. System Message: %s", vm.Id, vm.Status, vm.SystemMessage)
 			allRunning = false
@@ -385,26 +385,26 @@ func createMciInternal(nsId, mciId, filePath string, tbAuth map[string]string, l
 	}
 
 	if !allRunning {
-		return mciInfo, fmt.Errorf("some VMs failed to initialize correctly")
+		return infraInfo, fmt.Errorf("some VMs failed to initialize correctly")
 	}
 
-	log.Info().Msg("MCI project created successfully and all VMs are Running.")
-	return mciInfo, nil
+	log.Info().Msg("Infra project created successfully and all VMs are Running.")
+	return infraInfo, nil
 }
 
 func createVpnTunnel(cmd *cobra.Command, args []string) {
 	var err error
 	var respBytes []byte
 
-	// Set namespace ID, MCI ID, VPN ID, and Target CSP
+	// Set namespace ID, Infra ID, VPN ID, and Target CSP
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mciId, _ := cmd.Flags().GetString("mciId")
+	infraId, _ := cmd.Flags().GetString("infraId")
 	vpnId, _ := cmd.Flags().GetString("vpnId")
 	targetCsp, _ := cmd.Flags().GetString("targetCsp")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("VPN ID", vpnId).
 		Str("Target CSP", targetCsp).
 		Msg("[args]")
@@ -413,8 +413,8 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
 
-	if mciId == "" {
-		mciId = viper.GetString("tumblebug.demo.mciId")
+	if infraId == "" {
+		infraId = viper.GetString("tumblebug.demo.infraId")
 	}
 
 	if vpnId == "" {
@@ -423,15 +423,15 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("VPN ID", vpnId).
 		Msg("[config.yaml]")
 
-	if nsId == "" || mciId == "" || vpnId == "" {
-		err = fmt.Errorf("bad request: nsId, mciId, or vpnId is not set")
+	if nsId == "" || infraId == "" || vpnId == "" {
+		err = fmt.Errorf("bad request: nsId, infraId, or vpnId is not set")
 		log.Fatal().Err(err).
 			Str("Namespace ID", nsId).
-			Str("MCI ID", mciId).
+			Str("Infra ID", infraId).
 			Str("VPN ID", vpnId).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
@@ -474,39 +474,39 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Get MCI
+	// Tumblebug API: Get Infra
 
 	// Set the API path
 	queryParams := "" //"option=status"
-	urlGetMciStatus := fmt.Sprintf("%s/ns/%s/mci/%s", tbApiBase, nsId, mciId)
+	urlGetInfraStatus := fmt.Sprintf("%s/ns/%s/infra/%s", tbApiBase, nsId, infraId)
 	if queryParams != "" {
-		urlGetMciStatus += "?" + queryParams
+		urlGetInfraStatus += "?" + queryParams
 	}
 
-	// Request to create an mci dynamically
-	respBytes, err = callApi("GET", urlGetMciStatus, tbAuth, nil, nil, "Get MCI Status")
+	// Request to create an infra dynamically
+	respBytes, err = callApi("GET", urlGetInfraStatus, tbAuth, nil, nil, "Get Infra Status")
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	mciInfo := new(model.MciInfo)
-	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
+	infraInfo := new(model.InfraInfo)
+	if err := json.Unmarshal(respBytes, infraInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyMciInfo, err := json.MarshalIndent(mciInfo, "", "   ")
+	prettyInfraInfo, err := json.MarshalIndent(infraInfo, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
 
-	log.Debug().Msgf("[Response] %+v", string(prettyMciInfo))
+	log.Debug().Msgf("[Response] %+v", string(prettyInfraInfo))
 
-	// Print the mciInfo
-	for _, vm := range mciInfo.Vm {
+	// Print the infraInfo
+	for _, vm := range infraInfo.Vm {
 		log.Debug().
 			Str("ProviderName", vm.ConnectionConfig.ProviderName).
 			Str("ConfigName", vm.ConnectionConfig.ConfigName).
@@ -534,9 +534,9 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	awsVNetId := ""
 	targetVNetId := ""
 
-	// Extract info from mciInfo
+	// Extract info from infraInfo
 	targetCspLower := strings.ToLower(targetCsp)
-	for _, vm := range mciInfo.Vm {
+	for _, vm := range infraInfo.Vm {
 		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
 		if providerName == "aws" {
 			awsVNetId = vm.VNetId
@@ -549,7 +549,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("Target (%s) VNet ID: %s", targetCsp, targetVNetId)
 
 	if targetVNetId == "" {
-		log.Error().Msgf("Could not find a VM with provider '%s' in MCI", targetCsp)
+		log.Error().Msgf("Could not find a VM with provider '%s' in Infra", targetCsp)
 		return
 	}
 
@@ -558,7 +558,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// Configure VPN tunnel via Tumblebug
 
-	urlPostVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn", tbApiBase, nsId, mciId)
+	urlPostVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn", tbApiBase, nsId, infraId)
 
 	// Set properties for site2 based on targetCsp
 	var site2Props map[string]interface{}
@@ -635,7 +635,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("[POST VPN Response] \n%s", string(prettyVpnResp))
 
 	// GET VPN
-	urlGetVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, vpnId)
+	urlGetVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s", tbApiBase, nsId, infraId, vpnId)
 	respBytes, err = callApi("GET", urlGetVpn, tbAuth, nil, nil, "Get VPN Info")
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
@@ -650,7 +650,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("[GET VPN Response] \n%s", string(prettyVpnGetResp))
 
 	// GET all VPNs - IdList
-	urlGetVpnIds := fmt.Sprintf("%s/ns/%s/mci/%s/vpn?option=IdList", tbApiBase, nsId, mciId)
+	urlGetVpnIds := fmt.Sprintf("%s/ns/%s/infra/%s/vpn?option=IdList", tbApiBase, nsId, infraId)
 	respBytes, err = callApi("GET", urlGetVpnIds, tbAuth, nil, nil, "List VPN IDs")
 	if err == nil {
 		var vpnIds map[string]interface{}
@@ -660,7 +660,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// GET all VPNs - InfoList
-	urlGetVpnInfos := fmt.Sprintf("%s/ns/%s/mci/%s/vpn?option=InfoList", tbApiBase, nsId, mciId)
+	urlGetVpnInfos := fmt.Sprintf("%s/ns/%s/infra/%s/vpn?option=InfoList", tbApiBase, nsId, infraId)
 	respBytes, err = callApi("GET", urlGetVpnInfos, tbAuth, nil, nil, "List VPN Infos")
 	if err == nil {
 		var vpnInfos map[string]interface{}
@@ -672,7 +672,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// VPN Health Check (bidirectional ping test)
 
-	urlHealthCheck := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s/health", tbApiBase, nsId, mciId, vpnId)
+	urlHealthCheck := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s/health", tbApiBase, nsId, infraId, vpnId)
 	reqHealth := map[string]interface{}{
 		"userName":    "cb-user",
 		"pingCount":   4,
@@ -710,14 +710,14 @@ func getVpnTunnel(cmd *cobra.Command, args []string) {
 	var err error
 	var respBytes []byte
 
-	// Set namespace ID, MCI ID, and VPN ID
+	// Set namespace ID, Infra ID, and VPN ID
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mciId, _ := cmd.Flags().GetString("mciId")
+	infraId, _ := cmd.Flags().GetString("infraId")
 	vpnId, _ := cmd.Flags().GetString("vpnId")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("VPN ID", vpnId).
 		Msg("[args]")
 
@@ -725,8 +725,8 @@ func getVpnTunnel(cmd *cobra.Command, args []string) {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
 
-	if mciId == "" {
-		mciId = viper.GetString("tumblebug.demo.mciId")
+	if infraId == "" {
+		infraId = viper.GetString("tumblebug.demo.infraId")
 	}
 
 	if vpnId == "" {
@@ -735,15 +735,15 @@ func getVpnTunnel(cmd *cobra.Command, args []string) {
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("VPN ID", vpnId).
 		Msg("[config.yaml]")
 
-	if nsId == "" || mciId == "" || vpnId == "" {
-		err = fmt.Errorf("bad request: nsId, mciId, or vpnId is not set")
+	if nsId == "" || infraId == "" || vpnId == "" {
+		err = fmt.Errorf("bad request: nsId, infraId, or vpnId is not set")
 		log.Fatal().Err(err).
 			Str("Namespace ID", nsId).
-			Str("MCI ID", mciId).
+			Str("Infra ID", infraId).
 			Str("VPN ID", vpnId).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
@@ -759,7 +759,7 @@ func getVpnTunnel(cmd *cobra.Command, args []string) {
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Tumblebug API: Get VPN
 
-	urlGetVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, vpnId)
+	urlGetVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s", tbApiBase, nsId, infraId, vpnId)
 	respBytes, err = callApi("GET", urlGetVpn, tbAuth, nil, nil, "Get VPN Info")
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
@@ -782,7 +782,7 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 	// Set VPN ID
 	vpnId, _ := cmd.Flags().GetString("vpnId")
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mciId, _ := cmd.Flags().GetString("mciId")
+	infraId, _ := cmd.Flags().GetString("infraId")
 
 	log.Debug().
 		Str("VPN ID", vpnId).
@@ -794,8 +794,8 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 	if nsId == "" {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
-	if mciId == "" {
-		mciId = viper.GetString("tumblebug.demo.mciId")
+	if infraId == "" {
+		infraId = viper.GetString("tumblebug.demo.infraId")
 	}
 
 	log.Debug().
@@ -803,7 +803,7 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 		Msg("[config.yaml]")
 
 	if vpnId == "" {
-		err = fmt.Errorf("bad request: nsId, mciId, or vpnId is not set")
+		err = fmt.Errorf("bad request: nsId, infraId, or vpnId is not set")
 		log.Fatal().Err(err).
 			Str("VPN ID", vpnId).
 			Msg("Please set the values in the config file or pass them as arguments")
@@ -820,7 +820,7 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 
 	// Tumblebug: Delete VPN tunnel
 
-	urlDeleteVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, vpnId)
+	urlDeleteVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s", tbApiBase, nsId, infraId, vpnId)
 
 	respBytes, err = callApi("DELETE", urlDeleteVpn, tbAuth, nil, nil, "Delete VPN")
 	if err != nil {
@@ -836,41 +836,41 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 
 }
 
-func terminateMciInternal(nsId, mciId, option string, tbAuth map[string]string, logs *[]ApiLog) error {
+func terminateInfraInternal(nsId, infraId, option string, tbAuth map[string]string, logs *[]ApiLog) error {
 	// Set the API path
-	urlDeleteMci := fmt.Sprintf("%s/ns/%s/mci/%s?option=%s", tbApiBase, nsId, mciId, option)
+	urlDeleteInfra := fmt.Sprintf("%s/ns/%s/infra/%s?option=%s", tbApiBase, nsId, infraId, option)
 
-	respBytes, err := callApi("DELETE", urlDeleteMci, tbAuth, nil, logs, "Delete MCI")
+	respBytes, err := callApi("DELETE", urlDeleteInfra, tbAuth, nil, logs, "Delete Infra")
 	if err != nil {
-		log.Warn().Msgf("Failed to delete MCI: %s. Retrying in 3 seconds...", string(respBytes))
+		log.Warn().Msgf("Failed to delete Infra: %s. Retrying in 3 seconds...", string(respBytes))
 		time.Sleep(3 * time.Second)
-		respBytes, err = callApi("DELETE", urlDeleteMci, tbAuth, nil, logs, "Delete MCI (Retry)")
+		respBytes, err = callApi("DELETE", urlDeleteInfra, tbAuth, nil, logs, "Delete Infra (Retry)")
 		if err != nil {
-			return fmt.Errorf("failed to delete MCI: %s", string(respBytes))
+			return fmt.Errorf("failed to delete Infra: %s", string(respBytes))
 		}
 	}
 
-	log.Info().Msg("Verifying MCI deletion...")
+	log.Info().Msg("Verifying Infra deletion...")
 	time.Sleep(15 * time.Second)
-	urlGetMciStatus := fmt.Sprintf("%s/ns/%s/mci/%s", tbApiBase, nsId, mciId)
-	respBytes, err = callApi("GET", urlGetMciStatus, tbAuth, nil, nil, "Check MCI Deletion Status")
+	urlGetInfraStatus := fmt.Sprintf("%s/ns/%s/infra/%s", tbApiBase, nsId, infraId)
+	respBytes, err = callApi("GET", urlGetInfraStatus, tbAuth, nil, nil, "Check Infra Deletion Status")
 	if !isDeleted(err, respBytes) {
-		log.Warn().Msgf("MCI(id: %s) deletion verification failed or MCI still exists", mciId)
+		log.Warn().Msgf("Infra(id: %s) deletion verification failed or Infra still exists", infraId)
 		if err != nil {
-			return fmt.Errorf("failed to check MCI status: %v", err)
+			return fmt.Errorf("failed to check Infra status: %v", err)
 		}
-		return fmt.Errorf("timeout waiting for MCI %s deletion", mciId)
+		return fmt.Errorf("timeout waiting for Infra %s deletion", infraId)
 	}
 
-	log.Info().Msgf("MCI(id: %s) is successfully deleted.", mciId)
+	log.Info().Msgf("Infra(id: %s) is successfully deleted.", infraId)
 	return nil
 }
 
-func deleteAllVpnsInternal(nsId, mciId string, tbAuth map[string]string, logs *[]ApiLog) error {
-	log.Info().Msg("Cleaning up all VPN resources in the MCI...")
+func deleteAllVpnsInternal(nsId, infraId string, tbAuth map[string]string, logs *[]ApiLog) error {
+	log.Info().Msg("Cleaning up all VPN resources in the Infra...")
 
 	// 1. Get List of all VPN IDs
-	urlListVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn?option=IdList", tbApiBase, nsId, mciId)
+	urlListVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn?option=IdList", tbApiBase, nsId, infraId)
 	respBytes, err := callApi("GET", urlListVpn, tbAuth, nil, logs, "List all VPN IDs for cleanup")
 	if err != nil {
 		return fmt.Errorf("failed to list VPNs for cleanup: %v", err)
@@ -886,7 +886,7 @@ func deleteAllVpnsInternal(nsId, mciId string, tbAuth map[string]string, logs *[
 	// 2. Delete each VPN
 	for _, vpnId := range res.VpnIdList {
 		log.Info().Msgf("Deleting orphan VPN: %s", vpnId)
-		urlDeleteVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, vpnId)
+		urlDeleteVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s", tbApiBase, nsId, infraId, vpnId)
 		_, err := callApi("DELETE", urlDeleteVpn, tbAuth, nil, logs, fmt.Sprintf("Delete orphan VPN %s", vpnId))
 		if err != nil {
 			log.Warn().Msgf("Failed to delete VPN %s: %v. Retrying in 3 seconds...", vpnId, err)
@@ -986,18 +986,18 @@ func cleanupShared(cmd *cobra.Command, args []string) {
 	}
 }
 
-func terminateMci(cmd *cobra.Command, args []string) {
+func terminateInfra(cmd *cobra.Command, args []string) {
 	var err error
 	var respBytes []byte
 
-	// Set namespace ID, MCI ID, and request body file
+	// Set namespace ID, Infra ID, and request body file
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mciId, _ := cmd.Flags().GetString("mciId")
+	infraId, _ := cmd.Flags().GetString("infraId")
 	option, _ := cmd.Flags().GetString("option")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("Option", option).
 		Msg("[args]")
 
@@ -1005,13 +1005,13 @@ func terminateMci(cmd *cobra.Command, args []string) {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
 
-	if mciId == "" {
-		mciId = viper.GetString("tumblebug.demo.mciId")
+	if infraId == "" {
+		infraId = viper.GetString("tumblebug.demo.infraId")
 	}
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCI ID", mciId).
+		Str("Infra ID", infraId).
 		Str("Option", option).
 		Msg("[config.yaml]")
 
@@ -1042,9 +1042,9 @@ func terminateMci(cmd *cobra.Command, args []string) {
 	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Delete MCI with option
+	// Tumblebug API: Delete Infra with option
 
-	err = terminateMciInternal(nsId, mciId, option, tbAuth, nil)
+	err = terminateInfraInternal(nsId, infraId, option, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -1062,18 +1062,18 @@ func terminateMci(cmd *cobra.Command, args []string) {
 
 func batchTestVpn(cmd *cobra.Command, args []string) {
 	nsId, _ := cmd.Flags().GetString("nsId")
-	mciId, _ := cmd.Flags().GetString("mciId")
+	infraId, _ := cmd.Flags().GetString("infraId")
 	filePath, _ := cmd.Flags().GetString("file")
 
 	if nsId == "" {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
-	if mciId == "" {
-		mciId = viper.GetString("tumblebug.demo.mciId")
+	if infraId == "" {
+		infraId = viper.GetString("tumblebug.demo.infraId")
 	}
 
-	if nsId == "" || mciId == "" || filePath == "" {
-		log.Fatal().Msg("nsId, mciId, or file path is not set")
+	if nsId == "" || infraId == "" || filePath == "" {
+		log.Fatal().Msg("nsId, infraId, or file path is not set")
 		return
 	}
 
@@ -1109,15 +1109,15 @@ func batchTestVpn(cmd *cobra.Command, args []string) {
 
 	// Keep AWS as hub for aws-to-site VPN scenarios.
 	enabledCSPs["aws"] = true
-	log.Info().Msgf("Enabled CSPs for MCI provisioning: %v", enabledCSPs)
+	log.Info().Msgf("Enabled CSPs for Infra provisioning: %v", enabledCSPs)
 
 	// Phase 1: Infrastructure Provisioning
 	log.Info().Msg("Phase 1: Infrastructure Provisioning")
-	mciInfo, err := createMciInternal(nsId, mciId, "mciDynamic.json", tbAuth, &provisionLogs, enabledCSPs)
+	infraInfo, err := createInfraInternal(nsId, infraId, "infraDynamic.json", tbAuth, &provisionLogs, enabledCSPs)
 	if err != nil {
-		log.Error().Err(err).Msg("MCI Creation failed. Rolling back...")
+		log.Error().Err(err).Msg("Infra Creation failed. Rolling back...")
 		// Use "terminate" option to ensure VMs are cleaned up before shared resources
-		terminateMciInternal(nsId, mciId, "terminate", tbAuth, &cleanupLogs)
+		terminateInfraInternal(nsId, infraId, "terminate", tbAuth, &cleanupLogs)
 		cleanupSharedResourcesInternal(nsId, tbAuth, &cleanupLogs)
 		saveDetailedReport("test-results/provision.md", "Phase 1: Infrastructure Provisioning (Failed)", provisionLogs, "")
 		return
@@ -1135,7 +1135,7 @@ func batchTestVpn(cmd *cobra.Command, args []string) {
 		log.Info().Msgf("--- Testing Case: %s to %s ---", tc.Site1, tc.Site2)
 		result := TestResult{TestCase: tc, ApiLogs: []ApiLog{}}
 
-		err := runVpnTestCase(nsId, mciId, mciInfo, tc, tbAuth, &result)
+		err := runVpnTestCase(nsId, infraId, infraInfo, tc, tbAuth, &result)
 		summaryResults = append(summaryResults, result)
 
 		// Save individual report
@@ -1154,14 +1154,14 @@ func batchTestVpn(cmd *cobra.Command, args []string) {
 	log.Info().Msg("Phase 3: Cleanup")
 
 	// Ensure ALL VPNs are deleted first to avoid DependencyViolation in Tumblebug/Spider
-	err = deleteAllVpnsInternal(nsId, mciId, tbAuth, &cleanupLogs)
+	err = deleteAllVpnsInternal(nsId, infraId, tbAuth, &cleanupLogs)
 	if err != nil {
 		log.Error().Err(err).Msg("Error during VPN orphan cleanup")
 	}
 
-	err = terminateMciInternal(nsId, mciId, "terminate", tbAuth, &cleanupLogs)
+	err = terminateInfraInternal(nsId, infraId, "terminate", tbAuth, &cleanupLogs)
 	if err != nil {
-		log.Error().Err(err).Msg("Error during MCI termination")
+		log.Error().Err(err).Msg("Error during Infra termination")
 	}
 
 	err = cleanupSharedResourcesInternal(nsId, tbAuth, &cleanupLogs)
@@ -1175,11 +1175,11 @@ func batchTestVpn(cmd *cobra.Command, args []string) {
 	log.Info().Msg("Batch VPN testing completed.")
 }
 
-func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbAuth map[string]string, result *TestResult) error {
+func runVpnTestCase(nsId, infraId string, infraInfo *model.InfraInfo, tc TestCase, tbAuth map[string]string, result *TestResult) error {
 	awsVNetId := ""
 	targetVNetId := ""
 
-	for _, vm := range mciInfo.Vm {
+	for _, vm := range infraInfo.Vm {
 		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
 		if providerName == "aws" {
 			awsVNetId = vm.VNetId
@@ -1214,7 +1214,7 @@ func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbA
 		"site2": site2Props,
 	}
 
-	urlPostVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn", tbApiBase, nsId, mciId)
+	urlPostVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn", tbApiBase, nsId, infraId)
 	_, err := callApi("POST", urlPostVpn, tbAuth, reqVpn, &result.ApiLogs, "Create VPN")
 	if err != nil {
 		result.CreateRes = "Failed"
@@ -1223,13 +1223,13 @@ func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbA
 	result.CreateRes = "Success"
 
 	// 2. GET VPN Info
-	urlGetVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, tc.VpnId)
+	urlGetVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s", tbApiBase, nsId, infraId, tc.VpnId)
 	callApi("GET", urlGetVpn, tbAuth, nil, &result.ApiLogs, "Get VPN Info")
 
 	// 3. GET all VPNs
-	urlListVpnId := fmt.Sprintf("%s/ns/%s/mci/%s/vpn?option=IdList", tbApiBase, nsId, mciId)
+	urlListVpnId := fmt.Sprintf("%s/ns/%s/infra/%s/vpn?option=IdList", tbApiBase, nsId, infraId)
 	callApi("GET", urlListVpnId, tbAuth, nil, &result.ApiLogs, "List VPN IDs")
-	urlListVpnInfo := fmt.Sprintf("%s/ns/%s/mci/%s/vpn?option=InfoList", tbApiBase, nsId, mciId)
+	urlListVpnInfo := fmt.Sprintf("%s/ns/%s/infra/%s/vpn?option=InfoList", tbApiBase, nsId, infraId)
 	callApi("GET", urlListVpnInfo, tbAuth, nil, &result.ApiLogs, "List VPN Infos")
 
 	// Wait for BGP propagation
@@ -1237,7 +1237,7 @@ func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbA
 	time.Sleep(60 * time.Second)
 
 	// 4. VPN Health Check (bidirectional ping test via health API)
-	urlHealthCheck := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s/health", tbApiBase, nsId, mciId, tc.VpnId)
+	urlHealthCheck := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s/health", tbApiBase, nsId, infraId, tc.VpnId)
 	reqHealth := map[string]interface{}{
 		"userName":    "cb-user",
 		"pingCount":   4,
@@ -1274,7 +1274,7 @@ func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbA
 	}
 
 	// 5. DELETE VPN
-	urlDeleteVpn := fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, tc.VpnId)
+	urlDeleteVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s", tbApiBase, nsId, infraId, tc.VpnId)
 	_, err = callApi("DELETE", urlDeleteVpn, tbAuth, nil, &result.ApiLogs, "Delete VPN")
 	if err != nil {
 		log.Warn().Msgf("Failed to delete VPN %s: %v. Retrying in 3 seconds...", tc.VpnId, err)
@@ -1289,7 +1289,7 @@ func runVpnTestCase(nsId, mciId string, mciInfo *model.MciInfo, tc TestCase, tbA
 	// Verify VPN deletion for this specific case
 	log.Info().Msgf("Verifying deletion of VPN: %s", tc.VpnId)
 	time.Sleep(15 * time.Second)
-	urlGetVpn = fmt.Sprintf("%s/ns/%s/mci/%s/vpn/%s", tbApiBase, nsId, mciId, tc.VpnId)
+	urlGetVpn = fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s", tbApiBase, nsId, infraId, tc.VpnId)
 	delCheckResp, err := callApi("GET", urlGetVpn, tbAuth, nil, nil, "Verify individual VPN deletion")
 	if !isDeleted(err, delCheckResp) {
 		log.Warn().Msgf("VPN %s deletion verification failed or timed out", tc.VpnId)
@@ -1335,9 +1335,9 @@ func generateSummaryReport(filename string, results []TestResult, interrupted bo
 	os.MkdirAll("test-results", 0755)
 	md := "# VPN Batch Test Summary\n\n"
 	md += "## Test Workflow\n\n"
-	md += "1. **Phase 1: Infrastructure Provisioning** (MCI creation with multi-cloud VMs)\n"
+	md += "1. **Phase 1: Infrastructure Provisioning** (Infra creation with multi-cloud VMs)\n"
 	md += "2. **Phase 2: VPN Tests** (Sequential VPN creation > View > Health Check (ping) > Deletion)\n"
-	md += "3. **Phase 3: Cleanup** (MCI termination and Shared Resource deletion)\n\n"
+	md += "3. **Phase 3: Cleanup** (Infra termination and Shared Resource deletion)\n\n"
 	md += "--- \n\n"
 
 	if interrupted {

@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package infra
 
 import (
@@ -27,7 +27,7 @@ import (
 // @Description Recommend specs for configuring an infrastructure (filter and priority)
 // @Description Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
 // @Description Get available options by /recommendSpecOptions for filtering and prioritizing specs in RecommendSpec API
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param recommendSpecReq body model.RecommendSpecReq false "Conditions for recommending specs (filter and priority)"
@@ -55,7 +55,7 @@ func RestRecommendSpec(c echo.Context) error {
 // @ID RecommendSpecOptions
 // @Summary Get options for RecommendSpec API
 // @Description Get available options for filtering and prioritizing specs in RecommendSpec API
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} model.RecommendSpecRequestOptions
@@ -76,41 +76,41 @@ func RestRecommendSpecOptions(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-type RestPostMciRecommendResponse struct {
+type RestPostInfraRecommendResponse struct {
 	//VmReq          []VmRecommendReq    `json:"vmReq"`
 	VmRecommend    []model.VmRecommendInfo `json:"vmRecommend"`
 	PlacementAlgo  string                  `json:"placementAlgo"`
 	PlacementParam []model.KeyValue        `json:"placementParam"`
 }
 
-// RestPostMciRecommend godoc
+// RestPostInfraRecommend godoc
 // @Deprecated
-// func RestPostMciRecommend(c echo.Context) error {
-// 	// @Summary Get MCI recommendation
-// 	// @Description Get MCI recommendation
-// 	// @Tags [MC-Infra] MCI Provisioning and Management
+// func RestPostInfraRecommend(c echo.Context) error {
+// 	// @Summary Get Infra recommendation
+// 	// @Description Get Infra recommendation
+// 	// @Tags [MC-Infra] Infra Provisioning and Management
 // 	// @Accept  json
 // 	// @Produce  json
 // 	// @Param nsId path string true "Namespace ID" default(default)
-// 	// @Param mciRecommendReq body model.MciRecommendReq true "Details for an MCI object"
-// 	// @Success 200 {object} RestPostMciRecommendResponse
+// 	// @Param infraRecommendReq body model.InfraRecommendReq true "Details for an Infra object"
+// 	// @Success 200 {object} RestPostInfraRecommendResponse
 // 	// @Failure 404 {object} model.SimpleMsg
 // 	// @Failure 500 {object} model.SimpleMsg
-// 	// @Router /ns/{nsId}/mci/recommend [post]
+// 	// @Router /ns/{nsId}/infra/recommend [post]
 // 	nsId := c.Param("nsId")
 
-// 	req := &model.MciRecommendReq{}
+// 	req := &model.InfraRecommendReq{}
 // 	if err := c.Bind(req); err != nil {
 // 		return err
 // 	}
 
-// 	result, err := model.CorePostMciRecommend(nsId, req)
+// 	result, err := model.CorePostInfraRecommend(nsId, req)
 // 	if err != nil {
 // 		mapA := map[string]string{"message": err.Error()}
 // 		return c.JSON(http.StatusInternalServerError, &mapA)
 // 	}
 
-// 	content := RestPostMciRecommendResponse{}
+// 	content := RestPostInfraRecommendResponse{}
 // 	content.VmRecommend = result
 // 	content.PlacementAlgo = req.PlacementAlgo
 // 	content.PlacementParam = req.PlacementParam

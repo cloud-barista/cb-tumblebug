@@ -1,6 +1,6 @@
 # Global DNS Management
 
-Guide for managing DNS records across multi-cloud infrastructures using AWS Route53. Supports automatic IP resolution from MCI VMs, label-based VM selection, and geoproximity routing for location-aware traffic distribution.
+Guide for managing DNS records across multi-cloud infrastructures using AWS Route53. Supports automatic IP resolution from Infra VMs, label-based VM selection, and geoproximity routing for location-aware traffic distribution.
 
 ## 📑 Table of Contents
 
@@ -18,7 +18,7 @@ Guide for managing DNS records across multi-cloud infrastructures using AWS Rout
 
 ### What is Global DNS Management?
 
-**Global DNS Management** enables users to create, update, query, and delete DNS records in AWS Route53 through a unified CB-Tumblebug API. Instead of manually managing DNS entries, users can point a DNS record at an MCI — Tumblebug automatically resolves VM public IPs and creates the appropriate Route53 records.
+**Global DNS Management** enables users to create, update, query, and delete DNS records in AWS Route53 through a unified CB-Tumblebug API. Instead of manually managing DNS entries, users can point a DNS record at an Infra — Tumblebug automatically resolves VM public IPs and creates the appropriate Route53 records.
 
 ### Why Use This Feature?
 
@@ -28,7 +28,7 @@ Guide for managing DNS records across multi-cloud infrastructures using AWS Rout
 - Standard DNS (simple routing) sends all traffic to one region, ignoring user proximity
 
 **Solution:**
-- **MCI-Aware DNS**: Automatically resolve public IPs from MCI VMs and create DNS records
+- **Infra-Aware DNS**: Automatically resolve public IPs from Infra VMs and create DNS records
 - **Label-Based Selection**: Target specific VMs using label selectors (e.g., `role=web`)
 - **Geoproximity Routing**: Route users to the nearest VM based on geographic coordinates
 - **Bulk Operations**: Delete multiple records in a single API call
@@ -43,7 +43,7 @@ When creating or updating a DNS record, users must choose **exactly one** method
 
 | Method | Field | Description | Geoproximity Support |
 |--------|-------|-------------|---------------------|
-| **MCI** | `setBy.mci` | All public IPs from VMs in the specified MCI | ✅ (uses VM location) |
+| **Infra** | `setBy.infra` | All public IPs from VMs in the specified Infra | ✅ (uses VM location) |
 | **Label** | `setBy.label` | Public IPs from VMs matching a label selector | ✅ (uses VM location) |
 | **Manual IPs** | `setBy.ips` | User-provided IP addresses | ❌ (no location data) |
 
@@ -61,7 +61,7 @@ Record names are automatically resolved to FQDNs:
 
 When using the Label source with a `nsId`, the system automatically scopes the label query by prepending `sys.namespace=<nsId>` to the label selector. This ensures only VMs in the target namespace are selected.
 
-When using the MapUI with the MCI + Label filter mode, `sys.mciId=<mciId>` is also prepended to scope VMs within the selected MCI.
+When using the MapUI with the Infra + Label filter mode, `sys.infraId=<infraId>` is also prepended to scope VMs within the selected Infra.
 
 ---
 
@@ -81,8 +81,8 @@ sequenceDiagram
     API->>OpenBao: Fetch AWS credentials<br/>(secret/data/csp/aws)
     OpenBao-->>API: AccessKeyID, SecretAccessKey, Region
 
-    alt MCI Source
-        API->>KVStore: Get VMs from /ns/{nsId}/mci/{mciId}/vm/
+    alt Infra Source
+        API->>KVStore: Get VMs from /ns/{nsId}/infra/{infraId}/vm/
         KVStore-->>API: VM list (PublicIP, Location)
     else Label Source
         API->>KVStore: Get VMs by label selector
@@ -162,7 +162,7 @@ graph TB
 - VMs at the **same coordinates** (same CSP region) are grouped into one record with multiple IPs
 - Coordinates are rounded to **2 decimal places** (Route53 precision limit)
 - Each group gets a `SetIdentifier` like `app.example.com-geo-1`, `app.example.com-geo-2`, etc.
-- Geoproximity routing requires **MCI or Label** source (manual IPs have no location data)
+- Geoproximity routing requires **Infra or Label** source (manual IPs have no location data)
 
 ---
 
@@ -228,9 +228,9 @@ PUT /tumblebug/resources/globalDns/record
   "ttl": 300,
   "routingPolicy": "simple",
   "setBy": {
-    "mci": {
+    "infra": {
       "nsId": "default",
-      "mciId": "mci-01"
+      "infraId": "infra-01"
     }
   }
 }
@@ -243,11 +243,11 @@ PUT /tumblebug/resources/globalDns/record
 | `recordType` | string | | `A`, `AAAA`, `CNAME`, `TXT` (default: `A`) |
 | `ttl` | int | | TTL in seconds (default: `300`) |
 | `routingPolicy` | string | | `simple` or `geoproximity` (default: `simple`) |
-| `setBy.mci` | object | ①  | `{ nsId, mciId }` |
+| `setBy.infra` | object | ①  | `{ nsId, infraId }` |
 | `setBy.label` | object | ①  | `{ nsId, labelSelector }` |
 | `setBy.ips` | string[] | ①  | Manual IP list |
 
-> ① Exactly one of `mci`, `label`, or `ips` must be provided.
+> ① Exactly one of `infra`, `label`, or `ips` must be provided.
 
 **Response:**
 ```json
@@ -356,9 +356,9 @@ DELETE /tumblebug/resources/globalDns/records
 
 ## Usage Examples
 
-### Example 1: Simple Record from MCI
+### Example 1: Simple Record from Infra
 
-Point `app.example.com` to all VMs in an MCI with simple round-robin routing:
+Point `app.example.com` to all VMs in an Infra with simple round-robin routing:
 
 ```bash
 curl -X PUT "http://localhost:1323/tumblebug/resources/globalDns/record" \
@@ -371,12 +371,12 @@ curl -X PUT "http://localhost:1323/tumblebug/resources/globalDns/record" \
     "ttl": 300,
     "routingPolicy": "simple",
     "setBy": {
-      "mci": { "nsId": "default", "mciId": "mci-01" }
+      "infra": { "nsId": "default", "infraId": "infra-01" }
     }
   }'
 ```
 
-### Example 2: Geoproximity Record from MCI
+### Example 2: Geoproximity Record from Infra
 
 Route users to the nearest VM based on geographic proximity:
 
@@ -391,7 +391,7 @@ curl -X PUT "http://localhost:1323/tumblebug/resources/globalDns/record" \
     "ttl": 60,
     "routingPolicy": "geoproximity",
     "setBy": {
-      "mci": { "nsId": "default", "mciId": "mci-01" }
+      "infra": { "nsId": "default", "infraId": "infra-01" }
     }
   }'
 ```

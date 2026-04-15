@@ -88,7 +88,7 @@ Task Complete → [Interval Wait] → Task Execute → [Interval Wait] → ...
 ```json
 {
   "connectionName": "aws-ap-northeast-2",
-  "mciNamePrefix": "aws-kr"
+  "infraNamePrefix": "aws-kr"
 }
 ```
 → Registers resources from specified connection only
@@ -97,7 +97,7 @@ Task Complete → [Interval Wait] → Task Execute → [Interval Wait] → ...
 ```json
 {
   "connectionName": "",
-  "mciNamePrefix": "all-csps"
+  "infraNamePrefix": "all-csps"
 }
 ```
 → Automatically registers resources from all registered connections
@@ -235,8 +235,8 @@ flowchart TD
     CheckConn -->|Yes<br/>connectionName = ""| AllMode[All Connections Mode]
     CheckConn -->|No<br/>connectionName specified| SingleMode[Single Connection Mode]
     
-    AllMode --> CallAll[RegisterCspNativeResourcesAll<br/>nsId, mciNamePrefix]
-    SingleMode --> CallSingle[RegisterCspNativeResources<br/>nsId, connectionName, mciNamePrefix]
+    AllMode --> CallAll[RegisterCspNativeResourcesAll<br/>nsId, infraNamePrefix]
+    SingleMode --> CallSingle[RegisterCspNativeResources<br/>nsId, connectionName, infraNamePrefix]
     
     CallAll --> ProcessAll[Process all registered<br/>connections in parallel]
     CallSingle --> ProcessSingle[Process specified<br/>connection only]
@@ -442,7 +442,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "default",
     "intervalSeconds": 3600,
     "connectionName": "aws-ap-northeast-2",
-    "mciNamePrefix": "aws-kr-resources"
+    "infraNamePrefix": "aws-kr-resources"
   }'
 ```
 
@@ -462,7 +462,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
   "failureCount": 0,
   "consecutiveFailures": 0,
   "connectionName": "aws-ap-northeast-2",
-  "mciNamePrefix": "aws-kr-resources"
+  "infraNamePrefix": "aws-kr-resources"
 }
 ```
 
@@ -511,9 +511,9 @@ curl -X DELETE http://localhost:1323/tumblebug/registerCspResources/schedule/{jo
   "nsId": "default",                        // Required: Target namespace
   "intervalSeconds": 3600,                  // Required: Execution interval (seconds, minimum 10)
   "connectionName": "aws-ap-northeast-2",   // Optional: Specific connection (empty = all)
-  "mciNamePrefix": "mci-prefix",            // Optional: MCI name prefix
+  "infraNamePrefix": "infra-prefix",            // Optional: Infra name prefix
   "option": "vNet,securityGroup",           // Optional: Resource types (empty = all)
-  "mciFlag": "y"                            // Optional: "y" (single MCI), "n" (per-VM MCI)
+  "infraFlag": "y"                            // Optional: "y" (single Infra), "n" (per-VM Infra)
 }
 ```
 
@@ -525,9 +525,9 @@ curl -X DELETE http://localhost:1323/tumblebug/registerCspResources/schedule/{jo
 | `nsId` | string | Yes | - | Target namespace to register resources |
 | `intervalSeconds` | int | Yes | - | Execution interval (seconds), minimum 10 |
 | `connectionName` | string | No | "" | Specific connection (empty = all connections) |
-| `mciNamePrefix` | string | No | "mci" | MCI name prefix |
+| `infraNamePrefix` | string | No | "infra" | Infra name prefix |
 | `option` | string | No | "" | Resource types to register. (empty = all resources) |
-| `mciFlag` | string | No | "y" | "y": single MCI, "n": individual MCI per VM |
+| `infraFlag` | string | No | "y" | "y": single Infra, "n": individual Infra per VM |
 
 **Option Values:**
 Specify the resource types to register, separated by commas (e.g., `"vNet, customImage"`).
@@ -547,7 +547,7 @@ Specify the resource types to register, separated by commas (e.g., `"vNet, custo
   "executionTimeout": 1800,
   "enabled": true,
   "connectionName": "aws-ap-northeast-2",
-  "mciNamePrefix": "mci-prefix",
+  "infraNamePrefix": "infra-prefix",
   "createdAt": "2025-10-29T10:00:00Z",
   "lastExecutedAt": "2025-10-29T10:00:00Z",
   "nextExecutionAt": "2025-10-29T11:00:00Z",
@@ -580,7 +580,7 @@ Specify the resource types to register, separated by commas (e.g., `"vNet, custo
       "intervalSeconds": 3600,
       "enabled": true,
       "connectionName": "aws-ap-northeast-2",
-      "mciNamePrefix": "aws-kr",
+      "infraNamePrefix": "aws-kr",
       "executionCount": 5,
       "successCount": 5,
       "failureCount": 0,
@@ -609,9 +609,9 @@ Specify the resource types to register, separated by commas (e.g., `"vNet, custo
   "executionTimeout": 1800,
   "enabled": true,
   "connectionName": "aws-ap-northeast-2",
-  "mciNamePrefix": "aws-kr",
+  "infraNamePrefix": "aws-kr",
   "option": "",
-  "mciFlag": "y",
+  "infraFlag": "y",
   "createdAt": "2025-10-29T10:00:00Z",
   "lastExecutedAt": "2025-10-29T14:00:00Z",
   "nextExecutionAt": "2025-10-29T15:00:00Z",
@@ -713,9 +713,9 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "production",
     "intervalSeconds": 3600,
     "connectionName": "aws-ap-northeast-2",
-    "mciNamePrefix": "aws-kr-prod",
+    "infraNamePrefix": "aws-kr-prod",
     "option": "",
-    "mciFlag": "y"
+    "infraFlag": "y"
   }'
 ```
 
@@ -735,7 +735,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "aws-ns",
     "intervalSeconds": 21600,
     "connectionName": "aws-ap-northeast-2",
-    "mciNamePrefix": "aws-resources"
+    "infraNamePrefix": "aws-resources"
   }'
 
 # Azure resources to 'azure-ns'
@@ -745,7 +745,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "azure-ns",
     "intervalSeconds": 21600,
     "connectionName": "azure-koreacentral",
-    "mciNamePrefix": "azure-resources"
+    "infraNamePrefix": "azure-resources"
   }'
 
 # GCP resources to 'gcp-ns'
@@ -755,7 +755,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "gcp-ns",
     "intervalSeconds": 21600,
     "connectionName": "gcp-asia-northeast3",
-    "mciNamePrefix": "gcp-resources"
+    "infraNamePrefix": "gcp-resources"
   }'
 ```
 
@@ -773,9 +773,9 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "network-monitoring",
     "intervalSeconds": 1800,
     "connectionName": "aws-us-east-1",
-    "mciNamePrefix": "network-scan",
+    "infraNamePrefix": "network-scan",
     "option": "vNet,securityGroup",
-    "mciFlag": "n"
+    "infraFlag": "n"
   }'
 ```
 
@@ -793,7 +793,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "dev",
     "intervalSeconds": 60,
     "connectionName": "aws-dev-region",
-    "mciNamePrefix": "dev-test"
+    "infraNamePrefix": "dev-test"
   }'
 ```
 
@@ -816,7 +816,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "nsId": "inventory",
     "intervalSeconds": 86400,
     "connectionName": "",
-    "mciNamePrefix": "daily-scan"
+    "infraNamePrefix": "daily-scan"
   }'
 ```
 
@@ -866,7 +866,7 @@ curl -X PUT http://localhost:1323/tumblebug/registerCspResources/schedule/{jobId
 ```json
 {
   "connectionName": "aws-ap-northeast-2",
-  "mciNamePrefix": "aws-kr"
+  "infraNamePrefix": "aws-kr"
 }
 ```
 - **Pros**: Precise targeting, fast execution
@@ -876,7 +876,7 @@ curl -X PUT http://localhost:1323/tumblebug/registerCspResources/schedule/{jobId
 ```json
 {
   "connectionName": "",
-  "mciNamePrefix": "all-resources"
+  "infraNamePrefix": "all-resources"
 }
 ```
 - **Pros**: Process all CSPs at once, simple management
@@ -905,27 +905,27 @@ nsId: "north-america" → NA regions
 nsId: "europe"        → EU regions
 ```
 
-### MCI Flag Strategy
+### Infra Flag Strategy
 
-**mciFlag: "y" (recommended)**
+**infraFlag: "y" (recommended)**
 ```json
 {
-  "mciFlag": "y",
-  "mciNamePrefix": "aws-kr"
+  "infraFlag": "y",
+  "infraNamePrefix": "aws-kr"
 }
 ```
-- Group all VMs into one MCI
+- Group all VMs into one Infra
 - Improved management convenience
 - Simplified resource structure
 
-**mciFlag: "n"**
+**infraFlag: "n"**
 ```json
 {
-  "mciFlag": "n",
-  "mciNamePrefix": "vm"
+  "infraFlag": "n",
+  "infraNamePrefix": "vm"
 }
 ```
-- Create individual MCI per VM
+- Create individual Infra per VM
 - When detailed per-VM management needed
 - Not recommended for large-scale environments
 
@@ -1200,7 +1200,7 @@ curl -X PUT .../schedule/{jobId} -d '{"intervalSeconds": 3600}'
 ```
 
 **Cause:**
-Job with identical configuration (jobType + nsId + connectionName + mciNamePrefix + option + mciFlag) already exists
+Job with identical configuration (jobType + nsId + connectionName + infraNamePrefix + option + infraFlag) already exists
 
 **Solution:**
 ```bash
@@ -1318,7 +1318,7 @@ monitoring        → Monitoring resources
 
 ### 3. Job Naming Strategy
 
-**MCI Name Prefix Convention:**
+**Infra Name Prefix Convention:**
 ```
 {csp}-{region}-{purpose}
 
@@ -1423,7 +1423,7 @@ def create_job(ns_id, connection, interval):
             "nsId": ns_id,
             "intervalSeconds": interval,
             "connectionName": connection,
-            "mciNamePrefix": f"{connection}-resources"
+            "infraNamePrefix": f"{connection}-resources"
         }
     )
     return response.json()
@@ -1458,7 +1458,7 @@ print(f"Executions: {status['executionCount']}")
 **A:** Yes, jobs are stored in kvstore and automatically recovered after server restart. However, tasks that were executing are stopped and recovered to `Scheduled` status.
 
 ### Q4: Can I create multiple jobs for the same connection?
-**A:** No, you cannot create duplicate jobs with identical configuration (jobType + nsId + connectionName + mciNamePrefix + option + mciFlag). A 409 Conflict error will be returned.
+**A:** No, you cannot create duplicate jobs with identical configuration (jobType + nsId + connectionName + infraNamePrefix + option + infraFlag). A 409 Conflict error will be returned.
 
 ### Q5: What happens if connectionName is empty?
 **A:** Resources from all registered connections are automatically collected. The `RegisterCspNativeResourcesAll()` function is called.

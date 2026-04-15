@@ -127,7 +127,7 @@ func SetupViperPaths(v *viper.Viper) {
 	v.AddConfigPath("../assets/")
 }
 
-// MCI utilities
+// Infra utilities
 
 // GenUid is func to return a uid string
 func GenUid() string {
@@ -229,13 +229,13 @@ func ChangeIdString(name string) string {
 	return changedString
 }
 
-// GenMciKey is func to generate a key used in keyValue store
-func GenMciKey(nsId string, mciId string, vmId string) string {
+// GenInfraKey is func to generate a key used in keyValue store
+func GenInfraKey(nsId string, infraId string, vmId string) string {
 
 	if vmId != "" {
-		return "/ns/" + nsId + "/mci/" + mciId + "/vm/" + vmId
-	} else if mciId != "" {
-		return "/ns/" + nsId + "/mci/" + mciId
+		return "/ns/" + nsId + "/infra/" + infraId + "/vm/" + vmId
+	} else if infraId != "" {
+		return "/ns/" + nsId + "/infra/" + infraId
 	} else if nsId != "" {
 		return "/ns/" + nsId
 	} else {
@@ -244,19 +244,19 @@ func GenMciKey(nsId string, mciId string, vmId string) string {
 
 }
 
-// GenMciSubGroupKey is func to generate a key from subGroupId used in keyValue store
-func GenMciSubGroupKey(nsId string, mciId string, groupId string) string {
+// GenInfraNodeGroupKey is func to generate a key from nodeGroupId used in keyValue store
+func GenInfraNodeGroupKey(nsId string, infraId string, groupId string) string {
 
-	return "/ns/" + nsId + "/mci/" + mciId + "/subgroup/" + groupId
+	return "/ns/" + nsId + "/infra/" + infraId + "/nodegroup/" + groupId
 
 }
 
-// GenMciPolicyKey is func to generate Mci policy key
-func GenMciPolicyKey(nsId string, mciId string, vmId string) string {
+// GenInfraPolicyKey is func to generate Infra policy key
+func GenInfraPolicyKey(nsId string, infraId string, vmId string) string {
 	if vmId != "" {
-		return "/ns/" + nsId + "/policy/mci/" + mciId + "/vm/" + vmId
-	} else if mciId != "" {
-		return "/ns/" + nsId + "/policy/mci/" + mciId
+		return "/ns/" + nsId + "/policy/infra/" + infraId + "/vm/" + vmId
+	} else if infraId != "" {
+		return "/ns/" + nsId + "/policy/infra/" + infraId
 	} else if nsId != "" {
 		return "/ns/" + nsId
 	} else {
@@ -293,9 +293,9 @@ func GetCredentialHolderList() (model.CredentialHolderList, error) {
 	}
 
 	type holderStats struct {
-		providers        map[string]bool
-		connectionCount  int
-		verifiedCount    int
+		providers       map[string]bool
+		connectionCount int
+		verifiedCount   int
 	}
 
 	holderMap := make(map[string]*holderStats)

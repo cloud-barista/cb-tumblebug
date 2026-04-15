@@ -14,7 +14,7 @@ source $TestSetFile
 source ../conf.env
 
 echo "####################################################################"
-echo "## Command (SSH) to MCI "
+echo "## Command (SSH) to Infra "
 echo "####################################################################"
 
 CSP=${1}
@@ -24,17 +24,17 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
-MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 if [ "${INDEX}" == "0" ]; then
-	# MCIPREFIX=avengers
-	MCIID=${POSTFIX}
+	# InfraPREFIX=avengers
+	InfraID=${POSTFIX}
 fi
 
-MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
-VMARRAY=$(jq -r '.status.vm' <<<"$MCIINFO")
-MASTERIP=$(jq -r '.status.masterIp' <<<"$MCIINFO")
-MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCIINFO")
+InfraINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}?option=status)
+VMARRAY=$(jq -r '.status.vm' <<<"$InfraINFO")
+MASTERIP=$(jq -r '.status.masterIp' <<<"$InfraINFO")
+MASTERVM=$(jq -r '.status.masterVmId' <<<"$InfraINFO")
 
 echo "MASTERIP: $MASTERIP"
 echo "MASTERVM: $MASTERVM"
@@ -72,7 +72,7 @@ echo "PRIVIPLIST: $PRIVIPLIST"
 
 LAUNCHCMD="sudo scope stop"
 echo "Stopping Weavescope for master node if exist..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$InfraID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
@@ -81,7 +81,7 @@ EOF
 LAUNCHCMD="sudo scope launch $IPLIST $PRIVIPLIST"
 
 echo "Launching Weavescope for master node..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$InfraID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
@@ -91,13 +91,13 @@ EOF
 LAUNCHCMD="sudo scope launch $MASTERIP $PRIVIPLIST"
 
 echo ""
-echo "[MCI Weavescope: master node only] Access to"
+echo "[Infra Weavescope: master node only] Access to"
 echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 echo ""
 echo "Working on clustring..."
 
 echo "Launching Weavescope for the other nodes..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$InfraID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
@@ -109,6 +109,6 @@ duration=$SECONDS
 printElapsed $@
 echo ""
 
-echo "[MCI Weavescope: complete cluster] Access to"
+echo "[Infra Weavescope: complete cluster] Access to"
 echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 echo ""

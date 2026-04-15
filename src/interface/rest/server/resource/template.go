@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net/http"
 
-	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -249,7 +249,7 @@ func RestPostVNetFromTemplate(c echo.Context) error {
 
 	// Policy-mode templates require connection context and are used for dynamic provisioning only
 	if template.VNetPolicy != nil {
-		err := fmt.Errorf("vNet template '%s' uses policy mode and cannot be applied directly; use dynamic provisioning (MCI) instead", templateId)
+		err := fmt.Errorf("vNet template '%s' uses policy mode and cannot be applied directly; use dynamic provisioning (Infra) instead", templateId)
 		log.Warn().Err(err).Msg("cannot apply policy-mode vNet template directly")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

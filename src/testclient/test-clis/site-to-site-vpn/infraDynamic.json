@@ -2,7 +2,7 @@
   "description": "Multi-CSP Test infra for VPN tunnel",
   "installMonAgent": "no",
   "name": "",
-  "subGroups": [
+  "nodeGroups": [
     {
       "imageId": "ami-08a4fd517a4872931",
       "specId": "aws+ap-northeast-2+t3a.nano"

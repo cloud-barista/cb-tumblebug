@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package model
 
 // SiteDetail struct represents the structure for detailed site information
@@ -37,19 +37,19 @@ type sites struct {
 	OpenStack []SiteDetail `json:"openstack,omitempty"`
 }
 
-// SitesInfo struct represents the overall site information including namespace and MCI ID
+// SitesInfo struct represents the overall site information including namespace and Infra ID
 type SitesInfo struct {
-	NsId  string `json:"nsId" example:"ns-01"`
-	MciId string `json:"mciId" example:"mci-01"`
-	Count int    `json:"count" example:"3"`
-	Sites sites  `json:"sites"`
+	NsId    string `json:"nsId" example:"ns-01"`
+	InfraId string `json:"infraId" example:"infra-01"`
+	Count   int    `json:"count" example:"3"`
+	Sites   sites  `json:"sites"`
 }
 
-func NewSiteInfo(nsId, mciId string) *SitesInfo {
+func NewSiteInfo(nsId, infraId string) *SitesInfo {
 	siteInfo := &SitesInfo{
-		NsId:  nsId,
-		MciId: mciId,
-		Count: 0,
+		NsId:    nsId,
+		InfraId: infraId,
+		Count:   0,
 		Sites: sites{
 			Aws:       []SiteDetail{},
 			Azure:     []SiteDetail{},

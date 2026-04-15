@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -38,17 +38,17 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var mciInfoMutex sync.Mutex
+var infraInfoMutex sync.Mutex
 
-// [MCI and VM object information managemenet]
+// [Infra and VM object information managemenet]
 
-// ListMciId is func to list MCI ID
-func ListMciId(nsId string) ([]string, error) {
+// ListInfraId is func to list Infra ID
+func ListInfraId(nsId string) ([]string, error) {
 
-	var mciList []string
+	var infraList []string
 
-	// Check MCI exists
-	key := common.GenMciKey(nsId, "", "")
+	// Check Infra exists
+	key := common.GenInfraKey(nsId, "", "")
 	key += "/"
 
 	keyValue, err := kvstore.GetKvList(key)
@@ -59,20 +59,20 @@ func ListMciId(nsId string) ([]string, error) {
 	}
 
 	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/mci/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + "mci/"))
-			// prevent malformed key (if key for mci id includes '/', the key does not represent MCI ID)
+		if strings.Contains(v.Key, "/infra/") {
+			trimmedString := strings.TrimPrefix(v.Key, (key + "infra/"))
+			// prevent malformed key (if key for infra id includes '/', the key does not represent Infra ID)
 			if !strings.Contains(trimmedString, "/") {
-				mciList = append(mciList, trimmedString)
+				infraList = append(infraList, trimmedString)
 			}
 		}
 	}
 
-	return mciList, nil
+	return infraList, nil
 }
 
 // ListVmId is func to list VM IDs
-func ListVmId(nsId string, mciId string) ([]string, error) {
+func ListVmId(nsId string, infraId string) ([]string, error) {
 
 	// err := common.CheckString(nsId)
 	// if err != nil {
@@ -80,7 +80,7 @@ func ListVmId(nsId string, mciId string) ([]string, error) {
 	// 	return nil, err
 	// }
 
-	// err = common.CheckString(mciId)
+	// err = common.CheckString(infraId)
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
 	// 	return nil, err
@@ -88,13 +88,13 @@ func ListVmId(nsId string, mciId string) ([]string, error) {
 
 	var vmList []string
 
-	// Check MCI exists
-	key := common.GenMciKey(nsId, mciId, "")
+	// Check Infra exists
+	key := common.GenInfraKey(nsId, infraId, "")
 	key += "/"
 
 	_, _, err := kvstore.GetKv(key)
 	if err != nil {
-		log.Debug().Msg("[Not found] " + mciId)
+		log.Debug().Msg("[Not found] " + infraId)
 		log.Error().Err(err).Msg("")
 		return vmList, err
 	}
@@ -121,9 +121,9 @@ func ListVmId(nsId string, mciId string) ([]string, error) {
 }
 
 // ListVmByLabel is a function to list VM IDs by label
-func ListVmByLabel(nsId string, mciId string, labelKey string) ([]string, error) {
+func ListVmByLabel(nsId string, infraId string, labelKey string) ([]string, error) {
 	// Construct the label selector
-	labelSelector := labelKey + " exists" + "," + model.LabelNamespace + "=" + nsId + "," + model.LabelMciId + "=" + mciId
+	labelSelector := labelKey + " exists" + "," + model.LabelNamespace + "=" + nsId + "," + model.LabelInfraId + "=" + infraId
 
 	// Call GetResourcesByLabelSelector (returns []interface{})
 	resources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)
@@ -148,16 +148,16 @@ func ListVmByLabel(nsId string, mciId string, labelKey string) ([]string, error)
 	return vmListByLabel, nil
 }
 
-// ListVmByFilter is func to get list VMs in a MCI by a filter consist of Key and Value
-func ListVmByFilter(nsId string, mciId string, filterKey string, filterVal string) ([]string, error) {
+// ListVmByFilter is func to get list VMs in a Infra by a filter consist of Key and Value
+func ListVmByFilter(nsId string, infraId string, filterKey string, filterVal string) ([]string, error) {
 
-	check, err := CheckMci(nsId, mciId)
+	check, err := CheckInfra(nsId, infraId)
 	if !check {
-		err := fmt.Errorf("Not found the MCI: " + mciId + " from the NS: " + nsId)
+		err := fmt.Errorf("Not found the Infra: " + infraId + " from the NS: " + nsId)
 		return nil, err
 	}
 
-	vmList, err := ListVmId(nsId, mciId)
+	vmList, err := ListVmId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -169,8 +169,8 @@ func ListVmByFilter(nsId string, mciId string, filterKey string, filterVal strin
 		return vmList, nil
 	}
 
-	// Use existing ListMciVmInfo function instead of individual GetVmObject calls
-	vmInfoList, err := ListMciVmInfo(nsId, mciId)
+	// Use existing ListInfraVmInfo function instead of individual GetVmObject calls
+	vmInfoList, err := ListInfraVmInfo(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -201,37 +201,37 @@ func ListVmByFilter(nsId string, mciId string, filterKey string, filterVal strin
 	return groupVmList, nil
 }
 
-// ListVmBySubGroup is func to get VM list with a SubGroup label in a specified MCI
-func ListVmBySubGroup(nsId string, mciId string, groupId string) ([]string, error) {
-	// SubGroupId is the Key for SubGroupId in model.VmInfo struct
-	filterKey := "SubGroupId"
-	return ListVmByFilter(nsId, mciId, filterKey, groupId)
+// ListVmByNodeGroup is func to get VM list with a NodeGroup label in a specified Infra
+func ListVmByNodeGroup(nsId string, infraId string, groupId string) ([]string, error) {
+	// NodeGroupId is the Key for NodeGroupId in model.VmInfo struct
+	filterKey := "NodeGroupId"
+	return ListVmByFilter(nsId, infraId, filterKey, groupId)
 }
 
-// GetSubGroup is func to return list of SubGroups in a given MCI
-func GetSubGroup(nsId string, mciId string, subGroupId string) (model.SubGroupInfo, error) {
-	subGroupInfo := model.SubGroupInfo{}
+// GetNodeGroup is func to return list of NodeGroups in a given Infra
+func GetNodeGroup(nsId string, infraId string, nodeGroupId string) (model.NodeGroupInfo, error) {
+	nodeGroupInfo := model.NodeGroupInfo{}
 
-	key := common.GenMciSubGroupKey(nsId, mciId, subGroupId)
+	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId)
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return subGroupInfo, err
+		return nodeGroupInfo, err
 	}
-	err = json.Unmarshal([]byte(keyValue.Value), &subGroupInfo)
+	err = json.Unmarshal([]byte(keyValue.Value), &nodeGroupInfo)
 	if err != nil {
-		err = fmt.Errorf("failed to get subGroupInfo (Key: %s), message: failed to unmarshal", key)
+		err = fmt.Errorf("failed to get nodeGroupInfo (Key: %s), message: failed to unmarshal", key)
 		log.Error().Err(err).Msg("")
-		return subGroupInfo, err
+		return nodeGroupInfo, err
 	}
-	return subGroupInfo, nil
+	return nodeGroupInfo, nil
 }
 
-// ListSubGroupId is func to return list of SubGroups in a given MCI
-func ListSubGroupId(nsId string, mciId string) ([]string, error) {
+// ListNodeGroupId is func to return list of NodeGroups in a given Infra
+func ListNodeGroupId(nsId string, infraId string) ([]string, error) {
 
-	//log.Debug().Msg("[ListSubGroupId]")
-	key := common.GenMciKey(nsId, mciId, "")
+	//log.Debug().Msg("[ListNodeGroupId]")
+	key := common.GenInfraKey(nsId, infraId, "")
 	key += "/"
 
 	keyValue, err := kvstore.GetKvList(key)
@@ -239,88 +239,88 @@ func ListSubGroupId(nsId string, mciId string) ([]string, error) {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	var subGroupList []string
+	var nodeGroupList []string
 	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/subgroup/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + "subgroup/"))
+		if strings.Contains(v.Key, "/nodegroup/") {
+			trimmedString := strings.TrimPrefix(v.Key, (key + "nodegroup/"))
 			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
 			if !strings.Contains(trimmedString, "/") {
-				subGroupList = append(subGroupList, trimmedString)
+				nodeGroupList = append(nodeGroupList, trimmedString)
 			}
 		}
 	}
-	return subGroupList, nil
+	return nodeGroupList, nil
 }
 
-// GetMciInfo is func to return MCI information with the current status update
-func GetMciInfo(nsId string, mciId string) (*model.MciInfo, error) {
+// GetInfraInfo is func to return Infra information with the current status update
+func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 
-	check, _ := CheckMci(nsId, mciId)
+	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
-		temp := &model.MciInfo{}
-		err := fmt.Errorf("The mci " + mciId + " does not exist.")
+		temp := &model.InfraInfo{}
+		err := fmt.Errorf("The infra " + infraId + " does not exist.")
 		return temp, err
 	}
 
-	mciObj, _, err := GetMciObject(nsId, mciId)
+	infraObj, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	// common.PrintJsonPretty(mciObj)
+	// common.PrintJsonPretty(infraObj)
 
-	mciStatus, err := GetMciStatus(nsId, mciId)
+	infraStatus, err := GetInfraStatus(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	// common.PrintJsonPretty(mciStatus)
+	// common.PrintJsonPretty(infraStatus)
 
-	mciObj.Status = mciStatus.Status
-	mciObj.StatusCount = mciStatus.StatusCount
+	infraObj.Status = infraStatus.Status
+	infraObj.StatusCount = infraStatus.StatusCount
 
-	vmList, err := ListVmId(nsId, mciId)
+	vmList, err := ListVmId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	sort.Slice(mciObj.Vm, func(i, j int) bool {
-		return mciObj.Vm[i].Id < mciObj.Vm[j].Id
+	sort.Slice(infraObj.Vm, func(i, j int) bool {
+		return infraObj.Vm[i].Id < infraObj.Vm[j].Id
 	})
 
 	for vmInfoIndex := range vmList {
-		for vmStatusInfoIndex := range mciStatus.Vm {
-			if mciObj.Vm[vmInfoIndex].Id == mciStatus.Vm[vmStatusInfoIndex].Id {
-				mciObj.Vm[vmInfoIndex].Status = mciStatus.Vm[vmStatusInfoIndex].Status
-				mciObj.Vm[vmInfoIndex].TargetStatus = mciStatus.Vm[vmStatusInfoIndex].TargetStatus
-				mciObj.Vm[vmInfoIndex].TargetAction = mciStatus.Vm[vmStatusInfoIndex].TargetAction
+		for vmStatusInfoIndex := range infraStatus.Vm {
+			if infraObj.Vm[vmInfoIndex].Id == infraStatus.Vm[vmStatusInfoIndex].Id {
+				infraObj.Vm[vmInfoIndex].Status = infraStatus.Vm[vmStatusInfoIndex].Status
+				infraObj.Vm[vmInfoIndex].TargetStatus = infraStatus.Vm[vmStatusInfoIndex].TargetStatus
+				infraObj.Vm[vmInfoIndex].TargetAction = infraStatus.Vm[vmStatusInfoIndex].TargetAction
 				break
 			}
 		}
 	}
 
 	// add label info for VM
-	for i := range mciObj.Vm {
-		labelInfo, err := label.GetLabels(model.StrVM, mciObj.Vm[i].Uid)
+	for i := range infraObj.Vm {
+		labelInfo, err := label.GetLabels(model.StrVM, infraObj.Vm[i].Uid)
 		if err != nil {
 			log.Error().Err(err).Msg("Cannot get the label info")
 			return nil, err
 		}
-		mciObj.Vm[i].Label = labelInfo.Labels
+		infraObj.Vm[i].Label = labelInfo.Labels
 	}
 
 	// add label info
-	labelInfo, err := label.GetLabels(model.StrMCI, mciObj.Uid)
+	labelInfo, err := label.GetLabels(model.StrInfra, infraObj.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot get the label info")
 		return nil, err
 	}
-	mciObj.Label = labelInfo.Labels
+	infraObj.Label = labelInfo.Labels
 
-	return &mciObj, nil
+	return &infraObj, nil
 }
 
 // filterOutSystemLabels returns a copy of labels excluding system-managed keys (prefixed with "sys.").
@@ -337,42 +337,42 @@ func filterOutSystemLabels(labels map[string]string) map[string]string {
 	return filtered
 }
 
-// ExtractMciDynamicReqFromMciInfo reconstructs an MciDynamicReq from a running MCI's info.
+// ExtractInfraDynamicReqFromInfraInfo reconstructs an InfraDynamicReq from a running Infra's info.
 // This returns a dynamic creation request (resources like vNet, subnet, SG, sshKey are auto-created)
-// so that users can easily clone or recreate a similar MCI configuration.
-func ExtractMciDynamicReqFromMciInfo(nsId string, mciId string) (*model.MciDynamicReq, error) {
+// so that users can easily clone or recreate a similar Infra configuration.
+func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.InfraDynamicReq, error) {
 
-	mciInfo, err := GetMciInfo(nsId, mciId)
+	infraInfo, err := GetInfraInfo(nsId, infraId)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(mciInfo.Vm) == 0 {
-		return nil, fmt.Errorf("MCI '%s' has no VMs to extract configuration from", mciId)
+	if len(infraInfo.Vm) == 0 {
+		return nil, fmt.Errorf("Infra '%s' has no VMs to extract configuration from", infraId)
 	}
 
-	// Group VMs by SubGroupId to reconstruct SubGroup requests
-	subGroupMap := make(map[string][]model.VmInfo)
-	var subGroupOrder []string
-	for _, vm := range mciInfo.Vm {
-		sgId := vm.SubGroupId
+	// Group VMs by NodeGroupId to reconstruct NodeGroup requests
+	nodeGroupMap := make(map[string][]model.VmInfo)
+	var nodeGroupOrder []string
+	for _, vm := range infraInfo.Vm {
+		sgId := vm.NodeGroupId
 		if sgId == "" {
 			sgId = vm.Id // fallback: treat each VM as its own group
 		}
-		if _, exists := subGroupMap[sgId]; !exists {
-			subGroupOrder = append(subGroupOrder, sgId)
+		if _, exists := nodeGroupMap[sgId]; !exists {
+			nodeGroupOrder = append(nodeGroupOrder, sgId)
 		}
-		subGroupMap[sgId] = append(subGroupMap[sgId], vm)
+		nodeGroupMap[sgId] = append(nodeGroupMap[sgId], vm)
 	}
 
-	var subGroups []model.CreateSubGroupDynamicReq
-	for _, sgId := range subGroupOrder {
-		vms := subGroupMap[sgId]
-		// Use the first VM in each subgroup as the representative spec
+	var nodeGroups []model.CreateNodeGroupDynamicReq
+	for _, sgId := range nodeGroupOrder {
+		vms := nodeGroupMap[sgId]
+		// Use the first VM in each nodegroup as the representative spec
 		rep := vms[0]
-		sg := model.CreateSubGroupDynamicReq{
+		sg := model.CreateNodeGroupDynamicReq{
 			Name:           sgId,
-			SubGroupSize:   len(vms),
+			NodeGroupSize:  len(vms),
 			Label:          filterOutSystemLabels(rep.Label),
 			Description:    rep.Description,
 			ConnectionName: rep.ConnectionName,
@@ -382,93 +382,93 @@ func ExtractMciDynamicReqFromMciInfo(nsId string, mciId string) (*model.MciDynam
 			RootDiskSize:   rep.RootDiskSize,
 			Zone:           rep.Region.Zone,
 		}
-		subGroups = append(subGroups, sg)
+		nodeGroups = append(nodeGroups, sg)
 	}
 
-	mciDynamicReq := &model.MciDynamicReq{
-		Name:            mciInfo.Name,
-		InstallMonAgent: mciInfo.InstallMonAgent,
-		Label:           filterOutSystemLabels(mciInfo.Label),
-		SystemLabel:     mciInfo.SystemLabel,
-		Description:     mciInfo.Description,
-		SubGroups:       subGroups,
-		PostCommand:     mciInfo.PostCommand,
+	infraDynamicReq := &model.InfraDynamicReq{
+		Name:            infraInfo.Name,
+		InstallMonAgent: infraInfo.InstallMonAgent,
+		Label:           filterOutSystemLabels(infraInfo.Label),
+		SystemLabel:     infraInfo.SystemLabel,
+		Description:     infraInfo.Description,
+		NodeGroups:      nodeGroups,
+		PostCommand:     infraInfo.PostCommand,
 	}
 
-	return mciDynamicReq, nil
+	return infraDynamicReq, nil
 }
 
-// GetMciAccessInfo is func to retrieve MCI Access information
-func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAccessInfo, error) {
+// GetInfraAccessInfo is func to retrieve Infra Access information
+func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.InfraAccessInfo, error) {
 
-	output := &model.MciAccessInfo{}
-	temp := &model.MciAccessInfo{}
+	output := &model.InfraAccessInfo{}
+	temp := &model.InfraAccessInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckMci(nsId, mciId)
+	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The mci " + mciId + " does not exist.")
+		err := fmt.Errorf("The infra " + infraId + " does not exist.")
 		return temp, err
 	}
 
-	// Get MCI information to check if it's being terminated
-	mciInfo, err := GetMciInfo(nsId, mciId)
+	// Get Infra information to check if it's being terminated
+	infraInfo, err := GetInfraInfo(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get MCI info")
+		log.Error().Err(err).Msg("failed to get Infra info")
 		return temp, err
 	}
 
-	// Check if MCI is being terminated or terminate action
-	if strings.EqualFold(mciInfo.Status, model.StatusTerminated) ||
-		mciInfo.TargetAction == model.ActionTerminate {
-		err := fmt.Errorf("MCI %s is currently being terminated or in terminate action (Status: %s, TargetAction: %s)",
-			mciId, mciInfo.Status, mciInfo.TargetAction)
+	// Check if Infra is being terminated or terminate action
+	if strings.EqualFold(infraInfo.Status, model.StatusTerminated) ||
+		infraInfo.TargetAction == model.ActionTerminate {
+		err := fmt.Errorf("Infra %s is currently being terminated or in terminate action (Status: %s, TargetAction: %s)",
+			infraId, infraInfo.Status, infraInfo.TargetAction)
 		log.Info().Msg(err.Error())
 		return temp, err
 	}
 
-	output.MciId = mciId
+	output.InfraId = infraId
 
-	mcNlbAccess, err := GetMcNlbAccess(nsId, mciId)
+	mcNlbAccess, err := GetMcNlbAccess(nsId, infraId)
 	if err == nil {
-		output.MciNlbListener = mcNlbAccess
+		output.InfraNlbListener = mcNlbAccess
 	}
 
-	subGroupList, err := ListSubGroupId(nsId, mciId)
+	nodeGroupList, err := ListNodeGroupId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	// TODO: make in parallel
 
-	for _, groupId := range subGroupList {
-		subGroupAccessInfo := model.MciSubGroupAccessInfo{}
-		subGroupAccessInfo.SubGroupId = groupId
-		nlb, err := GetNLB(nsId, mciId, groupId)
+	for _, groupId := range nodeGroupList {
+		nodeGroupAccessInfo := model.InfraNodeGroupAccessInfo{}
+		nodeGroupAccessInfo.NodeGroupId = groupId
+		nlb, err := GetNLB(nsId, infraId, groupId)
 		if err == nil {
-			subGroupAccessInfo.NlbListener = &nlb.Listener
+			nodeGroupAccessInfo.NlbListener = &nlb.Listener
 		}
-		vmList, err := ListVmBySubGroup(nsId, mciId, groupId)
+		vmList, err := ListVmByNodeGroup(nsId, infraId, groupId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return temp, err
 		}
 		var wg sync.WaitGroup
-		chanResults := make(chan model.MciVmAccessInfo)
+		chanResults := make(chan model.InfraVmAccessInfo)
 
 		for _, vmId := range vmList {
 			// Check if VM is terminated before processing
-			vmObject, err := GetVmObject(nsId, mciId, vmId)
+			vmObject, err := GetVmObject(nsId, infraId, vmId)
 			if err != nil {
 				log.Debug().Err(err).Msgf("Failed to get VM object for %s, skipping", vmId)
 				continue
@@ -481,12 +481,12 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 			}
 
 			wg.Add(1)
-			go func(nsId string, mciId string, vmId string, option string, chanResults chan model.MciVmAccessInfo) {
+			go func(nsId string, infraId string, vmId string, option string, chanResults chan model.InfraVmAccessInfo) {
 				defer wg.Done()
 				common.RandomSleep(0, len(vmList)/2*1000)
-				vmInfo, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+				vmInfo, err := GetVmCurrentPublicIp(nsId, infraId, vmId)
 
-				vmAccessInfo := model.MciVmAccessInfo{}
+				vmAccessInfo := model.InfraVmAccessInfo{}
 				if err != nil {
 					log.Info().Err(err).Msg("")
 					vmAccessInfo.PublicIP = ""
@@ -499,14 +499,14 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 				}
 				vmAccessInfo.VmId = vmId
 
-				vmObject, err := GetVmObject(nsId, mciId, vmId)
+				vmObject, err := GetVmObject(nsId, infraId, vmId)
 				if err != nil {
 					log.Info().Err(err).Msg("")
 				} else {
 					vmAccessInfo.ConnectionConfig = vmObject.ConnectionConfig
 				}
 
-				_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, mciId, vmId)
+				_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, infraId, vmId)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					vmAccessInfo.PrivateKey = ""
@@ -520,26 +520,26 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 
 				//vmAccessInfo.VmUserPassword
 				chanResults <- vmAccessInfo
-			}(nsId, mciId, vmId, option, chanResults)
+			}(nsId, infraId, vmId, option, chanResults)
 		}
 		go func() {
 			wg.Wait()
 			close(chanResults)
 		}()
 		for result := range chanResults {
-			subGroupAccessInfo.MciVmAccessInfo = append(subGroupAccessInfo.MciVmAccessInfo, result)
+			nodeGroupAccessInfo.InfraVmAccessInfo = append(nodeGroupAccessInfo.InfraVmAccessInfo, result)
 		}
 
-		output.MciSubGroupAccessInfo = append(output.MciSubGroupAccessInfo, subGroupAccessInfo)
+		output.InfraNodeGroupAccessInfo = append(output.InfraNodeGroupAccessInfo, nodeGroupAccessInfo)
 	}
 
 	return output, nil
 }
 
-// GetMciVmAccessInfo is func to retrieve MCI Access information
-func GetMciVmAccessInfo(nsId string, mciId string, vmId string, option string) (*model.MciVmAccessInfo, error) {
+// GetInfraVmAccessInfo is func to retrieve Infra Access information
+func GetInfraVmAccessInfo(nsId string, infraId string, vmId string, option string) (*model.InfraVmAccessInfo, error) {
 
-	output := &model.MciVmAccessInfo{}
+	output := &model.InfraVmAccessInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -547,23 +547,23 @@ func GetMciVmAccessInfo(nsId string, mciId string, vmId string, option string) (
 		return output, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return output, err
 	}
-	check, _ := CheckMci(nsId, mciId)
+	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The mci %s does not exist.", mciId)
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return output, err
 	}
 
 	output.VmId = vmId
 
-	vmInfo, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+	vmInfo, err := GetVmCurrentPublicIp(nsId, infraId, vmId)
 
-	vmAccessInfo := &model.MciVmAccessInfo{}
+	vmAccessInfo := &model.InfraVmAccessInfo{}
 	if err != nil {
 		log.Info().Err(err).Msg("")
 		return output, err
@@ -574,7 +574,7 @@ func GetMciVmAccessInfo(nsId string, mciId string, vmId string, option string) (
 	}
 	vmAccessInfo.VmId = vmId
 
-	vmObject, err := GetVmObject(nsId, mciId, vmId)
+	vmObject, err := GetVmObject(nsId, infraId, vmId)
 	if err != nil {
 		log.Info().Err(err).Msg("")
 		return output, err
@@ -582,7 +582,7 @@ func GetMciVmAccessInfo(nsId string, mciId string, vmId string, option string) (
 		vmAccessInfo.ConnectionConfig = vmObject.ConnectionConfig
 	}
 
-	_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, mciId, vmId)
+	_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, infraId, vmId)
 	if err != nil {
 		log.Info().Err(err).Msg("")
 		return output, err
@@ -598,8 +598,8 @@ func GetMciVmAccessInfo(nsId string, mciId string, vmId string, option string) (
 	return output, nil
 }
 
-// ListMciInfo is func to get all MCI objects
-func ListMciInfo(nsId string, option string) ([]model.MciInfo, error) {
+// ListInfraInfo is func to get all Infra objects
+func ListInfraInfo(nsId string, option string) ([]model.InfraInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -607,46 +607,46 @@ func ListMciInfo(nsId string, option string) ([]model.MciInfo, error) {
 		return nil, err
 	}
 
-	Mci := []model.MciInfo{}
+	Infra := []model.InfraInfo{}
 
-	mciList, err := ListMciId(nsId)
+	infraList, err := ListInfraId(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	for _, v := range mciList {
+	for _, v := range infraList {
 
-		mciTmp, err := GetMciInfo(nsId, v)
+		infraTmp, err := GetInfraInfo(nsId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 
-		Mci = append(Mci, *mciTmp)
+		Infra = append(Infra, *infraTmp)
 	}
 
-	return Mci, nil
+	return Infra, nil
 }
 
-// ListMciVmInfo is func to Get all VM Info objects in MCI
-func ListMciVmInfo(nsId string, mciId string) ([]model.VmInfo, error) {
+// ListInfraVmInfo is func to Get all VM Info objects in Infra
+func ListInfraVmInfo(nsId string, infraId string) ([]model.VmInfo, error) {
 
-	// Check if MCI exists
-	check, err := CheckMci(nsId, mciId)
+	// Check if Infra exists
+	check, err := CheckInfra(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msgf("Cannot check MCI %s exist", mciId)
+		log.Error().Err(err).Msgf("Cannot check Infra %s exist", infraId)
 		return nil, err
 	}
 	if !check {
-		err := fmt.Errorf("MCI %s does not exist", mciId)
+		err := fmt.Errorf("Infra %s does not exist", infraId)
 		return nil, err
 	}
 
 	// Get VM ID list using existing function
-	vmIdList, err := ListVmId(nsId, mciId)
+	vmIdList, err := ListVmId(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to list VM IDs for MCI %s", mciId)
+		log.Error().Err(err).Msgf("Failed to list VM IDs for Infra %s", infraId)
 		return nil, err
 	}
 
@@ -665,16 +665,16 @@ func ListMciVmInfo(nsId string, mciId string) ([]model.VmInfo, error) {
 			defer wg.Done()
 
 			// Check if VM exists first to avoid race conditions during deletion
-			vmKey := common.GenMciKey(nsId, mciId, vmId)
+			vmKey := common.GenInfraKey(nsId, infraId, vmId)
 			_, exists, err := kvstore.GetKv(vmKey)
 			if err != nil || !exists {
-				// VM might be deleted by concurrent operations (e.g., DelMci)
-				// This is normal during MCI deletion process, so use Debug level
+				// VM might be deleted by concurrent operations (e.g., DelInfra)
+				// This is normal during Infra deletion process, so use Debug level
 				log.Debug().Msgf("VM object not found for vmId: %s (possibly deleted concurrently)", vmId)
 				return // Skip this VM
 			}
 
-			vmInfo, err := GetVmObject(nsId, mciId, vmId)
+			vmInfo, err := GetVmObject(nsId, infraId, vmId)
 			if err != nil {
 				// Secondary check - VM might have been deleted between existence check and retrieval
 				log.Debug().Err(err).Msgf("VM object retrieval failed for vmId: %s (possibly deleted concurrently)", vmId)
@@ -700,40 +700,40 @@ func ListMciVmInfo(nsId string, mciId string) ([]model.VmInfo, error) {
 	return vmInfoList, nil
 }
 
-// GetMciObject is func to retrieve MCI object from database (no current status update)
-func GetMciObject(nsId string, mciId string) (model.MciInfo, bool, error) {
-	//log.Debug().Msg("[GetMciObject]" + mciId)
-	key := common.GenMciKey(nsId, mciId, "")
+// GetInfraObject is func to retrieve Infra object from database (no current status update)
+func GetInfraObject(nsId string, infraId string) (model.InfraInfo, bool, error) {
+	//log.Debug().Msg("[GetInfraObject]" + infraId)
+	key := common.GenInfraKey(nsId, infraId, "")
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.MciInfo{}, false, err
+		return model.InfraInfo{}, false, err
 	}
 	if !exists {
-		log.Warn().Msgf("no MCI found (ID: %s)", key)
-		return model.MciInfo{}, false, err
+		log.Warn().Msgf("no Infra found (ID: %s)", key)
+		return model.InfraInfo{}, false, err
 	}
 
-	mciTmp := model.MciInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
+	infraTmp := model.InfraInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
 
-	// Use existing ListMciVmInfo function instead of manually iterating through VMs
-	vmInfoList, err := ListMciVmInfo(nsId, mciId)
+	// Use existing ListInfraVmInfo function instead of manually iterating through VMs
+	vmInfoList, err := ListInfraVmInfo(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.MciInfo{}, false, err
+		return model.InfraInfo{}, false, err
 	}
 
-	mciTmp.Vm = vmInfoList
+	infraTmp.Vm = vmInfoList
 
-	return mciTmp, true, nil
+	return infraTmp, true, nil
 }
 
 // GetVmObject is func to get VM object
-func GetVmObject(nsId string, mciId string, vmId string) (model.VmInfo, error) {
+func GetVmObject(nsId string, infraId string, vmId string) (model.VmInfo, error) {
 
 	vmTmp := model.VmInfo{}
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, vmId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		err = fmt.Errorf("failed to get GetVmObject (ID: %s)", key)
@@ -754,7 +754,7 @@ func GetVmObject(nsId string, mciId string, vmId string) (model.VmInfo, error) {
 	return vmTmp, nil
 }
 
-// ConvertVmInfoToVmStatusInfo converts VmInfo to VmStatusInfo for MCI status operations
+// ConvertVmInfoToVmStatusInfo converts VmInfo to VmStatusInfo for Infra status operations
 func ConvertVmInfoToVmStatusInfo(vmInfo model.VmInfo) model.VmStatusInfo {
 	return model.VmStatusInfo{
 		Id:              vmInfo.Id,
@@ -776,7 +776,7 @@ func ConvertVmInfoToVmStatusInfo(vmInfo model.VmInfo) model.VmStatusInfo {
 	}
 }
 
-// ConvertVmInfoListToVmStatusInfoList converts a slice of VmInfo to VmStatusInfo for MCI status operations
+// ConvertVmInfoListToVmStatusInfoList converts a slice of VmInfo to VmStatusInfo for Infra status operations
 func ConvertVmInfoListToVmStatusInfoList(vmInfoList []model.VmInfo) []model.VmStatusInfo {
 	vmStatusInfoList := make([]model.VmStatusInfo, len(vmInfoList))
 	for i, vmInfo := range vmInfoList {
@@ -785,21 +785,21 @@ func ConvertVmInfoListToVmStatusInfoList(vmInfoList []model.VmInfo) []model.VmSt
 	return vmStatusInfoList
 }
 
-// ensureVmStatusInfoComplete ensures all VMs from VmInfo are represented in MciStatus.Vm
+// ensureVmStatusInfoComplete ensures all VMs from VmInfo are represented in InfraStatus.Vm
 // This handles cases where VM status fetch might have failed or VM is newly created
-// ConvertMciInfoToMciStatusInfo converts MciInfo to MciStatusInfo (partial conversion for basic fields)
-func ConvertMciInfoToMciStatusInfo(mciInfo model.MciInfo) model.MciStatusInfo {
-	return model.MciStatusInfo{
-		Id:              mciInfo.Id,
-		Name:            mciInfo.Name,
-		Status:          mciInfo.Status,
-		StatusCount:     mciInfo.StatusCount,
-		TargetStatus:    mciInfo.TargetStatus,
-		TargetAction:    mciInfo.TargetAction,
-		InstallMonAgent: mciInfo.InstallMonAgent,
-		Label:           mciInfo.Label,
-		SystemLabel:     mciInfo.SystemLabel,
-		Vm:              ConvertVmInfoListToVmStatusInfoList(mciInfo.Vm),
+// ConvertInfraInfoToInfraStatusInfo converts InfraInfo to InfraStatusInfo (partial conversion for basic fields)
+func ConvertInfraInfoToInfraStatusInfo(infraInfo model.InfraInfo) model.InfraStatusInfo {
+	return model.InfraStatusInfo{
+		Id:              infraInfo.Id,
+		Name:            infraInfo.Name,
+		Status:          infraInfo.Status,
+		StatusCount:     infraInfo.StatusCount,
+		TargetStatus:    infraInfo.TargetStatus,
+		TargetAction:    infraInfo.TargetAction,
+		InstallMonAgent: infraInfo.InstallMonAgent,
+		Label:           infraInfo.Label,
+		SystemLabel:     infraInfo.SystemLabel,
+		Vm:              ConvertVmInfoListToVmStatusInfoList(infraInfo.Vm),
 		// MasterVmId, MasterIp, MasterSSHPort will be set by status determination logic
 	}
 }
@@ -844,8 +844,8 @@ func ConvertVmInfoFieldsToVmStatusInfoList(vmStatusList []model.VmStatusInfo, vm
 }
 
 // GetVmIdNameInDetail is func to get ID and Name details
-func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.IdNameInDetailInfo, error) {
-	key := common.GenMciKey(nsId, mciId, vmId)
+func GetVmIdNameInDetail(nsId string, infraId string, vmId string) (*model.IdNameInDetailInfo, error) {
+	key := common.GenInfraKey(nsId, infraId, vmId)
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -901,103 +901,103 @@ func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.IdNameI
 	return &idDetails, nil
 }
 
-// [MCI and VM status management]
+// [Infra and VM status management]
 
-// GetMciStatus is func to Get Mci Status
-func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
+// GetInfraStatus is func to Get Infra Status
+func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error) {
 
 	// err := common.CheckString(nsId)
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
-	// 	return &model.MciStatusInfo{}, err
+	// 	return &model.InfraStatusInfo{}, err
 	// }
 
-	// err = common.CheckString(mciId)
+	// err = common.CheckString(infraId)
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
-	// 	return &model.MciStatusInfo{}, err
+	// 	return &model.InfraStatusInfo{}, err
 	// }
 
-	key := common.GenMciKey(nsId, mciId, "")
+	key := common.GenInfraKey(nsId, infraId, "")
 
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.MciStatusInfo{}, err
+		return &model.InfraStatusInfo{}, err
 	}
 	if !exists {
 		err := fmt.Errorf("%s", "Not found ["+key+"]")
 		log.Error().Err(err).Msg("")
-		return &model.MciStatusInfo{}, err
+		return &model.InfraStatusInfo{}, err
 	}
 
-	mciStatus := model.MciStatusInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mciStatus)
+	infraStatus := model.InfraStatusInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &infraStatus)
 
-	mciTmp := model.MciInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
+	infraTmp := model.InfraInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
 
-	vmList, err := ListVmId(nsId, mciId)
+	vmList, err := ListVmId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.MciStatusInfo{}, err
+		return &model.InfraStatusInfo{}, err
 	}
 	if len(vmList) == 0 {
-		// MCI has no VMs - check if it's in provisioning phase or truly empty
-		currentStatus := mciTmp.Status
+		// Infra has no VMs - check if it's in provisioning phase or truly empty
+		currentStatus := infraTmp.Status
 		if strings.Contains(currentStatus, model.StatusPreparing) || strings.Contains(currentStatus, model.StatusPrepared) ||
 			strings.Contains(currentStatus, model.StatusCreating) || strings.Contains(currentStatus, model.StatusFailed) {
-			// MCI is in provisioning phase or failed - keep current status
-			mciStatus.Status = currentStatus
+			// Infra is in provisioning phase or failed - keep current status
+			infraStatus.Status = currentStatus
 		} else {
-			// MCI was already running/completed but now has no VMs - set to Empty
-			mciStatus.Status = model.StatusEmpty
+			// Infra was already running/completed but now has no VMs - set to Empty
+			infraStatus.Status = model.StatusEmpty
 		}
-		mciStatus.StatusCount = model.StatusCountInfo{}
-		mciStatus.Vm = []model.VmStatusInfo{}
-		return &mciStatus, nil
+		infraStatus.StatusCount = model.StatusCountInfo{}
+		infraStatus.Vm = []model.VmStatusInfo{}
+		return &infraStatus, nil
 	}
 
 	// Fetch VM statuses with rate limiting by CSP and region
-	vmStatusList, err := fetchVmStatusesWithRateLimiting(nsId, mciId, vmList)
+	vmStatusList, err := fetchVmStatusesWithRateLimiting(nsId, infraId, vmList)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.MciStatusInfo{}, err
+		return &model.InfraStatusInfo{}, err
 	}
-	// log.Debug().Msgf("Fetched %d VM statuses for MCI %s", len(vmStatusList), mciId)
+	// log.Debug().Msgf("Fetched %d VM statuses for Infra %s", len(vmStatusList), infraId)
 	// log.Debug().Msgf("VM Status List: %+v", vmStatusList)
 
-	// Copy results to mciStatus
-	mciStatus.Vm = vmStatusList
+	// Copy results to infraStatus
+	infraStatus.Vm = vmStatusList
 
-	vmInfos, err := ListMciVmInfo(nsId, mciId)
+	vmInfos, err := ListInfraVmInfo(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.MciStatusInfo{}, err
+		return &model.InfraStatusInfo{}, err
 	}
 
 	// If VM status fetch didn't populate all VMs, use VmInfo as fallback
-	if len(mciStatus.Vm) == 0 && len(vmInfos) > 0 {
-		// log.Debug().Msgf("No VM status info found, converting from VmInfo for MCI: %s", mciId)
-		mciStatus.Vm = ConvertVmInfoListToVmStatusInfoList(vmInfos)
+	if len(infraStatus.Vm) == 0 && len(vmInfos) > 0 {
+		// log.Debug().Msgf("No VM status info found, converting from VmInfo for Infra: %s", infraId)
+		infraStatus.Vm = ConvertVmInfoListToVmStatusInfoList(vmInfos)
 	}
 
 	for _, v := range vmInfos {
 		if strings.EqualFold(v.Status, model.StatusRunning) {
-			mciStatus.MasterVmId = v.Id
-			mciStatus.MasterIp = v.PublicIP
-			mciStatus.MasterSSHPort = v.SSHPort
+			infraStatus.MasterVmId = v.Id
+			infraStatus.MasterIp = v.PublicIP
+			infraStatus.MasterSSHPort = v.SSHPort
 			break
 		}
 	}
 
-	sort.Slice(mciStatus.Vm, func(i, j int) bool {
-		return mciStatus.Vm[i].Id < mciStatus.Vm[j].Id
+	sort.Slice(infraStatus.Vm, func(i, j int) bool {
+		return infraStatus.Vm[i].Id < infraStatus.Vm[j].Id
 	})
 
 	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	statusFlagStr := []string{model.StatusFailed, model.StatusSuspended, model.StatusRunning, model.StatusTerminated, model.StatusCreating, model.StatusSuspending, model.StatusResuming, model.StatusRebooting, model.StatusTerminating, model.StatusRegistering, model.StatusUndefined}
-	for _, v := range mciStatus.Vm {
+	for _, v := range infraStatus.Vm {
 
 		switch v.Status {
 		case model.StatusFailed:
@@ -1022,7 +1022,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			statusFlag[9]++
 		default:
 			statusFlag[10]++
-			log.Warn().Msgf("Undefined status (%s) found in VM %s of MCI %s", v.Status, v.Id, mciId)
+			log.Warn().Msgf("Undefined status (%s) found in VM %s of Infra %s", v.Status, v.Id, infraId)
 		}
 	}
 
@@ -1036,18 +1036,18 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	}
 
 	// Use the maximum of actual VM count and status VM count to handle race conditions during creation
-	// During MCI creation, len(vmList) might be smaller than len(mciStatus.Vm) due to timing issues
+	// During Infra creation, len(vmList) might be smaller than len(infraStatus.Vm) due to timing issues
 	actualVmCount := len(vmList)
-	statusVmCount := len(mciStatus.Vm)
+	statusVmCount := len(infraStatus.Vm)
 	vmInfoCount := len(vmInfos)
 
-	// Check if MCI is still being created/registered to use more stable VM count calculation
-	isCreating := strings.Contains(mciTmp.Status, model.StatusCreating) ||
-		strings.Contains(mciTmp.Status, model.StatusRegistering) ||
-		strings.Contains(mciTmp.TargetAction, model.ActionCreate) ||
-		strings.Contains(mciTmp.TargetStatus, model.StatusRunning)
+	// Check if Infra is still being created/registered to use more stable VM count calculation
+	isCreating := strings.Contains(infraTmp.Status, model.StatusCreating) ||
+		strings.Contains(infraTmp.Status, model.StatusRegistering) ||
+		strings.Contains(infraTmp.TargetAction, model.ActionCreate) ||
+		strings.Contains(infraTmp.TargetStatus, model.StatusRunning)
 
-	// Check if MCI is in a stable state (all VMs have same stable status)
+	// Check if Infra is in a stable state (all VMs have same stable status)
 	isStableState := tmpMax == statusVmCount && tmpMax > 0
 	// stableStatusName := ""
 	// if isStableState && tmpMaxIndex < len(statusFlagStr) {
@@ -1062,39 +1062,39 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			numVm = statusVmCount
 		}
 		// Additionally, ensure we don't show a VM count smaller than the previous maximum
-		if numVm < mciStatus.StatusCount.CountTotal && mciStatus.StatusCount.CountTotal > 0 {
-			numVm = mciStatus.StatusCount.CountTotal
+		if numVm < infraStatus.StatusCount.CountTotal && infraStatus.StatusCount.CountTotal > 0 {
+			numVm = infraStatus.StatusCount.CountTotal
 		}
 
-		// If we still have inconsistent counts, use the MCI's stored VM information as fallback
-		if len(mciTmp.Vm) > numVm {
-			numVm = len(mciTmp.Vm)
+		// If we still have inconsistent counts, use the Infra's stored VM information as fallback
+		if len(infraTmp.Vm) > numVm {
+			numVm = len(infraTmp.Vm)
 		}
 
-		// log.Debug().Msgf("MCI %s is creating: using stable VM count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
-		// 	mciId, numVm, actualVmCount, statusVmCount, mciStatus.StatusCount.CountTotal, len(mciTmp.Vm))
+		// log.Debug().Msgf("Infra %s is creating: using stable VM count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
+		// 	infraId, numVm, actualVmCount, statusVmCount, infraStatus.StatusCount.CountTotal, len(infraTmp.Vm))
 	} else if isStableState {
-		// For stable MCI states (all VMs in same state), use the most reliable source to avoid count fluctuation
+		// For stable Infra states (all VMs in same state), use the most reliable source to avoid count fluctuation
 		// This applies to Terminated, Suspended, Failed, Running, etc.
 		// Use the maximum of available counts, prioritizing vmInfos as they are stored persistently
 		numVm = vmInfoCount
 		if actualVmCount > numVm {
 			numVm = actualVmCount
 		}
-		if len(mciTmp.Vm) > numVm {
-			numVm = len(mciTmp.Vm)
+		if len(infraTmp.Vm) > numVm {
+			numVm = len(infraTmp.Vm)
 		}
 		// Ensure we don't show a count smaller than the actual VMs found in dominant status
 		if tmpMax > numVm {
 			numVm = tmpMax
 		}
 
-		// log.Debug().Msgf("MCI %s is in stable state (%s): using stable VM count (%d) - actual: %d, status: %d, vmInfos: %d, stored: %d, dominant: %d",
-		// 	mciId, stableStatusName, numVm, actualVmCount, statusVmCount, vmInfoCount, len(mciTmp.Vm), tmpMax)
+		// log.Debug().Msgf("Infra %s is in stable state (%s): using stable VM count (%d) - actual: %d, status: %d, vmInfos: %d, stored: %d, dominant: %d",
+		// 	infraId, stableStatusName, numVm, actualVmCount, statusVmCount, vmInfoCount, len(infraTmp.Vm), tmpMax)
 	} else {
-		// MCI creation completed, use actual VM count from status
+		// Infra creation completed, use actual VM count from status
 		numVm = statusVmCount
-		// log.Debug().Msgf("MCI %s creation completed: using status VM count (%d)", mciId, numVm)
+		// log.Debug().Msgf("Infra %s creation completed: using status VM count (%d)", infraId, numVm)
 	}
 
 	//numUnNormalStatus := statusFlag[0] + statusFlag[9]
@@ -1103,40 +1103,40 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 
 	proportionStr := ":" + strconv.Itoa(tmpMax) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
 	if tmpMax == numVm {
-		mciStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
+		infraStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
 	} else if tmpMax < numVm {
-		mciStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex] + proportionStr
+		infraStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex] + proportionStr
 	} else {
-		mciStatus.Status = statusFlagStr[9] + proportionStr
+		infraStatus.Status = statusFlagStr[9] + proportionStr
 	}
 	// // for representing Failed status in front.
 
 	// proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
 	// if statusFlag[0] > 0 {
-	// 	mciStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
+	// 	infraStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
 	// 	if statusFlag[0] == numVm {
-	// 		mciStatus.Status = statusFlagStr[0] + proportionStr
+	// 		infraStatus.Status = statusFlagStr[0] + proportionStr
 	// 	}
 	// }
 
 	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
 	// if statusFlag[9] > 0 {
-	// 	mciStatus.Status = statusFlagStr[9] + proportionStr
+	// 	infraStatus.Status = statusFlagStr[9] + proportionStr
 	// }
 
-	// Set mciStatus.StatusCount
-	mciStatus.StatusCount.CountTotal = numVm
-	mciStatus.StatusCount.CountFailed = statusFlag[0]
-	mciStatus.StatusCount.CountSuspended = statusFlag[1]
-	mciStatus.StatusCount.CountRunning = statusFlag[2]
-	mciStatus.StatusCount.CountTerminated = statusFlag[3]
-	mciStatus.StatusCount.CountCreating = statusFlag[4]
-	mciStatus.StatusCount.CountSuspending = statusFlag[5]
-	mciStatus.StatusCount.CountResuming = statusFlag[6]
-	mciStatus.StatusCount.CountRebooting = statusFlag[7]
-	mciStatus.StatusCount.CountTerminating = statusFlag[8]
-	mciStatus.StatusCount.CountRegistering = statusFlag[9]
-	mciStatus.StatusCount.CountUndefined = statusFlag[10]
+	// Set infraStatus.StatusCount
+	infraStatus.StatusCount.CountTotal = numVm
+	infraStatus.StatusCount.CountFailed = statusFlag[0]
+	infraStatus.StatusCount.CountSuspended = statusFlag[1]
+	infraStatus.StatusCount.CountRunning = statusFlag[2]
+	infraStatus.StatusCount.CountTerminated = statusFlag[3]
+	infraStatus.StatusCount.CountCreating = statusFlag[4]
+	infraStatus.StatusCount.CountSuspending = statusFlag[5]
+	infraStatus.StatusCount.CountResuming = statusFlag[6]
+	infraStatus.StatusCount.CountRebooting = statusFlag[7]
+	infraStatus.StatusCount.CountTerminating = statusFlag[8]
+	infraStatus.StatusCount.CountRegistering = statusFlag[9]
+	infraStatus.StatusCount.CountUndefined = statusFlag[10]
 
 	// Recovery/fallback handling for TargetAction completion
 	// Primary completion should happen in actual control actions (control.go, provisioning.go)
@@ -1144,14 +1144,14 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	isDone := true
 	pendingVmsCount := 0
 
-	// Check MCI target action to determine completion criteria
-	mciTargetAction := mciTmp.TargetAction
+	// Check Infra target action to determine completion criteria
+	infraTargetAction := infraTmp.TargetAction
 
 	// Only perform recovery completion if TargetAction is not already Complete
-	if mciTargetAction != model.ActionComplete && mciTargetAction != "" {
-		for _, v := range mciStatus.Vm {
+	if infraTargetAction != model.ActionComplete && infraTargetAction != "" {
+		for _, v := range infraStatus.Vm {
 			// Check completion based on action type
-			switch mciTargetAction {
+			switch infraTargetAction {
 			case model.ActionCreate:
 				// For Create action, completion means all VMs reach final states (Running/Failed/Terminated/Suspended)
 				// VM is considered pending if it's still in transitional states (Creating/Registering/Undefined/empty)
@@ -1210,26 +1210,26 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		}
 
 		// Log completion status for debugging
-		// log.Debug().Msgf("MCI %s %s recovery completion check: %d VMs total, %d pending, isDone=%t",
-		// 	mciId, mciTargetAction, len(mciStatus.Vm), pendingVmsCount, isDone)
+		// log.Debug().Msgf("Infra %s %s recovery completion check: %d VMs total, %d pending, isDone=%t",
+		// 	infraId, infraTargetAction, len(infraStatus.Vm), pendingVmsCount, isDone)
 
 		if isDone {
-			log.Warn().Msgf("MCI %s action %s completed via RECOVERY PATH (primary completion in control.go/provisioning.go was missed) - VM states: %d total, %d pending",
-				mciId, mciTargetAction, len(mciStatus.Vm), pendingVmsCount)
+			log.Warn().Msgf("Infra %s action %s completed via RECOVERY PATH (primary completion in control.go/provisioning.go was missed) - VM states: %d total, %d pending",
+				infraId, infraTargetAction, len(infraStatus.Vm), pendingVmsCount)
 
 			// Add more detailed logging for debugging
 			statusBreakdown := make(map[string]int)
-			for _, v := range mciStatus.Vm {
+			for _, v := range infraStatus.Vm {
 				statusBreakdown[v.Status]++
 			}
-			// log.Debug().Msgf("MCI %s recovery completion - VM status breakdown: %+v", mciId, statusBreakdown)
+			// log.Debug().Msgf("Infra %s recovery completion - VM status breakdown: %+v", infraId, statusBreakdown)
 
 			// Check if all VMs are in failed state
 			// If there are no VMs, consider it as all VMs failed for creation context
-			allVmsFailed := len(mciStatus.Vm) == 0
-			if len(mciStatus.Vm) > 0 {
+			allVmsFailed := len(infraStatus.Vm) == 0
+			if len(infraStatus.Vm) > 0 {
 				allVmsFailed = true
-				for _, v := range mciStatus.Vm {
+				for _, v := range infraStatus.Vm {
 					if v.Status != model.StatusFailed && v.Status != model.StatusTerminated {
 						allVmsFailed = false
 						break
@@ -1237,58 +1237,58 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 				}
 			}
 
-			if allVmsFailed && mciTargetAction == model.ActionCreate {
-				// All VMs failed during creation - mark MCI as Failed
-				log.Error().Msgf("MCI %s: All VMs failed during creation - setting MCI status to Failed", mciId)
-				mciStatus.TargetAction = model.ActionComplete
-				mciStatus.TargetStatus = model.StatusComplete // Target was to complete the creation process
-				mciStatus.Status = model.StatusFailed         // Actual status is Failed due to VM failures
-				mciTmp.TargetAction = model.ActionComplete
-				mciTmp.TargetStatus = model.StatusComplete // Target was to complete the creation process
-				mciTmp.Status = model.StatusFailed         // Actual status is Failed due to VM failures
+			if allVmsFailed && infraTargetAction == model.ActionCreate {
+				// All VMs failed during creation - mark Infra as Failed
+				log.Error().Msgf("Infra %s: All VMs failed during creation - setting Infra status to Failed", infraId)
+				infraStatus.TargetAction = model.ActionComplete
+				infraStatus.TargetStatus = model.StatusComplete // Target was to complete the creation process
+				infraStatus.Status = model.StatusFailed         // Actual status is Failed due to VM failures
+				infraTmp.TargetAction = model.ActionComplete
+				infraTmp.TargetStatus = model.StatusComplete // Target was to complete the creation process
+				infraTmp.Status = model.StatusFailed         // Actual status is Failed due to VM failures
 			} else {
 				// Normal completion
-				mciStatus.TargetAction = model.ActionComplete
-				mciStatus.TargetStatus = model.StatusComplete
-				mciTmp.TargetAction = model.ActionComplete
-				mciTmp.TargetStatus = model.StatusComplete
+				infraStatus.TargetAction = model.ActionComplete
+				infraStatus.TargetStatus = model.StatusComplete
+				infraTmp.TargetAction = model.ActionComplete
+				infraTmp.TargetStatus = model.StatusComplete
 			}
 
-			mciTmp.StatusCount = mciStatus.StatusCount
-			UpdateMciInfo(nsId, mciTmp)
+			infraTmp.StatusCount = infraStatus.StatusCount
+			UpdateInfraInfo(nsId, infraTmp)
 		}
 	}
 
-	return &mciStatus, nil
+	return &infraStatus, nil
 
 	//need to change status
 
 }
 
-// ListMciStatus is func to get MCI status all
-func ListMciStatus(nsId string) ([]model.MciStatusInfo, error) {
+// ListInfraStatus is func to get Infra status all
+func ListInfraStatus(nsId string) ([]model.InfraStatusInfo, error) {
 
-	//mciStatuslist := []model.MciStatusInfo{}
-	mciList, err := ListMciId(nsId)
+	//infraStatuslist := []model.InfraStatusInfo{}
+	infraList, err := ListInfraId(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return []model.MciStatusInfo{}, err
+		return []model.InfraStatusInfo{}, err
 	}
 
 	var wg sync.WaitGroup
-	chanResults := make(chan model.MciStatusInfo)
-	var mciStatuslist []model.MciStatusInfo
+	chanResults := make(chan model.InfraStatusInfo)
+	var infraStatuslist []model.InfraStatusInfo
 
-	for _, mciId := range mciList {
+	for _, infraId := range infraList {
 		wg.Add(1)
-		go func(nsId string, mciId string, chanResults chan model.MciStatusInfo) {
+		go func(nsId string, infraId string, chanResults chan model.InfraStatusInfo) {
 			defer wg.Done()
-			mciStatus, err := GetMciStatus(nsId, mciId)
+			infraStatus, err := GetInfraStatus(nsId, infraId)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
-			chanResults <- *mciStatus
-		}(nsId, mciId, chanResults)
+			chanResults <- *infraStatus
+		}(nsId, infraId, chanResults)
 	}
 
 	go func() {
@@ -1296,21 +1296,21 @@ func ListMciStatus(nsId string) ([]model.MciStatusInfo, error) {
 		close(chanResults)
 	}()
 	for result := range chanResults {
-		mciStatuslist = append(mciStatuslist, result)
+		infraStatuslist = append(infraStatuslist, result)
 	}
 
-	return mciStatuslist, nil
+	return infraStatuslist, nil
 
 	//need to change status
 
 }
 
 // GetVmCurrentPublicIp is func to get VM public IP
-func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.VmStatusInfo, error) {
+func GetVmCurrentPublicIp(nsId string, infraId string, vmId string) (model.VmStatusInfo, error) {
 	errorInfo := model.VmStatusInfo{}
 	errorInfo.Status = model.StatusFailed
 
-	temp, err := GetVmObject(nsId, mciId, vmId) // to check if the VM exists
+	temp, err := GetVmObject(nsId, infraId, vmId) // to check if the VM exists
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
@@ -1370,9 +1370,9 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.VmStatu
 }
 
 // GetVmIp is func to get VM IP to return PublicIP, PrivateIP, SSHPort
-func GetVmIp(nsId string, mciId string, vmId string) (string, string, int, error) {
+func GetVmIp(nsId string, infraId string, vmId string) (string, string, int, error) {
 
-	vmObject, err := GetVmObject(nsId, mciId, vmId)
+	vmObject, err := GetVmObject(nsId, infraId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", "", 0, err
@@ -1382,14 +1382,14 @@ func GetVmIp(nsId string, mciId string, vmId string) (string, string, int, error
 }
 
 // GetVmSpecId is func to get VM SpecId
-func GetVmSpecId(nsId string, mciId string, vmId string) string {
+func GetVmSpecId(nsId string, infraId string, vmId string) string {
 
 	var content struct {
 		SpecId string `json:"specId"`
 	}
 
 	log.Debug().Msg("[getVmSpecID]" + vmId)
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, vmId)
 
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
@@ -1424,7 +1424,7 @@ type VmGroupInfo struct {
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
 // Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
-func fetchVmStatusesWithRateLimiting(nsId, mciId string, vmList []string) ([]model.VmStatusInfo, error) {
+func fetchVmStatusesWithRateLimiting(nsId, infraId string, vmList []string) ([]model.VmStatusInfo, error) {
 	if len(vmList) == 0 {
 		return []model.VmStatusInfo{}, nil
 	}
@@ -1434,7 +1434,7 @@ func fetchVmStatusesWithRateLimiting(nsId, mciId string, vmList []string) ([]mod
 	vmGroupInfos := make(map[string]VmGroupInfo)     // VmId -> GroupInfo
 
 	for _, vmId := range vmList {
-		vmInfo, err := GetVmObject(nsId, mciId, vmId)
+		vmInfo, err := GetVmObject(nsId, infraId, vmId)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to get VM object for %s, skipping", vmId)
 			continue
@@ -1507,7 +1507,7 @@ func fetchVmStatusesWithRateLimiting(nsId, mciId string, vmList []string) ([]mod
 							defer func() { <-vmSemaphore }()
 
 							// Fetch VM status
-							vmStatusTmp, err := FetchVmStatus(nsId, mciId, vmId)
+							vmStatusTmp, err := FetchVmStatus(nsId, infraId, vmId)
 							if err != nil {
 								log.Error().Err(err).Msgf("Failed to fetch status for VM %s", vmId)
 								vmStatusTmp.Status = model.StatusFailed
@@ -1557,11 +1557,11 @@ func fetchVmStatusesWithRateLimiting(nsId, mciId string, vmList []string) ([]mod
 }
 
 // // FetchVmStatusAsync is func to get VM status async
-// func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, results *model.MciStatusInfo) error {
+// func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string, results *model.InfraStatusInfo) error {
 // 	defer wg.Done() //goroutine sync done
 
-// 	if nsId != "" && mciId != "" && vmId != "" {
-// 		vmStatusTmp, err := FetchVmStatus(nsId, mciId, vmId)
+// 	if nsId != "" && infraId != "" && vmId != "" {
+// 		vmStatusTmp, err := FetchVmStatus(nsId, infraId, vmId)
 // 		if err != nil {
 // 			log.Error().Err(err).Msg("")
 // 			vmStatusTmp.Status = model.StatusFailed
@@ -1593,11 +1593,11 @@ func populateVmStatusInfoFromVmInfo(statusInfo *model.VmStatusInfo, vmInfo model
 }
 
 // FetchVmStatus is func to fetch VM status (call to CSPs)
-func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, error) {
+func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo, error) {
 
 	statusInfo := model.VmStatusInfo{}
 
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	vmInfo, err := GetVmObject(nsId, infraId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return statusInfo, err
@@ -1733,7 +1733,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		callResult.Status = model.StatusUndefined
 	}
 
-	vmInfo, err = GetVmObject(nsId, mciId, vmId)
+	vmInfo, err = GetVmObject(nsId, infraId, vmId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return statusInfo, err
@@ -1838,7 +1838,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 			vmStatusTmp.TargetAction = model.ActionComplete
 
 			//Get current public IP when status has been changed.
-			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mciId, vmInfo.Id)
+			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, infraId, vmInfo.Id)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				statusInfo.SystemMessage = err.Error()
@@ -1861,7 +1861,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 
 	// Apply current status to vmInfo only if VM is not already terminated
 	// Prevent overwriting Terminated status with empty or other states
-	originalVmInfo, _ := GetVmObject(nsId, mciId, vmId)
+	originalVmInfo, _ := GetVmObject(nsId, infraId, vmId)
 	if originalVmInfo.Status != model.StatusTerminated {
 		vmInfo.Status = vmStatusTmp.Status
 		vmInfo.TargetAction = vmStatusTmp.TargetAction
@@ -1870,7 +1870,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 
 		if cspResourceName != "" {
 			// don't update VM info, if cspResourceName is empty
-			UpdateVmInfo(nsId, mciId, vmInfo)
+			UpdateVmInfo(nsId, infraId, vmInfo)
 		}
 	}
 	// else: VM is already terminated, skip status update
@@ -1878,8 +1878,8 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	return vmStatusTmp, nil
 }
 
-// GetMciVmStatus is func to Get MciVm Status with option to control CSP API fetch
-func GetMciVmStatus(nsId string, mciId string, vmId string, fetchFromCSP bool) (*model.VmStatusInfo, error) {
+// GetInfraVmStatus is func to Get InfraVm Status with option to control CSP API fetch
+func GetInfraVmStatus(nsId string, infraId string, vmId string, fetchFromCSP bool) (*model.VmStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1888,7 +1888,7 @@ func GetMciVmStatus(nsId string, mciId string, vmId string, fetchFromCSP bool) (
 		return temp, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		temp := &model.VmStatusInfo{}
 		log.Error().Err(err).Msg("")
@@ -1902,7 +1902,7 @@ func GetMciVmStatus(nsId string, mciId string, vmId string, fetchFromCSP bool) (
 		return temp, err
 	}
 
-	check, _ := CheckVm(nsId, mciId, vmId)
+	check, _ := CheckVm(nsId, infraId, vmId)
 
 	if !check {
 		temp := &model.VmStatusInfo{}
@@ -1914,14 +1914,14 @@ func GetMciVmStatus(nsId string, mciId string, vmId string, fetchFromCSP bool) (
 
 	if fetchFromCSP {
 		// Fetch current status from CSP API
-		vmStatusResponse, err = FetchVmStatus(nsId, mciId, vmId)
+		vmStatusResponse, err = FetchVmStatus(nsId, infraId, vmId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 	} else {
 		// Use cached status from database (faster response)
-		vmObject, err := GetVmObject(nsId, mciId, vmId)
+		vmObject, err := GetVmObject(nsId, infraId, vmId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
@@ -1948,22 +1948,22 @@ func GetMciVmStatus(nsId string, mciId string, vmId string, fetchFromCSP bool) (
 	return &vmStatusResponse, nil
 }
 
-// GetMciVmCurrentStatus is func to Get MciVm Current Status from CSP API (real-time)
-func GetMciVmCurrentStatus(nsId string, mciId string, vmId string) (*model.VmStatusInfo, error) {
-	// Simply delegate to GetMciVmStatus with fetchFromCSP=true
-	return GetMciVmStatus(nsId, mciId, vmId, true)
+// GetInfraVmCurrentStatus is func to Get InfraVm Current Status from CSP API (real-time)
+func GetInfraVmCurrentStatus(nsId string, infraId string, vmId string) (*model.VmStatusInfo, error) {
+	// Simply delegate to GetInfraVmStatus with fetchFromCSP=true
+	return GetInfraVmStatus(nsId, infraId, vmId, true)
 }
 
-// [Update MCI and VM object]
+// [Update Infra and VM object]
 
-// UpdateMciInfo is func to update MCI Info (without VM info in MCI)
-func UpdateMciInfo(nsId string, mciInfoData model.MciInfo) {
-	mciInfoMutex.Lock()
-	defer mciInfoMutex.Unlock()
+// UpdateInfraInfo is func to update Infra Info (without VM info in Infra)
+func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
+	infraInfoMutex.Lock()
+	defer infraInfoMutex.Unlock()
 
-	mciInfoData.Vm = nil
+	infraInfoData.Vm = nil
 
-	key := common.GenMciKey(nsId, mciInfoData.Id, "")
+	key := common.GenInfraKey(nsId, infraInfoData.Id, "")
 
 	// Check existence of the key. If no key, no update.
 	keyValue, exists, err := kvstore.GetKv(key)
@@ -1971,11 +1971,11 @@ func UpdateMciInfo(nsId string, mciInfoData model.MciInfo) {
 		return
 	}
 
-	mciTmp := model.MciInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
+	infraTmp := model.InfraInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
 
-	if !reflect.DeepEqual(mciTmp, mciInfoData) {
-		val, _ := json.Marshal(mciInfoData)
+	if !reflect.DeepEqual(infraTmp, infraInfoData) {
+		val, _ := json.Marshal(infraInfoData)
 		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1984,13 +1984,13 @@ func UpdateMciInfo(nsId string, mciInfoData model.MciInfo) {
 }
 
 // UpdateVmInfo is func to update VM Info
-func UpdateVmInfo(nsId string, mciId string, vmInfoData model.VmInfo) {
-	mciInfoMutex.Lock()
+func UpdateVmInfo(nsId string, infraId string, vmInfoData model.VmInfo) {
+	infraInfoMutex.Lock()
 	defer func() {
-		mciInfoMutex.Unlock()
+		infraInfoMutex.Unlock()
 	}()
 
-	key := common.GenMciKey(nsId, mciId, vmInfoData.Id)
+	key := common.GenInfraKey(nsId, infraId, vmInfoData.Id)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, exists, err := kvstore.GetKv(key)
@@ -2010,13 +2010,13 @@ func UpdateVmInfo(nsId string, mciId string, vmInfoData model.VmInfo) {
 	}
 }
 
-// GetMciAssociatedResources returns a list of associated resource IDs for given MCI info
-func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedResourceList, error) {
+// GetInfraAssociatedResources returns a list of associated resource IDs for given Infra info
+func GetInfraAssociatedResources(nsId string, infraId string) (model.InfraAssociatedResourceList, error) {
 
-	mciInfo, _, err := GetMciObject(nsId, mciId)
+	infraInfo, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.MciAssociatedResourceList{}, err
+		return model.InfraAssociatedResourceList{}, err
 	}
 
 	vNetSet := make(map[string]struct{})
@@ -2031,11 +2031,11 @@ func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedRe
 	connNameSet := make(map[string]struct{})
 	providerNameSet := make(map[string]struct{})
 	vmIdSet := make(map[string]struct{})
-	subGroupIdSet := make(map[string]struct{})
+	nodeGroupIdSet := make(map[string]struct{})
 	cspVmNameSet := make(map[string]struct{})
 	cspVmIdSet := make(map[string]struct{})
 
-	for _, vm := range mciInfo.Vm {
+	for _, vm := range infraInfo.Vm {
 		if vm.VNetId != "" {
 			vNetSet[vm.VNetId] = struct{}{}
 		}
@@ -2076,8 +2076,8 @@ func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedRe
 		if vm.Id != "" {
 			vmIdSet[vm.Id] = struct{}{}
 		}
-		if vm.SubGroupId != "" {
-			subGroupIdSet[vm.SubGroupId] = struct{}{}
+		if vm.NodeGroupId != "" {
+			nodeGroupIdSet[vm.NodeGroupId] = struct{}{}
 		}
 		if vm.CspResourceName != "" {
 			cspVmNameSet[vm.CspResourceName] = struct{}{}
@@ -2095,7 +2095,7 @@ func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedRe
 		return s
 	}
 
-	return model.MciAssociatedResourceList{
+	return model.InfraAssociatedResourceList{
 		VNetIds:          toSlice(vNetSet),
 		CspVNetIds:       toSlice(cspVNetSet),
 		SubnetIds:        toSlice(subnetSet),
@@ -2108,15 +2108,15 @@ func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedRe
 		ConnectionNames:  toSlice(connNameSet),
 		ProviderNames:    toSlice(providerNameSet),
 		VmIds:            toSlice(vmIdSet),
-		SubGroupIds:      toSlice(subGroupIdSet),
+		NodeGroupIds:     toSlice(nodeGroupIdSet),
 		CspVmNames:       toSlice(cspVmNameSet),
 		CspVmIds:         toSlice(cspVmIdSet),
 	}, nil
 }
 
 // ProvisionDataDisk is func to provision DataDisk to VM (create and attach to VM)
-func ProvisionDataDisk(ctx context.Context, nsId string, mciId string, vmId string, u *model.DataDiskVmReq) (model.VmInfo, error) {
-	vm, err := GetVmObject(nsId, mciId, vmId)
+func ProvisionDataDisk(ctx context.Context, nsId string, infraId string, vmId string, u *model.DataDiskVmReq) (model.VmInfo, error) {
+	vm, err := GetVmObject(nsId, infraId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.VmInfo{}, err
@@ -2137,7 +2137,7 @@ func ProvisionDataDisk(ctx context.Context, nsId string, mciId string, vmId stri
 	}
 	retry := 3
 	for i := 0; i < retry; i++ {
-		vmInfo, err := AttachDetachDataDisk(nsId, mciId, vmId, model.AttachDataDisk, newDataDisk.Id, false)
+		vmInfo, err := AttachDetachDataDisk(nsId, infraId, vmId, model.AttachDataDisk, newDataDisk.Id, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
@@ -2149,13 +2149,13 @@ func ProvisionDataDisk(ctx context.Context, nsId string, mciId string, vmId stri
 }
 
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
-func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string, dataDiskId string, force bool) (model.VmInfo, error) {
-	vmKey := common.GenMciKey(nsId, mciId, vmId)
+func AttachDetachDataDisk(nsId string, infraId string, vmId string, command string, dataDiskId string, force bool) (model.VmInfo, error) {
+	vmKey := common.GenInfraKey(nsId, infraId, vmId)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, exists, err := kvstore.GetKv(vmKey)
 	if !exists || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/infra/vm': %s/%s/%s \n", nsId, infraId, vmId)
 		log.Error().Err(err).Msg("")
 		return model.VmInfo{}, err
 	}
@@ -2290,7 +2290,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderVM.DataDiskIIDs: %s", updatedSpiderVM.DataDiskIIDs) // for debug
 	vm.AddtionalDetails = callResultSpiderVMInfo.KeyValueList
 
-	UpdateVmInfo(nsId, mciId, vm)
+	UpdateVmInfo(nsId, infraId, vm)
 
 	// Update TB DataDisk object's 'associatedObjects' field
 	resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, cmdToUpdateAsso, vmKey)
@@ -2335,13 +2335,13 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	return vm, nil
 }
 
-func GetAvailableDataDisks(nsId string, mciId string, vmId string, option string) (interface{}, error) {
-	vmKey := common.GenMciKey(nsId, mciId, vmId)
+func GetAvailableDataDisks(nsId string, infraId string, vmId string, option string) (interface{}, error) {
+	vmKey := common.GenInfraKey(nsId, infraId, vmId)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, exists, err := kvstore.GetKv(vmKey)
 	if !exists || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/infra/vm': %s/%s/%s \n", nsId, infraId, vmId)
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
@@ -2389,89 +2389,89 @@ func GetAvailableDataDisks(nsId string, mciId string, vmId string, option string
 	}
 }
 
-// [Delete MCI and VM object]
+// [Delete Infra and VM object]
 
-// DelMci is func to delete MCI object
-func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
+// DelInfra is func to delete Infra object
+func DelInfra(nsId string, infraId string, option string) (model.IdList, error) {
 
 	option = common.ToLower(option)
 	deletedResources := model.IdList{}
 	deleteStatus := "[Done] "
 
-	mciInfo, err := GetMciInfo(nsId, mciId)
+	infraInfo, err := GetInfraInfo(nsId, infraId)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Cannot Delete Mci")
+		log.Error().Err(err).Msg("Cannot Delete Infra")
 		return deletedResources, err
 	}
 
-	log.Debug().Msg("[Delete MCI] " + mciId)
+	log.Debug().Msg("[Delete Infra] " + infraId)
 
-	// Check MCI status is Terminated so that approve deletion
-	mciStatus, _ := GetMciStatus(nsId, mciId)
-	if mciStatus == nil {
-		err := fmt.Errorf("MCI " + mciId + " status nil, Deletion is not allowed (use option=force for force deletion)")
+	// Check Infra status is Terminated so that approve deletion
+	infraStatus, _ := GetInfraStatus(nsId, infraId)
+	if infraStatus == nil {
+		err := fmt.Errorf("Infra " + infraId + " status nil, Deletion is not allowed (use option=force for force deletion)")
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err
 		}
 	}
 
-	if !(!strings.Contains(mciStatus.Status, "Partial-") && strings.Contains(mciStatus.Status, model.StatusTerminated)) {
+	if !(!strings.Contains(infraStatus.Status, "Partial-") && strings.Contains(infraStatus.Status, model.StatusTerminated)) {
 
-		// with terminate option, do MCI refine and terminate in advance (skip if already model.StatusTerminated)
+		// with terminate option, do Infra refine and terminate in advance (skip if already model.StatusTerminated)
 		if strings.EqualFold(option, model.ActionTerminate) {
 
 			// ActionRefine
-			_, err := HandleMciAction(nsId, mciId, model.ActionRefine, true)
+			_, err := HandleInfraAction(nsId, infraId, model.ActionRefine, true)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return deletedResources, err
 			}
 
 			// model.ActionTerminate
-			_, err = HandleMciAction(nsId, mciId, model.ActionTerminate, true)
+			_, err = HandleInfraAction(nsId, infraId, model.ActionTerminate, true)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return deletedResources, err
 			}
 			// Poll until all VMs reach Terminated (or a non-Terminating state),
-			// because ControlMciAsync returns immediately while the CSP processes
+			// because ControlInfraAsync returns immediately while the CSP processes
 			// the termination request in the background (can take several minutes
 			// for bare-metal instances, but typically 10-30 s for regular VMs).
 			const terminateWaitInterval = 5 * time.Second
 			const terminateWaitTimeout = 10 * time.Minute
-			log.Info().Msgf("Waiting for MCI %s to become Terminated (polling every %s, timeout %s)", mciId, terminateWaitInterval, terminateWaitTimeout)
+			log.Info().Msgf("Waiting for Infra %s to become Terminated (polling every %s, timeout %s)", infraId, terminateWaitInterval, terminateWaitTimeout)
 			deadline := time.Now().Add(terminateWaitTimeout)
 			for time.Now().Before(deadline) {
 				time.Sleep(terminateWaitInterval)
-				mciStatus, _ = GetMciStatus(nsId, mciId)
-				if mciStatus == nil {
+				infraStatus, _ = GetInfraStatus(nsId, infraId)
+				if infraStatus == nil {
 					break
 				}
-				log.Info().Msgf("MCI %s status: %s", mciId, mciStatus.Status)
+				log.Info().Msgf("Infra %s status: %s", infraId, infraStatus.Status)
 				// Exit the loop once every VM has left the Terminating state
-				if !strings.Contains(mciStatus.Status, model.StatusTerminating) {
+				if !strings.Contains(infraStatus.Status, model.StatusTerminating) {
 					break
 				}
 			}
-			if mciStatus != nil && strings.Contains(mciStatus.Status, model.StatusTerminating) {
-				log.Warn().Msgf("MCI %s is still %s after %s — proceeding with deletion anyway", mciId, mciStatus.Status, terminateWaitTimeout)
+			if infraStatus != nil && strings.Contains(infraStatus.Status, model.StatusTerminating) {
+				log.Warn().Msgf("Infra %s is still %s after %s — proceeding with deletion anyway", infraId, infraStatus.Status, terminateWaitTimeout)
 			}
 		}
 
 	}
 
-	// Check MCI status is Terminated (not Partial)
+	// Check Infra status is Terminated (not Partial)
 	// Allow deletion for: Terminated, Undefined, Failed, Preparing, Prepared, Empty
-	if mciStatus.Id != "" && !(!strings.Contains(mciStatus.Status, "Partial-") && (strings.Contains(mciStatus.Status, model.StatusTerminated) || strings.Contains(mciStatus.Status, model.StatusUndefined) || strings.Contains(mciStatus.Status, model.StatusFailed) || strings.Contains(mciStatus.Status, model.StatusPreparing) || strings.Contains(mciStatus.Status, model.StatusPrepared) || strings.Contains(mciStatus.Status, model.StatusEmpty))) {
+	if infraStatus.Id != "" && !(!strings.Contains(infraStatus.Status, "Partial-") && (strings.Contains(infraStatus.Status, model.StatusTerminated) || strings.Contains(infraStatus.Status, model.StatusUndefined) || strings.Contains(infraStatus.Status, model.StatusFailed) || strings.Contains(infraStatus.Status, model.StatusPreparing) || strings.Contains(infraStatus.Status, model.StatusPrepared) || strings.Contains(infraStatus.Status, model.StatusEmpty))) {
 		var err error
-		if strings.Contains(mciStatus.Status, model.StatusTerminating) {
+		if strings.Contains(infraStatus.Status, model.StatusTerminating) {
 			// Termination is still in progress (e.g. bare-metal instances take several minutes).
 			// The caller should retry deletion after a while.
-			err = fmt.Errorf("MCI %s is still %s — termination is in progress. Please retry deletion in a few minutes", mciId, mciStatus.Status)
+			err = fmt.Errorf("Infra %s is still %s — termination is in progress. Please retry deletion in a few minutes", infraId, infraStatus.Status)
 		} else {
-			err = fmt.Errorf("MCI %s is %s, which is not a deletable status (Terminated/Undefined/Failed/Preparing/Prepared/Empty). Use option=force for forced deletion", mciId, mciStatus.Status)
+			err = fmt.Errorf("Infra %s is %s, which is not a deletable status (Terminated/Undefined/Failed/Preparing/Prepared/Empty). Use option=force for forced deletion", infraId, infraStatus.Status)
 		}
 		log.Error().Err(err).Msg("")
 		if option != "force" {
@@ -2479,20 +2479,20 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 		}
 	}
 
-	key := common.GenMciKey(nsId, mciId, "")
+	key := common.GenInfraKey(nsId, infraId, "")
 
-	// delete associated MCI Policy
-	check, _ := CheckMciPolicy(nsId, mciId)
+	// delete associated Infra Policy
+	check, _ := CheckInfraPolicy(nsId, infraId)
 	if check {
-		err = DelMciPolicy(nsId, mciId)
+		err = DelInfraPolicy(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Policy: "+mciId)
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Policy: "+infraId)
 	}
 
-	vmList, err := ListVmId(nsId, mciId)
+	vmList, err := ListVmId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
@@ -2500,11 +2500,11 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 
 	// delete vms info
 	for _, v := range vmList {
-		vmKey := common.GenMciKey(nsId, mciId, v)
+		vmKey := common.GenInfraKey(nsId, infraId, v)
 		fmt.Println(vmKey)
 
 		// get vm info
-		vmInfo, err := GetVmObject(nsId, mciId, v)
+		vmInfo, err := GetVmObject(nsId, infraId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
@@ -2541,28 +2541,28 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 
 	}
 
-	// delete subGroup info
-	subGroupList, err := ListSubGroupId(nsId, mciId)
+	// delete nodeGroup info
+	nodeGroupList, err := ListNodeGroupId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
-	for _, v := range subGroupList {
-		subGroupKey := common.GenMciSubGroupKey(nsId, mciId, v)
-		subGroupInfo, err := GetSubGroup(nsId, mciId, v)
+	for _, v := range nodeGroupList {
+		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, v)
+		nodeGroupInfo, err := GetNodeGroup(nsId, infraId, v)
 		if err != nil {
-			log.Error().Err(err).Msg("Cannot get SubGroup")
+			log.Error().Err(err).Msg("Cannot get NodeGroup")
 			return deletedResources, err
 		}
 
-		err = kvstore.Delete(subGroupKey)
+		err = kvstore.Delete(nodeGroupKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"SubGroup: "+v)
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"NodeGroup: "+v)
 
-		err = label.DeleteLabelObject(model.StrSubGroup, subGroupInfo.Uid)
+		err = label.DeleteLabelObject(model.StrNodeGroup, nodeGroupInfo.Uid)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
@@ -2573,34 +2573,34 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	if option == "force" {
 		forceFlag = "true"
 	}
-	output, err := DelAllNLB(nsId, mciId, "", forceFlag)
+	output, err := DelAllNLB(nsId, infraId, "", forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
 	deletedResources.IdList = append(deletedResources.IdList, output.IdList...)
 
-	// delete associated MCI NLBs
-	mciNlbId := mciId + "-nlb"
-	check, _ = CheckMci(nsId, mciNlbId)
+	// delete associated Infra NLBs
+	infraNlbId := infraId + "-nlb"
+	check, _ = CheckInfra(nsId, infraNlbId)
 	if check {
-		mciNlbDeleteResult, err := DelMci(nsId, mciNlbId, option)
+		infraNlbDeleteResult, err := DelInfra(nsId, infraNlbId, option)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, mciNlbDeleteResult.IdList...)
+		deletedResources.IdList = append(deletedResources.IdList, infraNlbDeleteResult.IdList...)
 	}
 
-	// delete mci info
+	// delete infra info
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
-	deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"MCI: "+mciId)
+	deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Infra: "+infraId)
 
-	err = label.DeleteLabelObject(model.StrMCI, mciInfo.Uid)
+	err = label.DeleteLabelObject(model.StrInfra, infraInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
@@ -2608,8 +2608,8 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	return deletedResources, nil
 }
 
-// DelMciVm is func to delete VM object
-func DelMciVm(nsId string, mciId string, vmId string, option string) error {
+// DelInfraVm is func to delete VM object
+func DelInfraVm(nsId string, infraId string, vmId string, option string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -2617,7 +2617,7 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 		return err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -2628,7 +2628,7 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	check, _ := CheckVm(nsId, mciId, vmId)
+	check, _ := CheckVm(nsId, infraId, vmId)
 
 	if !check {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
@@ -2640,7 +2640,7 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 	// skip termination if option is force
 	if option != "force" {
 		// ControlVm first
-		_, err := HandleMciVmAction(nsId, mciId, vmId, model.ActionTerminate, false)
+		_, err := HandleInfraVmAction(nsId, infraId, vmId, model.ActionTerminate, false)
 		if err != nil {
 			log.Info().Msg(err.Error())
 			return err
@@ -2652,33 +2652,33 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 	}
 
 	// get vm info
-	vmInfo, _ := GetVmObject(nsId, mciId, vmId)
+	vmInfo, _ := GetVmObject(nsId, infraId, vmId)
 
 	// delete vms info
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, vmId)
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	// remove empty SubGroups
-	subGroup, err := ListSubGroupId(nsId, mciId)
+	// remove empty NodeGroups
+	nodeGroup, err := ListNodeGroupId(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list subGroup to remove")
+		log.Error().Err(err).Msg("Failed to list nodeGroup to remove")
 		return err
 	}
-	for _, v := range subGroup {
-		vmListInSubGroup, err := ListVmBySubGroup(nsId, mciId, v)
+	for _, v := range nodeGroup {
+		vmListInNodeGroup, err := ListVmByNodeGroup(nsId, infraId, v)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
+			log.Error().Err(err).Msg("Failed to list vm in nodeGroup to remove")
 			return err
 		}
-		if len(vmListInSubGroup) == 0 {
-			subGroupKey := common.GenMciSubGroupKey(nsId, mciId, v)
-			err := kvstore.Delete(subGroupKey)
+		if len(vmListInNodeGroup) == 0 {
+			nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, v)
+			err := kvstore.Delete(nodeGroupKey)
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to remove the empty subGroup")
+				log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
 				return err
 			}
 		}
@@ -2709,15 +2709,15 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 	return nil
 }
 
-// DeregisterMciVm deregisters VM from Spider and TB without deleting the actual CSP resource
+// DeregisterInfraVm deregisters VM from Spider and TB without deleting the actual CSP resource
 // This function only removes the VM mapping from Spider and TB internal storage
 // The actual CSP VM resource remains intact and can be re-registered later
-func DeregisterMciVm(nsId string, mciId string, vmId string) error {
+func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 
 	log.Debug().Msg("[Deregister VM] " + vmId)
 
 	// get vm info
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	vmInfo, err := GetVmObject(nsId, infraId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -2790,24 +2790,24 @@ func DeregisterMciVm(nsId string, mciId string, vmId string) error {
 	log.Debug().Msg("Deregister request finished from " + url)
 
 	// delete the VM info from TB
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, vmId)
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	// remove empty SubGroups
-	vmListInSubGroup, err := ListVmBySubGroup(nsId, mciId, vmInfo.SubGroupId)
+	// remove empty NodeGroups
+	vmListInNodeGroup, err := ListVmByNodeGroup(nsId, infraId, vmInfo.NodeGroupId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
+		log.Error().Err(err).Msg("Failed to list vm in nodeGroup to remove")
 		return err
 	}
-	if len(vmListInSubGroup) == 0 {
-		subGroupKey := common.GenMciSubGroupKey(nsId, mciId, vmInfo.SubGroupId)
-		err := kvstore.Delete(subGroupKey)
+	if len(vmListInNodeGroup) == 0 {
+		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, vmInfo.NodeGroupId)
+		err := kvstore.Delete(nodeGroupKey)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to remove the empty subGroup")
+			log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
 			return err
 		}
 	}
@@ -2831,30 +2831,30 @@ func DeregisterMciVm(nsId string, mciId string, vmId string) error {
 	return nil
 }
 
-// DelAllMci is func to delete all MCI objects in parallel
-func DelAllMci(nsId string, option string) (string, error) {
+// DelAllInfra is func to delete all Infra objects in parallel
+func DelAllInfra(nsId string, option string) (string, error) {
 
-	mciList, err := ListMciId(nsId)
+	infraList, err := ListInfraId(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
-	if len(mciList) == 0 {
-		return "No MCI to delete", nil
+	if len(infraList) == 0 {
+		return "No Infra to delete", nil
 	}
 
 	var wg sync.WaitGroup
-	errCh := make(chan error, len(mciList))
+	errCh := make(chan error, len(infraList))
 	defer close(errCh)
 
-	for _, v := range mciList {
+	for _, v := range infraList {
 		wg.Add(1)
-		go func(mciId string) {
+		go func(infraId string) {
 			defer wg.Done()
-			_, err := DelMci(nsId, mciId, option)
+			_, err := DelInfra(nsId, infraId, option)
 			if err != nil {
-				log.Error().Err(err).Str("mciId", mciId).Msg("Failed to delete MCI")
+				log.Error().Err(err).Str("infraId", infraId).Msg("Failed to delete Infra")
 				errCh <- err
 			}
 		}(v)
@@ -2864,16 +2864,16 @@ func DelAllMci(nsId string, option string) (string, error) {
 
 	select {
 	case err := <-errCh:
-		return "", fmt.Errorf("failed to delete all MCIs: %v", err)
+		return "", fmt.Errorf("failed to delete all Infras: %v", err)
 	default:
-		return "All MCIs have been deleted", nil
+		return "All Infras have been deleted", nil
 	}
 }
 
 // UpdateVmPublicIp is func to update VM public IP
-func UpdateVmPublicIp(nsId string, mciId string, vmInfoData model.VmInfo) error {
+func UpdateVmPublicIp(nsId string, infraId string, vmInfoData model.VmInfo) error {
 
-	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mciId, vmInfoData.Id)
+	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, infraId, vmInfoData.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -2881,17 +2881,17 @@ func UpdateVmPublicIp(nsId string, mciId string, vmInfoData model.VmInfo) error 
 	if vmInfoData.PublicIP != vmInfoTmp.PublicIp || vmInfoData.SSHPort != vmInfoTmp.SSHPort {
 		vmInfoData.PublicIP = vmInfoTmp.PublicIp
 		vmInfoData.SSHPort = vmInfoTmp.SSHPort
-		UpdateVmInfo(nsId, mciId, vmInfoData)
+		UpdateVmInfo(nsId, infraId, vmInfoData)
 	}
 	return nil
 }
 
 // GetVmTemplate is func to get VM template
-func GetVmTemplate(nsId string, mciId string, algo string) (model.VmInfo, error) {
+func GetVmTemplate(nsId string, infraId string, algo string) (model.VmInfo, error) {
 
-	log.Debug().Msg("[GetVmTemplate]" + mciId + " by algo: " + algo)
+	log.Debug().Msg("[GetVmTemplate]" + infraId + " by algo: " + algo)
 
-	vmList, err := ListVmId(nsId, mciId)
+	vmList, err := ListVmId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.VmInfo{}, err
@@ -2902,7 +2902,7 @@ func GetVmTemplate(nsId string, mciId string, algo string) (model.VmInfo, error)
 
 	rand.Seed(time.Now().UnixNano())
 	index := rand.Intn(len(vmList))
-	vmObj, vmErr := GetVmObject(nsId, mciId, vmList[index])
+	vmObj, vmErr := GetVmObject(nsId, infraId, vmList[index])
 	var vmTemplate model.VmInfo
 
 	// only take template required to create VM

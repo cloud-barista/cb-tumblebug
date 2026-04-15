@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function create_mci_policy() {
+#function create_infra_policy() {
 
 
 	TestSetFile=${5:-../testSet.env}
@@ -13,31 +13,31 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## 8. Create MCI Policy"
+	echo "## 8. Create Infra Policy"
 	echo "####################################################################"
 
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	MCINAME=${4:-noname}
+	InfraNAME=${4:-noname}
 
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
 
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 	if [ "${INDEX}" == "0" ]; then
-		# MCIPREFIX=avengers
-		MCIID=${POSTFIX}
+		# InfraPREFIX=avengers
+		InfraID=${POSTFIX}
 	fi
 
-	if [ "${MCINAME}" != "noname" ]; then
-		echo "[MCI name is given]"
-		MCIID=${MCINAME}
+	if [ "${InfraNAME}" != "noname" ]; then
+		echo "[Infra name is given]"
+		InfraID=${InfraNAME}
 	fi
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/policy/mci/$MCIID -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/policy/infra/$InfraID -H 'Content-Type: application/json' -d \
 		'{
 			"description": "Tumblebug Auto Control Demo",
 			"policy": [
@@ -74,4 +74,4 @@
 		}' | jq '.' 
 #}
 
-#create_mci
+#create_infra

@@ -204,12 +204,12 @@ The credential holder is communicated via the **`X-Credential-Holder`** HTTP hea
 
 ```bash
 # Use default holder (admin) — header can be omitted
-curl -X POST http://localhost:1323/tumblebug/ns/default/mciDynamic \
+curl -X POST http://localhost:1323/tumblebug/ns/default/infraDynamic \
   -H "Content-Type: application/json" \
   -d '{ ... }'
 
 # Use a specific holder
-curl -X POST http://localhost:1323/tumblebug/ns/default/mciDynamic \
+curl -X POST http://localhost:1323/tumblebug/ns/default/infraDynamic \
   -H "Content-Type: application/json" \
   -H "X-Credential-Holder: role01" \
   -d '{ ... }'
@@ -225,20 +225,20 @@ sequenceDiagram
     participant Core as Core Function
     participant Spider as CB-Spider
 
-    Client->>MW: POST /ns/default/mciDynamic<br/>X-Credential-Holder: role01
+    Client->>MW: POST /ns/default/infraDynamic<br/>X-Credential-Holder: role01
     
     MW->>MW: Extract header<br/>holder = "role01"<br/>(default: "admin" if absent)
     MW->>MW: Inject into context.Context<br/>WithCredentialHolder(ctx, "role01")
     MW->>Handler: Pass enriched context
     
-    Handler->>Core: CreateMciDynamic(ctx, nsId, req)
+    Handler->>Core: CreateInfraDynamic(ctx, nsId, req)
     
     Core->>Core: holder = CredentialHolderFromContext(ctx)<br/>→ "role01"
     Core->>Core: connectionName = ResolveConnectionName(<br/>"aws-ap-northeast-2", "role01")<br/>→ "role01-aws-ap-northeast-2"
     
     Core->>Spider: Create VM via<br/>"role01-aws-ap-northeast-2"
     Spider-->>Core: VM created
-    Core-->>Handler: MCI result
+    Core-->>Handler: Infra result
     Handler-->>Client: Response
 ```
 
@@ -296,7 +296,7 @@ The credential holder affects multiple API behaviors:
 
 | Capability | Effect |
 |-----------|--------|
-| **MCI Provisioning** | VMs are created using the holder's CSP accounts |
+| **Infra Provisioning** | VMs are created using the holder's CSP accounts |
 | **Resource Creation** | VNet, SecurityGroup, SSHKey use holder-specific connections |
 | **Spec Recommendation** | Results are automatically filtered to the holder's available CSPs |
 | **Connection Listing** | `GET /connConfig` can be filtered by `filterCredentialHolder` query param |

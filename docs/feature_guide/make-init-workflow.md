@@ -126,7 +126,7 @@ sequenceDiagram
     box Local Host
         participant Script as multi-init.sh<br/>init.sh / init.py
         participant EncFile as credentials.yaml.enc<br/>(~/.cloud-barista/)
-        participant Templates as init/templates/<br/>(MCI / vNet / SG)
+        participant Templates as init/templates/<br/>(Infra / vNet / SG)
     end
 
     box Docker Compose Environment
@@ -239,7 +239,7 @@ sequenceDiagram
         loop For each JSON file in init/templates/
             Script->>TB: POST /tumblebug/ns  (ensure namespace)
             TB-->>Script: namespace ready
-            Script->>TB: POST /tumblebug/ns/{nsId}/template/{type}<br/>(type: mci | vNet | securityGroup)
+            Script->>TB: POST /tumblebug/ns/{nsId}/template/{type}<br/>(type: infra | vNet | securityGroup)
             TB-->>Script: template stored
         end
     end
@@ -338,7 +338,7 @@ flowchart TD
         subgraph TplLoad["Template Loading"]
             TplLoop["For each JSON in init/templates/"]
             EnsureNS["POST /tumblebug/ns\n(ensure namespace exists)"]
-            PostTpl["POST /tumblebug/ns/{nsId}/template/{type}\ntype: mci | vNet | securityGroup"]
+            PostTpl["POST /tumblebug/ns/{nsId}/template/{type}\ntype: infra | vNet | securityGroup"]
             TplLoop --> EnsureNS --> PostTpl --> TplLoop
         end
 

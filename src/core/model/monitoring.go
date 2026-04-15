@@ -28,7 +28,7 @@ const (
 // MonAgentInstallReq struct
 type MonAgentInstallReq struct {
 	NsId     string `json:"nsId,omitempty"`
-	MciId    string `json:"mciId,omitempty"`
+	InfraId  string `json:"infraId,omitempty"`
 	VmId     string `json:"vmId,omitempty"`
 	PublicIp string `json:"publicIp,omitempty"`
 	Port     string `json:"port,omitempty"`
@@ -45,17 +45,17 @@ type MonResultSimple struct {
 	Err    string `json:"err"`
 }
 
-// MonResultSimpleResponse struct is for containing Mci monitoring results
+// MonResultSimpleResponse struct is for containing Infra monitoring results
 type MonResultSimpleResponse struct {
-	NsId          string            `json:"nsId"`
-	MciId         string            `json:"mciId"`
-	MciMonitoring []MonResultSimple `json:"mciMonitoring"`
+	NsId            string            `json:"nsId"`
+	InfraId         string            `json:"infraId"`
+	InfraMonitoring []MonResultSimple `json:"infraMonitoring"`
 }
 
 // DfAgentInstallReq is struct for CB-Dragonfly monitoring agent installation request
 type DfAgentInstallReq struct {
 	NsId        string `json:"ns_id"`
-	MciId       string `json:"mci_id"`
+	InfraId     string `json:"infra_id"`
 	VmId        string `json:"vm_id"`
 	PublicIp    string `json:"public_ip"`
 	UserName    string `json:"user_name"`

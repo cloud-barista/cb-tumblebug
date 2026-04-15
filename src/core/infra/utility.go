@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -57,10 +57,10 @@ func init() {
 	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
 	// internally dereferences during it's type checks.
 
-	validate.RegisterStructValidation(MciReqStructLevelValidation, model.MciReq{})
-	validate.RegisterStructValidation(CreateSubGroupReqStructLevelValidation, model.CreateSubGroupReq{})
-	validate.RegisterStructValidation(TbMciCmdReqStructLevelValidation, model.MciCmdReq{})
-	// validate.RegisterStructValidation(TbMciRecommendReqStructLevelValidation, MciRecommendReq{})
+	validate.RegisterStructValidation(InfraReqStructLevelValidation, model.InfraReq{})
+	validate.RegisterStructValidation(CreateNodeGroupReqStructLevelValidation, model.CreateNodeGroupReq{})
+	validate.RegisterStructValidation(TbInfraCmdReqStructLevelValidation, model.InfraCmdReq{})
+	// validate.RegisterStructValidation(TbInfraRecommendReqStructLevelValidation, InfraRecommendReq{})
 	// validate.RegisterStructValidation(VmRecommendReqStructLevelValidation, VmRecommendReq{})
 	// validate.RegisterStructValidation(TbBenchmarkReqStructLevelValidation, BenchmarkReq{})
 	// validate.RegisterStructValidation(TbMultihostBenchmarkReqStructLevelValidation, MultihostBenchmarkReq{})
@@ -69,24 +69,24 @@ func init() {
 
 }
 
-// CheckMci func is to check given mciId is duplicated with existing
-func CheckMci(nsId string, mciId string) (bool, error) {
+// CheckInfra func is to check given infraId is duplicated with existing
+func CheckInfra(nsId string, infraId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckMci failed; nsId given is empty.")
+		err := fmt.Errorf("CheckInfra failed; nsId given is empty.")
 		return false, err
-	} else if mciId == "" {
-		err := fmt.Errorf("CheckMci failed; mciId given is empty.")
+	} else if infraId == "" {
+		err := fmt.Errorf("CheckInfra failed; infraId given is empty.")
 		return false, err
 	}
 
-	key := common.GenMciKey(nsId, mciId, "")
+	key := common.GenInfraKey(nsId, infraId, "")
 
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckMci(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In CheckInfra(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -98,8 +98,8 @@ func CheckMci(nsId string, mciId string) (bool, error) {
 
 }
 
-// CheckSubGroup func is to check given subGroupId is duplicated with existing
-func CheckSubGroup(nsId string, mciId string, subGroupId string) (bool, error) {
+// CheckNodeGroup func is to check given nodeGroupId is duplicated with existing
+func CheckNodeGroup(nsId string, infraId string, nodeGroupId string) (bool, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -107,33 +107,33 @@ func CheckSubGroup(nsId string, mciId string, subGroupId string) (bool, error) {
 		return false, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
-	subGroupList, err := ListSubGroupId(nsId, mciId)
+	nodeGroupList, err := ListNodeGroupId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	for _, v := range subGroupList {
-		if strings.EqualFold(v, subGroupId) {
+	for _, v := range nodeGroupList {
+		if strings.EqualFold(v, nodeGroupId) {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
+func CheckVm(nsId string, infraId string, vmId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
 		err := fmt.Errorf("CheckVm failed; nsId given is null.")
 		return false, err
-	} else if mciId == "" {
-		err := fmt.Errorf("CheckVm failed; mciId given is null.")
+	} else if infraId == "" {
+		err := fmt.Errorf("CheckVm failed; infraId given is null.")
 		return false, err
 	} else if vmId == "" {
 		err := fmt.Errorf("CheckVm failed; vmId given is null.")
@@ -146,7 +146,7 @@ func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
 		return false, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
@@ -156,9 +156,9 @@ func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	//log.Debug().Msg("[Check vm] " + mciId + ", " + vmId)
+	//log.Debug().Msg("[Check vm] " + infraId + ", " + vmId)
 
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, vmId)
 
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
@@ -175,14 +175,14 @@ func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
 
 }
 
-func CheckMciPolicy(nsId string, mciId string) (bool, error) {
+func CheckInfraPolicy(nsId string, infraId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckMci failed; nsId given is null.")
+		err := fmt.Errorf("CheckInfra failed; nsId given is null.")
 		return false, err
-	} else if mciId == "" {
-		err := fmt.Errorf("CheckMci failed; mciId given is null.")
+	} else if infraId == "" {
+		err := fmt.Errorf("CheckInfra failed; infraId given is null.")
 		return false, err
 	}
 
@@ -192,19 +192,19 @@ func CheckMciPolicy(nsId string, mciId string) (bool, error) {
 	// 	return false, err
 	// }
 
-	// err = common.CheckString(mciId)
+	// err = common.CheckString(infraId)
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
 	// 	return false, err
 	// }
-	log.Debug().Msg("[Check MciPolicy] " + mciId)
+	log.Debug().Msg("[Check InfraPolicy] " + infraId)
 
-	key := common.GenMciPolicyKey(nsId, mciId, "")
+	key := common.GenInfraPolicyKey(nsId, infraId, "")
 
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckMciPolicy(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In CheckInfraPolicy(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -259,23 +259,23 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 		// Bring TB resources
 		switch resourceType {
 		case model.StrNLB:
-			mciListinNs, _ := ListMciId(ns)
-			if mciListinNs == nil {
+			infraListinNs, _ := ListInfraId(ns)
+			if infraListinNs == nil {
 				continue
 			}
-			for _, mci := range mciListinNs {
-				nlbListInMci, err := ListNLBId(ns, mci)
+			for _, infra := range infraListinNs {
+				nlbListInInfra, err := ListNLBId(ns, infra)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					err := fmt.Errorf("an error occurred while getting resource list")
 					return nullObj, err
 				}
-				if nlbListInMci == nil {
+				if nlbListInInfra == nil {
 					continue
 				}
 
-				for _, nlbId := range nlbListInMci {
-					nlb, err := GetNLB(ns, mci, nlbId)
+				for _, nlbId := range nlbListInInfra {
+					nlb, err := GetNLB(ns, infra, nlbId)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						err := fmt.Errorf("an error occurred while getting resource list")
@@ -287,31 +287,31 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 						temp.IdByTb = nlb.Id
 						temp.CspResourceId = nlb.CspResourceId
 						temp.NsId = ns
-						temp.MciId = mci
-						temp.ObjectKey = GenNLBKey(ns, mci, nlb.Id)
+						temp.InfraId = infra
+						temp.ObjectKey = GenNLBKey(ns, infra, nlb.Id)
 
 						TbResourceList.Info = append(TbResourceList.Info, temp)
 					}
 				}
 			}
 		case model.StrVM:
-			mciListinNs, _ := ListMciId(ns)
-			if mciListinNs == nil {
+			infraListinNs, _ := ListInfraId(ns)
+			if infraListinNs == nil {
 				continue
 			}
-			for _, mci := range mciListinNs {
-				vmListInMci, err := ListVmId(ns, mci)
+			for _, infra := range infraListinNs {
+				vmListInInfra, err := ListVmId(ns, infra)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					err := fmt.Errorf("an error occurred while getting resource list")
 					return nullObj, err
 				}
-				if vmListInMci == nil {
+				if vmListInInfra == nil {
 					continue
 				}
 
-				for _, vmId := range vmListInMci {
-					vm, err := GetVmObject(ns, mci, vmId)
+				for _, vmId := range vmListInInfra {
+					vm, err := GetVmObject(ns, infra, vmId)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						err := fmt.Errorf("an error occurred while getting resource list")
@@ -323,8 +323,8 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 						temp.IdByTb = vm.Id
 						temp.CspResourceId = vm.CspResourceId
 						temp.NsId = ns
-						temp.MciId = mci
-						temp.ObjectKey = common.GenMciKey(ns, mci, vm.Id)
+						temp.InfraId = infra
+						temp.ObjectKey = common.GenInfraKey(ns, infra, vm.Id)
 
 						TbResourceList.Info = append(TbResourceList.Info, temp)
 					}
@@ -822,7 +822,7 @@ func getRegisterRateLimitsForCSP(providerName string) (maxConns int, delayMinMs 
 // RegisterCspNativeResourcesAll registers all CSP-native resources into CB-TB
 // using hierarchical rate limiting: global cap → per-CSP cap → per-connection processing.
 // Results are collected via a channel to avoid data races.
-func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
+func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePrefix string, option string, infraFlag string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
 	if _, err := getValidatedOptionMap(option); err != nil {
@@ -892,10 +892,10 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, mciNamePref
 					// Stagger start with CSP-specific delay to avoid API rate limit bursts
 					common.RandomSleep(delayMinMs, delayMaxMs)
 
-					mciNameForRegister := mciNamePrefix + "-" + k.ConfigName
+					infraNameForRegister := infraNamePrefix + "-" + k.ConfigName
 
 					log.Debug().Msgf("Registering resources for connection %s (CSP: %s)", k.ConfigName, providerName)
-					registerResult, err := RegisterCspNativeResources(ctx, nsId, k.ConfigName, mciNameForRegister, option, mciFlag)
+					registerResult, err := RegisterCspNativeResources(ctx, nsId, k.ConfigName, infraNameForRegister, option, infraFlag)
 					if err != nil {
 						log.Error().Err(err).Msgf("Failed to register resources for connection %s", k.ConfigName)
 					}
@@ -956,7 +956,7 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, mciNamePref
 }
 
 // RegisterCspNativeResources registers specified CSP native resources from a target connection.
-func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceResult, error) {
+func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig string, infraNamePrefix string, option string, infraFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
 	optionFlag := "register"
 	result := model.RegisterResourceResult{}
@@ -1042,26 +1042,26 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 		if res, err := InspectResources(connConfig, model.StrVM); err != nil {
 			result.SystemMessage += "// VM Inspect Failed: " + err.Error()
 		} else {
-			// Determine MCI creation strategy based on mciFlag
-			useSingleMci := strings.ToLower(mciFlag) == "y"
-			var singleMciName string
-			var singleMciCreated bool
+			// Determine Infra creation strategy based on infraFlag
+			useSingleInfra := strings.ToLower(infraFlag) == "y"
+			var singleInfraName string
+			var singleInfraCreated bool
 
-			// Track registered MCIs for status sync
-			registeredMcis := make(map[string]bool)
+			// Track registered Infras for status sync
+			registeredInfras := make(map[string]bool)
 
-			// Track network-based subgroups: key = "vnetId_subnetId", value = subgroup name
-			networkSubgroupMap := make(map[string]string)
-			// Track subgroup VM counts for naming: key = subgroup name, value = VM count
-			subgroupVmCount := make(map[string]int)
+			// Track network-based nodegroups: key = "vnetId_subnetId", value = nodegroup name
+			networkNodeGroupMap := make(map[string]string)
+			// Track nodegroup VM counts for naming: key = nodegroup name, value = VM count
+			nodegroupVmCount := make(map[string]int)
 
-			if useSingleMci {
-				// Single MCI mode: all VMs go into one MCI
-				singleMciName = common.ChangeIdString(mciNamePrefix)
+			if useSingleInfra {
+				// Single Infra mode: all VMs go into one Infra
+				singleInfraName = common.ChangeIdString(infraNamePrefix)
 			}
 
 			// Phase 1: Register all VMs and collect network info
-			// We'll use temporary subgroup names first, then reorganize
+			// We'll use temporary nodegroup names first, then reorganize
 			type registeredVmInfo struct {
 				vmId       string
 				vnetId     string
@@ -1071,44 +1071,44 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 			var registeredVms []registeredVmInfo
 
 			for idx, r := range res.Resources.OnCspOnly.Info {
-				// Generate a temporary unique subgroup name for initial registration
-				tempSubGroupName := common.ChangeIdString(fmt.Sprintf("reg-%s-%d", connConfig, idx))
+				// Generate a temporary unique nodegroup name for initial registration
+				tempNodeGroupName := common.ChangeIdString(fmt.Sprintf("reg-%s-%d", connConfig, idx))
 
-				var mciName string
-				if useSingleMci {
-					// Use the same MCI name for all VMs
-					mciName = singleMciName
+				var infraName string
+				if useSingleInfra {
+					// Use the same Infra name for all VMs
+					infraName = singleInfraName
 				} else {
-					// Create separate MCI for each VM (use shorter name)
-					mciName = common.ChangeIdString(fmt.Sprintf("%s-%s", mciNamePrefix, r.RefNameOrId))
+					// Create separate Infra for each VM (use shorter name)
+					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.RefNameOrId))
 				}
 
 				var vmId string
-				if useSingleMci && singleMciCreated {
-					// Add VM to existing MCI
-					subGroupReq := &model.CreateSubGroupReq{
-						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempSubGroupName,
+				if useSingleInfra && singleInfraCreated {
+					// Add VM to existing Infra
+					nodeGroupReq := &model.CreateNodeGroupReq{
+						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempNodeGroupName,
 						Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
 						Label:       map[string]string{model.LabelRegistered: "true"},
 						// Placeholders
 						ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
 						SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 					}
-					mciInfo, err := CreateMciGroupVm(ctx, nsId, mciName, subGroupReq, true)
-					appendResult(&result, model.StrVM, tempSubGroupName, err, &result.RegisterationOverview.Vm)
+					infraInfo, err := CreateInfraGroupVm(ctx, nsId, infraName, nodeGroupReq, true)
+					appendResult(&result, model.StrVM, tempNodeGroupName, err, &result.RegisterationOverview.Vm)
 					if err == nil {
-						registeredMcis[mciName] = true
+						registeredInfras[infraName] = true
 						// Get the VM ID from the newly added VM
-						if mciInfo != nil && len(mciInfo.NewVmList) > 0 {
-							vmId = mciInfo.NewVmList[0]
+						if infraInfo != nil && len(infraInfo.NewVmList) > 0 {
+							vmId = infraInfo.NewVmList[0]
 						}
 					}
 				} else {
-					// Create new MCI (either first VM in single MCI mode, or each VM in separate MCI mode)
-					req := model.MciReq{
-						Name: mciName, Description: "MCI for CSP managed VMs", InstallMonAgent: "no",
-						SubGroups: []model.CreateSubGroupReq{{
-							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempSubGroupName,
+					// Create new Infra (either first VM in single Infra mode, or each VM in separate Infra mode)
+					req := model.InfraReq{
+						Name: infraName, Description: "Infra for CSP managed VMs", InstallMonAgent: "no",
+						NodeGroups: []model.CreateNodeGroupReq{{
+							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempNodeGroupName,
 							Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
 							Label:       map[string]string{model.LabelRegistered: "true"},
 							// Placeholders
@@ -1116,26 +1116,26 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 							SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 						}},
 					}
-					mciInfo, err := CreateMci(ctx, nsId, &req, optionFlag, false)
-					appendResult(&result, model.StrVM, tempSubGroupName, err, &result.RegisterationOverview.Vm)
+					infraInfo, err := CreateInfra(ctx, nsId, &req, optionFlag, false)
+					appendResult(&result, model.StrVM, tempNodeGroupName, err, &result.RegisterationOverview.Vm)
 
 					if err == nil {
-						registeredMcis[mciName] = true
-						if useSingleMci {
-							singleMciCreated = true
+						registeredInfras[infraName] = true
+						if useSingleInfra {
+							singleInfraCreated = true
 						}
 						// Get the VM ID from the newly created VM
-						if mciInfo != nil && len(mciInfo.NewVmList) > 0 {
-							vmId = mciInfo.NewVmList[0]
-						} else if mciInfo != nil && len(mciInfo.Vm) > 0 {
-							vmId = mciInfo.Vm[0].Id
+						if infraInfo != nil && len(infraInfo.NewVmList) > 0 {
+							vmId = infraInfo.NewVmList[0]
+						} else if infraInfo != nil && len(infraInfo.Vm) > 0 {
+							vmId = infraInfo.Vm[0].Id
 						}
 					}
 				}
 
 				// If VM was registered successfully, collect its network info
-				if vmId != "" && useSingleMci {
-					vmInfo, err := GetVmObject(nsId, singleMciName, vmId)
+				if vmId != "" && useSingleInfra {
+					vmInfo, err := GetVmObject(nsId, singleInfraName, vmId)
 					if err == nil && vmInfo.VNetId != "" {
 						networkKey := fmt.Sprintf("%s_%s", vmInfo.VNetId, vmInfo.SubnetId)
 						registeredVms = append(registeredVms, registeredVmInfo{
@@ -1148,9 +1148,9 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 				}
 			}
 
-			// Phase 2: Reorganize subgroups by network configuration (only for single MCI mode)
-			if useSingleMci && len(registeredVms) > 1 {
-				log.Info().Msgf("Reorganizing %d VMs into network-based subgroups in MCI %s", len(registeredVms), singleMciName)
+			// Phase 2: Reorganize nodegroups by network configuration (only for single Infra mode)
+			if useSingleInfra && len(registeredVms) > 1 {
+				log.Info().Msgf("Reorganizing %d VMs into network-based nodegroups in Infra %s", len(registeredVms), singleInfraName)
 
 				// Group VMs by network configuration
 				networkGroups := make(map[string][]string) // networkKey -> []vmId
@@ -1158,65 +1158,65 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					networkGroups[vm.networkKey] = append(networkGroups[vm.networkKey], vm.vmId)
 				}
 
-				// Generate meaningful subgroup names and update VMs
-				subgroupIndex := 1
+				// Generate meaningful nodegroup names and update VMs
+				nodegroupIndex := 1
 				for networkKey, vmIds := range networkGroups {
-					var newSubgroupName string
+					var newNodeGroupName string
 					if len(networkGroups) == 1 {
 						// All VMs in same network - use simple name
-						newSubgroupName = fmt.Sprintf("reg-group")
+						newNodeGroupName = fmt.Sprintf("reg-group")
 					} else {
 						// Multiple networks - use indexed name
-						newSubgroupName = fmt.Sprintf("reg-group%d", subgroupIndex)
-						subgroupIndex++
+						newNodeGroupName = fmt.Sprintf("reg-group%d", nodegroupIndex)
+						nodegroupIndex++
 					}
 
 					// Track for logging
-					networkSubgroupMap[networkKey] = newSubgroupName
-					subgroupVmCount[newSubgroupName] = len(vmIds)
+					networkNodeGroupMap[networkKey] = newNodeGroupName
+					nodegroupVmCount[newNodeGroupName] = len(vmIds)
 
-					// Update each VM's SubGroupId
+					// Update each VM's NodeGroupId
 					for _, vmId := range vmIds {
-						vmInfo, err := GetVmObject(nsId, singleMciName, vmId)
+						vmInfo, err := GetVmObject(nsId, singleInfraName, vmId)
 						if err != nil {
-							log.Warn().Err(err).Msgf("Failed to get VM %s for subgroup update", vmId)
+							log.Warn().Err(err).Msgf("Failed to get VM %s for nodegroup update", vmId)
 							continue
 						}
 
-						oldSubgroupId := vmInfo.SubGroupId
-						vmInfo.SubGroupId = newSubgroupName
-						UpdateVmInfo(nsId, singleMciName, vmInfo)
+						oldNodeGroupId := vmInfo.NodeGroupId
+						vmInfo.NodeGroupId = newNodeGroupName
+						UpdateVmInfo(nsId, singleInfraName, vmInfo)
 
-						// Delete old subgroup if it was temporary (starts with "reg-")
-						if oldSubgroupId != "" && strings.HasPrefix(oldSubgroupId, "reg-") && oldSubgroupId != newSubgroupName {
-							oldSubgroupKey := common.GenMciSubGroupKey(nsId, singleMciName, oldSubgroupId)
-							kvstore.Delete(oldSubgroupKey)
+						// Delete old nodegroup if it was temporary (starts with "reg-")
+						if oldNodeGroupId != "" && strings.HasPrefix(oldNodeGroupId, "reg-") && oldNodeGroupId != newNodeGroupName {
+							oldNodeGroupKey := common.GenInfraNodeGroupKey(nsId, singleInfraName, oldNodeGroupId)
+							kvstore.Delete(oldNodeGroupKey)
 						}
 					}
 
-					// Create or update the new subgroup
-					subgroupKey := common.GenMciSubGroupKey(nsId, singleMciName, newSubgroupName)
-					subgroupInfo := model.SubGroupInfo{
-						ResourceType: model.StrSubGroup,
-						Id:           newSubgroupName,
-						Name:         newSubgroupName,
-						Uid:          common.GenUid(),
-						SubGroupSize: len(vmIds),
-						VmId:         vmIds,
+					// Create or update the new nodegroup
+					nodegroupKey := common.GenInfraNodeGroupKey(nsId, singleInfraName, newNodeGroupName)
+					nodegroupInfo := model.NodeGroupInfo{
+						ResourceType:  model.StrNodeGroup,
+						Id:            newNodeGroupName,
+						Name:          newNodeGroupName,
+						Uid:           common.GenUid(),
+						NodeGroupSize: len(vmIds),
+						VmId:          vmIds,
 					}
-					subgroupVal, _ := json.Marshal(subgroupInfo)
-					kvstore.Put(subgroupKey, string(subgroupVal))
+					nodegroupVal, _ := json.Marshal(nodegroupInfo)
+					kvstore.Put(nodegroupKey, string(nodegroupVal))
 
-					log.Info().Msgf("Created subgroup '%s' with %d VMs (network: %s)", newSubgroupName, len(vmIds), networkKey)
+					log.Info().Msgf("Created nodegroup '%s' with %d VMs (network: %s)", newNodeGroupName, len(vmIds), networkKey)
 				}
 			}
 
-			// Sync MCI status after all VM registrations and reorganization
-			for mciName := range registeredMcis {
-				if _, err := GetMciStatus(nsId, mciName); err != nil {
-					log.Warn().Err(err).Msgf("Failed to sync MCI status for %s after registration", mciName)
+			// Sync Infra status after all VM registrations and reorganization
+			for infraName := range registeredInfras {
+				if _, err := GetInfraStatus(nsId, infraName); err != nil {
+					log.Warn().Err(err).Msgf("Failed to sync Infra status for %s after registration", infraName)
 				} else {
-					log.Info().Msgf("MCI %s status synced after VM registration", mciName)
+					log.Info().Msgf("Infra %s status synced after VM registration", infraName)
 				}
 			}
 		}
@@ -1334,7 +1334,7 @@ func appendResult(result *model.RegisterResourceResult, resType, name string, er
 	result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, fmt.Sprintf("%s: %s%s", resType, name, status))
 }
 
-func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.VmInfo, error) {
+func FindTbVmByCspId(nsId string, infraId string, vmCspResourceId string) (model.VmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1342,7 +1342,7 @@ func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.V
 		return model.VmInfo{}, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.VmInfo{}, err
@@ -1354,31 +1354,31 @@ func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.V
 		return model.VmInfo{}, err
 	}
 
-	check, err := CheckMci(nsId, mciId)
+	check, err := CheckInfra(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The MCI " + mciId + " does not exist.")
+		err := fmt.Errorf("The Infra " + infraId + " does not exist.")
 		return model.VmInfo{}, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the MCI " + mciId + ".")
+		err := fmt.Errorf("Failed to check the existence of the Infra " + infraId + ".")
 		return model.VmInfo{}, err
 	}
 
-	mci, _, err := GetMciObject(nsId, mciId)
+	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the MCI " + mciId + ".")
+		err := fmt.Errorf("Failed to get the Infra " + infraId + ".")
 		return model.VmInfo{}, err
 	}
 
-	vms := mci.Vm
+	vms := infra.Vm
 	for _, v := range vms {
 		if v.CspResourceId == vmCspResourceId || v.CspResourceName == vmCspResourceId {
 			return v, nil
 		}
 	}
 
-	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmCspResourceId, nsId, mciId)
+	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmCspResourceId, nsId, infraId)
 	return model.VmInfo{}, err
 }

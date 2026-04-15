@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -231,7 +231,7 @@ func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
 	return strings.Join(orderParts, ", "), nil
 }
 
-// RecommendVmLatency func prioritize specs by latency based on given MCI (fair)
+// RecommendVmLatency func prioritize specs by latency based on given Infra (fair)
 func RecommendVmLatency(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
 
 	result := []model.SpecInfo{}
@@ -1353,7 +1353,7 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 // 		ConnectionName string
 // 	}
 
-// 	key := common.GenMciKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
+// 	key := common.GenInfraKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
 // 	log.Debug().Msg(key)
 // 	keyValue, err := kvstore.GetKvList(key)
 // 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
@@ -1395,8 +1395,8 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 
 // }
 
-// // CorePostMciRecommend is func to command to all VMs in MCI with SSH
-// func CorePostMciRecommend(nsId string, req *MciRecommendReq) ([]VmRecommendInfo, error) {
+// // CorePostInfraRecommend is func to command to all VMs in Infra with SSH
+// func CorePostInfraRecommend(nsId string, req *InfraRecommendReq) ([]VmRecommendInfo, error) {
 
 // 	err := common.CheckString(nsId)
 // 	if err != nil {
@@ -1412,7 +1412,7 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 // 			PlacementParam []common.KeyValue        `json:"placementParam"`
 // 		}
 // 	*/
-// 	//content := RestPostMciRecommendResponse{}
+// 	//content := RestPostInfraRecommendResponse{}
 // 	//content.VmReq = req.VmReq
 // 	//content.PlacementAlgo = req.PlacementAlgo
 // 	//content.PlacementParam = req.PlacementParam
@@ -1433,7 +1433,7 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 
 // 		if err != nil {
 // 			log.Error().Err(err).Msg("")
-// 			return nil, fmt.Errorf("Failed to recommend MCI")
+// 			return nil, fmt.Errorf("Failed to recommend Infra")
 // 		}
 
 // 		VmRecommend = append(VmRecommend, vmTmp)

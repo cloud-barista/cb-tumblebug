@@ -102,7 +102,7 @@ flowchart LR
     style G fill:#e8f5e9,stroke:#2e7d32
 ```
 
-> Restore replaces all data in PostgreSQL. It does **not** affect etcd (namespaces, MCI state, credentials).
+> Restore replaces all data in PostgreSQL. It does **not** affect etcd (namespaces, Infra state, credentials).
 
 ---
 
@@ -110,7 +110,7 @@ flowchart LR
 
 **Included (PostgreSQL):** VM specs, OS images, pricing, region info
 
-**Not included (stored in etcd):** Running MCIs, namespaces, credentials
+**Not included (stored in etcd):** Running Infras, namespaces, credentials
 
 ---
 

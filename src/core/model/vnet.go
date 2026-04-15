@@ -71,9 +71,9 @@ type VNetInfo struct {
 
 // BastionNode is a struct that represents TB BastionNode object.
 type BastionNode struct {
-	NsId  string `json:"nsId,omitempty"`
-	MciId string `json:"mciId"`
-	VmId  string `json:"vmId"`
+	NsId    string `json:"nsId,omitempty"`
+	InfraId string `json:"infraId"`
+	VmId    string `json:"vmId"`
 }
 
 // VNetDesignRequest is a struct to handle the utility function, DesignVNet()

@@ -101,12 +101,12 @@ sequenceDiagram
     Note over C,CSP: User Request Flow
     C->>P: User request: "Create AWS VM"
     P->>TB: MCP JSON-RPC over Streamable HTTP
-    TB->>TB: Execute tool: create_mci_dynamic()
+    TB->>TB: Execute tool: create_infra_dynamic()
     
-    TB->>API: POST /ns/{ns}/mciDynamic
+    TB->>API: POST /ns/{ns}/infraDynamic
     API->>CSP: Provision VM resources
     CSP-->>API: Resource creation response
-    API-->>TB: MCI creation result
+    API-->>TB: Infra creation result
     TB-->>P: MCP response over Streamable HTTP
     P-->>C: Display result to user via stdio
     
@@ -251,18 +251,18 @@ mindmap
       API_resources_searchImage
       API_recommendSpec
     
-    MCI Management
-      create_mci_dynamic
-      control_mci
-      delete_mci
-      API_ns_mciDynamic
-      API_ns_control_mci
+    Infra Management
+      create_infra_dynamic
+      control_infra
+      delete_infra
+      API_ns_infraDynamic
+      API_ns_control_infra
     
     Remote Operations
-      execute_command_mci
-      transfer_file_mci
-      API_ns_cmd_mci
-      API_ns_transferFile_mci
+      execute_command_infra
+      transfer_file_infra
+      API_ns_cmd_infra
+      API_ns_transferFile_infra
     
     Resource Management
       get_vnets

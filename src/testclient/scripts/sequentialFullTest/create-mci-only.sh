@@ -9,15 +9,15 @@ function test_sequence() {
 	local NUMVM=$5
 	local CMDPATH=$6
 
-	../8.mci/create-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
+	../8.infra/create-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
 	dozing 1
-	../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.infra/status-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCI:${MCIID}(${SECONDS}s)] ${_self} (MCI) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${NUMVM}" >>./executionStatus
+	echo "[Infra:${InfraID}(${SECONDS}s)] ${_self} (Infra) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${NUMVM}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	#cat ./executionStatus
@@ -26,7 +26,7 @@ function test_sequence() {
 }
 
 
-function test_sequence_allcsp_mci() {
+function test_sequence_allcsp_infra() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
@@ -37,12 +37,12 @@ function test_sequence_allcsp_mci() {
 
 	_self=$CMDPATH
 
-	../8.mci/create-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM
+	../8.infra/create-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM
 	#dozing 1
-	#../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCIPREFIX
+	#../8.infra/status-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $InfraPREFIX
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCI:${MCIID}(${SECONDS}s+More)] ${_self} (MCI) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[Infra:${InfraID}(${SECONDS}s+More)] ${_self} (Infra) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	#cat ./executionStatus
@@ -51,14 +51,14 @@ function test_sequence_allcsp_mci() {
 
 }
 
-function test_sequence_allcsp_mci_vm() {
+function test_sequence_allcsp_infra_vm() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
 	local TestSetFile=$4
 	local NUMVM=$5
 
-	../8.mci/add-subgroup-to-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
+	../8.infra/add-nodegroup-to-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
 
 }
 SECONDS=0
@@ -78,7 +78,7 @@ if [ "${INDEX}" == "0" ]; then
 	INDEXX=${NumCSP}
 
 
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 
 
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do
@@ -92,36 +92,36 @@ if [ "${INDEX}" == "0" ]; then
 			#echo $CSP
 			#echo $REGION
 			TOTALVM=$((INDEXX * INDEXY * NUMVM))
-			echo "[Create MCI] VMs($TOTALVM) = Cloud($INDEXX) * Region($INDEXY) * subGroup($NUMVM)"
+			echo "[Create Infra] VMs($TOTALVM) = Cloud($INDEXX) * Region($INDEXY) * nodeGroup($NUMVM)"
 			echo "- Create VM in ${CONN_CONFIG[$cspi, $REGION]}"
 
 			if [ "${cspi}" -eq 1 ] && [ "${cspj}" -eq 1 ]; then
 				echo ""
-				echo "[Create a MCI object with a VM]"
-				test_sequence_allcsp_mci $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/} &
-				# Check MCI object is created
+				echo "[Create a Infra object with a VM]"
+				test_sequence_allcsp_infra $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/} &
+				# Check Infra object is created
 				echo ""
-				echo "[Waiting for initialization of MCI:$MCIID (5s)]"
+				echo "[Waiting for initialization of Infra:$InfraID (5s)]"
 				dozing 5
 
-				echo "Checking MCI object. (upto 3s * 20 trials)"
+				echo "Checking Infra object. (upto 3s * 20 trials)"
 				for ((try = 1; try <= 20; try++)); do
 					HTTP_CODE=0
-					HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}" --silent)
-					echo "HTTP status for get MCI object: $HTTP_CODE"
+					HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}" --silent)
+					echo "HTTP status for get Infra object: $HTTP_CODE"
 					if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
-						echo "[$try : MCI object is READY]"
+						echo "[$try : Infra object is READY]"
 						break
 					else
-						printf "[$try : MCI object is not ready yet].."
+						printf "[$try : Infra object is not ready yet].."
 						dozing 3
 					fi
 				done
 			else
 				dozing 6
 				echo ""
-				echo "[Create VM and add it into the MCI in parallel]"
-				test_sequence_allcsp_mci_vm $CSP $REGION $POSTFIX $TestSetFile $NUMVM &
+				echo "[Create VM and add it into the Infra in parallel]"
+				test_sequence_allcsp_infra_vm $CSP $REGION $POSTFIX $TestSetFile $NUMVM &
 
 			fi
 		done
@@ -129,14 +129,14 @@ if [ "${INDEX}" == "0" ]; then
 	done
 	wait
 
-	../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.infra/status-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 else
 	echo ""
 	TOTALVM=$((1 * 1 * NUMVM))
-	echo "[Create MCI] VMs($TOTALVM) = Cloud(1) * Region(1) * subGroup($NUMVM)"
+	echo "[Create Infra] VMs($TOTALVM) = Cloud(1) * Region(1) * nodeGroup($NUMVM)"
 
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 	test_sequence $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/}
 

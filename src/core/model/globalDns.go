@@ -19,7 +19,7 @@ package model
 type GlobalDnsRecordReq struct {
 	// --- DNS Record Settings ---
 	DomainName    string `json:"domainName" validate:"required" example:"example.com" description:"Managed Domain Name in Route53"`
-	RecordName    string `json:"recordName" example:"mci.example.com" description:"Record Name (FQDN) to update"`
+	RecordName    string `json:"recordName" example:"infra.example.com" description:"Record Name (FQDN) to update"`
 	RecordType    string `json:"recordType" example:"A" enums:"A,AAAA,CNAME,TXT" description:"DNS Record Type"`
 	TTL           int64  `json:"ttl" example:"300" description:"Time To Live (seconds)"`
 	RoutingPolicy string `json:"routingPolicy,omitempty" example:"simple" enums:"simple,geoproximity" description:"Routing policy (default: simple)"`
@@ -31,7 +31,7 @@ type GlobalDnsRecordReq struct {
 // GlobalDnsDeleteReq is a struct to handle 'Delete globalDns record' request.
 type GlobalDnsDeleteReq struct {
 	DomainName    string `json:"domainName" validate:"required" example:"example.com" description:"Managed Domain Name in Route53"`
-	RecordName    string `json:"recordName" validate:"required" example:"mci.example.com" description:"Record Name (FQDN) to delete"`
+	RecordName    string `json:"recordName" validate:"required" example:"infra.example.com" description:"Record Name (FQDN) to delete"`
 	RecordType    string `json:"recordType" example:"A" enums:"A,AAAA,CNAME,TXT" description:"DNS Record Type"`
 	SetIdentifier string `json:"setIdentifier,omitempty" example:"" description:"SetIdentifier for specific record (empty = delete all matching)"`
 }
@@ -43,7 +43,7 @@ type GlobalDnsBulkDeleteReq struct {
 
 // GlobalDnsBulkDeleteResult represents the result of one record deletion in a bulk operation.
 type GlobalDnsBulkDeleteResult struct {
-	RecordName    string `json:"recordName" example:"mci.example.com"`
+	RecordName    string `json:"recordName" example:"infra.example.com"`
 	RecordType    string `json:"recordType" example:"A"`
 	SetIdentifier string `json:"setIdentifier,omitempty"`
 	Success       bool   `json:"success" example:"true"`
@@ -52,34 +52,34 @@ type GlobalDnsBulkDeleteResult struct {
 
 // GlobalDnsBulkDeleteResponse is a struct to handle 'Bulk delete globalDns records' response.
 type GlobalDnsBulkDeleteResponse struct {
-	TotalRequested int                     `json:"totalRequested" example:"5"`
-	Succeeded      int                     `json:"succeeded" example:"4"`
-	Failed         int                     `json:"failed" example:"1"`
+	TotalRequested int                         `json:"totalRequested" example:"5"`
+	Succeeded      int                         `json:"succeeded" example:"4"`
+	Failed         int                         `json:"failed" example:"1"`
 	Results        []GlobalDnsBulkDeleteResult `json:"results"`
 }
 
 // GlobalDnsIPSource defines the source for IP addresses.
 type GlobalDnsIPSource struct {
-	Mci   *GlobalDnsMciSource   `json:"mci,omitempty" description:"(Method 1) MCI ID source"`
+	Infra *GlobalDnsInfraSource `json:"infra,omitempty" description:"(Method 1) Infra ID source"`
 	Label *GlobalDnsLabelSource `json:"label,omitempty" description:"(Method 2) Label Selector source"`
 	Ips   []string              `json:"ips,omitempty" example:"[\"1.2.3.4\"]" description:"(Method 3) Manual IP addresses"`
 }
 
-// GlobalDnsMciSource defines MCI ID and its namespace.
-type GlobalDnsMciSource struct {
-	NsId  string `json:"nsId" validate:"required" example:"default" description:"Namespace ID"`
-	MciId string `json:"mciId" validate:"required" example:"mci-01" description:"MCI ID"`
+// GlobalDnsInfraSource defines Infra ID and its namespace.
+type GlobalDnsInfraSource struct {
+	NsId    string `json:"nsId" validate:"required" example:"default" description:"Namespace ID"`
+	InfraId string `json:"infraId" validate:"required" example:"infra-01" description:"Infra ID"`
 }
 
 // GlobalDnsLabelSource defines Label Selector and its namespace.
 type GlobalDnsLabelSource struct {
 	NsId          string `json:"nsId" validate:"required" example:"default" description:"Namespace ID"`
-	LabelSelector string `json:"labelSelector" validate:"required" example:"sys.mciId=mci-01,app=nginx" description:"Label Selector (e.g., sys.mciId=mci-01,app=nginx)"`
+	LabelSelector string `json:"labelSelector" validate:"required" example:"sys.infraId=infra-01,app=nginx" description:"Label Selector (e.g., sys.infraId=infra-01,app=nginx)"`
 }
 
 // GlobalDnsRecordInfo is a struct to handle DNS record information.
 type GlobalDnsRecordInfo struct {
-	Name          string   `json:"name" example:"mci.example.com"`
+	Name          string   `json:"name" example:"infra.example.com"`
 	Type          string   `json:"type" example:"A"`
 	TTL           int64    `json:"ttl" example:"300"`
 	Values        []string `json:"values" example:"[\"1.2.3.4\"]"`

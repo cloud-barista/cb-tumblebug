@@ -332,7 +332,7 @@ func DelNs(id string) error {
 	log.Debug().Msg("[Delete ns] " + id)
 	key := "/ns/" + id
 
-	mciList := GetChildIdList(key + "/mci")
+	infraList := GetChildIdList(key + "/infra")
 	imageList := GetChildIdList(key + "/resources/image")
 	vNetList := GetChildIdList(key + "/resources/vNet")
 	//subnetList := GetChildIdList(key + "/resources/subnet")
@@ -342,15 +342,15 @@ func DelNs(id string) error {
 	sshKeyList := GetChildIdList(key + "/resources/sshKey")
 	//vNicList := GetChildIdList(key + "/resources/vNic")
 
-	if len(mciList)+
+	if len(infraList)+
 		len(imageList)+
 		len(vNetList)+
 		//len(subnetList)
 		len(securityGroupList)+
 		len(specList)+
 		len(sshKeyList) > 0 {
-		errString := "Cannot delete NS " + id + ", which is not empty. There exists at least one MCI or one of resources."
-		errString += " \n len(mciList): " + strconv.Itoa(len(mciList))
+		errString := "Cannot delete NS " + id + ", which is not empty. There exists at least one Infra or one of resources."
+		errString += " \n len(infraList): " + strconv.Itoa(len(infraList))
 		errString += " \n len(imageList): " + strconv.Itoa(len(imageList))
 		errString += " \n len(vNetList): " + strconv.Itoa(len(vNetList))
 		//errString += " \n len(publicIpList): " + strconv.Itoa(len(publicIpList))

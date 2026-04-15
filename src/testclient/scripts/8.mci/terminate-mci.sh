@@ -1,23 +1,23 @@
 #!/bin/bash
 
-#function just_terminate_mci() {
+#function just_terminate_infra() {
 
 echo "####################################################################"
-echo "## 8. VM: Just Terminate MCI"
+echo "## 8. VM: Just Terminate Infra"
 echo "####################################################################"
 
 source ../init.sh
 
 # if [ "${INDEX}" == "0" ]; then
-# 	MCIID=${POSTFIX}
+# 	InfraID=${POSTFIX}
 # else
-# 	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+# 	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 # fi
 
-echo "${MCIID}"
+echo "${InfraID}"
 
 ControlCmd=terminate
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq '.'
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/infra/${InfraID}?action=${ControlCmd} | jq '.'
 
 
-#just_terminate_mci
+#just_terminate_infra

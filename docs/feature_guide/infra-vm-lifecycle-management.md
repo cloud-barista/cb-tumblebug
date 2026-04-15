@@ -1,40 +1,40 @@
-# MCI and VM Lifecycle Management
+# Infra and VM Lifecycle Management
 
-This document provides a comprehensive guide to the lifecycle management of MCI (Multi-Cloud Infrastructure) and VM (Virtual Machine) resources in CB-Tumblebug. It covers state transitions, control actions, status management, and internal mechanisms.
+This document provides a comprehensive guide to the lifecycle management of Infra (Multi-Cloud Infrastructure) and VM (Virtual Machine) resources in CB-Tumblebug. It covers state transitions, control actions, status management, and internal mechanisms.
 
 ## 🔑 Key Concepts
 
-### What is MCI?
+### What is Infra?
 
-**MCI (Multi-Cloud Infrastructure)** is a logical unit that groups multiple VMs deployed across different Cloud Service Providers (CSPs) into a single manageable entity. An MCI can contain VMs from AWS, Azure, GCP, Alibaba, and other clouds simultaneously.
+**Infra (Multi-Cloud Infrastructure)** is a logical unit that groups multiple VMs deployed across different Cloud Service Providers (CSPs) into a single manageable entity. An Infra can contain VMs from AWS, Azure, GCP, Alibaba, and other clouds simultaneously.
 
-### What is a SubGroup?
+### What is a NodeGroup?
 
-A **SubGroup** is a logical grouping of homogeneous VMs within an MCI. VMs in the same SubGroup share identical configurations (same spec, image, region, etc.) and are typically scaled together.
+A **NodeGroup** is a logical grouping of homogeneous VMs within an Infra. VMs in the same NodeGroup share identical configurations (same spec, image, region, etc.) and are typically scaled together.
 
 ```
-MCI
-├── SubGroup-A (AWS ap-northeast-2)
+Infra
+├── NodeGroup-A (AWS ap-northeast-2)
 │   ├── VM-A-1
 │   ├── VM-A-2
 │   └── VM-A-3
-├── SubGroup-B (Azure koreacentral)
+├── NodeGroup-B (Azure koreacentral)
 │   ├── VM-B-1
 │   └── VM-B-2
-└── SubGroup-C (GCP asia-northeast3)
+└── NodeGroup-C (GCP asia-northeast3)
     └── VM-C-1
 ```
 
 ## 📊 Status Constants
 
-### MCI Status
+### Infra Status
 
-The following statuses represent the current state of an MCI:
+The following statuses represent the current state of an Infra:
 
 | Status | Description | Stable? |
 |--------|-------------|---------|
-| `Preparing` | MCI resources are being prepared (VNet, SecurityGroup, SSH Key) | No (Transitional) |
-| `Prepared` | MCI resources are prepared, ready for VM provisioning | No (Transitional) |
+| `Preparing` | Infra resources are being prepared (VNet, SecurityGroup, SSH Key) | No (Transitional) |
+| `Prepared` | Infra resources are prepared, ready for VM provisioning | No (Transitional) |
 | `Creating` | VMs are being provisioned | No (Transitional) |
 | `Running` | All VMs are running | Yes |
 | `Suspending` | VMs are being suspended | No (Transitional) |
@@ -43,8 +43,8 @@ The following statuses represent the current state of an MCI:
 | `Rebooting` | VMs are being rebooted | No (Transitional) |
 | `Terminating` | VMs are being terminated | No (Transitional) |
 | `Terminated` | All VMs are terminated | Yes (Final) |
-| `Failed` | MCI creation failed | Yes (Final) |
-| `Undefined` | MCI status cannot be determined | Yes |
+| `Failed` | Infra creation failed | Yes (Final) |
+| `Undefined` | Infra status cannot be determined | Yes |
 | `Partial-*` | Mixed VM states (e.g., `Partial-Running`, `Partial-Suspended`) | Yes |
 
 ### VM Status
@@ -66,7 +66,7 @@ The following statuses represent the current state of a VM:
 
 ### Action Constants
 
-Actions that can be performed on MCI/VM:
+Actions that can be performed on Infra/VM:
 
 | Action | Description | Target Status |
 |--------|-------------|---------------|
@@ -79,15 +79,15 @@ Actions that can be performed on MCI/VM:
 
 ## 🔄 State Transition Diagram
 
-### MCI State Transitions
+### Infra State Transitions
 
-MCI follows a multi-phase lifecycle: **Preparation → Provisioning → Operation → Termination**
+Infra follows a multi-phase lifecycle: **Preparation → Provisioning → Operation → Termination**
 
-> **Note:** Most statuses can have a `Partial-` prefix (e.g., `Partial-Running`) indicating mixed VM states within the MCI.
+> **Note:** Most statuses can have a `Partial-` prefix (e.g., `Partial-Running`) indicating mixed VM states within the Infra.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Preparing: Create MCI Request
+    [*] --> Preparing: Create Infra Request
     
     Preparing --> Prepared: Resources Ready
     Preparing --> Failed: Resource Creation Error
@@ -174,7 +174,7 @@ The `Preparing` → `Prepared` phase involves creating shared resources before V
 
 ```mermaid
 flowchart TD
-    START[MCI Create Request] --> PREPARE[Status: Preparing]
+    START[Infra Create Request] --> PREPARE[Status: Preparing]
     
     PREPARE --> VNET[Create VNet/Subnet]
     VNET --> SG[Create Security Groups]
@@ -210,13 +210,13 @@ The system validates state transitions before executing actions. Below is the tr
 | Terminated | ❌ | ❌ | ❌ | ❌ |
 | Failed | ❌ | ❌ | ❌ | ✅ (Force) |
 
-### MCI-Level Actions
+### Infra-Level Actions
 
-When an action is applied to an MCI, it propagates to all VMs within:
+When an action is applied to an Infra, it propagates to all VMs within:
 
 ```mermaid
 flowchart TD
-    ACTION[MCI Action Request] --> VALIDATE[Validate MCI State]
+    ACTION[Infra Action Request] --> VALIDATE[Validate Infra State]
     VALIDATE --> CHECK{Transition Allowed?}
     
     CHECK -->|Yes| SET_TARGET[Set TargetAction & TargetStatus]
@@ -243,7 +243,7 @@ flowchart TD
     VM2 --> COLLECT
     VMN --> COLLECT
     
-    COLLECT --> UPDATE[Update MCI Status]
+    COLLECT --> UPDATE[Update Infra Status]
     UPDATE --> COMPLETE[Mark Action Complete]
     
     style ACTION fill:#e3f2fd
@@ -257,14 +257,14 @@ Individual VM actions follow a similar pattern but only affect the specified VM:
 
 ```go
 // Example: Suspend a specific VM
-HandleMciVmAction(nsId, mciId, vmId, "suspend", force)
+HandleInfraVmAction(nsId, infraId, vmId, "suspend", force)
 ```
 
 ## 📈 Status Management
 
-### Status Aggregation for MCI
+### Status Aggregation for Infra
 
-MCI status is aggregated from all VM statuses. The aggregation logic determines the overall MCI status based on the dominant VM status:
+Infra status is aggregated from all VM statuses. The aggregation logic determines the overall Infra status based on the dominant VM status:
 
 ```mermaid
 flowchart TD
@@ -292,7 +292,7 @@ flowchart TD
 
 ```go
 type StatusCountInfo struct {
-    CountTotal       int  // Total VMs in MCI
+    CountTotal       int  // Total VMs in Infra
     CountCreating    int  // VMs being created
     CountRunning     int  // Running VMs
     CountFailed      int  // Failed VMs
@@ -310,7 +310,7 @@ type StatusCountInfo struct {
 
 ### TargetAction and TargetStatus
 
-Each MCI and VM maintains two tracking fields:
+Each Infra and VM maintains two tracking fields:
 
 - **TargetAction**: The action currently being performed (e.g., `Create`, `Terminate`)
 - **TargetStatus**: The expected final status after the action completes (e.g., `Running`, `Terminated`)
@@ -338,7 +338,7 @@ flowchart LR
     style FETCH fill:#2196f3
 ```
 
-This optimization reduces API calls by 30-50% for large MCIs with many terminated or suspended VMs.
+This optimization reduces API calls by 30-50% for large Infras with many terminated or suspended VMs.
 
 ### Rate Limiting for Control Operations
 
@@ -356,11 +356,11 @@ Control operations (Suspend, Resume, Reboot, Terminate) use the same hierarchica
 
 ### Refine Action
 
-The `refine` action removes VMs in `Failed` or `Undefined` status from an MCI:
+The `refine` action removes VMs in `Failed` or `Undefined` status from an Infra:
 
 ```mermaid
 flowchart TD
-    START[Refine Action] --> LIST[List All VMs in MCI]
+    START[Refine Action] --> LIST[List All VMs in Infra]
     LIST --> LOOP[For Each VM]
     
     LOOP --> CHECK{Status?}
@@ -368,10 +368,10 @@ flowchart TD
     CHECK -->|Failed/Undefined| DELETE[Delete VM Object]
     CHECK -->|Other| KEEP[Keep VM]
     
-    DELETE --> UPDATE_MCI[Update MCI VM List]
+    DELETE --> UPDATE_Infra[Update Infra VM List]
     KEEP --> NEXT[Next VM]
     
-    UPDATE_MCI --> NEXT
+    UPDATE_Infra --> NEXT
     NEXT --> LOOP
     
     LOOP -->|Done| COMPLETE[Refine Complete]
@@ -386,20 +386,20 @@ Most actions support a `force` flag that bypasses state validation:
 
 ```go
 // Normal action (validates state transitions)
-HandleMciAction(nsId, mciId, "terminate", false)
+HandleInfraAction(nsId, infraId, "terminate", false)
 
 // Force action (skips validation)
-HandleMciAction(nsId, mciId, "terminate", true)
+HandleInfraAction(nsId, infraId, "terminate", true)
 ```
 
 **Use `force` carefully** - it can lead to inconsistent states if misused.
 
 ## 📋 API Reference
 
-### MCI Control Endpoint
+### Infra Control Endpoint
 
 ```
-POST /tumblebug/ns/{nsId}/mci/{mciId}?action={action}
+POST /tumblebug/ns/{nsId}/infra/{infraId}?action={action}
 ```
 
 **Parameters:**
@@ -408,23 +408,23 @@ POST /tumblebug/ns/{nsId}/mci/{mciId}?action={action}
 ### VM Control Endpoint
 
 ```
-POST /tumblebug/ns/{nsId}/mci/{mciId}/vm/{vmId}?action={action}
+POST /tumblebug/ns/{nsId}/infra/{infraId}/vm/{vmId}?action={action}
 ```
 
 **Parameters:**
 - `action`: One of `suspend`, `resume`, `reboot`, `terminate`
 
-### Get MCI Status
+### Get Infra Status
 
 ```
-GET /tumblebug/ns/{nsId}/mci/{mciId}?option=status
+GET /tumblebug/ns/{nsId}/infra/{infraId}?option=status
 ```
 
 **Response:**
 ```json
 {
-  "id": "mci-01",
-  "name": "mci-01",
+  "id": "infra-01",
+  "name": "infra-01",
   "status": "Running:5 (R:5/5)",
   "statusCount": {
     "countTotal": 5,
@@ -445,12 +445,12 @@ GET /tumblebug/ns/{nsId}/mci/{mciId}?option=status
 Always verify the current status before performing actions:
 
 ```go
-mciStatus, err := GetMciStatus(nsId, mciId)
+infraStatus, err := GetInfraStatus(nsId, infraId)
 if err != nil {
     return err
 }
-if mciStatus.TargetAction != model.ActionComplete {
-    return fmt.Errorf("MCI is under %s, please try later", mciStatus.TargetAction)
+if infraStatus.TargetAction != model.ActionComplete {
+    return fmt.Errorf("Infra is under %s, please try later", infraStatus.TargetAction)
 }
 ```
 
@@ -459,28 +459,28 @@ if mciStatus.TargetAction != model.ActionComplete {
 After failed provisioning, use `refine` to clean up failed VMs:
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/mci/my-mci?action=refine"
+curl -X POST "http://localhost:1323/tumblebug/ns/default/infra/my-infra?action=refine"
 ```
 
 ### 3. Wait for Transitional States
 
-Don't perform new actions while MCI is in a transitional state (Creating, Suspending, etc.):
+Don't perform new actions while Infra is in a transitional state (Creating, Suspending, etc.):
 
 ```go
-if strings.Contains(mciStatus.Status, model.StatusCreating) ||
-   strings.Contains(mciStatus.Status, model.StatusTerminating) {
-    return errors.New("MCI is in transitional state")
+if strings.Contains(infraStatus.Status, model.StatusCreating) ||
+   strings.Contains(infraStatus.Status, model.StatusTerminating) {
+    return errors.New("Infra is in transitional state")
 }
 ```
 
 ### 4. Handle Partial States
 
-Be aware that MCI can be in "Partial-" states where VMs have mixed statuses:
+Be aware that Infra can be in "Partial-" states where VMs have mixed statuses:
 
 ```go
-if strings.HasPrefix(mciStatus.Status, "Partial-") {
+if strings.HasPrefix(infraStatus.Status, "Partial-") {
     // Some VMs may need individual attention
-    for _, vm := range mciStatus.Vm {
+    for _, vm := range infraStatus.Vm {
         if vm.Status == model.StatusFailed {
             // Handle failed VM
         }

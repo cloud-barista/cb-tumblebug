@@ -43,7 +43,7 @@ type SpiderNLBReqInfo struct {
 
 	//------ Backend
 
-	VMGroup       SpiderNLBSubGroupReq
+	VMGroup       SpiderNLBNodeGroupReq
 	HealthChecker SpiderNLBHealthCheckerReq
 }
 
@@ -59,12 +59,12 @@ type NLBHealthCheckerReq struct {
 	// Protocol  string `json:"protocol" example:"TCP"`      // TCP|HTTP|HTTPS
 	// Port      string `json:"port" example:"22"`           // Listener Port or 1-65535
 
-	Interval  int `json:"interval" example:"10"`  // secs, Interval time between health checks. 0 = use default.
-	Timeout   int `json:"timeout" example:"10"`   // secs, Waiting time to decide an unhealthy VM when no response. 0 = use default.
+	Interval  int `json:"interval" example:"10"` // secs, Interval time between health checks. 0 = use default.
+	Timeout   int `json:"timeout" example:"10"`  // secs, Waiting time to decide an unhealthy VM when no response. 0 = use default.
 	Threshold int `json:"threshold" example:"3"` // num, The number of continuous health checks to change the VM status. 0 = use default.
 }
 
-type SpiderNLBSubGroupReq struct {
+type SpiderNLBNodeGroupReq struct {
 	Protocol string // TCP|HTTP|HTTPS
 	Port     string // Listener Port or 1-65535
 	VMs      []string
@@ -73,7 +73,7 @@ type SpiderNLBSubGroupReq struct {
 // SpiderNLBAddRemoveVMReqInfoWrapper is a wrapper struct to create JSON body of 'Add/Remove VMs to/from NLB' request
 type SpiderNLBAddRemoveVMReqInfoWrapper struct {
 	ConnectionName string
-	ReqInfo        SpiderNLBSubGroupReq
+	ReqInfo        SpiderNLBNodeGroupReq
 }
 
 // SpiderNLBInfo is a struct to handle NLB information from the CB-Spider's REST API response
@@ -88,7 +88,7 @@ type SpiderNLBInfo struct {
 	Listener SpiderNLBListenerInfo
 
 	//------ Backend
-	VMGroup       SpiderNLBSubGroupInfo
+	VMGroup       SpiderNLBNodeGroupInfo
 	HealthChecker SpiderNLBHealthCheckerInfo
 
 	CreatedTime  time.Time
@@ -122,8 +122,8 @@ type NLBListenerInfo struct {
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
-// SpiderNLBSubGroupInfo is a struct from NLBSubGroupInfo from Spider
-type SpiderNLBSubGroupInfo struct {
+// SpiderNLBNodeGroupInfo is a struct from NLBNodeGroupInfo from Spider
+type SpiderNLBNodeGroupInfo struct {
 	Protocol string // TCP|UDP|HTTP|HTTPS
 	Port     string // 1-65535
 	VMs      *[]IID
@@ -164,17 +164,17 @@ type SpiderNLBHealthInfo struct {
 }
 
 type NLBTargetGroupReq struct {
-	Protocol   string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
-	Port       string `json:"port" example:"80"`      // Listener Port or 1-65535
-	SubGroupId string `json:"subGroupId" example:"g1"`
+	Protocol    string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
+	Port        string `json:"port" example:"80"`      // Listener Port or 1-65535
+	NodeGroupId string `json:"nodeGroupId" example:"g1"`
 }
 
 type NLBTargetGroupInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"80"`      // Listener Port or 1-65535
 
-	SubGroupId string   `json:"subGroupId" example:"g1"`
-	VMs        []string `json:"vms"`
+	NodeGroupId string   `json:"nodeGroupId" example:"g1"`
+	VMs         []string `json:"vms"`
 
 	KeyValueList []KeyValue
 }
@@ -262,7 +262,7 @@ type NLBAddRemoveVMReq struct { // Tumblebug
 
 // McNlbInfo is a struct for response of CreateMcSwNlb
 type McNlbInfo struct {
-	MciAccessInfo *MciAccessInfo  `json:"mciAccessInfo"`
-	McNlbHostInfo *MciInfo        `json:"mcNlbHostInfo"`
-	DeploymentLog MciSshCmdResult `json:"deploymentLog"`
+	InfraAccessInfo *InfraAccessInfo  `json:"infraAccessInfo"`
+	McNlbHostInfo   *InfraInfo        `json:"mcNlbHostInfo"`
+	DeploymentLog   InfraSshCmdResult `json:"deploymentLog"`
 }

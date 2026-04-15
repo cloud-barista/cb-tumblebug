@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## test-mci-dynamic-all.sh (parameters: -x (create or delete) -y numVM)"
+echo "## test-infra-dynamic-all.sh (parameters: -x (create or delete) -y numVM)"
 echo "####################################################################"
 
 
@@ -10,11 +10,11 @@ source ../init.sh
 
 # create or delete
 option=${OPTION01}
-subGroupSizeInput=${OPTION02:-1}
+nodeGroupSizeInput=${OPTION02:-1}
 
 
-PRINT="index,mciName,connectionName,specId,image,subGroupSize,startTime,endTime,elapsedTime,option"
-echo "${PRINT}" >./mciTest-$option.csv
+PRINT="index,infraName,connectionName,specId,image,nodeGroupSize,startTime,endTime,elapsedTime,option"
+echo "${PRINT}" >./infraTest-$option.csv
 
 
 description="Made in CB-TB"
@@ -37,21 +37,21 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
             rootDiskType=$(_jq '.rootDiskType')
             rootDiskSize=$(_jq '.rootDiskSize')
             image="ubuntu18.04"
-            subGroupSize=$subGroupSizeInput
-            mciName=$specId
+            nodeGroupSize=$nodeGroupSizeInput
+            infraName=$specId
 
             if [ "${option}" == "create" ]; then
-                echo "[$i] connection: $connectionName / specId: $specId / image: $image / replica: $subGroupSize "
+                echo "[$i] connection: $connectionName / specId: $specId / image: $image / replica: $nodeGroupSize "
             elif [ "${option}" == "delete" ]; then
-                echo "[$i] mciName: $mciName / replica: $subGroupSize "
+                echo "[$i] infraName: $infraName / replica: $nodeGroupSize "
             fi
             ((i++))
         }
 done
 
 echo
-echo "[Test] will $option MCIs using all common Specs sequentially"
-echo "[options] Operation: $option , mciSize: $subGroupSizeInput , fileName: mciTest-$option.csv"
+echo "[Test] will $option Infras using all common Specs sequentially"
+echo "[options] Operation: $option , infraSize: $nodeGroupSizeInput , fileName: infraTest-$option.csv"
 echo
 
 while true; do
@@ -92,26 +92,26 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
         rootDiskType=$(_jq '.rootDiskType')
         rootDiskSize=$(_jq '.rootDiskSize')
         image="ubuntu18.04"
-        subGroupSize=$subGroupSizeInput
-        mciName=$specId
+        nodeGroupSize=$nodeGroupSizeInput
+        infraName=$specId
 
         echo
-        echo "mciName: $mciName   specId: $specId   image: $image   connectionName: $connectionName   rootDiskType: $rootDiskType   rootDiskSize: $rootDiskSize  subGroupSize: $subGroupSize "
+        echo "infraName: $infraName   specId: $specId   image: $image   connectionName: $connectionName   rootDiskType: $rootDiskType   rootDiskSize: $rootDiskSize  nodeGroupSize: $nodeGroupSize "
         sleepDuration=$((1 + RANDOM % 600))
         echo "sleepDuration: $sleepDuration"
         sleep $sleepDuration
 
         startTime=$SECONDS
         if [ "${option}" == "delete" ]; then
-            echo "Terminate and Delete [$mciName]"
-            curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq '.'
+            echo "Terminate and Delete [$infraName]"
+            curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/infra/${infraName}?option=terminate | jq '.'
 
 
         elif [ "${option}" == "create" ]; then
-            echo "Creat MCI dynamic [$mciName]"
-            VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mciDynamic -H 'Content-Type: application/json' -d @- <<EOF
+            echo "Creat Infra dynamic [$infraName]"
+            VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/infraDynamic -H 'Content-Type: application/json' -d @- <<EOF
             {
-                    "name": "${mciName}",
+                    "name": "${infraName}",
                     "description": "${description}",
                     "installMonAgent": "${installMonAgent}",
                     "label": "${label}",
@@ -121,7 +121,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
                             "specId": "${specId}",
                             "rootDiskType": "${rootDiskType}",
                             "rootDiskSize": "${rootDiskSize}",
-                            "subGroupSize": "${subGroupSize}"
+                            "nodeGroupSize": "${nodeGroupSize}"
                         }
                     ]
             }
@@ -134,9 +134,9 @@ EOF
         endTime=$SECONDS
         elapsedTime=$(($endTime-$startTime))
 
-        PRINT="${i},${mciName},${connectionName},${specId},${image},${subGroupSize},${startTime},${endTime},${elapsedTime},${option}"
+        PRINT="${i},${infraName},${connectionName},${specId},${image},${nodeGroupSize},${startTime},${endTime},${elapsedTime},${option}"
         echo "$PRINT"
-        echo "$PRINT" >>./mciTest-$option.csv
+        echo "$PRINT" >>./infraTest-$option.csv
 
         echo "[$i] Elapsed time: $elapsedTime s"
         ((i++))

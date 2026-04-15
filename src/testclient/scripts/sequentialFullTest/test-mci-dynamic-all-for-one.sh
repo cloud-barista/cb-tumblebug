@@ -1,17 +1,17 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## test-mci-dynamic-all.sh (parameters: -x (create or delete) -y numVM)"
+echo "## test-infra-dynamic-all.sh (parameters: -x (create or delete) -y numVM)"
 echo "####################################################################"
 
 source ../init.sh
 
 # create or delete
 option=${OPTION01}
-subGroupSizeInput=${OPTION02:-1}
+nodeGroupSizeInput=${OPTION02:-1}
 
-PRINT="index,mciName,connectionName,specId,image,subGroupSize,startTime,endTime,elapsedTime,option"
-echo "${PRINT}" >./mciTest-$option.csv
+PRINT="index,infraName,connectionName,specId,image,nodeGroupSize,startTime,endTime,elapsedTime,option"
+echo "${PRINT}" >./infraTest-$option.csv
 
 description="Made in CB-TB"
 label="DynamicVM"
@@ -63,8 +63,8 @@ echo "Number of specs: $(echo "$specArray" | jq length)"
 
 imageId="ubuntu22.04"
 
-MainMciName="allforone"
-mciName=$MainMciName
+MainInfraName="allforone"
+infraName=$MainInfraName
 
 i=0
 
@@ -79,9 +79,9 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
             rootDiskSize=$(_jq '.rootDiskSize')
 
             if [ "${option}" == "create" ]; then
-                echo "[$i] connection: $connectionName / specId: $specId / image: $imageId / replica: $subGroupSizeInput "
+                echo "[$i] connection: $connectionName / specId: $specId / image: $imageId / replica: $nodeGroupSizeInput "
             elif [ "${option}" == "delete" ]; then
-                echo "[$i] mciName: $mciName (connection: $connectionName specId: $specId) "
+                echo "[$i] infraName: $infraName (connection: $connectionName specId: $specId) "
             fi
             ((i++))
 
@@ -92,8 +92,8 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
 done
 
 echo
-echo "[Test] will $option MCIs using all common Specs sequentially"
-echo "[options] Operation: $option , mciSize: $subGroupSizeInput , fileName: mciTest-$option.csv"
+echo "[Test] will $option Infras using all common Specs sequentially"
+echo "[options] Operation: $option , infraSize: $nodeGroupSizeInput , fileName: infraTest-$option.csv"
 echo
 
 while true; do
@@ -130,7 +130,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
         echo "specId: $specId"
 
         # Properly append to the JSON array
-        vmArray=$(echo "$vmArray" | jq --arg imageId "$imageId" --arg specId "$specId" --arg subGroupSizeInput "$subGroupSizeInput"  '. + [{"imageId": $imageId, "specIdspecId, "subGroupSize": $subGroupSizeInput}]')
+        vmArray=$(echo "$vmArray" | jq --arg imageId "$imageId" --arg specId "$specId" --arg nodeGroupSizeInput "$nodeGroupSizeInput"  '. + [{"imageId": $imageId, "specIdspecId, "nodeGroupSize": $nodeGroupSizeInput}]')
         ((i++))
 
         # Break the loop when max iterations are reached
@@ -142,23 +142,23 @@ done
 
 # Construct the request body with the accumulated JSON array
 installMonAgent="no"
-requestBody=$(jq -n --arg name "$mciName" --arg installMonAgent "$installMonAgent" --argjson vm "$vmArray" '{name: $name, installMonAgent: $installMonAgent , vm: $vm}')
+requestBody=$(jq -n --arg name "$infraName" --arg installMonAgent "$installMonAgent" --argjson vm "$vmArray" '{name: $name, installMonAgent: $installMonAgent , vm: $vm}')
 echo "requestBody: $requestBody"
 
 if [ "${option}" == "delete" ]; then
-    echo "Terminate and Delete [$mciName]"
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq '.'
+    echo "Terminate and Delete [$infraName]"
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/infra/${infraName}?option=terminate | jq '.'
 elif [ "${option}" == "create" ]; then
-    echo "Provisioning MC-Infra dynamically: [$mciName]"
-    response=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mciDynamic -H 'Content-Type: application/json' -d "$requestBody")
+    echo "Provisioning MC-Infra dynamically: [$infraName]"
+    response=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/infraDynamic -H 'Content-Type: application/json' -d "$requestBody")
     #echo "${response}" | jq '.'
 
 
-    mciResponse=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName})
+    infraResponse=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${infraName})
 
 
-    echo -e "${BOLD}Table: All VMs in the MCI : ${mciName}${NC} ${BLUE} ${BOLD}"
-    echo "$mciResponse" |
+    echo -e "${BOLD}Table: All VMs in the Infra : ${infraName}${NC} ${BLUE} ${BOLD}"
+    echo "$infraResponse" |
         jq '.vm | sort_by(.connectionName)' |
         jq -r '(["CloudRegion", "ID(TB)", "Status", "PublicIP", "PrivateIP", "DateTime(Created)"] | 
             (., map(length*"-"))), 
@@ -168,8 +168,8 @@ elif [ "${option}" == "create" ]; then
 
     echo ""
 
-    echo -e "${BOLD}MC-Infra: ${mciName} Status Summary ${NC}"
-    echo "$mciResponse" | jq '.status'
+    echo -e "${BOLD}MC-Infra: ${infraName} Status Summary ${NC}"
+    echo "$infraResponse" | jq '.status'
 
 fi
 

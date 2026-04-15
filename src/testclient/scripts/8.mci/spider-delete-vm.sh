@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function spider_delete_mci() {
+#function spider_delete_infra() {
 
 
 	TestSetFile=${4:-../testSet.env}
@@ -24,4 +24,4 @@
 		}' | jq '.'
 #}
 
-#spider_delete_mci
+#spider_delete_infra

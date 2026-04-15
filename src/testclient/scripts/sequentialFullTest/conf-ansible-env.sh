@@ -9,7 +9,7 @@ SECONDS=0
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 fi
 
 
@@ -22,27 +22,27 @@ printf '[Command to install Ansible]\n 1. apt install python-pip\n 2. pip instal
 # ansible localhost -m ping
 if ! dpkg-query -W -f='${Status}' ansible | grep "ok installed"; then exit; fi
 
-# curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$ResourceID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCIID.pem
-# chmod 600 ./sshkey-tmp/$MCIID.pem
-# puttygen ./sshkey-tmp/$MCIID.pem -o ./sshkey-tmp/$MCIID.ppk -O private
+# curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$ResourceID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$InfraID.pem
+# chmod 600 ./sshkey-tmp/$InfraID.pem
+# puttygen ./sshkey-tmp/$InfraID.pem -o ./sshkey-tmp/$InfraID.ppk -O private
 
 echo ""
 echo "[CHECK REMOTE COMMAND BY CB-TB API]"
 echo " This will retrieve verified SSH username"
 
-./command-mci.sh -n $POSTFIX -f $TestSetFile
+./command-infra.sh -n $POSTFIX -f $TestSetFile
 
-MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
-VMARRAY=$(jq '.status.vm' <<<"$MCIINFO")
+InfraINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}?option=status)
+VMARRAY=$(jq '.status.vm' <<<"$InfraINFO")
 
 echo "$VMARRAY" | jq '.'
 
 echo ""
 echo "[GENERATED PRIVATE KEY (PEM, PPK)]"
-# echo -e " ./sshkey-tmp/$MCIID.pem \n ./sshkey-tmp/$MCIID.ppk"
+# echo -e " ./sshkey-tmp/$InfraID.pem \n ./sshkey-tmp/$InfraID.ppk"
 echo ""
 
-echo "[MCI INFO: $MCIID]"
+echo "[Infra INFO: $InfraID]"
 for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	_jq() {
 		echo ${row} | base64 --decode | jq -r ${1}
@@ -51,27 +51,27 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	id=$(_jq '.id')
 	ip=$(_jq '.publicIp')
 
-	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/vm/${id})
+	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}/vm/${id})
 	VMKEYID=$(jq -r '.sshKeyId' <<<"$VMINFO")
 
-	# KEYFILENAME="MCI_${MCIID}_VM_${id}"
+	# KEYFILENAME="Infra_${InfraID}_VM_${id}"
 	KEYFILENAME="${VMKEYID}"
 
 	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$VMKEYID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' >./sshkey-tmp/$KEYFILENAME.pem
 	chmod 600 ./sshkey-tmp/$KEYFILENAME.pem
 	puttygen ./sshkey-tmp/$KEYFILENAME.pem -o ./sshkey-tmp/$KEYFILENAME.ppk -O private
 
-	printf ' [VMIP]: %s   [MCIID]: %s   [VMID]: %s\n' "$ip" "MCIID" "$id"
+	printf ' [VMIP]: %s   [InfraID]: %s   [VMID]: %s\n' "$ip" "InfraID" "$id"
 
 	echo -e " ./sshkey-tmp/$KEYFILENAME.pem \n ./sshkey-tmp/$KEYFILENAME.ppk"
 	echo ""
 done
 
 echo ""
-echo "[Configure Ansible Host File based on MCI Info]"
+echo "[Configure Ansible Host File based on Infra Info]"
 
-HostFileName="${MCIID}-host"
-echo "[mci_hosts]" >./ansibleAutoConf/${HostFileName}
+HostFileName="${InfraID}-host"
+echo "[infra_hosts]" >./ansibleAutoConf/${HostFileName}
 
 for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	_jq() {
@@ -81,7 +81,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	id=$(_jq '.id')
 	ip=$(_jq '.publicIp')
 
-	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/vm/${id})
+	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}/vm/${id})
 	VMKEYID=$(jq -r '.sshKeyId' <<<"$VMINFO")
 
 	KEYINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/${NSID}/resources/sshKey/${VMKEYID})
@@ -92,7 +92,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 
 	echo ""
 
-	printf ' [VMIP]: %s   [MCIID]: %s   [VMID]: %s\n' "$ip" "MCIID" "$id"
+	printf ' [VMIP]: %s   [InfraID]: %s   [VMID]: %s\n' "$ip" "InfraID" "$id"
 	printf ' ssh -i ./sshkey-tmp/%s.pem %s@%s -o StrictHostKeyChecking=no\n' "$KEYFILENAME" "$USERNAME" "$ip"
 
 	echo "Add ansible hosts to ./ansibleAutoConf/${HostFileName}"

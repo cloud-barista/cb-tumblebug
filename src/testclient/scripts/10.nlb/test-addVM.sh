@@ -7,7 +7,7 @@ echo "####################################################################"
 source ../init.sh
 
 resp=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/nlb/${CONN_CONFIG[$INDEX,$REGION]}/vm -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}/nlb/${CONN_CONFIG[$INDEX,$REGION]}/vm -H 'Content-Type: application/json' -d @- <<EOF
 	{
 		"targetGroup": {
 			"VMs" : [

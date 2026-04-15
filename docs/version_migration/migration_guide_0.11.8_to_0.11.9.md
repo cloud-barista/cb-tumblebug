@@ -26,13 +26,13 @@ This document provides a comprehensive guide for migrating from CB-Tumblebug v0.
 type TbMciReq struct {
     Name        string               `json:"name"`
     Description string               `json:"description"`
-    SubGroups   []TbCreateSubGroupReq `json:"subGroups"`
+    NodeGroups   []TbCreateNodeGroupReq `json:"subGroups"`
     // ... other fields
 }
 
-type TbCreateSubGroupReq struct {
+type TbCreateNodeGroupReq struct {
     Name         string `json:"name"`
-    SubGroupSize string `json:"subGroupSize"`
+    NodeGroupSize string `json:"subGroupSize"`
     // ... other fields
 }
 ```
@@ -42,13 +42,13 @@ type TbCreateSubGroupReq struct {
 type MciReq struct {
     Name        string              `json:"name"`
     Description string              `json:"description"`
-    SubGroups   []CreateSubGroupReq `json:"subGroups"`
+    NodeGroups   []CreateNodeGroupReq `json:"subGroups"`
     // ... other fields
 }
 
-type CreateSubGroupReq struct {
+type CreateNodeGroupReq struct {
     Name         string `json:"name"`
-    SubGroupSize string `json:"subGroupSize"`
+    NodeGroupSize string `json:"subGroupSize"`
     // ... other fields
 }
 ```
@@ -103,7 +103,7 @@ type MciInfo struct {
 |---|---|---|
 | `TbMciReq` | `MciReq` | ✅ **POST /ns/{nsId}/mci** |
 | `TbMciInfo` | `MciInfo` | ✅ **GET /ns/{nsId}/mci/{mciId}** |
-| `TbCreateSubGroupReq` | `CreateSubGroupReq` | ✅ **POST /ns/{nsId}/mci** |
+| `TbCreateNodeGroupReq` | `CreateNodeGroupReq` | ✅ **POST /ns/{nsId}/mci** |
 | `TbSpecInfo` | `SpecInfo` | ✅ **GET /ns/{nsId}/resources/spec** |
 | `TbVmInfo` | `VmInfo` | ✅ **GET /ns/{nsId}/mci/{mciId}/vm** |
 | `TbSshKeyInfo` | `SshKeyInfo` | ✅ **GET /ns/{nsId}/resources/sshKey** |
@@ -141,9 +141,9 @@ func SpecReqStructLevelValidation(sl validator.StructLevel) {
 
 ## New Features
 
-### 1. SubGroup Request Review Feature
+### 1. NodeGroup Request Review Feature
 
-**Description:** Added comprehensive request validation and review capability for SubGroup configurations before MCI creation.
+**Description:** Added comprehensive request validation and review capability for NodeGroup configurations before MCI creation.
 
 **New API Endpoints:**
 ```
@@ -361,10 +361,10 @@ Content-Type: application/json
 // OLD - This will break in v0.11.9
 mciReq := model.TbMciReq{
     Name: "test-mci",
-    SubGroups: []model.TbCreateSubGroupReq{
+    NodeGroups: []model.TbCreateNodeGroupReq{
         {
             Name: "web-group",
-            SubGroupSize: "3",
+            NodeGroupSize: "3",
         },
     },
 }
@@ -375,10 +375,10 @@ mciReq := model.TbMciReq{
 // NEW - Required for v0.11.9
 mciReq := model.MciReq{
     Name: "test-mci",
-    SubGroups: []model.CreateSubGroupReq{
+    NodeGroups: []model.CreateNodeGroupReq{
         {
             Name: "web-group",
-            SubGroupSize: "3",
+            NodeGroupSize: "3",
         },
     },
 }
@@ -581,7 +581,7 @@ var vm model.VmInfo            // instead of model.TbVmInfo
 
 // Update MCI creation requests
 mciReq := model.MciReq{        // instead of model.TbMciReq
-    SubGroups: []model.CreateSubGroupReq{  // instead of []model.TbCreateSubGroupReq
+    NodeGroups: []model.CreateNodeGroupReq{  // instead of []model.TbCreateNodeGroupReq
         // ... configuration
     },
 }
@@ -776,7 +776,7 @@ if err != nil {
 
 ### 2. Test Enhanced Features
 
-- ✅ **Test SubGroup request review functionality**
+- ✅ **Test NodeGroup request review functionality**
 - ✅ **Verify Alibaba Cloud spec availability updates**  
 - ✅ **Confirm improved VM status checking performance**
 - ✅ **Test new spec availability query APIs**

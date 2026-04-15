@@ -31,7 +31,7 @@ import (
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
+// @Param labelType path string true "Label Type" Enums(ns, infra, nodeGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
 // @Param uid path string true "Resource uid"
 // @Param labels body model.Label true "Labels to create or update"
 // @Success 200 {object} model.SimpleMsg "Label created or updated successfully"
@@ -70,7 +70,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
+// @Param labelType path string true "Label Type" Enums(ns, infra, nodeGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
 // @Param uid path string true "Resource uid"
 // @Success 200 {object} model.SimpleMsg "Merged CSP labels successfully"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
@@ -102,7 +102,7 @@ func RestMergeCSPResourceLabel(c echo.Context) error {
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
+// @Param labelType path string true "Label Type" Enums(ns, infra, nodeGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
 // @Param uid path string true "Resource uid"
 // @Param key path string true "Label key to remove"
 // @Success 200 {object} model.SimpleMsg "Label removed successfully"
@@ -133,7 +133,7 @@ func RestRemoveLabel(c echo.Context) error {
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
+// @Param labelType path string true "Label Type" Enums(ns, infra, nodeGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
 // @Param uid path string true "Resource uid"
 // @Success 200 {object} model.LabelInfo "Labels for the resource"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
@@ -172,7 +172,7 @@ type ResourcesResponse struct {
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
+// @Param labelType path string true "Label Type" Enums(ns, infra, nodeGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
 // @Param labelSelector query string true "Label selector query. Example: env=production,tier=backend"
 // @Success 200 {object} ResourcesResponse "Matched resources"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"

@@ -1,13 +1,13 @@
 {
-  "resourceType": "mci",
+  "resourceType": "infra",
   "name": "llm-bench-gpu",
-  "description": "LLM benchmarking MCI with GPU VMs (NVIDIA L4, L40S, AMD Radeon PRO V710) and a CPU-based observability node",
-  "mciDynamicReq": {
+  "description": "LLM benchmarking Infra with GPU VMs (NVIDIA L4, L40S, AMD Radeon PRO V710) and a CPU-based observability node",
+  "infraDynamicReq": {
     "installMonAgent": "no",
-    "subGroups": [
+    "nodeGroups": [
       {
         "name": "amd710",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "label": {
           "accelerator": "gpu"
         },
@@ -20,7 +20,7 @@
       },
       {
         "name": "benchmark",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "label": {
           "role": "observability"
         },
@@ -33,7 +33,7 @@
       },
       {
         "name": "nvidial4",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "label": {
           "accelerator": "gpu"
         },
@@ -46,7 +46,7 @@
       },
       {
         "name": "nvidial40s",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "label": {
           "accelerator": "gpu"
         },

@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package infra
 
 import (
@@ -24,154 +24,154 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// RestPostMciPolicy godoc
-// @ID PostMciPolicy
-// @Summary Create MCI Automation policy
-// @Description Create MCI Automation policy
-// @Tags [MC-Infra] MCI Orchestration Management (WIP)
+// RestPostInfraPolicy godoc
+// @ID PostInfraPolicy
+// @Summary Create Infra Automation policy
+// @Description Create Infra Automation policy
+// @Tags [MC-Infra] Infra Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param mciPolicyReq body model.MciPolicyReq true "Details for an MCI automation policy request"
-// @Success 200 {object} model.MciPolicyInfo
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param infraPolicyReq body model.InfraPolicyReq true "Details for an Infra automation policy request"
+// @Success 200 {object} model.InfraPolicyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/policy/mci/{mciId} [post]
-func RestPostMciPolicy(c echo.Context) error {
+// @Router /ns/{nsId}/policy/infra/{infraId} [post]
+func RestPostInfraPolicy(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
-	req := &model.MciPolicyReq{}
+	req := &model.InfraPolicyReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := infra.CreateMciPolicy(nsId, mciId, req)
+	content, err := infra.CreateInfraPolicy(nsId, infraId, req)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestGetMciPolicy godoc
-// @ID GetMciPolicy
-// @Summary Get MCI Policy
-// @Description Get MCI Policy
-// @Tags [MC-Infra] MCI Orchestration Management (WIP)
+// RestGetInfraPolicy godoc
+// @ID GetInfraPolicy
+// @Summary Get Infra Policy
+// @Description Get Infra Policy
+// @Tags [MC-Infra] Infra Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Success 200 {object} model.MciPolicyInfo
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Success 200 {object} model.InfraPolicyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/policy/mci/{mciId} [get]
-func RestGetMciPolicy(c echo.Context) error {
+// @Router /ns/{nsId}/policy/infra/{infraId} [get]
+func RestGetInfraPolicy(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
-	result, err := infra.GetMciPolicyObject(nsId, mciId)
+	result, err := infra.GetInfraPolicyObject(nsId, infraId)
 	if err != nil {
-		errorMessage := fmt.Errorf("Error to find MciPolicyObject : " + mciId + "ERROR : " + err.Error())
+		errorMessage := fmt.Errorf("Error to find InfraPolicyObject : " + infraId + "ERROR : " + err.Error())
 		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
 
 	if result.Id == "" {
-		errorMessage := fmt.Errorf("Failed to find MciPolicyObject : " + mciId)
+		errorMessage := fmt.Errorf("Failed to find InfraPolicyObject : " + infraId)
 		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// Response structure for RestGetAllMciPolicy
-type RestGetAllMciPolicyResponse struct {
-	MciPolicy []model.MciPolicyInfo `json:"mciPolicy"`
+// Response structure for RestGetAllInfraPolicy
+type RestGetAllInfraPolicyResponse struct {
+	InfraPolicy []model.InfraPolicyInfo `json:"infraPolicy"`
 }
 
-// RestGetAllMciPolicy godoc
-// @ID GetAllMciPolicy
-// @Summary List all MCI policies
-// @Description List all MCI policies
-// @Tags [MC-Infra] MCI Orchestration Management (WIP)
+// RestGetAllInfraPolicy godoc
+// @ID GetAllInfraPolicy
+// @Summary List all Infra policies
+// @Description List all Infra policies
+// @Tags [MC-Infra] Infra Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} RestGetAllMciPolicyResponse
+// @Success 200 {object} RestGetAllInfraPolicyResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/policy/mci [get]
-func RestGetAllMciPolicy(c echo.Context) error {
+// @Router /ns/{nsId}/policy/infra [get]
+func RestGetAllInfraPolicy(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	log.Debug().Msg("[Get MCI Policy List]")
+	log.Debug().Msg("[Get Infra Policy List]")
 
-	result, err := infra.GetAllMciPolicyObject(nsId)
+	result, err := infra.GetAllInfraPolicyObject(nsId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content := RestGetAllMciPolicyResponse{}
-	content.MciPolicy = result
+	content := RestGetAllInfraPolicyResponse{}
+	content.InfraPolicy = result
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 /*
-	function RestPutMciPolicy not yet implemented
+	function RestPutInfraPolicy not yet implemented
 
-// RestPutMciPolicy godoc
-// @ID PutMciPolicy
-// @Summary Update MCI Policy
-// @Description Update MCI Policy
-// @Tags [MC-Infra] MCI Orchestration Management (WIP)
+// RestPutInfraPolicy godoc
+// @ID PutInfraPolicy
+// @Summary Update Infra Policy
+// @Description Update Infra Policy
+// @Tags [MC-Infra] Infra Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param mciInfo body MciPolicyInfo true "Details for an MCI Policy object"
-// @Success 200 {object} MciPolicyInfo
+// @Param infraInfo body InfraPolicyInfo true "Details for an Infra Policy object"
+// @Success 200 {object} InfraPolicyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/policy/mci/{mciId} [put]
+// @Router /ns/{nsId}/policy/infra/{infraId} [put]
 */
-func RestPutMciPolicy(c echo.Context) error {
+func RestPutInfraPolicy(c echo.Context) error {
 	return nil
 }
 
-// DelMciPolicy godoc
-// @ID DelMciPolicy
-// @Summary Delete MCI Policy
-// @Description Delete MCI Policy
-// @Tags [MC-Infra] MCI Orchestration Management (WIP)
+// DelInfraPolicy godoc
+// @ID DelInfraPolicy
+// @Summary Delete Infra Policy
+// @Description Delete Infra Policy
+// @Tags [MC-Infra] Infra Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/policy/mci/{mciId} [delete]
-func RestDelMciPolicy(c echo.Context) error {
+// @Router /ns/{nsId}/policy/infra/{infraId} [delete]
+func RestDelInfraPolicy(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
-	err := infra.DelMciPolicy(nsId, mciId)
-	result := map[string]string{"message": "Deleted the MCI Policy info"}
+	err := infra.DelInfraPolicy(nsId, infraId)
+	result := map[string]string{"message": "Deleted the Infra Policy info"}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestDelAllMciPolicy godoc
-// @ID DelAllMciPolicy
-// @Summary Delete all MCI policies
-// @Description Delete all MCI policies
-// @Tags [MC-Infra] MCI Orchestration Management (WIP)
+// RestDelAllInfraPolicy godoc
+// @ID DelAllInfraPolicy
+// @Summary Delete all Infra policies
+// @Description Delete all Infra policies
+// @Tags [MC-Infra] Infra Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -179,10 +179,10 @@ func RestDelMciPolicy(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/policy/mci [delete]
-func RestDelAllMciPolicy(c echo.Context) error {
+// @Router /ns/{nsId}/policy/infra [delete]
+func RestDelAllInfraPolicy(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	result, err := infra.DelAllMciPolicy(nsId)
+	result, err := infra.DelAllInfraPolicy(nsId)
 	return clientManager.EndRequestWithLog(c, err, result)
 }

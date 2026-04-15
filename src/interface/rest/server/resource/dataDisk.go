@@ -200,20 +200,20 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Produce  json
 // @Param attachDetachDataDiskReq body model.AttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Param option query string true "Option for MCI" Enums(attach, detach)
+// @Param option query string true "Option for Infra" Enums(attach, detach)
 // @Param force query string false "Force to attach/detach even if VM info is not matched" Enums(true, false)
 // @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [put]
+// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk [put]
 func RestPutVmDataDisk(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	vmId := c.Param("vmId")
 
 	option := c.QueryParam("option")
@@ -236,7 +236,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 	case model.AttachDataDisk:
 		fallthrough
 	case model.DetachDataDisk:
-		result, err := infra.AttachDetachDataDisk(nsId, mciId, vmId, option, u.DataDiskId, forceBool)
+		result, err := infra.AttachDetachDataDisk(nsId, infraId, vmId, option, u.DataDiskId, forceBool)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	default:
@@ -254,18 +254,18 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Produce  json
 // @Param dataDiskInfo body model.DataDiskVmReq true "Details for an Data Disk object"
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [post]
+// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk [post]
 func RestPostVmDataDisk(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	vmId := c.Param("vmId")
 
 	u := &model.DataDiskVmReq{}
@@ -273,7 +273,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ProvisionDataDisk(ctx, nsId, mciId, vmId, u)
+	result, err := infra.ProvisionDataDisk(ctx, nsId, infraId, vmId, u)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -289,22 +289,22 @@ func RestPostVmDataDisk(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllDataDiskResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [get]
+// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk [get]
 func RestGetVmDataDisk(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	vmId := c.Param("vmId")
 	optionFlag := c.QueryParam("option")
 
-	result, err := infra.GetAvailableDataDisks(nsId, mciId, vmId, optionFlag)
+	result, err := infra.GetAvailableDataDisks(nsId, infraId, vmId, optionFlag)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

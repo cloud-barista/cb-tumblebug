@@ -1,14 +1,14 @@
 {
   "nsId": "system",
-  "resourceType": "mci",
+  "resourceType": "infra",
   "name": "mc-openstack-template",
-  "description": "Template extracted from MCI: mc-openstack",
-  "mciDynamicReq": {
+  "description": "Template extracted from Infra: mc-openstack",
+  "infraDynamicReq": {
     "name": "mc-openstack",
-    "subGroups": [
+    "nodeGroups": [
       {
         "name": "g1",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-northeast-2+m5.metal",
         "imageId": "ami-08a4fd517a4872931",
@@ -19,7 +19,7 @@
       },
       {
         "name": "g2",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-east-1+m5.metal",
         "imageId": "ami-0ed4fd6805d8ecb23",
@@ -30,7 +30,7 @@
       },
       {
         "name": "g3",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+eu-north-1+m5.metal",
         "imageId": "ami-0c33fcb753a7176f6",
@@ -41,7 +41,7 @@
       },
       {
         "name": "g4",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ca-central-1+m5.metal",
         "imageId": "ami-0631168b8ae6e1731",
@@ -52,7 +52,7 @@
       },
       {
         "name": "g5",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+us-west-1+m5.metal",
         "imageId": "ami-072028e29f8a73b88",
@@ -63,7 +63,7 @@
       },
       {
         "name": "g6",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+sa-east-1+m5.metal",
         "imageId": "ami-0533a139e02b00be4",
@@ -74,7 +74,7 @@
       },
       {
         "name": "g7",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+af-south-1+m5.metal",
         "imageId": "ami-0340a8d15d1d11b56",
@@ -85,7 +85,7 @@
       },
       {
         "name": "g8",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-southeast-2+m5.metal",
         "imageId": "ami-0c73bd9145b5546f5",
@@ -96,7 +96,7 @@
       },
       {
         "name": "g9",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+eu-south-1+m5.metal",
         "imageId": "ami-036328180182924dd",

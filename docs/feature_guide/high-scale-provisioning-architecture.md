@@ -4,7 +4,7 @@ Visually analyzing the advanced architecture and optimization techniques for hig
 
 ## 🏗️ Overall Architecture
 
-This diagram illustrates the high-level architecture of CB-Tumblebug's provisioning system. It separates the core logic from the optimization layer, ensuring that high-scale requests are handled efficiently before reaching the Cloud Service Providers (CSPs) via CB-Spider. Key components include the **MCI Controller**, **Provisioning Engine**, and a dedicated **Optimization Layer** for rate limiting and concurrency control.
+This diagram illustrates the high-level architecture of CB-Tumblebug's provisioning system. It separates the core logic from the optimization layer, ensuring that high-scale requests are handled efficiently before reaching the Cloud Service Providers (CSPs) via CB-Spider. Key components include the **Infra Controller**, **Provisioning Engine**, and a dedicated **Optimization Layer** for rate limiting and concurrency control.
 
 ```mermaid
 graph TB
@@ -16,7 +16,7 @@ graph TB
     
     subgraph "CB-Tumblebug Core"
         ROUTER[API Router]
-        CTRL[MCI Controller]
+        CTRL[Infra Controller]
         PROV[Provisioning Engine]
         CACHE[Cache Layer]
         HIST[History Manager]
@@ -129,11 +129,11 @@ graph TD
 
 ## ⚡ Advanced Parallel Processing Flow
 
-This flow demonstrates how a massive MCI creation request (e.g., 1000+ VMs) is broken down. Requests are grouped by CSP and Region, allowing for **unlimited parallel processing** at the CSP level, while enforcing **semaphores** at the Region and VM levels to maintain stability and prevent resource exhaustion.
+This flow demonstrates how a massive Infra creation request (e.g., 1000+ VMs) is broken down. Requests are grouped by CSP and Region, allowing for **unlimited parallel processing** at the CSP level, while enforcing **semaphores** at the Region and VM levels to maintain stability and prevent resource exhaustion.
 
 ```mermaid
 flowchart TD
-    START[MCI Creation Request<br/>1000+ VMs] --> GROUP[VM Grouping by CSP & Region]
+    START[Infra Creation Request<br/>1000+ VMs] --> GROUP[VM Grouping by CSP & Region]
     
     GROUP --> CSP_GROUP{CSP Grouping}
     
@@ -169,7 +169,7 @@ flowchart TD
     NCP_RESULT --> COLLECT
     
     COLLECT --> STATUS_AGG[Status Aggregation<br/>Mutex Protected]
-    STATUS_AGG --> FINAL[Final MCI Status<br/>Success/Partial/Failed]
+    STATUS_AGG --> FINAL[Final Infra Status<br/>Success/Partial/Failed]
     
     style START fill:#e3f2fd
     style AWS_FLOW fill:#ff9800
@@ -184,7 +184,7 @@ This state diagram shows the lifecycle of a VM status check. The system **intell
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Creating: MCI Request
+    [*] --> Creating: Infra Request
     Creating --> VMObjects: Create VM Objects
     VMObjects --> ResourcePrep: Prepare Resources
     ResourcePrep --> Provisioning: Start Provisioning
@@ -315,7 +315,7 @@ When failures occur, the system offers flexible recovery options. **'Continue'**
 
 ```mermaid
 flowchart TD
-    MCI_START[MCI Creation Start] --> POLICY{Failure Policy}
+    Infra_START[Infra Creation Start] --> POLICY{Failure Policy}
     
     POLICY -->|continue| CONTINUE_FLOW[Continue Flow]
     POLICY -->|rollback| ROLLBACK_FLOW[Rollback Flow]
@@ -324,10 +324,10 @@ flowchart TD
     subgraph "Continue Strategy"
         CONTINUE_FLOW --> VM_PARALLEL[Parallel VM Creation]
         VM_PARALLEL --> SOME_FAIL{Some VMs Failed?}
-        SOME_FAIL -->|Yes| PARTIAL_MCI[Create Partial MCI]
-        SOME_FAIL -->|No| FULL_MCI[Create Full MCI]
-        PARTIAL_MCI --> MARK_FAILED[Mark Failed VMs<br/>as StatusFailed]
-        FULL_MCI --> SUCCESS_COMPLETE[Complete Success]
+        SOME_FAIL -->|Yes| PARTIAL_Infra[Create Partial Infra]
+        SOME_FAIL -->|No| FULL_Infra[Create Full Infra]
+        PARTIAL_Infra --> MARK_FAILED[Mark Failed VMs<br/>as StatusFailed]
+        FULL_Infra --> SUCCESS_COMPLETE[Complete Success]
     end
     
     subgraph "Rollback Strategy"
@@ -335,14 +335,14 @@ flowchart TD
         VM_CREATE_RB --> ANY_FAIL{Any VM Failed?}
         ANY_FAIL -->|Yes| CLEANUP_ALL[Delete All Resources]
         ANY_FAIL -->|No| SUCCESS_RB[Complete Success]
-        CLEANUP_ALL --> ROLLBACK_COMPLETE[Rollback Complete<br/>MCI Deleted]
+        CLEANUP_ALL --> ROLLBACK_COMPLETE[Rollback Complete<br/>Infra Deleted]
     end
     
     subgraph "Refine Strategy"
         REFINE_FLOW --> VM_CREATE_RF[VM Creation]
         VM_CREATE_RF --> AUTO_CLEANUP[Auto Cleanup Failed VMs]
-        AUTO_CLEANUP --> CLEAN_MCI[Clean MCI<br/>Only Successful VMs]
-        CLEAN_MCI --> REFINE_COMPLETE[Refine Complete]
+        AUTO_CLEANUP --> CLEAN_Infra[Clean Infra<br/>Only Successful VMs]
+        CLEAN_Infra --> REFINE_COMPLETE[Refine Complete]
     end
     
     subgraph "Error Tracking"
@@ -356,7 +356,7 @@ flowchart TD
     style CONTINUE_FLOW fill:#4caf50
     style ROLLBACK_FLOW fill:#f44336
     style REFINE_FLOW fill:#ff9800
-    style PARTIAL_MCI fill:#ffeb3b
+    style PARTIAL_Infra fill:#ffeb3b
     style CLEANUP_ALL fill:#e91e63
     style AUTO_CLEANUP fill:#2196f3
 ```
@@ -375,7 +375,7 @@ sequenceDiagram
     participant CSP2 as Azure
     participant CSP3 as GCP
     
-    Client->>TB: Create MCI (1000 VMs)
+    Client->>TB: Create Infra (1000 VMs)
     TB->>TB: Group by CSP & Region
     
     par AWS Processing
@@ -402,7 +402,7 @@ sequenceDiagram
     Spider-->>TB: All Results
     TB->>TB: Status Aggregation<br/>(Thread-Safe)
     TB->>Cache: Cache Stable Statuses
-    TB-->>Client: MCI Creation Complete
+    TB-->>Client: Infra Creation Complete
     
     Note over TB: Random delays prevent<br/>CSP API throttling
     Note over Cache: Stable states cached<br/>to avoid redundant calls
@@ -415,7 +415,7 @@ This flow ensures no resources are orphaned. The system **tracks all dynamically
 ```mermaid
 flowchart TD
     subgraph "Resource Creation"
-        DYNAMIC[Dynamic MCI Request]
+        DYNAMIC[Dynamic Infra Request]
         VALIDATE[Resource Validation]
         CREATE_RES[Create Missing Resources]
         
@@ -475,7 +475,7 @@ We have validated the architecture with large-scale provisioning tests. The foll
 | **Total VMs** | **1,110** | 🚀 **Massive Scale** |
 | **Regions Used** | **53** | 🌍 **Global Distribution** |
 | CSPs Used | 8 | Multi-Cloud Coverage |
-| MCIs Running | 4 | Concurrent Operations |
+| Infras Running | 4 | Concurrent Operations |
 
 > The successful provisioning of **1,110 VMs** across **53 regions** validates the stability of the hierarchical rate limiting and parallel processing mechanisms.
 
@@ -503,4 +503,4 @@ We have validated the architecture with large-scale provisioning tests. The foll
 - **Memory Optimization**: Memory efficiency with Channel-based result collection and minimal mutex usage.
 - **Connection Pooling**: Minimize network overhead with connection config caching.
 
-Through these optimization techniques, we have implemented an enterprise-grade multi-cloud infrastructure provisioning system capable of **stably and efficiently managing MCIs with thousands of VMs**.
+Through these optimization techniques, we have implemented an enterprise-grade multi-cloud infrastructure provisioning system capable of **stably and efficiently managing Infras with thousands of VMs**.

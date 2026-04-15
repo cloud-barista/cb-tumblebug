@@ -33,7 +33,7 @@ Comprehensive guide for automated CSP-agnostic custom image creation using CB-Tu
 ### Key Highlights
 
 ✅ **End-to-End Automation**: From empty state to ready-to-use custom image in one request.
-✅ **Parallel Processing**: Creates snapshots for multiple VMs (subgroups) simultaneously.
+✅ **Parallel Processing**: Creates snapshots for multiple VMs (nodegroups) simultaneously.
 ✅ **Smart Cleanup**: Automatically terminates temporary VMs only after images are confirmed "Available".
 ✅ **Error Handling**: Uses "Refine" policy to handle partial provisioning failures gracefully.
 ✅ **Status Tracking**: Monitors image creation progress and ensures availability before cleanup.
@@ -46,15 +46,15 @@ Comprehensive guide for automated CSP-agnostic custom image creation using CB-Tu
 
 The system executes a strictly ordered sequence of operations:
 
-1. **Provisioning**: Creates a temporary MCI (Multi-Cloud Infrastructure) based on your specifications.
+1. **Provisioning**: Creates a temporary Infra (Multi-Cloud Infrastructure) based on your specifications.
 2. **Configuration**: Executes post-deployment commands (e.g., `apt install nginx`) to set up the software environment.
 3. **Snapshotting**: Triggers CSP-native snapshot mechanisms for each running VM.
 4. **Verification**: Actively polls image status until it transitions to `Available`.
-5. **Cleanup**: Terminates the temporary MCI to prevent unnecessary costs (optional but recommended).
+5. **Cleanup**: Terminates the temporary Infra to prevent unnecessary costs (optional but recommended).
 
 ### 2. Parallel Snapshot Creation
 
-- Identifies the first running VM in each SubGroup.
+- Identifies the first running VM in each NodeGroup.
 - Executes snapshot requests in parallel across different providers.
 - Uses provider-specific semaphores to prevent API rate limiting.
 
@@ -76,28 +76,28 @@ The following sequence diagram illustrates the interaction between the user, Tum
 sequenceDiagram
     actor User
     participant API as Tumblebug API
-    participant MCI as MCI Manager
+    participant Infra as Infra Manager
     participant Snap as Snapshot Manager
     participant Spider as CB-Spider
     
     User->>API: POST /buildAgnosticImage
     
     rect rgb(230, 240, 255)
-        Note over API,MCI: Phase 1: Provisioning
-        API->>MCI: CreateMciDynamic (Policy="refine")
-        MCI->>Spider: Create VMs
-        Spider-->>MCI: VMs Created
-        MCI-->>API: MCI Info
+        Note over API,Infra: Phase 1: Provisioning
+        API->>Infra: CreateInfraDynamic (Policy="refine")
+        Infra->>Spider: Create VMs
+        Spider-->>Infra: VMs Created
+        Infra-->>API: Infra Info
         
-        API->>MCI: GetMciStatus
-        MCI-->>API: Running Count
+        API->>Infra: GetInfraStatus
+        Infra-->>API: Running Count
     end
     
     rect rgb(255, 245, 230)
         Note over API,Snap: Phase 2: Snapshotting
-        API->>Snap: CreateMciSnapshot
+        API->>Snap: CreateInfraSnapshot
         
-        par Parallel per SubGroup
+        par Parallel per NodeGroup
             Snap->>Spider: Create Image (VM 1)
             Snap->>Spider: Create Image (VM 2)
         end
@@ -114,8 +114,8 @@ sequenceDiagram
     end
     
     rect rgb(255, 230, 230)
-        Note over API,MCI: Phase 4: Cleanup
-        API->>MCI: DelMci (Terminate)
+        Note over API,Infra: Phase 4: Cleanup
+        API->>Infra: DelInfra (Terminate)
     end
     
     API-->>User: Final Result
@@ -127,12 +127,12 @@ Tumblebug optimizes the snapshot process by selecting representative VMs and man
 
 ```mermaid
 flowchart TD
-    Start([Start Snapshot Process]) --> GetVMs[Get All VMs in MCI]
+    Start([Start Snapshot Process]) --> GetVMs[Get All VMs in Infra]
     
     subgraph Selection [Target Selection]
-        GetVMs --> GroupSG[Group by SubGroup]
+        GetVMs --> GroupSG[Group by NodeGroup]
         GroupSG --> FilterRunning[Filter Running VMs]
-        FilterRunning --> SelectOne[Select First Running VM / per SubGroup]
+        FilterRunning --> SelectOne[Select First Running VM / per NodeGroup]
     end
     
     subgraph Concurrency [Provider-Aware Parallelism]
@@ -188,11 +188,11 @@ stateDiagram-v2
     TimeoutWarning --> CleanupDecision
     
     state "Cleanup Phase" as Cleanup {
-        CleanupDecision --> TerminateMCI: Cleanup=true
-        CleanupDecision --> KeepMCI: Cleanup=false
+        CleanupDecision --> TerminateInfra: Cleanup=true
+        CleanupDecision --> KeepInfra: Cleanup=false
         
-        TerminateMCI --> Result
-        KeepMCI --> Result
+        TerminateInfra --> Result
+        KeepInfra --> Result
     }
     
     Result --> [*]
@@ -214,18 +214,18 @@ Once a custom image is created, it becomes a reusable asset within Tumblebug. Yo
 ```mermaid
 flowchart TD
     subgraph BuildPhase [Phase 1: Build]
-        SourceMCI[Source MCI] -->|Snapshot| CustomImg[Custom Image / ID: nginx-custom-image-g1]
-        SourceMCI -.->|Cleanup| Terminated[Terminated]
+        SourceInfra[Source Infra] -->|Snapshot| CustomImg[Custom Image / ID: nginx-custom-image-g1]
+        SourceInfra -.->|Cleanup| Terminated[Terminated]
     end
 
     subgraph DeployPhase [Phase 2: Deploy & Scale]
-        CustomImg -->|Reference by imageId| NewMCI1[Production MCI 1]
-        CustomImg -->|Reference by imageId| NewMCI2[Production MCI 2]
-        CustomImg -->|Reference by imageId| ScaleOut[Scale Out Existing MCI]
+        CustomImg -->|Reference by imageId| NewInfra1[Production Infra 1]
+        CustomImg -->|Reference by imageId| NewInfra2[Production Infra 2]
+        CustomImg -->|Reference by imageId| ScaleOut[Scale Out Existing Infra]
         
-        NewMCI1 --> VM1[VM Instance 1]
-        NewMCI1 --> VM2[VM Instance 2]
-        NewMCI2 --> VM3[VM Instance 3]
+        NewInfra1 --> VM1[VM Instance 1]
+        NewInfra1 --> VM2[VM Instance 2]
+        NewInfra2 --> VM3[VM Instance 3]
     end
     
     style CustomImg fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
@@ -234,7 +234,7 @@ flowchart TD
 ```
 
 **How to Reuse:**
-Simply use the `imageId` returned from the build process in your standard MCI creation request:
+Simply use the `imageId` returned from the build process in your standard Infra creation request:
 
 ```json
 {
@@ -259,11 +259,11 @@ Simply use the `imageId` returned from the build process in your standard MCI cr
 **Request Body:**
 ```json
 {
-  "sourceMciReq": {
-    "name": "build-image-mci",
+  "sourceInfraReq": {
+    "name": "build-image-infra",
     "vm": [
       {
-        "subGroupSize": "1",
+        "nodeGroupSize": "1",
         "name": "base-vm",
         "imageId": "ubuntu-22.04",
         "specId": "aws-t3-small",
@@ -281,7 +281,7 @@ Simply use the `imageId` returned from the build process in your standard MCI cr
     "name": "nginx-custom-image",
     "description": "Ubuntu 22.04 with Nginx pre-installed"
   },
-  "cleanupMciAfterSnapshot": true
+  "cleanupInfraAfterSnapshot": true
 }
 ```
 
@@ -289,26 +289,26 @@ Simply use the `imageId` returned from the build process in your standard MCI cr
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `sourceMciReq` | object | Yes | - | Standard MCI creation request with VM specs and post-commands |
+| `sourceInfraReq` | object | Yes | - | Standard Infra creation request with VM specs and post-commands |
 | `snapshotReq` | object | Yes | - | Configuration for the resulting images (name, description) |
-| `cleanupMciAfterSnapshot` | boolean | No | `true` | Whether to delete the MCI after successful image creation |
+| `cleanupInfraAfterSnapshot` | boolean | No | `true` | Whether to delete the Infra after successful image creation |
 
 **Response:** `200 OK`
 ```json
 {
   "namespace": "default",
-  "mciId": "build-image-mci",
-  "mciStatus": "Terminated",
-  "mciCleanedUp": true,
+  "infraId": "build-image-infra",
+  "infraStatus": "Terminated",
+  "infraCleanedUp": true,
   "totalDuration": "12m45s",
-  "message": "Successfully created 1 custom images from MCI build-image-mci and cleaned up infrastructure",
+  "message": "Successfully created 1 custom images from Infra build-image-infra and cleaned up infrastructure",
   "snapshotResult": {
-    "mciId": "build-image-mci",
+    "infraId": "build-image-infra",
     "successCount": 1,
     "failCount": 0,
     "results": [
       {
-        "subGroupId": "g1",
+        "nodeGroupId": "g1",
         "vmId": "base-vm-01",
         "status": "Success",
         "imageId": "nginx-custom-image-g1",

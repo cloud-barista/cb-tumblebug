@@ -8,7 +8,7 @@ if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt instal
 source ../conf.env
 
 echo "####################################################################"
-echo "## Command (SSH) to MCI "
+echo "## Command (SSH) to Infra "
 echo "####################################################################"
 
 source ../common-functions.sh
@@ -17,32 +17,32 @@ source ../common-functions.sh
 # REGION=${2:-1}
 # POSTFIX=${3:-developer}
 
-# NUM_MCI=${1}
+# NUM_Infra=${1}
 
-# if [ "${NUM_MCI}" == "" ]; then
-#     echo "Usage: ./script.sh <NUM_MCI> <MCI_1> <MCI_2> <MCI_3> ..."
+# if [ "${NUM_Infra}" == "" ]; then
+#     echo "Usage: ./script.sh <NUM_Infra> <Infra_1> <Infra_2> <Infra_3> ..."
 #     exit 1
 # fi
 
-# for (( i=0; i<${NUM_MCI}; i++ ));
+# for (( i=0; i<${NUM_Infra}; i++ ));
 # do
 #     j=$((i+2))
 #     echo ${$j};
 # done
 
-NUM_MCI=$#
+NUM_Infra=$#
 
 WHOLE_IPLIST=""
 WHOLE_PRIVIPLIST=""
 LORDIP=""
 LORDVM=""
-LORDMCI=""
+LORDInfra=""
 
-for MCIID in "$@"; do
-    MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
-    VMARRAY=$(jq -r '.status.vm' <<<"$MCIINFO")
-    MASTERIP=$(jq -r '.status.masterIp' <<<"$MCIINFO")
-    MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCIINFO")
+for InfraID in "$@"; do
+    InfraINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}?option=status)
+    VMARRAY=$(jq -r '.status.vm' <<<"$InfraINFO")
+    MASTERIP=$(jq -r '.status.masterIp' <<<"$InfraINFO")
+    MASTERVM=$(jq -r '.status.masterVmId' <<<"$InfraINFO")
 
     echo "MASTERIP: $MASTERIP"
     echo "MASTERVM: $MASTERVM"
@@ -84,7 +84,7 @@ for MCIID in "$@"; do
     # WHOLE_PRIVIPLIST=(${WHOLE_PRIVIPLIST[@]} ${PRIVIPLIST[@]})
     LORDIP=$MASTERIP
     LORDVM=$MASTERVM
-    LORDMCI=$MCIID
+    LORDInfra=$InfraID
 done
 
 echo $WHOLE_IPLIST
@@ -93,13 +93,13 @@ echo $WHOLE_PRIVIPLIST
 LAUNCHCMD="sudo scope launch $WHOLE_IPLIST $WHOLE_PRIVIPLIST"
 #echo $LAUNCHCMD
 
-for MCIID in "$@"; do
+for InfraID in "$@"; do
     echo ""
-    echo "Installing Weavescope to MCI..."
+    echo "Installing Weavescope to Infra..."
     ScopeInstallFile="git.io/scope"
     ScopeInstallFile="https://gist.githubusercontent.com/seokho-son/bb2703ca49555f9afe0d0097894c74fa/raw/9eb65b296b85bc53f53af3e8733603d807fb9287/scope"
     echo ""
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d \
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$InfraID -H 'Content-Type: application/json' -d \
         '{
         "command": "sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L ${ScopeInstallFile} -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
         }' | jq '.'
@@ -107,22 +107,22 @@ for MCIID in "$@"; do
 done
 
 echo "Launching Weavescope for master node..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$LORDMCI/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$LORDInfra/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 
 echo ""
-echo "[MCI Weavescope: complete cluster] Access to"
+echo "[Infra Weavescope: complete cluster] Access to"
 echo " $LORDIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 echo ""
 echo "Working on clustring..."
 
-for MCIID in "$@"; do
+for InfraID in "$@"; do
 
     echo "Launching Weavescope for the other nodes..."
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$InfraID -H 'Content-Type: application/json' -d @- <<EOF
         {
         "command"        : "[${LAUNCHCMD}]"
         }
@@ -136,6 +136,6 @@ duration=$SECONDS
 printElapsed $@
 echo ""
 
-echo "[MCI Weavescope: complete cluster] Access to"
+echo "[Infra Weavescope: complete cluster] Access to"
 echo " $LORDIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 echo ""
