@@ -39,8 +39,8 @@ var gcpPricingSubPages = []string{
 	"https://cloud.google.com/products/compute/pricing/accelerator-optimized?hl=en",
 }
 
-// vmPriceEntry holds a single VM pricing entry parsed from the pricing page.
-type vmPriceEntry struct {
+// nodePriceEntry holds a single VM pricing entry parsed from the pricing page.
+type nodePriceEntry struct {
 	MachineType string
 	VCPU        string
 	MemoryGiB   string
@@ -49,10 +49,10 @@ type vmPriceEntry struct {
 
 // GCPPriceCache holds all parsed GCP pricing data, keyed by region.
 // Key: region code (e.g., "us-central1")
-// Value: map of machine type name -> vmPriceEntry
+// Value: map of machine type name -> nodePriceEntry
 type GCPPriceCache struct {
 	mu   sync.RWMutex
-	data map[string]map[string]vmPriceEntry
+	data map[string]map[string]nodePriceEntry
 }
 
 // regex patterns compiled once
@@ -89,7 +89,7 @@ var (
 // a GCPPriceCache containing region -> machine_type -> price mappings.
 func FetchAllGCPPrices() (*GCPPriceCache, error) {
 	cache := &GCPPriceCache{
-		data: make(map[string]map[string]vmPriceEntry),
+		data: make(map[string]map[string]nodePriceEntry),
 	}
 
 	type fetchResult struct {
@@ -129,7 +129,7 @@ func FetchAllGCPPrices() (*GCPPriceCache, error) {
 		cache.mu.Lock()
 		for region, machines := range entries {
 			if cache.data[region] == nil {
-				cache.data[region] = make(map[string]vmPriceEntry, len(machines))
+				cache.data[region] = make(map[string]nodePriceEntry, len(machines))
 			}
 			for mt, entry := range machines {
 				cache.data[region][mt] = entry
@@ -248,8 +248,8 @@ func extractPageName(url string) string {
 
 // parsePricingPage parses a single GCP pricing sub-page HTML and extracts
 // all region -> machine_type -> price mappings.
-// Returns: map[regionCode]map[machineType]vmPriceEntry
-func parsePricingPage(html string) (map[string]map[string]vmPriceEntry, error) {
+// Returns: map[regionCode]map[machineType]nodePriceEntry
+func parsePricingPage(html string) (map[string]map[string]nodePriceEntry, error) {
 	// Find AF_initDataCallback block
 	dataArray, err := extractDataArray(html)
 	if err != nil {
@@ -270,7 +270,7 @@ func parsePricingPage(html string) (map[string]map[string]vmPriceEntry, error) {
 		return nil, fmt.Errorf("unexpected data format: data[0][2] not array")
 	}
 
-	results := make(map[string]map[string]vmPriceEntry)
+	results := make(map[string]map[string]nodePriceEntry)
 
 	for _, sec := range sections {
 		secArr, ok := sec.([]interface{})
@@ -367,7 +367,7 @@ type token struct {
 
 // parseSection extracts region -> machine -> price mappings from a section string
 // and merges them into the results map.
-func parseSection(sectionStr string, results map[string]map[string]vmPriceEntry) {
+func parseSection(sectionStr string, results map[string]map[string]nodePriceEntry) {
 	// Strip <span> tags that some machine families (e.g., c4a-*-lssd) wrap around
 	// vCPU/Memory values: <p><span style="...">16</span></p> → <p>16</p>
 	sectionStr = spanTagPattern.ReplaceAllString(sectionStr, "")
@@ -480,14 +480,14 @@ func parseSection(sectionStr string, results map[string]map[string]vmPriceEntry)
 
 			if priceFound {
 				if results[currentRegion] == nil {
-					results[currentRegion] = make(map[string]vmPriceEntry)
+					results[currentRegion] = make(map[string]nodePriceEntry)
 				}
 				// Keep the highest price per region+machine. The section data contains
 				// multiple pricing tiers (on-demand, CUD-1yr, CUD-3yr) and CUD tables
 				// may appear before on-demand. The on-demand price is always the highest.
 				existing, exists := results[currentRegion][machineType]
 				if !exists || onDemandPrice > existing.OnDemand {
-					results[currentRegion][machineType] = vmPriceEntry{
+					results[currentRegion][machineType] = nodePriceEntry{
 						MachineType: machineType,
 						VCPU:        vcpu,
 						MemoryGiB:   mem,

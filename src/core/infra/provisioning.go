@@ -37,11 +37,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// getVmCreateRateLimitsForCSP returns rate limiting configuration for VM creation.
+// getNodeCreateRateLimitsForCSP returns rate limiting configuration for Node creation.
 // Uses centralized CSP config from csp.GetRateLimitConfig() with built-in fallback for unknown CSPs.
-func getVmCreateRateLimitsForCSP(cspName string) (int, int) {
+func getNodeCreateRateLimitsForCSP(cspName string) (int, int) {
 	config := csp.GetRateLimitConfig(cspName)
-	return config.MaxConcurrentRegions, config.MaxVMsPerRegion
+	return config.MaxConcurrentRegions, config.MaxNodesPerRegion
 }
 
 // InfraReqStructLevelValidation is func to validate fields in InfraReqStruct
@@ -70,18 +70,18 @@ func CreateNodeGroupReqStructLevelValidation(sl validator.StructLevel) {
 
 var holdingInfraMap sync.Map
 
-// createVmObjectSafe creates VM object without WaitGroup management
-func createVmObjectSafe(nsId, infraId string, vmInfoData *model.VmInfo) error {
+// createNodeObjectSafe creates Node object without WaitGroup management
+func createNodeObjectSafe(nsId, infraId string, nodeInfoData *model.NodeInfo) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	return CreateVmObject(&wg, nsId, infraId, vmInfoData)
+	return CreateNodeObject(&wg, nsId, infraId, nodeInfoData)
 }
 
-// // createVmSafe creates VM without WaitGroup management
-// func createVmSafe(nsId, infraId string, vmInfoData *model.VmInfo, option string) error {
+// // createNodeSafe creates Node without WaitGroup management
+// func createNodeSafe(nsId, infraId string, nodeInfoData *model.NodeInfo, option string) error {
 // 	var wg sync.WaitGroup
 // 	wg.Add(1)
-// 	err := CreateVm(&wg, nsId, infraId, vmInfoData, option)
+// 	err := CreateNode(&wg, nsId, infraId, nodeInfoData, option)
 // 	wg.Wait()
 // 	return err
 // }
@@ -99,21 +99,21 @@ func contains(slice []string, item string) bool {
 }
 
 // createNodeGroup creates a nodeGroup with proper error handling
-func createNodeGroup(ctx context.Context, nsId, infraId string, vmRequest *model.CreateNodeGroupReq, nodeGroupSize, vmStartIndex int, uid string, req *model.InfraReq) error {
-	log.Info().Msgf("Creating Infra nodeGroup object for '%s'", vmRequest.Name)
-	key := common.GenInfraNodeGroupKey(nsId, infraId, vmRequest.Name)
+func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *model.CreateNodeGroupReq, nodeGroupSize, nodeStartIndex int, uid string, req *model.InfraReq) error {
+	log.Info().Msgf("Creating Infra nodeGroup object for '%s'", nodeRequest.Name)
+	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
 
 	nodeGroupInfoData := model.NodeGroupInfo{
 		ResourceType:  model.StrNodeGroup,
-		Id:            common.ToLower(vmRequest.Name),
-		Name:          common.ToLower(vmRequest.Name),
+		Id:            common.ToLower(nodeRequest.Name),
+		Name:          common.ToLower(nodeRequest.Name),
 		Uid:           common.GenUid(),
-		NodeGroupSize: vmRequest.NodeGroupSize,
+		NodeGroupSize: nodeRequest.NodeGroupSize,
 	}
 
-	// Build VM ID list
-	for i := vmStartIndex; i < nodeGroupSize+vmStartIndex; i++ {
-		nodeGroupInfoData.VmId = append(nodeGroupInfoData.VmId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
+	// Build Node ID list
+	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
+		nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
 	}
 
 	// Marshal with error handling
@@ -218,7 +218,7 @@ func handleHoldOption(nsId, infraId string) error {
 func cleanupPartialInfra(nsId, infraId string) error {
 	log.Warn().Msgf("Cleaning up partial Infra: %s/%s", nsId, infraId)
 
-	// Attempt to delete Infra - this will handle cleanup of VMs and other resources
+	// Attempt to delete Infra - this will handle cleanup of Nodes and other resources
 	_, err := DelInfra(nsId, infraId, "force")
 	if err != nil {
 		return fmt.Errorf("failed to cleanup partial Infra: %w", err)
@@ -244,9 +244,9 @@ func handleMonitoringAgent(nsId, infraId string, infraTmp model.InfraInfo, optio
 		UserName: "cb-user", // TODO: Make this configurable
 	}
 
-	// Intelligent wait time based on VM count
+	// Intelligent wait time based on Node count
 	waitTime := 30 * time.Second
-	if len(infraTmp.Vm) > 5 {
+	if len(infraTmp.Node) > 5 {
 		waitTime = 60 * time.Second
 	}
 
@@ -297,9 +297,9 @@ type CreatedResource struct {
 	Id   string `json:"id"`   // Resource ID
 }
 
-// VmReqWithCreatedResources contains VM request and list of created resources for rollback
-type VmReqWithCreatedResources struct {
-	VmReq            *model.CreateNodeGroupReq `json:"vmReq"`
+// NodeReqWithCreatedResources contains Node request and list of created resources for rollback
+type NodeReqWithCreatedResources struct {
+	VmReq            *model.CreateNodeGroupReq `json:"nodeReq"`
 	CreatedResources []CreatedResource         `json:"createdResources"`
 }
 
@@ -440,41 +440,41 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 	return nil
 }
 
-// Infra and VM Provisioning
+// Infra and Node Provisioning
 
-// ScaleOutInfraNodeGroup is func to create Infra groupVM
-func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, nodeGroupId string, numVMsToAdd int) (*model.InfraInfo, error) {
-	vmIdList, err := ListVmByNodeGroup(nsId, infraId, nodeGroupId)
+// ScaleOutInfraNodeGroup is func to create Infra groupNode
+func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, nodeGroupId string, numNodesToAdd int) (*model.InfraInfo, error) {
+	nodeIdList, err := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
 	if err != nil {
 		temp := &model.InfraInfo{}
 		return temp, err
 	}
-	vmObj, err := GetVmObject(nsId, infraId, vmIdList[0])
+	nodeObj, err := GetNodeObject(nsId, infraId, nodeIdList[0])
 	if err != nil {
 		temp := &model.InfraInfo{}
 		return temp, err
 	}
 
-	vmNodeGroupReqTemplate := &model.CreateNodeGroupReq{}
+	nodeGroupReqTemplate := &model.CreateNodeGroupReq{}
 
-	// only take template required to create VM
-	vmNodeGroupReqTemplate.Name = vmObj.NodeGroupId
-	vmNodeGroupReqTemplate.ConnectionName = vmObj.ConnectionName
-	vmNodeGroupReqTemplate.ImageId = vmObj.ImageId
-	vmNodeGroupReqTemplate.SpecId = vmObj.SpecId
-	vmNodeGroupReqTemplate.VNetId = vmObj.VNetId
-	vmNodeGroupReqTemplate.SubnetId = vmObj.SubnetId
-	vmNodeGroupReqTemplate.SecurityGroupIds = vmObj.SecurityGroupIds
-	vmNodeGroupReqTemplate.SshKeyId = vmObj.SshKeyId
-	vmNodeGroupReqTemplate.VmUserName = vmObj.VmUserName
-	vmNodeGroupReqTemplate.VmUserPassword = vmObj.VmUserPassword
-	vmNodeGroupReqTemplate.RootDiskType = vmObj.RootDiskType
-	vmNodeGroupReqTemplate.RootDiskSize = vmObj.RootDiskSize
-	vmNodeGroupReqTemplate.Description = vmObj.Description
+	// only take template required to create Node
+	nodeGroupReqTemplate.Name = nodeObj.NodeGroupId
+	nodeGroupReqTemplate.ConnectionName = nodeObj.ConnectionName
+	nodeGroupReqTemplate.ImageId = nodeObj.ImageId
+	nodeGroupReqTemplate.SpecId = nodeObj.SpecId
+	nodeGroupReqTemplate.VNetId = nodeObj.VNetId
+	nodeGroupReqTemplate.SubnetId = nodeObj.SubnetId
+	nodeGroupReqTemplate.SecurityGroupIds = nodeObj.SecurityGroupIds
+	nodeGroupReqTemplate.SshKeyId = nodeObj.SshKeyId
+	nodeGroupReqTemplate.NodeUserName = nodeObj.NodeUserName
+	nodeGroupReqTemplate.NodeUserPassword = nodeObj.NodeUserPassword
+	nodeGroupReqTemplate.RootDiskType = nodeObj.RootDiskType
+	nodeGroupReqTemplate.RootDiskSize = nodeObj.RootDiskSize
+	nodeGroupReqTemplate.Description = nodeObj.Description
 
-	vmNodeGroupReqTemplate.NodeGroupSize = numVMsToAdd
+	nodeGroupReqTemplate.NodeGroupSize = numNodesToAdd
 
-	result, err := CreateInfraGroupVm(ctx, nsId, infraId, vmNodeGroupReqTemplate, true)
+	result, err := CreateInfraGroupNode(ctx, nsId, infraId, nodeGroupReqTemplate, true)
 	if err != nil {
 		temp := &model.InfraInfo{}
 		return temp, err
@@ -483,8 +483,8 @@ func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, no
 
 }
 
-// CreateInfraGroupVm is func to create Infra groupVM
-func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequest *model.CreateNodeGroupReq, newNodeGroup bool) (*model.InfraInfo, error) {
+// CreateInfraGroupNode is func to create Infra groupNode
+func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, nodeRequest *model.CreateNodeGroupReq, newNodeGroup bool) (*model.InfraInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -501,7 +501,7 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 	}
 
 	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
-	err = validate.Struct(vmRequest)
+	err = validate.Struct(nodeRequest)
 	if err != nil {
 
 		// this check is only needed when your code could produce
@@ -537,7 +537,7 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 		return temp, err
 	}
 
-	//vmRequest := req
+	//nodeRequest := req
 
 	targetAction := model.ActionCreate
 	targetStatus := model.StatusRunning
@@ -546,19 +546,19 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 	var wg sync.WaitGroup
 
 	// nodeGroup handling
-	nodeGroupSize := vmRequest.NodeGroupSize
+	nodeGroupSize := nodeRequest.NodeGroupSize
 	fmt.Printf("nodeGroupSize: %v\n", nodeGroupSize)
 
-	// make nodeGroup default (any VM going to be in a nodeGroup)
+	// make nodeGroup default (any Node going to be in a nodeGroup)
 	if nodeGroupSize < 1 {
 		nodeGroupSize = 1
 	}
 
-	vmStartIndex := 1
+	nodeStartIndex := 1
 
-	tentativeVmId := common.ToLower(vmRequest.Name)
+	tentativeNodeId := common.ToLower(nodeRequest.Name)
 
-	err = common.CheckString(tentativeVmId)
+	err = common.CheckString(tentativeNodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.InfraInfo{}, err
@@ -569,24 +569,24 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 
 	nodeGroupInfoData := model.NodeGroupInfo{}
 	nodeGroupInfoData.ResourceType = model.StrNodeGroup
-	nodeGroupInfoData.Id = tentativeVmId
-	nodeGroupInfoData.Name = tentativeVmId
+	nodeGroupInfoData.Id = tentativeNodeId
+	nodeGroupInfoData.Name = tentativeNodeId
 	nodeGroupInfoData.Uid = common.GenUid()
 	nodeGroupInfoData.NodeGroupSize = nodeGroupSize
 
-	key := common.GenInfraNodeGroupKey(nsId, infraId, vmRequest.Name)
+	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
-		err = fmt.Errorf("In CreateInfraGroupVm(); kvstore.GetKv(): " + err.Error())
+		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): " + err.Error())
 		log.Error().Err(err).Msg("")
 	}
 	if exists {
 		if newNodeGroup {
 			json.Unmarshal([]byte(keyValue.Value), &nodeGroupInfoData)
-			existingVmSize := nodeGroupInfoData.NodeGroupSize
-			// add the number of existing VMs in the NodeGroup with requested number for additions
-			nodeGroupInfoData.NodeGroupSize = existingVmSize + nodeGroupSize
-			vmStartIndex = existingVmSize + 1
+			existingNodeSize := nodeGroupInfoData.NodeGroupSize
+			// add the number of existing Nodes in the NodeGroup with requested number for additions
+			nodeGroupInfoData.NodeGroupSize = existingNodeSize + nodeGroupSize
+			nodeStartIndex = existingNodeSize + 1
 		} else {
 			err = fmt.Errorf("Duplicated NodeGroup ID")
 			log.Error().Err(err).Msg("")
@@ -594,8 +594,8 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 		}
 	}
 
-	for i := vmStartIndex; i < nodeGroupSize+vmStartIndex; i++ {
-		nodeGroupInfoData.VmId = append(nodeGroupInfoData.VmId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
+	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
+		nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
 	}
 
 	val, _ := json.Marshal(nodeGroupInfoData)
@@ -606,98 +606,98 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 	// check stored nodeGroup object
 	_, _, err = kvstore.GetKv(key)
 	if err != nil {
-		err = fmt.Errorf("In CreateInfraGroupVm(); kvstore.GetKv(): " + err.Error())
+		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): " + err.Error())
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
-	// Create VM objects for all VMs in the nodeGroup
-	for i := vmStartIndex; i < nodeGroupSize+vmStartIndex; i++ {
-		vmInfoData := model.VmInfo{}
+	// Create Node objects for all Nodes in the nodeGroup
+	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
+		nodeInfoData := model.NodeInfo{}
 
-		vmInfoData.NodeGroupId = common.ToLower(vmRequest.Name)
-		vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+		nodeInfoData.NodeGroupId = common.ToLower(nodeRequest.Name)
+		nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
 
-		log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
+		log.Debug().Msg("nodeInfoData.Name: " + nodeInfoData.Name)
 
-		vmInfoData.ResourceType = model.StrVM
-		vmInfoData.Id = vmInfoData.Name
-		vmInfoData.Uid = common.GenUid()
+		nodeInfoData.ResourceType = model.StrNode
+		nodeInfoData.Id = nodeInfoData.Name
+		nodeInfoData.Uid = common.GenUid()
 
-		vmInfoData.PublicIP = ""
-		vmInfoData.PublicDNS = ""
+		nodeInfoData.PublicIP = ""
+		nodeInfoData.PublicDNS = ""
 
 		// Set initial status based on whether this is a registration (CspResourceId is set)
-		if vmRequest.CspResourceId != "" {
-			vmInfoData.Status = model.StatusRegistering
+		if nodeRequest.CspResourceId != "" {
+			nodeInfoData.Status = model.StatusRegistering
 		} else {
-			vmInfoData.Status = model.StatusCreating
+			nodeInfoData.Status = model.StatusCreating
 		}
-		vmInfoData.TargetAction = targetAction
-		vmInfoData.TargetStatus = targetStatus
+		nodeInfoData.TargetAction = targetAction
+		nodeInfoData.TargetStatus = targetStatus
 
-		vmInfoData.ConnectionName = vmRequest.ConnectionName
-		vmInfoData.ConnectionConfig, err = common.GetConnConfig(vmRequest.ConnectionName)
+		nodeInfoData.ConnectionName = nodeRequest.ConnectionName
+		nodeInfoData.ConnectionConfig, err = common.GetConnConfig(nodeRequest.ConnectionName)
 		if err != nil {
 			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 			log.Error().Err(err).Msg("")
 		}
-		vmInfoData.Location = vmInfoData.ConnectionConfig.RegionDetail.Location
-		vmInfoData.SpecId = vmRequest.SpecId
-		vmInfoData.ImageId = vmRequest.ImageId
-		vmInfoData.VNetId = vmRequest.VNetId
-		vmInfoData.SubnetId = vmRequest.SubnetId
-		vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
-		vmInfoData.DataDiskIds = vmRequest.DataDiskIds
-		vmInfoData.SshKeyId = vmRequest.SshKeyId
-		vmInfoData.Description = vmRequest.Description
-		vmInfoData.VmUserName = vmRequest.VmUserName
-		vmInfoData.VmUserPassword = vmRequest.VmUserPassword
-		vmInfoData.RootDiskType = vmRequest.RootDiskType
-		vmInfoData.RootDiskSize = vmRequest.RootDiskSize
+		nodeInfoData.Location = nodeInfoData.ConnectionConfig.RegionDetail.Location
+		nodeInfoData.SpecId = nodeRequest.SpecId
+		nodeInfoData.ImageId = nodeRequest.ImageId
+		nodeInfoData.VNetId = nodeRequest.VNetId
+		nodeInfoData.SubnetId = nodeRequest.SubnetId
+		nodeInfoData.SecurityGroupIds = nodeRequest.SecurityGroupIds
+		nodeInfoData.DataDiskIds = nodeRequest.DataDiskIds
+		nodeInfoData.SshKeyId = nodeRequest.SshKeyId
+		nodeInfoData.Description = nodeRequest.Description
+		nodeInfoData.NodeUserName = nodeRequest.NodeUserName
+		nodeInfoData.NodeUserPassword = nodeRequest.NodeUserPassword
+		nodeInfoData.RootDiskType = nodeRequest.RootDiskType
+		nodeInfoData.RootDiskSize = nodeRequest.RootDiskSize
 
-		vmInfoData.Label = vmRequest.Label
+		nodeInfoData.Label = nodeRequest.Label
 
-		vmInfoData.CspResourceId = vmRequest.CspResourceId
+		nodeInfoData.CspResourceId = nodeRequest.CspResourceId
 
 		wg.Add(1)
-		go CreateVmObject(&wg, nsId, infraId, &vmInfoData)
+		go CreateNodeObject(&wg, nsId, infraId, &nodeInfoData)
 	}
 	wg.Wait()
 
 	// Set option based on whether this is a registration (CspResourceId is set)
 	option := "create"
-	if vmRequest.CspResourceId != "" {
+	if nodeRequest.CspResourceId != "" {
 		option = "register"
 	}
 
-	// Collect all VM info for rate-limited parallel processing
-	var vmInfoList []*model.VmInfo
-	for i := vmStartIndex; i <= nodeGroupSize+vmStartIndex; i++ {
-		vmInfoData := model.VmInfo{}
+	// Collect all Node info for rate-limited parallel processing
+	var nodeInfoList []*model.NodeInfo
+	for i := nodeStartIndex; i <= nodeGroupSize+nodeStartIndex; i++ {
+		nodeInfoData := model.NodeInfo{}
 
-		if nodeGroupSize == 0 { // for VM (not in a group)
-			vmInfoData.Name = common.ToLower(vmRequest.Name)
-		} else { // for VM (in a group)
-			if i == nodeGroupSize+vmStartIndex {
+		if nodeGroupSize == 0 { // for Node (not in a group)
+			nodeInfoData.Name = common.ToLower(nodeRequest.Name)
+		} else { // for Node (in a group)
+			if i == nodeGroupSize+nodeStartIndex {
 				break
 			}
-			vmInfoData.NodeGroupId = common.ToLower(vmRequest.Name)
-			vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+			nodeInfoData.NodeGroupId = common.ToLower(nodeRequest.Name)
+			nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
 		}
-		vmInfoData.Id = vmInfoData.Name
-		vmId := vmInfoData.Id
-		vmInfo, err := GetVmObject(nsId, infraId, vmId)
+		nodeInfoData.Id = nodeInfoData.Name
+		nodeId := nodeInfoData.Id
+		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
-		vmInfoList = append(vmInfoList, &vmInfo)
+		nodeInfoList = append(nodeInfoList, &nodeInfo)
 	}
 
 	// Create VMs with hierarchical rate limiting
-	log.Info().Msgf("Creating %d VMs with rate limiting", len(vmInfoList))
-	err = CreateVmsInParallel(ctx, nsId, infraId, vmInfoList, option)
+	log.Info().Msgf("Creating %d VMs with rate limiting", len(nodeInfoList))
+	err = CreateNodesInParallel(ctx, nsId, infraId, nodeInfoList, option)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create VMs in parallel")
 		return nil, err
@@ -721,20 +721,20 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 		// For Create action, check if all VMs are in final states (including Failed)
 		// Final states: Running, Failed, Terminated, Suspended
 		// Transitional states: Creating, Undefined, empty string
-		allVmsInFinalState := true
+		allNodesInFinalState := true
 		pendingCount := 0
 		runningCount := 0
 		failedCount := 0
-		totalVmCount := len(infraStatusTmp.Vm)
+		totalNodeCount := len(infraStatusTmp.Node)
 
-		for _, vm := range infraStatusTmp.Vm {
+		for _, node := range infraStatusTmp.Node {
 			// Check if VM is still in transitional/pending state
-			if vm.Status == model.StatusCreating || vm.Status == model.StatusRegistering || vm.Status == model.StatusUndefined || vm.Status == "" {
-				allVmsInFinalState = false
+			if node.Status == model.StatusCreating || node.Status == model.StatusRegistering || node.Status == model.StatusUndefined || node.Status == "" {
+				allNodesInFinalState = false
 				pendingCount++
 			} else {
 				// VM is in final state, count by type for logging
-				switch vm.Status {
+				switch node.Status {
 				case model.StatusRunning:
 					runningCount++
 				case model.StatusFailed:
@@ -744,18 +744,18 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 			}
 		}
 
-		if allVmsInFinalState && totalVmCount > 0 {
+		if allNodesInFinalState && totalNodeCount > 0 {
 			isCreateCompleted = true
 			if failedCount > 0 {
 				log.Info().Msgf("Infra %s Create action completed with partial success: %d running, %d failed, %d total VMs",
-					infraId, runningCount, failedCount, totalVmCount)
+					infraId, runningCount, failedCount, totalNodeCount)
 			} else {
 				log.Info().Msgf("Infra %s Create action completed successfully: all %d VMs reached final state",
-					infraId, totalVmCount)
+					infraId, totalNodeCount)
 			}
 		} else {
 			log.Debug().Msgf("Infra %s Create action pending: %d/%d VMs still in transitional state",
-				infraId, pendingCount, totalVmCount)
+				infraId, pendingCount, totalNodeCount)
 		}
 	} else {
 		// For other actions, use the original simple check
@@ -795,13 +795,13 @@ func CreateInfraGroupVm(ctx context.Context, nsId string, infraId string, vmRequ
 		}
 	}
 
-	vmList, err := ListVmByNodeGroup(nsId, infraId, tentativeVmId)
+	nodeList, err := ListNodeByNodeGroup(nsId, infraId, tentativeNodeId)
 
 	if err != nil {
 		infraTmp.SystemMessage = append(infraTmp.SystemMessage, err.Error())
 	}
-	if vmList != nil {
-		infraTmp.NewVmList = vmList
+	if nodeList != nil {
+		infraTmp.NewNodeList = nodeList
 	}
 
 	return &infraTmp, nil
@@ -827,27 +827,27 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	// Initialize failure tracking
 	var (
-		vmObjectErrors []model.VmCreationError
-		vmCreateErrors []model.VmCreationError
-		totalVmCount   int
+		nodeObjectErrors []model.NodeCreationError
+		nodeCreateErrors []model.NodeCreationError
+		totalNodeCount   int
 		errorMu        sync.Mutex
 	)
 
 	// Count total VMs to be created (minimum 1 per nodeGroup)
 	for _, nodeGroupReq := range req.NodeGroups {
-		vmCount := nodeGroupReq.NodeGroupSize
-		if vmCount < 1 {
-			vmCount = 1
+		nodeCount := nodeGroupReq.NodeGroupSize
+		if nodeCount < 1 {
+			nodeCount = 1
 		}
-		totalVmCount += vmCount
+		totalNodeCount += nodeCount
 	}
 
 	// Helper function to add VM creation error (with mutex for standalone use)
-	addVmError := func(errors *[]model.VmCreationError, vmName, errorMsg, phase string) {
+	addNodeError := func(errors *[]model.NodeCreationError, nodeName, errorMsg, phase string) {
 		errorMu.Lock()
 		defer errorMu.Unlock()
-		*errors = append(*errors, model.VmCreationError{
-			VmName:    vmName,
+		*errors = append(*errors, model.NodeCreationError{
+			NodeName:    nodeName,
 			Error:     errorMsg,
 			Phase:     phase,
 			Timestamp: time.Now().Format(time.RFC3339),
@@ -876,15 +876,15 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 	infraId := req.Name
 
 	// Pre-calculate VM configurations to avoid duplication
-	type vmConfig struct {
-		vmInfo        model.VmInfo
+	type nodeConfig struct {
+		nodeInfo        model.NodeInfo
 		nodeGroupSize int
-		vmIndex       int
+		nodeIndex       int
 	}
 
-	var vmConfigs []vmConfig
+	var nodeConfigs []nodeConfig
 	var nodeGroupsCreated []string
-	vmStartIndex := 1
+	nodeStartIndex := 1
 
 	// Get infra object
 	// Note: return 'an empty Infra object', 'nil' if Infra doesn't exist
@@ -939,7 +939,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		if nodeGroupSize > 0 {
 			nodeGroupName := common.ToLower(nodeGroupReq.Name)
 			if !contains(nodeGroupsCreated, nodeGroupName) {
-				if err := createNodeGroup(ctx, nsId, infraId, &nodeGroupReq, nodeGroupSize, vmStartIndex, uid, req); err != nil {
+				if err := createNodeGroup(ctx, nsId, infraId, &nodeGroupReq, nodeGroupSize, nodeStartIndex, uid, req); err != nil {
 					return nil, fmt.Errorf("failed to create nodeGroup '%s': %w", nodeGroupName, err)
 				}
 				nodeGroupsCreated = append(nodeGroupsCreated, nodeGroupName)
@@ -947,8 +947,8 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		}
 
 		// Build VM configurations
-		for i := vmStartIndex; i <= nodeGroupSize+vmStartIndex; i++ {
-			if nodeGroupSize > 0 && i == nodeGroupSize+vmStartIndex {
+		for i := nodeStartIndex; i <= nodeGroupSize+nodeStartIndex; i++ {
+			if nodeGroupSize > 0 && i == nodeGroupSize+nodeStartIndex {
 				break
 			}
 
@@ -958,8 +958,8 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				initialStatus = model.StatusRegistering
 			}
 
-			vmInfo := model.VmInfo{
-				ResourceType:     model.StrVM,
+			nodeInfo := model.NodeInfo{
+				ResourceType:     model.StrNode,
 				Uid:              common.GenUid(),
 				PublicIP:         "",
 				PublicDNS:        "",
@@ -977,8 +977,8 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				DataDiskIds:      nodeGroupReq.DataDiskIds,
 				SshKeyId:         nodeGroupReq.SshKeyId,
 				Description:      nodeGroupReq.Description,
-				VmUserName:       nodeGroupReq.VmUserName,
-				VmUserPassword:   nodeGroupReq.VmUserPassword,
+				NodeUserName:       nodeGroupReq.NodeUserName,
+				NodeUserPassword:   nodeGroupReq.NodeUserPassword,
 				RootDiskType:     nodeGroupReq.RootDiskType,
 				RootDiskSize:     nodeGroupReq.RootDiskSize,
 				Label:            nodeGroupReq.Label,
@@ -986,17 +986,17 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			}
 
 			if nodeGroupSize == 0 {
-				vmInfo.Name = common.ToLower(nodeGroupReq.Name)
+				nodeInfo.Name = common.ToLower(nodeGroupReq.Name)
 			} else {
-				vmInfo.NodeGroupId = common.ToLower(nodeGroupReq.Name)
-				vmInfo.Name = common.ToLower(nodeGroupReq.Name) + "-" + strconv.Itoa(i)
+				nodeInfo.NodeGroupId = common.ToLower(nodeGroupReq.Name)
+				nodeInfo.Name = common.ToLower(nodeGroupReq.Name) + "-" + strconv.Itoa(i)
 			}
-			vmInfo.Id = vmInfo.Name
+			nodeInfo.Id = nodeInfo.Name
 
-			vmConfigs = append(vmConfigs, vmConfig{
-				vmInfo:        vmInfo,
+			nodeConfigs = append(nodeConfigs, nodeConfig{
+				nodeInfo:        nodeInfo,
 				nodeGroupSize: nodeGroupSize,
-				vmIndex:       i,
+				nodeIndex:       i,
 			})
 		}
 	}
@@ -1013,16 +1013,16 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 	var wg sync.WaitGroup
 	var createErrors []error
 
-	log.Info().Msgf("Creating %d VM objects", len(vmConfigs))
+	log.Info().Msgf("Creating %d VM objects", len(nodeConfigs))
 
-	for _, config := range vmConfigs {
+	for _, config := range nodeConfigs {
 		wg.Add(1)
-		go func(cfg vmConfig) {
+		go func(cfg nodeConfig) {
 			defer wg.Done()
-			if err := createVmObjectSafe(nsId, infraId, &cfg.vmInfo); err != nil {
+			if err := createNodeObjectSafe(nsId, infraId, &cfg.nodeInfo); err != nil {
 				errorMu.Lock()
-				createErrors = append(createErrors, fmt.Errorf("VM object creation failed for '%s': %w", cfg.vmInfo.Name, err))
-				addVmError(&vmObjectErrors, cfg.vmInfo.Name, err.Error(), "object_creation")
+				createErrors = append(createErrors, fmt.Errorf("VM object creation failed for '%s': %w", cfg.nodeInfo.Name, err))
+				addNodeError(&nodeObjectErrors, cfg.nodeInfo.Name, err.Error(), "object_creation")
 				errorMu.Unlock()
 			}
 		}(config)
@@ -1035,12 +1035,12 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		infraTmp, _, err := GetInfraObject(nsId, infraId)
 		if err == nil {
 			// Add VM object creation error summary
-			errorSummary := fmt.Sprintf("VM object creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
+			errorSummary := fmt.Sprintf("VM object creation failed for %d out of %d VMs", len(createErrors), len(nodeConfigs))
 			infraTmp.SystemMessage = append(infraTmp.SystemMessage, errorSummary)
 
 			// Add each VM object creation error
-			for _, vmError := range vmObjectErrors {
-				errorDetail := fmt.Sprintf("VM '%s' object creation failed: %s", vmError.VmName, vmError.Error)
+			for _, nodeError := range nodeObjectErrors {
+				errorDetail := fmt.Sprintf("VM '%s' object creation failed: %s", nodeError.NodeName, nodeError.Error)
 				infraTmp.SystemMessage = append(infraTmp.SystemMessage, errorDetail)
 			}
 
@@ -1073,40 +1073,40 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 	}
 
 	// Create actual VMs with hierarchical rate limiting
-	log.Info().Msgf("Creating %d VMs with rate limiting", len(vmConfigs))
+	log.Info().Msgf("Creating %d VMs with rate limiting", len(nodeConfigs))
 	createErrors = createErrors[:0] // Reset error slice
 
-	// Collect all VM info for rate-limited parallel processing
-	var vmInfoList []*model.VmInfo
-	for _, config := range vmConfigs {
-		vmInfoData, err := GetVmObject(nsId, infraId, config.vmInfo.Id)
+	// Collect all Node info for rate-limited parallel processing
+	var nodeInfoList []*model.NodeInfo
+	for _, config := range nodeConfigs {
+		nodeInfoData, err := GetNodeObject(nsId, infraId, config.nodeInfo.Id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get VM object '%s': %w", config.vmInfo.Id, err)
+			return nil, fmt.Errorf("failed to get VM object '%s': %w", config.nodeInfo.Id, err)
 		}
-		vmInfoList = append(vmInfoList, &vmInfoData)
+		nodeInfoList = append(nodeInfoList, &nodeInfoData)
 	}
 
 	// Create VMs with hierarchical rate limiting
-	err = CreateVmsInParallel(ctx, nsId, infraId, vmInfoList, option)
+	err = CreateNodesInParallel(ctx, nsId, infraId, nodeInfoList, option)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create VMs in parallel")
 
-		// CRITICAL: If CreateVmsInParallel returns error, it means ALL VMs failed
+		// CRITICAL: If CreateNodesInParallel returns error, it means ALL VMs failed
 		// Check total VM count and immediately terminate if all failed
-		totalVmsInParallel := len(vmInfoList)
+		totalNodesInParallel := len(nodeInfoList)
 
-		log.Error().Msgf("EARLY TERMINATION: CreateVmsInParallel returned error - all %d VMs failed", totalVmsInParallel)
+		log.Error().Msgf("EARLY TERMINATION: CreateNodesInParallel returned error - all %d VMs failed", totalNodesInParallel)
 
-		// Force update all VM statuses to Failed since CreateVmsInParallel failed completely
+		// Force update all VM statuses to Failed since CreateNodesInParallel failed completely
 		log.Debug().Msg("Force updating all VM statuses to Failed since no VMs were actually created")
-		for _, vmInfo := range vmInfoList {
-			vmInfo.Status = model.StatusFailed
-			if vmInfo.SystemMessage == "" {
-				vmInfo.SystemMessage = fmt.Sprintf("VM creation failed: %s", err.Error())
+		for _, nodeInfo := range nodeInfoList {
+			nodeInfo.Status = model.StatusFailed
+			if nodeInfo.SystemMessage == "" {
+				nodeInfo.SystemMessage = fmt.Sprintf("VM creation failed: %s", err.Error())
 			}
 
-			UpdateVmInfo(nsId, infraId, *vmInfo)
-			log.Debug().Msgf("Force updated VM %s to Failed status (no actual CSP VM created)", vmInfo.Name)
+			UpdateNodeInfo(nsId, infraId, *nodeInfo)
+			log.Debug().Msgf("Force updated VM %s to Failed status (no actual CSP VM created)", nodeInfo.Name)
 		}
 
 		// Get Infra info and mark as failed immediately
@@ -1130,13 +1130,13 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 		// Return detailed error message
 		errorMsg := fmt.Sprintf("Infra '%s' creation failed: all %d VMs failed to create.\n\nError: %s",
-			infraId, totalVmsInParallel, err.Error())
+			infraId, totalNodesInParallel, err.Error())
 
 		return infraResult, fmt.Errorf("%s", errorMsg)
 	}
 
 	// Continue with normal processing for successful or partial VM creation
-	// Note: If CreateVmsInParallel returns error, we already handled it above and returned early
+	// Note: If CreateNodesInParallel returns error, we already handled it above and returned early
 	// This code block is only reached when VM creation was successful or partially successful
 
 	// Check for VM creation errors (this applies to partial failures only)
@@ -1145,16 +1145,16 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		infraTmp, _, err := GetInfraObject(nsId, infraId)
 		if err == nil {
 			// Add VM creation error summary
-			errorSummary := fmt.Sprintf("VM creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
+			errorSummary := fmt.Sprintf("VM creation failed for %d out of %d VMs", len(createErrors), len(nodeConfigs))
 			infraTmp.SystemMessage = append(infraTmp.SystemMessage, errorSummary)
 
-			// Add each VM creation error - use vmObjectErrors if vmCreateErrors is empty
-			errorList := vmCreateErrors
+			// Add each VM creation error - use nodeObjectErrors if nodeCreateErrors is empty
+			errorList := nodeCreateErrors
 			if len(errorList) == 0 {
-				errorList = vmObjectErrors
+				errorList = nodeObjectErrors
 			}
-			for _, vmError := range errorList {
-				errorDetail := fmt.Sprintf("VM '%s' creation failed: %s", vmError.VmName, vmError.Error)
+			for _, nodeError := range errorList {
+				errorDetail := fmt.Sprintf("VM '%s' creation failed: %s", nodeError.NodeName, nodeError.Error)
 				infraTmp.SystemMessage = append(infraTmp.SystemMessage, errorDetail)
 			}
 
@@ -1222,7 +1222,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		UpdateInfraInfo(nsId, infraTmp)
 	}
 
-	log.Info().Msgf("Infra '%s' has been successfully created with %d VMs", infraId, len(vmConfigs))
+	log.Info().Msgf("Infra '%s' has been successfully created with %d VMs", infraId, len(nodeConfigs))
 
 	// Install monitoring agent if requested
 	if err := handleMonitoringAgent(nsId, infraId, infraTmp, option); err != nil {
@@ -1250,7 +1250,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	// Execute refine action if policy is set to refine and there were failures
 	var shouldRefine bool
-	if req.PolicyOnPartialFailure == model.PolicyRefine && (len(vmObjectErrors) > 0 || len(vmCreateErrors) > 0) {
+	if req.PolicyOnPartialFailure == model.PolicyRefine && (len(nodeObjectErrors) > 0 || len(nodeCreateErrors) > 0) {
 		log.Info().Msgf("Executing refine action to cleanup failed VMs in Infra '%s'", infraId)
 		if refineResult, err := HandleInfraAction(nsId, infraId, model.ActionRefine, true); err != nil {
 			log.Error().Err(err).Msg("Failed to execute refine action, but continuing")
@@ -1266,13 +1266,13 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		return nil, fmt.Errorf("failed to get final Infra information: %w", err)
 	}
 
-	// Note: All VM failure case is already handled earlier when CreateVmsInParallel returns error
+	// Note: All VM failure case is already handled earlier when CreateNodesInParallel returns error
 	// This section only handles partial failures or successful cases
 
 	// Add creation error information if there were any failures
-	if len(vmObjectErrors) > 0 || len(vmCreateErrors) > 0 {
-		successfulVmCount := totalVmCount - len(vmObjectErrors) - len(vmCreateErrors)
-		failedVmCount := len(vmObjectErrors) + len(vmCreateErrors)
+	if len(nodeObjectErrors) > 0 || len(nodeCreateErrors) > 0 {
+		successfulNodeCount := totalNodeCount - len(nodeObjectErrors) - len(nodeCreateErrors)
+		failedNodeCount := len(nodeObjectErrors) + len(nodeCreateErrors)
 
 		var failureStrategy string
 		switch req.PolicyOnPartialFailure {
@@ -1285,18 +1285,18 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		}
 
 		infraResult.CreationErrors = &model.InfraCreationErrors{
-			VmObjectCreationErrors:  vmObjectErrors,
-			VmCreationErrors:        vmCreateErrors,
-			TotalVmCount:            totalVmCount,
-			SuccessfulVmCount:       successfulVmCount,
-			FailedVmCount:           failedVmCount,
+			NodeObjectCreationErrors:  nodeObjectErrors,
+			NodeCreationErrors:        nodeCreateErrors,
+			TotalNodeCount:            totalNodeCount,
+			SuccessfulNodeCount:       successfulNodeCount,
+			FailedNodeCount:           failedNodeCount,
 			FailureHandlingStrategy: failureStrategy,
 		}
 
 		log.Info().Msgf("Infra '%s' creation completed with %d successful VMs out of %d total (strategy: %s, refined: %t)",
-			infraId, successfulVmCount, totalVmCount, failureStrategy, shouldRefine)
+			infraId, successfulNodeCount, totalNodeCount, failureStrategy, shouldRefine)
 	} else {
-		log.Info().Msgf("Infra '%s' has been successfully created with all %d VMs", infraId, totalVmCount)
+		log.Info().Msgf("Infra '%s' has been successfully created with all %d VMs", infraId, totalNodeCount)
 	}
 
 	// Record provisioning events to history if there were any failures or if specs have previous failure history
@@ -1334,7 +1334,7 @@ func CheckInfraDynamicReq(ctx context.Context, req *model.InfraConnectionConfigC
 	for _, k := range req.SpecIds {
 		errMessage := ""
 
-		vmReqInfo := model.CheckNodeGroupDynamicReqInfo{}
+		nodeReqInfo := model.CheckNodeGroupDynamicReqInfo{}
 
 		specInfo, err := resource.GetSpec(model.SystemCommonNs, k)
 		if err != nil {
@@ -1349,19 +1349,19 @@ func CheckInfraDynamicReq(ctx context.Context, req *model.InfraConnectionConfigC
 
 		for _, connectionConfig := range connectionConfigList.Connectionconfig {
 			if connectionConfig.ProviderName == specInfo.ProviderName && strings.Contains(connectionConfig.RegionDetail.RegionName, specInfo.RegionName) {
-				vmReqInfo.ConnectionConfigCandidates = append(vmReqInfo.ConnectionConfigCandidates, connectionConfig.ConfigName)
+				nodeReqInfo.ConnectionConfigCandidates = append(nodeReqInfo.ConnectionConfigCandidates, connectionConfig.ConfigName)
 			}
 		}
 
-		vmReqInfo.Spec = specInfo
+		nodeReqInfo.Spec = specInfo
 		availableImageList, err := resource.GetImagesByRegion(model.SystemCommonNs, specInfo.ProviderName, specInfo.RegionName)
 		if err != nil {
 			errMessage += "//Failed to search images for Spec (" + k + ")"
 		}
-		vmReqInfo.Image = availableImageList
-		vmReqInfo.Region = regionInfo
-		vmReqInfo.SystemMessage = errMessage
-		infraReqInfo.ReqCheck = append(infraReqInfo.ReqCheck, vmReqInfo)
+		nodeReqInfo.Image = availableImageList
+		nodeReqInfo.Region = regionInfo
+		nodeReqInfo.SystemMessage = errMessage
+		infraReqInfo.ReqCheck = append(infraReqInfo.ReqCheck, nodeReqInfo)
 	}
 
 	return &infraReqInfo, err
@@ -1506,7 +1506,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		return emptyInfra, errors.New(errorMsg)
 	}
 
-	// Check if vmRequest has elements
+	// Check if nodeRequest has elements
 	if len(nodeGroupReqs) > 0 {
 		// allCreatedResources tracks ALL resources created during the preparation phase,
 		// including those from failed NodeGroups. This enables cleanup under rollback policy.
@@ -1514,11 +1514,11 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		var wg sync.WaitGroup
 		var mutex sync.Mutex
 
-		type vmResult struct {
-			result *VmReqWithCreatedResources
+		type nodeResult struct {
+			result *NodeReqWithCreatedResources
 			err    error
 		}
-		resultChan := make(chan vmResult, len(nodeGroupReqs))
+		resultChan := make(chan nodeResult, len(nodeGroupReqs))
 
 		// Group nodeGroupReqs by connectionName for sequential processing
 		connectionGroups := make(map[string][]model.CreateNodeGroupDynamicReq)
@@ -1530,7 +1530,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to get spec info for grouping: %s", nodeGroupReq.SpecId)
 				// Add error to result channel instead of continuing
-				resultChan <- vmResult{
+				resultChan <- nodeResult{
 					result: nil,
 					err:    fmt.Errorf("failed to get spec info for NodeGroup '%s': %w", nodeGroupReq.Name, err),
 				}
@@ -1588,7 +1588,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 					}
 
 					result, err := getNodeGroupReqFromDynamicReq(ctx, nsId, &nodeGroupDynamicReq)
-					resultChan <- vmResult{result: result, err: err}
+					resultChan <- nodeResult{result: result, err: err}
 				}
 
 				log.Info().Msgf("Completed processing NodeGroups for connection '%s'", connName)
@@ -1605,38 +1605,38 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		var errorDetails []string
 		var successfulNodeGroups []string
 
-		for vmRes := range resultChan {
-			if vmRes.err != nil {
-				log.Error().Err(vmRes.err).Msg("Failed to prepare resources for dynamic Infra creation")
+		for nodeRes := range resultChan {
+			if nodeRes.err != nil {
+				log.Error().Err(nodeRes.err).Msg("Failed to prepare resources for dynamic Infra creation")
 				hasError = true
 
 				// Extract NodeGroup details from error context
 				nodeGroupName := "unknown"
-				if vmRes.result != nil && vmRes.result.VmReq != nil {
-					nodeGroupName = vmRes.result.VmReq.Name
+				if nodeRes.result != nil && nodeRes.result.VmReq != nil {
+					nodeGroupName = nodeRes.result.VmReq.Name
 				}
 				failedNodeGroups = append(failedNodeGroups, nodeGroupName)
-				errorDetails = append(errorDetails, fmt.Sprintf("NodeGroup '%s': %s", nodeGroupName, vmRes.err.Error()))
+				errorDetails = append(errorDetails, fmt.Sprintf("NodeGroup '%s': %s", nodeGroupName, nodeRes.err.Error()))
 
 				// Add to error history
 				addErrorToHistory("NodeGroup Resource Preparation",
-					fmt.Sprintf("Failed to prepare resources for NodeGroup '%s': %s", nodeGroupName, vmRes.err.Error()))
+					fmt.Sprintf("Failed to prepare resources for NodeGroup '%s': %s", nodeGroupName, nodeRes.err.Error()))
 
 				// Track resources that were partially created before the failure so they can
 				// be cleaned up if rollback policy is in effect.
 				mutex.Lock()
-				if vmRes.result != nil && len(vmRes.result.CreatedResources) > 0 {
+				if nodeRes.result != nil && len(nodeRes.result.CreatedResources) > 0 {
 					log.Info().Msgf("NodeGroup '%s' failed after creating %d resource(s); tracking for potential rollback",
-						nodeGroupName, len(vmRes.result.CreatedResources))
-					allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
+						nodeGroupName, len(nodeRes.result.CreatedResources))
+					allCreatedResources = append(allCreatedResources, nodeRes.result.CreatedResources...)
 				}
 				mutex.Unlock()
 			} else {
 				// Safely append to the shared infraReq.NodeGroups slice
 				mutex.Lock()
-				infraReq.NodeGroups = append(infraReq.NodeGroups, *vmRes.result.VmReq)
-				allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
-				successfulNodeGroups = append(successfulNodeGroups, vmRes.result.VmReq.Name)
+				infraReq.NodeGroups = append(infraReq.NodeGroups, *nodeRes.result.VmReq)
+				allCreatedResources = append(allCreatedResources, nodeRes.result.CreatedResources...)
+				successfulNodeGroups = append(successfulNodeGroups, nodeRes.result.VmReq.Name)
 				mutex.Unlock()
 			}
 		}
@@ -1832,8 +1832,8 @@ func ValidateInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraD
 func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq model.CreateNodeGroupDynamicReq, deployOption string) (model.ReviewNodeGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
 
 	credentialHolder := common.CredentialHolderFromContext(ctx)
-	vmReview := model.ReviewNodeGroupDynamicReqInfo{
-		VmName:        nodeGroupDynamicReq.Name,
+	nodeReview := model.ReviewNodeGroupDynamicReqInfo{
+		NodeName:        nodeGroupDynamicReq.Name,
 		NodeGroupSize: nodeGroupDynamicReq.NodeGroupSize,
 		CanCreate:     true,
 		Status:        "Ready",
@@ -1843,42 +1843,42 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 	}
 
 	viable := true
-	hasVmWarning := false
+	hasNodeWarning := false
 	var specInfoPtr *model.SpecInfo
-	vmCost := 0.0
+	nodeCost := 0.0
 
 	// Validate VM name
 	if nodeGroupDynamicReq.Name == "" {
-		vmReview.Warnings = append(vmReview.Warnings, "VM NodeGroup name not specified, will be auto-generated")
-		hasVmWarning = true
+		nodeReview.Warnings = append(nodeReview.Warnings, "VM NodeGroup name not specified, will be auto-generated")
+		hasNodeWarning = true
 	}
 
 	// Validate NodeGroupSize
 	if nodeGroupDynamicReq.NodeGroupSize <= 0 {
 		nodeGroupDynamicReq.NodeGroupSize = 1
-		vmReview.Warnings = append(vmReview.Warnings, "NodeGroupSize not specified, defaulting to 1")
-		hasVmWarning = true
+		nodeReview.Warnings = append(nodeReview.Warnings, "NodeGroupSize not specified, defaulting to 1")
+		hasNodeWarning = true
 	}
 
 	// Validate SpecId
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, nodeGroupDynamicReq.SpecId)
 	if err != nil {
-		vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", nodeGroupDynamicReq.SpecId, err))
-		vmReview.SpecValidation = model.ReviewResourceValidation{
+		nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", nodeGroupDynamicReq.SpecId, err))
+		nodeReview.SpecValidation = model.ReviewResourceValidation{
 			ResourceId:  nodeGroupDynamicReq.SpecId,
 			IsAvailable: false,
 			Status:      "Unavailable",
 			Message:     err.Error(),
 		}
-		vmReview.CanCreate = false
+		nodeReview.CanCreate = false
 		viable = false
 	} else {
 		specInfoPtr = &specInfo
 		// Resolve connection name based on credential holder
 		resolvedConnectionName := common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
-		vmReview.ConnectionName = resolvedConnectionName
-		vmReview.ProviderName = specInfo.ProviderName
-		vmReview.RegionName = specInfo.RegionName
+		nodeReview.ConnectionName = resolvedConnectionName
+		nodeReview.ProviderName = specInfo.ProviderName
+		nodeReview.RegionName = specInfo.RegionName
 
 		// Check if spec is available in CSP
 		specAvailable := false
@@ -1921,8 +1921,8 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 			if specCheckErr != nil {
 				errMsg = specCheckErr.Error()
 			}
-			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %s", nodeGroupDynamicReq.SpecId, errMsg))
-			vmReview.SpecValidation = model.ReviewResourceValidation{
+			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %s", nodeGroupDynamicReq.SpecId, errMsg))
+			nodeReview.SpecValidation = model.ReviewResourceValidation{
 				ResourceId:    nodeGroupDynamicReq.SpecId,
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   false,
@@ -1930,10 +1930,10 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 				Message:       errMsg,
 				CspResourceId: specInfo.CspSpecName,
 			}
-			vmReview.CanCreate = false
+			nodeReview.CanCreate = false
 			viable = false
 		} else {
-			vmReview.SpecValidation = model.ReviewResourceValidation{
+			nodeReview.SpecValidation = model.ReviewResourceValidation{
 				ResourceId:    nodeGroupDynamicReq.SpecId,
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
@@ -1947,10 +1947,10 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 				if nodeGroupSizeInt < 1 {
 					nodeGroupSizeInt = 1
 				}
-				vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", float64(specInfo.CostPerHour)*float64(nodeGroupSizeInt))
-				vmCost = float64(specInfo.CostPerHour) * float64(nodeGroupSizeInt)
+				nodeReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", float64(specInfo.CostPerHour)*float64(nodeGroupSizeInt))
+				nodeCost = float64(specInfo.CostPerHour) * float64(nodeGroupSizeInt)
 			} else {
-				vmReview.EstimatedCost = "Cost estimation unavailable"
+				nodeReview.EstimatedCost = "Cost estimation unavailable"
 			}
 		}
 	}
@@ -1960,23 +1960,23 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		resolvedConnName := common.ResolveConnectionName(specInfoPtr.ConnectionName, credentialHolder)
 		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, resolvedConnName, nodeGroupDynamicReq.ImageId)
 		if err != nil {
-			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available: %v", nodeGroupDynamicReq.ImageId, err))
-			vmReview.ImageValidation = model.ReviewResourceValidation{
+			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf("Image '%s' not available: %v", nodeGroupDynamicReq.ImageId, err))
+			nodeReview.ImageValidation = model.ReviewResourceValidation{
 				ResourceId:    nodeGroupDynamicReq.ImageId,
 				IsAvailable:   false,
 				Status:        "Unavailable",
 				Message:       err.Error(),
 				CspResourceId: nodeGroupDynamicReq.ImageId,
 			}
-			vmReview.CanCreate = false
+			nodeReview.CanCreate = false
 			viable = false
 		} else {
 			status := "Available"
 			if isAutoRegistered {
 				status = "Available (Auto-registered)"
-				vmReview.Info = append(vmReview.Info, fmt.Sprintf("Image '%s' was auto-registered from CSP", nodeGroupDynamicReq.ImageId))
+				nodeReview.Info = append(nodeReview.Info, fmt.Sprintf("Image '%s' was auto-registered from CSP", nodeGroupDynamicReq.ImageId))
 			}
-			vmReview.ImageValidation = model.ReviewResourceValidation{
+			nodeReview.ImageValidation = model.ReviewResourceValidation{
 				ResourceId:    nodeGroupDynamicReq.ImageId,
 				ResourceName:  imageInfo.Name,
 				IsAvailable:   true,
@@ -1990,19 +1990,19 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 	if nodeGroupDynamicReq.ConnectionName != "" {
 		_, err := common.GetConnConfig(nodeGroupDynamicReq.ConnectionName)
 		if err != nil {
-			vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", nodeGroupDynamicReq.ConnectionName))
-			hasVmWarning = true
+			nodeReview.Warnings = append(nodeReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", nodeGroupDynamicReq.ConnectionName))
+			hasNodeWarning = true
 		} else {
-			vmReview.ConnectionName = nodeGroupDynamicReq.ConnectionName
+			nodeReview.ConnectionName = nodeGroupDynamicReq.ConnectionName
 		}
 	}
 
 	// Validate RootDisk settings
 	if nodeGroupDynamicReq.RootDiskType != "" && nodeGroupDynamicReq.RootDiskType != "default" {
-		vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", nodeGroupDynamicReq.RootDiskType))
+		nodeReview.Info = append(nodeReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", nodeGroupDynamicReq.RootDiskType))
 	}
 	if nodeGroupDynamicReq.RootDiskSize > 0 {
-		vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %d GB, be sure it meets minimum requirements", nodeGroupDynamicReq.RootDiskSize))
+		nodeReview.Info = append(nodeReview.Info, fmt.Sprintf("Root disk size configured: %d GB, be sure it meets minimum requirements", nodeGroupDynamicReq.RootDiskSize))
 	}
 
 	// Check provisioning history and risk analysis
@@ -2010,7 +2010,7 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		riskAnalysis, err := AnalyzeProvisioningRiskDetailed(nodeGroupDynamicReq.SpecId, nodeGroupDynamicReq.ImageId)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to analyze provisioning risk for VM: %s", nodeGroupDynamicReq.Name)
-			vmReview.Warnings = append(vmReview.Warnings, "Failed to analyze provisioning history")
+			nodeReview.Warnings = append(nodeReview.Warnings, "Failed to analyze provisioning history")
 		} else {
 			riskLevel := riskAnalysis.OverallRisk.Level
 			riskMessage := riskAnalysis.OverallRisk.Message
@@ -2026,17 +2026,17 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 
 			switch riskLevel {
 			case "high":
-				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", fullRiskMessage))
-				vmReview.CanCreate = false
+				nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", fullRiskMessage))
+				nodeReview.CanCreate = false
 				viable = false
 				log.Debug().Msgf("High risk detected for spec %s with image %s: %s", nodeGroupDynamicReq.SpecId, nodeGroupDynamicReq.ImageId, riskMessage)
 			case "medium":
-				vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", fullRiskMessage))
-				hasVmWarning = true
+				nodeReview.Warnings = append(nodeReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", fullRiskMessage))
+				hasNodeWarning = true
 				log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", nodeGroupDynamicReq.SpecId, nodeGroupDynamicReq.ImageId, riskMessage)
 			case "low":
 				if riskMessage != "No previous provisioning history available" && riskMessage != "No provisioning attempts recorded" {
-					vmReview.Info = append(vmReview.Info, fmt.Sprintf("Provisioning history: %s", riskMessage))
+					nodeReview.Info = append(nodeReview.Info, fmt.Sprintf("Provisioning history: %s", riskMessage))
 				}
 				log.Debug().Msgf("Low risk for spec %s with image %s: %s", nodeGroupDynamicReq.SpecId, nodeGroupDynamicReq.ImageId, riskMessage)
 			default:
@@ -2053,8 +2053,8 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		if csp.ResolveCloudPlatform(providerName) == csp.KT {
 			if !strings.Contains(nodeGroupDynamicReq.SpecId, ".itl") {
 				// Only show warning when spec does not contain '.itl'
-				vmReview.Warnings = append(vmReview.Warnings, "KT Cloud provisioning is currently limited to '.itl' specs only (temporary limitation). This spec may fail to provision.")
-				hasVmWarning = true
+				nodeReview.Warnings = append(nodeReview.Warnings, "KT Cloud provisioning is currently limited to '.itl' specs only (temporary limitation). This spec may fail to provision.")
+				hasNodeWarning = true
 				log.Debug().Msgf("KT Cloud warning for VM: %s (spec: %s does not contain '.itl')", nodeGroupDynamicReq.Name, nodeGroupDynamicReq.SpecId)
 			} else {
 				// '.itl' spec is valid, no warning needed
@@ -2065,32 +2065,32 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		// // Check NHN Cloud limitations
 		// if providerName == csp.NHN {
 		// 	if deployOption != "hold" {
-		// 		vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
-		// 		vmReview.CanCreate = false
+		// 		nodeReview.Errors = append(nodeReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
+		// 		nodeReview.CanCreate = false
 		// 		viable = false
 		// 		log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", nodeGroupDynamicReq.Name)
 		// 	} else {
-		// 		vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
-		// 		hasVmWarning = true
+		// 		nodeReview.Warnings = append(nodeReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
+		// 		hasNodeWarning = true
 		// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", nodeGroupDynamicReq.Name)
 		// 	}
 		// }
 	}
 
 	// Set VM review status
-	if len(vmReview.Errors) > 0 {
-		vmReview.Status = "Error"
-		vmReview.Message = fmt.Sprintf("VM has %d error(s) that prevent creation", len(vmReview.Errors))
-	} else if len(vmReview.Warnings) > 0 {
-		vmReview.Status = "Warning"
-		vmReview.Message = fmt.Sprintf("VM can be created but has %d warning(s)", len(vmReview.Warnings))
+	if len(nodeReview.Errors) > 0 {
+		nodeReview.Status = "Error"
+		nodeReview.Message = fmt.Sprintf("VM has %d error(s) that prevent creation", len(nodeReview.Errors))
+	} else if len(nodeReview.Warnings) > 0 {
+		nodeReview.Status = "Warning"
+		nodeReview.Message = fmt.Sprintf("VM can be created but has %d warning(s)", len(nodeReview.Warnings))
 	} else {
-		vmReview.Status = "Ready"
-		vmReview.Message = "VM can be created successfully"
+		nodeReview.Status = "Ready"
+		nodeReview.Message = "VM can be created successfully"
 	}
 
-	log.Debug().Msgf("VM '%s' review completed: %s", nodeGroupDynamicReq.Name, vmReview.Status)
-	return vmReview, specInfoPtr, viable, hasVmWarning, vmCost
+	log.Debug().Msgf("VM '%s' review completed: %s", nodeGroupDynamicReq.Name, nodeReview.Status)
+	return nodeReview, specInfoPtr, viable, hasNodeWarning, nodeCost
 }
 
 // ReviewSpecImagePair reviews spec and image pair compatibility for provisioning
@@ -2302,10 +2302,10 @@ func ReviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, req *mode
 	}
 
 	// Use the common VM review function with empty deployOption
-	vmReview, _, _, _, _ := reviewSingleNodeGroupDynamicReq(ctx, *req, "")
+	nodeReview, _, _, _, _ := reviewSingleNodeGroupDynamicReq(ctx, *req, "")
 
-	log.Debug().Msgf("Single VM review completed: %s - %s", vmReview.Status, vmReview.Message)
-	return &vmReview, nil
+	log.Debug().Msgf("Single VM review completed: %s - %s", nodeReview.Status, nodeReview.Message)
+	return &nodeReview, nil
 }
 
 // ReviewInfraDynamicReq is func to review and validate Infra dynamic request comprehensively
@@ -2315,8 +2315,8 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 	reviewResult := &model.ReviewInfraDynamicReqInfo{
 		InfraName:    req.Name,
-		TotalVmCount: len(req.NodeGroups),
-		VmReviews:    make([]model.ReviewNodeGroupDynamicReqInfo, 0),
+		TotalNodeCount: len(req.NodeGroups),
+		NodeReviews:    make([]model.ReviewNodeGroupDynamicReqInfo, 0),
 		ResourceSummary: model.ReviewResourceSummary{
 			UniqueSpecs:     make([]string, 0),
 			UniqueImages:    make([]string, 0),
@@ -2365,9 +2365,9 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 	semaphore := make(chan struct{}, maxConcurrency)
 
 	// Channel to collect VM review results
-	vmReviewChan := make(chan struct {
+	nodeReviewChan := make(chan struct {
 		index    int
-		vmReview model.ReviewNodeGroupDynamicReqInfo
+		nodeReview model.ReviewNodeGroupDynamicReqInfo
 		specInfo *model.SpecInfo
 		viable   bool
 		warning  bool
@@ -2388,46 +2388,46 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 			defer func() { <-semaphore }()
 
 			// Use the common VM review function
-			vmReview, specInfoPtr, viable, hasVmWarning, vmCost := reviewSingleNodeGroupDynamicReq(ctx, nodeGroupDynamicReq, deployOption)
+			nodeReview, specInfoPtr, viable, hasNodeWarning, nodeCost := reviewSingleNodeGroupDynamicReq(ctx, nodeGroupDynamicReq, deployOption)
 
 			// Send result to channel
-			vmReviewChan <- struct {
+			nodeReviewChan <- struct {
 				index    int
-				vmReview model.ReviewNodeGroupDynamicReqInfo
+				nodeReview model.ReviewNodeGroupDynamicReqInfo
 				specInfo *model.SpecInfo
 				viable   bool
 				warning  bool
 				cost     float64
 			}{
 				index:    index,
-				vmReview: vmReview,
+				nodeReview: nodeReview,
 				specInfo: specInfoPtr,
 				viable:   viable,
-				warning:  hasVmWarning,
-				cost:     vmCost,
+				warning:  hasNodeWarning,
+				cost:     nodeCost,
 			}
 
-			log.Debug().Msgf("[%d] VM '%s' review completed: %s", index, nodeGroupDynamicReq.Name, vmReview.Status)
+			log.Debug().Msgf("[%d] VM '%s' review completed: %s", index, nodeGroupDynamicReq.Name, nodeReview.Status)
 		}(i, nodeGroupReq)
 	}
 
 	// Close channel when all goroutines are done
 	go func() {
 		wg.Wait()
-		close(vmReviewChan)
+		close(nodeReviewChan)
 	}()
 
 	// Collect results and maintain order
-	vmReviews := make([]model.ReviewNodeGroupDynamicReqInfo, len(req.NodeGroups))
+	nodeReviews := make([]model.ReviewNodeGroupDynamicReqInfo, len(req.NodeGroups))
 	allViable := true
 	hasWarnings := false
 	totalEstimatedCost := 0.0
-	vmWithUnknownCost := 0
+	nodeWithUnknownCost := 0
 
 	// Process results from channel
-	for result := range vmReviewChan {
+	for result := range nodeReviewChan {
 		// Store VM review result in correct order
-		vmReviews[result.index] = result.vmReview
+		nodeReviews[result.index] = result.nodeReview
 
 		// Update overall status flags
 		if !result.viable {
@@ -2440,8 +2440,8 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 		// Update cost calculation
 		if result.cost > 0 {
 			totalEstimatedCost += result.cost
-		} else if result.vmReview.EstimatedCost == "Cost estimation unavailable" {
-			vmWithUnknownCost++
+		} else if result.nodeReview.EstimatedCost == "Cost estimation unavailable" {
+			nodeWithUnknownCost++
 		}
 
 		// Update resource summary maps (thread-safe since we're processing sequentially here)
@@ -2458,7 +2458,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 	}
 
 	// Store VM reviews in result
-	reviewResult.VmReviews = vmReviews
+	reviewResult.NodeReviews = nodeReviews
 
 	// Build resource summary
 	for spec := range specMap {
@@ -2481,13 +2481,13 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 	reviewResult.ResourceSummary.TotalRegions = len(regionMap)
 
 	// Count available/unavailable resources
-	for _, vmReview := range reviewResult.VmReviews {
-		if vmReview.SpecValidation.IsAvailable {
+	for _, nodeReview := range reviewResult.NodeReviews {
+		if nodeReview.SpecValidation.IsAvailable {
 			reviewResult.ResourceSummary.AvailableSpecs++
 		} else {
 			reviewResult.ResourceSummary.UnavailableSpecs++
 		}
-		if vmReview.ImageValidation.IsAvailable {
+		if nodeReview.ImageValidation.IsAvailable {
 			reviewResult.ResourceSummary.AvailableImages++
 		} else {
 			reviewResult.ResourceSummary.UnavailableImages++
@@ -2496,13 +2496,13 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 	// Set overall status and cost estimation
 	if totalEstimatedCost > 0 {
-		if vmWithUnknownCost > 0 {
-			reviewResult.EstimatedCost = fmt.Sprintf("$%.4f/hour (partial - %d VMs have unknown costs)", totalEstimatedCost, vmWithUnknownCost)
+		if nodeWithUnknownCost > 0 {
+			reviewResult.EstimatedCost = fmt.Sprintf("$%.4f/hour (partial - %d VMs have unknown costs)", totalEstimatedCost, nodeWithUnknownCost)
 		} else {
 			reviewResult.EstimatedCost = fmt.Sprintf("$%.4f/hour", totalEstimatedCost)
 		}
-	} else if vmWithUnknownCost > 0 {
-		reviewResult.EstimatedCost = fmt.Sprintf("Cost estimation unavailable for all %d VMs", vmWithUnknownCost)
+	} else if nodeWithUnknownCost > 0 {
+		reviewResult.EstimatedCost = fmt.Sprintf("Cost estimation unavailable for all %d VMs", nodeWithUnknownCost)
 	}
 
 	reviewResult.CreationViable = allViable
@@ -2533,8 +2533,8 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 	if totalEstimatedCost > 10.0 {
 		reviewResult.Recommendations = append(reviewResult.Recommendations, "High estimated cost - consider using smaller instance types if appropriate")
 	}
-	if vmWithUnknownCost > 0 {
-		reviewResult.Recommendations = append(reviewResult.Recommendations, fmt.Sprintf("Cost estimation unavailable for %d VMs - actual costs may be higher than shown", vmWithUnknownCost))
+	if nodeWithUnknownCost > 0 {
+		reviewResult.Recommendations = append(reviewResult.Recommendations, fmt.Sprintf("Cost estimation unavailable for %d VMs - actual costs may be higher than shown", nodeWithUnknownCost))
 	}
 
 	// Add PolicyOnPartialFailure analysis and recommendations
@@ -2551,7 +2551,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 		policyDescription = "If some VMs fail during creation, Infra will be created with successfully provisioned VMs only. Failed VMs will remain in 'StatusFailed' state and can be fixed later using 'refine' action."
 		reviewResult.Recommendations = append(reviewResult.Recommendations,
 			"Failure Policy: 'continue' - Partial deployment allowed, failed VMs can be refined later")
-		if reviewResult.TotalVmCount > 1 {
+		if reviewResult.TotalNodeCount > 1 {
 			policyRecommendation = "With multiple VMs, consider 'rollback' policy for all-or-nothing deployment, or 'refine' policy for automatic cleanup"
 			reviewResult.Recommendations = append(reviewResult.Recommendations,
 				"With multiple VMs, partial failures are possible. Consider using 'rollback' policy if you need all-or-nothing deployment, or 'refine' policy for automatic cleanup of failed VMs.")
@@ -2560,7 +2560,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 		policyDescription = "If any VM fails during creation, the entire Infra will be deleted automatically. This ensures all-or-nothing deployment but may waste resources if only a few VMs fail."
 		reviewResult.Recommendations = append(reviewResult.Recommendations,
 			"Failure Policy: 'rollback' - All-or-nothing deployment, entire Infra deleted on any failure")
-		if reviewResult.TotalVmCount > 5 {
+		if reviewResult.TotalNodeCount > 5 {
 			policyRecommendation = "With many VMs, rollback policy increases risk of complete deployment failure. Consider 'continue' or 'refine' policy for better reliability"
 			reviewResult.Recommendations = append(reviewResult.Recommendations,
 				"WARNING: With many VMs, rollback policy increases risk of complete deployment failure. Consider 'continue' or 'refine' policy for better reliability.")
@@ -2573,7 +2573,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 		policyDescription = "If some VMs fail during creation, Infra will be created with successful VMs, and failed VMs will be automatically cleaned up using refine action. This provides the best balance between reliability and resource efficiency."
 		reviewResult.Recommendations = append(reviewResult.Recommendations,
 			"Failure Policy: 'refine' - Automatic cleanup of failed VMs, optimal balance of reliability and efficiency")
-		if reviewResult.TotalVmCount > 10 {
+		if reviewResult.TotalNodeCount > 10 {
 			policyRecommendation = "With many VMs, 'refine' policy provides optimal balance between reliability and resource efficiency"
 			reviewResult.Recommendations = append(reviewResult.Recommendations,
 				"RECOMMENDED: With many VMs, 'refine' policy provides optimal balance between reliability and resource efficiency.")
@@ -2714,13 +2714,13 @@ func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId strin
 		return emptyInfra, err
 	}
 
-	vmReqResult, err := getNodeGroupReqFromDynamicReq(ctx, nsId, req)
+	nodeReqResult, err := getNodeGroupReqFromDynamicReq(ctx, nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfra, err
 	}
 
-	return CreateInfraGroupVm(ctx, nsId, infraId, vmReqResult.VmReq, true)
+	return CreateInfraGroupNode(ctx, nsId, infraId, nodeReqResult.VmReq, true)
 }
 
 // checkCommonResAvailableForNodeGroupDynamicReq is func to check common resources availability for NodeGroupDynamicReq
@@ -2885,7 +2885,7 @@ func waitForVNetReady(ctx context.Context, nsId string, vNetId string) error {
 }
 
 // getNodeGroupReqFromDynamicReq is func to getNodeGroupReqFromDynamicReq with created resource tracking
-func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.CreateNodeGroupDynamicReq) (*VmReqWithCreatedResources, error) {
+func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.CreateNodeGroupDynamicReq) (*NodeReqWithCreatedResources, error) {
 
 	reqID := common.RequestIDFromContext(ctx)
 	credentialHolder := common.CredentialHolderFromContext(ctx)
@@ -2893,9 +2893,9 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 	onDemand := true
 	var createdResources []CreatedResource
 
-	vmRequest := req
+	nodeRequest := req
 	// Check whether VM names meet requirement.
-	k := vmRequest
+	k := nodeRequest
 
 	nodeGroupReq := &model.CreateNodeGroupReq{}
 
@@ -2903,10 +2903,10 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to find VM specification '%s': %w. Please verify the spec exists and is properly configured", req.SpecId, err)
 		log.Error().Err(err).Msgf("Spec lookup failed for VM '%s' with SpecId '%s'", req.Name, req.SpecId)
-		return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name}, CreatedResources: createdResources}, detailedErr
+		return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name}, CreatedResources: createdResources}, detailedErr
 	}
 
-	// remake vmReqest from given input and check resource availability
+	// remake nodeRequest from given input and check resource availability
 	// Resolve connection name based on credential holder
 	nodeGroupReq.ConnectionName = common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
 
@@ -2921,7 +2921,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 		detailedErr := fmt.Errorf("failed to get connection configuration '%s' for VM '%s' with spec '%s': %w. Please verify the connection exists and is properly configured",
 			nodeGroupReq.ConnectionName, req.Name, k.SpecId, err)
 		log.Error().Err(err).Msgf("Connection config lookup failed for VM '%s', ConnectionName '%s', Spec '%s'", req.Name, nodeGroupReq.ConnectionName, k.SpecId)
-		return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
+		return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
 	}
 
 	// Base shared resource name pattern: nsId + "-shared-" + connectionName [+ "-" + zone]
@@ -2960,7 +2960,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 			nodeGroupReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
 		log.Error().Err(err).Msgf("Image lookup failed for VM '%s', ImageId '%s', Provider '%s', Connection '%s'",
 			req.Name, nodeGroupReq.ImageId, connection.ProviderName, connection.ConfigName)
-		return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, ImageId: nodeGroupReq.ImageId}, CreatedResources: createdResources}, detailedErr
+		return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, ImageId: nodeGroupReq.ImageId}, CreatedResources: createdResources}, detailedErr
 	}
 	if isAutoRegistered {
 		log.Info().Msgf("Image '%s' was auto-registered from CSP for VM '%s'", nodeGroupReq.ImageId, req.Name)
@@ -2978,7 +2978,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 				nodeGroupReq.VNetId, req.Name, nodeGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("VNet lookup failed for VM '%s', VNetId '%s', Connection '%s' (onDemand disabled)",
 				req.Name, nodeGroupReq.VNetId, nodeGroupReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + vNetResourceName, Time: time.Now()})
 
@@ -3005,7 +3005,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 					req.Name, nsId, nodeGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("VNet creation failed for VM '%s', VNetId '%s', Namespace '%s', Connection '%s'",
 					req.Name, nodeGroupReq.VNetId, nsId, nodeGroupReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+				return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default vNet: " + nodeGroupReq.VNetId)
 				// Track the newly created VNet
@@ -3017,7 +3017,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 		if err != nil {
 			detailedErr := fmt.Errorf("VNet '%s' is not ready for use after creation: %w", nodeGroupReq.VNetId, err)
 			log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, nodeGroupReq.VNetId)
-			return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 	} else {
 		log.Info().Msg("Found and utilize default vNet: " + nodeGroupReq.VNetId)
@@ -3027,7 +3027,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 		if err != nil {
 			detailedErr := fmt.Errorf("failed to get VNet info for '%s': %w", nodeGroupReq.VNetId, err)
 			log.Error().Err(err).Msg(detailedErr.Error())
-			return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 
 		// Check if VNet is ready, if not wait for it
@@ -3037,7 +3037,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 			if err != nil {
 				detailedErr := fmt.Errorf("existing VNet '%s' is not ready for use: %w", nodeGroupReq.VNetId, err)
 				log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, nodeGroupReq.VNetId)
-				return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+				return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 			}
 		}
 	}
@@ -3096,7 +3096,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 				nodeGroupReq.SshKeyId, req.Name, nodeGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("SSHKey lookup failed for VM '%s', SshKeyId '%s', Connection '%s' (onDemand disabled)",
 				req.Name, nodeGroupReq.SshKeyId, nodeGroupReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SshKeyId: nodeGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
+			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SshKeyId: nodeGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
@@ -3118,7 +3118,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 					req.Name, nsId, nodeGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("SSHKey creation failed for VM '%s', SshKeyId '%s', Namespace '%s', Connection '%s'",
 					req.Name, nodeGroupReq.SshKeyId, nsId, nodeGroupReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SshKeyId: nodeGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
+				return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SshKeyId: nodeGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default SSHKey: " + nodeGroupReq.SshKeyId)
 				// Track the newly created SSHKey
@@ -3139,7 +3139,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 				securityGroup, req.Name, nodeGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("SecurityGroup lookup failed for VM '%s', SecurityGroup '%s', Connection '%s' (onDemand disabled)",
 				req.Name, securityGroup, nodeGroupReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
+			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + sgResourceName, Time: time.Now()})
 
@@ -3167,7 +3167,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 					req.Name, nsId, nodeGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("SecurityGroup creation failed for VM '%s', SecurityGroup '%s', Namespace '%s', Connection '%s'",
 					req.Name, securityGroup, nsId, nodeGroupReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
+				return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default securityGroup: " + securityGroup)
 				// Track the newly created SecurityGroup
@@ -3187,16 +3187,16 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 	nodeGroupReq.Description = k.Description
 	nodeGroupReq.RootDiskType = k.RootDiskType
 	nodeGroupReq.RootDiskSize = k.RootDiskSize
-	nodeGroupReq.VmUserPassword = k.VmUserPassword
+	nodeGroupReq.NodeUserPassword = k.NodeUserPassword
 
 	common.PrintJsonPretty(nodeGroupReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for VM:" + nodeGroupReq.Name, Info: nodeGroupReq, Time: time.Now()})
 
-	return &VmReqWithCreatedResources{VmReq: nodeGroupReq, CreatedResources: createdResources}, nil
+	return &NodeReqWithCreatedResources{VmReq: nodeGroupReq, CreatedResources: createdResources}, nil
 }
 
-// CreateVmObject is func to add VM to Infra
-func CreateVmObject(wg *sync.WaitGroup, nsId string, infraId string, vmInfoData *model.VmInfo) error {
+// CreateNodeObject is func to add VM to Infra
+func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoData *model.NodeInfo) error {
 	log.Debug().Msg("Start to add VM To Infra")
 	//goroutin
 	defer wg.Done()
@@ -3204,23 +3204,23 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, infraId string, vmInfoData 
 	key := common.GenInfraKey(nsId, infraId, "")
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
-		log.Fatal().Err(err).Msg("AddVmToInfra kvstore.GetKv() returned an error.")
+		log.Fatal().Err(err).Msg("AddNodeToInfra kvstore.GetKv() returned an error.")
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("AddVmToInfra Cannot find infraId. Key: %s", key)
+		return fmt.Errorf("AddNodeToInfra Cannot find infraId. Key: %s", key)
 	}
 
-	configTmp, err := common.GetConnConfig(vmInfoData.ConnectionName)
+	configTmp, err := common.GetConnConfig(nodeInfoData.ConnectionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	vmInfoData.Location = configTmp.RegionDetail.Location
+	nodeInfoData.Location = configTmp.RegionDetail.Location
 
 	// Make VM object
-	key = common.GenInfraKey(nsId, infraId, vmInfoData.Id)
-	val, _ := json.Marshal(vmInfoData)
+	key = common.GenInfraKey(nsId, infraId, nodeInfoData.Id)
+	val, _ := json.Marshal(nodeInfoData)
 	err = kvstore.Put(key, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -3230,39 +3230,39 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, infraId string, vmInfoData 
 	return nil
 }
 
-// VmCreateInfo represents VM creation information with grouping details
-type VmCreateInfo struct {
-	VmInfo       *model.VmInfo
+// NodeCreateInfo represents Node creation information with grouping details
+type NodeCreateInfo struct {
+	NodeInfo       *model.NodeInfo
 	ProviderName string
 	RegionName   string
 }
 
-// CreateVmsInParallel creates VMs with hierarchical rate limiting
+// CreateNodesInParallel creates VMs with hierarchical rate limiting
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
-// Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
-func CreateVmsInParallel(ctx context.Context, nsId, infraId string, vmInfoList []*model.VmInfo, option string) error {
-	if len(vmInfoList) == 0 {
+// Level 3: Within each region, VMs are processed with semaphore (maxConcurrentNodesPerRegion)
+func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoList []*model.NodeInfo, option string) error {
+	if len(nodeInfoList) == 0 {
 		return nil
 	}
 
 	// Step 1: Group VMs by CSP and region
-	vmGroups := make(map[string]map[string][]*model.VmInfo) // CSP -> Region -> VmInfos
-	vmGroupInfos := make(map[string]VmCreateInfo)           // VmId -> CreateInfo
+	nodeGroups := make(map[string]map[string][]*model.NodeInfo) // CSP -> Region -> NodeInfos
+	nodeGroupInfos := make(map[string]NodeCreateInfo)           // NodeId -> CreateInfo
 
-	for _, vmInfo := range vmInfoList {
-		providerName := vmInfo.ConnectionConfig.ProviderName
-		regionName := vmInfo.Region.Region
+	for _, nodeInfo := range nodeInfoList {
+		providerName := nodeInfo.ConnectionConfig.ProviderName
+		regionName := nodeInfo.Region.Region
 
 		// Initialize CSP map if not exists
-		if vmGroups[providerName] == nil {
-			vmGroups[providerName] = make(map[string][]*model.VmInfo)
+		if nodeGroups[providerName] == nil {
+			nodeGroups[providerName] = make(map[string][]*model.NodeInfo)
 		}
 
 		// Add VM to the appropriate group
-		vmGroups[providerName][regionName] = append(vmGroups[providerName][regionName], vmInfo)
-		vmGroupInfos[vmInfo.Id] = VmCreateInfo{
-			VmInfo:       vmInfo,
+		nodeGroups[providerName][regionName] = append(nodeGroups[providerName][regionName], nodeInfo)
+		nodeGroupInfos[nodeInfo.Id] = NodeCreateInfo{
+			NodeInfo:       nodeInfo,
 			ProviderName: providerName,
 			RegionName:   regionName,
 		}
@@ -3273,16 +3273,16 @@ func CreateVmsInParallel(ctx context.Context, nsId, infraId string, vmInfoList [
 	var mutex sync.Mutex
 	var allErrors []error
 
-	for csp, regions := range vmGroups {
+	for csp, regions := range nodeGroups {
 		wg.Add(1)
-		go func(providerName string, regionMap map[string][]*model.VmInfo) {
+		go func(providerName string, regionMap map[string][]*model.NodeInfo) {
 			defer wg.Done()
 
 			// Get rate limits for this specific CSP
-			maxRegionsForCSP, maxVMsForRegion := getVmCreateRateLimitsForCSP(providerName)
+			maxRegionsForCSP, maxNodesForRegion := getNodeCreateRateLimitsForCSP(providerName)
 
 			log.Debug().Msgf("Creating VMs for CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
-				providerName, len(regionMap), maxRegionsForCSP, maxVMsForRegion)
+				providerName, len(regionMap), maxRegionsForCSP, maxNodesForRegion)
 
 			// Step 3: Process regions within CSP with rate limiting
 			regionSemaphore := make(chan struct{}, maxRegionsForCSP)
@@ -3290,9 +3290,9 @@ func CreateVmsInParallel(ctx context.Context, nsId, infraId string, vmInfoList [
 			var regionMutex sync.Mutex
 			var cspErrors []error
 
-			for region, vmInfos := range regionMap {
+			for region, nodeInfos := range regionMap {
 				regionWg.Add(1)
-				go func(regionName string, vmInfoList []*model.VmInfo) {
+				go func(regionName string, nodeInfoList []*model.NodeInfo) {
 					defer regionWg.Done()
 
 					// Acquire region semaphore
@@ -3300,37 +3300,37 @@ func CreateVmsInParallel(ctx context.Context, nsId, infraId string, vmInfoList [
 					defer func() { <-regionSemaphore }()
 
 					log.Debug().Msgf("Creating VMs in region: %s/%s with %d VMs (limit: %d VMs/region)",
-						providerName, regionName, len(vmInfoList), maxVMsForRegion)
+						providerName, regionName, len(nodeInfoList), maxNodesForRegion)
 
 					// Step 4: Process VMs within region with rate limiting
-					vmSemaphore := make(chan struct{}, maxVMsForRegion)
-					var vmWg sync.WaitGroup
-					var vmMutex sync.Mutex
+					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
+					var nodeWg sync.WaitGroup
+					var nodeMutex sync.Mutex
 					var regionErrors []error
 
-					for _, vmInfo := range vmInfoList {
-						vmWg.Add(1)
-						go func(vmInfo *model.VmInfo) {
-							defer vmWg.Done()
+					for _, nodeInfo := range nodeInfoList {
+						nodeWg.Add(1)
+						go func(nodeInfo *model.NodeInfo) {
+							defer nodeWg.Done()
 
 							// Acquire VM semaphore
-							vmSemaphore <- struct{}{}
-							defer func() { <-vmSemaphore }()
+							nodeSemaphore <- struct{}{}
+							defer func() { <-nodeSemaphore }()
 
-							// Create VM using the existing CreateVm function
+							// Create VM using the existing CreateNode function
 							var createWg sync.WaitGroup
 							createWg.Add(1)
-							err := CreateVm(ctx, &createWg, nsId, infraId, vmInfo, option)
+							err := CreateNode(ctx, &createWg, nsId, infraId, nodeInfo, option)
 							if err != nil {
-								log.Error().Err(err).Msgf("Failed to create VM %s", vmInfo.Name)
-								vmMutex.Lock()
-								regionErrors = append(regionErrors, fmt.Errorf("VM %s: %w", vmInfo.Name, err))
-								vmMutex.Unlock()
+								log.Error().Err(err).Msgf("Failed to create VM %s", nodeInfo.Name)
+								nodeMutex.Lock()
+								regionErrors = append(regionErrors, fmt.Errorf("VM %s: %w", nodeInfo.Name, err))
+								nodeMutex.Unlock()
 							}
 
-						}(vmInfo)
+						}(nodeInfo)
 					}
-					vmWg.Wait()
+					nodeWg.Wait()
 
 					// Merge region errors to CSP errors
 					if len(regionErrors) > 0 {
@@ -3339,7 +3339,7 @@ func CreateVmsInParallel(ctx context.Context, nsId, infraId string, vmInfoList [
 						regionMutex.Unlock()
 					}
 
-				}(region, vmInfos)
+				}(region, nodeInfos)
 			}
 			regionWg.Wait()
 
@@ -3358,73 +3358,73 @@ func CreateVmsInParallel(ctx context.Context, nsId, infraId string, vmInfoList [
 	wg.Wait()
 
 	// Summary logging
-	cspCount := len(vmGroups)
+	cspCount := len(nodeGroups)
 	totalRegions := 0
-	for _, regions := range vmGroups {
+	for _, regions := range nodeGroups {
 		totalRegions += len(regions)
 	}
 
 	if len(allErrors) > 0 {
 		log.Warn().Msgf("Rate-limited VM creation completed with errors: %d CSPs, %d regions, %d VMs total, %d errors",
-			cspCount, totalRegions, len(vmInfoList), len(allErrors))
+			cspCount, totalRegions, len(nodeInfoList), len(allErrors))
 		// Don't return error for partial failures - let the caller handle individual VM status checks
 		// Return first error for compatibility only if ALL VMs failed
-		if len(allErrors) >= len(vmInfoList) {
+		if len(allErrors) >= len(nodeInfoList) {
 			return allErrors[0]
 		}
 		log.Info().Msgf("Partial VM creation success: %d out of %d VMs may have failed, but continuing",
-			len(allErrors), len(vmInfoList))
+			len(allErrors), len(nodeInfoList))
 	}
 
 	log.Debug().Msgf("Rate-limited VM creation completed successfully: %d CSPs, %d regions, %d VMs processed",
-		cspCount, totalRegions, len(vmInfoList))
+		cspCount, totalRegions, len(nodeInfoList))
 	return nil
 }
 
-// CreateVm is func to create VM (option = "register" for register existing VM)
-func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId string, vmInfoData *model.VmInfo, option string) error {
-	log.Info().Msgf("Start to create VM: %s", vmInfoData.Name)
+// CreateNode is func to create VM (option = "register" for register existing VM)
+func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId string, nodeInfoData *model.NodeInfo, option string) error {
+	log.Info().Msgf("Start to create VM: %s", nodeInfoData.Name)
 	//goroutin
 	defer wg.Done()
 
 	var err error = nil
 	switch {
-	case vmInfoData.Name == "":
-		err = fmt.Errorf("vmInfoData.Name is empty")
-	case vmInfoData.ImageId == "":
-		err = fmt.Errorf("vmInfoData.ImageId is empty")
-	case vmInfoData.ConnectionName == "":
-		err = fmt.Errorf("vmInfoData.ConnectionName is empty")
-	case vmInfoData.SshKeyId == "":
-		err = fmt.Errorf("vmInfoData.SshKeyId is empty")
-	case vmInfoData.SpecId == "":
-		err = fmt.Errorf("vmInfoData.SpecId is empty")
-	case vmInfoData.SecurityGroupIds == nil:
-		err = fmt.Errorf("vmInfoData.SecurityGroupIds is empty")
-	case vmInfoData.VNetId == "":
-		err = fmt.Errorf("vmInfoData.VNetId is empty")
-	case vmInfoData.SubnetId == "":
-		err = fmt.Errorf("vmInfoData.SubnetId is empty")
+	case nodeInfoData.Name == "":
+		err = fmt.Errorf("nodeInfoData.Name is empty")
+	case nodeInfoData.ImageId == "":
+		err = fmt.Errorf("nodeInfoData.ImageId is empty")
+	case nodeInfoData.ConnectionName == "":
+		err = fmt.Errorf("nodeInfoData.ConnectionName is empty")
+	case nodeInfoData.SshKeyId == "":
+		err = fmt.Errorf("nodeInfoData.SshKeyId is empty")
+	case nodeInfoData.SpecId == "":
+		err = fmt.Errorf("nodeInfoData.SpecId is empty")
+	case nodeInfoData.SecurityGroupIds == nil:
+		err = fmt.Errorf("nodeInfoData.SecurityGroupIds is empty")
+	case nodeInfoData.VNetId == "":
+		err = fmt.Errorf("nodeInfoData.VNetId is empty")
+	case nodeInfoData.SubnetId == "":
+		err = fmt.Errorf("nodeInfoData.SubnetId is empty")
 	default:
 	}
 	if err != nil {
-		vmInfoData.Status = model.StatusFailed
-		vmInfoData.SystemMessage = err.Error()
-		UpdateVmInfo(nsId, infraId, *vmInfoData)
+		nodeInfoData.Status = model.StatusFailed
+		nodeInfoData.SystemMessage = err.Error()
+		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	vmKey := common.GenInfraKey(nsId, infraId, vmInfoData.Id)
+	nodeKey := common.GenInfraKey(nsId, infraId, nodeInfoData.Id)
 
 	// in case of registering existing CSP VM
 	if option == "register" {
 		// CspResourceId is required
-		if vmInfoData.CspResourceId == "" {
-			err := fmt.Errorf("vmInfoData.CspResourceId is empty (required for register VM)")
-			vmInfoData.Status = model.StatusFailed
-			vmInfoData.SystemMessage = err.Error()
-			UpdateVmInfo(nsId, infraId, *vmInfoData)
+		if nodeInfoData.CspResourceId == "" {
+			err := fmt.Errorf("nodeInfoData.CspResourceId is empty (required for register VM)")
+			nodeInfoData.Status = model.StatusFailed
+			nodeInfoData.SystemMessage = err.Error()
+			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -3434,35 +3434,35 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 
 	// Fill VM creation reqest (request to cb-spider)
 	requestBody := model.SpiderVMReqInfoWrapper{}
-	requestBody.ConnectionName = vmInfoData.ConnectionName
+	requestBody.ConnectionName = nodeInfoData.ConnectionName
 
 	//generate VM ID(Name) to request to CSP(Spider)
-	requestBody.ReqInfo.Name = vmInfoData.Uid
+	requestBody.ReqInfo.Name = nodeInfoData.Uid
 
 	customImageFlag := false
 
-	requestBody.ReqInfo.VMUserId = vmInfoData.VmUserName
-	requestBody.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
+	requestBody.ReqInfo.VMUserId = nodeInfoData.NodeUserName
+	requestBody.ReqInfo.VMUserPasswd = nodeInfoData.NodeUserPassword
 	// provide a random passwd, if it is not provided by user (the passwd required for Windows)
 	if requestBody.ReqInfo.VMUserPasswd == "" {
 		// assign random string (mixed Uid style)
 		requestBody.ReqInfo.VMUserPasswd = common.GenRandomPassword(14)
 	}
 
-	requestBody.ReqInfo.RootDiskType = vmInfoData.RootDiskType
+	requestBody.ReqInfo.RootDiskType = nodeInfoData.RootDiskType
 	// Convert int to string for Spider API
-	if vmInfoData.RootDiskSize > 0 {
-		requestBody.ReqInfo.RootDiskSize = strconv.Itoa(vmInfoData.RootDiskSize)
+	if nodeInfoData.RootDiskSize > 0 {
+		requestBody.ReqInfo.RootDiskSize = strconv.Itoa(nodeInfoData.RootDiskSize)
 	} else {
 		requestBody.ReqInfo.RootDiskSize = ""
 	}
 
 	if option == "register" {
-		requestBody.ReqInfo.CSPid = vmInfoData.CspResourceId
+		requestBody.ReqInfo.CSPid = nodeInfoData.CspResourceId
 
 	} else {
 		// Try lookup customImage
-		imageInfo, err := resource.GetImage(nsId, vmInfoData.ImageId)
+		imageInfo, err := resource.GetImage(nsId, nodeInfoData.ImageId)
 		if err != nil {
 			log.Debug().Msgf("GetImage returned an error: %s", err.Error())
 			return err
@@ -3481,59 +3481,59 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 			requestBody.ReqInfo.ImageName = imageInfo.CspImageName
 		}
 
-		requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceName(nsId, model.StrSpec, vmInfoData.SpecId)
+		requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceName(nsId, model.StrSpec, nodeInfoData.SpecId)
 		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
-			log.Warn().Msgf("Not found the Spec: %s in nsId: %s, find it from SystemCommonNs", vmInfoData.SpecId, nsId)
+			log.Warn().Msgf("Not found the Spec: %s in nsId: %s, find it from SystemCommonNs", nodeInfoData.SpecId, nsId)
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
-			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceName(model.SystemCommonNs, model.StrSpec, vmInfoData.SpecId)
+			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceName(model.SystemCommonNs, model.StrSpec, nodeInfoData.SpecId)
 			log.Info().Msgf("Use the common VMSpecName: %s", requestBody.ReqInfo.VMSpecName)
 
 			if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 				errAgg += err.Error()
 				err = fmt.Errorf(errAgg)
 
-				vmInfoData.Status = model.StatusFailed
-				vmInfoData.SystemMessage = err.Error()
-				UpdateVmInfo(nsId, infraId, *vmInfoData)
+				nodeInfoData.Status = model.StatusFailed
+				nodeInfoData.SystemMessage = err.Error()
+				UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 				log.Error().Err(err).Msg("")
 
 				return err
 			}
 		}
 
-		requestBody.ReqInfo.VPCName, err = resource.GetCspResourceName(nsId, model.StrVNet, vmInfoData.VNetId)
+		requestBody.ReqInfo.VPCName, err = resource.GetCspResourceName(nsId, model.StrVNet, nodeInfoData.VNetId)
 		if requestBody.ReqInfo.VPCName == "" {
 			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		// retrieve csp subnet id
-		subnetInfo, err := resource.GetSubnet(nsId, vmInfoData.VNetId, vmInfoData.SubnetId)
+		subnetInfo, err := resource.GetSubnet(nsId, nodeInfoData.VNetId, nodeInfoData.SubnetId)
 		if err != nil {
-			log.Error().Err(err).Msg("Cannot find the Subnet ID: " + vmInfoData.SubnetId)
-			vmInfoData.Status = model.StatusFailed
-			vmInfoData.SystemMessage = err.Error()
-			UpdateVmInfo(nsId, infraId, *vmInfoData)
+			log.Error().Err(err).Msg("Cannot find the Subnet ID: " + nodeInfoData.SubnetId)
+			nodeInfoData.Status = model.StatusFailed
+			nodeInfoData.SystemMessage = err.Error()
+			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 			return err
 		}
 
 		requestBody.ReqInfo.SubnetName = subnetInfo.CspResourceName
 		if requestBody.ReqInfo.SubnetName == "" {
-			vmInfoData.Status = model.StatusFailed
-			vmInfoData.SystemMessage = err.Error()
-			UpdateVmInfo(nsId, infraId, *vmInfoData)
+			nodeInfoData.Status = model.StatusFailed
+			nodeInfoData.SystemMessage = err.Error()
+			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		var SecurityGroupIdsTmp []string
-		for _, v := range vmInfoData.SecurityGroupIds {
+		for _, v := range nodeInfoData.SecurityGroupIds {
 			CspResourceId, err := resource.GetCspResourceName(nsId, model.StrSecurityGroup, v)
 			if CspResourceId == "" {
-				vmInfoData.Status = model.StatusFailed
-				vmInfoData.SystemMessage = err.Error()
-				UpdateVmInfo(nsId, infraId, *vmInfoData)
+				nodeInfoData.Status = model.StatusFailed
+				nodeInfoData.SystemMessage = err.Error()
+				UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 				log.Error().Err(err).Msg("")
 				return err
 			}
@@ -3543,14 +3543,14 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 		requestBody.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
 		var DataDiskIdsTmp []string
-		for _, v := range vmInfoData.DataDiskIds {
+		for _, v := range nodeInfoData.DataDiskIds {
 			// ignore DataDiskIds == "", assume it is ignorable mistake
 			if v != "" {
 				CspResourceId, err := resource.GetCspResourceName(nsId, model.StrDataDisk, v)
 				if err != nil || CspResourceId == "" {
-					vmInfoData.Status = model.StatusFailed
-					vmInfoData.SystemMessage = err.Error()
-					UpdateVmInfo(nsId, infraId, *vmInfoData)
+					nodeInfoData.Status = model.StatusFailed
+					nodeInfoData.SystemMessage = err.Error()
+					UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 					log.Error().Err(err).Msg("")
 					return err
 				}
@@ -3559,11 +3559,11 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 		}
 		requestBody.ReqInfo.DataDiskNames = DataDiskIdsTmp
 
-		requestBody.ReqInfo.KeyPairName, err = resource.GetCspResourceName(nsId, model.StrSSHKey, vmInfoData.SshKeyId)
+		requestBody.ReqInfo.KeyPairName, err = resource.GetCspResourceName(nsId, model.StrSSHKey, nodeInfoData.SshKeyId)
 		if requestBody.ReqInfo.KeyPairName == "" {
-			vmInfoData.Status = model.StatusFailed
-			vmInfoData.SystemMessage = err.Error()
-			UpdateVmInfo(nsId, infraId, *vmInfoData)
+			nodeInfoData.Status = model.StatusFailed
+			nodeInfoData.SystemMessage = err.Error()
+			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -3595,43 +3595,43 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 
 	if err != nil {
 		err = fmt.Errorf("%v", err)
-		vmInfoData.Status = model.StatusFailed
-		vmInfoData.SystemMessage = err.Error()
-		UpdateVmInfo(nsId, infraId, *vmInfoData)
-		msg := fmt.Sprintf("Failed to create VM %s request body to Spider: %v", vmInfoData.Name, requestBody)
+		nodeInfoData.Status = model.StatusFailed
+		nodeInfoData.SystemMessage = err.Error()
+		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+		msg := fmt.Sprintf("Failed to create VM %s request body to Spider: %v", nodeInfoData.Name, requestBody)
 		log.Error().Err(err).Msg(msg)
 		return err
 	}
 
-	vmInfoData.AddtionalDetails = callResult.KeyValueList
-	vmInfoData.VmUserName = callResult.VMUserId
-	vmInfoData.VmUserPassword = callResult.VMUserPasswd
-	vmInfoData.CspResourceName = callResult.IId.NameId
-	vmInfoData.CspResourceId = callResult.IId.SystemId
-	vmInfoData.Region = callResult.Region
-	vmInfoData.PublicIP = callResult.PublicIP
+	nodeInfoData.AddtionalDetails = callResult.KeyValueList
+	nodeInfoData.NodeUserName = callResult.VMUserId
+	nodeInfoData.NodeUserPassword = callResult.VMUserPasswd
+	nodeInfoData.CspResourceName = callResult.IId.NameId
+	nodeInfoData.CspResourceId = callResult.IId.SystemId
+	nodeInfoData.Region = callResult.Region
+	nodeInfoData.PublicIP = callResult.PublicIP
 	// Convert port string from Spider to int
 	if portStr, err := TrimIP(callResult.SSHAccessPoint); err == nil {
 		if port, err := strconv.Atoi(portStr); err == nil {
-			vmInfoData.SSHPort = port
+			nodeInfoData.SSHPort = port
 		}
 	}
-	vmInfoData.PublicDNS = callResult.PublicDNS
-	vmInfoData.PrivateIP = callResult.PrivateIP
-	vmInfoData.PrivateDNS = callResult.PrivateDNS
-	vmInfoData.RootDiskType = callResult.RootDiskType
+	nodeInfoData.PublicDNS = callResult.PublicDNS
+	nodeInfoData.PrivateIP = callResult.PrivateIP
+	nodeInfoData.PrivateDNS = callResult.PrivateDNS
+	nodeInfoData.RootDiskType = callResult.RootDiskType
 	// Convert RootDiskSize string from Spider to int
 	if rootDiskSize, err := strconv.Atoi(callResult.RootDiskSize); err == nil {
-		vmInfoData.RootDiskSize = rootDiskSize
+		nodeInfoData.RootDiskSize = rootDiskSize
 	}
-	vmInfoData.RootDeviceName = callResult.RootDeviceName
-	vmInfoData.NetworkInterface = callResult.NetworkInterface
+	nodeInfoData.RootDeviceName = callResult.RootDeviceName
+	nodeInfoData.NetworkInterface = callResult.NetworkInterface
 
-	vmInfoData.CspSpecName = callResult.VMSpecName
-	vmInfoData.CspImageName = callResult.ImageIId.SystemId
-	vmInfoData.CspVNetId = callResult.VpcIID.SystemId
-	vmInfoData.CspSubnetId = callResult.SubnetIID.SystemId
-	vmInfoData.CspSshKeyId = callResult.KeyPairIId.SystemId
+	nodeInfoData.CspSpecName = callResult.VMSpecName
+	nodeInfoData.CspImageName = callResult.ImageIId.SystemId
+	nodeInfoData.CspVNetId = callResult.VpcIID.SystemId
+	nodeInfoData.CspSubnetId = callResult.SubnetIID.SystemId
+	nodeInfoData.CspSshKeyId = callResult.KeyPairIId.SystemId
 
 	if option == "register" {
 		// Reconstuct resource IDs
@@ -3644,7 +3644,7 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 				resourcesInNs := resourceListInNs.([]model.SpecInfo)
 				for _, res := range resourcesInNs {
 					if res.ConnectionName == requestBody.ConnectionName {
-						vmInfoData.SpecId = res.Id
+						nodeInfoData.SpecId = res.Id
 						break
 					}
 				}
@@ -3664,7 +3664,7 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 				errMsg := fmt.Sprintf("Dependency Missing: Cannot find or register Image (CSP ID: %s) in TB.", targetImageName)
 				log.Error().Msg(errMsg)
 			} else {
-				vmInfoData.ImageId = imageInfo.Id
+				nodeInfoData.ImageId = imageInfo.Id
 
 				// Determine if this is a custom image
 				if imageInfo.ResourceType == model.StrCustomImage {
@@ -3685,7 +3685,7 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 			resourcesInNs := resourceListInNs.([]model.VNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == requestBody.ConnectionName {
-					vmInfoData.VNetId = resource.Id
+					nodeInfoData.VNetId = resource.Id
 
 					// subnet
 					targetSubnet := callResult.SubnetIID.SystemId
@@ -3696,7 +3696,7 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 
 					for _, subnet := range resource.SubnetInfoList {
 						if subnet.CspResourceId == targetSubnet {
-							vmInfoData.SubnetId = subnet.Id
+							nodeInfoData.SubnetId = subnet.Id
 							break
 						}
 					}
@@ -3721,7 +3721,7 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 				}
 			}
 		}
-		vmInfoData.SecurityGroupIds = matchedSgIds
+		nodeInfoData.SecurityGroupIds = matchedSgIds
 
 		// access Key
 		sshKeyMatched := false
@@ -3733,7 +3733,7 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 				resourcesInNs := resourceListInNs.([]model.SshKeyInfo) // type assertion
 				for _, res := range resourcesInNs {
 					if res.ConnectionName == requestBody.ConnectionName {
-						vmInfoData.SshKeyId = res.Id
+						nodeInfoData.SshKeyId = res.Id
 						sshKeyMatched = true
 						break
 					}
@@ -3745,69 +3745,69 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 		// Create a placeholder SSH key so that VM registration can proceed.
 		// The user can later update this SSH key via the ComplementSshKey API.
 		if !sshKeyMatched {
-			providerName := strings.ToLower(vmInfoData.ConnectionConfig.ProviderName)
+			providerName := strings.ToLower(nodeInfoData.ConnectionConfig.ProviderName)
 			if csp.ResolveCloudPlatform(providerName) == csp.GCP {
-				log.Info().Msgf("GCP detected: creating placeholder SSH key for VM '%s' (GCP does not manage SSH keys as independent resources)", vmInfoData.Name)
-				placeholderSshKey, placeholderErr := resource.CreatePlaceholderSshKey(ctx, nsId, requestBody.ConnectionName, vmInfoData.Name, vmInfoData.Uid)
+				log.Info().Msgf("GCP detected: creating placeholder SSH key for VM '%s' (GCP does not manage SSH keys as independent resources)", nodeInfoData.Name)
+				placeholderSshKey, placeholderErr := resource.CreatePlaceholderSshKey(ctx, nsId, requestBody.ConnectionName, nodeInfoData.Name, nodeInfoData.Uid)
 				if placeholderErr != nil {
-					log.Error().Err(placeholderErr).Msgf("Failed to create placeholder SSH key for GCP VM '%s'", vmInfoData.Name)
+					log.Error().Err(placeholderErr).Msgf("Failed to create placeholder SSH key for GCP VM '%s'", nodeInfoData.Name)
 				} else {
-					vmInfoData.SshKeyId = placeholderSshKey.Id
-					log.Info().Msgf("Successfully created placeholder SSH key '%s' for GCP VM '%s'", placeholderSshKey.Id, vmInfoData.Name)
+					nodeInfoData.SshKeyId = placeholderSshKey.Id
+					log.Info().Msgf("Successfully created placeholder SSH key '%s' for GCP VM '%s'", placeholderSshKey.Id, nodeInfoData.Name)
 				}
 			} else {
-				log.Warn().Msgf("No matching SSH key found for VM '%s' (provider: %s, cspKeyPairId: %s)", vmInfoData.Name, providerName, callResult.KeyPairIId.SystemId)
+				log.Warn().Msgf("No matching SSH key found for VM '%s' (provider: %s, cspKeyPairId: %s)", nodeInfoData.Name, providerName, callResult.KeyPairIId.SystemId)
 			}
 		}
 
 	}
 
 	if customImageFlag == false {
-		resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfoData.ImageId, model.StrAdd, vmKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfoData.ImageId, model.StrAdd, nodeKey)
 	} else {
-		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfoData.ImageId, model.StrAdd, vmKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, nodeInfoData.ImageId, model.StrAdd, nodeKey)
 	}
 
-	//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, vmInfoData.SpecId, model.StrAdd, vmKey)
-	if vmInfoData.SshKeyId != "" {
-		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfoData.SshKeyId, model.StrAdd, vmKey)
+	//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, nodeInfoData.SpecId, model.StrAdd, nodeKey)
+	if nodeInfoData.SshKeyId != "" {
+		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfoData.SshKeyId, model.StrAdd, nodeKey)
 	}
-	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfoData.VNetId, model.StrAdd, vmKey)
+	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, nodeInfoData.VNetId, model.StrAdd, nodeKey)
 
-	for _, v := range vmInfoData.SecurityGroupIds {
-		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrAdd, vmKey)
+	for _, v := range nodeInfoData.SecurityGroupIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrAdd, nodeKey)
 	}
 
-	for _, v := range vmInfoData.DataDiskIds {
-		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrAdd, vmKey)
+	for _, v := range nodeInfoData.DataDiskIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrAdd, nodeKey)
 	}
 
 	// Register dataDisks which are created with the creation of VM
 	for _, v := range callResult.DataDiskIIDs {
 		tbDataDiskReq := model.DataDiskReq{
 			Name:           v.NameId,
-			ConnectionName: vmInfoData.ConnectionName,
+			ConnectionName: nodeInfoData.ConnectionName,
 			CspResourceId:  v.SystemId,
 		}
 
 		dataDisk, err := resource.CreateDataDisk(ctx, nsId, &tbDataDiskReq, "register")
 		if err != nil {
-			err = fmt.Errorf("after starting VM %s, failed to register dataDisk %s. \n", vmInfoData.Name, v.NameId)
+			err = fmt.Errorf("after starting VM %s, failed to register dataDisk %s. \n", nodeInfoData.Name, v.NameId)
 			log.Err(err).Msg("")
 		}
 
-		vmInfoData.DataDiskIds = append(vmInfoData.DataDiskIds, dataDisk.Id)
+		nodeInfoData.DataDiskIds = append(nodeInfoData.DataDiskIds, dataDisk.Id)
 
-		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDisk.Id, model.StrAdd, vmKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDisk.Id, model.StrAdd, nodeKey)
 	}
 
-	// Populate SpecSummary and ImageSummary for VmInfo
-	if vmInfoData.SpecId != "" {
-		specInfo, err := resource.GetSpec(model.SystemCommonNs, vmInfoData.SpecId)
+	// Populate SpecSummary and ImageSummary for NodeInfo
+	if nodeInfoData.SpecId != "" {
+		specInfo, err := resource.GetSpec(model.SystemCommonNs, nodeInfoData.SpecId)
 		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to get spec info for SpecSummary: %s", vmInfoData.SpecId)
+			log.Warn().Err(err).Msgf("Failed to get spec info for SpecSummary: %s", nodeInfoData.SpecId)
 		} else {
-			vmInfoData.Spec = model.SpecSummary{
+			nodeInfoData.Spec = model.SpecSummary{
 				CspSpecName:         specInfo.CspSpecName,
 				VCPU:                specInfo.VCPU,
 				MemoryGiB:           specInfo.MemoryGiB,
@@ -3820,12 +3820,12 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 		}
 	}
 
-	if vmInfoData.ImageId != "" {
-		imageInfo, err := resource.GetImage(nsId, vmInfoData.ImageId)
+	if nodeInfoData.ImageId != "" {
+		imageInfo, err := resource.GetImage(nsId, nodeInfoData.ImageId)
 		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to get image info for ImageSummary: %s", vmInfoData.ImageId)
+			log.Warn().Err(err).Msgf("Failed to get image info for ImageSummary: %s", nodeInfoData.ImageId)
 		} else {
-			vmInfoData.Image = model.ImageSummary{
+			nodeInfoData.Image = model.ImageSummary{
 				ResourceType:   imageInfo.ResourceType,
 				CspImageName:   imageInfo.CspImageName,
 				OSType:         imageInfo.OSType,
@@ -3836,70 +3836,70 @@ func CreateVm(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId stri
 	}
 
 	// Assign a Bastion if none (randomly)
-	UpdateVmInfo(nsId, infraId, *vmInfoData)
-	_, err = SetBastionNodes(nsId, infraId, vmInfoData.Id, "", "", "")
+	UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+	_, err = SetBastionNodes(nsId, infraId, nodeInfoData.Id, "", "", "")
 	if err != nil {
 		// just log error and continue
 		log.Debug().Msg(err.Error())
 	}
 
 	// set initial TargetAction, TargetStatus
-	vmInfoData.TargetAction = model.ActionComplete
-	vmInfoData.TargetStatus = model.StatusComplete
+	nodeInfoData.TargetAction = model.ActionComplete
+	nodeInfoData.TargetStatus = model.StatusComplete
 
-	// get and set current vm status
-	vmStatusInfoTmp, err := FetchVmStatus(nsId, infraId, vmInfoData.Id)
+	// get and set current node status
+	nodeStatusInfoTmp, err := FetchNodeStatus(nsId, infraId, nodeInfoData.Id)
 
 	if err != nil {
 		err = fmt.Errorf("cannot Fetch Vm Status from CSP: %v", err)
-		vmInfoData.Status = model.StatusFailed
-		vmInfoData.SystemMessage = err.Error()
-		UpdateVmInfo(nsId, infraId, *vmInfoData)
+		nodeInfoData.Status = model.StatusFailed
+		nodeInfoData.SystemMessage = err.Error()
+		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 
 		log.Error().Err(err).Msg("")
 
 		return err
 	}
 
-	vmInfoData.Status = vmStatusInfoTmp.Status
+	nodeInfoData.Status = nodeStatusInfoTmp.Status
 
 	// Monitoring Agent Installation Status (init: notInstalled)
-	vmInfoData.MonAgentStatus = "notInstalled"
-	vmInfoData.NetworkAgentStatus = "notInstalled"
+	nodeInfoData.MonAgentStatus = "notInstalled"
+	nodeInfoData.NetworkAgentStatus = "notInstalled"
 
 	// set CreatedTime
 	t := time.Now()
-	vmInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
-	log.Debug().Msg(vmInfoData.CreatedTime)
+	nodeInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
+	log.Debug().Msg(nodeInfoData.CreatedTime)
 
-	UpdateVmInfo(nsId, infraId, *vmInfoData)
+	UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
 		model.LabelManager:         model.StrManager,
 		model.LabelNamespace:       nsId,
-		model.LabelLabelType:       model.StrVM,
-		model.LabelId:              vmInfoData.Id,
-		model.LabelName:            vmInfoData.Name,
-		model.LabelUid:             vmInfoData.Uid,
-		model.LabelCspResourceId:   vmInfoData.CspResourceId,
-		model.LabelCspResourceName: vmInfoData.CspResourceName,
-		model.LabelNodeGroupId:     vmInfoData.NodeGroupId,
+		model.LabelLabelType:       model.StrNode,
+		model.LabelId:              nodeInfoData.Id,
+		model.LabelName:            nodeInfoData.Name,
+		model.LabelUid:             nodeInfoData.Uid,
+		model.LabelCspResourceId:   nodeInfoData.CspResourceId,
+		model.LabelCspResourceName: nodeInfoData.CspResourceName,
+		model.LabelNodeGroupId:     nodeInfoData.NodeGroupId,
 		model.LabelInfraId:         infraId,
-		model.LabelCreatedTime:     vmInfoData.CreatedTime,
-		model.LabelConnectionName:  vmInfoData.ConnectionName,
-		model.LabelVNetId:          vmInfoData.VNetId,
-		model.LabelSubnetId:        vmInfoData.SubnetId,
+		model.LabelCreatedTime:     nodeInfoData.CreatedTime,
+		model.LabelConnectionName:  nodeInfoData.ConnectionName,
+		model.LabelVNetId:          nodeInfoData.VNetId,
+		model.LabelSubnetId:        nodeInfoData.SubnetId,
 	}
-	for key, value := range vmInfoData.Label {
+	for key, value := range nodeInfoData.Label {
 		labels[key] = value
 	}
-	err = label.CreateOrUpdateLabel(ctx, model.StrVM, vmInfoData.Uid, vmKey, labels)
+	err = label.CreateOrUpdateLabel(ctx, model.StrNode, nodeInfoData.Uid, nodeKey, labels)
 	if err != nil {
 		err = fmt.Errorf("cannot create label object: %v", err)
-		vmInfoData.Status = model.StatusFailed
-		vmInfoData.SystemMessage = err.Error()
-		UpdateVmInfo(nsId, infraId, *vmInfoData)
+		nodeInfoData.Status = model.StatusFailed
+		nodeInfoData.SystemMessage = err.Error()
+		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 
 		log.Error().Err(err).Msg("")
 		return err
@@ -4158,7 +4158,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		}
 	}
 
-	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
+	// Default resource name has this pattern (nsId + "-shared-" + nodeReq.ConnectionName)
 	resourceName := nsId + model.StrSharedResourceName + k8sReq.ConnectionName
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
@@ -4389,7 +4389,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 		log.Debug().Msgf("Using user-specified imageId: %s", dReq.ImageId)
 	}
 
-	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
+	// Default resource name has this pattern (nsId + "-shared-" + nodeReq.ConnectionName)
 	resourceName := nsId + model.StrSharedResourceName + k8sClusterInfo.ConnectionName
 
 	k8sNgReq.SshKeyId = resourceName
@@ -4684,61 +4684,61 @@ func RecordProvisioningEventsFromInfra(nsId string, infraInfo *model.InfraInfo) 
 	eventCount := 0
 
 	// Process VMs to record events
-	for _, vm := range infraInfo.Vm {
-		log.Debug().Msgf("Processing VM: %s, status: %s", vm.Id, vm.Status)
+	for _, node := range infraInfo.Node {
+		log.Debug().Msgf("Processing VM: %s, status: %s", node.Id, node.Status)
 
 		// Determine if this VM failed or succeeded based on status
-		isSuccess := vm.Status == model.StatusRunning
+		isSuccess := node.Status == model.StatusRunning
 		errorMessage := ""
 
 		if !isSuccess {
 			// Look for specific error message in creation errors
 			if infraInfo.CreationErrors != nil {
-				for _, vmError := range infraInfo.CreationErrors.VmCreationErrors {
-					if vmError.VmName == vm.Id || strings.Contains(vmError.VmName, vm.Id) {
-						errorMessage = vmError.Error
+				for _, nodeError := range infraInfo.CreationErrors.NodeCreationErrors {
+					if nodeError.NodeName == node.Id || strings.Contains(nodeError.NodeName, node.Id) {
+						errorMessage = nodeError.Error
 						break
 					}
 				}
 				// Also check VM object creation errors
-				for _, vmError := range infraInfo.CreationErrors.VmObjectCreationErrors {
-					if vmError.VmName == vm.Id || strings.Contains(vmError.VmName, vm.Id) {
-						errorMessage = vmError.Error
+				for _, nodeError := range infraInfo.CreationErrors.NodeObjectCreationErrors {
+					if nodeError.NodeName == node.Id || strings.Contains(nodeError.NodeName, node.Id) {
+						errorMessage = nodeError.Error
 						break
 					}
 				}
 			}
 			// Check VM's SystemMessage for additional error details
-			if errorMessage == "" && vm.SystemMessage != "" {
-				errorMessage = vm.SystemMessage
+			if errorMessage == "" && node.SystemMessage != "" {
+				errorMessage = node.SystemMessage
 			}
 			// If no specific error message found, provide a clearer message
 			if errorMessage == "" {
-				errorMessage = fmt.Sprintf("VM provisioning failed (status: %s) - check CSP console for details", vm.Status)
+				errorMessage = fmt.Sprintf("VM provisioning failed (status: %s) - check CSP console for details", node.Status)
 			}
 		}
 
 		// Create provisioning event
 		event := &model.ProvisioningEvent{
-			SpecId:       vm.SpecId,
-			CspImageName: vm.CspImageName,
+			SpecId:       node.SpecId,
+			CspImageName: node.CspImageName,
 			IsSuccess:    isSuccess,
 			ErrorMessage: errorMessage,
 			Timestamp:    time.Now(),
-			VmName:       vm.Id,
+			NodeName:       node.Id,
 			InfraId:      infraInfo.Id,
 		}
 
 		// Record the event
 		err := RecordProvisioningEvent(event)
 		if err != nil {
-			log.Error().Err(err).Msgf("Failed to record provisioning event for VM: %s", vm.Id)
+			log.Error().Err(err).Msgf("Failed to record provisioning event for VM: %s", node.Id)
 			continue
 		}
 
 		eventCount++
 		log.Debug().Msgf("Recorded provisioning event for VM: %s, spec: %s, success: %t",
-			vm.Id, vm.SpecId, isSuccess)
+			node.Id, node.SpecId, isSuccess)
 	}
 
 	log.Debug().Msgf("Successfully recorded %d provisioning events from Infra: %s", eventCount, infraInfo.Id)

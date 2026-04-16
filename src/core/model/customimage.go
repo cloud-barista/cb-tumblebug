@@ -25,7 +25,7 @@ const (
 	MyImageUnavailable CustomImageStatus = "Unavailable"
 )
 
-// SnapshotReq is a struct to handle 'Create VM snapshot' request toward CB-Tumblebug.
+// SnapshotReq is a struct to handle 'Create Node snapshot' request toward CB-Tumblebug.
 type SnapshotReq struct {
 	Name        string `json:"name" example:"custom-image01" validate:"required"`
 	Description string `json:"description" example:"Description about this custom image"`
@@ -35,14 +35,14 @@ type SpiderMyImageReq struct {
 	ConnectionName string
 	ReqInfo        struct {
 		Name     string
-		SourceVM string
+		SourceNode string
 	}
 }
 
 type SpiderMyImageInfo struct {
 	IId IID // {NameId, SystemId}
 
-	SourceVM IID
+	SourceNode IID
 
 	Status CustomImageStatus // Available | Deleting
 
@@ -58,22 +58,22 @@ type SpiderMyImageRegisterReq struct {
 	}
 }
 
-// CustomImageReq is a struct to handle a request for Create custom image (VM snapshot)
+// CustomImageReq is a struct to handle a request for Create custom image (Node snapshot)
 type CustomImageReq struct {
 	// This field is for 'Register existing custom image'
 	CspResourceId string `json:"cspResourceId"`
 
 	ConnectionName string `json:"connectionName"`
 	Name           string `json:"name" validate:"required"`
-	SourceVmId     string `json:"sourceVmId"`
+	SourceNodeId     string `json:"sourceNodeId"`
 	Description    string `json:"description"`
 }
 
-// VmSnapshotResult represents the result of creating a snapshot for a single VM
-type VmSnapshotResult struct {
+// NodeSnapshotResult represents the result of creating a snapshot for a single Node
+type NodeSnapshotResult struct {
 	NodeGroupId string    `json:"nodeGroupId" example:"g1"`
-	VmId        string    `json:"vmId" example:"g1-1"`
-	VmName      string    `json:"vmName" example:"aws-ap-northeast-2-g1-1"`
+	NodeId        string    `json:"nodeId" example:"g1-1"`
+	NodeName      string    `json:"nodeName" example:"aws-ap-northeast-2-g1-1"`
 	Status      string    `json:"status" example:"Success" enums:"Success,Failed"`
 	ImageId     string    `json:"imageId,omitempty" example:"custom-image-g1"`
 	ImageInfo   ImageInfo `json:"imageInfo,omitempty"`
@@ -86,7 +86,7 @@ type InfraSnapshotResult struct {
 	Namespace    string             `json:"namespace" example:"default"`
 	SuccessCount int                `json:"successCount" example:"3"`
 	FailCount    int                `json:"failCount" example:"0"`
-	Results      []VmSnapshotResult `json:"results"`
+	Results      []NodeSnapshotResult `json:"results"`
 }
 
 // BuildAgnosticImageReq is a struct to handle 'Build Agnostic Image' request

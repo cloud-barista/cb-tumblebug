@@ -1,0 +1,549 @@
+# Infra and Node Lifecycle Management
+
+This document provides a comprehensive guide to the lifecycle management of **Infra** (Multi-Cloud Infrastructure) and **Node** (compute unit) resources in CB-Tumblebug. It covers the conceptual model, terminology, state transitions, control actions, status management, and internal mechanisms.
+
+## 🔑 Key Concepts and Terminology
+
+### Why the Terminology Change
+
+CB-Tumblebug originally used the terms **MCI** (Multi-Cloud Infrastructure), **SubGroup**, and **VM** for its core abstractions.
+These were renamed to **Infra**, **NodeGroup**, and **Node** for the following reasons:
+
+| Old Term | New Term | Reason for Change |
+|----------|----------|-------------------|
+| MCI (MCIS) | **Infra** | "MCI" was an acronym that required explanation every time. "Infra" is self-descriptive and universally understood. |
+| SubGroup | **NodeGroup** | "SubGroup" was vague. "NodeGroup" clearly describes a group of homogeneous Nodes. It also aligns with Kubernetes `NodeGroup` semantics, preparing for future Kubernetes integration. |
+| VM | **Node** | "VM" is implementation-specific (virtual machine). "Node" is a general-purpose compute unit — it could represent a VM today, or a container, bare-metal server, or Kubernetes pod in the future. The API uses "Node" for user-facing interactions, while the internal implementation still deals with VMs through CSP drivers. |
+
+> **Note on internal implementation:** Within the codebase, `vm` is still used in some internal identifiers (e.g., KV store keys, CSP driver interfaces) to maintain backward compatibility with the storage layer and CB-Spider driver interfaces.
+
+### Resource Hierarchy
+
+CB-Tumblebug organizes multi-cloud compute resources in a clear hierarchy:
+
+```
+Namespace
+└── Infra
+    ├── NodeGroup-A (AWS ap-northeast-2)
+    │   ├── Node-A-1 (VM)
+    │   ├── Node-A-2 (VM)
+    │   └── Node-A-3 (VM)
+    ├── NodeGroup-B (Azure koreacentral)
+    │   ├── Node-B-1 (VM)
+    │   └── Node-B-2 (VM)
+    └── NodeGroup-C (GCP asia-northeast3)
+        └── Node-C-1 (VM)
+```
+
+### What is Infra?
+
+**Infra** is a logical unit that groups multiple compute Nodes deployed across different Cloud Service Providers (CSPs) into a single manageable entity. An Infra can contain Nodes from AWS, Azure, GCP, Alibaba, and other clouds simultaneously.
+
+- **API Path:** `/ns/{nsId}/infra/{infraId}`
+- **Go Type:** `InfraInfo`
+
+### What is a NodeGroup?
+
+A **NodeGroup** is a logical grouping of homogeneous Nodes within an Infra. Nodes in the same NodeGroup share identical configurations (same spec, image, region, etc.) and are typically scaled together.
+
+- **API Path:** `/ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}`
+- **Go Type:** `NodeGroupInfo`
+
+The name "NodeGroup" is intentionally aligned with the Kubernetes NodeGroup concept, although CB-Tumblebug NodeGroups currently manage VMs rather than Kubernetes worker nodes.
+
+### What is a Node?
+
+A **Node** is an individual compute unit within an Infra. In the current implementation, each Node corresponds to a virtual machine (VM) provisioned on a CSP. The "Node" abstraction allows the system to evolve beyond VMs in the future.
+
+- **API Path:** `/ns/{nsId}/infra/{infraId}/node/{nodeId}`
+- **Go Type:** `NodeInfo`
+
+### Cluster (Future)
+
+**Cluster** is a planned abstraction within an Infra that is implicitly formed by NodeGroups sharing the same network boundary (e.g., VNet). A Cluster is not explicitly defined or created by the user — instead, it emerges indirectly from the networking and resource topology of NodeGroups.
+
+- A Cluster exists within an Infra, not above it
+- Clusters are **not separately created** — they are implicitly composed from NodeGroups that share a common VNet/network boundary
+- Every NodeGroup belongs to some implicit Cluster (there are no standalone NodeGroups outside a cluster context)
+- The Infra creation workflow remains the same; cluster semantics are layered on top
+- Complements the existing Kubernetes cluster management (`/k8sCluster`) by offering a parallel abstraction for VM-based workloads
+
+```
+Infra (future)                         K8s Cluster (existing)
+├── Cluster-1 (implicit, VNet-1)       ├── K8s NodeGroup-A
+│   ├── NodeGroup-A (AWS, master)      │   ├── Worker Node 1
+│   │   └── Node-A-1                   │   └── Worker Node 2
+│   └── NodeGroup-B (AWS, worker)      └── K8s NodeGroup-B
+│       ├── Node-B-1                       └── Worker Node 3
+│       └── Node-B-2
+└── Cluster-2 (implicit, VNet-2)
+    └── NodeGroup-C (Azure, worker)
+        └── Node-C-1
+```
+
+In this model, NodeGroups that share a VNet (or equivalent network boundary) implicitly form a Cluster. Each NodeGroup always belongs to an implicit Cluster — the cluster boundary is determined by the underlying network topology, not by explicit user declaration.
+
+> The naming alignment (Node, NodeGroup) between VM-based Infra and Kubernetes resources is intentional, providing a consistent mental model regardless of the underlying compute type.
+
+## 📊 Status Constants
+
+### Infra Status
+
+The following statuses represent the current state of an Infra:
+
+| Status | Description | Stable? |
+|--------|-------------|---------|
+| `Preparing` | Infra resources are being prepared (VNet, SecurityGroup, SSH Key) | No (Transitional) |
+| `Prepared` | Infra resources are prepared, ready for Node provisioning | No (Transitional) |
+| `Creating` | Nodes are being provisioned | No (Transitional) |
+| `Running` | All Nodes are running | Yes |
+| `Suspending` | Nodes are being suspended | No (Transitional) |
+| `Suspended` | All Nodes are suspended | Yes |
+| `Resuming` | Nodes are being resumed | No (Transitional) |
+| `Rebooting` | Nodes are being rebooted | No (Transitional) |
+| `Terminating` | Nodes are being terminated | No (Transitional) |
+| `Terminated` | All Nodes are terminated | Yes (Final) |
+| `Failed` | Infra creation failed | Yes (Final) |
+| `Undefined` | Infra status cannot be determined | Yes |
+| `Partial-*` | Mixed Node states (e.g., `Partial-Running`, `Partial-Suspended`) | Yes |
+
+### Node Status
+
+The following statuses represent the current state of a Node:
+
+| Status | Description | Stable? |
+|--------|-------------|---------|
+| `Creating` | Node is being provisioned | No (Transitional) |
+| `Running` | Node is running and accessible | Yes |
+| `Suspending` | Node is being suspended | No (Transitional) |
+| `Suspended` | Node is suspended (stopped) | Yes |
+| `Resuming` | Node is being resumed from suspended state | No (Transitional) |
+| `Rebooting` | Node is being rebooted | No (Transitional) |
+| `Terminating` | Node is being terminated | No (Transitional) |
+| `Terminated` | Node has been terminated | Yes (Final) |
+| `Failed` | Node creation or operation failed | Yes (Final) |
+| `Undefined` | Node status cannot be determined | Yes |
+
+### Action Constants
+
+Actions that can be performed on Infra/Node:
+
+| Action | Description | Target Status |
+|--------|-------------|---------------|
+| `Create` | Create new Node(s) | Running |
+| `Suspend` | Stop Node(s) without termination | Suspended |
+| `Resume` | Start suspended Node(s) | Running |
+| `Reboot` | Restart Node(s) | Running |
+| `Terminate` | Permanently delete Node(s) | Terminated |
+| `Refine` | Clean up failed/undefined Nodes | - |
+
+## 🔄 State Transition Diagram
+
+### Infra State Transitions
+
+Infra follows a multi-phase lifecycle: **Preparation → Provisioning → Operation → Termination**
+
+> **Note:** Most statuses can have a `Partial-` prefix (e.g., `Partial-Running`) indicating mixed Node states within the Infra.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Preparing: Create Infra Request
+    
+    Preparing --> Prepared: Resources Ready
+    Preparing --> Failed: Resource Creation Error
+    
+    Prepared --> Creating: Start Node Provisioning
+    Prepared --> Failed: Provisioning Error
+    
+    Creating --> Running: All/Some Nodes Running
+    Creating --> Failed: All Nodes Failed
+    
+    Running --> Suspending: Suspend Action
+    Running --> Rebooting: Reboot Action
+    Running --> Terminating: Terminate Action
+    
+    Suspending --> Suspended: All/Some Nodes Suspended
+    
+    Suspended --> Resuming: Resume Action
+    Suspended --> Terminating: Terminate Action
+    
+    Resuming --> Running: All/Some Nodes Running
+    
+    Rebooting --> Running: Success
+    
+    Terminating --> Terminated: All Nodes Terminated
+    
+    Failed --> Terminating: Terminate Force
+    
+    Terminated --> [*]
+```
+
+**Status Format:** `(Partial-){Status}:{Count} (R:{RunningCount}/{TotalCount})`
+
+| Example Status | Meaning |
+|----------------|---------|
+| `Running:5 (R:5/5)` | All 5 Nodes are running |
+| `Partial-Running:3 (R:3/5)` | 3 of 5 Nodes running, others in different states |
+| `Partial-Suspended:4 (R:1/5)` | 4 Nodes suspended, 1 still running |
+| `Terminated:5 (R:0/5)` | All 5 Nodes terminated |
+
+### Node State Transitions
+
+Individual Nodes follow a simpler lifecycle:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Creating: Create Action
+    
+    Creating --> Running: Success
+    Creating --> Failed: Error
+    
+    Running --> Suspending: Suspend Action
+    Running --> Rebooting: Reboot Action
+    Running --> Terminating: Terminate Action
+    
+    Suspending --> Suspended: Success
+    Suspending --> Failed: Error
+    
+    Suspended --> Resuming: Resume Action
+    Suspended --> Terminating: Terminate Action
+    
+    Resuming --> Running: Success
+    Resuming --> Failed: Error
+    
+    Rebooting --> Running: Success
+    Rebooting --> Failed: Error
+    
+    Terminating --> Terminated: Success
+    Terminating --> Failed: Error
+    
+    Failed --> Terminating: Terminate (Force)
+    
+    Terminated --> [*]
+    
+    note right of Creating: Transitional
+    note right of Running: Stable
+    note right of Suspended: Stable
+    note right of Terminated: Final
+    note right of Failed: Final
+```
+
+### Preparation Phase Details
+
+The `Preparing` → `Prepared` phase involves creating shared resources before Node provisioning:
+
+```mermaid
+flowchart TD
+    START[Infra Create Request] --> PREPARE[Status: Preparing]
+    
+    PREPARE --> VNET[Create VNet/Subnet]
+    VNET --> SG[Create Security Groups]
+    SG --> SSHKEY[Create SSH Keys]
+    SSHKEY --> VALIDATE[Validate Specs & Images]
+    
+    VALIDATE --> CHECK{All Resources Ready?}
+    
+    CHECK -->|Yes| PREPARED[Status: Prepared]
+    CHECK -->|No| FAILED[Status: Failed]
+    
+    PREPARED --> CREATING[Status: Creating]
+    CREATING --> PROVISION[Provision Nodes]
+    
+    style PREPARE fill:#fff3e0
+    style PREPARED fill:#e8f5e9
+    style CREATING fill:#e3f2fd
+    style FAILED fill:#ffebee
+```
+
+## 🎮 Control Actions
+
+### Allowed Transitions
+
+The system validates state transitions before executing actions. Below is the transition matrix:
+
+| Current Status | Suspend | Resume | Reboot | Terminate |
+|----------------|---------|--------|--------|-----------|
+| Running | ✅ | ❌ | ✅ | ✅ |
+| Suspended | ❌ | ✅ | ❌ | ✅ |
+| Creating | ❌ | ❌ | ❌ | ❌ |
+| Terminating | ❌ | ❌ | ❌ | ❌ |
+| Terminated | ❌ | ❌ | ❌ | ❌ |
+| Failed | ❌ | ❌ | ❌ | ✅ (Force) |
+
+### Infra-Level Actions
+
+When an action is applied to an Infra, it propagates to all Nodes within:
+
+```mermaid
+flowchart TD
+    ACTION[Infra Action Request] --> VALIDATE[Validate Infra State]
+    VALIDATE --> CHECK{Transition Allowed?}
+    
+    CHECK -->|Yes| SET_TARGET[Set TargetAction & TargetStatus]
+    CHECK -->|No| REJECT[Reject with Error]
+    
+    SET_TARGET --> GROUP[Group Nodes by CSP & Region]
+    GROUP --> PARALLEL[Process CSPs in Parallel]
+    
+    subgraph "Rate-Limited Parallel Processing"
+        PARALLEL --> CSP1[CSP-1 Nodes]
+        PARALLEL --> CSP2[CSP-2 Nodes]
+        PARALLEL --> CSPN[CSP-N Nodes]
+        
+        CSP1 --> REGION1[Region Semaphore]
+        CSP2 --> REGION2[Region Semaphore]
+        CSPN --> REGIONN[Region Semaphore]
+        
+        REGION1 --> NODE1[Node Semaphore]
+        REGION2 --> NODE2[Node Semaphore]
+        REGIONN --> NODEN[Node Semaphore]
+    end
+    
+    NODE1 --> COLLECT[Collect Results]
+    NODE2 --> COLLECT
+    NODEN --> COLLECT
+    
+    COLLECT --> UPDATE[Update Infra Status]
+    UPDATE --> COMPLETE[Mark Action Complete]
+    
+    style ACTION fill:#e3f2fd
+    style PARALLEL fill:#fff3e0
+    style COMPLETE fill:#4caf50
+```
+
+### Node-Level Actions
+
+Individual Node actions follow a similar pattern but only affect the specified Node:
+
+```go
+// Example: Suspend a specific Node
+HandleInfraNodeAction(nsId, infraId, nodeId, "suspend", force)
+```
+
+## 📈 Status Management
+
+### Status Aggregation for Infra
+
+Infra status is aggregated from all Node statuses. The aggregation logic determines the overall Infra status based on the dominant Node status:
+
+```mermaid
+flowchart TD
+    FETCH[Fetch All Node Statuses] --> COUNT[Count Nodes per Status]
+    COUNT --> FIND_MAX[Find Dominant Status]
+    
+    FIND_MAX --> CHECK{All Nodes Same Status?}
+    
+    CHECK -->|Yes| PURE[Status: DominantStatus]
+    CHECK -->|No| PARTIAL[Status: Partial-DominantStatus]
+    
+    PURE --> FORMAT[Format: Status:Count R:Running/Total]
+    PARTIAL --> FORMAT
+    
+    FORMAT --> EXAMPLE1["Running:10 (R:10/10)"]
+    FORMAT --> EXAMPLE2["Partial-Suspended:6 (R:4/10)"]
+    FORMAT --> EXAMPLE3["Terminated:10 (R:0/10)"]
+    
+    style FETCH fill:#e3f2fd
+    style PURE fill:#4caf50
+    style PARTIAL fill:#ff9800
+```
+
+### Status Count Structure
+
+```go
+type StatusCountInfo struct {
+    CountTotal       int  // Total Nodes in Infra
+    CountCreating    int  // Nodes being created
+    CountRunning     int  // Running Nodes
+    CountFailed      int  // Failed Nodes
+    CountSuspended   int  // Suspended Nodes
+    CountRebooting   int  // Rebooting Nodes
+    CountTerminated  int  // Terminated Nodes
+    CountSuspending  int  // Nodes being suspended
+    CountResuming    int  // Nodes being resumed
+    CountTerminating int  // Nodes being terminated
+    CountUndefined   int  // Nodes with undefined status
+}
+```
+
+## 🔧 Internal Mechanisms
+
+### TargetAction and TargetStatus
+
+Each Infra and Node maintains two tracking fields:
+
+- **TargetAction**: The action currently being performed (e.g., `Create`, `Terminate`)
+- **TargetStatus**: The expected final status after the action completes (e.g., `Running`, `Terminated`)
+
+When `TargetStatus == CurrentStatus`, the action is considered complete, and both fields are set to `None` (ActionComplete/StatusComplete).
+
+### Smart Status Caching
+
+To optimize performance, the system skips CSP API calls for Nodes in stable final states:
+
+```mermaid
+flowchart LR
+    CHECK{Node Status?}
+    
+    CHECK -->|Terminated| SKIP[Skip CSP Call]
+    CHECK -->|Failed| SKIP
+    CHECK -->|Suspended| SKIP
+    CHECK -->|Running/Creating| FETCH[Fetch from CSP]
+    
+    SKIP --> CACHE[Return Cached Status]
+    FETCH --> UPDATE[Update Cache]
+    UPDATE --> RETURN[Return Fresh Status]
+    
+    style SKIP fill:#4caf50
+    style FETCH fill:#2196f3
+```
+
+This optimization reduces API calls by 30-50% for large Infras with many terminated or suspended Nodes.
+
+### Rate Limiting for Control Operations
+
+Control operations (Suspend, Resume, Reboot, Terminate) use the same hierarchical rate limiting as provisioning:
+
+| CSP | Max Concurrent Regions | Max Nodes per Region |
+|-----|------------------------|-------------------|
+| AWS | 10 | 30 |
+| Azure | 8 | 25 |
+| GCP | 12 | 35 |
+| NCP | 3 | 15 |
+| Alibaba | 6 | 20 |
+
+## 🛡️ Failure Handling
+
+### Refine Action
+
+The `refine` action removes Nodes in `Failed` or `Undefined` status from an Infra:
+
+```mermaid
+flowchart TD
+    START[Refine Action] --> LIST[List All Nodes in Infra]
+    LIST --> LOOP[For Each Node]
+    
+    LOOP --> CHECK{Status?}
+    
+    CHECK -->|Failed/Undefined| DELETE[Delete Node Object]
+    CHECK -->|Other| KEEP[Keep Node]
+    
+    DELETE --> UPDATE_Infra[Update Infra Node List]
+    KEEP --> NEXT[Next Node]
+    
+    UPDATE_Infra --> NEXT
+    NEXT --> LOOP
+    
+    LOOP -->|Done| COMPLETE[Refine Complete]
+    
+    style DELETE fill:#f44336
+    style KEEP fill:#4caf50
+```
+
+### Force Flag
+
+Most actions support a `force` flag that bypasses state validation:
+
+```go
+// Normal action (validates state transitions)
+HandleInfraAction(nsId, infraId, "terminate", false)
+
+// Force action (skips validation)
+HandleInfraAction(nsId, infraId, "terminate", true)
+```
+
+**Use `force` carefully** - it can lead to inconsistent states if misused.
+
+## 📋 API Reference
+
+### Infra Control Endpoint
+
+```
+POST /tumblebug/ns/{nsId}/infra/{infraId}?action={action}
+```
+
+**Parameters:**
+- `action`: One of `suspend`, `resume`, `reboot`, `terminate`, `refine`, `continue`, `withdraw`
+
+### Node Control Endpoint
+
+```
+POST /tumblebug/ns/{nsId}/infra/{infraId}/node/{nodeId}?action={action}
+```
+
+**Parameters:**
+- `action`: One of `suspend`, `resume`, `reboot`, `terminate`
+
+### Get Infra Status
+
+```
+GET /tumblebug/ns/{nsId}/infra/{infraId}?option=status
+```
+
+**Response:**
+```json
+{
+  "id": "infra-01",
+  "name": "infra-01",
+  "status": "Running:5 (R:5/5)",
+  "statusCount": {
+    "countTotal": 5,
+    "countRunning": 5,
+    "countFailed": 0,
+    ...
+  },
+  "targetStatus": "None",
+  "targetAction": "None",
+  "node": [...]
+}
+```
+
+## 🔑 Best Practices
+
+### 1. Check Status Before Actions
+
+Always verify the current status before performing actions:
+
+```go
+infraStatus, err := GetInfraStatus(nsId, infraId)
+if err != nil {
+    return err
+}
+if infraStatus.TargetAction != model.ActionComplete {
+    return fmt.Errorf("Infra is under %s, please try later", infraStatus.TargetAction)
+}
+```
+
+### 2. Use Refine for Cleanup
+
+After failed provisioning, use `refine` to clean up failed Nodes:
+
+```bash
+curl -X POST "http://localhost:1323/tumblebug/ns/default/infra/my-infra?action=refine"
+```
+
+### 3. Wait for Transitional States
+
+Don't perform new actions while Infra is in a transitional state (Creating, Suspending, etc.):
+
+```go
+if strings.Contains(infraStatus.Status, model.StatusCreating) ||
+   strings.Contains(infraStatus.Status, model.StatusTerminating) {
+    return errors.New("Infra is in transitional state")
+}
+```
+
+### 4. Handle Partial States
+
+Be aware that Infra can be in "Partial-" states where Nodes have mixed statuses:
+
+```go
+if strings.HasPrefix(infraStatus.Status, "Partial-") {
+    // Some Nodes may need individual attention
+    for _, node := range infraStatus.Node {
+        if node.Status == model.StatusFailed {
+            // Handle failed Node
+        }
+    }
+}
+```

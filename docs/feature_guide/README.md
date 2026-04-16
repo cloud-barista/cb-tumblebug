@@ -6,15 +6,15 @@ This directory contains detailed documentation for specific features of CB-Tumbl
 
 | Feature | Description |
 |---------|-------------|
-| **[Assets Backup & Restore](assets-backup-restore.md)** | Guide for backing up and restoring the PostgreSQL assets database (VM specs, images, pricing info). |
+| **[Assets Backup & Restore](assets-backup-restore.md)** | Guide for backing up and restoring the PostgreSQL assets database (compute specs, images, pricing info). |
 | **[Cloud-Agnostic Image](cloud-agnostic-image.md)** | Comprehensive workflow for creating CSP-agnostic custom images automatically across multiple clouds (Provision → Setup → Snapshot → Cleanup). |
 | **[Credential & Connection](credential-and-connection.md)** | Guide to credentials, credential holders, and connections — multi-tenant credential isolation, connection naming, and `X-Credential-Holder` header usage. |
 | **[Global DNS Management](global-dns-management.md)** | Guide for managing DNS records via AWS Route53 — Infra/Label-based IP resolution, simple and geoproximity routing, bulk operations. |
-| **[High-Scale Provisioning Architecture](high-scale-provisioning-architecture.md)** | Visual analysis of the advanced architecture and optimization techniques (Rate Limiting, Parallel Processing) for massive VM provisioning. |
-| **[Infra/VM Lifecycle Management](infra-vm-lifecycle-management.md)** | Comprehensive guide to the lifecycle control (Suspend, Resume, Reboot, Terminate, Refine) and status management of Multi-Cloud Infrastructures and VMs. |
+| **[High-Scale Provisioning Architecture](high-scale-provisioning-architecture.md)** | Visual analysis of the advanced architecture and optimization techniques (Rate Limiting, Parallel Processing) for massive Node provisioning. |
+| **[Infra/Node Lifecycle Management](infra-lifecycle-management.md)** | Comprehensive guide to the lifecycle control (Suspend, Resume, Reboot, Terminate, Refine) and status management of Multi-Cloud Infrastructures and Nodes. |
 | **[Job Scheduler](existing-csp-res-job-scheduler.md)** | Guide for the automated task scheduler, currently supporting periodic CSP resource synchronization and registration. |
 | **[Namespace & Identity](namespace-and-resource-identity.md)** | Deep dive into the logical isolation model (Namespace) and the resource identification system (User ID vs System UID vs CSP ID). |
-| **[Remote Command & File Transfer](remote-command-and-file-transfer.md)** | Guide for executing remote commands and transferring files to Infra VMs via Bastion Host with TOFU (Trust On First Use) SSH host key verification. |
+| **[Remote Command & File Transfer](remote-command-and-file-transfer.md)** | Guide for executing remote commands and transferring files to Infra Nodes via Bastion Host with TOFU (Trust On First Use) SSH host key verification. |
 | **[Resource Template Management](resource-template-management.md)** | Guide for defining, storing, and applying reusable infrastructure templates (Infra, vNet, SecurityGroup) to enable repeatable multi-cloud provisioning. |
 | **[OpenStack-Type CSP Support](openstack-type-csp-support.md)** | Guide for adding OpenStack-based CSPs with 1:N Cloud Platform mapping (cloudinfo.yaml + credentials.yaml). |
 | **[`make init` Workflow](make-init-workflow.md)** | Detailed walkthrough of the two-phase initialization process: OpenBao credential registration and Tumblebug asset loading, with interaction diagrams for each component. |

@@ -126,17 +126,17 @@ func CheckNodeGroup(nsId string, infraId string, nodeGroupId string) (bool, erro
 	return false, nil
 }
 
-func CheckVm(nsId string, infraId string, vmId string) (bool, error) {
+func CheckNode(nsId string, infraId string, nodeId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckVm failed; nsId given is null.")
+		err := fmt.Errorf("CheckNode failed; nsId given is null.")
 		return false, err
 	} else if infraId == "" {
-		err := fmt.Errorf("CheckVm failed; infraId given is null.")
+		err := fmt.Errorf("CheckNode failed; infraId given is null.")
 		return false, err
-	} else if vmId == "" {
-		err := fmt.Errorf("CheckVm failed; vmId given is null.")
+	} else if nodeId == "" {
+		err := fmt.Errorf("CheckNode failed; nodeId given is null.")
 		return false, err
 	}
 
@@ -151,19 +151,19 @@ func CheckVm(nsId string, infraId string, vmId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	//log.Debug().Msg("[Check vm] " + infraId + ", " + vmId)
+	//log.Debug().Msg("[Check node] " + infraId + ", " + nodeId)
 
-	key := common.GenInfraKey(nsId, infraId, vmId)
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckVm(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In CheckNode(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -294,37 +294,37 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 					}
 				}
 			}
-		case model.StrVM:
+		case model.StrNode:
 			infraListinNs, _ := ListInfraId(ns)
 			if infraListinNs == nil {
 				continue
 			}
 			for _, infra := range infraListinNs {
-				vmListInInfra, err := ListVmId(ns, infra)
+				nodeListInInfra, err := ListNodeId(ns, infra)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					err := fmt.Errorf("an error occurred while getting resource list")
 					return nullObj, err
 				}
-				if vmListInInfra == nil {
+				if nodeListInInfra == nil {
 					continue
 				}
 
-				for _, vmId := range vmListInInfra {
-					vm, err := GetVmObject(ns, infra, vmId)
+				for _, nodeId := range nodeListInInfra {
+					node, err := GetNodeObject(ns, infra, nodeId)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						err := fmt.Errorf("an error occurred while getting resource list")
 						return nullObj, err
 					}
 
-					if vm.ConnectionName == connConfig { // filtering
+					if node.ConnectionName == connConfig { // filtering
 						temp := model.ResourceOnTumblebugInfo{}
-						temp.IdByTb = vm.Id
-						temp.CspResourceId = vm.CspResourceId
+						temp.IdByTb = node.Id
+						temp.CspResourceId = node.CspResourceId
 						temp.NsId = ns
 						temp.InfraId = infra
-						temp.ObjectKey = common.GenInfraKey(ns, infra, vm.Id)
+						temp.ObjectKey = common.GenInfraKey(ns, infra, node.Id)
 
 						TbResourceList.Info = append(TbResourceList.Info, temp)
 					}
@@ -650,13 +650,13 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 			temp.TumblebugOverview.CustomImage = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.CustomImage = inspectResult.ResourceOverview.OnCspOnly
 
-			inspectResult, err = InspectResources(k.ConfigName, model.StrVM)
+			inspectResult, err = InspectResources(k.ConfigName, model.StrNode)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
 			}
-			temp.TumblebugOverview.Vm = inspectResult.ResourceOverview.OnTumblebug
-			temp.CspOnlyOverview.Vm = inspectResult.ResourceOverview.OnCspOnly
+			temp.TumblebugOverview.Node = inspectResult.ResourceOverview.OnTumblebug
+			temp.CspOnlyOverview.Node = inspectResult.ResourceOverview.OnCspOnly
 
 			inspectResult, err = InspectResources(k.ConfigName, model.StrNLB)
 			if err != nil {
@@ -692,7 +692,7 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 		output.TumblebugOverview.SshKey += k.TumblebugOverview.SshKey
 		output.TumblebugOverview.DataDisk += k.TumblebugOverview.DataDisk
 		output.TumblebugOverview.CustomImage += k.TumblebugOverview.CustomImage
-		output.TumblebugOverview.Vm += k.TumblebugOverview.Vm
+		output.TumblebugOverview.Node += k.TumblebugOverview.Node
 		output.TumblebugOverview.NLB += k.TumblebugOverview.NLB
 
 		output.CspOnlyOverview.VNet += k.CspOnlyOverview.VNet
@@ -700,7 +700,7 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 		output.CspOnlyOverview.SshKey += k.CspOnlyOverview.SshKey
 		output.CspOnlyOverview.DataDisk += k.CspOnlyOverview.DataDisk
 		output.CspOnlyOverview.CustomImage += k.CspOnlyOverview.CustomImage
-		output.CspOnlyOverview.Vm += k.CspOnlyOverview.Vm
+		output.CspOnlyOverview.Node += k.CspOnlyOverview.Node
 		output.CspOnlyOverview.NLB += k.CspOnlyOverview.NLB
 
 		if k.SystemMessage != "" {
@@ -932,7 +932,7 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 		output.RegisterationOverview.SshKey += k.RegisterationOverview.SshKey
 		output.RegisterationOverview.DataDisk += k.RegisterationOverview.DataDisk
 		output.RegisterationOverview.CustomImage += k.RegisterationOverview.CustomImage
-		output.RegisterationOverview.Vm += k.RegisterationOverview.Vm
+		output.RegisterationOverview.Node += k.RegisterationOverview.Node
 		output.RegisterationOverview.NLB += k.RegisterationOverview.NLB
 		output.RegisterationOverview.Failed += k.RegisterationOverview.Failed
 
@@ -1037,10 +1037,10 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 		}
 	}
 
-	// [5] VM
-	if doMap[model.StrVM] {
-		if res, err := InspectResources(connConfig, model.StrVM); err != nil {
-			result.SystemMessage += "// VM Inspect Failed: " + err.Error()
+	// [5] Node (VM)
+	if doMap[model.StrNode] {
+		if res, err := InspectResources(connConfig, model.StrNode); err != nil {
+			result.SystemMessage += "// Node Inspect Failed: " + err.Error()
 		} else {
 			// Determine Infra creation strategy based on infraFlag
 			useSingleInfra := strings.ToLower(infraFlag) == "y"
@@ -1052,23 +1052,23 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 
 			// Track network-based nodegroups: key = "vnetId_subnetId", value = nodegroup name
 			networkNodeGroupMap := make(map[string]string)
-			// Track nodegroup VM counts for naming: key = nodegroup name, value = VM count
-			nodegroupVmCount := make(map[string]int)
+			// Track nodegroup Node counts for naming: key = nodegroup name, value = Node count
+			nodegroupNodeCount := make(map[string]int)
 
 			if useSingleInfra {
-				// Single Infra mode: all VMs go into one Infra
+				// Single Infra mode: all Nodes go into one Infra
 				singleInfraName = common.ChangeIdString(infraNamePrefix)
 			}
 
-			// Phase 1: Register all VMs and collect network info
+			// Phase 1: Register all Nodes and collect network info
 			// We'll use temporary nodegroup names first, then reorganize
-			type registeredVmInfo struct {
-				vmId       string
+			type registeredNodeInfo struct {
+				nodeId       string
 				vnetId     string
 				subnetId   string
 				networkKey string
 			}
-			var registeredVms []registeredVmInfo
+			var registeredNodes []registeredNodeInfo
 
 			for idx, r := range res.Resources.OnCspOnly.Info {
 				// Generate a temporary unique nodegroup name for initial registration
@@ -1076,40 +1076,40 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 
 				var infraName string
 				if useSingleInfra {
-					// Use the same Infra name for all VMs
+					// Use the same Infra name for all Nodes
 					infraName = singleInfraName
 				} else {
-					// Create separate Infra for each VM (use shorter name)
+					// Create separate Infra for each Node (use shorter name)
 					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.RefNameOrId))
 				}
 
-				var vmId string
+				var nodeId string
 				if useSingleInfra && singleInfraCreated {
-					// Add VM to existing Infra
+					// Add Node to existing Infra
 					nodeGroupReq := &model.CreateNodeGroupReq{
 						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempNodeGroupName,
-						Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
+						Description: "Ref name: " + r.RefNameOrId + ". CSP managed Node (registered to CB-TB)",
 						Label:       map[string]string{model.LabelRegistered: "true"},
 						// Placeholders
 						ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
 						SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 					}
-					infraInfo, err := CreateInfraGroupVm(ctx, nsId, infraName, nodeGroupReq, true)
-					appendResult(&result, model.StrVM, tempNodeGroupName, err, &result.RegisterationOverview.Vm)
+					infraInfo, err := CreateInfraGroupNode(ctx, nsId, infraName, nodeGroupReq, true)
+					appendResult(&result, model.StrNode, tempNodeGroupName, err, &result.RegisterationOverview.Node)
 					if err == nil {
 						registeredInfras[infraName] = true
-						// Get the VM ID from the newly added VM
-						if infraInfo != nil && len(infraInfo.NewVmList) > 0 {
-							vmId = infraInfo.NewVmList[0]
+						// Get the Node ID from the newly added Node
+						if infraInfo != nil && len(infraInfo.NewNodeList) > 0 {
+							nodeId = infraInfo.NewNodeList[0]
 						}
 					}
 				} else {
-					// Create new Infra (either first VM in single Infra mode, or each VM in separate Infra mode)
+					// Create new Infra (either first Node in single Infra mode, or each Node in separate Infra mode)
 					req := model.InfraReq{
-						Name: infraName, Description: "Infra for CSP managed VMs", InstallMonAgent: "no",
+						Name: infraName, Description: "Infra for CSP managed Nodes", InstallMonAgent: "no",
 						NodeGroups: []model.CreateNodeGroupReq{{
 							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempNodeGroupName,
-							Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
+							Description: "Ref name: " + r.RefNameOrId + ". CSP managed Node (registered to CB-TB)",
 							Label:       map[string]string{model.LabelRegistered: "true"},
 							// Placeholders
 							ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
@@ -1117,31 +1117,31 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						}},
 					}
 					infraInfo, err := CreateInfra(ctx, nsId, &req, optionFlag, false)
-					appendResult(&result, model.StrVM, tempNodeGroupName, err, &result.RegisterationOverview.Vm)
+					appendResult(&result, model.StrNode, tempNodeGroupName, err, &result.RegisterationOverview.Node)
 
 					if err == nil {
 						registeredInfras[infraName] = true
 						if useSingleInfra {
 							singleInfraCreated = true
 						}
-						// Get the VM ID from the newly created VM
-						if infraInfo != nil && len(infraInfo.NewVmList) > 0 {
-							vmId = infraInfo.NewVmList[0]
-						} else if infraInfo != nil && len(infraInfo.Vm) > 0 {
-							vmId = infraInfo.Vm[0].Id
+						// Get the Node ID from the newly created Node
+						if infraInfo != nil && len(infraInfo.NewNodeList) > 0 {
+							nodeId = infraInfo.NewNodeList[0]
+						} else if infraInfo != nil && len(infraInfo.Node) > 0 {
+							nodeId = infraInfo.Node[0].Id
 						}
 					}
 				}
 
-				// If VM was registered successfully, collect its network info
-				if vmId != "" && useSingleInfra {
-					vmInfo, err := GetVmObject(nsId, singleInfraName, vmId)
-					if err == nil && vmInfo.VNetId != "" {
-						networkKey := fmt.Sprintf("%s_%s", vmInfo.VNetId, vmInfo.SubnetId)
-						registeredVms = append(registeredVms, registeredVmInfo{
-							vmId:       vmId,
-							vnetId:     vmInfo.VNetId,
-							subnetId:   vmInfo.SubnetId,
+				// If Node was registered successfully, collect its network info
+				if nodeId != "" && useSingleInfra {
+					nodeInfo, err := GetNodeObject(nsId, singleInfraName, nodeId)
+					if err == nil && nodeInfo.VNetId != "" {
+						networkKey := fmt.Sprintf("%s_%s", nodeInfo.VNetId, nodeInfo.SubnetId)
+						registeredNodes = append(registeredNodes, registeredNodeInfo{
+							nodeId:       nodeId,
+							vnetId:     nodeInfo.VNetId,
+							subnetId:   nodeInfo.SubnetId,
 							networkKey: networkKey,
 						})
 					}
@@ -1149,18 +1149,18 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 			}
 
 			// Phase 2: Reorganize nodegroups by network configuration (only for single Infra mode)
-			if useSingleInfra && len(registeredVms) > 1 {
-				log.Info().Msgf("Reorganizing %d VMs into network-based nodegroups in Infra %s", len(registeredVms), singleInfraName)
+			if useSingleInfra && len(registeredNodes) > 1 {
+				log.Info().Msgf("Reorganizing %d VMs into network-based nodegroups in Infra %s", len(registeredNodes), singleInfraName)
 
 				// Group VMs by network configuration
-				networkGroups := make(map[string][]string) // networkKey -> []vmId
-				for _, vm := range registeredVms {
-					networkGroups[vm.networkKey] = append(networkGroups[vm.networkKey], vm.vmId)
+				networkGroups := make(map[string][]string) // networkKey -> []nodeId
+				for _, node := range registeredNodes {
+					networkGroups[node.networkKey] = append(networkGroups[node.networkKey], node.nodeId)
 				}
 
 				// Generate meaningful nodegroup names and update VMs
 				nodegroupIndex := 1
-				for networkKey, vmIds := range networkGroups {
+				for networkKey, nodeIds := range networkGroups {
 					var newNodeGroupName string
 					if len(networkGroups) == 1 {
 						// All VMs in same network - use simple name
@@ -1173,19 +1173,19 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 
 					// Track for logging
 					networkNodeGroupMap[networkKey] = newNodeGroupName
-					nodegroupVmCount[newNodeGroupName] = len(vmIds)
+					nodegroupNodeCount[newNodeGroupName] = len(nodeIds)
 
 					// Update each VM's NodeGroupId
-					for _, vmId := range vmIds {
-						vmInfo, err := GetVmObject(nsId, singleInfraName, vmId)
+					for _, nodeId := range nodeIds {
+						nodeInfo, err := GetNodeObject(nsId, singleInfraName, nodeId)
 						if err != nil {
-							log.Warn().Err(err).Msgf("Failed to get VM %s for nodegroup update", vmId)
+							log.Warn().Err(err).Msgf("Failed to get VM %s for nodegroup update", nodeId)
 							continue
 						}
 
-						oldNodeGroupId := vmInfo.NodeGroupId
-						vmInfo.NodeGroupId = newNodeGroupName
-						UpdateVmInfo(nsId, singleInfraName, vmInfo)
+						oldNodeGroupId := nodeInfo.NodeGroupId
+						nodeInfo.NodeGroupId = newNodeGroupName
+						UpdateNodeInfo(nsId, singleInfraName, nodeInfo)
 
 						// Delete old nodegroup if it was temporary (starts with "reg-")
 						if oldNodeGroupId != "" && strings.HasPrefix(oldNodeGroupId, "reg-") && oldNodeGroupId != newNodeGroupName {
@@ -1201,13 +1201,13 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						Id:            newNodeGroupName,
 						Name:          newNodeGroupName,
 						Uid:           common.GenUid(),
-						NodeGroupSize: len(vmIds),
-						VmId:          vmIds,
+						NodeGroupSize: len(nodeIds),
+						NodeId:        nodeIds,
 					}
 					nodegroupVal, _ := json.Marshal(nodegroupInfo)
 					kvstore.Put(nodegroupKey, string(nodegroupVal))
 
-					log.Info().Msgf("Created nodegroup '%s' with %d VMs (network: %s)", newNodeGroupName, len(vmIds), networkKey)
+					log.Info().Msgf("Created nodegroup '%s' with %d VMs (network: %s)", newNodeGroupName, len(nodeIds), networkKey)
 				}
 			}
 
@@ -1255,7 +1255,7 @@ func getValidatedOptionMap(option string) (map[string]bool, error) {
 			model.StrVNet,
 			model.StrSecurityGroup,
 			model.StrSSHKey,
-			model.StrVM,
+			model.StrNode,
 			model.StrDataDisk,
 		}
 		for _, op := range allResources {
@@ -1286,7 +1286,7 @@ func validateReqOptions(doMap map[string]bool) error {
 		model.StrVNet:          true,
 		model.StrSecurityGroup: true,
 		model.StrSSHKey:        true,
-		model.StrVM:            true,
+		model.StrNode:            true,
 		model.StrDataDisk:      true,
 	}
 
@@ -1297,8 +1297,8 @@ func validateReqOptions(doMap map[string]bool) error {
 	}
 
 	requiredDeps := map[string][]string{
-		model.StrDataDisk:      {model.StrVM},
-		model.StrVM:            {model.StrSecurityGroup, model.StrSSHKey},
+		model.StrDataDisk:      {model.StrNode},
+		model.StrNode:            {model.StrSecurityGroup, model.StrSSHKey},
 		model.StrSecurityGroup: {model.StrVNet},
 	}
 
@@ -1334,51 +1334,51 @@ func appendResult(result *model.RegisterResourceResult, resType, name string, er
 	result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, fmt.Sprintf("%s: %s%s", resType, name, status))
 }
 
-func FindTbVmByCspId(nsId string, infraId string, vmCspResourceId string) (model.VmInfo, error) {
+func FindTbNodeByCspId(nsId string, infraId string, nodeCspResourceId string) (model.NodeInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
-	err = common.CheckString(vmCspResourceId)
+	err = common.CheckString(nodeCspResourceId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	check, err := CheckInfra(nsId, infraId)
 
 	if !check {
 		err := fmt.Errorf("The Infra " + infraId + " does not exist.")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the Infra " + infraId + ".")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Infra " + infraId + ".")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
-	vms := infra.Vm
-	for _, v := range vms {
-		if v.CspResourceId == vmCspResourceId || v.CspResourceName == vmCspResourceId {
+	nodes := infra.Node
+	for _, v := range nodes {
+		if v.CspResourceId == nodeCspResourceId || v.CspResourceName == nodeCspResourceId {
 			return v, nil
 		}
 	}
 
-	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmCspResourceId, nsId, infraId)
-	return model.VmInfo{}, err
+	err = fmt.Errorf("Cannot find the VM %s in %s/%s", nodeCspResourceId, nsId, infraId)
+	return model.NodeInfo{}, err
 }

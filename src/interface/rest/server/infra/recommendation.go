@@ -77,8 +77,8 @@ func RestRecommendSpecOptions(c echo.Context) error {
 }
 
 type RestPostInfraRecommendResponse struct {
-	//VmReq          []VmRecommendReq    `json:"vmReq"`
-	VmRecommend    []model.VmRecommendInfo `json:"vmRecommend"`
+	//VmReq          []VmRecommendReq    `json:"nodeReq"`
+	NodeRecommend  []model.NodeRecommendInfo `json:"nodeRecommend"`
 	PlacementAlgo  string                  `json:"placementAlgo"`
 	PlacementParam []model.KeyValue        `json:"placementParam"`
 }

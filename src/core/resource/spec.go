@@ -515,7 +515,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 		tumblebugSpec.ConnectionName = connConfig.ConfigName
 		tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
 		tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
-		tumblebugSpec.InfraType = model.StrVM  // default value should be enhanced later
+		tumblebugSpec.InfraType = model.StrNode  // default value should be enhanced later
 		tumblebugSpec.SystemLabel = "auto-gen" // default value
 		tumblebugSpec.AssociatedObjectList = []string{}
 
@@ -1565,7 +1565,7 @@ func fetchAzurePricesDirect(azureConfigs []model.ConnConfig) (successCount uint,
 			defer func() { <-semaphore }()
 
 			region := config.RegionDetail.RegionName
-			priceData, fetchErr := azurePricing.FetchVMPricesByRegion(region)
+			priceData, fetchErr := azurePricing.FetchNodePricesByRegion(region)
 			if fetchErr != nil {
 				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error fetching Azure prices for connection %s: %w", config.ConfigName, fetchErr)}
 				return
@@ -1638,7 +1638,7 @@ func fetchAWSPricesDirect(awsConfigs []model.ConnConfig) (successCount uint, err
 	maxConcurrent := 8
 
 	// One global API call fetches pricing for ALL AWS regions at once.
-	priceMap, err := awsPricing.FetchAllVMPrices(context.Background())
+	priceMap, err := awsPricing.FetchAllNodePrices(context.Background())
 	if err != nil {
 		errMsg := fmt.Sprintf("AWS direct pricing fetch failed: %v", err)
 		log.Error().Msg(errMsg)
@@ -1779,7 +1779,7 @@ func fetchAlibabaPricesDirect(alibabaConfigs []model.ConnConfig) (successCount u
 				return
 			}
 
-			priceData, fetchErr := alibabaPricing.FetchVMPricesByRegionFiltered(context.Background(), region, targetSpecNames)
+			priceData, fetchErr := alibabaPricing.FetchNodePricesByRegionFiltered(context.Background(), region, targetSpecNames)
 			if fetchErr != nil {
 				resultChan <- connResult{ConnName: config.ConfigName, Err: fmt.Errorf("Error fetching Alibaba prices for connection %s: %w", config.ConfigName, fetchErr)}
 				return

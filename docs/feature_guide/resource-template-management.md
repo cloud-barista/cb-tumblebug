@@ -200,7 +200,7 @@ sequenceDiagram
         Provisioner->>Spider: Create VMs
         Spider->>CSP: Provision resources
         CSP-->>Spider: Resource details
-        Spider-->>Provisioner: VM info
+        Spider-->>Provisioner: Node info
         Provisioner-->>API: Infra created
     end
 
@@ -222,7 +222,7 @@ sequenceDiagram
     rect rgb(230, 240, 255)
         Note over API,Infra: Phase 1: Extract Configuration
         API->>Infra: ExtractInfraDynamicReqFromInfraInfo(nsId, infraId)
-        Infra->>ETCD: Get Infra info + VM details
+        Infra->>ETCD: Get Infra info + Node details
         ETCD-->>Infra: Infra data
         Infra-->>API: InfraDynamicReq (cleaned)
     end
@@ -244,7 +244,7 @@ sequenceDiagram
 
 ### 1. Infra Template (Multi-Cloud Infrastructure)
 
-Captures a complete multi-cloud VM deployment specification:
+Captures a complete multi-cloud Node deployment specification:
 
 ```json
 {
@@ -278,9 +278,9 @@ Captures a complete multi-cloud VM deployment specification:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | Yes | NodeGroup name (VM name prefix) |
+| `name` | Yes | NodeGroup name (Node name prefix) |
 | `nodeGroupSize` | No | Number of VMs in this group (default: 1) |
-| `specId` | Yes | VM spec ID (e.g., `aws+us-east-2+g6.2xlarge`) |
+| `specId` | Yes | Compute spec ID (e.g., `aws+us-east-2+g6.2xlarge`) |
 | `imageId` | Yes | OS image ID (e.g., AMI for AWS) |
 | `label` | No | User-defined labels (e.g., `{"accelerator": "gpu"}`) |
 | `rootDiskType` | No | Disk type (e.g., `gp2`, `gp3`, `PremiumSSD`) |

@@ -105,7 +105,7 @@ func init() {
 // CheckSpecAvailability checks whether a given Azure VM spec is available
 // in the specified region by checking both SKU restrictions (including
 // opt-in / subscription-level) and vCPU quota.
-func CheckSpecAvailability(ctx context.Context, region, vmSize string) (*SpecCheckResult, error) {
+func CheckSpecAvailability(ctx context.Context, region, nodeSize string) (*SpecCheckResult, error) {
 	creds, err := getCreds(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Azure credentials: %w", err)
@@ -119,10 +119,10 @@ func CheckSpecAvailability(ctx context.Context, region, vmSize string) (*SpecChe
 	}
 
 	cacheKey := creds.SubscriptionID + "+" + region
-	vmSizeLower := strings.ToLower(vmSize)
+	nodeSizeLower := strings.ToLower(nodeSize)
 
 	// Step 1: SKU existence & restrictions
-	sku, err := getSKUDetail(ctx, creds, credential, cacheKey, region, vmSizeLower)
+	sku, err := getSKUDetail(ctx, creds, credential, cacheKey, region, nodeSizeLower)
 	if err != nil {
 		return nil, err
 	}
@@ -130,17 +130,17 @@ func CheckSpecAvailability(ctx context.Context, region, vmSize string) (*SpecChe
 	if sku == nil {
 		return &SpecCheckResult{
 			Available: false,
-			Reason:    fmt.Sprintf("VM size '%s' does not exist in region '%s'", vmSize, region),
+			Reason:    fmt.Sprintf("VM size '%s' does not exist in region '%s'", nodeSize, region),
 		}, nil
 	}
 
 	if sku.restricted {
-		reason := fmt.Sprintf("VM size '%s' is restricted in region '%s'", vmSize, region)
+		reason := fmt.Sprintf("VM size '%s' is restricted in region '%s'", nodeSize, region)
 		switch sku.reasonCode {
 		case "NotAvailableForSubscription":
-			reason = fmt.Sprintf("VM size '%s' requires opt-in for your subscription in region '%s' (request via Azure Portal > Subscription > Usage + quotas)", vmSize, region)
+			reason = fmt.Sprintf("VM size '%s' requires opt-in for your subscription in region '%s' (request via Azure Portal > Subscription > Usage + quotas)", nodeSize, region)
 		case "QuotaId":
-			reason = fmt.Sprintf("VM size '%s' is restricted by quota policy in region '%s'", vmSize, region)
+			reason = fmt.Sprintf("VM size '%s' is restricted by quota policy in region '%s'", nodeSize, region)
 		}
 		return &SpecCheckResult{
 			Available:   false,
@@ -169,7 +169,7 @@ func CheckSpecAvailability(ctx context.Context, region, vmSize string) (*SpecChe
 				result.Available = false
 				result.Reason = fmt.Sprintf(
 					"Insufficient vCPU quota for '%s' in region '%s': need %d vCPUs but only %d remaining (used %d / limit %d, family: %s). Request increase via Azure Portal > Subscription > Usage + quotas",
-					vmSize, region, sku.vcpus, remaining, quota.currentValue, quota.limit, sku.family,
+					nodeSize, region, sku.vcpus, remaining, quota.currentValue, quota.limit, sku.family,
 				)
 			}
 		}
@@ -177,7 +177,7 @@ func CheckSpecAvailability(ctx context.Context, region, vmSize string) (*SpecChe
 
 	log.Debug().
 		Str("region", region).
-		Str("vmSize", vmSize).
+		Str("nodeSize", nodeSize).
 		Bool("available", result.Available).
 		Str("reason", result.Reason).
 		Int32("vcpus", result.VCPUs).
@@ -188,18 +188,18 @@ func CheckSpecAvailability(ctx context.Context, region, vmSize string) (*SpecChe
 }
 
 // getSKUDetail retrieves SKU detail for a VM size, using cache if available.
-func getSKUDetail(ctx context.Context, creds *azureCreds, cred *azidentity.ClientSecretCredential, cacheKey, region, vmSizeLower string) (*skuDetail, error) {
+func getSKUDetail(ctx context.Context, creds *azureCreds, cred *azidentity.ClientSecretCredential, cacheKey, region, nodeSizeLower string) (*skuDetail, error) {
 	specCacheMu.RLock()
 	entry, ok := specCache[cacheKey]
 	specCacheMu.RUnlock()
 
 	if ok && time.Since(entry.fetchedAt) < cacheTTL {
 		log.Debug().Str("region", region).Msg("[AzureSpec] SKU cache hit")
-		return entry.skus[vmSizeLower], nil
+		return entry.skus[nodeSizeLower], nil
 	}
 
 	log.Debug().Str("region", region).Msg("[AzureSpec] Fetching resource SKUs from Azure")
-	skus, err := fetchVMSKUs(ctx, creds, cred, region)
+	skus, err := fetchNodeSKUs(ctx, creds, cred, region)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch Azure SKUs for region %s: %w", region, err)
 	}
@@ -208,7 +208,7 @@ func getSKUDetail(ctx context.Context, creds *azureCreds, cred *azidentity.Clien
 	specCache[cacheKey] = &specCacheEntry{skus: skus, fetchedAt: time.Now()}
 	specCacheMu.Unlock()
 
-	return skus[vmSizeLower], nil
+	return skus[nodeSizeLower], nil
 }
 
 // getQuotaUsage retrieves quota usage for a VM family, using cache if available.
@@ -237,8 +237,8 @@ func getQuotaUsage(ctx context.Context, creds *azureCreds, cred *azidentity.Clie
 	return usages[familyLower], nil
 }
 
-// fetchVMSKUs queries Azure Resource SKUs API and returns detailed info per VM size.
-func fetchVMSKUs(ctx context.Context, creds *azureCreds, cred *azidentity.ClientSecretCredential, region string) (map[string]*skuDetail, error) {
+// fetchNodeSKUs queries Azure Resource SKUs API and returns detailed info per VM size.
+func fetchNodeSKUs(ctx context.Context, creds *azureCreds, cred *azidentity.ClientSecretCredential, region string) (map[string]*skuDetail, error) {
 	client, err := armcompute.NewResourceSKUsClient(creds.SubscriptionID, cred, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ResourceSKUs client: %w", err)

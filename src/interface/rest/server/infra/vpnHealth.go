@@ -27,9 +27,9 @@ import (
 // RestPostVpnHealthCheck godoc
 // @ID PostVpnHealthCheck
 // @Summary Check the health of a site-to-site VPN by bidirectional ping test
-// @Description Perform a bidirectional ping test on a site-to-site VPN using existing Infra VMs and return the results.
+// @Description Perform a bidirectional ping test on a site-to-site VPN using existing Infra nodes and return the results.
 // @Description
-// @Description It finds VMs that belong to the VPN's two sites and runs ping tests
+// @Description It finds nodes that belong to the VPN's two sites and runs ping tests
 // @Description in both directions (site1→site2 and site2→site1) via private IP.
 // @Description The VPN is considered healthy only when both directions succeed.
 // @Description

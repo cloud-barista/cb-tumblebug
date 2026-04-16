@@ -191,8 +191,8 @@ func RestDelAllDataDisk(c echo.Context) error {
 	return nil
 }
 
-// RestPutVmDataDisk godoc
-// @ID PutVmDataDisk
+// RestPutNodeDataDisk godoc
+// @ID PutNodeDataDisk
 // @Summary Attach/Detach available dataDisk
 // @Description Attach/Detach available dataDisk
 // @Tags [Infra Resource] Data Disk Management
@@ -201,20 +201,20 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Param attachDetachDataDiskReq body model.AttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param option query string true "Option for Infra" Enums(attach, detach)
-// @Param force query string false "Force to attach/detach even if VM info is not matched" Enums(true, false)
-// @Success 200 {object} model.VmInfo
+// @Param force query string false "Force to attach/detach even if node info is not matched" Enums(true, false)
+// @Success 200 {object} model.NodeInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk [put]
-func RestPutVmDataDisk(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk [put]
+func RestPutNodeDataDisk(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	option := c.QueryParam("option")
 	forceStr := c.QueryParam("force")
@@ -236,7 +236,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 	case model.AttachDataDisk:
 		fallthrough
 	case model.DetachDataDisk:
-		result, err := infra.AttachDetachDataDisk(nsId, infraId, vmId, option, u.DataDiskId, forceBool)
+		result, err := infra.AttachDetachDataDisk(nsId, infraId, nodeId, option, u.DataDiskId, forceBool)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	default:
@@ -245,35 +245,35 @@ func RestPutVmDataDisk(c echo.Context) error {
 	}
 }
 
-// RestPostVmDataDisk godoc
-// @ID PostVmDataDisk
+// RestPostNodeDataDisk godoc
+// @ID PostNodeDataDisk
 // @Summary Provisioning (Create and attach) dataDisk
 // @Description Provisioning (Create and attach) dataDisk
 // @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
-// @Param dataDiskInfo body model.DataDiskVmReq true "Details for an Data Disk object"
+// @Param dataDiskInfo body model.DataDiskNodeReq true "Details for an Data Disk object"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Success 200 {object} model.VmInfo
+// @Param nodeId path string true "Node ID" default(g1-1)
+// @Success 200 {object} model.NodeInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk [post]
-func RestPostVmDataDisk(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk [post]
+func RestPostNodeDataDisk(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
-	u := &model.DataDiskVmReq{}
+	u := &model.DataDiskNodeReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ProvisionDataDisk(ctx, nsId, infraId, vmId, u)
+	result, err := infra.ProvisionDataDisk(ctx, nsId, infraId, nodeId, u)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -281,30 +281,30 @@ func RestPostVmDataDisk(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestGetVmDataDisk godoc
-// @ID GetVmDataDisk
-// @Summary Get available dataDisks for a VM
-// @Description Get available dataDisks for a VM
+// RestGetNodeDataDisk godoc
+// @ID GetNodeDataDisk
+// @Summary Get available dataDisks for a node
+// @Description Get available dataDisks for a node
 // @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllDataDiskResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk [get]
-func RestGetVmDataDisk(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk [get]
+func RestGetNodeDataDisk(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 	optionFlag := c.QueryParam("option")
 
-	result, err := infra.GetAvailableDataDisks(nsId, infraId, vmId, optionFlag)
+	result, err := infra.GetAvailableDataDisks(nsId, infraId, nodeId, optionFlag)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

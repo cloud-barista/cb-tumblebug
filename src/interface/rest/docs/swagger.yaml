@@ -1312,9 +1312,9 @@ paths:
     post:
       tags:
       - "[Admin] System Management"
-      summary: "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in\
+      summary: "Inspect Resources (vNet, securityGroup, sshKey, node) registered in\
         \ CB-Tumblebug, CB-Spider, CSP"
-      description: "Inspect Resources (vNet, securityGroup, sshKey, vm) registered\
+      description: "Inspect Resources (vNet, securityGroup, sshKey, node) registered\
         \ in CB-Tumblebug, CB-Spider, CSP"
       operationId: InspectResources
       parameters:
@@ -1354,10 +1354,10 @@ paths:
     get:
       tags:
       - "[Admin] System Management"
-      summary: "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered\
+      summary: "Inspect Resources Overview (vNet, securityGroup, sshKey, node) registered\
         \ in CB-Tumblebug and CSP for all connections"
-      description: "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered\
-        \ in CB-Tumblebug and CSP for all connections"
+      description: "Inspect Resources Overview (vNet, securityGroup, sshKey, node)\
+        \ registered in CB-Tumblebug and CSP for all connections"
       operationId: InspectResourcesOverview
       parameters:
       - name: x-request-id
@@ -1530,7 +1530,7 @@ paths:
           - ns
           - infra
           - nodeGroup
-          - vm
+          - node
           - k8s
           - vNet
           - subnet
@@ -1587,7 +1587,7 @@ paths:
           - ns
           - infra
           - nodeGroup
-          - vm
+          - node
           - k8s
           - vNet
           - subnet
@@ -1653,7 +1653,7 @@ paths:
           - ns
           - infra
           - nodeGroup
-          - vm
+          - node
           - k8s
           - vNet
           - subnet
@@ -1970,7 +1970,7 @@ paths:
           - ns
           - infra
           - nodeGroup
-          - vm
+          - node
           - k8s
           - vNet
           - subnet
@@ -2543,7 +2543,7 @@ paths:
       - "[MC-Infra] Infra Remote Command"
       summary: Send a command to specified Infra
       description: |-
-        Send a command to specified Infra. Use query parameters to target specific nodeGroup or VM.
+        Send a command to specified Infra. Use query parameters to target specific nodeGroup or node.
         When async=true, returns immediately with xRequestId and streams results via SSE at GET /stream/ns/{nsId}/cmd/infra/{infraId}?xRequestId={xRequestId}
       operationId: PostCmdInfra
       parameters:
@@ -2563,20 +2563,20 @@ paths:
           default: infra01
       - name: nodeGroupId
         in: query
-        description: nodeGroupId to apply the command only for VMs in nodeGroup of
-          Infra
+        description: nodeGroupId to apply the command only for nodes in nodeGroup
+          of Infra
         schema:
           type: string
           default: g1
-      - name: vmId
+      - name: nodeId
         in: query
-        description: vmId to apply the command only for a VM in Infra
+        description: nodeId to apply the command only for a node in Infra
         schema:
           type: string
           default: g1-1
       - name: labelSelector
         in: query
-        description: "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
+        description: "Target node Label selector query. Example: sys.id=g1-1,role=worker"
         schema:
           type: string
       - name: async
@@ -2639,7 +2639,7 @@ paths:
       summary: List execution tasks for an Infra
       description: List all running and completed execution tasks for a specific Infra.
         These tasks can be cancelled if still in progress. The task list is based
-        on persistent VM command status records.
+        on persistent node command status records.
       operationId: GetInfraExecutionTasks
       parameters:
       - name: nsId
@@ -2718,7 +2718,7 @@ paths:
           default: infra01
       - name: taskId
         in: path
-        description: "Task ID (format: xRequestId:vmId:index)"
+        description: "Task ID (format: xRequestId:nodeId:index)"
         required: true
         schema:
           type: string
@@ -2758,7 +2758,7 @@ paths:
       - "[MC-Infra] Infra Remote Command"
       summary: Cancel an execution task
       description: Cancel a running execution task by task ID. This will send a cancellation
-        signal to the task and update the VM command status.
+        signal to the task and update the node command status.
       operationId: CancelExecutionTask
       parameters:
       - name: nsId
@@ -2983,13 +2983,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/control/infra/{infraId}/vm/{vmId}:
+  /ns/{nsId}/control/infra/{infraId}/node/{nodeId}:
     get:
       tags:
       - "[MC-Infra] Infra Provisioning and Management"
-      summary: "Control the lifecycle of VM (suspend, resume, reboot, terminate)"
-      description: "Control the lifecycle of VM (suspend, resume, reboot, terminate)"
-      operationId: GetControlInfraVm
+      summary: "Control the lifecycle of node (suspend, resume, reboot, terminate)"
+      description: "Control the lifecycle of node (suspend, resume, reboot, terminate)"
+      operationId: GetControlInfraNode
       parameters:
       - name: nsId
         in: path
@@ -3005,9 +3005,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -3214,14 +3214,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregisterResource/infra/{infraId}/vm/{vmId}:
+  /ns/{nsId}/deregisterResource/infra/{infraId}/node/{nodeId}:
     delete:
       tags:
       - "[MC-Infra] Infra Provisioning and Management"
-      summary: Deregister VM in specified Infra
-      description: Deregister VM from Spider and TB without deleting the actual CSP
-        resource
-      operationId: DeregisterInfraVm
+      summary: Deregister node in specified Infra
+      description: Deregister node from Spider and TB without deleting the actual
+        CSP resource
+      operationId: DeregisterInfraNode
       parameters:
       - name: nsId
         in: path
@@ -3237,9 +3237,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -3470,15 +3470,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/downloadFile/infra/{infraId}/vm/{vmId}:
+  /ns/{nsId}/downloadFile/infra/{infraId}/node/{nodeId}:
     post:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Download a file from a VM in Infra
+      summary: Download a file from a node in Infra
       description: |-
-        Download a file from a specific VM in Infra via SCP through bastion host.
+        Download a file from a specific node in Infra via SCP through bastion host.
         The file size should be less than 200MB.
-      operationId: PostDownloadFileFromInfraVm
+      operationId: PostDownloadFileFromInfraNode
       parameters:
       - name: nsId
         in: path
@@ -3494,9 +3494,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -3620,33 +3620,33 @@ paths:
       - "[MC-Infra] Infra Provisioning and Management"
       summary: Create Infra (Multi-Cloud Infrastructure)
       description: |-
-        Create Infra with detailed VM specifications and resource configuration.
+        Create Infra with detailed node specifications and resource configuration.
         This endpoint creates a complete multi-cloud infrastructure by:
-        1. **VM Provisioning**: Creates VMs across multiple cloud providers using predefined specs and images
+        1. **node Provisioning**: Creates nodes across multiple cloud providers using predefined specs and images
         2. **Resource Management**: Automatically handles VPC/VNet, security groups, SSH keys, and network configuration
-        3. **Status Tracking**: Monitors VM creation progress and handles failures based on policy settings
+        3. **Status Tracking**: Monitors node creation progress and handles failures based on policy settings
         4. **Post-Deployment**: Optionally installs monitoring agents and executes custom commands
 
         **Key Features:**
-        - Multi-cloud VM deployment with heterogeneous configurations
-        - Automatic resource dependency management (VPC → Security Group → VM)
+        - Multi-cloud node deployment with heterogeneous configurations
+        - Automatic resource dependency management (VPC → Security Group → node)
         - Built-in failure handling with configurable policies (continue/rollback/refine)
         - Optional CB-Dragonfly monitoring agent installation
         - Post-deployment command execution support
         - Real-time status updates and progress tracking
 
-        **VM Lifecycle:**
+        **node Lifecycle:**
         1. Creating → Running (successful deployment)
         2. Creating → Failed (deployment error, handled by failure policy)
         3. Running → Terminated (manual or policy-driven cleanup)
 
         **Failure Policies:**
-        - `continue`: Keep successful VMs, mark failed ones for later refinement
-        - `rollback`: Delete entire Infra if any VM fails (all-or-nothing)
-        - `refine`: Automatically clean up failed VMs, keep successful ones
+        - `continue`: Keep successful nodes, mark failed ones for later refinement
+        - `rollback`: Delete entire Infra if any node fails (all-or-nothing)
+        - `refine`: Automatically clean up failed nodes, keep successful ones
 
         **Resource Requirements:**
-        - Valid VM specifications (must exist in system namespace)
+        - Valid node specifications (must exist in system namespace)
         - Valid images (must be available in target CSP regions)
         - Sufficient CSP quotas and permissions
         - Network connectivity between components
@@ -3671,8 +3671,8 @@ paths:
         schema:
           type: string
       requestBody:
-        description: "Infra creation request with VM specifications, networking, and\
-          \ deployment options"
+        description: "Infra creation request with node specifications, networking,\
+          \ and deployment options"
         content:
           application/json:
             schema:
@@ -3680,7 +3680,7 @@ paths:
         required: true
       responses:
         "200":
-          description: "Created Infra information with VM details, status, and resource\
+          description: "Created Infra information with node details, status, and resource\
             \ mapping"
           content:
             application/json:
@@ -3763,8 +3763,8 @@ paths:
     get:
       tags:
       - "[MC-Infra] Infra Provisioning and Management"
-      summary: "Get Infra object (option: status, accessInfo, vmId)"
-      description: "Get Infra object (option: status, accessInfo, vmId)"
+      summary: "Get Infra object (option: status, accessInfo, nodeId)"
+      description: "Get Infra object (option: status, accessInfo, nodeId)"
       operationId: GetInfra
       parameters:
       - name: nsId
@@ -4037,11 +4037,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: securityGroupInfo
-  /ns/{nsId}/infra/{infraId}/bastion/{bastionInfraId}/{bastionVmId}:
+  /ns/{nsId}/infra/{infraId}/bastion/{bastionInfraId}/{bastionNodeId}:
     delete:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Remove a bastion VM (cross-Infra) from all vNets
+      summary: Remove a bastion node (cross-Infra) from all vNets
       description: Remove a specific cross-Infra bastion from all vNets of the target
         Infra
       operationId: RemoveBastionNodesWithInfra
@@ -4066,9 +4066,9 @@ paths:
         required: true
         schema:
           type: string
-      - name: bastionVmId
+      - name: bastionNodeId
         in: path
-        description: Bastion VM ID
+        description: Bastion Node ID
         required: true
         schema:
           type: string
@@ -4102,11 +4102,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionVmId}:
+  /ns/{nsId}/infra/{infraId}/bastion/{bastionNodeId}:
     delete:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Remove a bastion VM (cross-namespace) from all vNets
+      summary: Remove a bastion node from all vNets
+      description: Remove a bastion node from all vNets
+      operationId: RemoveBastionNodes
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: bastionNodeId
+        in: path
+        description: Bastion Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionNodeId}:
+    delete:
+      tags:
+      - "[MC-Infra] Infra Remote Command"
+      summary: Remove a bastion node (cross-namespace) from all vNets
       description: Remove a specific cross-namespace bastion from all vNets of the
         target Infra
       operationId: RemoveBastionNodesWithNs
@@ -4137,71 +4196,12 @@ paths:
         required: true
         schema:
           type: string
-      - name: bastionVmId
+      - name: bastionNodeId
         in: path
-        description: Bastion VM ID
+        description: Bastion Node ID
         required: true
         schema:
           type: string
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/bastion/{bastionVmId}:
-    delete:
-      tags:
-      - "[MC-Infra] Infra Remote Command"
-      summary: Remove a bastion VM from all vNets
-      description: Remove a bastion VM from all vNets
-      operationId: RemoveBastionNodes
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: bastionVmId
-        in: path
-        description: Bastion VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -4309,9 +4309,9 @@ paths:
     get:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Get count of currently handling commands for all VMs in Infra
+      summary: Get count of currently handling commands for all nodes in Infra
       description: Get the number of commands currently in 'Handling' status for all
-        VMs in an Infra. Returns per-VM counts and total count.
+        nodes in an Infra. Returns per-node counts and total count.
       operationId: GetInfraHandlingCommandCount
       parameters:
       - name: nsId
@@ -4781,13 +4781,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/vm:
+  /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/node:
     post:
       tags:
       - "[Infra Resource] NLB Management (for developer)"
-      summary: Add VMs to NLB
-      description: Add VMs to NLB
-      operationId: AddNLBVMs
+      summary: Add nodes to NLB
+      description: Add nodes to NLB
+      operationId: AddNLBNodes
       parameters:
       - name: nsId
         in: path
@@ -4822,11 +4822,11 @@ paths:
         schema:
           type: string
       requestBody:
-        description: VMs to add to NLB
+        description: nodes to add to NLB
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.NLBAddRemoveVMReq'
+              $ref: '#/components/schemas/model.NLBAddRemoveNodeReq'
         required: true
       responses:
         "200":
@@ -4847,13 +4847,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: nlbAddRemoveVMReq
+      x-codegen-request-body-name: nlbAddRemoveNodeReq
     delete:
       tags:
       - "[Infra Resource] NLB Management (for developer)"
-      summary: Delete VMs from NLB
-      description: Delete VMs from NLB
-      operationId: RemoveNLBVMs
+      summary: Delete nodes from NLB
+      description: Delete nodes from NLB
+      operationId: RemoveNLBNodes
       parameters:
       - name: nsId
         in: path
@@ -4888,11 +4888,11 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Select VMs to remove from NLB
+        description: Select nodes to remove from NLB
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.NLBAddRemoveVMReq'
+              $ref: '#/components/schemas/model.NLBAddRemoveNodeReq'
         required: true
       responses:
         "200":
@@ -4907,635 +4907,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: nlbAddRemoveVMReq
-  /ns/{nsId}/infra/{infraId}/nodeGroupDynamic:
+      x-codegen-request-body-name: nlbAddRemoveNodeReq
+  /ns/{nsId}/infra/{infraId}/node:
     post:
       tags:
       - "[MC-Infra] Infra Provisioning and Management"
-      summary: Add VM Dynamically to Existing Infra
-      description: |-
-        Dynamically add new virtual machines to an existing Infra using common specifications and automated resource management.
-        This endpoint provides elastic scaling capabilities for running Infras:
-
-        **Dynamic VM Addition Process:**
-        1. **Infra Validation**: Verifies target Infra exists and is in a valid state for expansion
-        2. **Resource Discovery**: Resolves common spec and image to provider-specific resources
-        3. **Network Integration**: Automatically configures new VMs to use existing Infra network resources
-        4. **NodeGroup Management**: Creates new nodegroups or expands existing ones based on configuration
-        5. **Status Synchronization**: Updates Infra status and metadata to reflect new VM additions
-
-        **Integration with Existing Infrastructure:**
-        - **Network Reuse**: New VMs automatically join existing VNets and security groups
-        - **SSH Key Sharing**: Uses existing SSH keys for consistent access management
-        - **Monitoring Integration**: New VMs inherit monitoring configuration from parent Infra
-        - **Label Propagation**: Applies Infra-level labels and policies to new VMs
-        - **Resource Consistency**: Maintains naming conventions and resource organization
-
-        **Scaling Scenarios:**
-        - **Horizontal Scaling**: Add more instances to handle increased workload
-        - **Multi-Region Expansion**: Deploy VMs in new regions while maintaining Infra cohesion
-        - **Provider Diversification**: Add VMs from different cloud providers for redundancy
-        - **Workload Specialization**: Deploy VMs with different specifications for specific tasks
-
-        **Configuration Requirements:**
-        - `specId`: Must specify valid VM specification from system namespace
-        - `imageId`: Must specify valid image compatible with target provider/region
-        - `name`: Becomes nodegroup name; VMs will be named with sequential suffixes
-        - `nodeGroupSize`: Number of identical VMs to create (default: 1)
-
-        **Network and Security:**
-        - New VMs automatically inherit security group rules from existing Infra
-        - Network connectivity to existing VMs is established automatically
-        - Firewall rules and access policies are applied consistently
-        - SSH access is configured using existing key pairs
-
-        **Example Use Cases:**
-        - Scale out web tier during traffic spikes
-        - Add GPU instances for machine learning workloads
-        - Deploy edge nodes in additional geographic regions
-        - Add specialized storage or database nodes to existing application stack
-
-        **Post-Addition Operations:**
-        - New VMs are immediately available for standard Infra operations
-        - Can be individually managed or grouped with existing nodegroups
-        - Monitoring and logging are automatically configured
-        - Application deployment and configuration management can proceed immediately
-      operationId: PostInfraNodeGroupDynamic
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID containing the target Infra
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID to which new VMs will be added
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID to select which credentials to use for\
-          \ provisioning (default: system default holder)"
-        schema:
-          type: string
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      requestBody:
-        description: "NodeGroup dynamic request specifying specId, imageId, and scaling\
-          \ parameters"
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.CreateNodeGroupDynamicReq'
-        required: true
-      responses:
-        "200":
-          description: Updated Infra information including newly added VMs and current
-            status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.InfraInfo'
-        "400":
-          description: Invalid VM request or incompatible configuration parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Target Infra not found or specified resources unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "409":
-          description: NodeGroup name conflicts or Infra in incompatible state
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: VM creation failed or network integration error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: vmReq
-  /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview:
-    post:
-      tags:
-      - "[MC-Infra] Infra Provisioning and Management"
-      summary: Review VM Dynamic Addition Request for Existing Infra
-      description: |-
-        Review and validate a VM dynamic addition request for an existing Infra before actual provisioning.
-        This endpoint provides comprehensive validation for adding new VMs to existing Infras without actually creating resources.
-        It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
-
-        **Key Features:**
-        - Validates VM specification and image against CSP availability
-        - Checks compatibility with existing Infra configuration
-        - Provides cost estimation for the new VM addition
-        - Identifies potential configuration issues and warnings
-        - Recommends optimization strategies
-        - Non-invasive validation (no resources are created)
-
-        **Review Status:**
-        - `Ready`: VM can be added successfully
-        - `Warning`: VM can be added but with configuration warnings
-        - `Error`: Critical errors prevent VM addition
-
-        **Infra Integration Validation:**
-        - Ensures target Infra exists and is in a compatible state
-        - Validates network integration possibilities
-        - Checks resource naming conflicts
-        - Verifies security group and SSH key compatibility
-
-        **Use Cases:**
-        - Pre-validation before expensive VM addition operations
-        - Cost estimation for scaling decisions
-        - Configuration optimization before deployment
-        - Risk assessment for VM addition to existing infrastructure
-      operationId: PostInfraDynamicNodeGroupVmReview
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID containing the target Infra
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID to which the VM will be added
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID to select which credentials to use for\
-          \ review (default: system default holder)"
-        schema:
-          type: string
-      requestBody:
-        description: "Request body to review VM dynamic addition. Must include specId\
-          \ and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small,\
-          \ imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})"
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.CreateNodeGroupDynamicReq'
-        required: true
-      responses:
-        "200":
-          description: "Comprehensive VM addition review result with validation status,\
-            \ cost estimation, and recommendations"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.ReviewNodeGroupDynamicReqInfo'
-        "400":
-          description: Invalid request format or parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Target Infra not found or namespace not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal server error during validation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: vmReq
-  /ns/{nsId}/infra/{infraId}/nodegroup:
-    get:
-      tags:
-      - "[MC-Infra] Infra Provisioning and Management"
-      summary: List NodeGroup IDs in a specified Infra
-      description: List NodeGroup IDs in a specified Infra
-      operationId: GetInfraGroupIds
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.IdList'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}:
-    get:
-      tags:
-      - "[MC-Infra] Infra Provisioning and Management"
-      summary: List VMs with a NodeGroup label in a specified Infra
-      description: List VMs with a NodeGroup label in a specified Infra
-      operationId: GetInfraGroupVms
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: nodegroupId
-        in: path
-        description: nodeGroup ID
-        required: true
-        schema:
-          type: string
-          default: g1
-      - name: option
-        in: query
-        description: Option
-        schema:
-          type: string
-          enum:
-          - id
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.IdList'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-    post:
-      tags:
-      - "[MC-Infra] Infra Provisioning and Management"
-      summary: Scale Out Existing NodeGroup in Infra
-      description: |-
-        Horizontally scale an existing VM nodegroup by adding more identical instances for increased capacity.
-        This endpoint provides elastic scaling capabilities for running application tiers:
-
-        **Scale-Out Process:**
-        1. **NodeGroup Validation**: Verifies target nodegroup exists and is in scalable state
-        2. **Template Replication**: Uses existing VM configuration as template for new instances
-        3. **Resource Allocation**: Ensures sufficient CSP quotas and network resources
-        4. **Parallel Deployment**: Deploys multiple new VMs simultaneously for faster scaling
-        5. **Integration**: Seamlessly integrates new VMs into existing nodegroup and Infra
-
-        **Configuration Inheritance:**
-        - **VM Specifications**: New VMs inherit exact specifications from existing nodegroup members
-        - **Network Settings**: Automatically placed in same VNet, subnet, and security groups
-        - **SSH Keys**: Use same SSH key pairs for consistent access management
-        - **Monitoring**: Inherit monitoring agent configuration and policies
-        - **Labels and Metadata**: Propagate all labels and metadata from parent nodegroup
-
-        **Scaling Scenarios:**
-        - **Traffic Spikes**: Quickly add capacity during high-demand periods
-        - **Seasonal Scaling**: Scale out for predictable demand increases
-        - **Performance Optimization**: Add instances to reduce per-VM resource utilization
-        - **Geographic Expansion**: Scale existing workloads to handle broader user base
-        - **Fault Tolerance**: Increase redundancy by adding more instances
-
-        **Intelligent Scaling:**
-        - **Sequential Naming**: New VMs follow established naming pattern (e.g., web-4, web-5, web-6)
-        - **Load Distribution**: New VMs are distributed optimally across availability zones
-        - **Resource Efficiency**: Reuses existing network and security infrastructure
-        - **Minimal Disruption**: Scaling occurs without affecting existing VM operations
-        - **Consistent Configuration**: Ensures all VMs in nodegroup remain homogeneous
-
-        **Operational Benefits:**
-        - **Zero Downtime**: Existing VMs continue running during scale-out operation
-        - **Immediate Availability**: New VMs are ready for traffic as soon as deployment completes
-        - **Unified Management**: All VMs (old and new) managed through single nodegroup
-        - **Policy Consistency**: All scaling and management policies apply uniformly
-        - **Monitoring Integration**: New VMs automatically included in existing monitoring dashboards
-
-        **Scale-Out Considerations:**
-        - **CSP Quotas**: Verifies sufficient instance, network, and storage quotas
-        - **Region Capacity**: Ensures target region has capacity for requested instance types
-        - **Network Limits**: Validates that VNet can accommodate additional VMs
-        - **Cost Impact**: Additional VMs incur proportional CSP billing costs
-        - **Application Readiness**: Applications should be designed to handle additional instances
-
-        **Post-Scale Operations:**
-        - New VMs immediately participate in nodegroup operations
-        - Can be individually managed while maintaining nodegroup membership
-        - Support for further scaling operations (scale-out or scale-in)
-        - Ready for application deployment and load balancer integration
-
-        **Best Practices:**
-        - Monitor application performance before and after scaling
-        - Ensure load balancers are configured to include new instances
-        - Verify application clustering and session management handle new instances
-        - Consider database connection limits and other resource constraints
-      operationId: PostInfraNodeGroupScaleOut
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID containing the target Infra and nodegroup
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID containing the nodegroup to scale
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: nodegroupId
-        in: path
-        description: NodeGroup ID to scale out (must exist and contain at least one
-          VM)
-        required: true
-        schema:
-          type: string
-          default: g1
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      requestBody:
-        description: Scale-out request specifying the number of additional VMs to
-          create
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.ScaleOutNodeGroupReq'
-        required: true
-      responses:
-        "200":
-          description: Updated Infra information with scaled nodegroup showing all
-            VMs including newly added instances
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.InfraInfo'
-        "400":
-          description: "Invalid scale-out request, insufficient quotas, or invalid\
-            \ VM count"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: "Target Infra or nodegroup not found, or namespace inaccessible"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "409":
-          description: NodeGroup in incompatible state for scaling or resource conflicts
-            detected
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: "VM provisioning failed, network configuration error, or CSP\
-            \ capacity limitations"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: vmReq
-  /ns/{nsId}/infra/{infraId}/site:
-    get:
-      tags:
-      - "[Infra Resource] Site-to-site VPN Management (preview)"
-      summary: Get sites in Infra
-      description: Get sites in Infra
-      operationId: GetSitesInInfra
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SitesInfo'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/snapshot:
-    post:
-      tags:
-      - "[Infra Resource] Image Management"
-      summary: Create snapshots for all nodegroups in Infra (one VM per nodegroup
-        in parallel)
-      description: Create snapshots for the first running VM in each nodegroup of
-        an Infra in parallel
-      operationId: PostInfraSnapshot
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      requestBody:
-        description: Request body to create Infra snapshots
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.SnapshotReq'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.InfraSnapshotResult'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: snapshotReq
-  /ns/{nsId}/infra/{infraId}/vm:
-    post:
-      tags:
-      - "[MC-Infra] Infra Provisioning and Management"
-      summary: Add Homogeneous VM NodeGroup to Existing Infra
+      summary: Add Homogeneous node NodeGroup to Existing Infra
       description: |-
         Create and add a group of identical virtual machines (nodegroup) to an existing Infra using detailed specifications.
-        This endpoint provides precise control over VM configuration and placement within existing infrastructure:
+        This endpoint provides precise control over node configuration and placement within existing infrastructure:
 
         **NodeGroup Creation Process:**
-        1. **Infra Integration**: Validates target Infra exists and can accommodate new VMs
+        1. **Infra Integration**: Validates target Infra exists and can accommodate new nodes
         2. **Resource Validation**: Verifies all specified resources (specs, images, networks) exist and are accessible
-        3. **Homogeneous Deployment**: Creates multiple identical VMs with consistent configuration
-        4. **Network Integration**: Integrates new VMs with existing Infra networking and security policies
+        3. **Homogeneous Deployment**: Creates multiple identical nodes with consistent configuration
+        4. **Network Integration**: Integrates new nodes with existing Infra networking and security policies
         5. **Group Management**: Establishes nodegroup for collective management and operations
 
         **Detailed Configuration Control:**
         - **Specific Resource References**: Uses exact resource IDs rather than common specifications
         - **Network Placement**: Precise control over VNet, subnet, and security group assignment
         - **Storage Configuration**: Detailed disk configuration including type, size, and performance tiers
-        - **Instance Customization**: Full control over VM specifications, images, and metadata
+        - **Instance Customization**: Full control over node specifications, images, and metadata
         - **Security Settings**: Explicit security group and SSH key configuration
 
         **NodeGroup Benefits:**
         - **Collective Operations**: Perform operations on entire nodegroup simultaneously
-        - **Homogeneous Scaling**: All VMs in nodegroup share identical configuration
-        - **Simplified Management**: Single configuration template for multiple VMs
+        - **Homogeneous Scaling**: All nodes in nodegroup share identical configuration
+        - **Simplified Management**: Single configuration template for multiple nodes
         - **Consistent Naming**: Automatic sequential naming (e.g., web-1, web-2, web-3)
         - **Group Policies**: Apply scaling, monitoring, and lifecycle policies at nodegroup level
 
         **Use Cases:**
         - **Application Tiers**: Deploy multiple instances of web servers, application servers, or databases
-        - **Load Distribution**: Create multiple identical VMs for load balancing scenarios
+        - **Load Distribution**: Create multiple identical nodes for load balancing scenarios
         - **High Availability**: Deploy redundant instances across availability zones
         - **Batch Processing**: Create worker nodes for distributed computing workloads
         - **Development Environments**: Provision identical development or testing instances
@@ -5545,20 +4950,20 @@ paths:
         - **Network Configuration**: VNet, subnet, and security group must exist and be compatible
         - **SSH Keys**: Must specify valid SSH key pairs for access management
         - **Image Compatibility**: Specified image must be available in target region
-        - **Quota Validation**: Sufficient CSP quotas must be available for all requested VMs
+        - **Quota Validation**: Sufficient CSP quotas must be available for all requested nodes
 
         **NodeGroup Size Considerations:**
-        - **Small Groups (1-5 VMs)**: Fast deployment, minimal resource contention
-        - **Medium Groups (6-20 VMs)**: Optimized parallel deployment with resource batching
-        - **Large Groups (21+ VMs)**: Advanced deployment strategies to avoid CSP rate limits
+        - **Small Groups (1-5 nodes)**: Fast deployment, minimal resource contention
+        - **Medium Groups (6-20 nodes)**: Optimized parallel deployment with resource batching
+        - **Large Groups (21+ nodes)**: Advanced deployment strategies to avoid CSP rate limits
         - **Resource Limits**: Respects CSP quotas and CB-Tumblebug configuration limits
 
         **Post-Deployment Integration:**
         - NodeGroup becomes integral part of parent Infra
-        - All VMs inherit Infra-level monitoring and management policies
-        - Can be scaled out further or individual VMs can be managed separately
-        - Supports all standard CB-Tumblebug VM lifecycle operations
-      operationId: PostInfraVm
+        - All nodes inherit Infra-level monitoring and management policies
+        - Can be scaled out further or individual nodes can be managed separately
+        - Supports all standard CB-Tumblebug node lifecycle operations
+      operationId: PostInfraNode
       parameters:
       - name: nsId
         in: path
@@ -5569,7 +4974,7 @@ paths:
           default: default
       - name: infraId
         in: path
-        description: Infra ID to which the VM nodegroup will be added
+        description: Infra ID to which the node nodegroup will be added
         required: true
         schema:
           type: string
@@ -5586,7 +4991,7 @@ paths:
         schema:
           type: string
       requestBody:
-        description: "Detailed VM nodegroup specification including exact resource\
+        description: "Detailed node nodegroup specification including exact resource\
           \ IDs, networking, and scaling parameters"
         content:
           application/json:
@@ -5595,14 +5000,14 @@ paths:
         required: true
       responses:
         "200":
-          description: Updated Infra information including newly created VM nodegroup
-            with individual VM details and status
+          description: Updated Infra information including newly created node nodegroup
+            with individual node details and status
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.InfraInfo'
         "400":
-          description: "Invalid VM request, missing required resources, or configuration\
+          description: "Invalid node request, missing required resources, or configuration\
             \ conflicts"
           content:
             application/json:
@@ -5623,308 +5028,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: "VM provisioning failed, network configuration error, or CSP\
-            \ API communication failure"
+          description: "node provisioning failed, network configuration error, or\
+            \ CSP API communication failure"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: vmReq
-  /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion:
-    get:
-      tags:
-      - "[MC-Infra] Infra Remote Command"
-      summary: Get bastion nodes for a VM
-      description: Get bastion nodes for a VM
-      operationId: GetBastionNodes
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: targetVmId
-        in: path
-        description: Target VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/model.BastionNode'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionInfraId}/{bastionVmId}:
-    put:
-      tags:
-      - "[MC-Infra] Infra Remote Command"
-      summary: Set bastion nodes for a VM using a bastion from another Infra (same
-        namespace)
-      description: "Set bastion nodes for a target VM, specifying a bastion VM that\
-        \ belongs to a different Infra within the same namespace (cross-Infra bastion).\
-        \ This allows, for example, an AWS VM to serve as a bastion for an OpenStack\
-        \ VM."
-      operationId: SetBastionNodesWithInfra
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Target Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: targetVmId
-        in: path
-        description: Target VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      - name: bastionInfraId
-        in: path
-        description: Bastion Infra ID (may differ from target Infra)
-        required: true
-        schema:
-          type: string
-          default: infra-bastion
-      - name: bastionVmId
-        in: path
-        description: Bastion VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionVmId}:
-    put:
-      tags:
-      - "[MC-Infra] Infra Remote Command"
-      summary: Set bastion nodes for a VM using a bastion from a different namespace
-        and Infra
-      description: "Set bastion nodes for a target VM, specifying a bastion VM that\
-        \ belongs to a different namespace and Infra (cross-namespace bastion). This\
-        \ allows, for example, a VM in a shared-services namespace to act as a bastion\
-        \ for VMs in other namespaces."
-      operationId: SetBastionNodesWithNs
-      parameters:
-      - name: nsId
-        in: path
-        description: Target Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Target Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: targetVmId
-        in: path
-        description: Target VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      - name: bastionNsId
-        in: path
-        description: Bastion Namespace ID (may differ from target namespace)
-        required: true
-        schema:
-          type: string
-          default: ns-bastion
-      - name: bastionInfraId
-        in: path
-        description: Bastion Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra-bastion
-      - name: bastionVmId
-        in: path
-        description: Bastion VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionVmId}:
-    put:
-      tags:
-      - "[MC-Infra] Infra Remote Command"
-      summary: Set bastion nodes for a VM
-      description: Set bastion nodes for a VM
-      operationId: SetBastionNodes
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: infraId
-        in: path
-        description: Infra ID
-        required: true
-        schema:
-          type: string
-          default: infra01
-      - name: targetVmId
-        in: path
-        description: Target VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      - name: bastionVmId
-        in: path
-        description: Bastion VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}:
+      x-codegen-request-body-name: nodeGroupReq
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}:
     get:
       tags:
       - "[MC-Infra] Infra Provisioning and Management"
-      summary: Get VM in specified Infra
-      description: Get VM in specified Infra
-      operationId: GetInfraVm
+      summary: Get node in specified Infra
+      description: Get node in specified Infra
+      operationId: GetInfraNode
       parameters:
       - name: nsId
         in: path
@@ -5940,9 +5057,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -5984,11 +5101,11 @@ paths:
                 - type: object
                   properties:
                     '[DEFAULT]':
-                      $ref: '#/components/schemas/model.VmInfo'
+                      $ref: '#/components/schemas/model.NodeInfo'
                     '[IDNAME]':
                       $ref: '#/components/schemas/model.IdNameInDetailInfo'
                     '[STATUS]':
-                      $ref: '#/components/schemas/model.VmStatusInfo'
+                      $ref: '#/components/schemas/model.NodeStatusInfo'
         "404":
           description: Not Found
           content:
@@ -6004,9 +5121,9 @@ paths:
     delete:
       tags:
       - "[MC-Infra] Infra Provisioning and Management"
-      summary: Delete VM in specified Infra
-      description: Delete VM in specified Infra
-      operationId: DelInfraVm
+      summary: Delete node in specified Infra
+      description: Delete node in specified Infra
+      operationId: DelInfraNode
       parameters:
       - name: nsId
         in: path
@@ -6022,16 +5139,16 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
           default: g1-1
       - name: option
         in: query
-        description: Option for delete VM (support force delete)
+        description: Option for delete node (support force delete)
         schema:
           type: string
           enum:
@@ -6060,13 +5177,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus:
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus:
     get:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: List command status records for a VM with filtering
-      description: List command status records for a VM with various filtering options
-      operationId: ListVmCommandStatus
+      summary: List command status records for a node with filtering
+      description: List command status records for a node with various filtering options
+      operationId: ListNodeCommandStatus
       parameters:
       - name: nsId
         in: path
@@ -6082,9 +5199,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6179,10 +5296,10 @@ paths:
     delete:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Delete multiple command status records by criteria for a VM
-      description: Delete multiple command status records for a VM based on filtering
+      summary: Delete multiple command status records by criteria for a node
+      description: Delete multiple command status records for a node based on filtering
         criteria
-      operationId: DeleteVmCommandStatusByCriteria
+      operationId: DeleteNodeCommandStatusByCriteria
       parameters:
       - name: nsId
         in: path
@@ -6198,9 +5315,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6280,13 +5397,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus/{index}:
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus/{index}:
     get:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Get a specific command status by index for a VM
-      description: Get a specific command status record by index for a VM
-      operationId: GetVmCommandStatus
+      summary: Get a specific command status by index for a node
+      description: Get a specific command status record by index for a node
+      operationId: GetNodeCommandStatus
       parameters:
       - name: nsId
         in: path
@@ -6302,9 +5419,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6349,9 +5466,9 @@ paths:
     delete:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Delete a specific command status by index for a VM
-      description: Delete a specific command status record by index for a VM
-      operationId: DeleteVmCommandStatus
+      summary: Delete a specific command status by index for a node
+      description: Delete a specific command status record by index for a node
+      operationId: DeleteNodeCommandStatus
       parameters:
       - name: nsId
         in: path
@@ -6367,9 +5484,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6411,13 +5528,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatusAll:
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatusAll:
     delete:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Clear all command status records for a VM
-      description: Delete all command status records for a VM
-      operationId: ClearAllVmCommandStatus
+      summary: Clear all command status records for a node
+      description: Delete all command status records for a node
+      operationId: ClearAllNodeCommandStatus
       parameters:
       - name: nsId
         in: path
@@ -6433,9 +5550,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6470,13 +5587,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk:
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk:
     get:
       tags:
       - "[Infra Resource] Data Disk Management"
-      summary: Get available dataDisks for a VM
-      description: Get available dataDisks for a VM
-      operationId: GetVmDataDisk
+      summary: Get available dataDisks for a node
+      description: Get available dataDisks for a node
+      operationId: GetNodeDataDisk
       parameters:
       - name: nsId
         in: path
@@ -6492,9 +5609,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6541,7 +5658,7 @@ paths:
       - "[Infra Resource] Data Disk Management"
       summary: Attach/Detach available dataDisk
       description: Attach/Detach available dataDisk
-      operationId: PutVmDataDisk
+      operationId: PutNodeDataDisk
       parameters:
       - name: nsId
         in: path
@@ -6557,9 +5674,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6575,7 +5692,7 @@ paths:
           - detach
       - name: force
         in: query
-        description: Force to attach/detach even if VM info is not matched
+        description: Force to attach/detach even if node info is not matched
         schema:
           type: string
           enum:
@@ -6605,7 +5722,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.VmInfo'
+                $ref: '#/components/schemas/model.NodeInfo'
         "404":
           description: Not Found
           content:
@@ -6624,7 +5741,7 @@ paths:
       - "[Infra Resource] Data Disk Management"
       summary: Provisioning (Create and attach) dataDisk
       description: Provisioning (Create and attach) dataDisk
-      operationId: PostVmDataDisk
+      operationId: PostNodeDataDisk
       parameters:
       - name: nsId
         in: path
@@ -6640,9 +5757,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6663,7 +5780,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.DataDiskVmReq'
+              $ref: '#/components/schemas/model.DataDiskNodeReq'
         required: true
       responses:
         "200":
@@ -6671,7 +5788,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.VmInfo'
+                $ref: '#/components/schemas/model.NodeInfo'
         "404":
           description: Not Found
           content:
@@ -6679,14 +5796,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: dataDiskInfo
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}/handlingCount:
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/handlingCount:
     get:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Get count of currently handling commands for a VM
+      summary: Get count of currently handling commands for a node
       description: Get the number of commands currently in 'Handling' status for a
-        specific VM. Optimized for frequent polling.
-      operationId: GetVmHandlingCommandCount
+        specific node. Optimized for frequent polling.
+      operationId: GetNodeHandlingCommandCount
       parameters:
       - name: nsId
         in: path
@@ -6702,9 +5819,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6739,13 +5856,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}/snapshot:
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/snapshot:
     post:
       tags:
       - "[Infra Resource] Image Management"
-      summary: Snapshot VM and create a Custom Image Object using the Snapshot
-      description: Snapshot VM and create a Custom Image Object using the Snapshot
-      operationId: PostInfraVmSnapshot
+      summary: Snapshot node and create a Custom Image Object using the Snapshot
+      description: Snapshot node and create a Custom Image Object using the Snapshot
+      operationId: PostInfraNodeSnapshot
       parameters:
       - name: nsId
         in: path
@@ -6761,9 +5878,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6780,7 +5897,7 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Request body to create VM snapshot
+        description: Request body to create node snapshot
         content:
           application/json:
             schema:
@@ -6806,14 +5923,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: snapshotReq
-  /ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey:
+  /ns/{nsId}/infra/{infraId}/node/{nodeId}/sshHostKey:
     get:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Get SSH host key information for a VM
-      description: Get the stored SSH host key information for a specific VM. This
+      summary: Get SSH host key information for a node
+      description: Get the stored SSH host key information for a specific node. This
         is used for TOFU (Trust On First Use) verification.
-      operationId: GetVmSshHostKey
+      operationId: GetNodeSshHostKey
       parameters:
       - name: nsId
         in: path
@@ -6829,9 +5946,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6869,12 +5986,12 @@ paths:
     delete:
       tags:
       - "[MC-Infra] Infra Remote Command"
-      summary: Reset SSH host key for a VM
-      description: "Reset the stored SSH host key for a specific VM. This should be\
-        \ used when the VM's host key has legitimately changed (e.g., after VM recreation)\
-        \ and you trust the new key. The next SSH connection will store the new host\
-        \ key (TOFU)."
-      operationId: DeleteVmSshHostKey
+      summary: Reset SSH host key for a node
+      description: "Reset the stored SSH host key for a specific node. This should\
+        \ be used when the node's host key has legitimately changed (e.g., after node\
+        \ recreation) and you trust the new key. The next SSH connection will store\
+        \ the new host key (TOFU)."
+      operationId: DeleteNodeSshHostKey
       parameters:
       - name: nsId
         in: path
@@ -6890,9 +6007,9 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
@@ -6927,6 +6044,889 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion:
+    get:
+      tags:
+      - "[MC-Infra] Infra Remote Command"
+      summary: Get bastion nodes for a node
+      description: Get bastion nodes for a node
+      operationId: GetBastionNodes
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: targetNodeId
+        in: path
+        description: Target Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/model.BastionNode'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionInfraId}/{bastionNodeId}:
+    put:
+      tags:
+      - "[MC-Infra] Infra Remote Command"
+      summary: Set bastion nodes for a node using a bastion from another Infra (same
+        namespace)
+      description: "Set bastion nodes for a target node, specifying a bastion node\
+        \ that belongs to a different Infra within the same namespace (cross-Infra\
+        \ bastion). This allows, for example, an AWS node to serve as a bastion for\
+        \ an OpenStack node."
+      operationId: SetBastionNodesWithInfra
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Target Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: targetNodeId
+        in: path
+        description: Target Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: bastionInfraId
+        in: path
+        description: Bastion Infra ID (may differ from target Infra)
+        required: true
+        schema:
+          type: string
+          default: infra-bastion
+      - name: bastionNodeId
+        in: path
+        description: Bastion Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionNodeId}:
+    put:
+      tags:
+      - "[MC-Infra] Infra Remote Command"
+      summary: Set bastion nodes for a node
+      description: Set bastion nodes for a node
+      operationId: SetBastionNodes
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: targetNodeId
+        in: path
+        description: Target Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: bastionNodeId
+        in: path
+        description: Bastion Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionNodeId}:
+    put:
+      tags:
+      - "[MC-Infra] Infra Remote Command"
+      summary: Set bastion nodes for a node using a bastion from a different namespace
+        and Infra
+      description: "Set bastion nodes for a target node, specifying a bastion node\
+        \ that belongs to a different namespace and Infra (cross-namespace bastion).\
+        \ This allows, for example, a node in a shared-services namespace to act as\
+        \ a bastion for nodes in other namespaces."
+      operationId: SetBastionNodesWithNs
+      parameters:
+      - name: nsId
+        in: path
+        description: Target Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Target Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: targetNodeId
+        in: path
+        description: Target Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: bastionNsId
+        in: path
+        description: Bastion Namespace ID (may differ from target namespace)
+        required: true
+        schema:
+          type: string
+          default: ns-bastion
+      - name: bastionInfraId
+        in: path
+        description: Bastion Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra-bastion
+      - name: bastionNodeId
+        in: path
+        description: Bastion Node ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/nodeGroupDynamic:
+    post:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Add node Dynamically to Existing Infra
+      description: |-
+        Dynamically add new virtual machines to an existing Infra using common specifications and automated resource management.
+        This endpoint provides elastic scaling capabilities for running Infras:
+
+        **Dynamic node Addition Process:**
+        1. **Infra Validation**: Verifies target Infra exists and is in a valid state for expansion
+        2. **Resource Discovery**: Resolves common spec and image to provider-specific resources
+        3. **Network Integration**: Automatically configures new nodes to use existing Infra network resources
+        4. **NodeGroup Management**: Creates new nodegroups or expands existing ones based on configuration
+        5. **Status Synchronization**: Updates Infra status and metadata to reflect new node additions
+
+        **Integration with Existing Infrastructure:**
+        - **Network Reuse**: New nodes automatically join existing VNets and security groups
+        - **SSH Key Sharing**: Uses existing SSH keys for consistent access management
+        - **Monitoring Integration**: New nodes inherit monitoring configuration from parent Infra
+        - **Label Propagation**: Applies Infra-level labels and policies to new nodes
+        - **Resource Consistency**: Maintains naming conventions and resource organization
+
+        **Scaling Scenarios:**
+        - **Horizontal Scaling**: Add more instances to handle increased workload
+        - **Multi-Region Expansion**: Deploy nodes in new regions while maintaining Infra cohesion
+        - **Provider Diversification**: Add nodes from different cloud providers for redundancy
+        - **Workload Specialization**: Deploy nodes with different specifications for specific tasks
+
+        **Configuration Requirements:**
+        - `specId`: Must specify valid node specification from system namespace
+        - `imageId`: Must specify valid image compatible with target provider/region
+        - `name`: Becomes nodegroup name; nodes will be named with sequential suffixes
+        - `nodeGroupSize`: Number of identical nodes to create (default: 1)
+
+        **Network and Security:**
+        - New nodes automatically inherit security group rules from existing Infra
+        - Network connectivity to existing nodes is established automatically
+        - Firewall rules and access policies are applied consistently
+        - SSH access is configured using existing key pairs
+
+        **Example Use Cases:**
+        - Scale out web tier during traffic spikes
+        - Add GPU instances for machine learning workloads
+        - Deploy edge nodes in additional geographic regions
+        - Add specialized storage or database nodes to existing application stack
+
+        **Post-Addition Operations:**
+        - New nodes are immediately available for standard Infra operations
+        - Can be individually managed or grouped with existing nodegroups
+        - Monitoring and logging are automatically configured
+        - Application deployment and configuration management can proceed immediately
+      operationId: PostInfraNodeGroupDynamic
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID containing the target Infra
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID to which new nodes will be added
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID to select which credentials to use for\
+          \ provisioning (default: system default holder)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: "NodeGroup dynamic request specifying specId, imageId, and scaling\
+          \ parameters"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.CreateNodeGroupDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: Updated Infra information including newly added nodes and current
+            status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraInfo'
+        "400":
+          description: Invalid node request or incompatible configuration parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Target Infra not found or specified resources unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: NodeGroup name conflicts or Infra in incompatible state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: node creation failed or network integration error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: nodeGroupReq
+  /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview:
+    post:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Review node Dynamic Addition Request for Existing Infra
+      description: |-
+        Review and validate a node dynamic addition request for an existing Infra before actual provisioning.
+        This endpoint provides comprehensive validation for adding new nodes to existing Infras without actually creating resources.
+        It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
+
+        **Key Features:**
+        - Validates node specification and image against CSP availability
+        - Checks compatibility with existing Infra configuration
+        - Provides cost estimation for the new node addition
+        - Identifies potential configuration issues and warnings
+        - Recommends optimization strategies
+        - Non-invasive validation (no resources are created)
+
+        **Review Status:**
+        - `Ready`: node can be added successfully
+        - `Warning`: node can be added but with configuration warnings
+        - `Error`: Critical errors prevent node addition
+
+        **Infra Integration Validation:**
+        - Ensures target Infra exists and is in a compatible state
+        - Validates network integration possibilities
+        - Checks resource naming conflicts
+        - Verifies security group and SSH key compatibility
+
+        **Use Cases:**
+        - Pre-validation before expensive node addition operations
+        - Cost estimation for scaling decisions
+        - Configuration optimization before deployment
+        - Risk assessment for node addition to existing infrastructure
+      operationId: PostInfraDynamicNodeGroupNodeReview
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID containing the target Infra
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID to which the node will be added
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID to select which credentials to use for\
+          \ review (default: system default holder)"
+        schema:
+          type: string
+      requestBody:
+        description: "Request body to review node dynamic addition. Must include specId\
+          \ and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small,\
+          \ imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.CreateNodeGroupDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: "Comprehensive node addition review result with validation\
+            \ status, cost estimation, and recommendations"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReviewNodeGroupDynamicReqInfo'
+        "400":
+          description: Invalid request format or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Target Infra not found or namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error during validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: nodeGroupReq
+  /ns/{nsId}/infra/{infraId}/nodegroup:
+    get:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: List NodeGroup IDs in a specified Infra
+      description: List NodeGroup IDs in a specified Infra
+      operationId: GetInfraGroupIds
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.IdList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}:
+    get:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: List nodes with a NodeGroup label in a specified Infra
+      description: List nodes with a NodeGroup label in a specified Infra
+      operationId: GetInfraGroupNodes
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: nodegroupId
+        in: path
+        description: nodeGroup ID
+        required: true
+        schema:
+          type: string
+          default: g1
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          enum:
+          - id
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.IdList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Scale Out Existing NodeGroup in Infra
+      description: |-
+        Horizontally scale an existing node nodegroup by adding more identical instances for increased capacity.
+        This endpoint provides elastic scaling capabilities for running application tiers:
+
+        **Scale-Out Process:**
+        1. **NodeGroup Validation**: Verifies target nodegroup exists and is in scalable state
+        2. **Template Replication**: Uses existing node configuration as template for new instances
+        3. **Resource Allocation**: Ensures sufficient CSP quotas and network resources
+        4. **Parallel Deployment**: Deploys multiple new nodes simultaneously for faster scaling
+        5. **Integration**: Seamlessly integrates new nodes into existing nodegroup and Infra
+
+        **Configuration Inheritance:**
+        - **node Specifications**: New nodes inherit exact specifications from existing nodegroup members
+        - **Network Settings**: Automatically placed in same VNet, subnet, and security groups
+        - **SSH Keys**: Use same SSH key pairs for consistent access management
+        - **Monitoring**: Inherit monitoring agent configuration and policies
+        - **Labels and Metadata**: Propagate all labels and metadata from parent nodegroup
+
+        **Scaling Scenarios:**
+        - **Traffic Spikes**: Quickly add capacity during high-demand periods
+        - **Seasonal Scaling**: Scale out for predictable demand increases
+        - **Performance Optimization**: Add instances to reduce per-node resource utilization
+        - **Geographic Expansion**: Scale existing workloads to handle broader user base
+        - **Fault Tolerance**: Increase redundancy by adding more instances
+
+        **Intelligent Scaling:**
+        - **Sequential Naming**: New nodes follow established naming pattern (e.g., web-4, web-5, web-6)
+        - **Load Distribution**: New nodes are distributed optimally across availability zones
+        - **Resource Efficiency**: Reuses existing network and security infrastructure
+        - **Minimal Disruption**: Scaling occurs without affecting existing node operations
+        - **Consistent Configuration**: Ensures all nodes in nodegroup remain homogeneous
+
+        **Operational Benefits:**
+        - **Zero Downtime**: Existing nodes continue running during scale-out operation
+        - **Immediate Availability**: New nodes are ready for traffic as soon as deployment completes
+        - **Unified Management**: All nodes (old and new) managed through single nodegroup
+        - **Policy Consistency**: All scaling and management policies apply uniformly
+        - **Monitoring Integration**: New nodes automatically included in existing monitoring dashboards
+
+        **Scale-Out Considerations:**
+        - **CSP Quotas**: Verifies sufficient instance, network, and storage quotas
+        - **Region Capacity**: Ensures target region has capacity for requested instance types
+        - **Network Limits**: Validates that VNet can accommodate additional nodes
+        - **Cost Impact**: Additional nodes incur proportional CSP billing costs
+        - **Application Readiness**: Applications should be designed to handle additional instances
+
+        **Post-Scale Operations:**
+        - New nodes immediately participate in nodegroup operations
+        - Can be individually managed while maintaining nodegroup membership
+        - Support for further scaling operations (scale-out or scale-in)
+        - Ready for application deployment and load balancer integration
+
+        **Best Practices:**
+        - Monitor application performance before and after scaling
+        - Ensure load balancers are configured to include new instances
+        - Verify application clustering and session management handle new instances
+        - Consider database connection limits and other resource constraints
+      operationId: PostInfraNodeGroupScaleOut
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID containing the target Infra and nodegroup
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID containing the nodegroup to scale
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: nodegroupId
+        in: path
+        description: NodeGroup ID to scale out (must exist and contain at least one
+          node)
+        required: true
+        schema:
+          type: string
+          default: g1
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      requestBody:
+        description: Scale-out request specifying the number of additional nodes to
+          create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ScaleOutNodeGroupReq'
+        required: true
+      responses:
+        "200":
+          description: Updated Infra information with scaled nodegroup showing all
+            nodes including newly added instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraInfo'
+        "400":
+          description: "Invalid scale-out request, insufficient quotas, or invalid\
+            \ node count"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: "Target Infra or nodegroup not found, or namespace inaccessible"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: NodeGroup in incompatible state for scaling or resource conflicts
+            detected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: "node provisioning failed, network configuration error, or\
+            \ CSP capacity limitations"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: nodeGroupReq
+  /ns/{nsId}/infra/{infraId}/site:
+    get:
+      tags:
+      - "[Infra Resource] Site-to-site VPN Management (preview)"
+      summary: Get sites in Infra
+      description: Get sites in Infra
+      operationId: GetSitesInInfra
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SitesInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/snapshot:
+    post:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Create snapshots for all nodegroups in Infra (one node per nodegroup
+        in parallel)
+      description: Create snapshots for the first running node in each nodegroup of
+        an Infra in parallel
+      operationId: PostInfraSnapshot
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      requestBody:
+        description: Request body to create Infra snapshots
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SnapshotReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraSnapshotResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: snapshotReq
   /ns/{nsId}/infra/{infraId}/vpn:
     get:
       tags:
@@ -7219,9 +7219,9 @@ paths:
       - "[Infra Resource] Site-to-site VPN Management (preview)"
       summary: Check the health of a site-to-site VPN by bidirectional ping test
       description: |-
-        Perform a bidirectional ping test on a site-to-site VPN using existing Infra VMs and return the results.
+        Perform a bidirectional ping test on a site-to-site VPN using existing Infra nodes and return the results.
 
-        It finds VMs that belong to the VPN's two sites and runs ping tests
+        It finds nodes that belong to the VPN's two sites and runs ping tests
         in both directions (site1→site2 and site2→site1) via private IP.
         The VPN is considered healthy only when both directions succeed.
 
@@ -7366,7 +7366,7 @@ paths:
       summary: Create Infra from a Template
       description: |-
         Create a new Infra by applying an Infra Dynamic Template.
-        The template provides the base VM configuration, and the apply request
+        The template provides the base node configuration, and the apply request
         allows overriding the Infra name and description.
 
         **Override Behavior (Phase 1):**
@@ -7391,7 +7391,7 @@ paths:
       - name: option
         in: query
         description: "Deployment option: 'hold' to create Infra without immediate\
-          \ VM provisioning"
+          \ node provisioning"
         schema:
           type: string
           enum:
@@ -7450,9 +7450,9 @@ paths:
         This is the **recommended approach** for Infra creation, providing simplified configuration with powerful automation:
 
         **Dynamic Resource Creation:**
-        1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace
+        1. **Automatic Resource Discovery**: Validates and selects optimal node specifications and images from common namespace
         2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider
-        3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously
+        3. **Cross-Cloud Orchestration**: Coordinates node provisioning across multiple cloud providers simultaneously
         4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically
         5. **Failure Recovery**: Implements configurable failure policies for robust deployment
 
@@ -7464,20 +7464,20 @@ paths:
         - **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization
 
         **Configuration Process:**
-        1. **Resource Discovery**: Use `/recommendSpec` to find suitable VM specifications
+        1. **Resource Discovery**: Use `/recommendSpec` to find suitable node specifications
         2. **Image Selection**: Use system namespace to discover compatible images
         3. **Request Validation**: Use `/infraDynamicCheckRequest` to validate configuration before deployment
         4. **Optional Preview**: Use `/infraDynamicReview` to estimate costs and review configuration
         5. **Deployment**: Submit Infra dynamic request with failure policy and deployment options
 
         **Failure Policies (PolicyOnPartialFailure):**
-        - **`continue`** (default): Create Infra with successful VMs, failed VMs remain for manual refinement
-        - **`rollback`**: Delete entire Infra if any VM fails (all-or-nothing deployment)
-        - **`refine`**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)
+        - **`continue`** (default): Create Infra with successful nodes, failed nodes remain for manual refinement
+        - **`rollback`**: Delete entire Infra if any node fails (all-or-nothing deployment)
+        - **`refine`**: Automatically clean up failed nodes, keep successful ones (recommended for large deployments)
 
         **Deployment Options:**
-        - **`hold`**: Create Infra object but hold VM provisioning for manual approval
-        - **Normal**: Proceed with immediate VM provisioning after resource creation
+        - **`hold`**: Create Infra object but hold node provisioning for manual approval
+        - **Normal**: Proceed with immediate node provisioning after resource creation
 
         **Multi-Cloud Example Configuration:**
         ```json
@@ -7485,7 +7485,7 @@ paths:
         "name": "multi-cloud-web-tier",
         "description": "Web application across AWS, Azure, and GCP",
         "policyOnPartialFailure": "refine",
-        "vm": [
+        "nodeGroups": [
         {
         "name": "aws-web-servers",
         "nodeGroupSize": "3",
@@ -7506,9 +7506,9 @@ paths:
         ```
 
         **Performance Considerations:**
-        - VM provisioning occurs in parallel across providers
+        - node provisioning occurs in parallel across providers
         - Network resources are created concurrently where possible
-        - Large deployments (>10 VMs) automatically use optimized batching
+        - Large deployments (>10 nodes) automatically use optimized batching
         - Built-in rate limiting prevents CSP API throttling
 
         **Monitoring and Post-Deployment:**
@@ -7528,7 +7528,7 @@ paths:
       - name: option
         in: query
         description: "Deployment option: 'hold' to create Infra without immediate\
-          \ VM provisioning"
+          \ node provisioning"
         schema:
           type: string
           enum:
@@ -7546,7 +7546,7 @@ paths:
           type: string
       requestBody:
         description: Dynamic Infra request with common specifications. Must include
-          specId and imageId for each VM group. See description for detailed example.
+          specId and imageId for each node group. See description for detailed example.
         content:
           application/json:
             schema:
@@ -7554,7 +7554,7 @@ paths:
         required: true
       responses:
         "200":
-          description: "Successfully created Infra with VM deployment status, resource\
+          description: "Successfully created Infra with node deployment status, resource\
             \ mappings, and configuration details"
           content:
             application/json:
@@ -7599,7 +7599,7 @@ paths:
         It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
 
         **Key Features:**
-        - Validates all VM specifications and images against CSP availability
+        - Validates all node specifications and images against CSP availability
         - Provides cost estimation (including partial estimates when some costs are unknown)
         - Identifies potential configuration issues and warnings
         - Recommends optimization strategies
@@ -7607,8 +7607,8 @@ paths:
         - Non-invasive validation (no resources are created)
 
         **Review Status:**
-        - `Ready`: All VMs can be created successfully
-        - `Warning`: VMs can be created but with configuration warnings
+        - `Ready`: All nodes can be created successfully
+        - `Warning`: nodes can be created but with configuration warnings
         - `Error`: Critical errors prevent Infra creation
 
         **Use Cases:**
@@ -7645,8 +7645,8 @@ paths:
           type: string
       requestBody:
         description: "Request body to review Infra dynamic provisioning. Must include\
-          \ specId and imageId info of each VM request. Same format as /infraDynamic\
-          \ endpoint. (ex: {name: infra01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04,\
+          \ specId and imageId info of each node request. Same format as /infraDynamic\
+          \ endpoint. (ex: {name: infra01, nodeGroups: [{imageId: aws+ap-northeast-2+ubuntu22.04,\
           \ specId: aws+ap-northeast-2+t2.small}]})"
         content:
           application/json:
@@ -8827,14 +8827,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: infraInfo
-  /ns/{nsId}/monitoring/status/infra/{infraId}/vm/{vmId}:
+  /ns/{nsId}/monitoring/status/infra/{infraId}/node/{nodeId}:
     put:
       tags:
       - "[MC-Infra] Infra Resource Monitor (for developer)"
       summary: Set monitoring agent (CB-Dragonfly agent) installation status installed
-        (for Windows VM only)
+        (for Windows node only)
       description: Set monitoring agent (CB-Dragonfly agent) installation status installed
-        (for Windows VM only)
+        (for Windows node only)
       operationId: PutMonitorAgentStatusInstalled
       parameters:
       - name: nsId
@@ -8851,13 +8851,13 @@ paths:
         schema:
           type: string
           default: infra01
-      - name: vmId
+      - name: nodeId
         in: path
-        description: VM ID
+        description: Node ID
         required: true
         schema:
           type: string
-          default: vm01
+          default: node01
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -8875,7 +8875,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.VmInfo'
+                $ref: '#/components/schemas/model.NodeInfo'
         "404":
           description: Not Found
           content:
@@ -9127,6 +9127,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/registerCspNode:
+    post:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Register Existing CSP nodes into Cloud-Barista Infra
+      description: |-
+        Import and register pre-existing virtual machines from cloud service providers into CB-Tumblebug management.
+        This endpoint allows you to bring existing CSP resources under CB-Tumblebug control without recreating them:
+
+        **Registration Process:**
+        1. **Discovery**: Validates that the specified node exists in the target CSP
+        2. **Metadata Import**: Retrieves node configuration, network settings, and current status
+        3. **Resource Mapping**: Creates CB-Tumblebug resource objects that reference the existing CSP resources
+        4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP node state
+        5. **Management Integration**: Enables CB-Tumblebug operations on the registered nodes
+
+        **Supported node States:**
+        - Running nodes (most common use case)
+        - Stopped nodes (will be registered with current state)
+        - nodes with attached storage and network interfaces
+
+        **Resource Compatibility:**
+        - node must exist in a supported CSP (AWS, Azure, GCP, etc.)
+        - Network resources (VPC, subnets, security groups) will be discovered and mapped
+        - Storage volumes and attached disks will be registered automatically
+        - SSH keys and security configurations will be imported
+
+        **Post-Registration Capabilities:**
+        - Standard CB-Tumblebug node lifecycle operations (start, stop, terminate)
+        - Monitoring agent installation (if CB-Dragonfly is configured)
+        - Command execution and automation
+        - Integration with other CB-Tumblebug Infras
+
+        **Important Notes:**
+        - Registration does not modify the existing node configuration
+        - Original CSP billing and resource management still applies
+        - CB-Tumblebug provides additional management layer and automation
+        - Ensure proper CSP credentials and permissions are configured
+      operationId: PostRegisterCSPNativeNode
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID for organizing registered resources
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      requestBody:
+        description: Infra registration request containing existing CSP node IDs and
+          connection details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.InfraReq'
+        required: true
+      responses:
+        "200":
+          description: Registered Infra information with imported node details and
+            current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraInfo'
+        "400":
+          description: Invalid request format or missing required CSP node identifiers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Specified nodes not found in target CSP or namespace doesn't
+            exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: node already registered or Infra name conflicts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: CSP communication error or registration process failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: infraReq
   /ns/{nsId}/registerCspResource/vNet:
     post:
       tags:
@@ -9239,106 +9339,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: subnetReq
-  /ns/{nsId}/registerCspVm:
-    post:
-      tags:
-      - "[MC-Infra] Infra Provisioning and Management"
-      summary: Register Existing CSP VMs into Cloud-Barista Infra
-      description: |-
-        Import and register pre-existing virtual machines from cloud service providers into CB-Tumblebug management.
-        This endpoint allows you to bring existing CSP resources under CB-Tumblebug control without recreating them:
-
-        **Registration Process:**
-        1. **Discovery**: Validates that the specified VM exists in the target CSP
-        2. **Metadata Import**: Retrieves VM configuration, network settings, and current status
-        3. **Resource Mapping**: Creates CB-Tumblebug resource objects that reference the existing CSP resources
-        4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP VM state
-        5. **Management Integration**: Enables CB-Tumblebug operations on the registered VMs
-
-        **Supported VM States:**
-        - Running VMs (most common use case)
-        - Stopped VMs (will be registered with current state)
-        - VMs with attached storage and network interfaces
-
-        **Resource Compatibility:**
-        - VM must exist in a supported CSP (AWS, Azure, GCP, etc.)
-        - Network resources (VPC, subnets, security groups) will be discovered and mapped
-        - Storage volumes and attached disks will be registered automatically
-        - SSH keys and security configurations will be imported
-
-        **Post-Registration Capabilities:**
-        - Standard CB-Tumblebug VM lifecycle operations (start, stop, terminate)
-        - Monitoring agent installation (if CB-Dragonfly is configured)
-        - Command execution and automation
-        - Integration with other CB-Tumblebug Infras
-
-        **Important Notes:**
-        - Registration does not modify the existing VM configuration
-        - Original CSP billing and resource management still applies
-        - CB-Tumblebug provides additional management layer and automation
-        - Ensure proper CSP credentials and permissions are configured
-      operationId: PostRegisterCSPNativeVM
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID for organizing registered resources
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      requestBody:
-        description: Infra registration request containing existing CSP VM IDs and
-          connection details
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.InfraReq'
-        required: true
-      responses:
-        "200":
-          description: Registered Infra information with imported VM details and current
-            status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.InfraInfo'
-        "400":
-          description: Invalid request format or missing required CSP VM identifiers
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Specified VMs not found in target CSP or namespace doesn't
-            exist
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "409":
-          description: VM already registered or Infra name conflicts
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: CSP communication error or registration process failure
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: infraReq
   /ns/{nsId}/resources/customImage:
     get:
       tags:
@@ -12840,7 +12840,7 @@ paths:
       - "[Infra Resource] Access Key Management"
       summary: Complement SSH Key info to enable remote command execution
       description: Update username and privateKey to enable remote command execution
-        on registered VMs
+        on registered nodes
       operationId: ComplementSshKeyRemoteCommand
       parameters:
       - name: nsId
@@ -13693,7 +13693,7 @@ paths:
         request configurations that can be applied later to create Infras with consistent settings.
 
         **Template Contents:**
-        - VM specifications (specId, imageId) for each nodegroup
+        - node specifications (specId, imageId) for each nodegroup
         - NodeGroup sizing and naming
         - Network and disk configuration
         - Post-deployment commands
@@ -14617,14 +14617,14 @@ paths:
           default: infra01
       - name: nodeGroupId
         in: query
-        description: nodeGroupId to apply the file transfer only for VMs in nodeGroup
+        description: nodeGroupId to apply the file transfer only for nodes in nodeGroup
           of Infra
         schema:
           type: string
           default: g1
-      - name: vmId
+      - name: nodeId
         in: query
-        description: vmId to apply the file transfer only for a VM in Infra
+        description: nodeId to apply the file transfer only for a node in Infra
         schema:
           type: string
           default: g1-1
@@ -14775,7 +14775,7 @@ paths:
       - "[MC-Infra] Infra Remote Command"
       summary: Transfer a file to Infra and optionally execute a command after transfer
       description: |-
-        Transfer a file to all targeted VMs in Infra via SCP, then optionally run a shell command on each VM where the transfer succeeded.
+        Transfer a file to all targeted nodes in Infra via SCP, then optionally run a shell command on each node where the transfer succeeded.
         Useful for deploying files directly to privileged locations (e.g., nginx document root) in a single API call.
         Example: upload index.html to /tmp and run "sudo mv /tmp/index.html /var/www/html/" as the post-transfer command.
         The file size should be less than 50MB.
@@ -14797,12 +14797,12 @@ paths:
           default: infra01
       - name: nodeGroupId
         in: query
-        description: NodeGroup ID to limit file transfer scope to VMs in a nodeGroup
+        description: NodeGroup ID to limit file transfer scope to nodes in a nodeGroup
         schema:
           type: string
-      - name: vmId
+      - name: nodeId
         in: query
-        description: VM ID to limit file transfer scope to a single VM
+        description: Node ID to limit file transfer scope to a single node
         schema:
           type: string
       - name: x-request-id
@@ -14827,7 +14827,7 @@ paths:
               properties:
                 path:
                   type: string
-                  description: Target directory path on the VM where the file will
+                  description: Target directory path on the node where the file will
                     be stored
                   default: /tmp
                 file:
@@ -14836,7 +14836,7 @@ paths:
                   format: binary
                 command:
                   type: string
-                  description: "Shell command to execute on each VM after successful\
+                  description: "Shell command to execute on each node after successful\
                     \ file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)"
         required: true
       responses:
@@ -15301,9 +15301,9 @@ paths:
     get:
       tags:
       - "[Admin] Provisioning History and Analytics"
-      summary: Get Provisioning History Log for VM Specification
+      summary: Get Provisioning History Log for node Specification
       description: |-
-        Retrieve detailed provisioning history for a specific VM specification including success/failure patterns and risk analysis.
+        Retrieve detailed provisioning history for a specific node specification including success/failure patterns and risk analysis.
         This endpoint provides comprehensive insights into provisioning reliability:
 
         **Historical Data Includes:**
@@ -15330,7 +15330,7 @@ paths:
       parameters:
       - name: specId
         in: path
-        description: "VM Specification ID (format: provider+region+spec_name, e.g.,\
+        description: "node Specification ID (format: provider+region+spec_name, e.g.,\
           \ aws+ap-northeast-2+t2.micro)"
         required: true
         schema:
@@ -15349,7 +15349,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.ProvisioningLog'
         "204":
-          description: No provisioning history found for the specified VM specification
+          description: No provisioning history found for the specified node specification
           content: {}
         "400":
           description: Invalid specification ID format or missing required parameters
@@ -15368,7 +15368,7 @@ paths:
       - "[Admin] Provisioning History and Analytics"
       summary: Delete Provisioning History Log
       description: |-
-        Remove all provisioning history data for a specific VM specification.
+        Remove all provisioning history data for a specific node specification.
         This operation permanently deletes historical failure and success records:
 
         **Warning**: This action is irreversible and will remove:
@@ -15391,7 +15391,7 @@ paths:
       parameters:
       - name: specId
         in: path
-        description: "VM Specification ID to delete history for (format: provider+region+spec_name)"
+        description: "node Specification ID to delete history for (format: provider+region+spec_name)"
         required: true
         schema:
           type: string
@@ -15428,11 +15428,11 @@ paths:
       - "[Admin] Provisioning History and Analytics"
       summary: Analyze Provisioning Risk for Spec and Image Combination
       description: |-
-        Evaluate the likelihood of provisioning failure based on historical data for a specific VM specification and image combination.
+        Evaluate the likelihood of provisioning failure based on historical data for a specific node specification and image combination.
         This endpoint provides intelligent risk assessment to help prevent deployment failures:
 
         **Risk Analysis Factors:**
-        - Historical failure rate for the VM specification
+        - Historical failure rate for the node specification
         - Image-specific compatibility with the spec
         - Recent failure patterns and trends
         - Cross-reference of spec+image combination success rates
@@ -15456,7 +15456,7 @@ paths:
       parameters:
       - name: specId
         in: path
-        description: "VM Specification ID (format: provider+region+spec_name)"
+        description: "node Specification ID (format: provider+region+spec_name)"
         required: true
         schema:
           type: string
@@ -15692,10 +15692,10 @@ paths:
     post:
       tags:
       - "[Admin] System Management"
-      summary: "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to\
-        \ CB-Tumblebug"
+      summary: "Register CSP Native Resources (vNet, securityGroup, sshKey, node)\
+        \ to CB-Tumblebug"
       description: |-
-        Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.
+        Register CSP Native Resources (vNet, securityGroup, sshKey, node) to CB-Tumblebug.
 
         **New filtering approach (recommended):**
         - Provider only: Registers resources from all connections of the specified provider
@@ -15727,12 +15727,12 @@ paths:
             - vNet
             - securityGroup
             - sshKey
-            - vm
+            - node
             - dataDisk
             - customImage
       - name: infraFlag
         in: query
-        description: "Flag to show VMs in a collective Infra form (y,n)"
+        description: "Flag to show Nodes in a collective Infra form (y,n)"
         schema:
           type: string
           default: "y"
@@ -15816,7 +15816,7 @@ paths:
       - "[Job Scheduler] (WIP) CSP Resource Registration"
       summary: Create scheduled CSP resource registration job
       description: |-
-        Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, vm) into CB-Tumblebug
+        Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, node) into CB-Tumblebug
 
         **Resource Registration Behavior:**
         This job registers CSP-native resources based on the `connectionName` field:
@@ -16265,12 +16265,12 @@ paths:
             - vNet
             - securityGroup
             - sshKey
-            - vm
+            - node
             - dataDisk
             - customImage
       - name: infraFlag
         in: query
-        description: "Flag to show VMs in a collective Infra form (y,n)"
+        description: "Flag to show Nodes in a collective Infra form (y,n)"
         schema:
           type: string
           default: "y"
@@ -16523,7 +16523,7 @@ paths:
           - ns
           - infra
           - nodeGroup
-          - vm
+          - node
           - k8s
           - vNet
           - subnet
@@ -16658,7 +16658,7 @@ paths:
         Update (UPSERT) a DNS record for a domain in Route53.
         Supports two routing policies: "simple" (default) and "geoproximity" (location-based).
         Choose exactly one IP source method in 'setBy':
-        1. Infra ID (infraId): Fetch Public IPs of all VMs in the Infra.
+        1. Infra ID (infraId): Fetch Public IPs of all nodes in the Infra.
         2. Label Selector (labelSelector): Fetch IPs of matching resources.
         3. Manual IP Values (values): Manually provide IP addresses (simple routing only).
       operationId: PutGlobalDnsRecord
@@ -17825,14 +17825,14 @@ paths:
       - "[MC-Infra] Infra Provisioning and Management"
       summary: Review Spec and Image Pair Compatibility
       description: |-
-        Validate whether a spec and image pair is compatible for VM provisioning.
+        Validate whether a spec and image pair is compatible for node provisioning.
         This lightweight API checks:
         - Spec availability in DB and CSP
         - Image availability in DB and CSP (auto-registers if found in CSP but not in DB)
         - Cost estimation based on spec
 
         **Use Cases:**
-        - Quick validation before VM creation
+        - Quick validation before node creation
         - Pre-check for dynamic provisioning
         - Verify custom image IDs entered by user
       operationId: PostSpecImagePairReview
@@ -17885,7 +17885,7 @@ paths:
         This endpoint provisions system-level infrastructure that supports CB-Tumblebug's internal functions:
 
         **System Infra Types:**
-        - `probe`: Creates lightweight VMs for network connectivity testing and CSP capability discovery
+        - `probe`: Creates lightweight nodes for network connectivity testing and CSP capability discovery
         - `monitor`: Deploys monitoring infrastructure for system health and performance tracking
         - `test`: Provisions test environments for validating CSP integrations and features
 
@@ -17902,7 +17902,7 @@ paths:
         - May be used for background maintenance and monitoring tasks
 
         **Automatic Configuration:**
-        - Uses optimized VM specifications for system tasks (typically minimal resources)
+        - Uses optimized node specifications for system tasks (typically minimal resources)
         - Automatically selects appropriate regions and providers based on probe requirements
         - Configures necessary network access and security policies
         - Deploys with minimal attack surface and security hardening
@@ -18028,11 +18028,11 @@ paths:
       - "[Admin] Provisioning History and Analytics"
       summary: Analyze Detailed Provisioning Risk with Spec and Image Breakdown
       description: |-
-        Provides comprehensive risk analysis with separate assessments for VM specification and image risks, plus actionable recommendations.
+        Provides comprehensive risk analysis with separate assessments for node specification and image risks, plus actionable recommendations.
         This endpoint offers enhanced risk analysis by separating spec-level and image-level risk factors:
 
         **Risk Analysis Breakdown:**
-        - **Spec Risk**: Analyzes whether the VM specification itself has compatibility or resource issues
+        - **Spec Risk**: Analyzes whether the node specification itself has compatibility or resource issues
         - **Image Risk**: Evaluates the track record of the specific image with this spec
         - **Overall Risk**: Combines both factors to determine the primary risk source
         - **Recommendations**: Provides actionable guidance based on risk analysis
@@ -18047,7 +18047,7 @@ paths:
         - Whether this is a new, untested combination
 
         **Recommendation Types:**
-        - Change VM specification (when spec is the primary risk factor)
+        - Change node specification (when spec is the primary risk factor)
         - Try different image (when image is the primary risk factor)
         - Monitor deployment closely (for new combinations or medium risk)
         - Proceed with confidence (for low-risk combinations)
@@ -18055,7 +18055,7 @@ paths:
       parameters:
       - name: specId
         in: query
-        description: "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')"
+        description: "node specification ID (e.g., 'gcp+europe-north1+f1-micro')"
         required: true
         schema:
           type: string
@@ -18426,11 +18426,11 @@ components:
       properties:
         infraId:
           type: string
+        nodeId:
+          type: string
+        nodeIp:
+          type: string
         result:
-          type: string
-        vmId:
-          type: string
-        vmIp:
           type: string
     model.AgentInstallContentWrapper:
       type: object
@@ -18491,7 +18491,7 @@ components:
           example: random
         postCommand:
           type: object
-          description: PostCommand is field for providing command to VMs after its
+          description: PostCommand is field for providing command to Nodes after their
             creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
             -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
           allOf:
@@ -18688,9 +18688,9 @@ components:
       properties:
         infraId:
           type: string
-        nsId:
+        nodeId:
           type: string
-        vmId:
+        nsId:
           type: string
     model.BenchmarkInfo:
       type: object
@@ -18953,9 +18953,9 @@ components:
     model.CommandDoneSummary:
       type: object
       properties:
-        completedVms:
+        completedNodes:
           type: integer
-          description: CompletedVms is the number of VMs that completed successfully
+          description: CompletedNodes is the number of Nodes that completed successfully
           example: 2
         elapsedSeconds:
           type: integer
@@ -18965,15 +18965,15 @@ components:
         error:
           type: string
           description: "Error is set when the command execution failed before reaching\
-            \ VMs (e.g., preprocessing error)"
-          example: "built-in function GetPublicIP error: no VM found"
-        failedVms:
+            \ Nodes (e.g., preprocessing error)"
+          example: "built-in function GetPublicIP error: no Node found"
+        failedNodes:
           type: integer
-          description: FailedVms is the number of VMs that failed
+          description: FailedNodes is the number of Nodes that failed
           example: 1
-        totalVms:
+        totalNodes:
           type: integer
-          description: TotalVms is the number of VMs that were targeted
+          description: TotalNodes is the number of Nodes that were targeted
           example: 3
     model.CommandExecutionStatus:
       type: string
@@ -19003,7 +19003,7 @@ components:
         lineNumber:
           type: integer
           description: LineNumber is the sequential line number within this stream
-            for this VM
+            for this Node
           example: 1
         stream:
           type: string
@@ -19014,7 +19014,7 @@ components:
       properties:
         commandExecuted:
           type: string
-          description: CommandExecuted is the actual SSH command executed on the VM
+          description: CommandExecuted is the actual SSH command executed on the Node
             (may be adjusted)
           example: ls -la
         commandRequested:
@@ -19098,13 +19098,17 @@ components:
       properties:
         commandIndex:
           type: integer
-          description: CommandIndex is the command status index in VmInfo.CommandStatus
+          description: CommandIndex is the command status index in NodeInfo.CommandStatus
           example: 1
         log:
           type: object
           description: Log is populated for EventCommandLog events
           allOf:
           - $ref: '#/components/schemas/model.CommandLogEntry'
+        nodeId:
+          type: string
+          description: NodeId identifies which Node this event belongs to
+          example: g1-1
         status:
           type: object
           description: Status is populated for EventCommandStatus events (reuses existing
@@ -19126,10 +19130,6 @@ components:
           example: CommandLog
           allOf:
           - $ref: '#/components/schemas/model.CommandStreamEventType'
-        vmId:
-          type: string
-          description: VmId identifies which VM this event belongs to
-          example: g1-1
     model.CommandStreamEventType:
       type: string
       enum:
@@ -19264,7 +19264,7 @@ components:
         connectionName:
           type: string
           description: |-
-            if ConnectionName is given, the VM tries to use associtated credential.
+            if ConnectionName is given, the Node tries to use associtated credential.
             if not, it will use predefined ConnectionName in Spec objects
           example: aws-ap-northeast-2
         description:
@@ -19284,13 +19284,17 @@ components:
             '{"role"': '"worker"'
         name:
           type: string
-          description: "NodeGroup name, actual VM name will be generated with -N postfix."
+          description: "NodeGroup name, actual Node name will be generated with -N\
+            \ postfix."
           example: g1
         nodeGroupSize:
           type: integer
-          description: "NodeGroupSize is the number of VMs to create in this NodeGroup.\
+          description: "NodeGroupSize is the number of Nodes to create in this NodeGroup.\
             \ If > 0, nodeGroup will be generated. Default is 1."
           example: 3
+        nodeUserPassword:
+          type: string
+          example: ""
         rootDiskSize:
           type: integer
           description: Root disk size in GB. 0 = use CSP default.
@@ -19320,14 +19324,11 @@ components:
             VNetTemplateId overrides the Infra-level VNetTemplateId for this NodeGroup.
             If empty, inherits the VNetTemplateId from the parent InfraDynamicReq.
           example: ""
-        vmUserPassword:
-          type: string
-          example: ""
         zone:
           type: string
           description: |-
-            Zone is an optional field to specify the availability zone for VM placement.
-            If specified, subnet will be created in this zone for resources like GPU VMs
+            Zone is an optional field to specify the availability zone for Node placement.
+            If specified, subnet will be created in this zone for resources like GPU Nodes
             that may only be available in specific zones. If empty, auto-selection applies.
           example: ap-northeast-2a
     model.CreateNodeGroupReq:
@@ -19367,14 +19368,18 @@ components:
           description: Label is for describing the object by keywords
         name:
           type: string
-          description: NodeGroup name of VMs. Actual VM name will be generated with
-            -N postfix.
+          description: NodeGroup name of Nodes. Actual Node name will be generated
+            with -N postfix.
           example: g1-1
         nodeGroupSize:
           type: integer
-          description: "NodeGroupSize is the number of VMs to create in this NodeGroup.\
+          description: "NodeGroupSize is the number of Nodes to create in this NodeGroup.\
             \ If > 0, nodeGroup will be generated."
           example: 3
+        nodeUserName:
+          type: string
+        nodeUserPassword:
+          type: string
         rootDiskSize:
           type: integer
           description: Root disk size in GB. 0 = use CSP default.
@@ -19398,10 +19403,6 @@ components:
         subnetId:
           type: string
         vNetId:
-          type: string
-        vmUserName:
-          type: string
-        vmUserPassword:
           type: string
     model.CredentialHolderInfo:
       type: object
@@ -19523,7 +19524,7 @@ components:
           type: string
         name:
           type: string
-        sourceVmId:
+        sourceNodeId:
           type: string
     model.DataDiskInfo:
       type: object
@@ -19531,7 +19532,7 @@ components:
         associatedObjectList:
           type: array
           example:
-          - /ns/default/infra/infra01/vm/aws-ap-southeast-1-1
+          - /ns/default/infra/infra01/node/aws-ap-southeast-1-1
           items:
             type: string
         connectionConfig:
@@ -19598,6 +19599,24 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+    model.DataDiskNodeReq:
+      required:
+      - diskSize
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+        diskSize:
+          type: integer
+          description: Disk size in GB
+          example: 77
+        diskType:
+          type: string
+          example: default
+        name:
+          type: string
+          example: aws-ap-southeast-1-datadisk
     model.DataDiskReq:
       required:
       - connectionName
@@ -19635,24 +19654,6 @@ components:
         diskSize:
           type: integer
           description: Disk size in GB
-    model.DataDiskVmReq:
-      required:
-      - diskSize
-      - name
-      type: object
-      properties:
-        description:
-          type: string
-        diskSize:
-          type: integer
-          description: Disk size in GB
-          example: 77
-        diskType:
-          type: string
-          example: default
-        name:
-          type: string
-          example: aws-ap-southeast-1-datadisk
     model.DiskStatus:
       type: string
       enum:
@@ -19693,7 +19694,7 @@ components:
             type: string
         commandIndex:
           type: integer
-          description: CommandIndex is the index of this command in the VM's command
+          description: CommandIndex is the index of this command in the Node's command
             history
           example: 1
         completedAt:
@@ -19701,9 +19702,10 @@ components:
           description: "CompletedAt is when the task completed (RFC3339 format), empty\
             \ if still running"
           example: 2024-01-15T10:35:00Z
-        completedVmCount:
+        completedNodeCount:
           type: integer
-          description: CompletedVmCount is the number of VMs that have completed execution
+          description: CompletedNodeCount is the number of Nodes that have completed
+            execution
           example: 1
         elapsedSeconds:
           type: integer
@@ -19716,11 +19718,15 @@ components:
         message:
           type: string
           description: Message provides additional status information
-          example: Executing command on 3 VMs
+          example: Executing command on 3 Nodes
         nodeGroupId:
           type: string
           description: NodeGroupId is the target nodegroup ID (empty if not specified)
           example: g1
+        nodeId:
+          type: string
+          description: NodeId is the target Node ID
+          example: g1-1
         nsId:
           type: string
           description: NsId is the namespace ID
@@ -19736,23 +19742,19 @@ components:
           example: Handling
           allOf:
           - $ref: '#/components/schemas/model.CommandExecutionStatus'
-        targetVmCount:
+        targetNodeCount:
           type: integer
-          description: TargetVmCount is the number of VMs targeted by this task
+          description: TargetNodeCount is the number of Nodes targeted by this task
           example: 3
         taskId:
           type: string
           description: "TaskId is the unique identifier for this execution task (format:\
-            \ xRequestId:vmId:index)"
-          example: req-12345678:vm-01:1
+            \ xRequestId:nodeId:index)"
+          example: req-12345678:node-01:1
         timeoutMinutes:
           type: integer
           description: TimeoutMinutes is the timeout setting for this task
           example: 30
-        vmId:
-          type: string
-          description: VmId is the target VM ID
-          example: g1-1
         xRequestId:
           type: string
           description: "XRequestId is the X-Request-ID header value, the unique identifier\
@@ -20185,9 +20187,9 @@ components:
           description: HandlingCount is the number of commands currently in 'Handling'
             status
           example: 3
-        vmId:
+        nodeId:
           type: string
-          description: VmId is the VM identifier
+          description: NodeId is the Node identifier
           example: g1-1
     model.HostedZoneInfo:
       type: object
@@ -20358,10 +20360,10 @@ components:
           description: SourceCspImageName is the name of the source CSP image from
             which this image was created
           example: csp-06eb41e14121c550a
-        sourceVmUid:
+        sourceNodeUid:
           type: string
-          description: SourceVmUid is the UID of the source VM from which this image
-            was created
+          description: SourceNodeUid is the UID of the source Node from which this
+            image was created
           example: wef12awefadf1221edcf
         systemLabel:
           type: string
@@ -20474,19 +20476,19 @@ components:
           type: array
           items:
             type: string
+        cspNodeIds:
+          type: array
+          items:
+            type: string
+        cspNodeNames:
+          type: array
+          items:
+            type: string
         cspSubnetIds:
           type: array
           items:
             type: string
         cspVNetIds:
-          type: array
-          items:
-            type: string
-        cspVmIds:
-          type: array
-          items:
-            type: string
-        cspVmNames:
           type: array
           items:
             type: string
@@ -20499,6 +20501,10 @@ components:
           items:
             type: string
         nodeGroupIds:
+          type: array
+          items:
+            type: string
+        nodeIds:
           type: array
           items:
             type: string
@@ -20523,10 +20529,6 @@ components:
           items:
             type: string
         vNetIds:
-          type: array
-          items:
-            type: string
-        vmIds:
           type: array
           items:
             type: string
@@ -20569,31 +20571,32 @@ components:
     model.InfraCreationErrors:
       type: object
       properties:
-        failedVmCount:
+        failedNodeCount:
           type: integer
-          description: FailedVmCount is the number of VMs that failed to be created
+          description: FailedNodeCount is the number of Nodes that failed to be created
         failureHandlingStrategy:
           type: string
           description: FailureHandlingStrategy indicates how failures were handled
-        successfulVmCount:
-          type: integer
-          description: SuccessfulVmCount is the number of VMs that were successfully
-            created
-        totalVmCount:
-          type: integer
-          description: TotalVmCount is the total number of VMs that were supposed
-            to be created
-        vmCreationErrors:
+        nodeCreationErrors:
           type: array
-          description: VmCreationErrors contains errors from actual VM creation phase
-          items:
-            $ref: '#/components/schemas/model.VmCreationError'
-        vmObjectCreationErrors:
-          type: array
-          description: VmObjectCreationErrors contains errors from VM object creation
+          description: NodeCreationErrors contains errors from actual Node creation
             phase
           items:
-            $ref: '#/components/schemas/model.VmCreationError'
+            $ref: '#/components/schemas/model.NodeCreationError'
+        nodeObjectCreationErrors:
+          type: array
+          description: NodeObjectCreationErrors contains errors from Node object creation
+            phase
+          items:
+            $ref: '#/components/schemas/model.NodeCreationError'
+        successfulNodeCount:
+          type: integer
+          description: SuccessfulNodeCount is the number of Nodes that were successfully
+            created
+        totalNodeCount:
+          type: integer
+          description: TotalNodeCount is the total number of Nodes that were supposed
+            to be created
     model.InfraDynamicReq:
       required:
       - name
@@ -20623,8 +20626,8 @@ components:
         nodeGroups:
           type: array
           description: |-
-            NodeGroups is array of VM requests for multi-cloud infrastructure
-            Example: Multiple VM groups across different CSPs
+            NodeGroups is array of Node requests for multi-cloud infrastructure
+            Example: Multiple Node groups across different CSPs
             [
               {
                 "name": "aws-group",
@@ -20656,10 +20659,10 @@ components:
         policyOnPartialFailure:
           type: string
           description: |-
-            PolicyOnPartialFailure determines how to handle VM creation failures
+            PolicyOnPartialFailure determines how to handle Node creation failures
             - "continue": Continue with partial Infra creation (default)
-            - "rollback": Cleanup entire Infra when any VM fails
-            - "refine": Mark failed VMs for refinement
+            - "rollback": Cleanup entire Infra when any Node fails
+            - "refine": Mark failed Nodes for refinement
           example: continue
           default: continue
           enum:
@@ -20668,7 +20671,7 @@ components:
           - refine
         postCommand:
           type: object
-          description: PostCommand is for the command to bootstrap the VMs
+          description: PostCommand is for the command to bootstrap the Nodes
           allOf:
           - $ref: '#/components/schemas/model.InfraCmdReq'
         sgTemplateId:
@@ -20770,16 +20773,17 @@ components:
           type: string
           description: InfraId is the Infra identifier
           example: infra01
-        totalHandlingCount:
-          type: integer
-          description: TotalHandlingCount is the total number of handling commands
-            across all VMs in the Infra
-          example: 3
-        vmHandlingCounts:
+        nodeHandlingCounts:
           type: object
           additionalProperties:
             type: integer
-          description: VmHandlingCounts is a map of VM ID to handling command count
+          description: NodeHandlingCounts is a map of Node ID to handling command
+            count
+        totalHandlingCount:
+          type: integer
+          description: TotalHandlingCount is the total number of handling commands
+            across all Nodes in the Infra
+          example: 3
     model.InfraInfo:
       type: object
       properties:
@@ -20794,7 +20798,7 @@ components:
           - "no"
         creationErrors:
           type: object
-          description: CreationErrors contains information about VM creation failures
+          description: CreationErrors contains information about Node creation failures
             (if any)
           allOf:
           - $ref: '#/components/schemas/model.InfraCreationErrors'
@@ -20822,23 +20826,27 @@ components:
           type: string
           description: Name is human-readable string to represent the object
           example: aws-ap-southeast-1
-        newVmList:
+        newNodeList:
           type: array
-          description: List of IDs for new VMs. Return IDs if the VMs are newly added.
-            This field should be used for return body only.
+          description: List of IDs for new nodes. Return IDs if the nodes are newly
+            added. This field should be used for return body only.
           items:
             type: string
+        node:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeInfo'
         placementAlgo:
           type: string
         postCommand:
           type: object
-          description: PostCommand is for the command to bootstrap the VMs
+          description: PostCommand is for the command to bootstrap the Nodes
           allOf:
           - $ref: '#/components/schemas/model.InfraCmdReq'
         postCommandResult:
           type: object
           description: PostCommandResult is the result of the command for bootstraping
-            the VMs
+            the Nodes
           allOf:
           - $ref: '#/components/schemas/model.InfraSshCmdResult'
         resourceType:
@@ -20867,21 +20875,36 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
-        vm:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.VmInfo'
+    model.InfraNodeAccessInfo:
+      type: object
+      properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        nodeId:
+          type: string
+        nodeUserName:
+          type: string
+        nodeUserPassword:
+          type: string
+        privateIP:
+          type: string
+        privateKey:
+          type: string
+        publicIP:
+          type: string
+        sshPort:
+          type: integer
     model.InfraNodeGroupAccessInfo:
       type: object
       properties:
-        bastionVmId:
+        bastionNodeId:
           type: string
-        infraVmAccessInfo:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.InfraVmAccessInfo'
         nlbListener:
           $ref: '#/components/schemas/model.NLBListenerInfo'
+        nodeAccessInfo:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.InfraNodeAccessInfo'
         nodeGroupId:
           type: string
     model.InfraPolicyInfo:
@@ -20947,10 +20970,10 @@ components:
         policyOnPartialFailure:
           type: string
           description: |-
-            PolicyOnPartialFailure determines how to handle VM creation failures
+            PolicyOnPartialFailure determines how to handle Node creation failures
             - "continue": Continue with partial Infra creation (default)
-            - "rollback": Cleanup entire Infra when any VM fails
-            - "refine": Mark failed VMs for refinement
+            - "rollback": Cleanup entire Infra when any Node fails
+            - "refine": Mark failed Nodes for refinement
           example: continue
           default: continue
           enum:
@@ -20959,7 +20982,7 @@ components:
           - refine
         postCommand:
           type: object
-          description: PostCommand is for the command to bootstrap the VMs
+          description: PostCommand is for the command to bootstrap the Nodes
           allOf:
           - $ref: '#/components/schemas/model.InfraCmdReq'
         systemLabel:
@@ -20982,7 +21005,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/model.VmSnapshotResult'
+            $ref: '#/components/schemas/model.NodeSnapshotResult'
         successCount:
           type: integer
           example: 3
@@ -21018,13 +21041,17 @@ components:
         masterIp:
           type: string
           example: 32.201.134.113
+        masterNodeId:
+          type: string
+          example: node-asiaeast1-cb-01
         masterSSHPort:
           type: integer
-        masterVmId:
-          type: string
-          example: vm-asiaeast1-cb-01
         name:
           type: string
+        node:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeStatusInfo'
         status:
           type: string
         statusCount:
@@ -21037,29 +21064,6 @@ components:
         targetAction:
           type: string
         targetStatus:
-          type: string
-        vm:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.VmStatusInfo'
-    model.InfraVmAccessInfo:
-      type: object
-      properties:
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        privateIP:
-          type: string
-        privateKey:
-          type: string
-        publicIP:
-          type: string
-        sshPort:
-          type: integer
-        vmId:
-          type: string
-        vmUserName:
-          type: string
-        vmUserPassword:
           type: string
     model.InspectResource:
       type: object
@@ -21118,7 +21122,7 @@ components:
           - subnet
           - securityGroup
           - sshKey
-          - vm
+          - node
     model.K8sAccessInfo:
       type: object
       properties:
@@ -21843,9 +21847,9 @@ components:
           type: string
         metric:
           type: string
-        value:
+        nodeId:
           type: string
-        vmId:
+        value:
           type: string
     model.MonResultSimpleResponse:
       type: object
@@ -21858,7 +21862,7 @@ components:
             $ref: '#/components/schemas/model.MonResultSimple'
         nsId:
           type: string
-    model.NLBAddRemoveVMReq:
+    model.NLBAddRemoveNodeReq:
       type: object
       properties:
         targetGroup:
@@ -21885,11 +21889,11 @@ components:
         threshold:
           type: integer
           description: "num, The number of continuous health checks to change the\
-            \ VM status."
+            \ node status."
           example: 3
         timeout:
           type: integer
-          description: "secs, Waiting time to decide an unhealthy VM when no response."
+          description: "secs, Waiting time to decide an unhealthy node when no response."
           example: 10
     model.NLBHealthCheckerReq:
       type: object
@@ -22062,6 +22066,10 @@ components:
         nodeGroupId:
           type: string
           example: g1
+        nodes:
+          type: array
+          items:
+            type: string
         port:
           type: string
           description: Listener Port or 1-65535
@@ -22070,10 +22078,6 @@ components:
           type: string
           description: TCP|HTTP|HTTPS
           example: TCP
-        vms:
-          type: array
-          items:
-            type: string
     model.NLBTargetGroupReq:
       type: object
       properties:
@@ -22088,6 +22092,240 @@ components:
           type: string
           description: TCP|HTTP|HTTPS
           example: TCP
+    model.NodeCreationError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error is the error message
+        nodeName:
+          type: string
+          description: NodeName is the name of the Node that failed
+        phase:
+          type: string
+          description: Phase indicates when the error occurred
+        timestamp:
+          type: string
+          description: Timestamp when the error occurred
+    model.NodeInfo:
+      type: object
+      properties:
+        RootDeviceName:
+          type: string
+        addtionalDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        commandStatus:
+          type: array
+          description: CommandStatus stores the status and history of remote commands
+            executed on this Node
+          items:
+            $ref: '#/components/schemas/model.CommandStatusInfo'
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        createdTime:
+          type: string
+          description: Created time
+          example: 2022-11-10 23:00:00
+        cspImageName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        cspSpecName:
+          type: string
+        cspSshKeyId:
+          type: string
+        cspSubnetId:
+          type: string
+        cspVNetId:
+          type: string
+        dataDiskIds:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        image:
+          $ref: '#/components/schemas/model.ImageSummary'
+        imageId:
+          type: string
+        label:
+          type: object
+          additionalProperties:
+            type: string
+        location:
+          $ref: '#/components/schemas/model.Location'
+        monAgentStatus:
+          type: string
+          description: Montoring agent status
+          example: "[installed, notInstalled, failed]"
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        networkAgentStatus:
+          type: string
+          description: NetworkAgent status
+          example: "[notInstalled, installing, installed, failed]"
+        networkInterface:
+          type: string
+        nodeGroupId:
+          type: string
+          description: defined if the Node is in a group
+        nodeUserName:
+          type: string
+        nodeUserPassword:
+          type: string
+        privateDNS:
+          type: string
+        privateIP:
+          type: string
+        publicDNS:
+          type: string
+        publicIP:
+          type: string
+        region:
+          type: object
+          description: "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}"
+          allOf:
+          - $ref: '#/components/schemas/model.RegionInfo'
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        rootDiskSize:
+          type: integer
+        rootDiskType:
+          type: string
+        securityGroupIds:
+          type: array
+          items:
+            type: string
+        spec:
+          $ref: '#/components/schemas/model.SpecSummary'
+        specId:
+          type: string
+        sshHostKeyInfo:
+          type: object
+          description: SshHostKeyInfo contains SSH host key information for TOFU (Trust
+            On First Use) verification
+          allOf:
+          - $ref: '#/components/schemas/model.SshHostKeyInfo'
+        sshKeyId:
+          type: string
+        sshPort:
+          type: integer
+        status:
+          type: string
+          description: Required by CB-Tumblebug
+        subnetId:
+          type: string
+        systemMessage:
+          type: string
+          description: Latest system message such as error message
+          example: Failed because ...
+        targetAction:
+          type: string
+        targetStatus:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vNetId:
+          type: string
+    model.NodeSnapshotResult:
+      type: object
+      properties:
+        error:
+          type: string
+        imageId:
+          type: string
+          example: custom-image-g1
+        imageInfo:
+          $ref: '#/components/schemas/model.ImageInfo'
+        nodeGroupId:
+          type: string
+          example: g1
+        nodeId:
+          type: string
+          example: g1-1
+        nodeName:
+          type: string
+          example: aws-ap-northeast-2-g1-1
+        status:
+          type: string
+          example: Success
+          enum:
+          - Success
+          - Failed
+    model.NodeStatusInfo:
+      type: object
+      properties:
+        createdTime:
+          type: string
+          description: Created time
+          example: 2022-11-10 23:00:00
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        location:
+          $ref: '#/components/schemas/model.Location'
+        monAgentStatus:
+          type: string
+          description: Montoring agent status
+          example: "[installed, notInstalled, failed]"
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        nativeStatus:
+          type: string
+        privateIp:
+          type: string
+        publicIp:
+          type: string
+        sshPort:
+          type: integer
+        status:
+          type: string
+        systemMessage:
+          type: string
+          description: Latest system message such as error message
+          example: Failed because ...
+        targetAction:
+          type: string
+        targetStatus:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
     model.NsInfo:
       type: object
       properties:
@@ -22617,15 +22855,15 @@ components:
         isSuccess:
           type: boolean
           description: IsSuccess indicates if the provisioning was successful
+        nodeName:
+          type: string
+          description: NodeName is the name of the VM that was being provisioned
         specId:
           type: string
-          description: SpecId is the VM specification ID
+          description: SpecId is the Node specification ID
         timestamp:
           type: string
           description: Timestamp is when this provisioning event occurred
-        vmName:
-          type: string
-          description: VmName is the name of the VM that was being provisioned
     model.ProvisioningLog:
       type: object
       properties:
@@ -22668,7 +22906,7 @@ components:
           description: RegionName is the region name
         specId:
           type: string
-          description: SpecId is the VM specification ID
+          description: SpecId is the Node specification ID
         successCount:
           type: integer
           description: SuccessCount is the total number of provisioning successes
@@ -22865,13 +23103,13 @@ components:
           type: integer
         nlb:
           type: integer
+        node:
+          type: integer
         securityGroup:
           type: integer
         sshKey:
           type: integer
         vNet:
-          type: integer
-        vm:
           type: integer
     model.RequiredAWSResourceForSqlDB:
       type: object
@@ -23159,24 +23397,29 @@ components:
         infraName:
           type: string
           description: Infra-level information
+        nodeReviews:
+          type: array
+          description: Node-level validation results
+          items:
+            $ref: '#/components/schemas/model.ReviewNodeGroupDynamicReqInfo'
         overallMessage:
           type: string
-          example: All VMs can be created successfully
+          example: All Nodes can be created successfully
         overallStatus:
           type: string
           description: Overall assessment of the Infra request
           example: Ready/Warning/Error
         policyDescription:
           type: string
-          example: "If some VMs fail during creation, Infra will be created with successfully\
-            \ provisioned VMs only"
+          example: "If some Nodes fail during creation, Infra will be created with\
+            \ successfully provisioned Nodes only"
         policyOnPartialFailure:
           type: string
           description: Failure policy analysis
           example: continue
         policyRecommendation:
           type: string
-          example: Consider 'refine' policy for automatic cleanup of failed VMs
+          example: Consider 'refine' policy for automatic cleanup of failed Nodes
         recommendations:
           type: array
           description: Recommendations for improvement
@@ -23187,13 +23430,8 @@ components:
           description: Resource availability summary
           allOf:
           - $ref: '#/components/schemas/model.ReviewResourceSummary'
-        totalVmCount:
+        totalNodeCount:
           type: integer
-        vmReviews:
-          type: array
-          description: VM-level validation results
-          items:
-            $ref: '#/components/schemas/model.ReviewNodeGroupDynamicReqInfo'
     model.ReviewNodeGroupDynamicReqInfo:
       type: object
       properties:
@@ -23219,9 +23457,12 @@ components:
             type: string
         message:
           type: string
-          example: VM can be created successfully
+          example: Node can be created successfully
         nodeGroupSize:
           type: integer
+        nodeName:
+          type: string
+          description: Node request information
         providerName:
           type: string
         regionName:
@@ -23235,9 +23476,6 @@ components:
           type: string
           description: Validation status
           example: Ready/Warning/Error
-        vmName:
-          type: string
-          description: VM request information
         warnings:
           type: array
           description: Warnings and errors
@@ -23327,12 +23565,12 @@ components:
           - $ref: '#/components/schemas/model.SpecRiskInfo'
     model.ScaleOutNodeGroupReq:
       required:
-      - numVMsToAdd
+      - numNodesToAdd
       type: object
       properties:
-        numVMsToAdd:
+        numNodesToAdd:
           type: integer
-          description: Define addtional VMs to scaleOut
+          description: Define additional Nodes to scaleOut
           example: 2
     model.ScheduleJobListResponse:
       type: object
@@ -24668,6 +24906,10 @@ components:
           type: object
         infraId:
           type: string
+        nodeId:
+          type: string
+        nodeIp:
+          type: string
         stderr:
           type: object
           additionalProperties:
@@ -24676,10 +24918,6 @@ components:
           type: object
           additionalProperties:
             type: string
-        vmId:
-          type: string
-        vmIp:
-          type: string
     model.SshCmdResultForAPI:
       type: object
       properties:
@@ -24692,6 +24930,10 @@ components:
           description: String representation of error for JSON serialization
         infraId:
           type: string
+        nodeId:
+          type: string
+        nodeIp:
+          type: string
         stderr:
           type: object
           additionalProperties:
@@ -24700,10 +24942,6 @@ components:
           type: object
           additionalProperties:
             type: string
-        vmId:
-          type: string
-        vmIp:
-          type: string
     model.SshHostKeyInfo:
       type: object
       properties:
@@ -24867,7 +25105,7 @@ components:
           description: CountTerminating is for counting Terminating
         countTotal:
           type: integer
-          description: CountTotal is for Total VMs
+          description: CountTotal is for Total Nodes
         countUndefined:
           type: integer
           description: CountUndefined is for counting Undefined
@@ -25228,240 +25466,6 @@ components:
             Mutually exclusive with VNetPolicy. Exactly one must be provided.
           allOf:
           - $ref: '#/components/schemas/model.VNetReq'
-    model.VmCreationError:
-      type: object
-      properties:
-        error:
-          type: string
-          description: Error is the error message
-        phase:
-          type: string
-          description: Phase indicates when the error occurred
-        timestamp:
-          type: string
-          description: Timestamp when the error occurred
-        vmName:
-          type: string
-          description: VmName is the name of the VM that failed
-    model.VmInfo:
-      type: object
-      properties:
-        RootDeviceName:
-          type: string
-        addtionalDetails:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        commandStatus:
-          type: array
-          description: CommandStatus stores the status and history of remote commands
-            executed on this VM
-          items:
-            $ref: '#/components/schemas/model.CommandStatusInfo'
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-        createdTime:
-          type: string
-          description: Created time
-          example: 2022-11-10 23:00:00
-        cspImageName:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        cspSpecName:
-          type: string
-        cspSshKeyId:
-          type: string
-        cspSubnetId:
-          type: string
-        cspVNetId:
-          type: string
-        dataDiskIds:
-          type: array
-          items:
-            type: string
-        description:
-          type: string
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        image:
-          $ref: '#/components/schemas/model.ImageSummary'
-        imageId:
-          type: string
-        label:
-          type: object
-          additionalProperties:
-            type: string
-        location:
-          $ref: '#/components/schemas/model.Location'
-        monAgentStatus:
-          type: string
-          description: Montoring agent status
-          example: "[installed, notInstalled, failed]"
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        networkAgentStatus:
-          type: string
-          description: NetworkAgent status
-          example: "[notInstalled, installing, installed, failed]"
-        networkInterface:
-          type: string
-        nodeGroupId:
-          type: string
-          description: defined if the VM is in a group
-        privateDNS:
-          type: string
-        privateIP:
-          type: string
-        publicDNS:
-          type: string
-        publicIP:
-          type: string
-        region:
-          type: object
-          description: "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}"
-          allOf:
-          - $ref: '#/components/schemas/model.RegionInfo'
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        rootDiskSize:
-          type: integer
-        rootDiskType:
-          type: string
-        securityGroupIds:
-          type: array
-          items:
-            type: string
-        spec:
-          $ref: '#/components/schemas/model.SpecSummary'
-        specId:
-          type: string
-        sshHostKeyInfo:
-          type: object
-          description: SshHostKeyInfo contains SSH host key information for TOFU (Trust
-            On First Use) verification
-          allOf:
-          - $ref: '#/components/schemas/model.SshHostKeyInfo'
-        sshKeyId:
-          type: string
-        sshPort:
-          type: integer
-        status:
-          type: string
-          description: Required by CB-Tumblebug
-        subnetId:
-          type: string
-        systemMessage:
-          type: string
-          description: Latest system message such as error message
-          example: Failed because ...
-        targetAction:
-          type: string
-        targetStatus:
-          type: string
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-        vNetId:
-          type: string
-        vmUserName:
-          type: string
-        vmUserPassword:
-          type: string
-    model.VmSnapshotResult:
-      type: object
-      properties:
-        error:
-          type: string
-        imageId:
-          type: string
-          example: custom-image-g1
-        imageInfo:
-          $ref: '#/components/schemas/model.ImageInfo'
-        nodeGroupId:
-          type: string
-          example: g1
-        status:
-          type: string
-          example: Success
-          enum:
-          - Success
-          - Failed
-        vmId:
-          type: string
-          example: g1-1
-        vmName:
-          type: string
-          example: aws-ap-northeast-2-g1-1
-    model.VmStatusInfo:
-      type: object
-      properties:
-        createdTime:
-          type: string
-          description: Created time
-          example: 2022-11-10 23:00:00
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        location:
-          $ref: '#/components/schemas/model.Location'
-        monAgentStatus:
-          type: string
-          description: Montoring agent status
-          example: "[installed, notInstalled, failed]"
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        nativeStatus:
-          type: string
-        privateIp:
-          type: string
-        publicIp:
-          type: string
-        sshPort:
-          type: integer
-        status:
-          type: string
-        systemMessage:
-          type: string
-          description: Latest system message such as error message
-          example: Failed because ...
-        targetAction:
-          type: string
-        targetStatus:
-          type: string
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
     model.VpnHealthCheckRequest:
       type: object
       properties:
@@ -25501,30 +25505,30 @@ components:
         vpnId:
           type: string
           example: vpn01
-    model.VpnHealthCheckSourceVmInfo:
+    model.VpnHealthCheckSourceNodeInfo:
       type: object
       properties:
         csp:
           type: string
           example: aws
+        nodeId:
+          type: string
+          example: aws-ap-northeast-2-1
         privateIp:
           type: string
           example: 10.1.0.4
-        vmId:
-          type: string
-          example: aws-ap-northeast-2-1
-    model.VpnHealthCheckTargetVmInfo:
+    model.VpnHealthCheckTargetNodeInfo:
       type: object
       properties:
         csp:
           type: string
           example: gcp
+        nodeId:
+          type: string
+          example: gcp-asia-northeast3-1
         privateIp:
           type: string
           example: 10.2.0.4
-        vmId:
-          type: string
-          example: gcp-asia-northeast3-1
     model.VpnIdList:
       type: object
       properties:
@@ -25589,10 +25593,10 @@ components:
         reachable:
           type: boolean
           example: true
-        sourceVm:
-          $ref: '#/components/schemas/model.VpnHealthCheckSourceVmInfo'
-        targetVm:
-          $ref: '#/components/schemas/model.VpnHealthCheckTargetVmInfo'
+        sourceNode:
+          $ref: '#/components/schemas/model.VpnHealthCheckSourceNodeInfo'
+        targetNode:
+          $ref: '#/components/schemas/model.VpnHealthCheckTargetNodeInfo'
     model.VpnPingStats:
       type: object
       properties:
@@ -25630,13 +25634,13 @@ components:
           type: integer
         nlb:
           type: integer
+        node:
+          type: integer
         securityGroup:
           type: integer
         sshKey:
           type: integer
         vNet:
-          type: integer
-        vm:
           type: integer
     model.sites:
       type: object

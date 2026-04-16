@@ -61,10 +61,10 @@ func InstallBenchmarkAgentToInfra(nsId string, infraId string, req *model.InfraC
 }
 
 // CallMilkyway is func to call milkyway agents
-func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, infraId string, vmId string, vmIp string, action string, option string, results *model.BenchmarkInfoArray) {
+func CallMilkyway(wg *sync.WaitGroup, nodeList []string, nsId string, infraId string, nodeId string, nodeIp string, action string, option string, results *model.BenchmarkInfoArray) {
 	defer wg.Done() //goroutine sync done
 
-	url := "http://" + vmIp + model.MilkywayPort + action
+	url := "http://" + nodeIp + model.MilkywayPort + action
 	method := "GET"
 
 	client := &http.Client{
@@ -83,17 +83,17 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, infraId stri
 
 	if action == "mrtt" {
 		reqTmp := model.MultihostBenchmarkReq{}
-		for _, vm := range vmList {
-			vmIdTmp := vm
-			vmIpTmp, _, _, err := GetVmIp(nsId, infraId, vmIdTmp)
+		for _, node := range nodeList {
+			nodeIdTmp := node
+			nodeIpTmp, _, _, err := GetNodeIp(nsId, infraId, nodeIdTmp)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
-			log.Debug().Msg("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
+			log.Debug().Msg("[Test for nodeList " + nodeIdTmp + ", " + nodeIpTmp + "]")
 
 			hostTmp := model.BenchmarkReq{}
-			hostTmp.Host = vmIpTmp
-			hostTmp.Spec = GetVmSpecId(nsId, infraId, vmIdTmp)
+			hostTmp.Host = nodeIpTmp
+			hostTmp.Spec = GetNodeSpecId(nsId, infraId, nodeIdTmp)
 			reqTmp.Multihost = append(reqTmp.Multihost, hostTmp)
 		}
 		common.PrintJsonPretty(reqTmp)
@@ -140,7 +140,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, infraId stri
 	if errStr != "" {
 		resultTmp.Result = errStr
 	}
-	resultTmp.SpecId = GetVmSpecId(nsId, infraId, vmId)
+	resultTmp.SpecId = GetNodeSpecId(nsId, infraId, nodeId)
 	results.ResultArray = append(results.ResultArray, resultTmp)
 }
 
@@ -547,7 +547,7 @@ func BenchmarkAction(nsId string, infraId string, action string, option string) 
 
 	var results model.BenchmarkInfoArray
 
-	vmList, err := ListVmId(nsId, infraId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.BenchmarkInfoArray{}, err
@@ -556,16 +556,16 @@ func BenchmarkAction(nsId string, infraId string, action string, option string) 
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
-	for _, vmId := range vmList {
+	for _, nodeId := range nodeList {
 		wg.Add(1)
 
-		vmIp, _, _, err := GetVmIp(nsId, infraId, vmId)
+		nodeIp, _, _, err := GetNodeIp(nsId, infraId, nodeId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			wg.Done()
-			// continue to next vm even if error occurs
+			// continue to next node even if error occurs
 		} else {
-			go CallMilkyway(&wg, vmList, nsId, infraId, vmId, vmIp, action, option, &results)
+			go CallMilkyway(&wg, nodeList, nsId, infraId, nodeId, nodeIp, action, option, &results)
 		}
 	}
 	wg.Wait() //goroutine sync wg

@@ -113,7 +113,7 @@ type SpiderPriceInfoHandler interface {
 	GetPriceInfo(productFamily string, regionName string, filterList []KeyValue) (string, error) // return string: json format
 }
 
-// SpecSummary is a lightweight struct containing essential spec information for VmInfo
+// SpecSummary is a lightweight struct containing essential spec information for NodeInfo
 type SpecSummary struct {
 	CspSpecName         string  `json:"cspSpecName,omitempty" example:"t3.medium"`
 	VCPU                uint16  `json:"vCPU,omitempty" example:"2"`

@@ -118,7 +118,7 @@ func getDefaultPublisherConfig() *PublisherFilterConfig {
 		"Microsoft",
 		"MicrosoftWindowsServer",
 		"MicrosoftWindowsDesktop",
-		"Microsoft-DSVM",
+		"Microsoft-DSNode",
 		"MicrosoftVisualStudio",
 		"microsoft-ads",
 		// Linux Distributions

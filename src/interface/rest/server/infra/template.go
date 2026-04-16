@@ -32,7 +32,7 @@ import (
 // @Description request configurations that can be applied later to create Infras with consistent settings.
 // @Description
 // @Description **Template Contents:**
-// @Description - VM specifications (specId, imageId) for each nodegroup
+// @Description - node specifications (specId, imageId) for each nodegroup
 // @Description - NodeGroup sizing and naming
 // @Description - Network and disk configuration
 // @Description - Post-deployment commands
@@ -208,7 +208,7 @@ func RestDeleteAllInfraDynamicTemplate(c echo.Context) error {
 // @ID PostInfraDynamicFromTemplate
 // @Summary Create Infra from a Template
 // @Description Create a new Infra by applying an Infra Dynamic Template.
-// @Description The template provides the base VM configuration, and the apply request
+// @Description The template provides the base node configuration, and the apply request
 // @Description allows overriding the Infra name and description.
 // @Description
 // @Description **Override Behavior (Phase 1):**
@@ -221,7 +221,7 @@ func RestDeleteAllInfraDynamicTemplate(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param templateId path string true "Template ID to apply"
 // @Param applyReq body model.TemplateApplyReq true "Template apply request with Infra name and optional description"
-// @Param option query string false "Deployment option: 'hold' to create Infra without immediate VM provisioning" Enums(hold)
+// @Param option query string false "Deployment option: 'hold' to create Infra without immediate node provisioning" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Success 200 {object} model.InfraInfo "Successfully created Infra from template"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"

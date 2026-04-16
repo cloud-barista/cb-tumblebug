@@ -36,7 +36,7 @@ func classifyDnsError(err error) int {
 		return http.StatusBadRequest
 	case strings.Contains(msg, "no hosted zone found"),
 		strings.Contains(msg, "no matching records found"),
-		strings.Contains(msg, "no VMs with public IP"),
+		strings.Contains(msg, "no Nodes with public IP"),
 		strings.Contains(msg, "no IP addresses found"):
 		return http.StatusNotFound
 	case strings.Contains(msg, "VAULT_TOKEN is not set"):
@@ -52,7 +52,7 @@ func classifyDnsError(err error) int {
 // @Description Update (UPSERT) a DNS record for a domain in Route53.
 // @Description Supports two routing policies: "simple" (default) and "geoproximity" (location-based).
 // @Description Choose exactly one IP source method in 'setBy':
-// @Description 1. Infra ID (infraId): Fetch Public IPs of all VMs in the Infra.
+// @Description 1. Infra ID (infraId): Fetch Public IPs of all nodes in the Infra.
 // @Description 2. Label Selector (labelSelector): Fetch IPs of matching resources.
 // @Description 3. Manual IP Values (values): Manually provide IP addresses (simple routing only).
 // @Tags [Utility] Global DNS Management

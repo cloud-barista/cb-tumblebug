@@ -29,7 +29,7 @@ const (
 type MonAgentInstallReq struct {
 	NsId     string `json:"nsId,omitempty"`
 	InfraId  string `json:"infraId,omitempty"`
-	VmId     string `json:"vmId,omitempty"`
+	NodeId     string `json:"nodeId,omitempty"`
 	PublicIp string `json:"publicIp,omitempty"`
 	Port     string `json:"port,omitempty"`
 	UserName string `json:"userName,omitempty"`
@@ -37,10 +37,10 @@ type MonAgentInstallReq struct {
 	CspType  string `json:"cspType,omitempty"`
 }
 
-// MonResultSimple struct is for containing vm monitoring results
+// MonResultSimple struct is for containing node monitoring results
 type MonResultSimple struct {
 	Metric string `json:"metric"`
-	VmId   string `json:"vmId"`
+	NodeId   string `json:"nodeId"`
 	Value  string `json:"value"`
 	Err    string `json:"err"`
 }
@@ -56,7 +56,7 @@ type MonResultSimpleResponse struct {
 type DfAgentInstallReq struct {
 	NsId        string `json:"ns_id"`
 	InfraId     string `json:"infra_id"`
-	VmId        string `json:"vm_id"`
+	NodeId      string `json:"node_id"`
 	PublicIp    string `json:"public_ip"`
 	UserName    string `json:"user_name"`
 	SshKey      string `json:"ssh_key"`

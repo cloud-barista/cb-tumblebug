@@ -86,14 +86,14 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 
 	} else if action == "terminate" {
 
-		vmList, err := ListVmId(nsId, infraId)
+		nodeList, err := ListNodeId(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return "", err
 		}
 
-		if len(vmList) == 0 {
-			return "No VM to terminate in the Infra", nil
+		if len(nodeList) == 0 {
+			return "No Node to terminate in the Infra", nil
 		}
 
 		err = ControlInfraAsync(nsId, infraId, model.ActionTerminate, force)
@@ -115,16 +115,16 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 
 		return "Withdraw the holding Infra", nil
 
-	} else if action == "refine" { // refine delete VMs in model.StatusFailed or model.StatusUndefined
+	} else if action == "refine" { // refine delete Nodes in model.StatusFailed or model.StatusUndefined
 
-		vmList, err := ListVmId(nsId, infraId)
+		nodeList, err := ListNodeId(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return "", err
 		}
 
-		if len(vmList) == 0 {
-			return "No VM in the Infra", nil
+		if len(nodeList) == 0 {
+			return "No Node in the Infra", nil
 		}
 
 		infraStatus, err := GetInfraStatus(nsId, infraId)
@@ -134,25 +134,25 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		}
 
 		var deletedCount int
-		var remainingVmIds []string
+		var remainingNodeIds []string
 
-		for _, v := range infraStatus.Vm {
-			// Remove VMs in model.StatusFailed or model.StatusUndefined
-			log.Debug().Msgf("[vmInfo.Status] %v", v.Status)
+		for _, v := range infraStatus.Node {
+			// Remove Nodes in model.StatusFailed or model.StatusUndefined
+			log.Debug().Msgf("[nodeInfo.Status] %v", v.Status)
 			if strings.EqualFold(v.Status, model.StatusFailed) || strings.EqualFold(v.Status, model.StatusUndefined) {
-				// Delete VM sequentially for safety (for performance, need to use goroutine)
-				err := DelInfraVm(nsId, infraId, v.Id, "force")
+				// Delete Node sequentially for safety (for performance, need to use goroutine)
+				err := DelInfraNode(nsId, infraId, v.Id, "force")
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return "", err
 				}
 				deletedCount++
 			} else {
-				remainingVmIds = append(remainingVmIds, v.Id)
+				remainingNodeIds = append(remainingNodeIds, v.Id)
 			}
 		}
 
-		// Update Infra object to reflect the current VM list after refine
+		// Update Infra object to reflect the current Node list after refine
 		if deletedCount > 0 {
 			infraTmp, _, err := GetInfraObject(nsId, infraId)
 			if err != nil {
@@ -160,21 +160,21 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 				return "", err
 			}
 
-			// Rebuild VM list with only remaining VMs
-			var remainingVms []model.VmInfo
-			for _, vmId := range remainingVmIds {
-				vmInfo, err := GetVmObject(nsId, infraId, vmId)
+			// Rebuild Node list with only remaining Nodes
+			var remainingNodes []model.NodeInfo
+			for _, nodeId := range remainingNodeIds {
+				nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 				if err != nil {
-					log.Warn().Err(err).Msgf("Failed to get VM info for %s during refine update", vmId)
+					log.Warn().Err(err).Msgf("Failed to get VM info for %s during refine update", nodeId)
 					continue
 				}
-				remainingVms = append(remainingVms, vmInfo)
+				remainingNodes = append(remainingNodes, nodeInfo)
 			}
 
-			infraTmp.Vm = remainingVms
+			infraTmp.Node = remainingNodes
 			UpdateInfraInfo(nsId, infraTmp)
 
-			log.Info().Msgf("Refine completed: deleted %d VMs, %d VMs remaining", deletedCount, len(remainingVmIds))
+			log.Info().Msgf("Refine completed: deleted %d Nodes, %d Nodes remaining", deletedCount, len(remainingNodeIds))
 		}
 
 		return "Refined the Infra", nil
@@ -184,8 +184,8 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 	}
 }
 
-// HandleInfraVmAction is func to Get InfraVm Action
-func HandleInfraVmAction(nsId string, infraId string, vmId string, action string, force bool) (string, error) {
+// HandleInfraNodeAction is func to Get InfraNode Action
+func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action string, force bool) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -199,19 +199,19 @@ func HandleInfraVmAction(nsId string, infraId string, vmId string, action string
 		return "", err
 	}
 
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	check, _ := CheckVm(nsId, infraId, vmId)
+	check, _ := CheckNode(nsId, infraId, nodeId)
 
 	if !check {
-		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		err := fmt.Errorf("The vm " + nodeId + " does not exist.")
 		return err.Error(), err
 	}
 
-	log.Info().Msg("[VM control request] " + action)
+	log.Info().Msg("[Node control request] " + action)
 
 	infra, err := GetInfraStatus(nsId, infraId)
 	if err != nil {
@@ -219,7 +219,7 @@ func HandleInfraVmAction(nsId string, infraId string, vmId string, action string
 		return "", err
 	}
 
-	// Check if Infra is under an action (individual VM action cannot be executed while Infra is under an action)
+	// Check if Infra is under an action (individual Node action cannot be executed while Infra is under an action)
 	if infra.TargetAction != "" && infra.TargetAction != model.ActionComplete {
 		err = fmt.Errorf("Infra %s is under %s, please try later", infraId, infra.TargetAction)
 		if !force {
@@ -228,7 +228,7 @@ func HandleInfraVmAction(nsId string, infraId string, vmId string, action string
 		}
 	}
 
-	err = CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: vmId}, action)
+	err = CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: nodeId}, action)
 	if err != nil {
 		if !force {
 			log.Info().Msg(err.Error())
@@ -236,26 +236,26 @@ func HandleInfraVmAction(nsId string, infraId string, vmId string, action string
 		}
 	}
 
-	// If VM is already terminated, treat terminate as a completed no-op
+	// If Node is already terminated, treat terminate as a completed no-op
 	if strings.EqualFold(action, model.ActionTerminate) {
-		vmStatus, statusErr := GetInfraVmStatus(nsId, infraId, vmId, false)
-		if statusErr == nil && strings.EqualFold(vmStatus.Status, model.StatusTerminated) {
-			log.Info().Msgf("[VM %s] already terminated, skipping", vmId)
+		nodeStatus, statusErr := GetInfraNodeStatus(nsId, infraId, nodeId, false)
+		if statusErr == nil && strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
+			log.Info().Msgf("[VM %s] already terminated, skipping", nodeId)
 			return "Already terminated", nil
 		}
 	}
 
 	var wg sync.WaitGroup
-	results := make(chan model.ControlVmResult, 1)
+	results := make(chan model.ControlNodeResult, 1)
 	wg.Add(1)
 	if strings.EqualFold(action, model.ActionSuspend) {
-		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionSuspend, results)
+		go ControlNodeAsync(&wg, nsId, infraId, nodeId, model.ActionSuspend, results)
 	} else if strings.EqualFold(action, model.ActionResume) {
-		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionResume, results)
+		go ControlNodeAsync(&wg, nsId, infraId, nodeId, model.ActionResume, results)
 	} else if strings.EqualFold(action, model.ActionReboot) {
-		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionReboot, results)
+		go ControlNodeAsync(&wg, nsId, infraId, nodeId, model.ActionReboot, results)
 	} else if strings.EqualFold(action, model.ActionTerminate) {
-		go ControlVmAsync(&wg, nsId, infraId, vmId, model.ActionTerminate, results)
+		go ControlNodeAsync(&wg, nsId, infraId, nodeId, model.ActionTerminate, results)
 	} else {
 		close(results)
 		wg.Done()
@@ -294,13 +294,13 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 		}
 	}
 
-	vmList, err := ListVmId(nsId, infraId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	if len(vmList) == 0 {
-		return errors.New("VM list is empty")
+	if len(nodeList) == 0 {
+		return errors.New("Node list is empty")
 	}
 
 	switch action {
@@ -333,14 +333,14 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 	}
 	UpdateInfraInfo(nsId, infra)
 
-	// Apply CSP-aware rate limiting for VM control operations
-	err = ControlVmsInParallel(nsId, infraId, vmList, action, force)
+	// Apply CSP-aware rate limiting for Node control operations
+	err = ControlNodesInParallel(nsId, infraId, nodeList, action, force)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to control VMs in parallel for action %s", action)
+		log.Error().Err(err).Msgf("Failed to control Nodes in parallel for action %s", action)
 		return err
 	}
 
-	// Update Infra TargetAction to Complete after all VM operations are done
+	// Update Infra TargetAction to Complete after all Node operations are done
 	// This ensures proper completion handling for large Infras
 	infra, _, err = GetInfraObject(nsId, infraId)
 	if err != nil {
@@ -358,52 +358,52 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 	return nil
 }
 
-// VmControlInfo represents VM control information with grouping details
-type VmControlInfo struct {
-	VmId         string
+// NodeControlInfo represents Node control information with grouping details
+type NodeControlInfo struct {
+	NodeId         string
 	ProviderName string
 	RegionName   string
 }
 
-// ControlVmsInParallel controls VMs with hierarchical rate limiting
+// ControlNodesInParallel controls VMs with hierarchical rate limiting
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
-// Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
-func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, force bool) error {
-	if len(vmList) == 0 {
+// Level 3: Within each region, VMs are processed with semaphore (maxConcurrentNodesPerRegion)
+func ControlNodesInParallel(nsId, infraId string, nodeList []string, action string, force bool) error {
+	if len(nodeList) == 0 {
 		return nil
 	}
 
 	// Step 1: Group VMs by CSP and region
-	vmGroups := make(map[string]map[string][]string) // CSP -> Region -> VmIds
-	vmGroupInfos := make(map[string]VmControlInfo)   // VmId -> ControlInfo
+	nodeGroups := make(map[string]map[string][]string) // CSP -> Region -> NodeIds
+	nodeGroupInfos := make(map[string]NodeControlInfo)   // NodeId -> ControlInfo
 
-	for _, vmId := range vmList {
+	for _, nodeId := range nodeList {
 		// Skip if control is not needed
-		err := CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: vmId}, action)
+		err := CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: nodeId}, action)
 		if err != nil && !force {
-			log.Debug().Msgf("Skipping VM %s for action %s: %v", vmId, action, err)
+			log.Debug().Msgf("Skipping VM %s for action %s: %v", nodeId, action, err)
 			continue
 		}
 
-		vmInfo, err := GetVmObject(nsId, infraId, vmId)
+		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", vmId)
+			log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", nodeId)
 			continue
 		}
 
-		providerName := vmInfo.ConnectionConfig.ProviderName
-		regionName := vmInfo.Region.Region
+		providerName := nodeInfo.ConnectionConfig.ProviderName
+		regionName := nodeInfo.Region.Region
 
 		// Initialize CSP map if not exists
-		if vmGroups[providerName] == nil {
-			vmGroups[providerName] = make(map[string][]string)
+		if nodeGroups[providerName] == nil {
+			nodeGroups[providerName] = make(map[string][]string)
 		}
 
 		// Add VM to the appropriate group
-		vmGroups[providerName][regionName] = append(vmGroups[providerName][regionName], vmId)
-		vmGroupInfos[vmId] = VmControlInfo{
-			VmId:         vmId,
+		nodeGroups[providerName][regionName] = append(nodeGroups[providerName][regionName], nodeId)
+		nodeGroupInfos[nodeId] = NodeControlInfo{
+			NodeId:       nodeId,
 			ProviderName: providerName,
 			RegionName:   regionName,
 		}
@@ -414,18 +414,18 @@ func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, 
 	var mutex sync.Mutex
 	var allErrors []error
 	var successCount int
-	totalVmCount := len(vmList)
+	totalNodeCount := len(nodeList)
 
-	for csp, regions := range vmGroups {
+	for csp, regions := range nodeGroups {
 		wg.Add(1)
 		go func(providerName string, regionMap map[string][]string) {
 			defer wg.Done()
 
 			// Get rate limits for this specific CSP (use same limits as VM creation)
-			maxRegionsForCSP, maxVMsForRegion := getVmCreateRateLimitsForCSP(providerName)
+			maxRegionsForCSP, maxNodesForRegion := getNodeCreateRateLimitsForCSP(providerName)
 
 			// log.Debug().Msgf("Controlling VMs for CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
-			// 	providerName, len(regionMap), maxRegionsForCSP, maxVMsForRegion)
+			// 	providerName, len(regionMap), maxRegionsForCSP, maxNodesForRegion)
 
 			// Step 3: Process regions within CSP with rate limiting
 			regionSemaphore := make(chan struct{}, maxRegionsForCSP)
@@ -434,9 +434,9 @@ func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, 
 			var cspErrors []error
 			var cspSuccessCount int
 
-			for region, vmIds := range regionMap {
+			for region, nodeIds := range regionMap {
 				regionWg.Add(1)
-				go func(regionName string, vmIdList []string) {
+				go func(regionName string, nodeIdList []string) {
 					defer regionWg.Done()
 
 					// Acquire region semaphore
@@ -444,51 +444,51 @@ func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, 
 					defer func() { <-regionSemaphore }()
 
 					// log.Debug().Msgf("Controlling VMs in region: %s/%s with %d VMs (limit: %d VMs/region)",
-					// 	providerName, regionName, len(vmIdList), maxVMsForRegion)
+					// 	providerName, regionName, len(nodeIdList), maxNodesForRegion)
 
 					// Step 4: Process VMs within region with rate limiting
-					vmSemaphore := make(chan struct{}, maxVMsForRegion)
-					var vmWg sync.WaitGroup
-					var vmMutex sync.Mutex
+					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
+					var nodeWg sync.WaitGroup
+					var nodeMutex sync.Mutex
 					var regionErrors []error
 					var regionSuccessCount int
 
-					for _, vmId := range vmIdList {
-						vmWg.Add(1)
-						go func(vmId string) {
-							defer vmWg.Done()
+					for _, nodeId := range nodeIdList {
+						nodeWg.Add(1)
+						go func(nodeId string) {
+							defer nodeWg.Done()
 
 							// Acquire VM semaphore
-							vmSemaphore <- struct{}{}
-							defer func() { <-vmSemaphore }()
+							nodeSemaphore <- struct{}{}
+							defer func() { <-nodeSemaphore }()
 
-							// Control VM using the existing ControlVmAsync function
+							// Control VM using the existing ControlNodeAsync function
 							var controlWg sync.WaitGroup
-							results := make(chan model.ControlVmResult, 1)
+							results := make(chan model.ControlNodeResult, 1)
 							controlWg.Add(1)
 
 							// Add delay to avoid overwhelming CSP APIs
 							common.RandomSleep(0, 1000)
 
-							go ControlVmAsync(&controlWg, nsId, infraId, vmId, action, results)
+							go ControlNodeAsync(&controlWg, nsId, infraId, nodeId, action, results)
 
 							result := <-results
 							close(results)
 
 							if result.Error != nil {
-								log.Error().Err(result.Error).Msgf("Failed to control VM %s", vmId)
-								vmMutex.Lock()
-								regionErrors = append(regionErrors, fmt.Errorf("VM %s: %w", vmId, result.Error))
-								vmMutex.Unlock()
+								log.Error().Err(result.Error).Msgf("Failed to control VM %s", nodeId)
+								nodeMutex.Lock()
+								regionErrors = append(regionErrors, fmt.Errorf("VM %s: %w", nodeId, result.Error))
+								nodeMutex.Unlock()
 							} else {
-								vmMutex.Lock()
+								nodeMutex.Lock()
 								regionSuccessCount++
-								vmMutex.Unlock()
+								nodeMutex.Unlock()
 							}
 
-						}(vmId)
+						}(nodeId)
 					}
-					vmWg.Wait()
+					nodeWg.Wait()
 
 					// Merge region results to CSP results
 					regionMutex.Lock()
@@ -497,9 +497,9 @@ func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, 
 					regionMutex.Unlock()
 
 					// log.Debug().Msgf("Completed VM control in region %s/%s: %d/%d VMs successful",
-					// 	providerName, regionName, regionSuccessCount, len(vmIdList))
+					// 	providerName, regionName, regionSuccessCount, len(nodeIdList))
 
-				}(region, vmIds)
+				}(region, nodeIds)
 			}
 			regionWg.Wait()
 
@@ -517,15 +517,15 @@ func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, 
 	wg.Wait()
 
 	// Summary logging
-	cspCount := len(vmGroups)
+	cspCount := len(nodeGroups)
 	totalRegions := 0
-	for _, regions := range vmGroups {
+	for _, regions := range nodeGroups {
 		totalRegions += len(regions)
 	}
 
 	if len(allErrors) > 0 {
 		log.Warn().Msgf("Rate-limited VM control completed with some errors: %d CSPs, %d regions, %d/%d VMs successful, %d errors",
-			cspCount, totalRegions, successCount, totalVmCount, len(allErrors))
+			cspCount, totalRegions, successCount, totalNodeCount, len(allErrors))
 		// Don't return error for partial failures, just log them
 	}
 	// else: Rate-limited VM control completed successfully
@@ -533,31 +533,31 @@ func ControlVmsInParallel(nsId, infraId string, vmList []string, action string, 
 	return nil
 }
 
-// ControlVmAsync is func to control VM async
-func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string, action string, results chan<- model.ControlVmResult) {
+// ControlNodeAsync is func to control VM async
+func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId string, action string, results chan<- model.ControlNodeResult) {
 	defer wg.Done() //goroutine sync done
 
 	var err error
 
-	callResult := model.ControlVmResult{}
-	callResult.VmId = vmId
+	callResult := model.ControlNodeResult{}
+	callResult.NodeId = nodeId
 	callResult.Status = ""
 
-	// Use GetVmObject to get VM information
-	temp, err := GetVmObject(nsId, infraId, vmId)
+	// Use GetNodeObject to get VM information
+	temp, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		callResult.Error = fmt.Errorf("GetVmObject() Err in ControlVmAsync: %v", err)
-		log.Error().Err(callResult.Error).Msg("Error in ControlVmAsync")
+		callResult.Error = fmt.Errorf("GetNodeObject() Err in ControlNodeAsync: %v", err)
+		log.Error().Err(callResult.Error).Msg("Error in ControlNodeAsync")
 		results <- callResult
 		return
 	}
 
 	// Generate key for resource updates
-	key := common.GenInfraKey(nsId, infraId, vmId)
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 
-	// If VM is already terminated, return early without UpdateVmInfo
+	// If Node is already terminated, return early without UpdateNodeInfo
 	if temp.Status == model.StatusTerminated {
-		// log.Debug().Msgf("[ControlVmAsync] VM [%s] is already terminated, skipping action [%s]", vmId, action)
+		// log.Debug().Msgf("[ControlNodeAsync] VM [%s] is already terminated, skipping action [%s]", nodeId, action)
 		callResult.Status = temp.Status
 		results <- callResult
 		return
@@ -568,10 +568,10 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string
 
 	// Prevent malformed cspResourceName
 	if cspResourceName == "" || common.CheckString(cspResourceName) != nil {
-		callResult.Error = fmt.Errorf("Not valid requested CSPNativeVmId: [" + cspResourceName + "]")
+		callResult.Error = fmt.Errorf("Not valid requested CSPNativeNodeId: [" + cspResourceName + "]")
 		// temp.Status = model.StatusFailed
 		temp.SystemMessage = callResult.Error.Error()
-		UpdateVmInfo(nsId, infraId, temp)
+		UpdateNodeInfo(nsId, infraId, temp)
 		results <- callResult
 		return
 	}
@@ -579,8 +579,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string
 	currentStatusBeforeUpdating := temp.Status
 
 	// Log control request initiation
-	log.Debug().Msgf("[ControlVm] VM %s: Control request received - Action: %s, CurrentStatus: %s",
-		vmId, action, currentStatusBeforeUpdating)
+	log.Debug().Msgf("[ControlNode] VM %s: Control request received - Action: %s, CurrentStatus: %s",
+		nodeId, action, currentStatusBeforeUpdating)
 
 	url := ""
 	method := ""
@@ -599,10 +599,10 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string
 		timeout = 40 * time.Minute
 
 		// Cancel any active SSH commands for this VM to prevent hanging sessions
-		CancelActiveCommandsForVm(vmId)
+		CancelActiveCommandsForNode(nodeId)
 
 		// Remove Bastion Info from all vNets if the terminating VM is a Bastion
-		_, err := RemoveBastionNodes(nsId, infraId, "", "", vmId)
+		_, err := RemoveBastionNodes(nsId, infraId, "", "", nodeId)
 		if err != nil {
 			log.Info().Msg(err.Error())
 		}
@@ -641,17 +641,17 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string
 	// If VM is already in target status, skip the operation
 	// Exception: Reboot action should always be executed even if current status equals target status (Running -> Running)
 	if currentStatusBeforeUpdating == temp.TargetStatus && action != model.ActionReboot {
-		log.Debug().Msgf("[ControlVm] VM %s: Already in target status [%s], skipping", vmId, temp.TargetStatus)
+		log.Debug().Msgf("[ControlNode] VM %s: Already in target status [%s], skipping", nodeId, temp.TargetStatus)
 		callResult.Status = temp.Status
 		results <- callResult
 		return
 	}
 
 	// Log status transition
-	log.Info().Msgf("[ControlVm] VM %s: Status transition - %s -> %s (Target: %s)",
-		vmId, currentStatusBeforeUpdating, temp.Status, temp.TargetStatus)
+	log.Info().Msgf("[ControlNode] VM %s: Status transition - %s -> %s (Target: %s)",
+		nodeId, currentStatusBeforeUpdating, temp.Status, temp.TargetStatus)
 
-	UpdateVmInfo(nsId, infraId, temp)
+	UpdateNodeInfo(nsId, infraId, temp)
 
 	client := clientManager.NewHttpClient()
 	// NCP requires a slightly longer timeout due to its control plane characteristics
@@ -675,8 +675,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string
 		clientManager.MediumDuration,
 	)
 
-	// log.Debug().Msgf("[ControlVmAsync] VM %s: CB-Spider control API response - Status: %s, Error: %v",
-	// 	vmId, callResult.Status, err)
+	// log.Debug().Msgf("[ControlNodeAsync] VM %s: CB-Spider control API response - Status: %s, Error: %v",
+	// 	nodeId, callResult.Status, err)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -689,17 +689,17 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string
 
 	// Fetch actual VM status from CSP after successful control operation
 	// This ensures we have the most accurate status in our database
-	vmStatusInfo, err := FetchVmStatus(nsId, infraId, vmId)
+	nodeStatusInfo, err := FetchNodeStatus(nsId, infraId, nodeId)
 	if err != nil {
-		log.Warn().Err(err).Msgf("Failed to fetch VM status after %s operation for VM %s", action, vmId)
+		log.Warn().Err(err).Msgf("Failed to fetch VM status after %s operation for VM %s", action, nodeId)
 	} else {
-		log.Debug().Msgf("[ControlVm] VM %s: After %s - Status: %s, NativeStatus: %s",
-			vmId, action, vmStatusInfo.Status, vmStatusInfo.NativeStatus)
+		log.Debug().Msgf("[ControlNode] VM %s: After %s - Status: %s, NativeStatus: %s",
+			nodeId, action, nodeStatusInfo.Status, nodeStatusInfo.NativeStatus)
 	}
 
 	if action != model.ActionTerminate {
 		//When VM is restarted, temporal PublicIP will be changed. Need update.
-		UpdateVmPublicIp(nsId, infraId, temp)
+		UpdateNodePublicIp(nsId, infraId, temp)
 	} else { // if action == model.ActionTerminate
 		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, temp.ImageId, model.StrDelete, key)
 		if err != nil {
@@ -723,7 +723,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
-func CheckAllowedTransition(nsId string, infraId string, vmId model.OptionalParameter, action string) error {
+func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalParameter, action string) error {
 
 	targetStatus := ""
 	switch {
@@ -739,8 +739,8 @@ func CheckAllowedTransition(nsId string, infraId string, vmId model.OptionalPara
 		return fmt.Errorf("requested action %s is not matched with available actions", action)
 	}
 
-	if vmId.Set {
-		vm, err := GetInfraVmStatus(nsId, infraId, vmId.Value, false)
+	if nodeId.Set {
+		vm, err := GetInfraNodeStatus(nsId, infraId, nodeId.Value, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err

@@ -284,7 +284,7 @@ func RestTestAddObjectAssociation(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, " ", "+")
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
-	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrAdd, "/test/vm/key")
+	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrAdd, "/test/node/key")
 
 	return clientManager.EndRequestWithLog(c, err, content)
 }
@@ -301,7 +301,7 @@ func RestTestDeleteObjectAssociation(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, " ", "+")
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
-	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrDelete, "/test/vm/key")
+	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrDelete, "/test/node/key")
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

@@ -35,13 +35,13 @@ func RestCheckInfra(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-func RestCheckVm(c echo.Context) error {
+func RestCheckNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
-	exists, err := infra.CheckVm(nsId, infraId, vmId)
+	exists, err := infra.CheckNode(nsId, infraId, nodeId)
 
 	type JsonTemplate struct {
 		Exists bool `json:"exists"`

@@ -86,7 +86,7 @@ func RestPutSshKey(c echo.Context) error {
 // RestComplementSshKey godoc
 // @ID ComplementSshKeyRemoteCommand
 // @Summary Complement SSH Key info to enable remote command execution
-// @Description Update username and privateKey to enable remote command execution on registered VMs
+// @Description Update username and privateKey to enable remote command execution on registered nodes
 // @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json

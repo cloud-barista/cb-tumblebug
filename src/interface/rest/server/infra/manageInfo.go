@@ -38,8 +38,8 @@ type JSONResult struct {
 
 // RestGetInfra godoc
 // @ID GetInfra
-// @Summary Get Infra object (option: status, accessInfo, vmId)
-// @Description Get Infra object (option: status, accessInfo, vmId)
+// @Summary Get Infra object (option: status, accessInfo, nodeId)
+// @Description Get Infra object (option: status, accessInfo, nodeId)
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
@@ -68,7 +68,7 @@ func RestGetInfra(c echo.Context) error {
 	if option == "id" {
 		content := model.IdList{}
 		var err error
-		content.IdList, err = infra.ListVmByFilter(nsId, infraId, filterKey, filterVal)
+		content.IdList, err = infra.ListNodeByFilter(nsId, infraId, filterKey, filterVal)
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else if option == "status" {
 
@@ -180,7 +180,7 @@ func RestGetAllInfra(c echo.Context) error {
 		content.Infra = result
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else if option == "simple" {
-		// Infra in simple (without VM information)
+		// Infra in simple (without Node information)
 		result, err := infra.ListInfraInfo(nsId, option)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
@@ -274,53 +274,53 @@ func RestDelAllInfra(c echo.Context) error {
 // TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention needs to be revised.
 
-// RestGetInfraVm godoc
-// @ID GetInfraVm
-// @Summary Get VM in specified Infra
-// @Description Get VM in specified Infra
+// RestGetInfraNode godoc
+// @ID GetInfraNode
+// @Summary Get node in specified Infra
+// @Description Get node in specified Infra
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param option query string false "Option for Infra" Enums(default, status, idsInDetail, accessinfo)
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
-// @success 200 {object} JSONResult{[DEFAULT]=model.VmInfo,[STATUS]=model.VmStatusInfo,[IDNAME]=model.IdNameInDetailInfo} "Different return structures by the given option param"
+// @success 200 {object} JSONResult{[DEFAULT]=model.NodeInfo,[STATUS]=model.NodeStatusInfo,[IDNAME]=model.IdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId} [get]
-func RestGetInfraVm(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId} [get]
+func RestGetInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	option := c.QueryParam("option")
 	accessInfoOption := c.QueryParam("accessInfoOption")
 
 	switch option {
 	case "status":
-		result, err := infra.GetInfraVmStatus(nsId, infraId, vmId, false)
+		result, err := infra.GetInfraNodeStatus(nsId, infraId, nodeId, false)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	case "idsInDetail":
-		result, err := infra.GetVmIdNameInDetail(nsId, infraId, vmId)
+		result, err := infra.GetNodeIdNameInDetail(nsId, infraId, nodeId)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	case "accessinfo":
-		result, err := infra.GetInfraVmAccessInfo(nsId, infraId, vmId, accessInfoOption)
+		result, err := infra.GetInfraNodeAccessInfo(nsId, infraId, nodeId, accessInfoOption)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	default:
-		result, err := infra.GetVmObject(nsId, infraId, vmId)
+		result, err := infra.GetNodeObject(nsId, infraId, nodeId)
 		return clientManager.EndRequestWithLog(c, err, result)
 	}
 }
 
-/* RestPutInfraVm function not yet implemented
+/* RestPutInfraNode function not yet implemented
 // RestPutSshKey godoc
 // @ID PutSshKey
 // @Summary Update Infra
@@ -330,88 +330,88 @@ func RestGetInfraVm(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Param vmInfo body model.VmInfo true "Details for an VM object"
-// @Success 200 {object} model.VmInfo
+// @Param nodeId path string true "Node ID" default(g1-1)
+// @Param nodeInfo body model.NodeInfo true "Details for a node object"
+// @Success 200 {object} model.NodeInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId} [put]
-func RestPutInfraVm(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId} [put]
+func RestPutInfraNode(c echo.Context) error {
 	return nil
 }
 */
 
-// RestDelInfraVm godoc
-// @ID DelInfraVm
-// @Summary Delete VM in specified Infra
-// @Description Delete VM in specified Infra
+// RestDelInfraNode godoc
+// @ID DelInfraNode
+// @Summary Delete node in specified Infra
+// @Description Delete node in specified Infra
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Param option query string false "Option for delete VM (support force delete)" Enums(force)
+// @Param nodeId path string true "Node ID" default(g1-1)
+// @Param option query string false "Option for delete node (support force delete)" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId} [delete]
-func RestDelInfraVm(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId} [delete]
+func RestDelInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 	option := c.QueryParam("option")
 
-	err := infra.DelInfraVm(nsId, infraId, vmId, option)
+	err := infra.DelInfraNode(nsId, infraId, nodeId, option)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("Failed to delete the VM info")
+		err := fmt.Errorf("Failed to delete the Node info")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result := map[string]string{"message": "Deleted the VM info"}
+	result := map[string]string{"message": "Deleted the Node info"}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestDeregisterInfraVm godoc
-// @ID DeregisterInfraVm
-// @Summary Deregister VM in specified Infra
-// @Description Deregister VM from Spider and TB without deleting the actual CSP resource
+// RestDeregisterInfraNode godoc
+// @ID DeregisterInfraNode
+// @Summary Deregister node in specified Infra
+// @Description Deregister node from Spider and TB without deleting the actual CSP resource
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/deregisterResource/infra/{infraId}/vm/{vmId} [delete]
-func RestDeregisterInfraVm(c echo.Context) error {
+// @Router /ns/{nsId}/deregisterResource/infra/{infraId}/node/{nodeId} [delete]
+func RestDeregisterInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
-	err := infra.DeregisterInfraVm(nsId, infraId, vmId)
+	err := infra.DeregisterInfraNode(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result := map[string]string{"message": "Deregistered the VM info (CSP resource remains intact)"}
+	result := map[string]string{"message": "Deregistered the Node info (CSP resource remains intact)"}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestGetInfraGroupVms godoc
-// @ID GetInfraGroupVms
-// @Summary List VMs with a NodeGroup label in a specified Infra
-// @Description List VMs with a NodeGroup label in a specified Infra
+// RestGetInfraGroupNodes godoc
+// @ID GetInfraGroupNodes
+// @Summary List nodes with a NodeGroup label in a specified Infra
+// @Description List nodes with a NodeGroup label in a specified Infra
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
@@ -425,7 +425,7 @@ func RestDeregisterInfraVm(c echo.Context) error {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId} [get]
-func RestGetInfraGroupVms(c echo.Context) error {
+func RestGetInfraGroupNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
@@ -434,7 +434,7 @@ func RestGetInfraGroupVms(c echo.Context) error {
 
 	content := model.IdList{}
 	var err error
-	content.IdList, err = infra.ListVmByNodeGroup(nsId, infraId, nodegroupId)
+	content.IdList, err = infra.ListNodeByNodeGroup(nsId, infraId, nodegroupId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

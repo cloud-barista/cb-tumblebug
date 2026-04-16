@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2/google"
@@ -33,8 +34,8 @@ import (
 // GCP Labels are supported on VM instances and disks (CB-Spider TagHandler also
 // only supports VM and DISK for GCP).
 var gcpLabelableTypes = map[string]bool{
-	"vm":       true, // Compute Engine instance
-	"dataDisk": true, // Persistent disk
+	model.StrNode:     true, // Compute Engine instance
+	model.StrDataDisk: true, // Persistent disk
 }
 
 // gcpMaxLabels is the maximum number of labels GCP allows per resource.
@@ -192,8 +193,8 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 	}
 
 	switch resourceType {
-	case "vm":
-		return upsertVMLabels(svc, creds.ProjectID, zone, cspResourceId, sanitized)
+	case "node":
+		return upsertNodeLabels(svc, creds.ProjectID, zone, cspResourceId, sanitized)
 	case "dataDisk":
 		return upsertDiskLabels(svc, creds.ProjectID, zone, cspResourceId, sanitized)
 	default:
@@ -201,8 +202,8 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 	}
 }
 
-// upsertVMLabels merges labels onto a GCP VM instance.
-func upsertVMLabels(svc *compute.Service, projectID, zone, instanceName string, labels map[string]string) error {
+// upsertNodeLabels merges labels onto a GCP VM instance.
+func upsertNodeLabels(svc *compute.Service, projectID, zone, instanceName string, labels map[string]string) error {
 	instance, err := svc.Instances.Get(projectID, zone, instanceName).Do()
 	if err != nil {
 		return fmt.Errorf("GCP Instances.Get failed for %s: %w", instanceName, err)

@@ -399,7 +399,7 @@ func RunServer() {
 
 	//Infra Management
 	g.POST("/:nsId/infra", rest_infra.RestPostInfra)
-	g.POST("/:nsId/registerCspVm", rest_infra.RestPostRegisterCSPNativeVM)
+	g.POST("/:nsId/registerCspNode", rest_infra.RestPostRegisterCSPNativeNode)
 
 	e.POST("/tumblebug/recommendSpec", rest_infra.RestRecommendSpec)
 	e.GET("/tumblebug/recommendSpecOptions", rest_infra.RestRecommendSpecOptions)
@@ -410,7 +410,7 @@ func RunServer() {
 	g.POST("/:nsId/infraDynamic", rest_infra.RestPostInfraDynamic)
 	g.POST("/:nsId/infraDynamicReview", rest_infra.RestPostInfraDynamicReview)
 	g.POST("/:nsId/infra/:infraId/nodeGroupDynamic", rest_infra.RestPostInfraNodeGroupDynamic)
-	g.POST("/:nsId/infra/:infraId/nodeGroupDynamicReview", rest_infra.RestPostInfraDynamicNodeGroupVmReview)
+	g.POST("/:nsId/infra/:infraId/nodeGroupDynamicReview", rest_infra.RestPostInfraDynamicNodeGroupNodeReview)
 
 	// Template-based Infra provisioning
 	g.POST("/:nsId/infra/template/:templateId", rest_infra.RestPostInfraDynamicFromTemplate)
@@ -454,45 +454,45 @@ func RunServer() {
 	g.DELETE("/:nsId/infra/:infraId", rest_infra.RestDelInfra)
 	g.DELETE("/:nsId/infra", rest_infra.RestDelAllInfra)
 
-	g.POST("/:nsId/infra/:infraId/vm", rest_infra.RestPostInfraVm)
-	g.GET("/:nsId/infra/:infraId/vm/:vmId", rest_infra.RestGetInfraVm)
+	g.POST("/:nsId/infra/:infraId/node", rest_infra.RestPostInfraNode)
+	g.GET("/:nsId/infra/:infraId/node/:nodeId", rest_infra.RestGetInfraNode)
 	g.GET("/:nsId/infra/:infraId/nodegroup", rest_infra.RestGetInfraGroupIds)
-	g.GET("/:nsId/infra/:infraId/nodegroup/:nodegroupId", rest_infra.RestGetInfraGroupVms)
+	g.GET("/:nsId/infra/:infraId/nodegroup/:nodegroupId", rest_infra.RestGetInfraGroupNodes)
 	g.POST("/:nsId/infra/:infraId/nodegroup/:nodegroupId", rest_infra.RestPostInfraNodeGroupScaleOut)
 
-	//g.GET("/:nsId/infra/:infraId/vm", rest_infra.RestGetAllInfraVm)
-	// g.PUT("/:nsId/infra/:infraId/vm/:vmId", rest_infra.RestPutInfraVm)
-	g.DELETE("/:nsId/infra/:infraId/vm/:vmId", rest_infra.RestDelInfraVm)
-	g.DELETE("/:nsId/deregisterResource/infra/:infraId/vm/:vmId", rest_infra.RestDeregisterInfraVm)
-	//g.DELETE("/:nsId/infra/:infraId/vm", rest_infra.RestDelAllInfraVm)
+	//g.GET("/:nsId/infra/:infraId/node", rest_infra.RestGetAllInfraNode)
+	// g.PUT("/:nsId/infra/:infraId/node/:nodeId", rest_infra.RestPutInfraNode)
+	g.DELETE("/:nsId/infra/:infraId/node/:nodeId", rest_infra.RestDelInfraNode)
+	g.DELETE("/:nsId/deregisterResource/infra/:infraId/node/:nodeId", rest_infra.RestDeregisterInfraNode)
+	//g.DELETE("/:nsId/infra/:infraId/node", rest_infra.RestDelAllInfraNode)
 
 	//g.POST("/:nsId/infra/recommend", rest_infra.RestPostInfraRecommend)
 
 	g.GET("/:nsId/control/infra/:infraId", rest_infra.RestGetControlInfra)
-	g.GET("/:nsId/control/infra/:infraId/vm/:vmId", rest_infra.RestGetControlInfraVm)
+	g.GET("/:nsId/control/infra/:infraId/node/:nodeId", rest_infra.RestGetControlInfraNode)
 
 	g.POST("/:nsId/cmd/infra/:infraId", rest_infra.RestPostCmdInfra)
 	g.POST("/:nsId/transferFile/infra/:infraId", rest_infra.RestPostFileToInfra)
 	g.POST("/:nsId/transferFileAndCmd/infra/:infraId", rest_infra.RestPostFileAndCmdToInfra)
-	g.POST("/:nsId/downloadFile/infra/:infraId/vm/:vmId", rest_infra.RestPostDownloadFileFromInfraVm)
+	g.POST("/:nsId/downloadFile/infra/:infraId/node/:nodeId", rest_infra.RestPostDownloadFileFromInfraNode)
 
 	// SSE stream for real-time command execution log streaming
 	g.GET("/:nsId/stream/cmd/infra/:infraId", rest_infra.RestGetCmdInfraStream)
 
-	// Command Status Management for VMs
-	g.GET("/:nsId/infra/:infraId/vm/:vmId/commandStatus/:index", rest_infra.RestGetVmCommandStatus)
-	g.GET("/:nsId/infra/:infraId/vm/:vmId/commandStatus", rest_infra.RestListVmCommandStatus)
-	g.DELETE("/:nsId/infra/:infraId/vm/:vmId/commandStatus/:index", rest_infra.RestDeleteVmCommandStatus)
-	g.DELETE("/:nsId/infra/:infraId/vm/:vmId/commandStatus", rest_infra.RestDeleteVmCommandStatusByCriteria)
-	g.DELETE("/:nsId/infra/:infraId/vm/:vmId/commandStatusAll", rest_infra.RestClearAllVmCommandStatus)
+	// Command Status Management for Nodes
+	g.GET("/:nsId/infra/:infraId/node/:nodeId/commandStatus/:index", rest_infra.RestGetNodeCommandStatus)
+	g.GET("/:nsId/infra/:infraId/node/:nodeId/commandStatus", rest_infra.RestListNodeCommandStatus)
+	g.DELETE("/:nsId/infra/:infraId/node/:nodeId/commandStatus/:index", rest_infra.RestDeleteNodeCommandStatus)
+	g.DELETE("/:nsId/infra/:infraId/node/:nodeId/commandStatus", rest_infra.RestDeleteNodeCommandStatusByCriteria)
+	g.DELETE("/:nsId/infra/:infraId/node/:nodeId/commandStatusAll", rest_infra.RestClearAllNodeCommandStatus)
 
 	// Handling Command Count for monitoring (optimized for frequent polling)
-	g.GET("/:nsId/infra/:infraId/vm/:vmId/handlingCount", rest_infra.RestGetVmHandlingCommandCount)
+	g.GET("/:nsId/infra/:infraId/node/:nodeId/handlingCount", rest_infra.RestGetNodeHandlingCommandCount)
 	g.GET("/:nsId/infra/:infraId/handlingCount", rest_infra.RestGetInfraHandlingCommandCount)
 
 	// SSH Host Key Management (TOFU - Trust On First Use)
-	g.GET("/:nsId/infra/:infraId/vm/:vmId/sshHostKey", rest_infra.RestGetVmSshHostKey)
-	g.DELETE("/:nsId/infra/:infraId/vm/:vmId/sshHostKey", rest_infra.RestDeleteVmSshHostKey)
+	g.GET("/:nsId/infra/:infraId/node/:nodeId/sshHostKey", rest_infra.RestGetNodeSshHostKey)
+	g.DELETE("/:nsId/infra/:infraId/node/:nodeId/sshHostKey", rest_infra.RestDeleteNodeSshHostKey)
 
 	// New resource-centric SSH command endpoint (replaces POST /:nsId/cmd/infra/:infraId)
 	// Note: Keeping original path for backward compatibility, this is an alias
@@ -503,13 +503,13 @@ func RunServer() {
 	g.GET("/:nsId/cmd/infra/:infraId/task/:taskId", rest_infra.RestGetExecutionTask)
 	g.POST("/:nsId/cmd/infra/:infraId/task/:taskId/cancel", rest_infra.RestCancelExecutionTask)
 
-	g.PUT("/:nsId/infra/:infraId/vm/:targetVmId/bastion/:bastionVmId", rest_infra.RestSetBastionNodes)
-	g.PUT("/:nsId/infra/:infraId/vm/:targetVmId/bastion/:bastionInfraId/:bastionVmId", rest_infra.RestSetBastionNodesWithInfra)
-	g.PUT("/:nsId/infra/:infraId/vm/:targetVmId/bastion/:bastionNsId/:bastionInfraId/:bastionVmId", rest_infra.RestSetBastionNodesWithNs)
-	g.DELETE("/:nsId/infra/:infraId/bastion/:bastionVmId", rest_infra.RestRemoveBastionNodes)
-	g.DELETE("/:nsId/infra/:infraId/bastion/:bastionInfraId/:bastionVmId", rest_infra.RestRemoveBastionNodesWithInfra)
-	g.DELETE("/:nsId/infra/:infraId/bastion/:bastionNsId/:bastionInfraId/:bastionVmId", rest_infra.RestRemoveBastionNodesWithNs)
-	g.GET("/:nsId/infra/:infraId/vm/:targetVmId/bastion", rest_infra.RestGetBastionNodes)
+	g.PUT("/:nsId/infra/:infraId/node/:targetNodeId/bastion/:bastionNodeId", rest_infra.RestSetBastionNodes)
+	g.PUT("/:nsId/infra/:infraId/node/:targetNodeId/bastion/:bastionInfraId/:bastionNodeId", rest_infra.RestSetBastionNodesWithInfra)
+	g.PUT("/:nsId/infra/:infraId/node/:targetNodeId/bastion/:bastionNsId/:bastionInfraId/:bastionNodeId", rest_infra.RestSetBastionNodesWithNs)
+	g.DELETE("/:nsId/infra/:infraId/bastion/:bastionNodeId", rest_infra.RestRemoveBastionNodes)
+	g.DELETE("/:nsId/infra/:infraId/bastion/:bastionInfraId/:bastionNodeId", rest_infra.RestRemoveBastionNodesWithInfra)
+	g.DELETE("/:nsId/infra/:infraId/bastion/:bastionNsId/:bastionInfraId/:bastionNodeId", rest_infra.RestRemoveBastionNodesWithNs)
+	g.GET("/:nsId/infra/:infraId/node/:targetNodeId/bastion", rest_infra.RestGetBastionNodes)
 
 	g.POST("/:nsId/installBenchmarkAgent/infra/:infraId", rest_infra.RestPostInstallBenchmarkAgentToInfra)
 	g.POST("/:nsId/benchmark/infra/:infraId", rest_infra.RestGetBenchmark)
@@ -547,7 +547,7 @@ func RunServer() {
 
 	g.POST("/:nsId/monitoring/install/infra/:infraId", rest_infra.RestPostInstallMonitorAgentToInfra)
 	g.GET("/:nsId/monitoring/infra/:infraId/metric/:metric", rest_infra.RestGetMonitorData)
-	g.PUT("/:nsId/monitoring/status/infra/:infraId/vm/:vmId", rest_infra.RestPutMonitorAgentStatusInstalled)
+	g.PUT("/:nsId/monitoring/status/infra/:infraId/node/:nodeId", rest_infra.RestPutMonitorAgentStatusInstalled)
 
 	// K8sCluster
 	e.GET("/tumblebug/availableK8sVersion", rest_resource.RestGetAvailableK8sVersion)
@@ -594,16 +594,16 @@ func RunServer() {
 	g.DELETE("/:nsId/infra/:infraId/nlb", rest_infra.RestDelAllNLB)
 	g.GET("/:nsId/infra/:infraId/nlb/:resourceId/healthz", rest_infra.RestGetNLBHealth)
 
-	// VM snapshot -> creates one customImage and 'n' dataDisks
-	g.POST("/:nsId/infra/:infraId/vm/:vmId/snapshot", rest_infra.RestPostInfraVmSnapshot)
-	// Infra snapshot -> creates snapshots for first running VM in each nodegroup (parallel)
+	// Node snapshot -> creates one customImage and 'n' dataDisks
+	g.POST("/:nsId/infra/:infraId/node/:nodeId/snapshot", rest_infra.RestPostInfraNodeSnapshot)
+	// Infra snapshot -> creates snapshots for first running Node in each nodegroup (parallel)
 	g.POST("/:nsId/infra/:infraId/snapshot", rest_infra.RestPostInfraSnapshot)
 	// Build agnostic image -> create Infra, execute commands, take snapshots, and cleanup
 	g.POST("/:nsId/buildAgnosticImage", rest_infra.RestPostBuildAgnosticImage)
 
 	// These REST APIs are for dev/test only
-	g.POST("/:nsId/infra/:infraId/nlb/:resourceId/vm", rest_infra.RestAddNLBVMs)
-	g.DELETE("/:nsId/infra/:infraId/nlb/:resourceId/vm", rest_infra.RestRemoveNLBVMs)
+	g.POST("/:nsId/infra/:infraId/nlb/:resourceId/node", rest_infra.RestAddNLBNodes)
+	g.DELETE("/:nsId/infra/:infraId/nlb/:resourceId/node", rest_infra.RestRemoveNLBNodes)
 
 	// Resource Management
 	g.POST("/:nsId/resources/dataDisk", rest_resource.RestPostDataDisk)
@@ -613,9 +613,9 @@ func RunServer() {
 	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestDelResource)
 	g.DELETE("/:nsId/resources/dataDisk", rest_resource.RestDelAllResources)
 	g.DELETE("/:nsId/deregisterResource/dataDisk/:resourceId", rest_resource.RestDeregisterResource)
-	g.GET("/:nsId/infra/:infraId/vm/:vmId/dataDisk", rest_resource.RestGetVmDataDisk)
-	g.POST("/:nsId/infra/:infraId/vm/:vmId/dataDisk", rest_resource.RestPostVmDataDisk)
-	g.PUT("/:nsId/infra/:infraId/vm/:vmId/dataDisk", rest_resource.RestPutVmDataDisk)
+	g.GET("/:nsId/infra/:infraId/node/:nodeId/dataDisk", rest_resource.RestGetNodeDataDisk)
+	g.POST("/:nsId/infra/:infraId/node/:nodeId/dataDisk", rest_resource.RestPostNodeDataDisk)
+	g.PUT("/:nsId/infra/:infraId/node/:nodeId/dataDisk", rest_resource.RestPutNodeDataDisk)
 
 	g.POST("/:nsId/resources/image", rest_resource.RestPostImage)
 	g.GET("/:nsId/resources/image/:imageId", rest_resource.RestGetImage)
@@ -814,7 +814,7 @@ func RunServer() {
 
 	g.GET("/:nsId/checkResource/:resourceType/:resourceId", rest_resource.RestCheckResource)
 	g.GET("/:nsId/checkInfra/:infraId", rest_infra.RestCheckInfra)
-	g.GET("/:nsId/infra/:infraId/checkVm/:vmId", rest_infra.RestCheckVm)
+	g.GET("/:nsId/infra/:infraId/checkNode/:nodeId", rest_infra.RestCheckNode)
 
 	// g.POST("/:nsId/registerExistingResources", rest_resource.RestRegisterExistingResources)
 

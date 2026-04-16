@@ -562,8 +562,8 @@ func RestDeleteObjects(c echo.Context) error {
 
 // RestInspectResources godoc
 // @ID InspectResources
-// @Summary Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
-// @Description Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
+// @Summary Inspect Resources (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug, CB-Spider, CSP
+// @Description Inspect Resources (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug, CB-Spider, CSP
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
@@ -587,7 +587,7 @@ func RestInspectResources(c echo.Context) error {
 	// if u.Type == model.StrVNet || u.Type == model.StrSecurityGroup || u.Type == model.StrSSHKey {
 	// 	content, err = infra.InspectResources(u.ConnectionName, u.Type)
 	// } else if u.Type == "vm" {
-	// 	content, err = infra.InspectVMs(u.ConnectionName)
+	// 	content, err = infra.InspectNodes(u.ConnectionName)
 	// }
 	content, err = infra.InspectResources(u.ConnectionName, u.ResourceType)
 	return clientManager.EndRequestWithLog(c, err, content)
@@ -596,8 +596,8 @@ func RestInspectResources(c echo.Context) error {
 
 // RestInspectResourcesOverview godoc
 // @ID InspectResourcesOverview
-// @Summary Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
-// @Description Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
+// @Summary Inspect Resources Overview (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug and CSP for all connections
+// @Description Inspect Resources Overview (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug and CSP for all connections
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
@@ -646,8 +646,8 @@ type RestRegisterCspNativeResourcesRequest struct {
 
 // RestRegisterCspNativeResources godoc
 // @ID RegisterCspNativeResources
-// @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
-// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.
+// @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, node) to CB-Tumblebug
+// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, node) to CB-Tumblebug.
 // @Description
 // @Description **New filtering approach (recommended):**
 // @Description - Provider only: Registers resources from all connections of the specified provider
@@ -668,8 +668,8 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify provider/region/zone or connectionName (deprecated), NS Id, and Infra Name Prefix"
-// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, vm, dataDisk, customImage)
-// @Param infraFlag query string false "Flag to show VMs in a collective Infra form (y,n)" Enums(y, n) default(y)
+// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, node, dataDisk, customImage)
+// @Param infraFlag query string false "Flag to show Nodes in a collective Infra form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceResult "Single connection result"
 // @Success 200 {object} model.RegisterResourceAllResult "Multiple connections result"
 // @Failure 400 {object} model.SimpleMsg "Invalid request (e.g., region without provider)"
@@ -774,8 +774,8 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and Infra Name Prefix"
-// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, vm, dataDisk, customImage)
-// @Param infraFlag query string false "Flag to show VMs in a collective Infra form (y,n)" Enums(y, n) default(y)
+// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, node, dataDisk, customImage)
+// @Param infraFlag query string false "Flag to show Nodes in a collective Infra form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceAllResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg

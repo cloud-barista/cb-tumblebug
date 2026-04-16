@@ -682,6 +682,8 @@ func convertTermToSpider(labelType string) string {
 		return model.StrDisk
 	} else if strings.EqualFold(labelType, model.StrSSHKey) {
 		return model.StrKeypair
+	} else if strings.EqualFold(labelType, model.StrNode) {
+		return model.StrSpiderVM // CB-Spider uses "vm" for VM resources
 	} else {
 		return labelType
 	}

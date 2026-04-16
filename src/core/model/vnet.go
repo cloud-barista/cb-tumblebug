@@ -73,7 +73,7 @@ type VNetInfo struct {
 type BastionNode struct {
 	NsId    string `json:"nsId,omitempty"`
 	InfraId string `json:"infraId"`
-	VmId    string `json:"vmId"`
+	NodeId  string `json:"nodeId"`
 }
 
 // VNetDesignRequest is a struct to handle the utility function, DesignVNet()

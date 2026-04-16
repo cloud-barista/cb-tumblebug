@@ -21,9 +21,9 @@ Comprehensive guide for automated CSP-agnostic custom image creation using CB-Tu
 ### Why Use Cloud-Agnostic Image?
 
 **Problem:**
-- Creating custom images manually involves multiple steps: Provision VM → Install Software → Verify → Stop VM → Create Image → Delete VM.
+- Creating custom images manually involves multiple steps: Provision Node → Install Software → Verify → Stop Node → Create Image → Delete Node.
 - Doing this across multiple clouds (AWS, Azure, GCP, etc.) requires different tools and procedures.
-- Managing the timing (waiting for VM to be ready, waiting for image to be available) is complex and error-prone.
+- Managing the timing (waiting for Node to be ready, waiting for image to be available) is complex and error-prone.
 
 **Solution:**
 - **One-Click Automation**: Define your infrastructure and software once, and Tumblebug handles the rest.
@@ -33,8 +33,8 @@ Comprehensive guide for automated CSP-agnostic custom image creation using CB-Tu
 ### Key Highlights
 
 ✅ **End-to-End Automation**: From empty state to ready-to-use custom image in one request.
-✅ **Parallel Processing**: Creates snapshots for multiple VMs (nodegroups) simultaneously.
-✅ **Smart Cleanup**: Automatically terminates temporary VMs only after images are confirmed "Available".
+✅ **Parallel Processing**: Creates snapshots for multiple Nodes (per NodeGroup) simultaneously.
+✅ **Smart Cleanup**: Automatically terminates temporary Nodes only after images are confirmed "Available".
 ✅ **Error Handling**: Uses "Refine" policy to handle partial provisioning failures gracefully.
 ✅ **Status Tracking**: Monitors image creation progress and ensures availability before cleanup.
 
@@ -48,20 +48,20 @@ The system executes a strictly ordered sequence of operations:
 
 1. **Provisioning**: Creates a temporary Infra (Multi-Cloud Infrastructure) based on your specifications.
 2. **Configuration**: Executes post-deployment commands (e.g., `apt install nginx`) to set up the software environment.
-3. **Snapshotting**: Triggers CSP-native snapshot mechanisms for each running VM.
+3. **Snapshotting**: Triggers CSP-native snapshot mechanisms for each running Node.
 4. **Verification**: Actively polls image status until it transitions to `Available`.
 5. **Cleanup**: Terminates the temporary Infra to prevent unnecessary costs (optional but recommended).
 
 ### 2. Parallel Snapshot Creation
 
-- Identifies the first running VM in each NodeGroup.
+- Identifies the first running Node in each NodeGroup.
 - Executes snapshot requests in parallel across different providers.
 - Uses provider-specific semaphores to prevent API rate limiting.
 
 ### 3. Safety Mechanisms
 
-- **Wait-for-Available**: The system does not delete the source VM until the created image is fully registered and available.
-- **Partial Failure Handling**: If some VMs fail to provision, the system proceeds with snapshotting the successful ones.
+- **Wait-for-Available**: The system does not delete the source Node until the created image is fully registered and available.
+- **Partial Failure Handling**: If some Nodes fail to provision, the system proceeds with snapshotting the successful ones.
 - **Cleanup Protection**: If snapshot creation fails completely, cleanup can still be enforced to avoid zombie resources.
 
 ---
@@ -85,8 +85,8 @@ sequenceDiagram
     rect rgb(230, 240, 255)
         Note over API,Infra: Phase 1: Provisioning
         API->>Infra: CreateInfraDynamic (Policy="refine")
-        Infra->>Spider: Create VMs
-        Spider-->>Infra: VMs Created
+        Infra->>Spider: Create Nodes
+        Spider-->>Infra: Nodes Created
         Infra-->>API: Infra Info
         
         API->>Infra: GetInfraStatus
@@ -98,8 +98,8 @@ sequenceDiagram
         API->>Snap: CreateInfraSnapshot
         
         par Parallel per NodeGroup
-            Snap->>Spider: Create Image (VM 1)
-            Snap->>Spider: Create Image (VM 2)
+            Snap->>Spider: Create Image (Node 1)
+            Snap->>Spider: Create Image (Node 2)
         end
         
         Spider-->>Snap: Image IDs
@@ -123,16 +123,16 @@ sequenceDiagram
 
 ### 2. Smart Snapshot Strategy
 
-Tumblebug optimizes the snapshot process by selecting representative VMs and managing API concurrency limits per provider.
+Tumblebug optimizes the snapshot process by selecting representative Nodes and managing API concurrency limits per provider.
 
 ```mermaid
 flowchart TD
-    Start([Start Snapshot Process]) --> GetVMs[Get All VMs in Infra]
+    Start([Start Snapshot Process]) --> GetVMs[Get All Nodes in Infra]
     
     subgraph Selection [Target Selection]
         GetVMs --> GroupSG[Group by NodeGroup]
-        GroupSG --> FilterRunning[Filter Running VMs]
-        FilterRunning --> SelectOne[Select First Running VM / per NodeGroup]
+        GroupSG --> FilterRunning[Filter Running Nodes]
+        FilterRunning --> SelectOne[Select First Running Node / per NodeGroup]
     end
     
     subgraph Concurrency [Provider-Aware Parallelism]
@@ -202,14 +202,14 @@ stateDiagram-v2
 
 | Stage | Description | Typical Duration |
 |-------|-------------|------------------|
-| **Provisioning** | Creating VMs and installing software | 2 - 10 mins |
+| **Provisioning** | Creating Nodes and installing software | 2 - 10 mins |
 | **Snapshotting** | Triggering CSP snapshot APIs | 1 - 5 mins |
 | **Waiting** | Waiting for cloud provider to finalize image | 5 - 20 mins |
 | **Cleanup** | Terminating resources | 1 - 3 mins |
 
 ### 4. Lifecycle: Build Once, Deploy Many
 
-Once a custom image is created, it becomes a reusable asset within Tumblebug. You can use the generated `imageId` to spawn multiple identical VM instances, enabling rapid scaling and consistent deployments.
+Once a custom image is created, it becomes a reusable asset within Tumblebug. You can use the generated `imageId` to spawn multiple identical Node instances, enabling rapid scaling and consistent deployments.
 
 ```mermaid
 flowchart TD
@@ -223,9 +223,9 @@ flowchart TD
         CustomImg -->|Reference by imageId| NewInfra2[Production Infra 2]
         CustomImg -->|Reference by imageId| ScaleOut[Scale Out Existing Infra]
         
-        NewInfra1 --> VM1[VM Instance 1]
-        NewInfra1 --> VM2[VM Instance 2]
-        NewInfra2 --> VM3[VM Instance 3]
+        NewInfra1 --> VM1[Node Instance 1]
+        NewInfra1 --> VM2[Node Instance 2]
+        NewInfra2 --> VM3[Node Instance 3]
     end
     
     style CustomImg fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
@@ -238,11 +238,11 @@ Simply use the `imageId` returned from the build process in your standard Infra 
 
 ```json
 {
-  "vm": [
+  "node": [
     {
       "imageId": "nginx-custom-image-g1",
       "specId": "aws-t3-small",
-      "name": "prod-vm-01"
+      "name": "prod-node-01"
     }
   ]
 }
@@ -261,10 +261,10 @@ Simply use the `imageId` returned from the build process in your standard Infra 
 {
   "sourceInfraReq": {
     "name": "build-image-infra",
-    "vm": [
+    "nodeGroups": [
       {
         "nodeGroupSize": "1",
-        "name": "base-vm",
+        "name": "base-group",
         "imageId": "ubuntu-22.04",
         "specId": "aws-t3-small",
         "vmUserPassword": "mypassword"
@@ -289,7 +289,7 @@ Simply use the `imageId` returned from the build process in your standard Infra 
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `sourceInfraReq` | object | Yes | - | Standard Infra creation request with VM specs and post-commands |
+| `sourceInfraReq` | object | Yes | - | Standard Infra creation request with Node specs and post-commands |
 | `snapshotReq` | object | Yes | - | Configuration for the resulting images (name, description) |
 | `cleanupInfraAfterSnapshot` | boolean | No | `true` | Whether to delete the Infra after successful image creation |
 
@@ -309,7 +309,7 @@ Simply use the `imageId` returned from the build process in your standard Infra 
     "results": [
       {
         "nodeGroupId": "g1",
-        "vmId": "base-vm-01",
+        "nodeId": "base-group-01",
         "status": "Success",
         "imageId": "nginx-custom-image-g1",
         "imageInfo": { ... }

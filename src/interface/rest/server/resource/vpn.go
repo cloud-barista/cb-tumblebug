@@ -98,11 +98,11 @@ func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, erro
 	sitesInTencent := []model.SiteDetail{}
 	sitesInIbm := []model.SiteDetail{}
 	sitesInOpenStack := []model.SiteDetail{}
-	for _, vm := range infraInfo.Vm {
+	for _, node := range infraInfo.Node {
 
-		vNetId := vm.VNetId
+		vNetId := node.VNetId
 		if vNetId == "" {
-			log.Warn().Msgf("VNet ID is empty for VM ID: %s", vm.Id)
+			log.Warn().Msgf("VNet ID is empty for Node ID: %s", node.Id)
 			continue
 		}
 
@@ -111,16 +111,16 @@ func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, erro
 		}
 		checkedVpcs[vNetId] = true
 
-		providerName := vm.ConnectionConfig.ProviderName
+		providerName := node.ConnectionConfig.ProviderName
 		if providerName == "" {
-			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
+			log.Warn().Msgf("Provider name is empty for Node ID: %s", node.Id)
 			continue
 		}
 
 		// Create and set a site details
 		var site = model.SiteDetail{}
-		site.CSP = vm.ConnectionConfig.ProviderName
-		site.Region = vm.Region.Region
+		site.CSP = node.ConnectionConfig.ProviderName
+		site.Region = node.Region.Region
 
 		// Lowercase the provider name
 		providerName = strings.ToLower(providerName)
@@ -130,7 +130,7 @@ func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, erro
 
 			// // Get vNet info
 			// resourceType := "vNet"
-			// resourceId := vm.VNetId
+			// resourceId := node.VNetId
 			// result, err := resource.GetResource(nsId, resourceType, resourceId)
 			// if err != nil {
 			// 	log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
@@ -147,20 +147,20 @@ func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, erro
 			// lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
 
 			// Set VNet and the last subnet IDs
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 			// site.SubnetId = lastSubnet.CspResourceId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 
 			sitesInAws = append(sitesInAws, site)
 
 		case csp.Azure:
 			// Parse vNet and resource group names
-			parts := strings.Split(vm.CspVNetId, "/")
+			parts := strings.Split(node.CspVNetId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
 			if len(parts) < 9 {
-				log.Warn().Msgf("Invalid VNet ID format for Azure VM ID: %s", vm.Id)
+				log.Warn().Msgf("Invalid VNet ID format for Azure Node ID: %s", node.Id)
 				continue
 			}
 			parsedResourceGroupName := parts[4]
@@ -168,12 +168,12 @@ func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, erro
 
 			// Set VNet and resource group names
 			// site.VNetId = parsedVirtualNetworkName
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 			site.ResourceGroup = parsedResourceGroupName
 
 			// Get vNet info
 			resourceType := "vNet"
-			resourceId := vm.VNetId
+			resourceId := node.VNetId
 			result, err := resource.GetResource(nsId, resourceType, resourceId)
 			if err != nil {
 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
@@ -200,52 +200,52 @@ func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, erro
 			site.GatewaySubnetCidr = nextCidr
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 
 			sitesInAzure = append(sitesInAzure, site)
 
 		case csp.GCP:
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 
 			sitesInGcp = append(sitesInGcp, site)
 
 		case csp.Alibaba:
 
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInAlibaba = append(sitesInAlibaba, site)
 
 		case csp.Tencent:
 
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInTencent = append(sitesInTencent, site)
 
 		case csp.IBM:
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInIbm = append(sitesInIbm, site)
 
 		case csp.OpenStack:
 			// Set vNet ID
-			site.VNetId = vm.VNetId
-			site.SubnetId = vm.SubnetId
+			site.VNetId = node.VNetId
+			site.SubnetId = node.SubnetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInOpenStack = append(sitesInOpenStack, site)
 
 		default:

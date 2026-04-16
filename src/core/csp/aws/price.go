@@ -72,13 +72,13 @@ type priceEntry struct {
 // specKey is used to deduplicate pricing entries by region+instanceType.
 type specKey struct{ region, instanceType string }
 
-// FetchAllVMPrices fetches EC2 Linux OnDemand pricing for ALL AWS regions in a single
+// FetchAllNodePrices fetches EC2 Linux OnDemand pricing for ALL AWS regions in a single
 // paginated query to the AWS Pricing API (no regionCode filter), then groups results by
 // region code. This eliminates the N-Spider-calls overhead of the legacy per-region path.
 //
 // Only one call chain is made regardless of how many AWS regions are configured in CB-TB.
 // Returns map[regionCode] → SpiderCloudPrice, compatible with the existing BulkUpdateSpec path.
-func FetchAllVMPrices(ctx context.Context) (map[string]model.SpiderCloudPrice, error) {
+func FetchAllNodePrices(ctx context.Context) (map[string]model.SpiderCloudPrice, error) {
 	accessKey, secretKey, err := getAWSCreds(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("AWS pricing: cannot get credentials: %w", err)

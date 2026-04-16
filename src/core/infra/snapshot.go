@@ -31,9 +31,9 @@ func mapSpiderToTumblebugImageStatus(spiderStatus string) model.ImageStatus {
 	return resource.MapSpiderToTumblebugImageStatus(spiderStatus)
 }
 
-// CreateVmSnapshot is func to create VM snapshot
-func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq model.SnapshotReq) (model.ImageInfo, error) {
-	vm, err := GetVmObject(nsId, infraId, vmId)
+// CreateNodeSnapshot is func to create Node snapshot
+func CreateNodeSnapshot(nsId string, infraId string, nodeId string, snapshotReq model.SnapshotReq) (model.ImageInfo, error) {
+	node, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.ImageInfo{}, err
@@ -46,19 +46,19 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 	}
 
 	requestBody := model.SpiderMyImageReq{
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 		ReqInfo: struct {
 			Name     string
-			SourceVM string
+			SourceNode string
 		}{
 			Name:     snapshotName,
-			SourceVM: vm.CspResourceName,
+			SourceNode: node.CspResourceName,
 		},
 	}
 
-	// Inspect DataDisks before creating VM snapshot
-	// Disabled because: there is no difference in dataDisks before and after creating VM snapshot
-	// inspect_result_before_snapshot, err := InspectResources(vm.ConnectionName, model.StrDataDisk)
+	// Inspect DataDisks before creating Node snapshot
+	// Disabled because: there is no difference in dataDisks before and after creating Node snapshot
+	// inspect_result_before_snapshot, err := InspectResources(node.ConnectionName, model.StrDataDisk)
 	// dataDisks_before_snapshot := inspect_result_before_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
@@ -66,7 +66,7 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 	// 	return model.ImageInfo{}, err
 	// }
 
-	// Create VM snapshot using ExecuteHttpRequest
+	// Create Node snapshot using ExecuteHttpRequest
 	var tempSpiderMyImageInfo model.SpiderMyImageInfo
 	client := clientManager.NewHttpClient()
 	client.SetTimeout(5 * time.Minute)
@@ -89,38 +89,38 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 		return model.ImageInfo{}, err
 	}
 
-	// Get the source VM's image information to inherit properties
+	// Get the source Node's image information to inherit properties
 	// Try to get image using CspImageName with provider/region information
 	var sourceImageInfo model.ImageInfo
 	var imgErr error
 
 	// First, try to get by composite primary key (ProviderName + CspImageName)
-	if vm.CspImageName != "" && vm.ConnectionConfig.ProviderName != "" {
-		sourceImageInfo, imgErr = resource.GetImageByPrimaryKey(model.SystemCommonNs, vm.ConnectionConfig.ProviderName, vm.CspImageName)
+	if node.CspImageName != "" && node.ConnectionConfig.ProviderName != "" {
+		sourceImageInfo, imgErr = resource.GetImageByPrimaryKey(model.SystemCommonNs, node.ConnectionConfig.ProviderName, node.CspImageName)
 		if imgErr != nil {
-			log.Debug().Err(imgErr).Msgf("Failed to get image by primary key (provider: %s, cspImageName: %s)", vm.ConnectionConfig.ProviderName, vm.CspImageName)
+			log.Debug().Err(imgErr).Msgf("Failed to get image by primary key (provider: %s, cspImageName: %s)", node.ConnectionConfig.ProviderName, node.CspImageName)
 		}
 	}
 
 	// If not found, try using ImageId (TB image ID)
-	if imgErr != nil && vm.ImageId != "" {
-		sourceImageInfo, imgErr = resource.GetImage(nsId, vm.ImageId)
+	if imgErr != nil && node.ImageId != "" {
+		sourceImageInfo, imgErr = resource.GetImage(nsId, node.ImageId)
 		if imgErr != nil {
-			log.Debug().Err(imgErr).Msgf("Failed to get image by ImageId: %s", vm.ImageId)
+			log.Debug().Err(imgErr).Msgf("Failed to get image by ImageId: %s", node.ImageId)
 		}
 	}
 
 	// If still not found, use minimal information
 	if imgErr != nil {
-		log.Warn().Msgf("Failed to get source image info for VM %s (ImageId: %s, CspImageName: %s), using minimal information",
-			vmId, vm.ImageId, vm.CspImageName)
+		log.Warn().Msgf("Failed to get source image info for Node %s (ImageId: %s, CspImageName: %s), using minimal information",
+			nodeId, node.ImageId, node.CspImageName)
 		sourceImageInfo = model.ImageInfo{}
 	} else {
-		log.Debug().Msgf("Successfully retrieved source image info for VM %s", vmId)
+		log.Debug().Msgf("Successfully retrieved source image info for VM %s", nodeId)
 	}
 
 	commandHistory := []model.ImageSourceCommandHistory{}
-	for _, cmd := range vm.CommandStatus {
+	for _, cmd := range node.CommandStatus {
 		commandHistory = append(commandHistory, model.ImageSourceCommandHistory{
 			Index:           cmd.Index,
 			CommandExecuted: cmd.CommandExecuted,
@@ -128,26 +128,26 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 	}
 
 	// Create ImageInfo inheriting from source image
-	// Use ConnectionConfig from VM (already contains all necessary information)
+	// Use ConnectionConfig from Node (already contains all necessary information)
 	tempImageInfo := model.ImageInfo{
 		// CustomImage-specific fields
 		ResourceType: model.StrCustomImage,
 		CspImageId:   tempSpiderMyImageInfo.IId.SystemId,
-		SourceVmUid:  vm.Uid,
+		SourceNodeUid:  node.Uid,
 
 		// Composite primary key fields (inherited from source image)
 		Namespace:    nsId,
-		ProviderName: vm.ConnectionConfig.ProviderName,
+		ProviderName: node.ConnectionConfig.ProviderName,
 		CspImageName: tempSpiderMyImageInfo.IId.NameId, // Custom image's CSP name
 
 		// Array field
-		RegionList: []string{vm.Region.Region},
+		RegionList: []string{node.Region.Region},
 
 		// Identifiers
 		Id:             snapshotName,
 		Uid:            common.GenUid(),
 		Name:           snapshotName,
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 		InfraType:      sourceImageInfo.InfraType,
 
 		// Time fields - Update creation date to custom image's creation date
@@ -173,8 +173,8 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 
 		// Additional information
 		Details:     tempSpiderMyImageInfo.KeyValueList,
-		SystemLabel: "Created from VM snapshot",
-		Description: fmt.Sprintf("Custom image from Infra/VM: %s/%s (Uid: %s): %s", infraId, vm.Name, vm.Uid, snapshotReq.Description),
+		SystemLabel: "Created from Node snapshot",
+		Description: fmt.Sprintf("Custom image from Infra/Node: %s/%s (Uid: %s): %s", infraId, node.Name, node.Uid, snapshotReq.Description),
 
 		CommandHistory: commandHistory,
 	}
@@ -185,9 +185,9 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 		return model.ImageInfo{}, err
 	}
 
-	// Inspect DataDisks after creating VM snapshot
-	// Disabled because: there is no difference in dataDisks before and after creating VM snapshot
-	// inspect_result_after_snapshot, err := InspectResources(vm.ConnectionName, model.StrDataDisk)
+	// Inspect DataDisks after creating Node snapshot
+	// Disabled because: there is no difference in dataDisks before and after creating Node snapshot
+	// inspect_result_after_snapshot, err := InspectResources(node.ConnectionName, model.StrDataDisk)
 	// dataDisks_after_snapshot := inspect_result_after_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
@@ -200,8 +200,8 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 	// // create 'n' dataDisks
 	// for _, v := range difference_dataDisks {
 	// 	tempDataDiskReq := model.DataDiskReq{
-	// 		Name:           fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5)),
-	// 		ConnectionName: vm.ConnectionName,
+	// 		Name:           fmt.Sprintf("%s-%s", node.Name, common.GenerateNewRandomString(5)),
+	// 		ConnectionName: node.ConnectionName,
 	// 		CspResourceId:  v.CspResourceId,
 	// 	}
 
@@ -216,7 +216,7 @@ func CreateVmSnapshot(nsId string, infraId string, vmId string, snapshotReq mode
 	return result, nil
 }
 
-// CreateInfraSnapshot creates snapshots for the first running VM in each nodegroup of an Infra in parallel
+// CreateInfraSnapshot creates snapshots for the first running Node in each nodegroup of an Infra in parallel
 // Snapshots are created with provider-specific semaphores to safely limit concurrent requests per CSP
 func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.SnapshotReq) (model.InfraSnapshotResult, error) {
 	// Get Infra information
@@ -230,38 +230,38 @@ func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.Snapshot
 	result := model.InfraSnapshotResult{
 		InfraId:   infraId,
 		Namespace: nsId,
-		Results:   []model.VmSnapshotResult{},
+		Results:   []model.NodeSnapshotResult{},
 	}
 
 	// Snapshot task structure with provider information
 	type snapshotTask struct {
 		nodegroupId    string
-		vmId           string
-		vmName         string
+		nodeId           string
+		nodeName         string
 		providerName   string
 		connectionName string
 	}
 
-	// Find first running VM in each nodegroup
+	// Find first running Node in each nodegroup
 	var tasks []snapshotTask
 	nodegroupMap := make(map[string]bool)
 
-	for _, vm := range infra.Vm {
-		// Skip if we already have a VM from this nodegroup
-		if nodegroupMap[vm.NodeGroupId] {
+	for _, node := range infra.Node {
+		// Skip if we already have a Node from this nodegroup
+		if nodegroupMap[node.NodeGroupId] {
 			continue
 		}
 
-		// Check if VM is running
-		if vm.Status == model.StatusRunning {
+		// Check if Node is running
+		if node.Status == model.StatusRunning {
 			tasks = append(tasks, snapshotTask{
-				nodegroupId:    vm.NodeGroupId,
-				vmId:           vm.Id,
-				vmName:         vm.Name,
-				providerName:   vm.ConnectionConfig.ProviderName,
-				connectionName: vm.ConnectionName,
+				nodegroupId:    node.NodeGroupId,
+				nodeId:           node.Id,
+				nodeName:         node.Name,
+				providerName:   node.ConnectionConfig.ProviderName,
+				connectionName: node.ConnectionName,
 			})
-			nodegroupMap[vm.NodeGroupId] = true
+			nodegroupMap[node.NodeGroupId] = true
 		}
 	}
 
@@ -293,7 +293,7 @@ func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.Snapshot
 	}
 
 	// Channel for collecting results
-	resultChan := make(chan model.VmSnapshotResult, len(tasks))
+	resultChan := make(chan model.NodeSnapshotResult, len(tasks))
 
 	// Execute snapshots in parallel with provider-specific semaphores
 	for _, task := range tasks {
@@ -310,49 +310,49 @@ func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.Snapshot
 			defer func() { <-semaphore }() // Release
 
 			log.Debug().Msgf("Creating snapshot for VM %s (Provider: %s, NodeGroup: %s)",
-				t.vmId, providerName, t.nodegroupId)
+				t.nodeId, providerName, t.nodegroupId)
 
-			vmResult := model.VmSnapshotResult{
+			nodeResult := model.NodeSnapshotResult{
 				NodeGroupId: t.nodegroupId,
-				VmId:        t.vmId,
-				VmName:      t.vmName,
+				NodeId:        t.nodeId,
+				NodeName:      t.nodeName,
 			}
 
 			// Generate unique snapshot name per VM
-			vmSnapshotName := snapshotReq.Name
-			if vmSnapshotName == "" {
-				vmSnapshotName = fmt.Sprintf("%s-%s-%s", infraId, t.nodegroupId, common.GenUid())
+			nodeSnapshotName := snapshotReq.Name
+			if nodeSnapshotName == "" {
+				nodeSnapshotName = fmt.Sprintf("%s-%s-%s", infraId, t.nodegroupId, common.GenUid())
 			} else {
-				vmSnapshotName = fmt.Sprintf("%s-%s", vmSnapshotName, t.nodegroupId)
+				nodeSnapshotName = fmt.Sprintf("%s-%s", nodeSnapshotName, t.nodegroupId)
 			}
 
-			vmSnapshotReq := model.SnapshotReq{
-				Name:        vmSnapshotName,
+			nodeSnapshotReq := model.SnapshotReq{
+				Name:        nodeSnapshotName,
 				Description: fmt.Sprintf("%s (NodeGroup: %s, Provider: %s)", snapshotReq.Description, t.nodegroupId, providerName),
 			}
 
 			// Create snapshot
-			imageInfo, err := CreateVmSnapshot(nsId, infraId, t.vmId, vmSnapshotReq)
+			imageInfo, err := CreateNodeSnapshot(nsId, infraId, t.nodeId, nodeSnapshotReq)
 			if err != nil {
-				log.Error().Err(err).Msgf("Failed to create snapshot for VM %s (Provider: %s)", t.vmId, providerName)
-				vmResult.Status = "Failed"
-				vmResult.Error = err.Error()
+				log.Error().Err(err).Msgf("Failed to create snapshot for VM %s (Provider: %s)", t.nodeId, providerName)
+				nodeResult.Status = "Failed"
+				nodeResult.Error = err.Error()
 			} else {
-				log.Info().Msgf("Successfully created snapshot for VM %s (Provider: %s): %s", t.vmId, providerName, imageInfo.Id)
-				vmResult.Status = "Success"
-				vmResult.ImageId = imageInfo.Id
-				vmResult.ImageInfo = imageInfo
+				log.Info().Msgf("Successfully created snapshot for VM %s (Provider: %s): %s", t.nodeId, providerName, imageInfo.Id)
+				nodeResult.Status = "Success"
+				nodeResult.ImageId = imageInfo.Id
+				nodeResult.ImageInfo = imageInfo
 			}
 
-			resultChan <- vmResult
+			resultChan <- nodeResult
 		}(task)
 	}
 
 	// Collect results
 	for i := 0; i < len(tasks); i++ {
-		vmResult := <-resultChan
-		result.Results = append(result.Results, vmResult)
-		if vmResult.Status == "Success" {
+		nodeResult := <-resultChan
+		result.Results = append(result.Results, nodeResult)
+		if nodeResult.Status == "Success" {
 			result.SuccessCount++
 		} else {
 			result.FailCount++
@@ -448,9 +448,9 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 
 		// Collect all successfully created image IDs
 		imageIds := make([]string, 0, snapshotResult.SuccessCount)
-		for _, vmResult := range snapshotResult.Results {
-			if vmResult.Status == "Success" && vmResult.ImageId != "" {
-				imageIds = append(imageIds, vmResult.ImageId)
+		for _, nodeResult := range snapshotResult.Results {
+			if nodeResult.Status == "Success" && nodeResult.ImageId != "" {
+				imageIds = append(imageIds, nodeResult.ImageId)
 			}
 		}
 

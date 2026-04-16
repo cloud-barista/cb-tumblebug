@@ -1,6 +1,6 @@
 # Remote Command Execution and File Transfer
 
-Comprehensive guide for executing remote commands and transferring files to Infra VMs via secure SSH with TOFU (Trust On First Use) verification.
+Comprehensive guide for executing remote commands and transferring files to Infra Nodes via secure SSH with TOFU (Trust On First Use) verification.
 
 ## 📑 Table of Contents
 
@@ -18,24 +18,24 @@ Comprehensive guide for executing remote commands and transferring files to Infr
 
 ### What is Remote Command Execution?
 
-**Remote Command Execution** is a core feature of CB-Tumblebug that allows users to execute shell commands on VMs within an Infra (Multi-Cloud Infrastructure). Commands are sent via SSH through a **Bastion Host** for security, supporting parallel execution across multiple VMs.
+**Remote Command Execution** is a core feature of CB-Tumblebug that allows users to execute shell commands on Nodes within an Infra (Multi-Cloud Infrastructure). Commands are sent via SSH through a **Bastion Host** for security, supporting parallel execution across multiple Nodes.
 
 ### What is File Transfer?
 
-**File Transfer** enables uploading files from the Tumblebug server to target VMs via SCP (Secure Copy Protocol). Like remote commands, file transfers also use the Bastion Host architecture.
+**File Transfer** enables uploading files from the Tumblebug server to target Nodes via SCP (Secure Copy Protocol). Like remote commands, file transfers also use the Bastion Host architecture.
 
 ### Why Use These Features?
 
 **Problem:**
-- Manually SSH-ing into each VM across multiple clouds is tedious and error-prone.
-- Direct SSH access to VMs in private subnets is not possible without a jump host.
-- Trusting SSH host keys manually for dozens of VMs is impractical.
+- Manually SSH-ing into each Node across multiple clouds is tedious and error-prone.
+- Direct SSH access to Nodes in private subnets is not possible without a jump host.
+- Trusting SSH host keys manually for dozens of Nodes is impractical.
 
 **Solution:**
-- **Unified API**: Execute commands on multiple VMs with a single API call.
-- **Bastion Architecture**: Secure access to private VMs via a designated jump host.
+- **Unified API**: Execute commands on multiple Nodes with a single API call.
+- **Bastion Architecture**: Secure access to private Nodes via a designated jump host.
 - **TOFU Security**: Automatic SSH host key verification to prevent MITM attacks.
-- **Parallel Execution**: Commands run concurrently across all target VMs.
+- **Parallel Execution**: Commands run concurrently across all target Nodes.
 
 ---
 
@@ -50,13 +50,13 @@ graph TB
     subgraph "Selection Levels"
         L1[Level 1: Entire Infra]
         L2[Level 2: NodeGroup]
-        L3[Level 3: Specific VM]
+        L3[Level 3: Specific Node]
         L4[Level 4: Label Selector]
     end
     
-    L1 --> |"All VMs"| ALL[g1-1, g1-2, g2-1, g2-2, g3-1]
+    L1 --> |"All Nodes"| ALL[g1-1, g1-2, g2-1, g2-2, g3-1]
     L2 --> |"nodeGroupId=g1"| SG[g1-1, g1-2]
-    L3 --> |"vmId=g1-1"| VM[g1-1]
+    L3 --> |"nodeId=g1-1"| ND[g1-1]
     L4 --> |"role=worker"| LBL[g1-2, g2-1, g3-1]
     
     style L1 fill:#e1f5ff
@@ -65,21 +65,21 @@ graph TB
     style L4 fill:#e1ffe1
 ```
 
-| Level | Parameter | Example | Target VMs |
+| Level | Parameter | Example | Target Nodes |
 |-------|-----------|---------|------------|
-| **Infra** | (none) | `/cmd/infra/infra01` | All VMs in Infra |
-| **NodeGroup** | `nodeGroupId` | `?nodeGroupId=g1` | All VMs in NodeGroup g1 |
-| **VM** | `vmId` | `?vmId=g1-1` | Only VM g1-1 |
-| **Label** | `labelSelector` | `?labelSelector=role=worker` | VMs with matching label |
+| **Infra** | (none) | `/cmd/infra/infra01` | All Nodes in Infra |
+| **NodeGroup** | `nodeGroupId` | `?nodeGroupId=g1` | All Nodes in NodeGroup g1 |
+| **Node** | `nodeId` | `?nodeId=g1-1` | Only Node g1-1 |
+| **Label** | `labelSelector` | `?labelSelector=role=worker` | Nodes with matching label |
 
 **Label Selector Examples:**
-- `role=worker` - VMs with role=worker label
-- `env=prod,tier=backend` - VMs matching both labels
-- `sys.id=g1-1` - System label matching (VM ID)
+- `role=worker` - Nodes with role=worker label
+- `env=prod,tier=backend` - Nodes matching both labels
+- `sys.id=g1-1` - System label matching (Node ID)
 
 ### Bastion Host (Jump Host)
 
-A **Bastion Host** is a VM with a public IP that acts as a gateway for SSH connections to other VMs in the Infra. All remote commands and file transfers are routed through the Bastion.
+A **Bastion Host** is a Node with a public IP that acts as a gateway for SSH connections to other Nodes in the Infra. All remote commands and file transfers are routed through the Bastion.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -91,23 +91,23 @@ A **Bastion Host** is a VM with a public IP that acts as a gateway for SSH conne
 │           │ SSH Tunnel (via Private Network)                    │
 │           ▼                                                     │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
-│  │   Target VM 1   │  │   Target VM 2   │  │   Target VM 3   │  │
+│  │   Target Node 1   │  │   Target Node 2   │  │   Target Node 3   │  │
 │  │  (Private IP)   │  │  (Private IP)   │  │  (Private IP)   │  │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Key Points:**
-- Each VM in an Infra is assigned a Bastion Host automatically.
-- The Bastion can be any VM in the Infra with a public IP.
-- SSH connections: `User → Bastion (Public IP) → Target VM (Private IP)`
+- Each Node in an Infra is assigned a Bastion Host automatically.
+- The Bastion can be any Node in the Infra with a public IP.
+- SSH connections: `User → Bastion (Public IP) → Target Node (Private IP)`
 
 ### Command Execution Flow
 
 1. User sends command request to Tumblebug API
-2. Tumblebug resolves Bastion Host for target VM
-3. SSH connection established: Tumblebug → Bastion → Target VM
-4. Command executed on Target VM
+2. Tumblebug resolves Bastion Host for target Node
+3. SSH connection established: Tumblebug → Bastion → Target Node
+4. Command executed on Target Node
 5. Output (stdout/stderr) returned to user
 
 ---
@@ -121,16 +121,16 @@ sequenceDiagram
     actor User
     participant API as Tumblebug API
     participant Bastion as Bastion Host
-    participant Target as Target VM
+    participant Target as Target Node
     participant KV as KV Store
     
     User->>API: POST /cmd/infra/{infraId}
     
     Note over API,KV: Resolve Bastion & Target Info
-    API->>KV: Get VM Info
-    KV-->>API: VM Details (IP, SSH Key)
+    API->>KV: Get Node Info
+    KV-->>API: Node Details (IP, SSH Key)
     API->>KV: Get Bastion Assignment
-    KV-->>API: Bastion VM Info
+    KV-->>API: Bastion Node Info
     
     Note over API,Target: SSH Connection via Bastion
     API->>Bastion: SSH Connect (TOFU Verify)
@@ -154,7 +154,7 @@ sequenceDiagram
     actor User
     participant API as Tumblebug API
     participant Bastion as Bastion Host
-    participant Target as Target VM
+    participant Target as Target Node
     
     User->>API: POST /file/infra/{infraId}
     Note right of User: multipart/form-data<br/>(file + targetPath)
@@ -171,7 +171,7 @@ sequenceDiagram
 
 ### Parallel Execution Architecture
 
-When targeting multiple VMs, commands execute in parallel:
+When targeting multiple Nodes, commands execute in parallel:
 
 ```mermaid
 graph TB
@@ -183,10 +183,10 @@ graph TB
         G3[Goroutine 3]
     end
     
-    subgraph "Infra VMs"
-        VM1[VM-1]
-        VM2[VM-2]
-        VM3[VM-3]
+    subgraph "Infra Nodes"
+        VM1[Node-1]
+        VM2[Node-2]
+        VM3[Node-3]
     end
     
     API --> G1
@@ -212,7 +212,7 @@ graph TB
 
 ### Overview
 
-By default, the remote command API operates in **synchronous mode** — the HTTP response is returned only after all VMs finish execution. For long-running commands across many VMs, this means the client must wait with no visibility into progress.
+By default, the remote command API operates in **synchronous mode** — the HTTP response is returned only after all Nodes finish execution. For long-running commands across many Nodes, this means the client must wait with no visibility into progress.
 
 **Async mode with SSE (Server-Sent Events)** solves this by:
 1. Returning an `HTTP 202 Accepted` immediately with an `xRequestId`
@@ -223,9 +223,9 @@ By default, the remote command API operates in **synchronous mode** — the HTTP
 
 | Feature | Sync Mode (default) | Async Mode (`?async=true`) |
 |---------|--------------------|--------------------------|
-| Response | Waits for all VMs to finish | Returns `202 Accepted` immediately |
+| Response | Waits for all Nodes to finish | Returns `202 Accepted` immediately |
 | Output | Full result in response body | Real-time events via SSE stream |
-| Progress visibility | None until completion | Live status updates per VM |
+| Progress visibility | None until completion | Live status updates per Node |
 | Use case | Short commands, scripted workflows | Long-running commands, interactive UIs |
 
 ### Architecture
@@ -235,31 +235,31 @@ sequenceDiagram
     actor Client
     participant API as Tumblebug API
     participant Broker as CommandLogBroker
-    participant VMs as Target VMs
+    participant Nodes as Target Nodes
     
     Client->>API: POST /cmd/infra/{infraId}?async=true
     Note right of Client: x-request-id: cmd-infra01-1234
     API-->>Client: 202 Accepted {xRequestId}
     
-    Note over API,VMs: Background Execution
+    Note over API,Nodes: Background Execution
     API->>Broker: Create session (xRequestId)
-    API->>VMs: SSH Connect & Execute (parallel)
+    API->>Nodes: SSH Connect & Execute (parallel)
     
     Client->>API: GET /stream/cmd/infra/{infraId}?xRequestId=cmd-infra01-1234
     API->>Broker: Subscribe(xRequestId)
     Broker-->>API: Replay buffered events
     API-->>Client: SSE: CommandStatus (Queued)
     
-    VMs-->>API: stdout line
+    Nodes-->>API: stdout line
     API->>Broker: Publish(CommandLog)
     Broker-->>API: Forward to subscriber
     API-->>Client: SSE: CommandLog {line}
     
-    VMs-->>API: Command complete
+    Nodes-->>API: Command complete
     API->>Broker: Publish(CommandStatus: Completed)
     API-->>Client: SSE: CommandStatus (Completed)
     
-    Note over API,VMs: All VMs finished
+    Note over API,Nodes: All Nodes finished
     API->>Broker: Publish(CommandDone)
     API-->>Client: SSE: CommandDone {summary}
     Note over Client: Stream ends
@@ -271,17 +271,17 @@ The SSE stream delivers three types of events, each as a JSON object in `data:` 
 
 #### 1. `CommandStatus`
 
-Sent when a VM's command execution status changes (e.g., Queued → Handling → Completed).
+Sent when a Node's command execution status changes (e.g., Queued → Handling → Completed).
 
 ```json
 {
   "type": "CommandStatus",
-  "vmId": "g1-1",
+  "nodeId": "g1-1",
   "commandIndex": 1,
   "timestamp": "2024-01-15T10:30:01Z",
   "status": {
     "infraId": "infra01",
-    "vmId": "g1-1",
+    "nodeId": "g1-1",
     "status": "Handling",
     "command": "echo hello && hostname"
   }
@@ -307,7 +307,7 @@ Sent for each line of stdout/stderr output from an SSH session, in real-time.
 ```json
 {
   "type": "CommandLog",
-  "vmId": "g1-1",
+  "nodeId": "g1-1",
   "commandIndex": 1,
   "timestamp": "2024-01-15T10:30:02Z",
   "log": {
@@ -322,37 +322,37 @@ Sent for each line of stdout/stderr output from an SSH session, in real-time.
 |-------|-------------|
 | `log.stream` | `"stdout"` or `"stderr"` |
 | `log.line` | Output line content |
-| `log.lineNumber` | Sequential line number per stream per VM |
+| `log.lineNumber` | Sequential line number per stream per Node |
 
 #### 3. `CommandDone`
 
-The **terminal event** — sent once when all VMs have finished. The SSE stream closes after this event.
+The **terminal event** — sent once when all Nodes have finished. The SSE stream closes after this event.
 
 ```json
 {
   "type": "CommandDone",
   "timestamp": "2024-01-15T10:30:45Z",
   "summary": {
-    "totalVms": 5,
-    "completedVms": 4,
-    "failedVms": 1,
+    "totalNodes": 5,
+    "completedNodes": 4,
+    "failedNodes": 1,
     "elapsedSeconds": 44
   }
 }
 ```
 
-If the command failed before reaching any VMs (e.g., preprocessing error), the `error` field is included:
+If the command failed before reaching any Nodes (e.g., preprocessing error), the `error` field is included:
 
 ```json
 {
   "type": "CommandDone",
   "timestamp": "2024-01-15T10:30:01Z",
   "summary": {
-    "totalVms": 0,
-    "completedVms": 0,
-    "failedVms": 0,
+    "totalNodes": 0,
+    "completedNodes": 0,
+    "failedNodes": 0,
     "elapsedSeconds": 0,
-    "error": "built-in function GetPublicIP error: no VM found (ID: /ns/default/infra/infra01/vm/g1-1)"
+    "error": "built-in function GetPublicIP error: no Node found (ID: /ns/default/infra/infra01/node/g1-1)"
   }
 }
 ```
@@ -420,10 +420,10 @@ type SshHostKeyInfo struct {
 
 ### Handling Host Key Changes
 
-When a VM is recreated (terminated and created again), its SSH host key changes. This is legitimate but will trigger a TOFU verification failure.
+When a Node is recreated (terminated and created again), its SSH host key changes. This is legitimate but will trigger a TOFU verification failure.
 
 **Resolution Steps:**
-1. Verify the key change is expected (VM was recreated, not compromised)
+1. Verify the key change is expected (Node was recreated, not compromised)
 2. Reset the stored host key via API
 3. Next connection will store the new key (TOFU)
 
@@ -431,34 +431,34 @@ When a VM is recreated (terminated and created again), its SSH host key changes.
 sequenceDiagram
     actor User
     participant API as Tumblebug API
-    participant VM as Target VM
+    participant ND as Target Node
     
-    Note over User,VM: After VM Recreation
+    Note over User,ND: After Node Recreation
     
     User->>API: POST /cmd/infra/{infraId}
-    API->>VM: SSH Connect
-    VM-->>API: New Host Key
+    API->>ND: SSH Connect
+    ND-->>API: New Host Key
     API-->>User: Error: Host Key Mismatch
     
     Note over User: Verify change is legitimate
     
-    User->>API: DELETE /vm/{vmId}/sshHostKey
+    User->>API: DELETE /node/{nodeId}/sshHostKey
     API-->>User: Key Reset Success
     
     User->>API: POST /cmd/infra/{infraId}
-    API->>VM: SSH Connect
-    VM-->>API: Host Key
+    API->>ND: SSH Connect
+    ND-->>API: Host Key
     Note over API: TOFU: Store new key
-    API->>VM: Execute Command
-    VM-->>API: Result
+    API->>ND: Execute Command
+    ND-->>API: Result
     API-->>User: Success
 ```
 
 ### Independent Key Management: Bastion vs Target
 
-Both Bastion and Target VMs have their own SSH host keys, managed independently:
+Both Bastion and Target Nodes have their own SSH host keys, managed independently:
 
-| VM Role | Key Storage Location | Verification |
+| Node Role | Key Storage Location | Verification |
 |---------|---------------------|--------------|
 | Bastion | `bastion.SshHostKeyInfo` | TOFU on first jump |
 | Target | `target.SshHostKeyInfo` | TOFU on final connection |
@@ -466,7 +466,7 @@ Both Bastion and Target VMs have their own SSH host keys, managed independently:
 This ensures:
 - Bastion compromise is detected if its key changes
 - Target compromise is detected if its key changes
-- Each VM's security is independently verified
+- Each Node's security is independently verified
 
 ---
 
@@ -474,7 +474,7 @@ This ensures:
 
 ### Execute Command on Infra
 
-Execute commands on VMs within an Infra.
+Execute commands on Nodes within an Infra.
 
 ```
 POST /tumblebug/ns/{nsId}/cmd/infra/{infraId}
@@ -484,8 +484,8 @@ POST /tumblebug/ns/{nsId}/cmd/infra/{infraId}
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `nodeGroupId` | string | Target specific nodegroup only |
-| `vmId` | string | Target specific VM only |
-| `labelSelector` | string | Filter VMs by label (e.g., `role=worker`) |
+| `nodeId` | string | Target specific Node only |
+| `labelSelector` | string | Filter Nodes by label (e.g., `role=worker`) |
 | `async` | bool | Set to `true` for async mode with SSE streaming |
 
 **Request Body:**
@@ -502,8 +502,8 @@ POST /tumblebug/ns/{nsId}/cmd/infra/{infraId}
   "results": [
     {
       "infraId": "infra01",
-      "vmId": "g1-1",
-      "vmIp": "10.0.1.5",
+      "nodeId": "g1-1",
+      "nodeIp": "10.0.1.5",
       "command": {
         "0": "echo 'Hello World'",
         "1": "hostname",
@@ -548,11 +548,11 @@ GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={xRequestId}
 
 The response is an SSE stream. Each event is delivered as:
 ```
-data: {"type":"CommandStatus","vmId":"g1-1", ...}
+data: {"type":"CommandStatus","nodeId":"g1-1", ...}
 
-data: {"type":"CommandLog","vmId":"g1-1","log":{"stream":"stdout","line":"Hello","lineNumber":1}, ...}
+data: {"type":"CommandLog","nodeId":"g1-1","log":{"stream":"stdout","line":"Hello","lineNumber":1}, ...}
 
-data: {"type":"CommandDone","summary":{"totalVms":3,"completedVms":3,"failedVms":0,"elapsedSeconds":12}}
+data: {"type":"CommandDone","summary":{"totalNodes":3,"completedNodes":3,"failedNodes":0,"elapsedSeconds":12}}
 ```
 
 The stream ends after the `CommandDone` event is sent. A keepalive comment (`: keepalive`) is sent every 15 seconds to prevent proxy/load-balancer timeouts.
@@ -564,7 +564,7 @@ The stream ends after the `CommandDone` event is sent. A keepalive comment (`: k
 
 ### Transfer File to Infra
 
-Upload a file to VMs within an Infra.
+Upload a file to Nodes within an Infra.
 
 ```
 POST /tumblebug/ns/{nsId}/file/infra/{infraId}
@@ -575,9 +575,9 @@ Content-Type: multipart/form-data
 | Field | Type | Description |
 |-------|------|-------------|
 | `file` | file | File to upload |
-| `targetPath` | string | Destination directory on VM |
+| `targetPath` | string | Destination directory on Node |
 | `nodeGroupId` | string | Target specific nodegroup (optional) |
-| `vmId` | string | Target specific VM (optional) |
+| `nodeId` | string | Target specific Node (optional) |
 
 **Response:**
 ```json
@@ -585,8 +585,8 @@ Content-Type: multipart/form-data
   "results": [
     {
       "infraId": "infra01",
-      "vmId": "g1-1",
-      "vmIp": "10.0.1.5",
+      "nodeId": "g1-1",
+      "nodeIp": "10.0.1.5",
       "stdout": {
         "0": "File transfer successful: /home/cb-user/config.yaml"
       },
@@ -599,10 +599,10 @@ Content-Type: multipart/form-data
 
 ### Get SSH Host Key Info
 
-Retrieve stored SSH host key information for a VM.
+Retrieve stored SSH host key information for a Node.
 
 ```
-GET /tumblebug/ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey
+GET /tumblebug/ns/{nsId}/infra/{infraId}/node/{nodeId}/sshHostKey
 ```
 
 **Response (key exists):**
@@ -622,16 +622,16 @@ GET /tumblebug/ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey
 
 ### Reset SSH Host Key
 
-Reset the stored SSH host key for a VM. Use when a VM has been legitimately recreated.
+Reset the stored SSH host key for a Node. Use when a Node has been legitimately recreated.
 
 ```
-DELETE /tumblebug/ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey
+DELETE /tumblebug/ns/{nsId}/infra/{infraId}/node/{nodeId}/sshHostKey
 ```
 
 **Response:**
 ```json
 {
-  "message": "SSH host key for VM 'g1-1' has been reset. The next SSH connection will store the new host key (TOFU)."
+  "message": "SSH host key for Node 'g1-1' has been reset. The next SSH connection will store the new host key (TOFU)."
 }
 ```
 
@@ -639,7 +639,7 @@ DELETE /tumblebug/ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey
 
 ## Usage Examples
 
-### Example 1: Execute Command on All VMs
+### Example 1: Execute Command on All Nodes
 
 ```bash
 curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01" \
@@ -650,10 +650,10 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01" \
   }'
 ```
 
-### Example 2: Execute Command on Specific VM
+### Example 2: Execute Command on Specific Node
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?vmId=g1-1" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?nodeId=g1-1" \
   -H "Content-Type: application/json" \
   -d '{
     "userName": "cb-user",
@@ -661,7 +661,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?vmId=
   }'
 ```
 
-### Example 3: Execute Command on VMs with Label
+### Example 3: Execute Command on Nodes with Label
 
 ```bash
 curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?labelSelector=role=worker" \
@@ -672,7 +672,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?label
   }'
 ```
 
-### Example 4: Transfer File to All VMs
+### Example 4: Transfer File to All Nodes
 
 ```bash
 curl -X POST "http://localhost:1323/tumblebug/ns/default/file/infra/infra01" \
@@ -684,21 +684,21 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/file/infra/infra01" \
 
 When you receive an error like:
 ```
-SSH host key mismatch for VM 'g1-1'. Stored key (ssh-ed25519, SHA256:abc...) 
+SSH host key mismatch for Node 'g1-1'. Stored key (ssh-ed25519, SHA256:abc...) 
 does not match received key (ssh-ed25519, SHA256:xyz...). 
-This could indicate a MITM attack or the VM was recreated.
+This could indicate a MITM attack or the Node was recreated.
 ```
 
-**Step 1:** Verify the change is legitimate (check if VM was recently recreated)
+**Step 1:** Verify the change is legitimate (check if Node was recently recreated)
 
 **Step 2:** Reset the host key
 ```bash
-curl -X DELETE "http://localhost:1323/tumblebug/ns/default/infra/infra01/vm/g1-1/sshHostKey"
+curl -X DELETE "http://localhost:1323/tumblebug/ns/default/infra/infra01/node/g1-1/sshHostKey"
 ```
 
 **Step 3:** Retry the command (new key will be stored via TOFU)
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?vmId=g1-1" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?nodeId=g1-1" \
   -H "Content-Type: application/json" \
   -d '{
     "userName": "cb-user",
@@ -709,7 +709,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/infra/infra01?vmId=
 ### Example 6: Check Stored Host Key
 
 ```bash
-curl -X GET "http://localhost:1323/tumblebug/ns/default/infra/infra01/vm/g1-1/sshHostKey"
+curl -X GET "http://localhost:1323/tumblebug/ns/default/infra/infra01/node/g1-1/sshHostKey"
 ```
 
 ### Example 7: Async Command with SSE Streaming
@@ -747,17 +747,17 @@ Output (SSE stream):
 ```
 : connected to stream for xRequestId=my-cmd-001
 
-data: {"type":"CommandStatus","vmId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Queued"}}
+data: {"type":"CommandStatus","nodeId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Queued"}}
 
-data: {"type":"CommandStatus","vmId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Handling"}}
+data: {"type":"CommandStatus","nodeId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Handling"}}
 
-data: {"type":"CommandLog","vmId":"g1-1","commandIndex":1,"timestamp":"...","log":{"stream":"stdout","line":"Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease","lineNumber":1}}
+data: {"type":"CommandLog","nodeId":"g1-1","commandIndex":1,"timestamp":"...","log":{"stream":"stdout","line":"Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease","lineNumber":1}}
 
-data: {"type":"CommandLog","vmId":"g1-1","commandIndex":1,"timestamp":"...","log":{"stream":"stdout","line":"Reading package lists...","lineNumber":2}}
+data: {"type":"CommandLog","nodeId":"g1-1","commandIndex":1,"timestamp":"...","log":{"stream":"stdout","line":"Reading package lists...","lineNumber":2}}
 
-data: {"type":"CommandStatus","vmId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Completed"}}
+data: {"type":"CommandStatus","nodeId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Completed"}}
 
-data: {"type":"CommandDone","timestamp":"...","summary":{"totalVms":3,"completedVms":3,"failedVms":0,"elapsedSeconds":45}}
+data: {"type":"CommandDone","timestamp":"...","summary":{"totalNodes":3,"completedNodes":3,"failedNodes":0,"elapsedSeconds":45}}
 ```
 
 ### Example 8: Async Command with SSE (JavaScript/Browser)
@@ -808,10 +808,10 @@ while (true) {
     for (const line of message.split('\n')) {
       if (line.startsWith('data: ')) {
         const event = JSON.parse(line.substring(6));
-        console.log(`[${event.type}]`, event.vmId || '', event);
+        console.log(`[${event.type}]`, event.nodeId || '', event);
 
         if (event.type === 'CommandDone') {
-          console.log('All VMs finished:', event.summary);
+          console.log('All Nodes finished:', event.summary);
         }
       }
     }
@@ -829,7 +829,7 @@ Using `InsecureIgnoreHostKey` (accepting any host key) would make SSH vulnerable
 
 ```
 [Attacker Scenario without TOFU]
-User → Attacker's Fake VM → Real VM
+User → Attacker's Fake Node → Real Node
       ↑                    
       Attacker intercepts all traffic
       and can modify commands/data
@@ -842,7 +842,7 @@ With TOFU:
 
 ### Best Practices
 
-1. **Verify Key Changes**: Before resetting a host key, confirm the VM was legitimately recreated.
+1. **Verify Key Changes**: Before resetting a host key, confirm the Node was legitimately recreated.
 2. **Monitor Alerts**: Unexpected host key mismatches may indicate security issues.
 3. **Use Label Selectors**: Target commands precisely to minimize exposure.
 4. **Review Command Output**: Check stderr for any security-related warnings.

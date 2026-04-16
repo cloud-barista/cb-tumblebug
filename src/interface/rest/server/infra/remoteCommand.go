@@ -39,8 +39,8 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.InfraSshCmdR
 	for i, result := range internal {
 		apiResult := model.SshCmdResultForAPI{
 			InfraId: result.InfraId,
-			VmId:    result.VmId,
-			VmIp:    result.VmIp,
+			NodeId:    result.NodeId,
+			NodeIp:    result.NodeIp,
 			Command: result.Command,
 			Stdout:  result.Stdout,
 			Stderr:  result.Stderr,
@@ -62,7 +62,7 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.InfraSshCmdR
 // RestPostCmdInfra godoc
 // @ID PostCmdInfra
 // @Summary Send a command to specified Infra
-// @Description Send a command to specified Infra. Use query parameters to target specific nodeGroup or VM.
+// @Description Send a command to specified Infra. Use query parameters to target specific nodeGroup or node.
 // @Description When async=true, returns immediately with xRequestId and streams results via SSE at GET /stream/ns/{nsId}/cmd/infra/{infraId}?xRequestId={xRequestId}
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
@@ -70,9 +70,9 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.InfraSshCmdR
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param infraCmdReq body model.InfraCmdReq true "Infra Command Request"
-// @Param nodeGroupId query string false "nodeGroupId to apply the command only for VMs in nodeGroup of Infra" default(g1)
-// @Param vmId query string false "vmId to apply the command only for a VM in Infra" default(g1-1)
-// @Param labelSelector query string false "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
+// @Param nodeGroupId query string false "nodeGroupId to apply the command only for nodes in nodeGroup of Infra" default(g1)
+// @Param nodeId query string false "nodeId to apply the command only for a node in Infra" default(g1-1)
+// @Param labelSelector query string false "Target node Label selector query. Example: sys.id=g1-1,role=worker"
 // @Param async query string false "If true, execute asynchronously and return xRequestId for SSE streaming" default(false)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.InfraSshCmdResultForAPI
@@ -86,7 +86,7 @@ func RestPostCmdInfra(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 	nodeGroupId := c.QueryParam("nodeGroupId")
-	vmId := c.QueryParam("vmId")
+	nodeId := c.QueryParam("nodeId")
 	asyncMode := c.QueryParam("async") == "true"
 	//Label selector query. Example: env=production,tier=backend
 	labelSelector := c.QueryParam("labelSelector")
@@ -108,7 +108,7 @@ func RestPostCmdInfra(c echo.Context) error {
 	if asyncMode {
 		// Async mode: launch execution in background and return xRequestId immediately
 		go func() {
-			_, err := infra.RemoteCommandToInfra(nsId, infraId, nodeGroupId, vmId, labelSelector, req, xRequestId)
+			_, err := infra.RemoteCommandToInfra(nsId, infraId, nodeGroupId, nodeId, labelSelector, req, xRequestId)
 			if err != nil {
 				log.Error().Err(err).Str("xRequestId", xRequestId).Msg("Async remote command execution failed")
 
@@ -123,9 +123,9 @@ func RestPostCmdInfra(c echo.Context) error {
 					Type:      model.EventCommandDone,
 					Timestamp: time.Now().Format(time.RFC3339Nano),
 					Summary: &model.CommandDoneSummary{
-						TotalVms:       0,
-						CompletedVms:   0,
-						FailedVms:      0,
+						TotalNodes:       0,
+						CompletedNodes:   0,
+						FailedNodes:      0,
 						ElapsedSeconds: 0,
 						Error:          err.Error(),
 					},
@@ -141,7 +141,7 @@ func RestPostCmdInfra(c echo.Context) error {
 	}
 
 	// Sync mode (default): execute and wait for result
-	output, err := infra.RemoteCommandToInfra(nsId, infraId, nodeGroupId, vmId, labelSelector, req, xRequestId)
+	output, err := infra.RemoteCommandToInfra(nsId, infraId, nodeGroupId, nodeId, labelSelector, req, xRequestId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -166,8 +166,8 @@ func RestPostCmdInfra(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param nodeGroupId query string false "nodeGroupId to apply the file transfer only for VMs in nodeGroup of Infra" default(g1)
-// @Param vmId query string false "vmId to apply the file transfer only for a VM in Infra" default(g1-1)
+// @Param nodeGroupId query string false "nodeGroupId to apply the file transfer only for nodes in nodeGroup of Infra" default(g1)
+// @Param nodeId query string false "nodeId to apply the file transfer only for a node in Infra" default(g1-1)
 // @Param path formData string true "Target path where the file will be stored" default(/home/cb-user/)
 // @Param file formData file true "The file to be uploaded (Max 10MB)"
 // @Param x-request-id header string false "Custom request ID"
@@ -181,7 +181,7 @@ func RestPostFileToInfra(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 	nodeGroupId := c.QueryParam("nodeGroupId")
-	vmId := c.QueryParam("vmId")
+	nodeId := c.QueryParam("nodeId")
 	targetPath := c.FormValue("path")
 
 	if targetPath == "" {
@@ -219,7 +219,7 @@ func RestPostFileToInfra(c echo.Context) error {
 	}
 
 	// Call the TransferFileToInfra function
-	output, err := infra.TransferFileToInfra(nsId, infraId, nodeGroupId, vmId, fileBytes, file.Filename, targetPath)
+	output, err := infra.TransferFileToInfra(nsId, infraId, nodeGroupId, nodeId, fileBytes, file.Filename, targetPath)
 	if err != nil {
 		err = fmt.Errorf("failed to transfer file to infra %v", err)
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -235,7 +235,7 @@ func RestPostFileToInfra(c echo.Context) error {
 // RestPostFileAndCmdToInfra godoc
 // @ID PostFileAndCmdToInfra
 // @Summary Transfer a file to Infra and optionally execute a command after transfer
-// @Description Transfer a file to all targeted VMs in Infra via SCP, then optionally run a shell command on each VM where the transfer succeeded.
+// @Description Transfer a file to all targeted nodes in Infra via SCP, then optionally run a shell command on each node where the transfer succeeded.
 // @Description Useful for deploying files directly to privileged locations (e.g., nginx document root) in a single API call.
 // @Description Example: upload index.html to /tmp and run "sudo mv /tmp/index.html /var/www/html/" as the post-transfer command.
 // @Description The file size should be less than 50MB.
@@ -244,11 +244,11 @@ func RestPostFileToInfra(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param nodeGroupId query string false "NodeGroup ID to limit file transfer scope to VMs in a nodeGroup"
-// @Param vmId query string false "VM ID to limit file transfer scope to a single VM"
-// @Param path formData string true "Target directory path on the VM where the file will be stored" default(/tmp)
+// @Param nodeGroupId query string false "NodeGroup ID to limit file transfer scope to nodes in a nodeGroup"
+// @Param nodeId query string false "Node ID to limit file transfer scope to a single node"
+// @Param path formData string true "Target directory path on the node where the file will be stored" default(/tmp)
 // @Param file formData file true "The file to be uploaded (Max 50MB)"
-// @Param command formData string false "Shell command to execute on each VM after successful file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)"
+// @Param command formData string false "Shell command to execute on each node after successful file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)"
 // @Param x-request-id header string false "Custom request ID"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Success 200 {object} model.InfraFileTransferAndCmdResultForAPI
@@ -260,7 +260,7 @@ func RestPostFileAndCmdToInfra(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 	nodeGroupId := c.QueryParam("nodeGroupId")
-	vmId := c.QueryParam("vmId")
+	nodeId := c.QueryParam("nodeId")
 	targetPath := c.FormValue("path")
 	command := c.FormValue("command")
 
@@ -294,7 +294,7 @@ func RestPostFileAndCmdToInfra(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	output, err := infra.TransferFileAndCmdToInfra(nsId, infraId, nodeGroupId, vmId, fileBytes, file.Filename, targetPath, command)
+	output, err := infra.TransferFileAndCmdToInfra(nsId, infraId, nodeGroupId, nodeId, fileBytes, file.Filename, targetPath, command)
 	if err != nil {
 		err = fmt.Errorf("failed to transfer file to infra: %v", err)
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -311,29 +311,29 @@ func RestPostFileAndCmdToInfra(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, apiResult)
 }
 
-// RestPostDownloadFileFromInfraVm godoc
-// @ID PostDownloadFileFromInfraVm
-// @Summary Download a file from a VM in Infra
-// @Description Download a file from a specific VM in Infra via SCP through bastion host.
+// RestPostDownloadFileFromInfraNode godoc
+// @ID PostDownloadFileFromInfraNode
+// @Summary Download a file from a node in Infra
+// @Description Download a file from a specific node in Infra via SCP through bastion host.
 // @Description The file size should be less than 200MB.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  application/octet-stream,json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param fileDownloadReq body model.FileDownloadReq true "File download request"
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {file} file "Downloaded file"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/downloadFile/infra/{infraId}/vm/{vmId} [post]
-func RestPostDownloadFileFromInfraVm(c echo.Context) error {
+// @Router /ns/{nsId}/downloadFile/infra/{infraId}/node/{nodeId} [post]
+func RestPostDownloadFileFromInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	req := &model.FileDownloadReq{}
 	if err := c.Bind(req); err != nil {
@@ -346,10 +346,10 @@ func RestPostDownloadFileFromInfraVm(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	// Download the file from the VM
-	fileData, fileName, err := infra.DownloadFileFromInfraVm(nsId, infraId, vmId, req.SourcePath)
+	// Download the file from the Node
+	fileData, fileName, err := infra.DownloadFileFromInfraNode(nsId, infraId, nodeId, req.SourcePath)
 	if err != nil {
-		err = fmt.Errorf("failed to download file from VM: %v", err)
+		err = fmt.Errorf("failed to download file from Node: %v", err)
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
@@ -370,156 +370,156 @@ func RestPostDownloadFileFromInfraVm(c echo.Context) error {
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	c.Response().Header().Set("Content-Length", fmt.Sprintf("%d", len(fileData)))
 
-	log.Info().Msgf("Sending downloaded file: %s (%d bytes) from VM %s", fileName, len(fileData), vmId)
+	log.Info().Msgf("Sending downloaded file: %s (%d bytes) from Node %s", fileName, len(fileData), nodeId)
 
 	return c.Blob(http.StatusOK, "application/octet-stream", fileData)
 }
 
 // RestSetBastionNodes godoc
 // @ID SetBastionNodes
-// @Summary Set bastion nodes for a VM
-// @Description Set bastion nodes for a VM
+// @Summary Set bastion nodes for a node
+// @Description Set bastion nodes for a node
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param targetVmId path string true "Target VM ID" default(g1-1)
-// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
+// @Param targetNodeId path string true "Target Node ID" default(g1-1)
+// @Param bastionNodeId path string true "Bastion Node ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionVmId} [put]
+// @Router /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionNodeId} [put]
 func RestSetBastionNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	targetVmId := c.Param("targetVmId")
-	bastionVmId := c.Param("bastionVmId")
+	targetNodeId := c.Param("targetNodeId")
+	bastionNodeId := c.Param("bastionNodeId")
 
-	content, err := infra.SetBastionNodes(nsId, infraId, targetVmId, "", "", bastionVmId)
+	content, err := infra.SetBastionNodes(nsId, infraId, targetNodeId, "", "", bastionNodeId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestSetBastionNodesWithInfra godoc
 // @ID SetBastionNodesWithInfra
-// @Summary Set bastion nodes for a VM using a bastion from another Infra (same namespace)
-// @Description Set bastion nodes for a target VM, specifying a bastion VM that belongs to a different Infra within the same namespace (cross-Infra bastion). This allows, for example, an AWS VM to serve as a bastion for an OpenStack VM.
+// @Summary Set bastion nodes for a node using a bastion from another Infra (same namespace)
+// @Description Set bastion nodes for a target node, specifying a bastion node that belongs to a different Infra within the same namespace (cross-Infra bastion). This allows, for example, an AWS node to serve as a bastion for an OpenStack node.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Target Infra ID" default(infra01)
-// @Param targetVmId path string true "Target VM ID" default(g1-1)
+// @Param targetNodeId path string true "Target Node ID" default(g1-1)
 // @Param bastionInfraId path string true "Bastion Infra ID (may differ from target Infra)" default(infra-bastion)
-// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
+// @Param bastionNodeId path string true "Bastion Node ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionInfraId}/{bastionVmId} [put]
+// @Router /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionInfraId}/{bastionNodeId} [put]
 func RestSetBastionNodesWithInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	targetVmId := c.Param("targetVmId")
+	targetNodeId := c.Param("targetNodeId")
 	bastionInfraId := c.Param("bastionInfraId")
-	bastionVmId := c.Param("bastionVmId")
+	bastionNodeId := c.Param("bastionNodeId")
 
-	content, err := infra.SetBastionNodes(nsId, infraId, targetVmId, "", bastionInfraId, bastionVmId)
+	content, err := infra.SetBastionNodes(nsId, infraId, targetNodeId, "", bastionInfraId, bastionNodeId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestSetBastionNodesWithNs godoc
 // @ID SetBastionNodesWithNs
-// @Summary Set bastion nodes for a VM using a bastion from a different namespace and Infra
-// @Description Set bastion nodes for a target VM, specifying a bastion VM that belongs to a different namespace and Infra (cross-namespace bastion). This allows, for example, a VM in a shared-services namespace to act as a bastion for VMs in other namespaces.
+// @Summary Set bastion nodes for a node using a bastion from a different namespace and Infra
+// @Description Set bastion nodes for a target node, specifying a bastion node that belongs to a different namespace and Infra (cross-namespace bastion). This allows, for example, a node in a shared-services namespace to act as a bastion for nodes in other namespaces.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Target Namespace ID" default(default)
 // @Param infraId path string true "Target Infra ID" default(infra01)
-// @Param targetVmId path string true "Target VM ID" default(g1-1)
+// @Param targetNodeId path string true "Target Node ID" default(g1-1)
 // @Param bastionNsId path string true "Bastion Namespace ID (may differ from target namespace)" default(ns-bastion)
 // @Param bastionInfraId path string true "Bastion Infra ID" default(infra-bastion)
-// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
+// @Param bastionNodeId path string true "Bastion Node ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionVmId} [put]
+// @Router /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionNodeId} [put]
 func RestSetBastionNodesWithNs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	targetVmId := c.Param("targetVmId")
+	targetNodeId := c.Param("targetNodeId")
 	bastionNsId := c.Param("bastionNsId")
 	bastionInfraId := c.Param("bastionInfraId")
-	bastionVmId := c.Param("bastionVmId")
+	bastionNodeId := c.Param("bastionNodeId")
 
-	content, err := infra.SetBastionNodes(nsId, infraId, targetVmId, bastionNsId, bastionInfraId, bastionVmId)
+	content, err := infra.SetBastionNodes(nsId, infraId, targetNodeId, bastionNsId, bastionInfraId, bastionNodeId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetBastionNodes godoc
 // @ID GetBastionNodes
-// @Summary Get bastion nodes for a VM
-// @Description Get bastion nodes for a VM
+// @Summary Get bastion nodes for a node
+// @Description Get bastion nodes for a node
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param targetVmId path string true "Target VM ID" default(g1-1)
+// @Param targetNodeId path string true "Target Node ID" default(g1-1)
 // @Success 200 {object} []model.BastionNode
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion [get]
+// @Router /ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion [get]
 func RestGetBastionNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	targetVmId := c.Param("targetVmId")
+	targetNodeId := c.Param("targetNodeId")
 
-	content, err := infra.GetBastionNodes(nsId, infraId, targetVmId)
+	content, err := infra.GetBastionNodes(nsId, infraId, targetNodeId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestRemoveBastionNodes godoc
 // @ID RemoveBastionNodes
-// @Summary Remove a bastion VM from all vNets
-// @Description Remove a bastion VM from all vNets
+// @Summary Remove a bastion node from all vNets
+// @Description Remove a bastion node from all vNets
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
+// @Param bastionNodeId path string true "Bastion Node ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/bastion/{bastionVmId} [delete]
+// @Router /ns/{nsId}/infra/{infraId}/bastion/{bastionNodeId} [delete]
 func RestRemoveBastionNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	bastionVmId := c.Param("bastionVmId")
+	bastionNodeId := c.Param("bastionNodeId")
 
-	content, err := infra.RemoveBastionNodes(nsId, infraId, "", "", bastionVmId)
+	content, err := infra.RemoveBastionNodes(nsId, infraId, "", "", bastionNodeId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestRemoveBastionNodesWithInfra godoc
 // @ID RemoveBastionNodesWithInfra
-// @Summary Remove a bastion VM (cross-Infra) from all vNets
+// @Summary Remove a bastion node (cross-Infra) from all vNets
 // @Description Remove a specific cross-Infra bastion from all vNets of the target Infra
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
@@ -527,26 +527,26 @@ func RestRemoveBastionNodes(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Target Infra ID" default(infra01)
 // @Param bastionInfraId path string true "Bastion Infra ID"
-// @Param bastionVmId path string true "Bastion VM ID"
+// @Param bastionNodeId path string true "Bastion Node ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/bastion/{bastionInfraId}/{bastionVmId} [delete]
+// @Router /ns/{nsId}/infra/{infraId}/bastion/{bastionInfraId}/{bastionNodeId} [delete]
 func RestRemoveBastionNodesWithInfra(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 	bastionInfraId := c.Param("bastionInfraId")
-	bastionVmId := c.Param("bastionVmId")
+	bastionNodeId := c.Param("bastionNodeId")
 
-	content, err := infra.RemoveBastionNodes(nsId, infraId, "", bastionInfraId, bastionVmId)
+	content, err := infra.RemoveBastionNodes(nsId, infraId, "", bastionInfraId, bastionNodeId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestRemoveBastionNodesWithNs godoc
 // @ID RemoveBastionNodesWithNs
-// @Summary Remove a bastion VM (cross-namespace) from all vNets
+// @Summary Remove a bastion node (cross-namespace) from all vNets
 // @Description Remove a specific cross-namespace bastion from all vNets of the target Infra
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
@@ -555,45 +555,45 @@ func RestRemoveBastionNodesWithInfra(c echo.Context) error {
 // @Param infraId path string true "Target Infra ID" default(infra01)
 // @Param bastionNsId path string true "Bastion Namespace ID"
 // @Param bastionInfraId path string true "Bastion Infra ID"
-// @Param bastionVmId path string true "Bastion VM ID"
+// @Param bastionNodeId path string true "Bastion Node ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionVmId} [delete]
+// @Router /ns/{nsId}/infra/{infraId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionNodeId} [delete]
 func RestRemoveBastionNodesWithNs(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 	bastionNsId := c.Param("bastionNsId")
 	bastionInfraId := c.Param("bastionInfraId")
-	bastionVmId := c.Param("bastionVmId")
+	bastionNodeId := c.Param("bastionNodeId")
 
-	content, err := infra.RemoveBastionNodes(nsId, infraId, bastionNsId, bastionInfraId, bastionVmId)
+	content, err := infra.RemoveBastionNodes(nsId, infraId, bastionNsId, bastionInfraId, bastionNodeId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestGetVmCommandStatus godoc
-// @ID GetVmCommandStatus
-// @Summary Get a specific command status by index for a VM
-// @Description Get a specific command status record by index for a VM
+// RestGetNodeCommandStatus godoc
+// @ID GetNodeCommandStatus
+// @Summary Get a specific command status by index for a node
+// @Description Get a specific command status record by index for a node
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param index path int true "Command Index" default(1)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.CommandStatusInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus/{index} [get]
-func RestGetVmCommandStatus(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus/{index} [get]
+func RestGetNodeCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	indexStr := c.Param("index")
 	index, err := strconv.Atoi(indexStr)
@@ -601,20 +601,20 @@ func RestGetVmCommandStatus(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, fmt.Errorf("invalid index parameter: %s", indexStr), nil)
 	}
 
-	commandStatus, err := infra.GetCommandStatusInfo(nsId, infraId, vmId, index)
+	commandStatus, err := infra.GetCommandStatusInfo(nsId, infraId, nodeId, index)
 	return clientManager.EndRequestWithLog(c, err, commandStatus)
 }
 
-// RestListVmCommandStatus godoc
-// @ID ListVmCommandStatus
-// @Summary List command status records for a VM with filtering
-// @Description List command status records for a VM with various filtering options
+// RestListNodeCommandStatus godoc
+// @ID ListNodeCommandStatus
+// @Summary List command status records for a node with filtering
+// @Description List command status records for a node with various filtering options
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,Failed,Timeout)
 // @Param xRequestId query string false "Filter by X-Request-ID"
 // @Param commandContains query string false "Filter commands containing this text"
@@ -629,11 +629,11 @@ func RestGetVmCommandStatus(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus [get]
-func RestListVmCommandStatus(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus [get]
+func RestListNodeCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	// Parse query parameters for filtering
 	filter := &model.CommandStatusFilter{}
@@ -679,31 +679,31 @@ func RestListVmCommandStatus(c echo.Context) error {
 		}
 	}
 
-	result, err := infra.ListCommandStatusInfo(nsId, infraId, vmId, filter)
+	result, err := infra.ListCommandStatusInfo(nsId, infraId, nodeId, filter)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestDeleteVmCommandStatus godoc
-// @ID DeleteVmCommandStatus
-// @Summary Delete a specific command status by index for a VM
-// @Description Delete a specific command status record by index for a VM
+// RestDeleteNodeCommandStatus godoc
+// @ID DeleteNodeCommandStatus
+// @Summary Delete a specific command status by index for a node
+// @Description Delete a specific command status record by index for a node
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param index path int true "Command Index" default(1)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus/{index} [delete]
-func RestDeleteVmCommandStatus(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus/{index} [delete]
+func RestDeleteNodeCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	indexStr := c.Param("index")
 	index, err := strconv.Atoi(indexStr)
@@ -711,7 +711,7 @@ func RestDeleteVmCommandStatus(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, fmt.Errorf("invalid index parameter: %s", indexStr), nil)
 	}
 
-	err = infra.DeleteCommandStatusInfo(nsId, infraId, vmId, index)
+	err = infra.DeleteCommandStatusInfo(nsId, infraId, nodeId, index)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -720,16 +720,16 @@ func RestDeleteVmCommandStatus(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// RestDeleteVmCommandStatusByCriteria godoc
-// @ID DeleteVmCommandStatusByCriteria
-// @Summary Delete multiple command status records by criteria for a VM
-// @Description Delete multiple command status records for a VM based on filtering criteria
+// RestDeleteNodeCommandStatusByCriteria godoc
+// @ID DeleteNodeCommandStatusByCriteria
+// @Summary Delete multiple command status records by criteria for a node
+// @Description Delete multiple command status records for a node based on filtering criteria
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,Failed,Timeout)
 // @Param xRequestId query string false "Filter by X-Request-ID"
 // @Param commandContains query string false "Filter commands containing this text"
@@ -742,11 +742,11 @@ func RestDeleteVmCommandStatus(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus [delete]
-func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus [delete]
+func RestDeleteNodeCommandStatusByCriteria(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	// Parse query parameters for filtering
 	filter := &model.CommandStatusFilter{}
@@ -778,7 +778,7 @@ func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
 		}
 	}
 
-	deletedCount, err := infra.DeleteCommandStatusInfoByCriteria(nsId, infraId, vmId, filter)
+	deletedCount, err := infra.DeleteCommandStatusInfoByCriteria(nsId, infraId, nodeId, filter)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -787,28 +787,28 @@ func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// RestClearAllVmCommandStatus godoc
-// @ID ClearAllVmCommandStatus
-// @Summary Clear all command status records for a VM
-// @Description Delete all command status records for a VM
+// RestClearAllNodeCommandStatus godoc
+// @ID ClearAllNodeCommandStatus
+// @Summary Clear all command status records for a node
+// @Description Delete all command status records for a node
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatusAll [delete]
-func RestClearAllVmCommandStatus(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatusAll [delete]
+func RestClearAllNodeCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
-	deletedCount, err := infra.ClearAllCommandStatusInfo(nsId, infraId, vmId)
+	deletedCount, err := infra.ClearAllCommandStatusInfo(nsId, infraId, nodeId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -817,34 +817,34 @@ func RestClearAllVmCommandStatus(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// RestGetVmHandlingCommandCount godoc
-// @ID GetVmHandlingCommandCount
-// @Summary Get count of currently handling commands for a VM
-// @Description Get the number of commands currently in 'Handling' status for a specific VM. Optimized for frequent polling.
+// RestGetNodeHandlingCommandCount godoc
+// @ID GetNodeHandlingCommandCount
+// @Summary Get count of currently handling commands for a node
+// @Description Get the number of commands currently in 'Handling' status for a specific node. Optimized for frequent polling.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.HandlingCommandCountResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/handlingCount [get]
-func RestGetVmHandlingCommandCount(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/handlingCount [get]
+func RestGetNodeHandlingCommandCount(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
-	handlingCount, err := infra.GetHandlingCommandCount(nsId, infraId, vmId)
+	handlingCount, err := infra.GetHandlingCommandCount(nsId, infraId, nodeId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result := model.HandlingCommandCountResponse{
-		VmId:          vmId,
+		NodeId:          nodeId,
 		HandlingCount: handlingCount,
 	}
 	return clientManager.EndRequestWithLog(c, nil, result)
@@ -852,8 +852,8 @@ func RestGetVmHandlingCommandCount(c echo.Context) error {
 
 // RestGetInfraHandlingCommandCount godoc
 // @ID GetInfraHandlingCommandCount
-// @Summary Get count of currently handling commands for all VMs in Infra
-// @Description Get the number of commands currently in 'Handling' status for all VMs in an Infra. Returns per-VM counts and total count.
+// @Summary Get count of currently handling commands for all nodes in Infra
+// @Description Get the number of commands currently in 'Handling' status for all nodes in an Infra. Returns per-node counts and total count.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
@@ -869,41 +869,41 @@ func RestGetInfraHandlingCommandCount(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 
-	vmHandlingCounts, totalHandlingCount, err := infra.GetInfraHandlingCommandCount(nsId, infraId)
+	nodeHandlingCounts, totalHandlingCount, err := infra.GetInfraHandlingCommandCount(nsId, infraId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result := model.InfraHandlingCommandCountResponse{
 		InfraId:            infraId,
-		VmHandlingCounts:   vmHandlingCounts,
+		NodeHandlingCounts:   nodeHandlingCounts,
 		TotalHandlingCount: totalHandlingCount,
 	}
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// RestGetVmSshHostKey godoc
-// @ID GetVmSshHostKey
-// @Summary Get SSH host key information for a VM
-// @Description Get the stored SSH host key information for a specific VM. This is used for TOFU (Trust On First Use) verification.
+// RestGetNodeSshHostKey godoc
+// @ID GetNodeSshHostKey
+// @Summary Get SSH host key information for a node
+// @Description Get the stored SSH host key information for a specific node. This is used for TOFU (Trust On First Use) verification.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Success 200 {object} model.SshHostKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey [get]
-func RestGetVmSshHostKey(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/sshHostKey [get]
+func RestGetNodeSshHostKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
-	result, err := infra.GetVmSshHostKey(nsId, infraId, vmId)
+	result, err := infra.GetNodeSshHostKey(nsId, infraId, nodeId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -911,34 +911,34 @@ func RestGetVmSshHostKey(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// RestDeleteVmSshHostKey godoc
-// @ID DeleteVmSshHostKey
-// @Summary Reset SSH host key for a VM
-// @Description Reset the stored SSH host key for a specific VM. This should be used when the VM's host key has legitimately changed (e.g., after VM recreation) and you trust the new key. The next SSH connection will store the new host key (TOFU).
+// RestDeleteNodeSshHostKey godoc
+// @ID DeleteNodeSshHostKey
+// @Summary Reset SSH host key for a node
+// @Description Reset the stored SSH host key for a specific node. This should be used when the node's host key has legitimately changed (e.g., after node recreation) and you trust the new key. The next SSH connection will store the new host key (TOFU).
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey [delete]
-func RestDeleteVmSshHostKey(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/sshHostKey [delete]
+func RestDeleteNodeSshHostKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
-	err := infra.ResetVmSshHostKey(nsId, infraId, vmId)
+	err := infra.ResetNodeSshHostKey(nsId, infraId, nodeId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result := model.SimpleMsg{
-		Message: fmt.Sprintf("SSH host key for VM '%s' has been reset. The next SSH connection will store the new host key (TOFU).", vmId),
+		Message: fmt.Sprintf("SSH host key for Node '%s' has been reset. The next SSH connection will store the new host key (TOFU).", nodeId),
 	}
 
 	return clientManager.EndRequestWithLog(c, nil, result)
@@ -947,7 +947,7 @@ func RestDeleteVmSshHostKey(c echo.Context) error {
 // RestGetInfraExecutionTasks godoc
 // @ID GetInfraExecutionTasks
 // @Summary List execution tasks for an Infra
-// @Description List all running and completed execution tasks for a specific Infra. These tasks can be cancelled if still in progress. The task list is based on persistent VM command status records.
+// @Description List all running and completed execution tasks for a specific Infra. These tasks can be cancelled if still in progress. The task list is based on persistent node command status records.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
@@ -989,7 +989,7 @@ func RestGetInfraExecutionTasks(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param taskId path string true "Task ID (format: xRequestId:vmId:index)"
+// @Param taskId path string true "Task ID (format: xRequestId:nodeId:index)"
 // @Success 200 {object} model.ExecutionTaskListResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -1030,7 +1030,7 @@ func RestGetExecutionTask(c echo.Context) error {
 // RestCancelExecutionTask godoc
 // @ID CancelExecutionTask
 // @Summary Cancel an execution task
-// @Description Cancel a running execution task by task ID. This will send a cancellation signal to the task and update the VM command status.
+// @Description Cancel a running execution task by task ID. This will send a cancellation signal to the task and update the node command status.
 // @Tags [MC-Infra] Infra Remote Command
 // @Accept  json
 // @Produce  json
@@ -1075,7 +1075,7 @@ func RestCancelExecutionTask(c echo.Context) error {
 
 	// Cancel the task using the retrieved information from the task itself
 	// Use targetTask.NsId and targetTask.InfraId to support global route (/tumblebug/task/:taskId/cancel)
-	response, err := infra.CancelInfraCommand(targetTask.NsId, targetTask.InfraId, targetTask.VmId, targetTask.XRequestId, targetTask.CommandIndex, req.Reason)
+	response, err := infra.CancelInfraCommand(targetTask.NsId, targetTask.InfraId, targetTask.NodeId, targetTask.XRequestId, targetTask.CommandIndex, req.Reason)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

@@ -28,7 +28,7 @@ import (
 // RestPostScheduleRegisterCspResources godoc
 // @ID PostScheduleRegisterCspResources
 // @Summary Create scheduled CSP resource registration job
-// @Description Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, vm) into CB-Tumblebug
+// @Description Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, node) into CB-Tumblebug
 // @Description
 // @Description **Resource Registration Behavior:**
 // @Description This job registers CSP-native resources based on the `connectionName` field:

@@ -587,12 +587,12 @@ Authorization: Basic <base64(username:password)>
 Following the [Quick Infra Creation Guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1570):
 
 ```bash
-# 1. Create VM specification
+# 1. Create compute spec
 curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/spec" \
   -H "Authorization: Basic <credentials>" \
   -d '{"name": "web-spec", "connectionName": "aws-ap-northeast-2"}'
 
-# 2. Create VM image
+# 2. Create OS image
 curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/image" \
   -H "Authorization: Basic <credentials>" \
   -d '{"name": "ubuntu-image", "connectionName": "aws-ap-northeast-2"}'
@@ -605,7 +605,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/infra" \
 
 **🛠️ Core API Categories**
 
-- **Infrastructure Resources**: VM specs, images, networks, security groups
+- **Infrastructure Resources**: Compute specs, images, networks, security groups
 - **Multi-Cloud Infrastructure (Infra)**: Provision and manage distributed infrastructure
 - **Monitoring & Control**: Performance metrics, scaling, lifecycle management
 - **Credentials & Connections**: Secure cloud provider configuration

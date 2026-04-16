@@ -47,7 +47,7 @@ func CreateInfraDynamicTemplate(nsId string, req *model.InfraDynamicTemplateReq)
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "infra", req.Name)
+	key := GenTemplateKey(nsId, model.StrInfra, req.Name)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -110,7 +110,7 @@ func GetInfraDynamicTemplate(nsId string, templateId string) (model.InfraDynamic
 		return emptyResult, err
 	}
 
-	key := GenTemplateKey(nsId, "infra", templateId)
+	key := GenTemplateKey(nsId, model.StrInfra, templateId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -150,7 +150,7 @@ func ListInfraDynamicTemplate(nsId string, filterKeyword string) ([]model.InfraD
 		return nil, err
 	}
 
-	key := GenTemplateKey(nsId, "infra", "")
+	key := GenTemplateKey(nsId, model.StrInfra, "")
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
@@ -212,7 +212,7 @@ func UpdateInfraDynamicTemplate(nsId string, templateId string, req *model.Infra
 	existing.UpdatedAt = now
 	existing.InfraDynamicReq = req.InfraDynamicReq
 
-	key := GenTemplateKey(nsId, "infra", templateId)
+	key := GenTemplateKey(nsId, model.StrInfra, templateId)
 	val, err := json.Marshal(existing)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal template info")
@@ -243,7 +243,7 @@ func DeleteInfraDynamicTemplate(nsId string, templateId string) error {
 	}
 
 	// Check if template exists
-	key := GenTemplateKey(nsId, "infra", templateId)
+	key := GenTemplateKey(nsId, model.StrInfra, templateId)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -307,7 +307,7 @@ func CreateInfraDynamicTemplateWithReq(nsId string, templateName string, descrip
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "infra", templateName)
+	key := GenTemplateKey(nsId, model.StrInfra, templateName)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -377,7 +377,7 @@ func CreateVNetTemplate(nsId string, req *model.VNetTemplateReq) (model.VNetTemp
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "vNet", req.Name)
+	key := GenTemplateKey(nsId, model.StrVNet, req.Name)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -441,7 +441,7 @@ func GetVNetTemplate(nsId string, templateId string) (model.VNetTemplateInfo, er
 		return emptyResult, err
 	}
 
-	key := GenTemplateKey(nsId, "vNet", templateId)
+	key := GenTemplateKey(nsId, model.StrVNet, templateId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -481,7 +481,7 @@ func ListVNetTemplate(nsId string, filterKeyword string) ([]model.VNetTemplateIn
 		return nil, err
 	}
 
-	key := GenTemplateKey(nsId, "vNet", "")
+	key := GenTemplateKey(nsId, model.StrVNet, "")
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
@@ -552,7 +552,7 @@ func UpdateVNetTemplate(nsId string, templateId string, req *model.VNetTemplateR
 	existing.VNetPolicy = req.VNetPolicy
 	existing.VNetReq = req.VNetReq
 
-	key := GenTemplateKey(nsId, "vNet", templateId)
+	key := GenTemplateKey(nsId, model.StrVNet, templateId)
 	val, err := json.Marshal(existing)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal vNet template info")
@@ -583,7 +583,7 @@ func DeleteVNetTemplate(nsId string, templateId string) error {
 	}
 
 	// Check if template exists
-	key := GenTemplateKey(nsId, "vNet", templateId)
+	key := GenTemplateKey(nsId, model.StrVNet, templateId)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -651,7 +651,7 @@ func CreateSecurityGroupTemplate(nsId string, req *model.SecurityGroupTemplateRe
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "securityGroup", req.Name)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, req.Name)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -714,7 +714,7 @@ func GetSecurityGroupTemplate(nsId string, templateId string) (model.SecurityGro
 		return emptyResult, err
 	}
 
-	key := GenTemplateKey(nsId, "securityGroup", templateId)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, templateId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -754,7 +754,7 @@ func ListSecurityGroupTemplate(nsId string, filterKeyword string) ([]model.Secur
 		return nil, err
 	}
 
-	key := GenTemplateKey(nsId, "securityGroup", "")
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, "")
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
@@ -816,7 +816,7 @@ func UpdateSecurityGroupTemplate(nsId string, templateId string, req *model.Secu
 	existing.UpdatedAt = now
 	existing.SecurityGroupReq = req.SecurityGroupReq
 
-	key := GenTemplateKey(nsId, "securityGroup", templateId)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, templateId)
 	val, err := json.Marshal(existing)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal securityGroup template info")
@@ -847,7 +847,7 @@ func DeleteSecurityGroupTemplate(nsId string, templateId string) error {
 	}
 
 	// Check if template exists
-	key := GenTemplateKey(nsId, "securityGroup", templateId)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, templateId)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")

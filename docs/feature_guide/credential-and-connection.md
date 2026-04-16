@@ -236,8 +236,8 @@ sequenceDiagram
     Core->>Core: holder = CredentialHolderFromContext(ctx)<br/>→ "role01"
     Core->>Core: connectionName = ResolveConnectionName(<br/>"aws-ap-northeast-2", "role01")<br/>→ "role01-aws-ap-northeast-2"
     
-    Core->>Spider: Create VM via<br/>"role01-aws-ap-northeast-2"
-    Spider-->>Core: VM created
+    Core->>Spider: Create Node via<br/>"role01-aws-ap-northeast-2"
+    Spider-->>Core: Node created
     Core-->>Handler: Infra result
     Handler-->>Client: Response
 ```
@@ -296,7 +296,7 @@ The credential holder affects multiple API behaviors:
 
 | Capability | Effect |
 |-----------|--------|
-| **Infra Provisioning** | VMs are created using the holder's CSP accounts |
+| **Infra Provisioning** | Nodes are created using the holder's CSP accounts |
 | **Resource Creation** | VNet, SecurityGroup, SSHKey use holder-specific connections |
 | **Spec Recommendation** | Results are automatically filtered to the holder's available CSPs |
 | **Connection Listing** | `GET /connConfig` can be filtered by `filterCredentialHolder` query param |
@@ -535,7 +535,7 @@ Namespace: staging     +  Holder: staging-ops  → Staging AWS account
 Namespace: development +  Holder: dev-team     → Development sandbox accounts
 ```
 
-> **Namespace vs Credential Holder:** Namespaces isolate **resources** (VMs, networks, etc.). Credential holders isolate **cloud accounts** (API keys, CSP access). They are orthogonal concepts and can be combined freely.
+> **Namespace vs Credential Holder:** Namespaces isolate **resources** (Nodes, networks, etc.). Credential holders isolate **cloud accounts** (API keys, CSP access). They are orthogonal concepts and can be combined freely.
 
 ## Data Model Summary
 
@@ -602,4 +602,4 @@ A: Yes. Different holders can register the same CSP API keys. They will have sep
 A: For non-default holders, `POST /recommendSpec` automatically filters results to only include specs from the holder's registered CSPs. For example, if `role01` only has AWS credentials, only AWS specs are returned.
 
 **Q: Is credential holder the same as namespace?**
-A: No. **Namespace** isolates resources (VMs, VNets, etc.). **Credential holder** isolates cloud accounts (API keys, connection configs). They are independent and can be combined: any namespace can use any credential holder.
+A: No. **Namespace** isolates resources (Nodes, VNets, etc.). **Credential holder** isolates cloud accounts (API keys, connection configs). They are independent and can be combined: any namespace can use any credential holder.

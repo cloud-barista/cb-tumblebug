@@ -240,14 +240,14 @@ func OrchestrationController() {
 						autoAction.NodeGroupDynamicReq.Label = labels
 						// append uid to given vm name to avoid duplicated vm ID.
 						autoAction.NodeGroupDynamicReq.Name = common.ToLower(autoAction.NodeGroupDynamicReq.Name) + "-" + common.GenUid()
-						//vmReqTmp := autoAction.Vm
+						//nodeReqTmp := autoAction.Vm
 						// autoAction.NodeGroupDynamicReq.NodeGroupSize = "1"
 
 						if strings.EqualFold(autoAction.PlacementAlgo, "random") {
 							log.Debug().Msg("[autoAction.PlacementAlgo] " + autoAction.PlacementAlgo)
-							// var vmTmpErr error
-							// existingVm, vmTmpErr := GetVmTemplate(nsId, infraPolicyTmp.Id, autoAction.PlacementAlgo)
-							// if vmTmpErr != nil {
+							// var nodeTmpErr error
+							// existingNode, nodeTmpErr := GetNodeTemplate(nsId, infraPolicyTmp.Id, autoAction.PlacementAlgo)
+							// if nodeTmpErr != nil {
 							// 	infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							// 	UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							// }
@@ -275,10 +275,10 @@ func OrchestrationController() {
 						common.PrintJsonPretty(autoAction.NodeGroupDynamicReq)
 						log.Debug().Msg("[Action] " + autoAction.ActionType)
 
-						// ScaleOut Infra according to the VM requirement.
-						log.Debug().Msg("[Generating VM]")
-						result, vmCreateErr := CreateInfraNodeGroupDynamic(common.NewDefaultContext(), nsId, infraPolicyTmp.Id, &autoAction.NodeGroupDynamicReq)
-						if vmCreateErr != nil {
+						// ScaleOut Infra according to the Node requirement.
+						log.Debug().Msg("[Generating Node]")
+						result, nodeCreateErr := CreateInfraNodeGroupDynamic(common.NewDefaultContext(), nsId, infraPolicyTmp.Id, &autoAction.NodeGroupDynamicReq)
+						if nodeCreateErr != nil {
 							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 						}
@@ -286,7 +286,7 @@ func OrchestrationController() {
 
 						if len(autoAction.PostCommand.Command) != 0 {
 
-							log.Debug().Msgf("[Post Command to VM] %v", autoAction.PostCommand.Command)
+							log.Debug().Msgf("[Post Command to Node] %v", autoAction.PostCommand.Command)
 							_, cmdErr := RemoteCommandToInfra(nsId, infraPolicyTmp.Id, common.ToLower(autoAction.NodeGroupDynamicReq.Name), "", "", &autoAction.PostCommand, "")
 							if cmdErr != nil {
 								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
@@ -298,17 +298,17 @@ func OrchestrationController() {
 						log.Debug().Msg("[Action] " + autoAction.ActionType)
 
 						// ScaleIn Infra.
-						log.Debug().Msg("[Removing VM]")
-						vmList, vmListErr := ListVmByLabel(nsId, infraPolicyTmp.Id, model.StrAutoGen)
-						if vmListErr != nil {
+						log.Debug().Msg("[Removing Node]")
+						nodeList, nodeListErr := ListNodeByLabel(nsId, infraPolicyTmp.Id, model.StrAutoGen)
+						if nodeListErr != nil {
 							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 						}
-						if len(vmList) != 0 {
-							removeTargetVm := vmList[len(vmList)-1]
-							log.Debug().Msg("[Removing VM ID] " + removeTargetVm)
-							delVmErr := DelInfraVm(nsId, infraPolicyTmp.Id, removeTargetVm, "")
-							if delVmErr != nil {
+						if len(nodeList) != 0 {
+							removeTargetNode := nodeList[len(nodeList)-1]
+							log.Debug().Msg("[Removing Node ID] " + removeTargetNode)
+							delNodeErr := DelInfraNode(nsId, infraPolicyTmp.Id, removeTargetNode, "")
+							if delNodeErr != nil {
 								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							}
@@ -502,8 +502,8 @@ func ListInfraPolicyId(nsId string) []string {
 
 	var infraList []string
 	for _, v := range keyValue {
-		if !strings.Contains(v.Key, "vm") {
-			infraList = append(infraList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/policy/infra/"))
+		if !strings.Contains(v.Key, model.StrNode) {
+			infraList = append(infraList, strings.TrimPrefix(v.Key, "/"+model.StrNamespace+"/"+nsId+"/policy/"+model.StrInfra+"/"))
 		}
 	}
 	return infraList

@@ -29,33 +29,33 @@ import (
 // RestPostInfra godoc
 // @ID PostInfra
 // @Summary Create Infra (Multi-Cloud Infrastructure)
-// @Description Create Infra with detailed VM specifications and resource configuration.
+// @Description Create Infra with detailed node specifications and resource configuration.
 // @Description This endpoint creates a complete multi-cloud infrastructure by:
-// @Description 1. **VM Provisioning**: Creates VMs across multiple cloud providers using predefined specs and images
+// @Description 1. **node Provisioning**: Creates nodes across multiple cloud providers using predefined specs and images
 // @Description 2. **Resource Management**: Automatically handles VPC/VNet, security groups, SSH keys, and network configuration
-// @Description 3. **Status Tracking**: Monitors VM creation progress and handles failures based on policy settings
+// @Description 3. **Status Tracking**: Monitors node creation progress and handles failures based on policy settings
 // @Description 4. **Post-Deployment**: Optionally installs monitoring agents and executes custom commands
 // @Description
 // @Description **Key Features:**
-// @Description - Multi-cloud VM deployment with heterogeneous configurations
-// @Description - Automatic resource dependency management (VPC → Security Group → VM)
+// @Description - Multi-cloud node deployment with heterogeneous configurations
+// @Description - Automatic resource dependency management (VPC → Security Group → node)
 // @Description - Built-in failure handling with configurable policies (continue/rollback/refine)
 // @Description - Optional CB-Dragonfly monitoring agent installation
 // @Description - Post-deployment command execution support
 // @Description - Real-time status updates and progress tracking
 // @Description
-// @Description **VM Lifecycle:**
+// @Description **node Lifecycle:**
 // @Description 1. Creating → Running (successful deployment)
 // @Description 2. Creating → Failed (deployment error, handled by failure policy)
 // @Description 3. Running → Terminated (manual or policy-driven cleanup)
 // @Description
 // @Description **Failure Policies:**
-// @Description - `continue`: Keep successful VMs, mark failed ones for later refinement
-// @Description - `rollback`: Delete entire Infra if any VM fails (all-or-nothing)
-// @Description - `refine`: Automatically clean up failed VMs, keep successful ones
+// @Description - `continue`: Keep successful nodes, mark failed ones for later refinement
+// @Description - `rollback`: Delete entire Infra if any node fails (all-or-nothing)
+// @Description - `refine`: Automatically clean up failed nodes, keep successful ones
 // @Description
 // @Description **Resource Requirements:**
-// @Description - Valid VM specifications (must exist in system namespace)
+// @Description - Valid node specifications (must exist in system namespace)
 // @Description - Valid images (must be available in target CSP regions)
 // @Description - Sufficient CSP quotas and permissions
 // @Description - Network connectivity between components
@@ -63,8 +63,8 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID for resource isolation" default(default)
-// @Param infraReq body model.InfraReq true "Infra creation request with VM specifications, networking, and deployment options"
-// @Success 200 {object} model.InfraInfo "Created Infra information with VM details, status, and resource mapping"
+// @Param infraReq body model.InfraReq true "Infra creation request with node specifications, networking, and deployment options"
+// @Success 200 {object} model.InfraInfo "Created Infra information with node details, status, and resource mapping"
 // @Failure 400 {object} model.SimpleMsg "Invalid request parameters or missing required fields"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found or specified resources unavailable"
 // @Failure 409 {object} model.SimpleMsg "Infra name already exists in namespace"
@@ -87,38 +87,38 @@ func RestPostInfra(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestPostRegisterCSPNativeVM godoc
-// @ID PostRegisterCSPNativeVM
-// @Summary Register Existing CSP VMs into Cloud-Barista Infra
+// RestPostRegisterCSPNativeNode godoc
+// @ID PostRegisterCSPNativeNode
+// @Summary Register Existing CSP nodes into Cloud-Barista Infra
 // @Description Import and register pre-existing virtual machines from cloud service providers into CB-Tumblebug management.
 // @Description This endpoint allows you to bring existing CSP resources under CB-Tumblebug control without recreating them:
 // @Description
 // @Description **Registration Process:**
-// @Description 1. **Discovery**: Validates that the specified VM exists in the target CSP
-// @Description 2. **Metadata Import**: Retrieves VM configuration, network settings, and current status
+// @Description 1. **Discovery**: Validates that the specified node exists in the target CSP
+// @Description 2. **Metadata Import**: Retrieves node configuration, network settings, and current status
 // @Description 3. **Resource Mapping**: Creates CB-Tumblebug resource objects that reference the existing CSP resources
-// @Description 4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP VM state
-// @Description 5. **Management Integration**: Enables CB-Tumblebug operations on the registered VMs
+// @Description 4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP node state
+// @Description 5. **Management Integration**: Enables CB-Tumblebug operations on the registered nodes
 // @Description
-// @Description **Supported VM States:**
-// @Description - Running VMs (most common use case)
-// @Description - Stopped VMs (will be registered with current state)
-// @Description - VMs with attached storage and network interfaces
+// @Description **Supported node States:**
+// @Description - Running nodes (most common use case)
+// @Description - Stopped nodes (will be registered with current state)
+// @Description - nodes with attached storage and network interfaces
 // @Description
 // @Description **Resource Compatibility:**
-// @Description - VM must exist in a supported CSP (AWS, Azure, GCP, etc.)
+// @Description - node must exist in a supported CSP (AWS, Azure, GCP, etc.)
 // @Description - Network resources (VPC, subnets, security groups) will be discovered and mapped
 // @Description - Storage volumes and attached disks will be registered automatically
 // @Description - SSH keys and security configurations will be imported
 // @Description
 // @Description **Post-Registration Capabilities:**
-// @Description - Standard CB-Tumblebug VM lifecycle operations (start, stop, terminate)
+// @Description - Standard CB-Tumblebug node lifecycle operations (start, stop, terminate)
 // @Description - Monitoring agent installation (if CB-Dragonfly is configured)
 // @Description - Command execution and automation
 // @Description - Integration with other CB-Tumblebug Infras
 // @Description
 // @Description **Important Notes:**
-// @Description - Registration does not modify the existing VM configuration
+// @Description - Registration does not modify the existing node configuration
 // @Description - Original CSP billing and resource management still applies
 // @Description - CB-Tumblebug provides additional management layer and automation
 // @Description - Ensure proper CSP credentials and permissions are configured
@@ -126,16 +126,16 @@ func RestPostInfra(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID for organizing registered resources" default(default)
-// @Param infraReq body model.InfraReq true "Infra registration request containing existing CSP VM IDs and connection details"
-// @Success 200 {object} model.InfraInfo "Registered Infra information with imported VM details and current status"
-// @Failure 400 {object} model.SimpleMsg "Invalid request format or missing required CSP VM identifiers"
-// @Failure 404 {object} model.SimpleMsg "Specified VMs not found in target CSP or namespace doesn't exist"
-// @Failure 409 {object} model.SimpleMsg "VM already registered or Infra name conflicts"
+// @Param infraReq body model.InfraReq true "Infra registration request containing existing CSP node IDs and connection details"
+// @Success 200 {object} model.InfraInfo "Registered Infra information with imported node details and current status"
+// @Failure 400 {object} model.SimpleMsg "Invalid request format or missing required CSP node identifiers"
+// @Failure 404 {object} model.SimpleMsg "Specified nodes not found in target CSP or namespace doesn't exist"
+// @Failure 409 {object} model.SimpleMsg "node already registered or Infra name conflicts"
 // @Failure 500 {object} model.SimpleMsg "CSP communication error or registration process failure"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/registerCspVm [post]
-func RestPostRegisterCSPNativeVM(c echo.Context) error {
+// @Router /ns/{nsId}/registerCspNode [post]
+func RestPostRegisterCSPNativeNode(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
@@ -157,7 +157,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @Description This endpoint provisions system-level infrastructure that supports CB-Tumblebug's internal functions:
 // @Description
 // @Description **System Infra Types:**
-// @Description - `probe`: Creates lightweight VMs for network connectivity testing and CSP capability discovery
+// @Description - `probe`: Creates lightweight nodes for network connectivity testing and CSP capability discovery
 // @Description - `monitor`: Deploys monitoring infrastructure for system health and performance tracking
 // @Description - `test`: Provisions test environments for validating CSP integrations and features
 // @Description
@@ -174,7 +174,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @Description - May be used for background maintenance and monitoring tasks
 // @Description
 // @Description **Automatic Configuration:**
-// @Description - Uses optimized VM specifications for system tasks (typically minimal resources)
+// @Description - Uses optimized node specifications for system tasks (typically minimal resources)
 // @Description - Automatically selects appropriate regions and providers based on probe requirements
 // @Description - Configures necessary network access and security policies
 // @Description - Deploys with minimal attack surface and security hardening
@@ -222,9 +222,9 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Description This is the **recommended approach** for Infra creation, providing simplified configuration with powerful automation:
 // @Description
 // @Description **Dynamic Resource Creation:**
-// @Description 1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace
+// @Description 1. **Automatic Resource Discovery**: Validates and selects optimal node specifications and images from common namespace
 // @Description 2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider
-// @Description 3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously
+// @Description 3. **Cross-Cloud Orchestration**: Coordinates node provisioning across multiple cloud providers simultaneously
 // @Description 4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically
 // @Description 5. **Failure Recovery**: Implements configurable failure policies for robust deployment
 // @Description
@@ -236,20 +236,20 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Description - **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization
 // @Description
 // @Description **Configuration Process:**
-// @Description 1. **Resource Discovery**: Use `/recommendSpec` to find suitable VM specifications
+// @Description 1. **Resource Discovery**: Use `/recommendSpec` to find suitable node specifications
 // @Description 2. **Image Selection**: Use system namespace to discover compatible images
 // @Description 3. **Request Validation**: Use `/infraDynamicCheckRequest` to validate configuration before deployment
 // @Description 4. **Optional Preview**: Use `/infraDynamicReview` to estimate costs and review configuration
 // @Description 5. **Deployment**: Submit Infra dynamic request with failure policy and deployment options
 // @Description
 // @Description **Failure Policies (PolicyOnPartialFailure):**
-// @Description - **`continue`** (default): Create Infra with successful VMs, failed VMs remain for manual refinement
-// @Description - **`rollback`**: Delete entire Infra if any VM fails (all-or-nothing deployment)
-// @Description - **`refine`**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)
+// @Description - **`continue`** (default): Create Infra with successful nodes, failed nodes remain for manual refinement
+// @Description - **`rollback`**: Delete entire Infra if any node fails (all-or-nothing deployment)
+// @Description - **`refine`**: Automatically clean up failed nodes, keep successful ones (recommended for large deployments)
 // @Description
 // @Description **Deployment Options:**
-// @Description - **`hold`**: Create Infra object but hold VM provisioning for manual approval
-// @Description - **Normal**: Proceed with immediate VM provisioning after resource creation
+// @Description - **`hold`**: Create Infra object but hold node provisioning for manual approval
+// @Description - **Normal**: Proceed with immediate node provisioning after resource creation
 // @Description
 // @Description **Multi-Cloud Example Configuration:**
 // @Description ```json
@@ -257,7 +257,7 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Description   "name": "multi-cloud-web-tier",
 // @Description   "description": "Web application across AWS, Azure, and GCP",
 // @Description   "policyOnPartialFailure": "refine",
-// @Description   "vm": [
+// @Description   "nodeGroups": [
 // @Description     {
 // @Description       "name": "aws-web-servers",
 // @Description       "nodeGroupSize": "3",
@@ -278,9 +278,9 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Description ```
 // @Description
 // @Description **Performance Considerations:**
-// @Description - VM provisioning occurs in parallel across providers
+// @Description - node provisioning occurs in parallel across providers
 // @Description - Network resources are created concurrently where possible
-// @Description - Large deployments (>10 VMs) automatically use optimized batching
+// @Description - Large deployments (>10 nodes) automatically use optimized batching
 // @Description - Built-in rate limiting prevents CSP API throttling
 // @Description
 // @Description **Monitoring and Post-Deployment:**
@@ -292,11 +292,11 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID for resource organization and isolation" default(default)
-// @Param infraReq body model.InfraDynamicReq true "Dynamic Infra request with common specifications. Must include specId and imageId for each VM group. See description for detailed example."
-// @Param option query string false "Deployment option: 'hold' to create Infra without immediate VM provisioning" Enums(hold)
+// @Param infraReq body model.InfraDynamicReq true "Dynamic Infra request with common specifications. Must include specId and imageId for each node group. See description for detailed example."
+// @Param option query string false "Deployment option: 'hold' to create Infra without immediate node provisioning" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking and correlation across API calls"
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for provisioning (default: system default holder)"
-// @Success 200 {object} model.InfraInfo "Successfully created Infra with VM deployment status, resource mappings, and configuration details"
+// @Success 200 {object} model.InfraInfo "Successfully created Infra with node deployment status, resource mappings, and configuration details"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format, missing required fields, or unsupported configuration"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found, specified specs/images unavailable, or CSP resources inaccessible"
 // @Failure 409 {object} model.SimpleMsg "Infra name already exists or resource naming conflicts detected"
@@ -330,7 +330,7 @@ func RestPostInfraDynamic(c echo.Context) error {
 // @Description It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
 // @Description
 // @Description **Key Features:**
-// @Description - Validates all VM specifications and images against CSP availability
+// @Description - Validates all node specifications and images against CSP availability
 // @Description - Provides cost estimation (including partial estimates when some costs are unknown)
 // @Description - Identifies potential configuration issues and warnings
 // @Description - Recommends optimization strategies
@@ -338,8 +338,8 @@ func RestPostInfraDynamic(c echo.Context) error {
 // @Description - Non-invasive validation (no resources are created)
 // @Description
 // @Description **Review Status:**
-// @Description - `Ready`: All VMs can be created successfully
-// @Description - `Warning`: VMs can be created but with configuration warnings
+// @Description - `Ready`: All nodes can be created successfully
+// @Description - `Warning`: nodes can be created but with configuration warnings
 // @Description - `Error`: Critical errors prevent Infra creation
 // @Description
 // @Description **Use Cases:**
@@ -351,7 +351,7 @@ func RestPostInfraDynamic(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param infraReq body model.InfraDynamicReq true "Request body to review Infra dynamic provisioning. Must include specId and imageId info of each VM request. Same format as /infraDynamic endpoint. (ex: {name: infra01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})"
+// @Param infraReq body model.InfraDynamicReq true "Request body to review Infra dynamic provisioning. Must include specId and imageId info of each node request. Same format as /infraDynamic endpoint. (ex: {name: infra01, nodeGroups: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})"
 // @Param option query string false "Option for Infra creation review (same as actual creation)" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for review (default: system default holder)"
@@ -382,39 +382,39 @@ func RestPostInfraDynamicReview(c echo.Context) error {
 
 // RestPostInfraNodeGroupDynamic godoc
 // @ID PostInfraNodeGroupDynamic
-// @Summary Add VM Dynamically to Existing Infra
+// @Summary Add node Dynamically to Existing Infra
 // @Description Dynamically add new virtual machines to an existing Infra using common specifications and automated resource management.
 // @Description This endpoint provides elastic scaling capabilities for running Infras:
 // @Description
-// @Description **Dynamic VM Addition Process:**
+// @Description **Dynamic node Addition Process:**
 // @Description 1. **Infra Validation**: Verifies target Infra exists and is in a valid state for expansion
 // @Description 2. **Resource Discovery**: Resolves common spec and image to provider-specific resources
-// @Description 3. **Network Integration**: Automatically configures new VMs to use existing Infra network resources
+// @Description 3. **Network Integration**: Automatically configures new nodes to use existing Infra network resources
 // @Description 4. **NodeGroup Management**: Creates new nodegroups or expands existing ones based on configuration
-// @Description 5. **Status Synchronization**: Updates Infra status and metadata to reflect new VM additions
+// @Description 5. **Status Synchronization**: Updates Infra status and metadata to reflect new node additions
 // @Description
 // @Description **Integration with Existing Infrastructure:**
-// @Description - **Network Reuse**: New VMs automatically join existing VNets and security groups
+// @Description - **Network Reuse**: New nodes automatically join existing VNets and security groups
 // @Description - **SSH Key Sharing**: Uses existing SSH keys for consistent access management
-// @Description - **Monitoring Integration**: New VMs inherit monitoring configuration from parent Infra
-// @Description - **Label Propagation**: Applies Infra-level labels and policies to new VMs
+// @Description - **Monitoring Integration**: New nodes inherit monitoring configuration from parent Infra
+// @Description - **Label Propagation**: Applies Infra-level labels and policies to new nodes
 // @Description - **Resource Consistency**: Maintains naming conventions and resource organization
 // @Description
 // @Description **Scaling Scenarios:**
 // @Description - **Horizontal Scaling**: Add more instances to handle increased workload
-// @Description - **Multi-Region Expansion**: Deploy VMs in new regions while maintaining Infra cohesion
-// @Description - **Provider Diversification**: Add VMs from different cloud providers for redundancy
-// @Description - **Workload Specialization**: Deploy VMs with different specifications for specific tasks
+// @Description - **Multi-Region Expansion**: Deploy nodes in new regions while maintaining Infra cohesion
+// @Description - **Provider Diversification**: Add nodes from different cloud providers for redundancy
+// @Description - **Workload Specialization**: Deploy nodes with different specifications for specific tasks
 // @Description
 // @Description **Configuration Requirements:**
-// @Description - `specId`: Must specify valid VM specification from system namespace
+// @Description - `specId`: Must specify valid node specification from system namespace
 // @Description - `imageId`: Must specify valid image compatible with target provider/region
-// @Description - `name`: Becomes nodegroup name; VMs will be named with sequential suffixes
-// @Description - `nodeGroupSize`: Number of identical VMs to create (default: 1)
+// @Description - `name`: Becomes nodegroup name; nodes will be named with sequential suffixes
+// @Description - `nodeGroupSize`: Number of identical nodes to create (default: 1)
 // @Description
 // @Description **Network and Security:**
-// @Description - New VMs automatically inherit security group rules from existing Infra
-// @Description - Network connectivity to existing VMs is established automatically
+// @Description - New nodes automatically inherit security group rules from existing Infra
+// @Description - Network connectivity to existing nodes is established automatically
 // @Description - Firewall rules and access policies are applied consistently
 // @Description - SSH access is configured using existing key pairs
 // @Description
@@ -425,7 +425,7 @@ func RestPostInfraDynamicReview(c echo.Context) error {
 // @Description - Add specialized storage or database nodes to existing application stack
 // @Description
 // @Description **Post-Addition Operations:**
-// @Description - New VMs are immediately available for standard Infra operations
+// @Description - New nodes are immediately available for standard Infra operations
 // @Description - Can be individually managed or grouped with existing nodegroups
 // @Description - Monitoring and logging are automatically configured
 // @Description - Application deployment and configuration management can proceed immediately
@@ -433,14 +433,14 @@ func RestPostInfraDynamicReview(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target Infra" default(default)
-// @Param infraId path string true "Infra ID to which new VMs will be added" default(infra01)
-// @Param vmReq body model.CreateNodeGroupDynamicReq true "NodeGroup dynamic request specifying specId, imageId, and scaling parameters"
+// @Param infraId path string true "Infra ID to which new nodes will be added" default(infra01)
+// @Param nodeGroupReq body model.CreateNodeGroupDynamicReq true "NodeGroup dynamic request specifying specId, imageId, and scaling parameters"
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for provisioning (default: system default holder)"
-// @Success 200 {object} model.InfraInfo "Updated Infra information including newly added VMs and current status"
-// @Failure 400 {object} model.SimpleMsg "Invalid VM request or incompatible configuration parameters"
+// @Success 200 {object} model.InfraInfo "Updated Infra information including newly added nodes and current status"
+// @Failure 400 {object} model.SimpleMsg "Invalid node request or incompatible configuration parameters"
 // @Failure 404 {object} model.SimpleMsg "Target Infra not found or specified resources unavailable"
 // @Failure 409 {object} model.SimpleMsg "NodeGroup name conflicts or Infra in incompatible state"
-// @Failure 500 {object} model.SimpleMsg "VM creation failed or network integration error"
+// @Failure 500 {object} model.SimpleMsg "node creation failed or network integration error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns/{nsId}/infra/{infraId}/nodeGroupDynamic [post]
 func RestPostInfraNodeGroupDynamic(c echo.Context) error {
@@ -458,25 +458,25 @@ func RestPostInfraNodeGroupDynamic(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestPostInfraDynamicNodeGroupVmReview godoc
-// @ID PostInfraDynamicNodeGroupVmReview
-// @Summary Review VM Dynamic Addition Request for Existing Infra
-// @Description Review and validate a VM dynamic addition request for an existing Infra before actual provisioning.
-// @Description This endpoint provides comprehensive validation for adding new VMs to existing Infras without actually creating resources.
+// RestPostInfraDynamicNodeGroupNodeReview godoc
+// @ID PostInfraDynamicNodeGroupNodeReview
+// @Summary Review node Dynamic Addition Request for Existing Infra
+// @Description Review and validate a node dynamic addition request for an existing Infra before actual provisioning.
+// @Description This endpoint provides comprehensive validation for adding new nodes to existing Infras without actually creating resources.
 // @Description It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
 // @Description
 // @Description **Key Features:**
-// @Description - Validates VM specification and image against CSP availability
+// @Description - Validates node specification and image against CSP availability
 // @Description - Checks compatibility with existing Infra configuration
-// @Description - Provides cost estimation for the new VM addition
+// @Description - Provides cost estimation for the new node addition
 // @Description - Identifies potential configuration issues and warnings
 // @Description - Recommends optimization strategies
 // @Description - Non-invasive validation (no resources are created)
 // @Description
 // @Description **Review Status:**
-// @Description - `Ready`: VM can be added successfully
-// @Description - `Warning`: VM can be added but with configuration warnings
-// @Description - `Error`: Critical errors prevent VM addition
+// @Description - `Ready`: node can be added successfully
+// @Description - `Warning`: node can be added but with configuration warnings
+// @Description - `Error`: Critical errors prevent node addition
 // @Description
 // @Description **Infra Integration Validation:**
 // @Description - Ensures target Infra exists and is in a compatible state
@@ -485,24 +485,24 @@ func RestPostInfraNodeGroupDynamic(c echo.Context) error {
 // @Description - Verifies security group and SSH key compatibility
 // @Description
 // @Description **Use Cases:**
-// @Description - Pre-validation before expensive VM addition operations
+// @Description - Pre-validation before expensive node addition operations
 // @Description - Cost estimation for scaling decisions
 // @Description - Configuration optimization before deployment
-// @Description - Risk assessment for VM addition to existing infrastructure
+// @Description - Risk assessment for node addition to existing infrastructure
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target Infra" default(default)
-// @Param infraId path string true "Infra ID to which the VM will be added" default(infra01)
-// @Param vmReq body model.CreateNodeGroupDynamicReq true "Request body to review VM dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})"
+// @Param infraId path string true "Infra ID to which the node will be added" default(infra01)
+// @Param nodeGroupReq body model.CreateNodeGroupDynamicReq true "Request body to review node dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for review (default: system default holder)"
-// @Success 200 {object} model.ReviewNodeGroupDynamicReqInfo "Comprehensive VM addition review result with validation status, cost estimation, and recommendations"
+// @Success 200 {object} model.ReviewNodeGroupDynamicReqInfo "Comprehensive node addition review result with validation status, cost estimation, and recommendations"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or parameters"
 // @Failure 404 {object} model.SimpleMsg "Target Infra not found or namespace not found"
 // @Failure 500 {object} model.SimpleMsg "Internal server error during validation"
 // @Router /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview [post]
-func RestPostInfraDynamicNodeGroupVmReview(c echo.Context) error {
+func RestPostInfraDynamicNodeGroupNodeReview(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
@@ -510,7 +510,7 @@ func RestPostInfraDynamicNodeGroupVmReview(c echo.Context) error {
 
 	req := &model.CreateNodeGroupDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		log.Warn().Err(err).Msg("invalid request for VM dynamic addition review")
+		log.Warn().Err(err).Msg("invalid request for Node dynamic addition review")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
@@ -523,7 +523,7 @@ func RestPostInfraDynamicNodeGroupVmReview(c echo.Context) error {
 
 	result, err := infra.ReviewSingleNodeGroupDynamicReq(ctx, nsId, req)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to review VM dynamic addition request")
+		log.Error().Err(err).Msg("failed to review Node dynamic addition request")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
@@ -532,14 +532,14 @@ func RestPostInfraDynamicNodeGroupVmReview(c echo.Context) error {
 // RestPostSpecImagePairReview godoc
 // @ID PostSpecImagePairReview
 // @Summary Review Spec and Image Pair Compatibility
-// @Description Validate whether a spec and image pair is compatible for VM provisioning.
+// @Description Validate whether a spec and image pair is compatible for node provisioning.
 // @Description This lightweight API checks:
 // @Description - Spec availability in DB and CSP
 // @Description - Image availability in DB and CSP (auto-registers if found in CSP but not in DB)
 // @Description - Cost estimation based on spec
 // @Description
 // @Description **Use Cases:**
-// @Description - Quick validation before VM creation
+// @Description - Quick validation before node creation
 // @Description - Pre-check for dynamic provisioning
 // @Description - Verify custom image IDs entered by user
 // @Tags [MC-Infra] Infra Provisioning and Management
@@ -649,36 +649,36 @@ func RestPostInfraDynamicCheckRequest(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestPostInfraVm godoc
-// @ID PostInfraVm
-// @Summary Add Homogeneous VM NodeGroup to Existing Infra
+// RestPostInfraNode godoc
+// @ID PostInfraNode
+// @Summary Add Homogeneous node NodeGroup to Existing Infra
 // @Description Create and add a group of identical virtual machines (nodegroup) to an existing Infra using detailed specifications.
-// @Description This endpoint provides precise control over VM configuration and placement within existing infrastructure:
+// @Description This endpoint provides precise control over node configuration and placement within existing infrastructure:
 // @Description
 // @Description **NodeGroup Creation Process:**
-// @Description 1. **Infra Integration**: Validates target Infra exists and can accommodate new VMs
+// @Description 1. **Infra Integration**: Validates target Infra exists and can accommodate new nodes
 // @Description 2. **Resource Validation**: Verifies all specified resources (specs, images, networks) exist and are accessible
-// @Description 3. **Homogeneous Deployment**: Creates multiple identical VMs with consistent configuration
-// @Description 4. **Network Integration**: Integrates new VMs with existing Infra networking and security policies
+// @Description 3. **Homogeneous Deployment**: Creates multiple identical nodes with consistent configuration
+// @Description 4. **Network Integration**: Integrates new nodes with existing Infra networking and security policies
 // @Description 5. **Group Management**: Establishes nodegroup for collective management and operations
 // @Description
 // @Description **Detailed Configuration Control:**
 // @Description - **Specific Resource References**: Uses exact resource IDs rather than common specifications
 // @Description - **Network Placement**: Precise control over VNet, subnet, and security group assignment
 // @Description - **Storage Configuration**: Detailed disk configuration including type, size, and performance tiers
-// @Description - **Instance Customization**: Full control over VM specifications, images, and metadata
+// @Description - **Instance Customization**: Full control over node specifications, images, and metadata
 // @Description - **Security Settings**: Explicit security group and SSH key configuration
 // @Description
 // @Description **NodeGroup Benefits:**
 // @Description - **Collective Operations**: Perform operations on entire nodegroup simultaneously
-// @Description - **Homogeneous Scaling**: All VMs in nodegroup share identical configuration
-// @Description - **Simplified Management**: Single configuration template for multiple VMs
+// @Description - **Homogeneous Scaling**: All nodes in nodegroup share identical configuration
+// @Description - **Simplified Management**: Single configuration template for multiple nodes
 // @Description - **Consistent Naming**: Automatic sequential naming (e.g., web-1, web-2, web-3)
 // @Description - **Group Policies**: Apply scaling, monitoring, and lifecycle policies at nodegroup level
 // @Description
 // @Description **Use Cases:**
 // @Description - **Application Tiers**: Deploy multiple instances of web servers, application servers, or databases
-// @Description - **Load Distribution**: Create multiple identical VMs for load balancing scenarios
+// @Description - **Load Distribution**: Create multiple identical nodes for load balancing scenarios
 // @Description - **High Availability**: Deploy redundant instances across availability zones
 // @Description - **Batch Processing**: Create worker nodes for distributed computing workloads
 // @Description - **Development Environments**: Provision identical development or testing instances
@@ -688,62 +688,62 @@ func RestPostInfraDynamicCheckRequest(c echo.Context) error {
 // @Description - **Network Configuration**: VNet, subnet, and security group must exist and be compatible
 // @Description - **SSH Keys**: Must specify valid SSH key pairs for access management
 // @Description - **Image Compatibility**: Specified image must be available in target region
-// @Description - **Quota Validation**: Sufficient CSP quotas must be available for all requested VMs
+// @Description - **Quota Validation**: Sufficient CSP quotas must be available for all requested nodes
 // @Description
 // @Description **NodeGroup Size Considerations:**
-// @Description - **Small Groups (1-5 VMs)**: Fast deployment, minimal resource contention
-// @Description - **Medium Groups (6-20 VMs)**: Optimized parallel deployment with resource batching
-// @Description - **Large Groups (21+ VMs)**: Advanced deployment strategies to avoid CSP rate limits
+// @Description - **Small Groups (1-5 nodes)**: Fast deployment, minimal resource contention
+// @Description - **Medium Groups (6-20 nodes)**: Optimized parallel deployment with resource batching
+// @Description - **Large Groups (21+ nodes)**: Advanced deployment strategies to avoid CSP rate limits
 // @Description - **Resource Limits**: Respects CSP quotas and CB-Tumblebug configuration limits
 // @Description
 // @Description **Post-Deployment Integration:**
 // @Description - NodeGroup becomes integral part of parent Infra
-// @Description - All VMs inherit Infra-level monitoring and management policies
-// @Description - Can be scaled out further or individual VMs can be managed separately
-// @Description - Supports all standard CB-Tumblebug VM lifecycle operations
+// @Description - All nodes inherit Infra-level monitoring and management policies
+// @Description - Can be scaled out further or individual nodes can be managed separately
+// @Description - Supports all standard CB-Tumblebug node lifecycle operations
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target Infra" default(default)
-// @Param infraId path string true "Infra ID to which the VM nodegroup will be added" default(infra01)
-// @Param vmReq body model.CreateNodeGroupReq true "Detailed VM nodegroup specification including exact resource IDs, networking, and scaling parameters"
-// @Success 200 {object} model.InfraInfo "Updated Infra information including newly created VM nodegroup with individual VM details and status"
-// @Failure 400 {object} model.SimpleMsg "Invalid VM request, missing required resources, or configuration conflicts"
+// @Param infraId path string true "Infra ID to which the node nodegroup will be added" default(infra01)
+// @Param nodeGroupReq body model.CreateNodeGroupReq true "Detailed node nodegroup specification including exact resource IDs, networking, and scaling parameters"
+// @Success 200 {object} model.InfraInfo "Updated Infra information including newly created node nodegroup with individual node details and status"
+// @Failure 400 {object} model.SimpleMsg "Invalid node request, missing required resources, or configuration conflicts"
 // @Failure 404 {object} model.SimpleMsg "Target Infra not found, specified resources unavailable, or namespace inaccessible"
 // @Failure 409 {object} model.SimpleMsg "NodeGroup name conflicts, resource allocation conflicts, or Infra state incompatible with expansion"
-// @Failure 500 {object} model.SimpleMsg "VM provisioning failed, network configuration error, or CSP API communication failure"
+// @Failure 500 {object} model.SimpleMsg "node provisioning failed, network configuration error, or CSP API communication failure"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm [post]
-func RestPostInfraVm(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node [post]
+func RestPostInfraNode(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 
-	vmInfoData := &model.CreateNodeGroupReq{}
-	if err := c.Bind(vmInfoData); err != nil {
+	nodeInfoData := &model.CreateNodeGroupReq{}
+	if err := c.Bind(nodeInfoData); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
-	result, err := infra.CreateInfraGroupVm(ctx, nsId, infraId, vmInfoData, true)
+	result, err := infra.CreateInfraGroupNode(ctx, nsId, infraId, nodeInfoData, true)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostInfraNodeGroupScaleOut godoc
 // @ID PostInfraNodeGroupScaleOut
 // @Summary Scale Out Existing NodeGroup in Infra
-// @Description Horizontally scale an existing VM nodegroup by adding more identical instances for increased capacity.
+// @Description Horizontally scale an existing node nodegroup by adding more identical instances for increased capacity.
 // @Description This endpoint provides elastic scaling capabilities for running application tiers:
 // @Description
 // @Description **Scale-Out Process:**
 // @Description 1. **NodeGroup Validation**: Verifies target nodegroup exists and is in scalable state
-// @Description 2. **Template Replication**: Uses existing VM configuration as template for new instances
+// @Description 2. **Template Replication**: Uses existing node configuration as template for new instances
 // @Description 3. **Resource Allocation**: Ensures sufficient CSP quotas and network resources
-// @Description 4. **Parallel Deployment**: Deploys multiple new VMs simultaneously for faster scaling
-// @Description 5. **Integration**: Seamlessly integrates new VMs into existing nodegroup and Infra
+// @Description 4. **Parallel Deployment**: Deploys multiple new nodes simultaneously for faster scaling
+// @Description 5. **Integration**: Seamlessly integrates new nodes into existing nodegroup and Infra
 // @Description
 // @Description **Configuration Inheritance:**
-// @Description - **VM Specifications**: New VMs inherit exact specifications from existing nodegroup members
+// @Description - **node Specifications**: New nodes inherit exact specifications from existing nodegroup members
 // @Description - **Network Settings**: Automatically placed in same VNet, subnet, and security groups
 // @Description - **SSH Keys**: Use same SSH key pairs for consistent access management
 // @Description - **Monitoring**: Inherit monitoring agent configuration and policies
@@ -752,33 +752,33 @@ func RestPostInfraVm(c echo.Context) error {
 // @Description **Scaling Scenarios:**
 // @Description - **Traffic Spikes**: Quickly add capacity during high-demand periods
 // @Description - **Seasonal Scaling**: Scale out for predictable demand increases
-// @Description - **Performance Optimization**: Add instances to reduce per-VM resource utilization
+// @Description - **Performance Optimization**: Add instances to reduce per-node resource utilization
 // @Description - **Geographic Expansion**: Scale existing workloads to handle broader user base
 // @Description - **Fault Tolerance**: Increase redundancy by adding more instances
 // @Description
 // @Description **Intelligent Scaling:**
-// @Description - **Sequential Naming**: New VMs follow established naming pattern (e.g., web-4, web-5, web-6)
-// @Description - **Load Distribution**: New VMs are distributed optimally across availability zones
+// @Description - **Sequential Naming**: New nodes follow established naming pattern (e.g., web-4, web-5, web-6)
+// @Description - **Load Distribution**: New nodes are distributed optimally across availability zones
 // @Description - **Resource Efficiency**: Reuses existing network and security infrastructure
-// @Description - **Minimal Disruption**: Scaling occurs without affecting existing VM operations
-// @Description - **Consistent Configuration**: Ensures all VMs in nodegroup remain homogeneous
+// @Description - **Minimal Disruption**: Scaling occurs without affecting existing node operations
+// @Description - **Consistent Configuration**: Ensures all nodes in nodegroup remain homogeneous
 // @Description
 // @Description **Operational Benefits:**
-// @Description - **Zero Downtime**: Existing VMs continue running during scale-out operation
-// @Description - **Immediate Availability**: New VMs are ready for traffic as soon as deployment completes
-// @Description - **Unified Management**: All VMs (old and new) managed through single nodegroup
+// @Description - **Zero Downtime**: Existing nodes continue running during scale-out operation
+// @Description - **Immediate Availability**: New nodes are ready for traffic as soon as deployment completes
+// @Description - **Unified Management**: All nodes (old and new) managed through single nodegroup
 // @Description - **Policy Consistency**: All scaling and management policies apply uniformly
-// @Description - **Monitoring Integration**: New VMs automatically included in existing monitoring dashboards
+// @Description - **Monitoring Integration**: New nodes automatically included in existing monitoring dashboards
 // @Description
 // @Description **Scale-Out Considerations:**
 // @Description - **CSP Quotas**: Verifies sufficient instance, network, and storage quotas
 // @Description - **Region Capacity**: Ensures target region has capacity for requested instance types
-// @Description - **Network Limits**: Validates that VNet can accommodate additional VMs
-// @Description - **Cost Impact**: Additional VMs incur proportional CSP billing costs
+// @Description - **Network Limits**: Validates that VNet can accommodate additional nodes
+// @Description - **Cost Impact**: Additional nodes incur proportional CSP billing costs
 // @Description - **Application Readiness**: Applications should be designed to handle additional instances
 // @Description
 // @Description **Post-Scale Operations:**
-// @Description - New VMs immediately participate in nodegroup operations
+// @Description - New nodes immediately participate in nodegroup operations
 // @Description - Can be individually managed while maintaining nodegroup membership
 // @Description - Support for further scaling operations (scale-out or scale-in)
 // @Description - Ready for application deployment and load balancer integration
@@ -793,13 +793,13 @@ func RestPostInfraVm(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target Infra and nodegroup" default(default)
 // @Param infraId path string true "Infra ID containing the nodegroup to scale" default(infra01)
-// @Param nodegroupId path string true "NodeGroup ID to scale out (must exist and contain at least one VM)" default(g1)
-// @Param vmReq body model.ScaleOutNodeGroupReq true "Scale-out request specifying the number of additional VMs to create"
-// @Success 200 {object} model.InfraInfo "Updated Infra information with scaled nodegroup showing all VMs including newly added instances"
-// @Failure 400 {object} model.SimpleMsg "Invalid scale-out request, insufficient quotas, or invalid VM count"
+// @Param nodegroupId path string true "NodeGroup ID to scale out (must exist and contain at least one node)" default(g1)
+// @Param nodeGroupReq body model.ScaleOutNodeGroupReq true "Scale-out request specifying the number of additional nodes to create"
+// @Success 200 {object} model.InfraInfo "Updated Infra information with scaled nodegroup showing all nodes including newly added instances"
+// @Failure 400 {object} model.SimpleMsg "Invalid scale-out request, insufficient quotas, or invalid node count"
 // @Failure 404 {object} model.SimpleMsg "Target Infra or nodegroup not found, or namespace inaccessible"
 // @Failure 409 {object} model.SimpleMsg "NodeGroup in incompatible state for scaling or resource conflicts detected"
-// @Failure 500 {object} model.SimpleMsg "VM provisioning failed, network configuration error, or CSP capacity limitations"
+// @Failure 500 {object} model.SimpleMsg "node provisioning failed, network configuration error, or CSP capacity limitations"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId} [post]
@@ -815,14 +815,14 @@ func RestPostInfraNodeGroupScaleOut(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ScaleOutInfraNodeGroup(ctx, nsId, infraId, nodegroupId, scaleOutReq.NumVMsToAdd)
+	result, err := infra.ScaleOutInfraNodeGroup(ctx, nsId, infraId, nodegroupId, scaleOutReq.NumNodesToAdd)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestGetProvisioningLog godoc
 // @ID GetProvisioningLog
-// @Summary Get Provisioning History Log for VM Specification
-// @Description Retrieve detailed provisioning history for a specific VM specification including success/failure patterns and risk analysis.
+// @Summary Get Provisioning History Log for node Specification
+// @Description Retrieve detailed provisioning history for a specific node specification including success/failure patterns and risk analysis.
 // @Description This endpoint provides comprehensive insights into provisioning reliability:
 // @Description
 // @Description **Historical Data Includes:**
@@ -848,9 +848,9 @@ func RestPostInfraNodeGroupScaleOut(c echo.Context) error {
 // @Tags [Admin] Provisioning History and Analytics
 // @Accept  json
 // @Produce  json
-// @Param specId path string true "VM Specification ID (format: provider+region+spec_name, e.g., aws+ap-northeast-2+t2.micro)"
+// @Param specId path string true "node Specification ID (format: provider+region+spec_name, e.g., aws+ap-northeast-2+t2.micro)"
 // @Success 200 {object} model.ProvisioningLog "Provisioning history log with success/failure statistics and detailed analytics"
-// @Success 204 "No provisioning history found for the specified VM specification"
+// @Success 204 "No provisioning history found for the specified node specification"
 // @Failure 400 {object} model.SimpleMsg "Invalid specification ID format or missing required parameters"
 // @Failure 500 {object} model.SimpleMsg "Internal server error while retrieving provisioning history"
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -879,7 +879,7 @@ func RestGetProvisioningLog(c echo.Context) error {
 // RestDeleteProvisioningLog godoc
 // @ID DeleteProvisioningLog
 // @Summary Delete Provisioning History Log
-// @Description Remove all provisioning history data for a specific VM specification.
+// @Description Remove all provisioning history data for a specific node specification.
 // @Description This operation permanently deletes historical failure and success records:
 // @Description
 // @Description **Warning**: This action is irreversible and will remove:
@@ -901,7 +901,7 @@ func RestGetProvisioningLog(c echo.Context) error {
 // @Tags [Admin] Provisioning History and Analytics
 // @Accept  json
 // @Produce  json
-// @Param specId path string true "VM Specification ID to delete history for (format: provider+region+spec_name)"
+// @Param specId path string true "node Specification ID to delete history for (format: provider+region+spec_name)"
 // @Success 200 {object} model.SimpleMsg "Provisioning history successfully deleted"
 // @Success 204 "No provisioning history found to delete"
 // @Failure 400 {object} model.SimpleMsg "Invalid specification ID format"
@@ -943,11 +943,11 @@ func RestDeleteProvisioningLog(c echo.Context) error {
 // RestAnalyzeProvisioningRisk godoc
 // @ID AnalyzeProvisioningRisk
 // @Summary Analyze Provisioning Risk for Spec and Image Combination
-// @Description Evaluate the likelihood of provisioning failure based on historical data for a specific VM specification and image combination.
+// @Description Evaluate the likelihood of provisioning failure based on historical data for a specific node specification and image combination.
 // @Description This endpoint provides intelligent risk assessment to help prevent deployment failures:
 // @Description
 // @Description **Risk Analysis Factors:**
-// @Description - Historical failure rate for the VM specification
+// @Description - Historical failure rate for the node specification
 // @Description - Image-specific compatibility with the spec
 // @Description - Recent failure patterns and trends
 // @Description - Cross-reference of spec+image combination success rates
@@ -970,7 +970,7 @@ func RestDeleteProvisioningLog(c echo.Context) error {
 // @Tags [Admin] Provisioning History and Analytics
 // @Accept  json
 // @Produce  json
-// @Param specId path string true "VM Specification ID (format: provider+region+spec_name)"
+// @Param specId path string true "node Specification ID (format: provider+region+spec_name)"
 // @Param cspImageName query string true "CSP-specific image name/ID to analyze compatibility"
 // @Success 200 {object} object{riskLevel=string,riskMessage=string,analysis=object} "Risk analysis result with level, message, and detailed analysis"
 // @Failure 400 {object} model.SimpleMsg "Invalid parameters or missing required query parameters"
@@ -1046,11 +1046,11 @@ func RestAnalyzeProvisioningRisk(c echo.Context) error {
 // RestAnalyzeProvisioningRiskDetailed godoc
 // @ID AnalyzeProvisioningRiskDetailed
 // @Summary Analyze Detailed Provisioning Risk with Spec and Image Breakdown
-// @Description Provides comprehensive risk analysis with separate assessments for VM specification and image risks, plus actionable recommendations.
+// @Description Provides comprehensive risk analysis with separate assessments for node specification and image risks, plus actionable recommendations.
 // @Description This endpoint offers enhanced risk analysis by separating spec-level and image-level risk factors:
 // @Description
 // @Description **Risk Analysis Breakdown:**
-// @Description - **Spec Risk**: Analyzes whether the VM specification itself has compatibility or resource issues
+// @Description - **Spec Risk**: Analyzes whether the node specification itself has compatibility or resource issues
 // @Description - **Image Risk**: Evaluates the track record of the specific image with this spec
 // @Description - **Overall Risk**: Combines both factors to determine the primary risk source
 // @Description - **Recommendations**: Provides actionable guidance based on risk analysis
@@ -1065,14 +1065,14 @@ func RestAnalyzeProvisioningRisk(c echo.Context) error {
 // @Description - Whether this is a new, untested combination
 // @Description
 // @Description **Recommendation Types:**
-// @Description - Change VM specification (when spec is the primary risk factor)
+// @Description - Change node specification (when spec is the primary risk factor)
 // @Description - Try different image (when image is the primary risk factor)
 // @Description - Monitor deployment closely (for new combinations or medium risk)
 // @Description - Proceed with confidence (for low-risk combinations)
 // @Tags [Admin] Provisioning History and Analytics
 // @Accept json
 // @Produce json
-// @Param specId query string true "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')"
+// @Param specId query string true "node specification ID (e.g., 'gcp+europe-north1+f1-micro')"
 // @Param cspImageName query string true "CSP-specific image name (e.g., 'ami-0c02fb55956c7d316' for AWS)"
 // @Success 200 {object} model.RiskAnalysis "Detailed risk analysis with spec, image, and overall risk assessments plus recommendations"
 // @Failure 400 {object} model.SimpleMsg "Bad Request - Missing or invalid parameters"

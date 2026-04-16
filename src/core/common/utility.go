@@ -230,14 +230,14 @@ func ChangeIdString(name string) string {
 }
 
 // GenInfraKey is func to generate a key used in keyValue store
-func GenInfraKey(nsId string, infraId string, vmId string) string {
+func GenInfraKey(nsId string, infraId string, nodeId string) string {
 
-	if vmId != "" {
-		return "/ns/" + nsId + "/infra/" + infraId + "/vm/" + vmId
+	if nodeId != "" {
+		return "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrNode + "/" + nodeId
 	} else if infraId != "" {
-		return "/ns/" + nsId + "/infra/" + infraId
+		return "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId
 	} else if nsId != "" {
-		return "/ns/" + nsId
+		return "/" + model.StrNamespace + "/" + nsId
 	} else {
 		return ""
 	}
@@ -247,18 +247,18 @@ func GenInfraKey(nsId string, infraId string, vmId string) string {
 // GenInfraNodeGroupKey is func to generate a key from nodeGroupId used in keyValue store
 func GenInfraNodeGroupKey(nsId string, infraId string, groupId string) string {
 
-	return "/ns/" + nsId + "/infra/" + infraId + "/nodegroup/" + groupId
+	return "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrNodeGroup + "/" + groupId
 
 }
 
 // GenInfraPolicyKey is func to generate Infra policy key
-func GenInfraPolicyKey(nsId string, infraId string, vmId string) string {
-	if vmId != "" {
-		return "/ns/" + nsId + "/policy/infra/" + infraId + "/vm/" + vmId
+func GenInfraPolicyKey(nsId string, infraId string, nodeId string) string {
+	if nodeId != "" {
+		return "/" + model.StrNamespace + "/" + nsId + "/policy/" + model.StrInfra + "/" + infraId + "/" + model.StrNode + "/" + nodeId
 	} else if infraId != "" {
-		return "/ns/" + nsId + "/policy/infra/" + infraId
+		return "/" + model.StrNamespace + "/" + nsId + "/policy/" + model.StrInfra + "/" + infraId
 	} else if nsId != "" {
-		return "/ns/" + nsId
+		return "/" + model.StrNamespace + "/" + nsId
 	} else {
 		return ""
 	}

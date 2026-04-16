@@ -21,7 +21,7 @@ Comprehensive guide for automated CSP resource registration using CB-Tumblebug's
 
 ### What is Job Scheduler?
 
-Job Scheduler is a system in CB-Tumblebug that automatically executes recurring tasks. It currently supports automation of **CSP resource registration tasks**, automatically collecting and registering CSP native resources (VNet, SecurityGroup, SSHKey, VM) at configured intervals.
+Job Scheduler is a system in CB-Tumblebug that automatically executes recurring tasks. It currently supports automation of **CSP resource registration tasks**, automatically collecting and registering CSP native resources (VNet, SecurityGroup, SSHKey, Node) at configured intervals.
 
 ### Why Use Job Scheduler?
 
@@ -513,7 +513,7 @@ curl -X DELETE http://localhost:1323/tumblebug/registerCspResources/schedule/{jo
   "connectionName": "aws-ap-northeast-2",   // Optional: Specific connection (empty = all)
   "infraNamePrefix": "infra-prefix",            // Optional: Infra name prefix
   "option": "vNet,securityGroup",           // Optional: Resource types (empty = all)
-  "infraFlag": "y"                            // Optional: "y" (single Infra), "n" (per-VM Infra)
+  "infraFlag": "y"                            // Optional: "y" (single Infra), "n" (per-Node Infra)
 }
 ```
 
@@ -527,7 +527,7 @@ curl -X DELETE http://localhost:1323/tumblebug/registerCspResources/schedule/{jo
 | `connectionName` | string | No | "" | Specific connection (empty = all connections) |
 | `infraNamePrefix` | string | No | "infra" | Infra name prefix |
 | `option` | string | No | "" | Resource types to register. (empty = all resources) |
-| `infraFlag` | string | No | "y" | "y": single Infra, "n": individual Infra per VM |
+| `infraFlag` | string | No | "y" | "y": single Infra, "n": individual Infra per Node |
 
 **Option Values:**
 Specify the resource types to register, separated by commas (e.g., `"vNet, customImage"`).
@@ -762,7 +762,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
 ### Scenario 3: Network Resources Only Periodic Collection
 
 **Requirements:**
-- Collect only network-related resources excluding VMs every 30 minutes
+- Collect only network-related resources excluding Nodes every 30 minutes
 - Fast infrastructure change detection
 
 **Configuration:**
@@ -914,7 +914,7 @@ nsId: "europe"        → EU regions
   "infraNamePrefix": "aws-kr"
 }
 ```
-- Group all VMs into one Infra
+- Group all Nodes into one Infra
 - Improved management convenience
 - Simplified resource structure
 
@@ -925,8 +925,8 @@ nsId: "europe"        → EU regions
   "infraNamePrefix": "vm"
 }
 ```
-- Create individual Infra per VM
-- When detailed per-VM management needed
+- Create individual Infra per Node
+- When detailed per-Node management needed
 - Not recommended for large-scale environments
 
 ### Execution Timeout Configuration

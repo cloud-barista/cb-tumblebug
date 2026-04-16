@@ -45,9 +45,9 @@ type azureRetailItem struct {
 	UnitOfMeasure string  `json:"unitOfMeasure"`
 }
 
-// FetchVMPricesByRegion fetches Azure VM prices directly from Azure Retail Prices API.
+// FetchNodePricesByRegion fetches Azure VM prices directly from Azure Retail Prices API.
 // It returns only fields required by cb-tumblebug's current spec price update flow.
-func FetchVMPricesByRegion(region string) (model.SpiderCloudPrice, error) {
+func FetchNodePricesByRegion(region string) (model.SpiderCloudPrice, error) {
 	region = strings.TrimSpace(region)
 	if region == "" {
 		return model.SpiderCloudPrice{}, fmt.Errorf("region is empty")

@@ -87,7 +87,7 @@ make enc-cred   # Encrypt updated credentials
 make init        # Reload assets and register credentials
 ```
 
-The new CSP will appear in the connection list and be available for VM provisioning. The map UI will automatically display the OpenStack icon for it.
+The new CSP will appear in the connection list and be available for Node provisioning. The map UI will automatically display the OpenStack icon for it.
 
 ## Reference
 

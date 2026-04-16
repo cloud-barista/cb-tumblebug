@@ -38,21 +38,21 @@ const (
 	defaultAlibabaRetryBaseBackoff = 1200 // ms
 )
 
-// FetchVMPricesByRegion fetches Alibaba ECS instance prices directly from Alibaba APIs.
+// FetchNodePricesByRegion fetches Alibaba ECS instance prices directly from Alibaba APIs.
 //
 // Optimization focus for TB spec cost/hour use-case:
 // - Uses DescribeInstanceTypes once to get candidate specs.
 // - Calls DescribePrice per instanceType WITHOUT systemDiskCategory sweep.
 // - Extracts only the instanceType component price (cost/hour).
 // - Treats PriceNotFound as data-gap (skip), not hard failure.
-func FetchVMPricesByRegion(ctx context.Context, region string) (model.SpiderCloudPrice, error) {
-	return FetchVMPricesByRegionFiltered(ctx, region, nil)
+func FetchNodePricesByRegion(ctx context.Context, region string) (model.SpiderCloudPrice, error) {
+	return FetchNodePricesByRegionFiltered(ctx, region, nil)
 }
 
-// FetchVMPricesByRegionFiltered fetches Alibaba ECS instance prices with optional
+// FetchNodePricesByRegionFiltered fetches Alibaba ECS instance prices with optional
 // instance-type filtering. When targetInstanceTypes is non-empty, only those instance
 // types are queried via DescribePrice.
-func FetchVMPricesByRegionFiltered(ctx context.Context, region string, targetInstanceTypes map[string]struct{}) (model.SpiderCloudPrice, error) {
+func FetchNodePricesByRegionFiltered(ctx context.Context, region string, targetInstanceTypes map[string]struct{}) (model.SpiderCloudPrice, error) {
 	region = strings.TrimSpace(region)
 	if region == "" {
 		return model.SpiderCloudPrice{}, fmt.Errorf("region is empty")

@@ -68,16 +68,16 @@ func RestGetControlInfra(c echo.Context) error {
 	}
 }
 
-// RestGetControlInfraVm godoc
-// @ID GetControlInfraVm
-// @Summary Control the lifecycle of VM (suspend, resume, reboot, terminate)
-// @Description Control the lifecycle of VM (suspend, resume, reboot, terminate)
+// RestGetControlInfraNode godoc
+// @ID GetControlInfraNode
+// @Summary Control the lifecycle of node (suspend, resume, reboot, terminate)
+// @Description Control the lifecycle of node (suspend, resume, reboot, terminate)
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Param action query string true "Action to Infra" Enums(suspend, resume, reboot, terminate)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} model.SimpleMsg
@@ -85,12 +85,12 @@ func RestGetControlInfra(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/control/infra/{infraId}/vm/{vmId} [get]
-func RestGetControlInfraVm(c echo.Context) error {
+// @Router /ns/{nsId}/control/infra/{infraId}/node/{nodeId} [get]
+func RestGetControlInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	action := c.QueryParam("action")
 	force := c.QueryParam("force")
@@ -103,7 +103,7 @@ func RestGetControlInfraVm(c echo.Context) error {
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
-		resultString, err := infra.HandleInfraVmAction(nsId, infraId, vmId, action, forceOption)
+		resultString, err := infra.HandleInfraNodeAction(nsId, infraId, nodeId, action, forceOption)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, returnObj)
 		}
@@ -116,35 +116,35 @@ func RestGetControlInfraVm(c echo.Context) error {
 	}
 }
 
-// RestPostInfraVmSnapshot godoc
-// @ID PostInfraVmSnapshot
-// @Summary Snapshot VM and create a Custom Image Object using the Snapshot
-// @Description Snapshot VM and create a Custom Image Object using the Snapshot
+// RestPostInfraNodeSnapshot godoc
+// @ID PostInfraNodeSnapshot
+// @Summary Snapshot node and create a Custom Image Object using the Snapshot
+// @Description Snapshot node and create a Custom Image Object using the Snapshot
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param snapshotReq body model.SnapshotReq true "Request body to create VM snapshot"
+// @Param snapshotReq body model.SnapshotReq true "Request body to create node snapshot"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/vm/{vmId}/snapshot [post]
-func RestPostInfraVmSnapshot(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/snapshot [post]
+func RestPostInfraNodeSnapshot(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	req := &model.SnapshotReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	result, err := infra.CreateVmSnapshot(nsId, infraId, vmId, *req)
+	result, err := infra.CreateNodeSnapshot(nsId, infraId, nodeId, *req)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
 	}
@@ -153,8 +153,8 @@ func RestPostInfraVmSnapshot(c echo.Context) error {
 
 // RestPostInfraSnapshot godoc
 // @ID PostInfraSnapshot
-// @Summary Create snapshots for all nodegroups in Infra (one VM per nodegroup in parallel)
-// @Description Create snapshots for the first running VM in each nodegroup of an Infra in parallel
+// @Summary Create snapshots for all nodegroups in Infra (one node per nodegroup in parallel)
+// @Description Create snapshots for the first running node in each nodegroup of an Infra in parallel
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json

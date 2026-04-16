@@ -92,7 +92,7 @@ import (
 
 // 		vNetId := vm.VNetId
 // 		if vNetId == "" {
-// 			log.Warn().Msgf("VNet ID is empty for VM ID: %s", vm.Id)
+// 			log.Warn().Msgf("VNet ID is empty for Node ID: %s", vm.Id)
 // 			continue
 // 		}
 
@@ -103,7 +103,7 @@ import (
 
 // 		providerName := vm.ConnectionConfig.ProviderName
 // 		if providerName == "" {
-// 			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
+// 			log.Warn().Msgf("Provider name is empty for Node ID: %s", vm.Id)
 // 			continue
 // 		}
 
@@ -150,7 +150,7 @@ import (
 // 			parts := strings.Split(vm.CspVNetId, "/")
 // 			log.Debug().Msgf("parts: %+v", parts)
 // 			if len(parts) < 9 {
-// 				log.Warn().Msgf("Invalid VNet ID format for Azure VM ID: %s", vm.Id)
+// 				log.Warn().Msgf("Invalid VNet ID format for Azure Node ID: %s", vm.Id)
 // 				continue
 // 			}
 // 			parsedResourceGroupName := parts[4]

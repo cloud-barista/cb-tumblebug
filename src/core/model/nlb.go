@@ -70,7 +70,7 @@ type SpiderNLBNodeGroupReq struct {
 	VMs      []string
 }
 
-// SpiderNLBAddRemoveVMReqInfoWrapper is a wrapper struct to create JSON body of 'Add/Remove VMs to/from NLB' request
+// SpiderNLBAddRemoveVMReqInfoWrapper is a wrapper struct to create JSON body of 'Add/Remove Nodes to/from NLB' request
 type SpiderNLBAddRemoveVMReqInfoWrapper struct {
 	ConnectionName string
 	ReqInfo        SpiderNLBNodeGroupReq
@@ -147,8 +147,8 @@ type NLBHealthCheckerInfo struct {
 	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port      string `json:"port" example:"22"`      // Listener Port or 1-65535
 	Interval  int    `json:"interval" example:"10"`  // secs, Interval time between health checks.
-	Timeout   int    `json:"timeout" example:"10"`   // secs, Waiting time to decide an unhealthy VM when no response.
-	Threshold int    `json:"threshold" example:"3"`  // num, The number of continuous health checks to change the VM status.
+	Timeout   int    `json:"timeout" example:"10"`   // secs, Waiting time to decide an unhealthy node when no response.
+	Threshold int    `json:"threshold" example:"3"`  // num, The number of continuous health checks to change the node status.
 
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
@@ -174,7 +174,7 @@ type NLBTargetGroupInfo struct {
 	Port     string `json:"port" example:"80"`      // Listener Port or 1-65535
 
 	NodeGroupId string   `json:"nodeGroupId" example:"g1"`
-	VMs         []string `json:"vms"`
+	Nodes       []string `json:"nodes"`
 
 	KeyValueList []KeyValue
 }
@@ -250,13 +250,13 @@ type NLBInfo struct {
 }
 
 type NLBHealthInfo struct { // Tumblebug
-	AllVMs       []string
-	HealthyVMs   []string
-	UnHealthyVMs []string
+	AllNodes     []string
+	HealthyNodes []string
+	UnHealthyNodes []string
 }
 
-// NLBAddRemoveVMReq is a struct to handle 'Add/Remove VMs to/from NLB' request toward CB-Tumblebug.
-type NLBAddRemoveVMReq struct { // Tumblebug
+// NLBAddRemoveNodeReq is a struct to handle 'Add/Remove Nodes to/from NLB' request toward CB-Tumblebug.
+type NLBAddRemoveNodeReq struct { // Tumblebug
 	TargetGroup NLBTargetGroupInfo `json:"targetGroup"`
 }
 

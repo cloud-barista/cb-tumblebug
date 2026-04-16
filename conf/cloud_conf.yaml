@@ -100,6 +100,6 @@ nlbsw:
   commandNlbDeploy: "sudo ~/deployNlb.sh"
   commandNlbAddTargetNode: "sudo ~/addTargetNode.sh"
   commandNlbApplyConfig: "sudo ~/applyConfig.sh"
-  nlbMciSpecId: "aws-ap-northeast-2-t2-small"
-  nlbMciImageId: "ubuntu18.04"
-  nlbMciSubGroupSize: 2
+  nlbInfraSpecId: "aws-ap-northeast-2-t2-small"
+  nlbInfraImageId: "ubuntu18.04"
+  nlbInfraNodeGroupSize: 2

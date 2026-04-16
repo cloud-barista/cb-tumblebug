@@ -106,7 +106,7 @@ func applyRange(field reflect.Value, operator string, operand float32) error {
 	return nil
 }
 
-// RecommendSpec is func to recommend a VM
+// RecommendSpec is func to recommend a Node
 // It automatically filters specs by the credential holder's available providers,
 // unless the caller has already specified a providerName filter.
 func RecommendSpec(ctx context.Context, nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
@@ -231,8 +231,8 @@ func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
 	return strings.Join(orderParts, ", "), nil
 }
 
-// RecommendVmLatency func prioritize specs by latency based on given Infra (fair)
-func RecommendVmLatency(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
+// RecommendNodeLatency func prioritize specs by latency based on given Infra (fair)
+func RecommendNodeLatency(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
 
 	result := []model.SpecInfo{}
 
@@ -509,8 +509,8 @@ func BuildLatencyOrderByClause(param *[]model.ParameterKeyVal) (string, error) {
 	return "", fmt.Errorf("unsupported latency parameter")
 }
 
-// RecommendVmLocation func prioritize specs based on given location
-func RecommendVmLocation(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
+// RecommendNodeLocation func prioritize specs based on given location
+func RecommendNodeLocation(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
 
 	for _, v := range *param {
 
@@ -845,7 +845,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 					Metric:      "infraType",
 					Description: "Filter specs by infrastructure type",
 					Condition: []model.OperationExample{
-						{Operator: "=", Operand: "vm"},
+						{Operator: "=", Operand: model.StrNode},
 					},
 				},
 				{
@@ -1184,8 +1184,8 @@ func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (dista
 	return (earthRadius * c)
 }
 
-// RecommendVmRandom func prioritize specs randomly
-func RecommendVmRandom(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
+// RecommendNodeRandom func prioritize specs randomly
+func RecommendNodeRandom(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
 
 	result := append([]model.SpecInfo{}, (*specList)...)
 
@@ -1202,8 +1202,8 @@ func RecommendVmRandom(nsId string, specList *[]model.SpecInfo) ([]model.SpecInf
 	return result, nil
 }
 
-// RecommendVmCost func prioritize specs based on given Cost
-func RecommendVmCost(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
+// RecommendNodeCost func prioritize specs based on given Cost
+func RecommendNodeCost(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
 
 	result := append([]model.SpecInfo{}, (*specList)...)
 
@@ -1228,8 +1228,8 @@ func RecommendVmCost(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo,
 	return result, nil
 }
 
-// RecommendVmPerformance func prioritize specs based on given Performance condition
-func RecommendVmPerformance(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
+// RecommendNodePerformance func prioritize specs based on given Performance condition
+func RecommendNodePerformance(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
 
 	result := append([]model.SpecInfo{}, (*specList)...)
 
@@ -1362,7 +1362,7 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 // 		return []VmPriority{}, err
 // 	}
 
-// 	var vmPriorityList []VmPriority
+// 	var nodePriorityList []VmPriority
 
 // 	for cnt, v := range keyValue {
 // 		log.Debug().Msg("getRecommendList1: " + v.Key)
@@ -1383,19 +1383,19 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 // 		json.Unmarshal([]byte(keyValue2.Value), &content2)
 // 		content2.Id = content.Id
 
-// 		vmPriorityTmp := VmPriority{}
-// 		vmPriorityTmp.Priority = strconv.Itoa(cnt)
-// 		vmPriorityTmp.VmSpec = content2
-// 		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
+// 		nodePriorityTmp := VmPriority{}
+// 		nodePriorityTmp.Priority = strconv.Itoa(cnt)
+// 		nodePriorityTmp.VmSpec = content2
+// 		nodePriorityList = append(nodePriorityList, nodePriorityTmp)
 // 	}
 
-// 	return vmPriorityList, err
+// 	return nodePriorityList, err
 
 // 	//requires error handling
 
 // }
 
-// // CorePostInfraRecommend is func to command to all VMs in Infra with SSH
+// // CorePostInfraRecommend is func to command to all Nodes in Infra with SSH
 // func CorePostInfraRecommend(nsId string, req *InfraRecommendReq) ([]VmRecommendInfo, error) {
 
 // 	err := common.CheckString(nsId)
@@ -1406,8 +1406,8 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 
 // 	/*
 // 		var content struct {
-// 			//VmReq          []VmRecommendReq    `json:"vmReq"`
-// 			VmRecommend    []infra.VmRecommendInfo `json:"vmRecommend"`
+// 			//VmReq          []VmRecommendReq    `json:"nodeReq"`
+// 			VmRecommend    []infra.VmRecommendInfo `json:"nodeRecommend"`
 // 			PlacementAlgo  string                   `json:"placementAlgo"`
 // 			PlacementParam []common.KeyValue        `json:"placementParam"`
 // 		}
@@ -1419,24 +1419,24 @@ func createMinimumCondition(metric string, minValue float64) model.FilterConditi
 
 // 	VmRecommend := []VmRecommendInfo{}
 
-// 	vmList := req.VmReq
+// 	nodeList := req.VmReq
 
-// 	for i, v := range vmList {
-// 		vmTmp := VmRecommendInfo{}
-// 		//vmTmp.RequestName = v.RequestName
-// 		vmTmp.VmReq = req.VmReq[i]
-// 		vmTmp.PlacementAlgo = v.PlacementAlgo
-// 		vmTmp.PlacementParam = v.PlacementParam
+// 	for i, v := range nodeList {
+// 		nodeTmp := VmRecommendInfo{}
+// 		//nodeTmp.RequestName = v.RequestName
+// 		nodeTmp.VmReq = req.VmReq[i]
+// 		nodeTmp.PlacementAlgo = v.PlacementAlgo
+// 		nodeTmp.PlacementParam = v.PlacementParam
 
 // 		var err error
-// 		vmTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
+// 		nodeTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
 
 // 		if err != nil {
 // 			log.Error().Err(err).Msg("")
 // 			return nil, fmt.Errorf("Failed to recommend Infra")
 // 		}
 
-// 		VmRecommend = append(VmRecommend, vmTmp)
+// 		VmRecommend = append(VmRecommend, nodeTmp)
 // 	}
 
 // 	return VmRecommend, nil

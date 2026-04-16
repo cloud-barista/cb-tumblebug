@@ -274,65 +274,65 @@ func RestGetNLBHealth(c echo.Context) error {
 
 // The REST APIs below are for dev/test only
 
-// RestAddNLBVMs godoc
-// @ID AddNLBVMs
-// @Summary Add VMs to NLB
-// @Description Add VMs to NLB
+// RestAddNLBNodes godoc
+// @ID AddNLBNodes
+// @Summary Add nodes to NLB
+// @Description Add nodes to NLB
 // @Tags [Infra Resource] NLB Management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbAddRemoveVMReq body model.NLBAddRemoveVMReq true "VMs to add to NLB"
+// @Param nlbAddRemoveNodeReq body model.NLBAddRemoveNodeReq true "nodes to add to NLB"
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/vm [post]
-func RestAddNLBVMs(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/node [post]
+func RestAddNLBNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 	resourceId := c.Param("resourceId")
 
-	u := &model.NLBAddRemoveVMReq{}
+	u := &model.NLBAddRemoveNodeReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-	content, err := infra.AddNLBVMs(nsId, infraId, resourceId, u)
+	content, err := infra.AddNLBNodes(nsId, infraId, resourceId, u)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestRemoveNLBVMs godoc
-// @ID RemoveNLBVMs
-// @Summary Delete VMs from NLB
-// @Description Delete VMs from NLB
+// RestRemoveNLBNodes godoc
+// @ID RemoveNLBNodes
+// @Summary Delete nodes from NLB
+// @Description Delete nodes from NLB
 // @Tags [Infra Resource] NLB Management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbAddRemoveVMReq body model.NLBAddRemoveVMReq true "Select VMs to remove from NLB"
+// @Param nlbAddRemoveNodeReq body model.NLBAddRemoveNodeReq true "Select nodes to remove from NLB"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/vm [delete]
-func RestRemoveNLBVMs(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/node [delete]
+func RestRemoveNLBNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 	resourceId := c.Param("resourceId")
 
-	u := &model.NLBAddRemoveVMReq{}
+	u := &model.NLBAddRemoveNodeReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	err := infra.RemoveNLBVMs(nsId, infraId, resourceId, u)
-	content := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
+	err := infra.RemoveNLBNodes(nsId, infraId, resourceId, u)
+	content := map[string]string{"message": "Removed Nodes from the NLB " + resourceId}
 	return clientManager.EndRequestWithLog(c, err, content)
 }

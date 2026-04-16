@@ -87,7 +87,7 @@ type SpiderImageInfo struct {
 	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty" description:"A list of key-value pairs associated with the image."`
 }
 
-// ImageSummary is a lightweight struct containing essential image information for VmInfo
+// ImageSummary is a lightweight struct containing essential image information for NodeInfo
 type ImageSummary struct {
 	ResourceType   string         `json:"resourceType,omitempty" example:"image" description:"image or customImage"`
 	CspImageName   string         `json:"cspImageName,omitempty" example:"ami-0123456789abcdef0"`
@@ -124,8 +124,8 @@ type ImageInfo struct {
 
 	// CspImageId is resource identifier managed by CSP
 	CspImageId string `json:"cspImageId,omitempty" example:"ami-0d399fba46a30a310"`
-	// SourceVmUid is the UID of the source VM from which this image was created
-	SourceVmUid string `json:"sourceVmUid" example:"wef12awefadf1221edcf"`
+	// SourceNodeUid is the UID of the source Node from which this image was created
+	SourceNodeUid string `json:"sourceNodeUid" example:"wef12awefadf1221edcf"`
 	// SourceCspImageName is the name of the source CSP image from which this image was created
 	SourceCspImageName string `json:"sourceCspImageName" example:"csp-06eb41e14121c550a"`
 

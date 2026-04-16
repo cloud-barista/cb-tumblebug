@@ -47,36 +47,36 @@ func parsePingStats(output string) model.VpnPingStats {
 	return stats
 }
 
-// runPingCheck runs a ping test from sourceVm to targetVm with retry logic.
+// runPingCheck runs a ping test from sourceNode to targetNode with retry logic.
 // Returns a VpnPingDirectionResult with parsed statistics.
-func runPingCheck(nsId, infraId, direction string, sourceVm, targetVm *model.VmInfo,
+func runPingCheck(nsId, infraId, direction string, sourceNode, targetNode *model.NodeInfo,
 	userName string, pingCount, intervalSec, maxAttempts int) model.VpnPingDirectionResult {
 
 	result := model.VpnPingDirectionResult{
 		Direction: direction,
-		SourceVm: model.VpnHealthCheckSourceVmInfo{
-			VmId:      sourceVm.Id,
-			PrivateIP: sourceVm.PrivateIP,
-			CSP:       sourceVm.ConnectionConfig.ProviderName,
+		SourceNode: model.VpnHealthCheckSourceNodeInfo{
+			NodeId:    sourceNode.Id,
+			PrivateIP: sourceNode.PrivateIP,
+			CSP:       sourceNode.ConnectionConfig.ProviderName,
 		},
-		TargetVm: model.VpnHealthCheckTargetVmInfo{
-			VmId:      targetVm.Id,
-			PrivateIP: targetVm.PrivateIP,
-			CSP:       targetVm.ConnectionConfig.ProviderName,
+		TargetNode: model.VpnHealthCheckTargetNodeInfo{
+			NodeId:    targetNode.Id,
+			PrivateIP: targetNode.PrivateIP,
+			CSP:       targetNode.ConnectionConfig.ProviderName,
 		},
 	}
 
 	cmdReq := &model.InfraCmdReq{
 		UserName:       userName,
-		Command:        []string{fmt.Sprintf("ping %s -c %d", targetVm.PrivateIP, pingCount)},
+		Command:        []string{fmt.Sprintf("ping %s -c %d", targetNode.PrivateIP, pingCount)},
 		TimeoutMinutes: 5,
 	}
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		log.Info().Msgf("[VPN Health Check] [%s] Ping attempt %d/%d from %s (%s) to %s (%s)",
-			direction, attempt, maxAttempts, sourceVm.Id, sourceVm.PrivateIP, targetVm.Id, targetVm.PrivateIP)
+			direction, attempt, maxAttempts, sourceNode.Id, sourceNode.PrivateIP, targetNode.Id, targetNode.PrivateIP)
 
-		results, err := RemoteCommandToInfra(nsId, infraId, "", sourceVm.Id, "", cmdReq, "")
+		results, err := RemoteCommandToInfra(nsId, infraId, "", sourceNode.Id, "", cmdReq, "")
 
 		if err == nil && len(results) > 0 {
 			stdout := results[0].Stdout[0]
@@ -104,7 +104,7 @@ func runPingCheck(nsId, infraId, direction string, sourceVm, targetVm *model.VmI
 }
 
 // CheckVpnHealth performs a bidirectional ping-based health check on a site-to-site VPN
-// by finding VMs in the Infra that match the VPN's two sites and running ping tests in both directions.
+// by finding Nodes in the Infra that match the VPN's two sites and running ping tests in both directions.
 func CheckVpnHealth(ctx context.Context, nsId, infraId, vpnId string, req *model.VpnHealthCheckRequest) (model.VpnHealthCheckResponse, error) {
 
 	var resp model.VpnHealthCheckResponse
@@ -118,31 +118,31 @@ func CheckVpnHealth(ctx context.Context, nsId, infraId, vpnId string, req *model
 		return resp, fmt.Errorf("VPN does not have two sites")
 	}
 
-	// Get Infra info to find VMs matching VPN sites
+	// Get Infra info to find Nodes matching VPN sites
 	infraInfo, err := GetInfraInfo(nsId, infraId)
 	if err != nil {
 		return resp, fmt.Errorf("Infra not found: %w", err)
 	}
 
-	// Find VMs matching each VPN site by ConnectionName
+	// Find Nodes matching each VPN site by ConnectionName
 	site1ConnName := vpnInfo.VpnSites[0].ConnectionName
 	site2ConnName := vpnInfo.VpnSites[1].ConnectionName
 
-	var site1Vm, site2Vm *model.VmInfo
-	for i := range infraInfo.Vm {
-		vm := &infraInfo.Vm[i]
-		if vm.ConnectionName == site1ConnName && site1Vm == nil {
-			site1Vm = vm
-		} else if vm.ConnectionName == site2ConnName && site2Vm == nil {
-			site2Vm = vm
+	var site1Node, site2Node *model.NodeInfo
+	for i := range infraInfo.Node {
+		vm := &infraInfo.Node[i]
+		if vm.ConnectionName == site1ConnName && site1Node == nil {
+			site1Node = vm
+		} else if vm.ConnectionName == site2ConnName && site2Node == nil {
+			site2Node = vm
 		}
-		if site1Vm != nil && site2Vm != nil {
+		if site1Node != nil && site2Node != nil {
 			break
 		}
 	}
 
-	if site1Vm == nil || site2Vm == nil {
-		return resp, fmt.Errorf("could not find VMs matching VPN sites (site1: %s, site2: %s) in Infra %s", site1ConnName, site2ConnName, infraId)
+	if site1Node == nil || site2Node == nil {
+		return resp, fmt.Errorf("could not find Nodes matching VPN sites (site1: %s, site2: %s) in Infra %s", site1ConnName, site2ConnName, infraId)
 	}
 
 	// Get effective values
@@ -157,11 +157,11 @@ func CheckVpnHealth(ctx context.Context, nsId, infraId, vpnId string, req *model
 
 	// Direction 1: site1 → site2
 	log.Info().Msgf("[VPN Health Check] Starting site1→site2 ping test")
-	result1 := runPingCheck(nsId, infraId, "site1→site2", site1Vm, site2Vm, userName, pingCount, intervalSec, maxAttempts)
+	result1 := runPingCheck(nsId, infraId, "site1→site2", site1Node, site2Node, userName, pingCount, intervalSec, maxAttempts)
 
 	// Direction 2: site2 → site1
 	log.Info().Msgf("[VPN Health Check] Starting site2→site1 ping test")
-	result2 := runPingCheck(nsId, infraId, "site2→site1", site2Vm, site1Vm, userName, pingCount, intervalSec, maxAttempts)
+	result2 := runPingCheck(nsId, infraId, "site2→site1", site2Node, site1Node, userName, pingCount, intervalSec, maxAttempts)
 
 	resp.Results = []model.VpnPingDirectionResult{result1, result2}
 	resp.Reachable = result1.Reachable && result2.Reachable

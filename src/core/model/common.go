@@ -163,7 +163,7 @@ type ResourceDeleteResults struct {
 	Results []ResourceDeleteResult `json:"results"`
 }
 
-// OptionalParameter is struct for optional parameter for function (ex. VmId)
+// OptionalParameter is struct for optional parameter for function (ex. NodeId)
 type OptionalParameter struct {
 	Value string
 	Set   bool
@@ -235,7 +235,8 @@ const (
 	StrDataDisk              string = "dataDisk"
 	StrDisk                  string = "disk"
 	StrNLB                   string = "nlb"
-	StrVM                    string = "vm"
+	StrNode                  string = "node"
+	StrSpiderVM              string = "vm" // CB-Spider uses "vm" as the resource type for VMs
 	StrInfra                 string = "infra"
 	StrNodeGroup             string = "nodeGroup"
 	StrK8s                   string = "k8s"
@@ -292,7 +293,7 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 	StrSubnet:        func() interface{} { return &SubnetInfo{} },
 	StrDataDisk:      func() interface{} { return &DataDiskInfo{} },
 	StrNLB:           func() interface{} { return &NLBInfo{} },
-	StrVM:            func() interface{} { return &VmInfo{} },
+	StrNode:            func() interface{} { return &NodeInfo{} },
 	StrInfra:         func() interface{} { return &InfraInfo{} },
 	StrK8s:           func() interface{} { return &K8sClusterInfo{} },
 	StrNamespace:     func() interface{} { return &NsInfo{} },
@@ -443,7 +444,7 @@ type inspectOverview struct {
 	SshKey        int `json:"sshKey"`
 	DataDisk      int `json:"dataDisk"`
 	CustomImage   int `json:"customImage"`
-	Vm            int `json:"vm"`
+	Node            int `json:"node"`
 	NLB           int `json:"nlb"`
 }
 
@@ -560,7 +561,7 @@ type RegisterationOverview struct {
 	SshKey        int `json:"sshKey"`
 	DataDisk      int `json:"dataDisk"`
 	CustomImage   int `json:"customImage"`
-	Vm            int `json:"vm"`
+	Node            int `json:"node"`
 	NLB           int `json:"nlb"`
 	Failed        int `json:"failed"`
 }
@@ -568,7 +569,7 @@ type RegisterationOverview struct {
 // InspectResourcesRequest struct for Inspect Resources Request
 type InspectResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
-	ResourceType   string `json:"resourceType" example:"vNet" enums:"vNet,subnet,securityGroup,sshKey,vm"`
+	ResourceType   string `json:"resourceType" example:"vNet" enums:"vNet,subnet,securityGroup,sshKey,node"`
 }
 
 // CspResourceStatusRequest is struct for requesting CSP resource status from CB-Spider

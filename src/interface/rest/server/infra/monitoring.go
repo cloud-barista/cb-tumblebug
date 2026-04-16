@@ -53,33 +53,33 @@ func RestPostInstallMonitorAgentToInfra(c echo.Context) error {
 
 // RestPutMonitorAgentStatusInstalled godoc
 // @ID PutMonitorAgentStatusInstalled
-// @Summary Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
-// @Description Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
+// @Summary Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows node only)
+// @Description Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows node only)
 // @Tags [MC-Infra] Infra Resource Monitor (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param vmId path string true "VM ID" default(vm01)
-// @Success 200 {object} model.VmInfo
+// @Param nodeId path string true "Node ID" default(node01)
+// @Success 200 {object} model.NodeInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/monitoring/status/infra/{infraId}/vm/{vmId} [put]
+// @Router /ns/{nsId}/monitoring/status/infra/{infraId}/node/{nodeId} [put]
 func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	vmId := c.Param("vmId")
+	nodeId := c.Param("nodeId")
 
 	// infraTmpSystemLabel := model.DefaultSystemLabel
-	err := infra.SetMonitoringAgentStatusInstalled(nsId, infraId, vmId)
+	err := infra.SetMonitoringAgentStatusInstalled(nsId, infraId, nodeId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.GetVmObject(nsId, infraId, vmId)
+	result, err := infra.GetNodeObject(nsId, infraId, nodeId)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 

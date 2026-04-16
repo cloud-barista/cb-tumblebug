@@ -40,7 +40,7 @@ import (
 
 var infraInfoMutex sync.Mutex
 
-// [Infra and VM object information managemenet]
+// [Infra and Node object information managemenet]
 
 // ListInfraId is func to list Infra ID
 func ListInfraId(nsId string) ([]string, error) {
@@ -71,8 +71,8 @@ func ListInfraId(nsId string) ([]string, error) {
 	return infraList, nil
 }
 
-// ListVmId is func to list VM IDs
-func ListVmId(nsId string, infraId string) ([]string, error) {
+// ListNodeId is func to list Node IDs
+func ListNodeId(nsId string, infraId string) ([]string, error) {
 
 	// err := common.CheckString(nsId)
 	// if err != nil {
@@ -86,7 +86,7 @@ func ListVmId(nsId string, infraId string) ([]string, error) {
 	// 	return nil, err
 	// }
 
-	var vmList []string
+	var nodeList []string
 
 	// Check Infra exists
 	key := common.GenInfraKey(nsId, infraId, "")
@@ -96,7 +96,7 @@ func ListVmId(nsId string, infraId string) ([]string, error) {
 	if err != nil {
 		log.Debug().Msg("[Not found] " + infraId)
 		log.Error().Err(err).Msg("")
-		return vmList, err
+		return nodeList, err
 	}
 
 	keyValue, err := kvstore.GetKvList(key)
@@ -107,49 +107,49 @@ func ListVmId(nsId string, infraId string) ([]string, error) {
 	}
 
 	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/vm/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + "vm/"))
-			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
+		if strings.Contains(v.Key, "/"+model.StrNode+"/") {
+			trimmedString := strings.TrimPrefix(v.Key, (key + model.StrNode + "/"))
+			// prevent malformed key (if key for node id includes '/', the key does not represent Node ID)
 			if !strings.Contains(trimmedString, "/") {
-				vmList = append(vmList, trimmedString)
+				nodeList = append(nodeList, trimmedString)
 			}
 		}
 	}
 
-	return vmList, nil
+	return nodeList, nil
 
 }
 
-// ListVmByLabel is a function to list VM IDs by label
-func ListVmByLabel(nsId string, infraId string, labelKey string) ([]string, error) {
+// ListNodeByLabel is a function to list Node IDs by label
+func ListNodeByLabel(nsId string, infraId string, labelKey string) ([]string, error) {
 	// Construct the label selector
 	labelSelector := labelKey + " exists" + "," + model.LabelNamespace + "=" + nsId + "," + model.LabelInfraId + "=" + infraId
 
 	// Call GetResourcesByLabelSelector (returns []interface{})
-	resources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)
+	resources, err := label.GetResourcesByLabelSelector(model.StrNode, labelSelector)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get resources by label selector")
 		return nil, err
 	}
 
-	// Slice to store the list of VM IDs
-	var vmListByLabel []string
+	// Slice to store the list of Node IDs
+	var nodeListByLabel []string
 
-	// Convert []interface{} to VmInfo and extract IDs
+	// Convert []interface{} to NodeInfo and extract IDs
 	for _, resource := range resources {
-		if vmInfo, ok := resource.(*model.VmInfo); ok {
-			vmListByLabel = append(vmListByLabel, vmInfo.Id)
+		if nodeInfo, ok := resource.(*model.NodeInfo); ok {
+			nodeListByLabel = append(nodeListByLabel, nodeInfo.Id)
 		} else {
-			log.Warn().Msg("Resource is not of type VmInfo")
+			log.Warn().Msg("Resource is not of type NodeInfo")
 		}
 	}
 
-	// Return the list of VM IDs
-	return vmListByLabel, nil
+	// Return the list of Node IDs
+	return nodeListByLabel, nil
 }
 
-// ListVmByFilter is func to get list VMs in a Infra by a filter consist of Key and Value
-func ListVmByFilter(nsId string, infraId string, filterKey string, filterVal string) ([]string, error) {
+// ListNodeByFilter is func to get list Nodes in an Infra by a filter consist of Key and Value
+func ListNodeByFilter(nsId string, infraId string, filterKey string, filterVal string) ([]string, error) {
 
 	check, err := CheckInfra(nsId, infraId)
 	if !check {
@@ -157,30 +157,30 @@ func ListVmByFilter(nsId string, infraId string, filterKey string, filterVal str
 		return nil, err
 	}
 
-	vmList, err := ListVmId(nsId, infraId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if len(vmList) == 0 {
+	if len(nodeList) == 0 {
 		return nil, nil
 	}
 	if filterKey == "" {
-		return vmList, nil
+		return nodeList, nil
 	}
 
-	// Use existing ListInfraVmInfo function instead of individual GetVmObject calls
-	vmInfoList, err := ListInfraVmInfo(nsId, infraId)
+	// Use existing ListInfraNodeInfo function instead of individual GetNodeObject calls
+	nodeInfoList, err := ListInfraNodeInfo(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	var groupVmList []string
+	var groupNodeList []string
 
-	for _, vmObj := range vmInfoList {
-		vmObjReflect := reflect.ValueOf(&vmObj)
-		elements := vmObjReflect.Elem()
+	for _, nodeObj := range nodeInfoList {
+		nodeObjReflect := reflect.ValueOf(&nodeObj)
+		elements := nodeObjReflect.Elem()
 		for i := 0; i < elements.NumField(); i++ {
 			key := elements.Type().Field(i).Name
 			if strings.EqualFold(filterKey, key) {
@@ -190,22 +190,22 @@ func ListVmByFilter(nsId string, infraId string, filterKey string, filterVal str
 				//fmt.Println(val)
 				if strings.EqualFold(filterVal, val) {
 
-					groupVmList = append(groupVmList, vmObj.Id)
-					//fmt.Println(groupVmList)
+					groupNodeList = append(groupNodeList, nodeObj.Id)
+					//fmt.Println(groupNodeList)
 				}
 
 				break
 			}
 		}
 	}
-	return groupVmList, nil
+	return groupNodeList, nil
 }
 
-// ListVmByNodeGroup is func to get VM list with a NodeGroup label in a specified Infra
-func ListVmByNodeGroup(nsId string, infraId string, groupId string) ([]string, error) {
-	// NodeGroupId is the Key for NodeGroupId in model.VmInfo struct
+// ListNodeByNodeGroup is func to get Node list with a NodeGroup label in a specified Infra
+func ListNodeByNodeGroup(nsId string, infraId string, groupId string) ([]string, error) {
+	// NodeGroupId is the Key for NodeGroupId in model.NodeInfo struct
 	filterKey := "NodeGroupId"
-	return ListVmByFilter(nsId, infraId, filterKey, groupId)
+	return ListNodeByFilter(nsId, infraId, filterKey, groupId)
 }
 
 // GetNodeGroup is func to return list of NodeGroups in a given Infra
@@ -241,9 +241,9 @@ func ListNodeGroupId(nsId string, infraId string) ([]string, error) {
 	}
 	var nodeGroupList []string
 	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/nodegroup/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + "nodegroup/"))
-			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
+		if strings.Contains(v.Key, "/"+model.StrNodeGroup+"/") {
+			trimmedString := strings.TrimPrefix(v.Key, (key + model.StrNodeGroup + "/"))
+			// prevent malformed key (if key for node id includes '/', the key does not represent Node ID)
 			if !strings.Contains(trimmedString, "/") {
 				nodeGroupList = append(nodeGroupList, trimmedString)
 			}
@@ -281,35 +281,35 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 	infraObj.Status = infraStatus.Status
 	infraObj.StatusCount = infraStatus.StatusCount
 
-	vmList, err := ListVmId(nsId, infraId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	sort.Slice(infraObj.Vm, func(i, j int) bool {
-		return infraObj.Vm[i].Id < infraObj.Vm[j].Id
+	sort.Slice(infraObj.Node, func(i, j int) bool {
+		return infraObj.Node[i].Id < infraObj.Node[j].Id
 	})
 
-	for vmInfoIndex := range vmList {
-		for vmStatusInfoIndex := range infraStatus.Vm {
-			if infraObj.Vm[vmInfoIndex].Id == infraStatus.Vm[vmStatusInfoIndex].Id {
-				infraObj.Vm[vmInfoIndex].Status = infraStatus.Vm[vmStatusInfoIndex].Status
-				infraObj.Vm[vmInfoIndex].TargetStatus = infraStatus.Vm[vmStatusInfoIndex].TargetStatus
-				infraObj.Vm[vmInfoIndex].TargetAction = infraStatus.Vm[vmStatusInfoIndex].TargetAction
+	for nodeInfoIndex := range nodeList {
+		for nodeStatusInfoIndex := range infraStatus.Node {
+			if infraObj.Node[nodeInfoIndex].Id == infraStatus.Node[nodeStatusInfoIndex].Id {
+				infraObj.Node[nodeInfoIndex].Status = infraStatus.Node[nodeStatusInfoIndex].Status
+				infraObj.Node[nodeInfoIndex].TargetStatus = infraStatus.Node[nodeStatusInfoIndex].TargetStatus
+				infraObj.Node[nodeInfoIndex].TargetAction = infraStatus.Node[nodeStatusInfoIndex].TargetAction
 				break
 			}
 		}
 	}
 
-	// add label info for VM
-	for i := range infraObj.Vm {
-		labelInfo, err := label.GetLabels(model.StrVM, infraObj.Vm[i].Uid)
+	// add label info for Node
+	for i := range infraObj.Node {
+		labelInfo, err := label.GetLabels(model.StrNode, infraObj.Node[i].Uid)
 		if err != nil {
 			log.Error().Err(err).Msg("Cannot get the label info")
 			return nil, err
 		}
-		infraObj.Vm[i].Label = labelInfo.Labels
+		infraObj.Node[i].Label = labelInfo.Labels
 	}
 
 	// add label info
@@ -347,32 +347,32 @@ func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.In
 		return nil, err
 	}
 
-	if len(infraInfo.Vm) == 0 {
-		return nil, fmt.Errorf("Infra '%s' has no VMs to extract configuration from", infraId)
+	if len(infraInfo.Node) == 0 {
+		return nil, fmt.Errorf("Infra '%s' has no Nodes to extract configuration from", infraId)
 	}
 
-	// Group VMs by NodeGroupId to reconstruct NodeGroup requests
-	nodeGroupMap := make(map[string][]model.VmInfo)
+	// Group Nodes by NodeGroupId to reconstruct NodeGroup requests
+	nodeGroupMap := make(map[string][]model.NodeInfo)
 	var nodeGroupOrder []string
-	for _, vm := range infraInfo.Vm {
-		sgId := vm.NodeGroupId
+	for _, node := range infraInfo.Node {
+		sgId := node.NodeGroupId
 		if sgId == "" {
-			sgId = vm.Id // fallback: treat each VM as its own group
+			sgId = node.Id // fallback: treat each Node as its own group
 		}
 		if _, exists := nodeGroupMap[sgId]; !exists {
 			nodeGroupOrder = append(nodeGroupOrder, sgId)
 		}
-		nodeGroupMap[sgId] = append(nodeGroupMap[sgId], vm)
+		nodeGroupMap[sgId] = append(nodeGroupMap[sgId], node)
 	}
 
 	var nodeGroups []model.CreateNodeGroupDynamicReq
 	for _, sgId := range nodeGroupOrder {
-		vms := nodeGroupMap[sgId]
-		// Use the first VM in each nodegroup as the representative spec
-		rep := vms[0]
+		nodes := nodeGroupMap[sgId]
+		// Use the first Node in each nodegroup as the representative spec
+		rep := nodes[0]
 		sg := model.CreateNodeGroupDynamicReq{
 			Name:           sgId,
-			NodeGroupSize:  len(vms),
+			NodeGroupSize:  len(nodes),
 			Label:          filterOutSystemLabels(rep.Label),
 			Description:    rep.Description,
 			ConnectionName: rep.ConnectionName,
@@ -458,76 +458,76 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 		if err == nil {
 			nodeGroupAccessInfo.NlbListener = &nlb.Listener
 		}
-		vmList, err := ListVmByNodeGroup(nsId, infraId, groupId)
+		nodeList, err := ListNodeByNodeGroup(nsId, infraId, groupId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return temp, err
 		}
 		var wg sync.WaitGroup
-		chanResults := make(chan model.InfraVmAccessInfo)
+		chanResults := make(chan model.InfraNodeAccessInfo)
 
-		for _, vmId := range vmList {
-			// Check if VM is terminated before processing
-			vmObject, err := GetVmObject(nsId, infraId, vmId)
+		for _, nodeId := range nodeList {
+			// Check if Node is terminated before processing
+			nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
 			if err != nil {
-				log.Debug().Err(err).Msgf("Failed to get VM object for %s, skipping", vmId)
+				log.Debug().Err(err).Msgf("Failed to get VM object for %s, skipping", nodeId)
 				continue
 			}
 
-			// Skip terminated VMs as they don't have meaningful access info
-			if strings.EqualFold(vmObject.Status, model.StatusTerminated) {
-				log.Debug().Msgf("VM %s is terminated, skipping access info collection", vmId)
+			// Skip terminated Nodes as they don't have meaningful access info
+			if strings.EqualFold(nodeObject.Status, model.StatusTerminated) {
+				log.Debug().Msgf("VM %s is terminated, skipping access info collection", nodeId)
 				continue
 			}
 
 			wg.Add(1)
-			go func(nsId string, infraId string, vmId string, option string, chanResults chan model.InfraVmAccessInfo) {
+			go func(nsId string, infraId string, nodeId string, option string, chanResults chan model.InfraNodeAccessInfo) {
 				defer wg.Done()
-				common.RandomSleep(0, len(vmList)/2*1000)
-				vmInfo, err := GetVmCurrentPublicIp(nsId, infraId, vmId)
+				common.RandomSleep(0, len(nodeList)/2*1000)
+				nodeInfo, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId)
 
-				vmAccessInfo := model.InfraVmAccessInfo{}
+				nodeAccessInfo := model.InfraNodeAccessInfo{}
 				if err != nil {
 					log.Info().Err(err).Msg("")
-					vmAccessInfo.PublicIP = ""
-					vmAccessInfo.PrivateIP = ""
-					vmAccessInfo.SSHPort = 0
+					nodeAccessInfo.PublicIP = ""
+					nodeAccessInfo.PrivateIP = ""
+					nodeAccessInfo.SSHPort = 0
 				} else {
-					vmAccessInfo.PublicIP = vmInfo.PublicIp
-					vmAccessInfo.PrivateIP = vmInfo.PrivateIp
-					vmAccessInfo.SSHPort = vmInfo.SSHPort
+					nodeAccessInfo.PublicIP = nodeInfo.PublicIp
+					nodeAccessInfo.PrivateIP = nodeInfo.PrivateIp
+					nodeAccessInfo.SSHPort = nodeInfo.SSHPort
 				}
-				vmAccessInfo.VmId = vmId
+				nodeAccessInfo.NodeId = nodeId
 
-				vmObject, err := GetVmObject(nsId, infraId, vmId)
+				nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
 				if err != nil {
 					log.Info().Err(err).Msg("")
 				} else {
-					vmAccessInfo.ConnectionConfig = vmObject.ConnectionConfig
+					nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
 				}
 
-				_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, infraId, vmId)
+				_, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
 				if err != nil {
 					log.Error().Err(err).Msg("")
-					vmAccessInfo.PrivateKey = ""
-					vmAccessInfo.VmUserName = ""
+					nodeAccessInfo.PrivateKey = ""
+					nodeAccessInfo.NodeUserName = ""
 				} else {
 					if strings.EqualFold(option, "showSshKey") {
-						vmAccessInfo.PrivateKey = privateKey
+						nodeAccessInfo.PrivateKey = privateKey
 					}
-					vmAccessInfo.VmUserName = verifiedUserName
+					nodeAccessInfo.NodeUserName = verifiedUserName
 				}
 
-				//vmAccessInfo.VmUserPassword
-				chanResults <- vmAccessInfo
-			}(nsId, infraId, vmId, option, chanResults)
+				//nodeAccessInfo.NodeUserPassword
+				chanResults <- nodeAccessInfo
+			}(nsId, infraId, nodeId, option, chanResults)
 		}
 		go func() {
 			wg.Wait()
 			close(chanResults)
 		}()
 		for result := range chanResults {
-			nodeGroupAccessInfo.InfraVmAccessInfo = append(nodeGroupAccessInfo.InfraVmAccessInfo, result)
+			nodeGroupAccessInfo.NodeAccessInfo = append(nodeGroupAccessInfo.NodeAccessInfo, result)
 		}
 
 		output.InfraNodeGroupAccessInfo = append(output.InfraNodeGroupAccessInfo, nodeGroupAccessInfo)
@@ -536,10 +536,10 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 	return output, nil
 }
 
-// GetInfraVmAccessInfo is func to retrieve Infra Access information
-func GetInfraVmAccessInfo(nsId string, infraId string, vmId string, option string) (*model.InfraVmAccessInfo, error) {
+// GetInfraNodeAccessInfo is func to retrieve Infra Access information
+func GetInfraNodeAccessInfo(nsId string, infraId string, nodeId string, option string) (*model.InfraNodeAccessInfo, error) {
 
-	output := &model.InfraVmAccessInfo{}
+	output := &model.InfraNodeAccessInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -559,41 +559,41 @@ func GetInfraVmAccessInfo(nsId string, infraId string, vmId string, option strin
 		return output, err
 	}
 
-	output.VmId = vmId
+	output.NodeId = nodeId
 
-	vmInfo, err := GetVmCurrentPublicIp(nsId, infraId, vmId)
+	nodeInfo, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId)
 
-	vmAccessInfo := &model.InfraVmAccessInfo{}
+	nodeAccessInfo := &model.InfraNodeAccessInfo{}
 	if err != nil {
 		log.Info().Err(err).Msg("")
 		return output, err
 	} else {
-		vmAccessInfo.PublicIP = vmInfo.PublicIp
-		vmAccessInfo.PrivateIP = vmInfo.PrivateIp
-		vmAccessInfo.SSHPort = vmInfo.SSHPort
+		nodeAccessInfo.PublicIP = nodeInfo.PublicIp
+		nodeAccessInfo.PrivateIP = nodeInfo.PrivateIp
+		nodeAccessInfo.SSHPort = nodeInfo.SSHPort
 	}
-	vmAccessInfo.VmId = vmId
+	nodeAccessInfo.NodeId = nodeId
 
-	vmObject, err := GetVmObject(nsId, infraId, vmId)
+	nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Info().Err(err).Msg("")
 		return output, err
 	} else {
-		vmAccessInfo.ConnectionConfig = vmObject.ConnectionConfig
+		nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
 	}
 
-	_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, infraId, vmId)
+	_, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
 	if err != nil {
 		log.Info().Err(err).Msg("")
 		return output, err
 	} else {
 		if strings.EqualFold(option, "showSshKey") {
-			vmAccessInfo.PrivateKey = privateKey
+			nodeAccessInfo.PrivateKey = privateKey
 		}
-		vmAccessInfo.VmUserName = verifiedUserName
+		nodeAccessInfo.NodeUserName = verifiedUserName
 	}
 
-	output = vmAccessInfo
+	output = nodeAccessInfo
 
 	return output, nil
 }
@@ -629,8 +629,8 @@ func ListInfraInfo(nsId string, option string) ([]model.InfraInfo, error) {
 	return Infra, nil
 }
 
-// ListInfraVmInfo is func to Get all VM Info objects in Infra
-func ListInfraVmInfo(nsId string, infraId string) ([]model.VmInfo, error) {
+// ListInfraNodeInfo is func to Get all Node Info objects in Infra
+func ListInfraNodeInfo(nsId string, infraId string) ([]model.NodeInfo, error) {
 
 	// Check if Infra exists
 	check, err := CheckInfra(nsId, infraId)
@@ -643,46 +643,46 @@ func ListInfraVmInfo(nsId string, infraId string) ([]model.VmInfo, error) {
 		return nil, err
 	}
 
-	// Get VM ID list using existing function
-	vmIdList, err := ListVmId(nsId, infraId)
+	// Get Node ID list using existing function
+	nodeIdList, err := ListNodeId(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to list VM IDs for Infra %s", infraId)
+		log.Error().Err(err).Msgf("Failed to list Node IDs for Infra %s", infraId)
 		return nil, err
 	}
 
-	if len(vmIdList) == 0 {
-		return []model.VmInfo{}, nil
+	if len(nodeIdList) == 0 {
+		return []model.NodeInfo{}, nil
 	}
 
-	// Use parallel processing for better performance when dealing with multiple VMs
+	// Use parallel processing for better performance when dealing with multiple Nodes
 	var wg sync.WaitGroup
-	chanResults := make(chan model.VmInfo, len(vmIdList))
+	chanResults := make(chan model.NodeInfo, len(nodeIdList))
 
-	// Process each VM in parallel, with existence validation
-	for _, vmId := range vmIdList {
+	// Process each Node in parallel, with existence validation
+	for _, nodeId := range nodeIdList {
 		wg.Add(1)
-		go func(vmId string) {
+		go func(nodeId string) {
 			defer wg.Done()
 
-			// Check if VM exists first to avoid race conditions during deletion
-			vmKey := common.GenInfraKey(nsId, infraId, vmId)
-			_, exists, err := kvstore.GetKv(vmKey)
+			// Check if Node exists first to avoid race conditions during deletion
+			nodeKey := common.GenInfraKey(nsId, infraId, nodeId)
+			_, exists, err := kvstore.GetKv(nodeKey)
 			if err != nil || !exists {
-				// VM might be deleted by concurrent operations (e.g., DelInfra)
+				// Node might be deleted by concurrent operations (e.g., DelInfra)
 				// This is normal during Infra deletion process, so use Debug level
-				log.Debug().Msgf("VM object not found for vmId: %s (possibly deleted concurrently)", vmId)
-				return // Skip this VM
+				log.Debug().Msgf("VM object not found for nodeId: %s (possibly deleted concurrently)", nodeId)
+				return // Skip this Node
 			}
 
-			vmInfo, err := GetVmObject(nsId, infraId, vmId)
+			nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 			if err != nil {
-				// Secondary check - VM might have been deleted between existence check and retrieval
-				log.Debug().Err(err).Msgf("VM object retrieval failed for vmId: %s (possibly deleted concurrently)", vmId)
-				return // Skip this VM
+				// Secondary check - Node might have been deleted between existence check and retrieval
+				log.Debug().Err(err).Msgf("VM object retrieval failed for nodeId: %s (possibly deleted concurrently)", nodeId)
+				return // Skip this Node
 			}
 
-			chanResults <- vmInfo
-		}(vmId)
+			chanResults <- nodeInfo
+		}(nodeId)
 	}
 
 	// Wait for all goroutines to complete and close the channel
@@ -692,12 +692,12 @@ func ListInfraVmInfo(nsId string, infraId string) ([]model.VmInfo, error) {
 	}()
 
 	// Collect results from the channel
-	var vmInfoList []model.VmInfo
-	for vmInfo := range chanResults {
-		vmInfoList = append(vmInfoList, vmInfo)
+	var nodeInfoList []model.NodeInfo
+	for nodeInfo := range chanResults {
+		nodeInfoList = append(nodeInfoList, nodeInfo)
 	}
 
-	return vmInfoList, nil
+	return nodeInfoList, nil
 }
 
 // GetInfraObject is func to retrieve Infra object from database (no current status update)
@@ -717,76 +717,76 @@ func GetInfraObject(nsId string, infraId string) (model.InfraInfo, bool, error) 
 	infraTmp := model.InfraInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
 
-	// Use existing ListInfraVmInfo function instead of manually iterating through VMs
-	vmInfoList, err := ListInfraVmInfo(nsId, infraId)
+	// Use existing ListInfraNodeInfo function instead of manually iterating through Nodes
+	nodeInfoList, err := ListInfraNodeInfo(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.InfraInfo{}, false, err
 	}
 
-	infraTmp.Vm = vmInfoList
+	infraTmp.Node = nodeInfoList
 
 	return infraTmp, true, nil
 }
 
-// GetVmObject is func to get VM object
-func GetVmObject(nsId string, infraId string, vmId string) (model.VmInfo, error) {
+// GetNodeObject is func to get Node object
+func GetNodeObject(nsId string, infraId string, nodeId string) (model.NodeInfo, error) {
 
-	vmTmp := model.VmInfo{}
-	key := common.GenInfraKey(nsId, infraId, vmId)
+	nodeTmp := model.NodeInfo{}
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
-		err = fmt.Errorf("failed to get GetVmObject (ID: %s)", key)
+		err = fmt.Errorf("failed to get GetNodeObject (ID: %s)", key)
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 	if !exists {
-		log.Warn().Msgf("no VM found (ID: %s)", key)
-		return model.VmInfo{}, fmt.Errorf("no VM found (ID: %s)", key)
+		log.Warn().Msgf("no Node found (ID: %s)", key)
+		return model.NodeInfo{}, fmt.Errorf("no Node found (ID: %s)", key)
 	}
 
-	err = json.Unmarshal([]byte(keyValue.Value), &vmTmp)
+	err = json.Unmarshal([]byte(keyValue.Value), &nodeTmp)
 	if err != nil {
-		err = fmt.Errorf("failed to get GetVmObject (ID: %s), message: failed to unmarshal", key)
+		err = fmt.Errorf("failed to get GetNodeObject (ID: %s), message: failed to unmarshal", key)
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
-	return vmTmp, nil
+	return nodeTmp, nil
 }
 
-// ConvertVmInfoToVmStatusInfo converts VmInfo to VmStatusInfo for Infra status operations
-func ConvertVmInfoToVmStatusInfo(vmInfo model.VmInfo) model.VmStatusInfo {
-	return model.VmStatusInfo{
-		Id:              vmInfo.Id,
-		Uid:             vmInfo.Uid,
-		CspResourceName: vmInfo.CspResourceName,
-		CspResourceId:   vmInfo.CspResourceId,
-		Name:            vmInfo.Name,
-		Status:          vmInfo.Status,
-		TargetStatus:    vmInfo.TargetStatus,
-		TargetAction:    vmInfo.TargetAction,
-		NativeStatus:    "", // VmInfo doesn't have NativeStatus, will be updated by status fetch
-		MonAgentStatus:  vmInfo.MonAgentStatus,
-		SystemMessage:   vmInfo.SystemMessage,
-		CreatedTime:     vmInfo.CreatedTime,
-		PublicIp:        vmInfo.PublicIP,
-		PrivateIp:       vmInfo.PrivateIP,
-		SSHPort:         vmInfo.SSHPort,
-		Location:        vmInfo.Location,
+// ConvertNodeInfoToNodeStatusInfo converts NodeInfo to NodeStatusInfo for Infra status operations
+func ConvertNodeInfoToNodeStatusInfo(nodeInfo model.NodeInfo) model.NodeStatusInfo {
+	return model.NodeStatusInfo{
+		Id:              nodeInfo.Id,
+		Uid:             nodeInfo.Uid,
+		CspResourceName: nodeInfo.CspResourceName,
+		CspResourceId:   nodeInfo.CspResourceId,
+		Name:            nodeInfo.Name,
+		Status:          nodeInfo.Status,
+		TargetStatus:    nodeInfo.TargetStatus,
+		TargetAction:    nodeInfo.TargetAction,
+		NativeStatus:    "", // NodeInfo doesn't have NativeStatus, will be updated by status fetch
+		MonAgentStatus:  nodeInfo.MonAgentStatus,
+		SystemMessage:   nodeInfo.SystemMessage,
+		CreatedTime:     nodeInfo.CreatedTime,
+		PublicIp:        nodeInfo.PublicIP,
+		PrivateIp:       nodeInfo.PrivateIP,
+		SSHPort:         nodeInfo.SSHPort,
+		Location:        nodeInfo.Location,
 	}
 }
 
-// ConvertVmInfoListToVmStatusInfoList converts a slice of VmInfo to VmStatusInfo for Infra status operations
-func ConvertVmInfoListToVmStatusInfoList(vmInfoList []model.VmInfo) []model.VmStatusInfo {
-	vmStatusInfoList := make([]model.VmStatusInfo, len(vmInfoList))
-	for i, vmInfo := range vmInfoList {
-		vmStatusInfoList[i] = ConvertVmInfoToVmStatusInfo(vmInfo)
+// ConvertNodeInfoListToNodeStatusInfoList converts a slice of NodeInfo to NodeStatusInfo for Infra status operations
+func ConvertNodeInfoListToNodeStatusInfoList(nodeInfoList []model.NodeInfo) []model.NodeStatusInfo {
+	nodeStatusInfoList := make([]model.NodeStatusInfo, len(nodeInfoList))
+	for i, nodeInfo := range nodeInfoList {
+		nodeStatusInfoList[i] = ConvertNodeInfoToNodeStatusInfo(nodeInfo)
 	}
-	return vmStatusInfoList
+	return nodeStatusInfoList
 }
 
-// ensureVmStatusInfoComplete ensures all VMs from VmInfo are represented in InfraStatus.Vm
-// This handles cases where VM status fetch might have failed or VM is newly created
+// ensureNodeStatusInfoComplete ensures all Nodes from NodeInfo are represented in InfraStatus.Node
+// This handles cases where Node status fetch might have failed or Node is newly created
 // ConvertInfraInfoToInfraStatusInfo converts InfraInfo to InfraStatusInfo (partial conversion for basic fields)
 func ConvertInfraInfoToInfraStatusInfo(infraInfo model.InfraInfo) model.InfraStatusInfo {
 	return model.InfraStatusInfo{
@@ -799,67 +799,67 @@ func ConvertInfraInfoToInfraStatusInfo(infraInfo model.InfraInfo) model.InfraSta
 		InstallMonAgent: infraInfo.InstallMonAgent,
 		Label:           infraInfo.Label,
 		SystemLabel:     infraInfo.SystemLabel,
-		Vm:              ConvertVmInfoListToVmStatusInfoList(infraInfo.Vm),
-		// MasterVmId, MasterIp, MasterSSHPort will be set by status determination logic
+		Node:              ConvertNodeInfoListToNodeStatusInfoList(infraInfo.Node),
+		// MasterNodeId, MasterIp, MasterSSHPort will be set by status determination logic
 	}
 }
 
-// ConvertVmInfoFieldsToVmStatusInfo converts VmInfo fields into existing VmStatusInfo
-// VmInfo is considered the trusted source, so all relevant fields are converted
-func ConvertVmInfoFieldsToVmStatusInfo(vmStatus *model.VmStatusInfo, vmInfo model.VmInfo) {
-	// Always convert from VmInfo as it's the trusted source
-	vmStatus.CreatedTime = vmInfo.CreatedTime
-	vmStatus.SystemMessage = vmInfo.SystemMessage
-	vmStatus.MonAgentStatus = vmInfo.MonAgentStatus
-	vmStatus.TargetStatus = vmInfo.TargetStatus
-	vmStatus.TargetAction = vmInfo.TargetAction
+// ConvertNodeInfoFieldsToNodeStatusInfo converts NodeInfo fields into existing NodeStatusInfo
+// NodeInfo is considered the trusted source, so all relevant fields are converted
+func ConvertNodeInfoFieldsToNodeStatusInfo(nodeStatus *model.NodeStatusInfo, nodeInfo model.NodeInfo) {
+	// Always convert from NodeInfo as it's the trusted source
+	nodeStatus.CreatedTime = nodeInfo.CreatedTime
+	nodeStatus.SystemMessage = nodeInfo.SystemMessage
+	nodeStatus.MonAgentStatus = nodeInfo.MonAgentStatus
+	nodeStatus.TargetStatus = nodeInfo.TargetStatus
+	nodeStatus.TargetAction = nodeInfo.TargetAction
 
-	// Convert network information - VmInfo is authoritative
-	vmStatus.PublicIp = vmInfo.PublicIP
-	vmStatus.PrivateIp = vmInfo.PrivateIP
-	vmStatus.SSHPort = vmInfo.SSHPort
+	// Convert network information - NodeInfo is authoritative
+	nodeStatus.PublicIp = nodeInfo.PublicIP
+	nodeStatus.PrivateIp = nodeInfo.PrivateIP
+	nodeStatus.SSHPort = nodeInfo.SSHPort
 
-	// Convert Status only if vmStatus doesn't have real-time CSP status
-	// Keep NativeStatus from CSP calls, but convert Status from VmInfo if no real-time data
-	if vmStatus.NativeStatus == "" {
-		vmStatus.Status = vmInfo.Status
+	// Convert Status only if nodeStatus doesn't have real-time CSP status
+	// Keep NativeStatus from CSP calls, but convert Status from NodeInfo if no real-time data
+	if nodeStatus.NativeStatus == "" {
+		nodeStatus.Status = nodeInfo.Status
 	}
 	// If we have real-time CSP status (NativeStatus), keep the current Status
 }
 
-// ConvertVmInfoFieldsToVmStatusInfoList converts VmInfo fields into corresponding VmStatusInfo list
-func ConvertVmInfoFieldsToVmStatusInfoList(vmStatusList []model.VmStatusInfo, vmInfoList []model.VmInfo) {
+// ConvertNodeInfoFieldsToNodeStatusInfoList converts NodeInfo fields into corresponding NodeStatusInfo list
+func ConvertNodeInfoFieldsToNodeStatusInfoList(nodeStatusList []model.NodeStatusInfo, nodeInfoList []model.NodeInfo) {
 	// Create a map for efficient lookup
-	vmInfoMap := make(map[string]model.VmInfo)
-	for _, vmInfo := range vmInfoList {
-		vmInfoMap[vmInfo.Id] = vmInfo
+	nodeInfoMap := make(map[string]model.NodeInfo)
+	for _, nodeInfo := range nodeInfoList {
+		nodeInfoMap[nodeInfo.Id] = nodeInfo
 	}
 
-	// Convert each VM status if corresponding VmInfo exists
-	for i := range vmStatusList {
-		if vmInfo, exists := vmInfoMap[vmStatusList[i].Id]; exists {
-			ConvertVmInfoFieldsToVmStatusInfo(&vmStatusList[i], vmInfo)
+	// Convert each Node status if corresponding NodeInfo exists
+	for i := range nodeStatusList {
+		if nodeInfo, exists := nodeInfoMap[nodeStatusList[i].Id]; exists {
+			ConvertNodeInfoFieldsToNodeStatusInfo(&nodeStatusList[i], nodeInfo)
 		}
 	}
 }
 
-// GetVmIdNameInDetail is func to get ID and Name details
-func GetVmIdNameInDetail(nsId string, infraId string, vmId string) (*model.IdNameInDetailInfo, error) {
-	key := common.GenInfraKey(nsId, infraId, vmId)
+// GetNodeIdNameInDetail is func to get ID and Name details
+func GetNodeIdNameInDetail(nsId string, infraId string, nodeId string) (*model.IdNameInDetailInfo, error) {
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.IdNameInDetailInfo{}, err
 	}
-	vmTmp := model.VmInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
+	nodeTmp := model.NodeInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &nodeTmp)
 
 	var idDetails model.IdNameInDetailInfo
 
-	idDetails.IdInTb = vmTmp.Id
-	idDetails.IdInSp = vmTmp.CspResourceName
-	idDetails.IdInCsp = vmTmp.CspResourceId
-	idDetails.NameInCsp = vmTmp.CspResourceName
+	idDetails.IdInTb = nodeTmp.Id
+	idDetails.IdInSp = nodeTmp.CspResourceName
+	idDetails.IdInCsp = nodeTmp.CspResourceId
+	idDetails.NameInCsp = nodeTmp.CspResourceName
 
 	type spiderReqTmp struct {
 		ConnectionName string `json:"ConnectionName"`
@@ -870,7 +870,7 @@ func GetVmIdNameInDetail(nsId string, infraId string, vmId string) (*model.IdNam
 	}
 
 	var requestBody spiderReqTmp
-	requestBody.ConnectionName = vmTmp.ConnectionName
+	requestBody.ConnectionName = nodeTmp.ConnectionName
 	requestBody.ResourceType = "vm"
 
 	callResult := spiderResTmp{}
@@ -901,7 +901,7 @@ func GetVmIdNameInDetail(nsId string, infraId string, vmId string) (*model.IdNam
 	return &idDetails, nil
 }
 
-// [Infra and VM status management]
+// [Infra and Node status management]
 
 // GetInfraStatus is func to Get Infra Status
 func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error) {
@@ -937,67 +937,67 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	infraTmp := model.InfraInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
 
-	vmList, err := ListVmId(nsId, infraId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.InfraStatusInfo{}, err
 	}
-	if len(vmList) == 0 {
-		// Infra has no VMs - check if it's in provisioning phase or truly empty
+	if len(nodeList) == 0 {
+		// Infra has no Nodes - check if it's in provisioning phase or truly empty
 		currentStatus := infraTmp.Status
 		if strings.Contains(currentStatus, model.StatusPreparing) || strings.Contains(currentStatus, model.StatusPrepared) ||
 			strings.Contains(currentStatus, model.StatusCreating) || strings.Contains(currentStatus, model.StatusFailed) {
 			// Infra is in provisioning phase or failed - keep current status
 			infraStatus.Status = currentStatus
 		} else {
-			// Infra was already running/completed but now has no VMs - set to Empty
+			// Infra was already running/completed but now has no Nodes - set to Empty
 			infraStatus.Status = model.StatusEmpty
 		}
 		infraStatus.StatusCount = model.StatusCountInfo{}
-		infraStatus.Vm = []model.VmStatusInfo{}
+		infraStatus.Node = []model.NodeStatusInfo{}
 		return &infraStatus, nil
 	}
 
-	// Fetch VM statuses with rate limiting by CSP and region
-	vmStatusList, err := fetchVmStatusesWithRateLimiting(nsId, infraId, vmList)
+	// Fetch Node statuses with rate limiting by CSP and region
+	nodeStatusList, err := fetchNodeStatusesWithRateLimiting(nsId, infraId, nodeList)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.InfraStatusInfo{}, err
 	}
-	// log.Debug().Msgf("Fetched %d VM statuses for Infra %s", len(vmStatusList), infraId)
-	// log.Debug().Msgf("VM Status List: %+v", vmStatusList)
+	// log.Debug().Msgf("Fetched %d VM statuses for Infra %s", len(nodeStatusList), infraId)
+	// log.Debug().Msgf("VM Status List: %+v", nodeStatusList)
 
 	// Copy results to infraStatus
-	infraStatus.Vm = vmStatusList
+	infraStatus.Node = nodeStatusList
 
-	vmInfos, err := ListInfraVmInfo(nsId, infraId)
+	nodeInfos, err := ListInfraNodeInfo(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.InfraStatusInfo{}, err
 	}
 
-	// If VM status fetch didn't populate all VMs, use VmInfo as fallback
-	if len(infraStatus.Vm) == 0 && len(vmInfos) > 0 {
-		// log.Debug().Msgf("No VM status info found, converting from VmInfo for Infra: %s", infraId)
-		infraStatus.Vm = ConvertVmInfoListToVmStatusInfoList(vmInfos)
+	// If Node status fetch didn't populate all Nodes, use NodeInfo as fallback
+	if len(infraStatus.Node) == 0 && len(nodeInfos) > 0 {
+		// log.Debug().Msgf("No Node status info found, converting from NodeInfo for Infra: %s", infraId)
+		infraStatus.Node = ConvertNodeInfoListToNodeStatusInfoList(nodeInfos)
 	}
 
-	for _, v := range vmInfos {
+	for _, v := range nodeInfos {
 		if strings.EqualFold(v.Status, model.StatusRunning) {
-			infraStatus.MasterVmId = v.Id
+			infraStatus.MasterNodeId = v.Id
 			infraStatus.MasterIp = v.PublicIP
 			infraStatus.MasterSSHPort = v.SSHPort
 			break
 		}
 	}
 
-	sort.Slice(infraStatus.Vm, func(i, j int) bool {
-		return infraStatus.Vm[i].Id < infraStatus.Vm[j].Id
+	sort.Slice(infraStatus.Node, func(i, j int) bool {
+		return infraStatus.Node[i].Id < infraStatus.Node[j].Id
 	})
 
 	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	statusFlagStr := []string{model.StatusFailed, model.StatusSuspended, model.StatusRunning, model.StatusTerminated, model.StatusCreating, model.StatusSuspending, model.StatusResuming, model.StatusRebooting, model.StatusTerminating, model.StatusRegistering, model.StatusUndefined}
-	for _, v := range infraStatus.Vm {
+	for _, v := range infraStatus.Node {
 
 		switch v.Status {
 		case model.StatusFailed:
@@ -1022,7 +1022,7 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 			statusFlag[9]++
 		default:
 			statusFlag[10]++
-			log.Warn().Msgf("Undefined status (%s) found in VM %s of Infra %s", v.Status, v.Id, infraId)
+			log.Warn().Msgf("Undefined status (%s) found in Node %s of Infra %s", v.Status, v.Id, infraId)
 		}
 	}
 
@@ -1035,97 +1035,97 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		}
 	}
 
-	// Use the maximum of actual VM count and status VM count to handle race conditions during creation
-	// During Infra creation, len(vmList) might be smaller than len(infraStatus.Vm) due to timing issues
-	actualVmCount := len(vmList)
-	statusVmCount := len(infraStatus.Vm)
-	vmInfoCount := len(vmInfos)
+	// Use the maximum of actual Node count and status Node count to handle race conditions during creation
+	// During Infra creation, len(nodeList) might be smaller than len(infraStatus.Vm) due to timing issues
+	actualNodeCount := len(nodeList)
+	statusNodeCount := len(infraStatus.Node)
+	nodeInfoCount := len(nodeInfos)
 
-	// Check if Infra is still being created/registered to use more stable VM count calculation
+	// Check if Infra is still being created/registered to use more stable Node count calculation
 	isCreating := strings.Contains(infraTmp.Status, model.StatusCreating) ||
 		strings.Contains(infraTmp.Status, model.StatusRegistering) ||
 		strings.Contains(infraTmp.TargetAction, model.ActionCreate) ||
 		strings.Contains(infraTmp.TargetStatus, model.StatusRunning)
 
-	// Check if Infra is in a stable state (all VMs have same stable status)
-	isStableState := tmpMax == statusVmCount && tmpMax > 0
+	// Check if Infra is in a stable state (all Nodes have same stable status)
+	isStableState := tmpMax == statusNodeCount && tmpMax > 0
 	// stableStatusName := ""
 	// if isStableState && tmpMaxIndex < len(statusFlagStr) {
 	// 	stableStatusName = statusFlagStr[tmpMaxIndex]
 	// }
 
-	var numVm int
+	var numNode int
 	if isCreating {
-		// During creation, use the larger of the two counts to avoid showing decreasing VM counts
-		numVm = actualVmCount
-		if statusVmCount > actualVmCount {
-			numVm = statusVmCount
+		// During creation, use the larger of the two counts to avoid showing decreasing Node counts
+		numNode = actualNodeCount
+		if statusNodeCount > actualNodeCount {
+			numNode = statusNodeCount
 		}
-		// Additionally, ensure we don't show a VM count smaller than the previous maximum
-		if numVm < infraStatus.StatusCount.CountTotal && infraStatus.StatusCount.CountTotal > 0 {
-			numVm = infraStatus.StatusCount.CountTotal
-		}
-
-		// If we still have inconsistent counts, use the Infra's stored VM information as fallback
-		if len(infraTmp.Vm) > numVm {
-			numVm = len(infraTmp.Vm)
+		// Additionally, ensure we don't show a Node count smaller than the previous maximum
+		if numNode < infraStatus.StatusCount.CountTotal && infraStatus.StatusCount.CountTotal > 0 {
+			numNode = infraStatus.StatusCount.CountTotal
 		}
 
-		// log.Debug().Msgf("Infra %s is creating: using stable VM count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
-		// 	infraId, numVm, actualVmCount, statusVmCount, infraStatus.StatusCount.CountTotal, len(infraTmp.Vm))
+		// If we still have inconsistent counts, use the Infra's stored Node information as fallback
+		if len(infraTmp.Node) > numNode {
+			numNode = len(infraTmp.Node)
+		}
+
+		// log.Debug().Msgf("Infra %s is creating: using stable Node count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
+		// 	infraId, numNode, actualNodeCount, statusNodeCount, infraStatus.StatusCount.CountTotal, len(infraTmp.Vm))
 	} else if isStableState {
-		// For stable Infra states (all VMs in same state), use the most reliable source to avoid count fluctuation
+		// For stable Infra states (all Nodes in same state), use the most reliable source to avoid count fluctuation
 		// This applies to Terminated, Suspended, Failed, Running, etc.
-		// Use the maximum of available counts, prioritizing vmInfos as they are stored persistently
-		numVm = vmInfoCount
-		if actualVmCount > numVm {
-			numVm = actualVmCount
+		// Use the maximum of available counts, prioritizing nodeInfos as they are stored persistently
+		numNode = nodeInfoCount
+		if actualNodeCount > numNode {
+			numNode = actualNodeCount
 		}
-		if len(infraTmp.Vm) > numVm {
-			numVm = len(infraTmp.Vm)
+		if len(infraTmp.Node) > numNode {
+			numNode = len(infraTmp.Node)
 		}
-		// Ensure we don't show a count smaller than the actual VMs found in dominant status
-		if tmpMax > numVm {
-			numVm = tmpMax
+		// Ensure we don't show a count smaller than the actual Nodes found in dominant status
+		if tmpMax > numNode {
+			numNode = tmpMax
 		}
 
-		// log.Debug().Msgf("Infra %s is in stable state (%s): using stable VM count (%d) - actual: %d, status: %d, vmInfos: %d, stored: %d, dominant: %d",
-		// 	infraId, stableStatusName, numVm, actualVmCount, statusVmCount, vmInfoCount, len(infraTmp.Vm), tmpMax)
+		// log.Debug().Msgf("Infra %s is in stable state (%s): using stable Node count (%d) - actual: %d, status: %d, nodeInfos: %d, stored: %d, dominant: %d",
+		// 	infraId, stableStatusName, numNode, actualNodeCount, statusNodeCount, nodeInfoCount, len(infraTmp.Vm), tmpMax)
 	} else {
-		// Infra creation completed, use actual VM count from status
-		numVm = statusVmCount
-		// log.Debug().Msgf("Infra %s creation completed: using status VM count (%d)", infraId, numVm)
+		// Infra creation completed, use actual Node count from status
+		numNode = statusNodeCount
+		// log.Debug().Msgf("Infra %s creation completed: using status Node count (%d)", infraId, numNode)
 	}
 
 	//numUnNormalStatus := statusFlag[0] + statusFlag[9]
-	//numNormalStatus := numVm - numUnNormalStatus
+	//numNormalStatus := numNode - numUnNormalStatus
 	runningStatus := statusFlag[2]
 
-	proportionStr := ":" + strconv.Itoa(tmpMax) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
-	if tmpMax == numVm {
+	proportionStr := ":" + strconv.Itoa(tmpMax) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numNode) + ")"
+	if tmpMax == numNode {
 		infraStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
-	} else if tmpMax < numVm {
+	} else if tmpMax < numNode {
 		infraStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex] + proportionStr
 	} else {
 		infraStatus.Status = statusFlagStr[9] + proportionStr
 	}
 	// // for representing Failed status in front.
 
-	// proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
+	// proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numNode) + ")"
 	// if statusFlag[0] > 0 {
 	// 	infraStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
-	// 	if statusFlag[0] == numVm {
+	// 	if statusFlag[0] == numNode {
 	// 		infraStatus.Status = statusFlagStr[0] + proportionStr
 	// 	}
 	// }
 
-	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
+	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numNode) + ")"
 	// if statusFlag[9] > 0 {
 	// 	infraStatus.Status = statusFlagStr[9] + proportionStr
 	// }
 
 	// Set infraStatus.StatusCount
-	infraStatus.StatusCount.CountTotal = numVm
+	infraStatus.StatusCount.CountTotal = numNode
 	infraStatus.StatusCount.CountFailed = statusFlag[0]
 	infraStatus.StatusCount.CountSuspended = statusFlag[1]
 	infraStatus.StatusCount.CountRunning = statusFlag[2]
@@ -1142,60 +1142,60 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	// Primary completion should happen in actual control actions (control.go, provisioning.go)
 	// This serves as a safety net for cases where the primary completion was missed
 	isDone := true
-	pendingVmsCount := 0
+	pendingNodesCount := 0
 
 	// Check Infra target action to determine completion criteria
 	infraTargetAction := infraTmp.TargetAction
 
 	// Only perform recovery completion if TargetAction is not already Complete
 	if infraTargetAction != model.ActionComplete && infraTargetAction != "" {
-		for _, v := range infraStatus.Vm {
+		for _, v := range infraStatus.Node {
 			// Check completion based on action type
 			switch infraTargetAction {
 			case model.ActionCreate:
-				// For Create action, completion means all VMs reach final states (Running/Failed/Terminated/Suspended)
-				// VM is considered pending if it's still in transitional states (Creating/Registering/Undefined/empty)
+				// For Create action, completion means all Nodes reach final states (Running/Failed/Terminated/Suspended)
+				// Node is considered pending if it's still in transitional states (Creating/Registering/Undefined/empty)
 				// Failed state is considered a final state - provisioning attempt was completed even if unsuccessful
 				if v.Status == model.StatusCreating || v.Status == model.StatusRegistering || v.Status == model.StatusUndefined || v.Status == "" {
 					isDone = false
-					pendingVmsCount++
+					pendingNodesCount++
 				}
 				// All other states (Running, Failed, Terminated, Suspended) are considered final states
 
 			case model.ActionTerminate:
-				// For Terminate action, completion means all VMs reach Terminated state or non-recoverable states
+				// For Terminate action, completion means all Nodes reach Terminated state or non-recoverable states
 				// Failed, Undefined, empty states are also considered "complete" as they can't proceed further
 				if v.Status != model.StatusTerminated && v.Status != model.StatusFailed &&
 					v.Status != model.StatusUndefined && v.Status != "" {
 					isDone = false
-					pendingVmsCount++
+					pendingNodesCount++
 				}
 
 			case model.ActionSuspend:
-				// For Suspend action, completion means all VMs reach Suspended state or non-recoverable states
+				// For Suspend action, completion means all Nodes reach Suspended state or non-recoverable states
 				// Failed, Terminated, Undefined, empty states are considered "complete"
 				if v.Status != model.StatusSuspended && v.Status != model.StatusFailed &&
 					v.Status != model.StatusTerminated && v.Status != model.StatusUndefined && v.Status != "" {
 					isDone = false
-					pendingVmsCount++
+					pendingNodesCount++
 				}
 
 			case model.ActionResume:
-				// For Resume action, completion means all VMs reach Running state or non-recoverable states
+				// For Resume action, completion means all Nodes reach Running state or non-recoverable states
 				// Failed, Terminated, Undefined, empty states are considered "complete"
 				if v.Status != model.StatusRunning && v.Status != model.StatusFailed &&
 					v.Status != model.StatusTerminated && v.Status != model.StatusUndefined && v.Status != "" {
 					isDone = false
-					pendingVmsCount++
+					pendingNodesCount++
 				}
 
 			case model.ActionReboot:
-				// For Reboot action, completion means all VMs reach Running state or non-recoverable states
+				// For Reboot action, completion means all Nodes reach Running state or non-recoverable states
 				// Failed, Terminated, Undefined, empty states are considered "complete"
 				if v.Status != model.StatusRunning && v.Status != model.StatusFailed &&
 					v.Status != model.StatusTerminated && v.Status != model.StatusUndefined && v.Status != "" {
 					isDone = false
-					pendingVmsCount++
+					pendingNodesCount++
 				}
 
 			default:
@@ -1203,49 +1203,49 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 				if v.TargetStatus != model.StatusComplete {
 					if v.Status != model.StatusTerminated {
 						isDone = false
-						pendingVmsCount++
+						pendingNodesCount++
 					}
 				}
 			}
 		}
 
 		// Log completion status for debugging
-		// log.Debug().Msgf("Infra %s %s recovery completion check: %d VMs total, %d pending, isDone=%t",
-		// 	infraId, infraTargetAction, len(infraStatus.Vm), pendingVmsCount, isDone)
+		// log.Debug().Msgf("Infra %s %s recovery completion check: %d Nodes total, %d pending, isDone=%t",
+		// 	infraId, infraTargetAction, len(infraStatus.Vm), pendingNodesCount, isDone)
 
 		if isDone {
-			log.Warn().Msgf("Infra %s action %s completed via RECOVERY PATH (primary completion in control.go/provisioning.go was missed) - VM states: %d total, %d pending",
-				infraId, infraTargetAction, len(infraStatus.Vm), pendingVmsCount)
+			log.Warn().Msgf("Infra %s action %s completed via RECOVERY PATH (primary completion in control.go/provisioning.go was missed) - Node states: %d total, %d pending",
+				infraId, infraTargetAction, len(infraStatus.Node), pendingNodesCount)
 
 			// Add more detailed logging for debugging
 			statusBreakdown := make(map[string]int)
-			for _, v := range infraStatus.Vm {
+			for _, v := range infraStatus.Node {
 				statusBreakdown[v.Status]++
 			}
-			// log.Debug().Msgf("Infra %s recovery completion - VM status breakdown: %+v", infraId, statusBreakdown)
+			// log.Debug().Msgf("Infra %s recovery completion - Node status breakdown: %+v", infraId, statusBreakdown)
 
-			// Check if all VMs are in failed state
-			// If there are no VMs, consider it as all VMs failed for creation context
-			allVmsFailed := len(infraStatus.Vm) == 0
-			if len(infraStatus.Vm) > 0 {
-				allVmsFailed = true
-				for _, v := range infraStatus.Vm {
+			// Check if all Nodes are in failed state
+			// If there are no Nodes, consider it as all Nodes failed for creation context
+			allNodesFailed := len(infraStatus.Node) == 0
+			if len(infraStatus.Node) > 0 {
+				allNodesFailed = true
+				for _, v := range infraStatus.Node {
 					if v.Status != model.StatusFailed && v.Status != model.StatusTerminated {
-						allVmsFailed = false
+						allNodesFailed = false
 						break
 					}
 				}
 			}
 
-			if allVmsFailed && infraTargetAction == model.ActionCreate {
-				// All VMs failed during creation - mark Infra as Failed
-				log.Error().Msgf("Infra %s: All VMs failed during creation - setting Infra status to Failed", infraId)
+			if allNodesFailed && infraTargetAction == model.ActionCreate {
+				// All Nodes failed during creation - mark Infra as Failed
+				log.Error().Msgf("Infra %s: All Nodes failed during creation - setting Infra status to Failed", infraId)
 				infraStatus.TargetAction = model.ActionComplete
 				infraStatus.TargetStatus = model.StatusComplete // Target was to complete the creation process
-				infraStatus.Status = model.StatusFailed         // Actual status is Failed due to VM failures
+				infraStatus.Status = model.StatusFailed         // Actual status is Failed due to Node failures
 				infraTmp.TargetAction = model.ActionComplete
 				infraTmp.TargetStatus = model.StatusComplete // Target was to complete the creation process
-				infraTmp.Status = model.StatusFailed         // Actual status is Failed due to VM failures
+				infraTmp.Status = model.StatusFailed         // Actual status is Failed due to Node failures
 			} else {
 				// Normal completion
 				infraStatus.TargetAction = model.ActionComplete
@@ -1305,12 +1305,12 @@ func ListInfraStatus(nsId string) ([]model.InfraStatusInfo, error) {
 
 }
 
-// GetVmCurrentPublicIp is func to get VM public IP
-func GetVmCurrentPublicIp(nsId string, infraId string, vmId string) (model.VmStatusInfo, error) {
-	errorInfo := model.VmStatusInfo{}
+// GetNodeCurrentPublicIp is func to get Node public IP
+func GetNodeCurrentPublicIp(nsId string, infraId string, nodeId string) (model.NodeStatusInfo, error) {
+	errorInfo := model.NodeStatusInfo{}
 	errorInfo.Status = model.StatusFailed
 
-	temp, err := GetVmObject(nsId, infraId, vmId) // to check if the VM exists
+	temp, err := GetNodeObject(nsId, infraId, nodeId) // to check if the VM exists
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
@@ -1318,7 +1318,7 @@ func GetVmCurrentPublicIp(nsId string, infraId string, vmId string) (model.VmSta
 
 	cspResourceName := temp.CspResourceName
 	if cspResourceName == "" {
-		err = fmt.Errorf("cspResourceName is empty (VmId: %s)", vmId)
+		err = fmt.Errorf("cspResourceName is empty (NodeId: %s)", nodeId)
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
 	}
@@ -1356,45 +1356,45 @@ func GetVmCurrentPublicIp(nsId string, infraId string, vmId string) (model.VmSta
 		return errorInfo, err
 	}
 
-	vmStatusTmp := model.VmStatusInfo{}
-	vmStatusTmp.PublicIp = callResult.PublicIP
-	vmStatusTmp.PrivateIp = callResult.PrivateIP
+	nodeStatusTmp := model.NodeStatusInfo{}
+	nodeStatusTmp.PublicIp = callResult.PublicIP
+	nodeStatusTmp.PrivateIp = callResult.PrivateIP
 	// Convert port string from Spider to int
 	if portStr, err := TrimIP(callResult.SSHAccessPoint); err == nil {
 		if port, err := strconv.Atoi(portStr); err == nil {
-			vmStatusTmp.SSHPort = port
+			nodeStatusTmp.SSHPort = port
 		}
 	}
 
-	return vmStatusTmp, nil
+	return nodeStatusTmp, nil
 }
 
-// GetVmIp is func to get VM IP to return PublicIP, PrivateIP, SSHPort
-func GetVmIp(nsId string, infraId string, vmId string) (string, string, int, error) {
+// GetNodeIp is func to get Node IP to return PublicIP, PrivateIP, SSHPort
+func GetNodeIp(nsId string, infraId string, nodeId string) (string, string, int, error) {
 
-	vmObject, err := GetVmObject(nsId, infraId, vmId)
+	nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", "", 0, err
 	}
 
-	return vmObject.PublicIP, vmObject.PrivateIP, vmObject.SSHPort, nil
+	return nodeObject.PublicIP, nodeObject.PrivateIP, nodeObject.SSHPort, nil
 }
 
-// GetVmSpecId is func to get VM SpecId
-func GetVmSpecId(nsId string, infraId string, vmId string) string {
+// GetNodeSpecId is func to get Node SpecId
+func GetNodeSpecId(nsId string, infraId string, nodeId string) string {
 
 	var content struct {
 		SpecId string `json:"specId"`
 	}
 
-	log.Debug().Msg("[getVmSpecID]" + vmId)
-	key := common.GenInfraKey(nsId, infraId, vmId)
+	log.Debug().Msg("[getNodeSpecID]" + nodeId)
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In GetVmSpecId(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In GetNodeSpecId(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -1406,52 +1406,52 @@ func GetVmSpecId(nsId string, infraId string, vmId string) string {
 	return content.SpecId
 }
 
-// getRateLimitsForCSP returns rate limiting configuration for VM status fetching
+// getRateLimitsForCSP returns rate limiting configuration for Node status fetching
 // for a specific CSP, using the centralized configuration in csp package.
 func getRateLimitsForCSP(cspName string) (int, int) {
 	config := csp.GetRateLimitConfig(cspName)
-	return config.MaxConcurrentRegionsForStatus, config.MaxVMsPerRegionForStatus
+	return config.MaxConcurrentRegionsForStatus, config.MaxNodesPerRegionForStatus
 }
 
-// VmGroupInfo represents VM grouping information for rate limiting
-type VmGroupInfo struct {
-	VmId         string
+// NodeGroupStatusInfo represents Node grouping information for rate limiting
+type NodeGroupStatusInfo struct {
+	NodeId         string
 	ProviderName string
 	RegionName   string
 }
 
-// fetchVmStatusesWithRateLimiting fetches VM statuses with hierarchical rate limiting
+// fetchNodeStatusesWithRateLimiting fetches Node statuses with hierarchical rate limiting
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
-// Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
-func fetchVmStatusesWithRateLimiting(nsId, infraId string, vmList []string) ([]model.VmStatusInfo, error) {
-	if len(vmList) == 0 {
-		return []model.VmStatusInfo{}, nil
+// Level 3: Within each region, Nodes are processed with semaphore (maxConcurrentNodesPerRegion)
+func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) ([]model.NodeStatusInfo, error) {
+	if len(nodeList) == 0 {
+		return []model.NodeStatusInfo{}, nil
 	}
 
-	// Step 1: Group VMs by CSP and region
-	vmGroups := make(map[string]map[string][]string) // CSP -> Region -> VmIds
-	vmGroupInfos := make(map[string]VmGroupInfo)     // VmId -> GroupInfo
+	// Step 1: Group Nodes by CSP and region
+	nodeGroups := make(map[string]map[string][]string) // CSP -> Region -> NodeIds
+	nodeGroupInfos := make(map[string]NodeGroupStatusInfo)     // NodeId -> GroupInfo
 
-	for _, vmId := range vmList {
-		vmInfo, err := GetVmObject(nsId, infraId, vmId)
+	for _, nodeId := range nodeList {
+		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to get VM object for %s, skipping", vmId)
+			log.Warn().Err(err).Msgf("Failed to get VM object for %s, skipping", nodeId)
 			continue
 		}
 
-		providerName := vmInfo.ConnectionConfig.ProviderName
-		regionName := vmInfo.Region.Region
+		providerName := nodeInfo.ConnectionConfig.ProviderName
+		regionName := nodeInfo.Region.Region
 
 		// Initialize CSP map if not exists
-		if vmGroups[providerName] == nil {
-			vmGroups[providerName] = make(map[string][]string)
+		if nodeGroups[providerName] == nil {
+			nodeGroups[providerName] = make(map[string][]string)
 		}
 
-		// Add VM to the appropriate group
-		vmGroups[providerName][regionName] = append(vmGroups[providerName][regionName], vmId)
-		vmGroupInfos[vmId] = VmGroupInfo{
-			VmId:         vmId,
+		// Add Node to the appropriate group
+		nodeGroups[providerName][regionName] = append(nodeGroups[providerName][regionName], nodeId)
+		nodeGroupInfos[nodeId] = NodeGroupStatusInfo{
+			NodeId:       nodeId,
 			ProviderName: providerName,
 			RegionName:   regionName,
 		}
@@ -1460,84 +1460,84 @@ func fetchVmStatusesWithRateLimiting(nsId, infraId string, vmList []string) ([]m
 	// Step 2: Process CSPs in parallel
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
-	var allVmStatuses []model.VmStatusInfo
+	var allNodeStatuses []model.NodeStatusInfo
 
-	for csp, regions := range vmGroups {
+	for csp, regions := range nodeGroups {
 		wg.Add(1)
 		go func(providerName string, regionMap map[string][]string) {
 			defer wg.Done()
 
 			// Get rate limits for this specific CSP
-			maxRegionsForCSP, maxVMsForRegion := getRateLimitsForCSP(providerName)
+			maxRegionsForCSP, maxNodesForRegion := getRateLimitsForCSP(providerName)
 
-			// log.Debug().Msgf("Processing CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
-			// 	providerName, len(regionMap), maxRegionsForCSP, maxVMsForRegion)
+			// log.Debug().Msgf("Processing CSP: %s with %d regions (limits: %d regions, %d Nodes/region)",
+			// 	providerName, len(regionMap), maxRegionsForCSP, maxNodesForRegion)
 
 			// Step 3: Process regions within CSP with rate limiting
 			regionSemaphore := make(chan struct{}, maxRegionsForCSP)
 			var regionWg sync.WaitGroup
 			var regionMutex sync.Mutex
-			var cspVmStatuses []model.VmStatusInfo
+			var cspVmStatuses []model.NodeStatusInfo
 
-			for region, vmIds := range regionMap {
+			for region, nodeIds := range regionMap {
 				regionWg.Add(1)
-				go func(regionName string, vmIdList []string) {
+				go func(regionName string, nodeIdList []string) {
 					defer regionWg.Done()
 
 					// Acquire region semaphore
 					regionSemaphore <- struct{}{}
 					defer func() { <-regionSemaphore }()
 
-					// log.Debug().Msgf("Processing region: %s/%s with %d VMs (in parallel: %d VMs/region)",
-					// 	providerName, regionName, len(vmIdList), maxVMsForRegion)
+					// log.Debug().Msgf("Processing region: %s/%s with %d Nodes (in parallel: %d Nodes/region)",
+					// 	providerName, regionName, len(nodeIdList), maxNodesForRegion)
 
-					// Step 4: Process VMs within region with rate limiting
-					vmSemaphore := make(chan struct{}, maxVMsForRegion)
-					var vmWg sync.WaitGroup
-					var vmMutex sync.Mutex
-					var regionVmStatuses []model.VmStatusInfo
+					// Step 4: Process Nodes within region with rate limiting
+					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
+					var nodeWg sync.WaitGroup
+					var nodeMutex sync.Mutex
+					var regionNodeStatuses []model.NodeStatusInfo
 
-					for _, vmId := range vmIdList {
-						vmWg.Add(1)
-						go func(vmId string) {
-							defer vmWg.Done()
+					for _, nodeId := range nodeIdList {
+						nodeWg.Add(1)
+						go func(nodeId string) {
+							defer nodeWg.Done()
 
-							// Acquire VM semaphore
-							vmSemaphore <- struct{}{}
-							defer func() { <-vmSemaphore }()
+							// Acquire Node semaphore
+							nodeSemaphore <- struct{}{}
+							defer func() { <-nodeSemaphore }()
 
-							// Fetch VM status
-							vmStatusTmp, err := FetchVmStatus(nsId, infraId, vmId)
+							// Fetch Node status
+							nodeStatusTmp, err := FetchNodeStatus(nsId, infraId, nodeId)
 							if err != nil {
-								log.Error().Err(err).Msgf("Failed to fetch status for VM %s", vmId)
-								vmStatusTmp.Status = model.StatusFailed
-								vmStatusTmp.SystemMessage = err.Error()
+								log.Error().Err(err).Msgf("Failed to fetch status for VM %s", nodeId)
+								nodeStatusTmp.Status = model.StatusFailed
+								nodeStatusTmp.SystemMessage = err.Error()
 							}
 
-							if vmStatusTmp != (model.VmStatusInfo{}) {
-								vmMutex.Lock()
-								regionVmStatuses = append(regionVmStatuses, vmStatusTmp)
-								vmMutex.Unlock()
+							if nodeStatusTmp != (model.NodeStatusInfo{}) {
+								nodeMutex.Lock()
+								regionNodeStatuses = append(regionNodeStatuses, nodeStatusTmp)
+								nodeMutex.Unlock()
 							}
-						}(vmId)
+						}(nodeId)
 					}
-					vmWg.Wait()
+					nodeWg.Wait()
 
 					// Merge region results to CSP results
 					regionMutex.Lock()
-					cspVmStatuses = append(cspVmStatuses, regionVmStatuses...)
+					cspVmStatuses = append(cspVmStatuses, regionNodeStatuses...)
 					regionMutex.Unlock()
 
-				}(region, vmIds)
+				}(region, nodeIds)
 			}
 			regionWg.Wait()
 
 			// Merge CSP results to global results
 			mutex.Lock()
-			allVmStatuses = append(allVmStatuses, cspVmStatuses...)
+			allNodeStatuses = append(allNodeStatuses, cspVmStatuses...)
 			mutex.Unlock()
 
-			// log.Debug().Msgf("Completed CSP: %s, processed %d VMs", providerName, len(cspVmStatuses))
+			// log.Debug().Msgf("Completed CSP: %s, processed %d Nodes", providerName, len(cspVmStatuses))
 
 		}(csp, regions)
 	}
@@ -1545,68 +1545,68 @@ func fetchVmStatusesWithRateLimiting(nsId, infraId string, vmList []string) ([]m
 	wg.Wait()
 
 	// // Summary logging
-	// cspCount := len(vmGroups)
+	// cspCount := len(nodeGroups)
 	// totalRegions := 0
-	// for _, regions := range vmGroups {
+	// for _, regions := range nodeGroups {
 	// 	totalRegions += len(regions)
 	// }
 
-	// log.Debug().Msgf("Rate-limited VM status fetch completed: %d CSPs, %d regions, %d VMs processed",
-	// 	cspCount, totalRegions, len(allVmStatuses))
-	return allVmStatuses, nil
+	// log.Debug().Msgf("Rate-limited Node status fetch completed: %d CSPs, %d regions, %d Nodes processed",
+	// 	cspCount, totalRegions, len(allNodeStatuses))
+	return allNodeStatuses, nil
 }
 
-// // FetchVmStatusAsync is func to get VM status async
-// func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, infraId string, vmId string, results *model.InfraStatusInfo) error {
+// // FetchNodeStatusAsync is func to get Node status async
+// func FetchNodeStatusAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId string, results *model.InfraStatusInfo) error {
 // 	defer wg.Done() //goroutine sync done
 
-// 	if nsId != "" && infraId != "" && vmId != "" {
-// 		vmStatusTmp, err := FetchVmStatus(nsId, infraId, vmId)
+// 	if nsId != "" && infraId != "" && nodeId != "" {
+// 		nodeStatusTmp, err := FetchNodeStatus(nsId, infraId, nodeId)
 // 		if err != nil {
 // 			log.Error().Err(err).Msg("")
-// 			vmStatusTmp.Status = model.StatusFailed
-// 			vmStatusTmp.SystemMessage = err.Error()
+// 			nodeStatusTmp.Status = model.StatusFailed
+// 			nodeStatusTmp.SystemMessage = err.Error()
 // 		}
-// 		if vmStatusTmp != (model.VmStatusInfo{}) {
-// 			results.Vm = append(results.Vm, vmStatusTmp)
+// 		if nodeStatusTmp != (model.NodeStatusInfo{}) {
+// 			results.Vm = append(results.Vm, nodeStatusTmp)
 // 		}
 // 	}
 // 	return nil
 // }
 
-// populateVmStatusInfoFromVmInfo fills VmStatusInfo with data from VmInfo
-// This is a helper function to avoid code duplication in FetchVmStatus
-func populateVmStatusInfoFromVmInfo(statusInfo *model.VmStatusInfo, vmInfo model.VmInfo) {
-	statusInfo.Id = vmInfo.Id
-	statusInfo.Name = vmInfo.Name
-	statusInfo.CspResourceName = vmInfo.CspResourceName
-	statusInfo.PublicIp = vmInfo.PublicIP
-	statusInfo.SSHPort = vmInfo.SSHPort
-	statusInfo.PrivateIp = vmInfo.PrivateIP
-	statusInfo.Status = vmInfo.Status
-	statusInfo.TargetAction = vmInfo.TargetAction
-	statusInfo.TargetStatus = vmInfo.TargetStatus
-	statusInfo.Location = vmInfo.Location
-	statusInfo.MonAgentStatus = vmInfo.MonAgentStatus
-	statusInfo.CreatedTime = vmInfo.CreatedTime
-	statusInfo.SystemMessage = vmInfo.SystemMessage
+// populateNodeStatusInfoFromNodeInfo fills NodeStatusInfo with data from NodeInfo
+// This is a helper function to avoid code duplication in FetchNodeStatus
+func populateNodeStatusInfoFromNodeInfo(statusInfo *model.NodeStatusInfo, nodeInfo model.NodeInfo) {
+	statusInfo.Id = nodeInfo.Id
+	statusInfo.Name = nodeInfo.Name
+	statusInfo.CspResourceName = nodeInfo.CspResourceName
+	statusInfo.PublicIp = nodeInfo.PublicIP
+	statusInfo.SSHPort = nodeInfo.SSHPort
+	statusInfo.PrivateIp = nodeInfo.PrivateIP
+	statusInfo.Status = nodeInfo.Status
+	statusInfo.TargetAction = nodeInfo.TargetAction
+	statusInfo.TargetStatus = nodeInfo.TargetStatus
+	statusInfo.Location = nodeInfo.Location
+	statusInfo.MonAgentStatus = nodeInfo.MonAgentStatus
+	statusInfo.CreatedTime = nodeInfo.CreatedTime
+	statusInfo.SystemMessage = nodeInfo.SystemMessage
 }
 
-// FetchVmStatus is func to fetch VM status (call to CSPs)
-func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo, error) {
+// FetchNodeStatus is func to fetch Node status (call to CSPs)
+func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStatusInfo, error) {
 
-	statusInfo := model.VmStatusInfo{}
+	statusInfo := model.NodeStatusInfo{}
 
-	vmInfo, err := GetVmObject(nsId, infraId, vmId)
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return statusInfo, err
 	}
 
-	// log.Debug().Msgf("[FetchVmStatus] VM %s - Initial state from DB: Status=%s, TargetAction=%s, TargetStatus=%s, ConnectionName=%s",
-	// 	vmId, vmInfo.Status, vmInfo.TargetAction, vmInfo.TargetStatus, vmInfo.ConnectionName)
+	// log.Debug().Msgf("[FetchNodeStatus] Node - Initial state from DB: Status=%s, TargetAction=%s, TargetStatus=%s, ConnectionName=%s",
+	// 	nodeId, nodeInfo.Status, nodeInfo.TargetAction, nodeInfo.TargetStatus, nodeInfo.ConnectionName)
 
-	// Check if we should skip CSP API call based on VM state
+	// Check if we should skip CSP API call based on Node state
 	// Skip API calls for stable final states or when CSP resource doesn't exist
 	shouldSkipCSPCall := false
 
@@ -1615,34 +1615,34 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 	stableStates := map[string]bool{
 		model.StatusTerminated: true,
 		model.StatusFailed:     true,
-		model.StatusSuspended:  true, // Suspended VMs are stable until explicitly resumed
+		model.StatusSuspended:  true, // Suspended Nodes are stable until explicitly resumed
 	}
 
 	// Skip CSP API call for stable states ONLY if there's no active action in progress
 	// If TargetAction is set (Resume, Reboot, etc.), we must fetch from CSP to track progress
-	if stableStates[vmInfo.Status] && vmInfo.TargetAction == model.ActionComplete {
+	if stableStates[nodeInfo.Status] && nodeInfo.TargetAction == model.ActionComplete {
 		shouldSkipCSPCall = true
 	}
 
-	// Skip CSP API call if cspResourceName is empty (VM not properly created)
-	if vmInfo.CspResourceName == "" && vmInfo.TargetAction != model.ActionCreate {
+	// Skip CSP API call if cspResourceName is empty (Node not properly created)
+	if nodeInfo.CspResourceName == "" && nodeInfo.TargetAction != model.ActionCreate {
 		shouldSkipCSPCall = true
 	}
 
 	if shouldSkipCSPCall {
-		// Return complete status info using stored VM info
-		populateVmStatusInfoFromVmInfo(&statusInfo, vmInfo)
-		statusInfo.NativeStatus = vmInfo.Status
+		// Return complete status info using stored Node info
+		populateNodeStatusInfoFromNodeInfo(&statusInfo, nodeInfo)
+		statusInfo.NativeStatus = nodeInfo.Status
 		return statusInfo, nil
 	}
 
-	populateVmStatusInfoFromVmInfo(&statusInfo, vmInfo)
+	populateNodeStatusInfoFromNodeInfo(&statusInfo, nodeInfo)
 	statusInfo.NativeStatus = model.StatusUndefined
 
-	cspResourceName := vmInfo.CspResourceName
+	cspResourceName := nodeInfo.CspResourceName
 
-	if (vmInfo.TargetAction != model.ActionCreate && vmInfo.TargetAction != model.ActionTerminate) && cspResourceName == "" {
-		err = fmt.Errorf("cspResourceName is empty (VmId: %s)", vmId)
+	if (nodeInfo.TargetAction != model.ActionCreate && nodeInfo.TargetAction != model.ActionTerminate) && cspResourceName == "" {
+		err = fmt.Errorf("cspResourceName is empty (NodeId: %s)", nodeId)
 		log.Error().Err(err).Msg("")
 		return statusInfo, err
 	}
@@ -1653,7 +1653,7 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 	callResult := statusResponse{}
 	callResult.Status = ""
 
-	if vmInfo.Status != model.StatusTerminated && cspResourceName != "" {
+	if nodeInfo.Status != model.StatusTerminated && cspResourceName != "" {
 		client := clientManager.NewHttpClient()
 		url := model.SpiderRestUrl + "/vmstatus/" + cspResourceName
 		method := "GET"
@@ -1663,12 +1663,12 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 			ConnectionName string
 		}
 		requestBody := VMStatusReqInfo{}
-		requestBody.ConnectionName = vmInfo.ConnectionName
+		requestBody.ConnectionName = nodeInfo.ConnectionName
 
-		// log.Debug().Msgf("[FetchVmStatus] VM %s: Calling CB-Spider API - URL: %s, ConnectionName: %s",
-		// 	vmId, url, vmInfo.ConnectionName)
+		// log.Debug().Msgf("[FetchNodeStatus] Node: Calling CB-Spider API - URL: %s, ConnectionName: %s",
+		// 	nodeId, url, nodeInfo.ConnectionName)
 
-		// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
+		// Retry to get right Node status from cb-spider. Sometimes cb-spider returns not approriate status.
 		retrycheck := 2
 		for range retrycheck {
 			statusInfo.Status = model.StatusFailed
@@ -1683,16 +1683,16 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 				clientManager.MediumDuration,
 			)
 
-			// log.Debug().Msgf("[FetchVmStatus] VM %s: CB-Spider response (attempt %d/%d) - Status: %s, Error: %v",
-			// 	vmId, i+1, retrycheck, callResult.Status, err)
+			// log.Debug().Msgf("[FetchNodeStatus] Node: CB-Spider response (attempt %d/%d) - Status: %s, Error: %v",
+			// 	nodeId, i+1, retrycheck, callResult.Status, err)
 
 			if err != nil {
 				statusInfo.SystemMessage = err.Error()
 
-				// check if VM is already Terminated
-				if vmInfo.Status == model.StatusTerminated {
-					// VM was already terminated, maintain the status instead of marking as Undefined
-					// log.Debug().Msgf("VM %s does not exist in CSP but is already Terminated, maintaining status", vmId)
+				// check if Node is already Terminated
+				if nodeInfo.Status == model.StatusTerminated {
+					// Node was already terminated, maintain the status instead of marking as Undefined
+					// log.Debug().Msgf("VM %s does not exist in CSP but is already Terminated, maintaining status", nodeId)
 					callResult.Status = model.StatusTerminated
 				} else {
 					callResult.Status = model.StatusUndefined
@@ -1711,7 +1711,7 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 
 	nativeStatus := callResult.Status
 
-	// log.Debug().Msgf("[FetchVmStatus] VM %s: Raw NativeStatus from CSP: %s", vmId, nativeStatus)
+	// log.Debug().Msgf("[FetchNodeStatus] VM %s: Raw NativeStatus from CSP: %s", nodeId, nativeStatus)
 
 	// Define a map to validate nativeStatus
 	var validStatuses = map[string]bool{
@@ -1729,42 +1729,42 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 	if _, ok := validStatuses[nativeStatus]; ok {
 		callResult.Status = nativeStatus
 	} else {
-		// log.Debug().Msgf("[FetchVmStatus] VM %s: NativeStatus '%s' is not valid, setting to Undefined", vmId, nativeStatus)
+		// log.Debug().Msgf("[FetchNodeStatus] VM %s: NativeStatus '%s' is not valid, setting to Undefined", nodeId, nativeStatus)
 		callResult.Status = model.StatusUndefined
 	}
 
-	vmInfo, err = GetVmObject(nsId, infraId, vmId)
+	nodeInfo, err = GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return statusInfo, err
 	}
-	vmStatusTmp := model.VmStatusInfo{}
-	vmStatusTmp.Id = vmInfo.Id
-	vmStatusTmp.Name = vmInfo.Name
-	vmStatusTmp.CspResourceName = vmInfo.CspResourceName
-	vmStatusTmp.Status = vmInfo.Status // Set the current status first
-	vmStatusTmp.PrivateIp = vmInfo.PrivateIP
-	vmStatusTmp.NativeStatus = nativeStatus
-	vmStatusTmp.TargetAction = vmInfo.TargetAction
-	vmStatusTmp.TargetStatus = vmInfo.TargetStatus
-	vmStatusTmp.Location = vmInfo.Location
-	vmStatusTmp.MonAgentStatus = vmInfo.MonAgentStatus
-	vmStatusTmp.CreatedTime = vmInfo.CreatedTime
-	vmStatusTmp.SystemMessage = vmInfo.SystemMessage
+	nodeStatusTmp := model.NodeStatusInfo{}
+	nodeStatusTmp.Id = nodeInfo.Id
+	nodeStatusTmp.Name = nodeInfo.Name
+	nodeStatusTmp.CspResourceName = nodeInfo.CspResourceName
+	nodeStatusTmp.Status = nodeInfo.Status // Set the current status first
+	nodeStatusTmp.PrivateIp = nodeInfo.PrivateIP
+	nodeStatusTmp.NativeStatus = nativeStatus
+	nodeStatusTmp.TargetAction = nodeInfo.TargetAction
+	nodeStatusTmp.TargetStatus = nodeInfo.TargetStatus
+	nodeStatusTmp.Location = nodeInfo.Location
+	nodeStatusTmp.MonAgentStatus = nodeInfo.MonAgentStatus
+	nodeStatusTmp.CreatedTime = nodeInfo.CreatedTime
+	nodeStatusTmp.SystemMessage = nodeInfo.SystemMessage
 
-	// log.Debug().Msgf("[FetchVmStatus] VM %s: Before TargetAction correction - Status=%s, NativeStatus=%s, TargetAction=%s, TargetStatus=%s",
-	// 	vmId, vmStatusTmp.Status, vmStatusTmp.NativeStatus, vmStatusTmp.TargetAction, vmStatusTmp.TargetStatus)
+	// log.Debug().Msgf("[FetchNodeStatus] Node: Before TargetAction correction - Status=%s, NativeStatus=%s, TargetAction=%s, TargetStatus=%s",
+	// 	nodeId, nodeStatusTmp.Status, nodeStatusTmp.NativeStatus, nodeStatusTmp.TargetAction, nodeStatusTmp.TargetStatus)
 
 	//Correct undefined status using TargetAction
-	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionCreate) {
+	if strings.EqualFold(nodeStatusTmp.TargetAction, model.ActionCreate) {
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusCreating
 		}
-		if strings.EqualFold(vmInfo.Status, model.StatusFailed) {
+		if strings.EqualFold(nodeInfo.Status, model.StatusFailed) {
 			callResult.Status = model.StatusFailed
 		}
 	}
-	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionTerminate) {
+	if strings.EqualFold(nodeStatusTmp.TargetAction, model.ActionTerminate) {
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusTerminated
 		}
@@ -1772,39 +1772,39 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 			callResult.Status = model.StatusTerminating
 		}
 	}
-	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionResume) {
+	if strings.EqualFold(nodeStatusTmp.TargetAction, model.ActionResume) {
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusResuming
 		}
 		// NCP may return Creating status during Resume operation instead of Resuming status.
 		if strings.EqualFold(callResult.Status, model.StatusCreating) {
-			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Creating during Resume action, correcting to Resuming", vmId)
+			log.Debug().Msgf("[FetchNodeStatus] VM %s: CSP returned Creating during Resume action, correcting to Resuming", nodeId)
 			callResult.Status = model.StatusResuming
 		}
 		// Some CSPs (e.g., KT Cloud) may return Suspended status during Resume operation
 		// instead of returning Resuming status. Correct it to Resuming.
 		if strings.EqualFold(callResult.Status, model.StatusSuspended) {
-			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Suspended during Resume action, correcting to Resuming", vmId)
+			log.Debug().Msgf("[FetchNodeStatus] VM %s: CSP returned Suspended during Resume action, correcting to Resuming", nodeId)
 			callResult.Status = model.StatusResuming
 		}
 	}
 	// Some CSPs may return Running or Resuming status during Suspend operation instead of Suspending status.
-	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionSuspend) {
+	if strings.EqualFold(nodeStatusTmp.TargetAction, model.ActionSuspend) {
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusSuspending
 		}
 		if strings.EqualFold(callResult.Status, model.StatusRunning) {
-			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Running during Suspend action, correcting to Suspending", vmId)
+			log.Debug().Msgf("[FetchNodeStatus] VM %s: CSP returned Running during Suspend action, correcting to Suspending", nodeId)
 			callResult.Status = model.StatusSuspending
 		}
 		// Tencent may temporarily return Resuming status during Suspend operation
 		if strings.EqualFold(callResult.Status, model.StatusResuming) {
-			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Resuming during Suspend action, correcting to Suspending", vmId)
+			log.Debug().Msgf("[FetchNodeStatus] VM %s: CSP returned Resuming during Suspend action, correcting to Suspending", nodeId)
 			callResult.Status = model.StatusSuspending
 		}
 	}
 	// for action reboot, some csp's native status are suspending, suspended, creating, resuming
-	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionReboot) {
+	if strings.EqualFold(nodeStatusTmp.TargetAction, model.ActionReboot) {
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusRebooting
 		}
@@ -1813,155 +1813,155 @@ func FetchVmStatus(nsId string, infraId string, vmId string) (model.VmStatusInfo
 		}
 	}
 
-	if strings.EqualFold(vmStatusTmp.Status, model.StatusTerminated) {
+	if strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminated) {
 		callResult.Status = model.StatusTerminated
 	}
 
 	// Log status change if status actually changed
-	previousStatus := vmStatusTmp.Status
-	vmStatusTmp.Status = callResult.Status
-	if previousStatus != vmStatusTmp.Status {
-		log.Debug().Msgf("[FetchVmStatus] VM %s: Status changed - %s -> %s (NativeStatus: %s, TargetAction: %s)",
-			vmId, previousStatus, vmStatusTmp.Status, vmStatusTmp.NativeStatus, vmStatusTmp.TargetAction)
+	previousStatus := nodeStatusTmp.Status
+	nodeStatusTmp.Status = callResult.Status
+	if previousStatus != nodeStatusTmp.Status {
+		log.Debug().Msgf("[FetchNodeStatus] Node %s: Status changed - %s -> %s (NativeStatus: %s, TargetAction: %s)",
+			nodeId, previousStatus, nodeStatusTmp.Status, nodeStatusTmp.NativeStatus, nodeStatusTmp.TargetAction)
 	}
 
 	// TODO: Alibaba Undefined status error is not resolved yet.
 	// (After Terminate action. "status": "Undefined", "targetStatus": "None", "targetAction": "None")
 
 	//if TargetStatus == CurrentStatus, record to finialize the control operation
-	if vmStatusTmp.TargetStatus == vmStatusTmp.Status {
-		if vmStatusTmp.TargetStatus != model.StatusTerminated {
-			log.Debug().Msgf("[FetchVmStatus] VM %s: Action completed - TargetStatus(%s) reached",
-				vmId, vmStatusTmp.TargetStatus)
-			vmStatusTmp.SystemMessage = vmStatusTmp.TargetStatus + "==" + vmStatusTmp.Status
-			vmStatusTmp.TargetStatus = model.StatusComplete
-			vmStatusTmp.TargetAction = model.ActionComplete
+	if nodeStatusTmp.TargetStatus == nodeStatusTmp.Status {
+		if nodeStatusTmp.TargetStatus != model.StatusTerminated {
+			log.Debug().Msgf("[FetchNodeStatus] Node %s: Action completed - TargetStatus(%s) reached",
+				nodeId, nodeStatusTmp.TargetStatus)
+			nodeStatusTmp.SystemMessage = nodeStatusTmp.TargetStatus + "==" + nodeStatusTmp.Status
+			nodeStatusTmp.TargetStatus = model.StatusComplete
+			nodeStatusTmp.TargetAction = model.ActionComplete
 
 			//Get current public IP when status has been changed.
-			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, infraId, vmInfo.Id)
+			nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				statusInfo.SystemMessage = err.Error()
 				return statusInfo, err
 			}
-			vmInfo.PublicIP = vmInfoTmp.PublicIp
-			vmInfo.SSHPort = vmInfoTmp.SSHPort
+			nodeInfo.PublicIP = nodeInfoTmp.PublicIp
+			nodeInfo.SSHPort = nodeInfoTmp.SSHPort
 
 		} else {
-			// Don't init TargetStatus if the TargetStatus is model.StatusTerminated. It is to finalize VM lifecycle if model.StatusTerminated.
-			vmStatusTmp.TargetStatus = model.StatusTerminated
-			vmStatusTmp.TargetAction = model.ActionTerminate
-			vmStatusTmp.Status = model.StatusTerminated
-			vmStatusTmp.SystemMessage = "terminated VM. No action is acceptable except deletion"
+			// Don't init TargetStatus if the TargetStatus is model.StatusTerminated. It is to finalize Node lifecycle if model.StatusTerminated.
+			nodeStatusTmp.TargetStatus = model.StatusTerminated
+			nodeStatusTmp.TargetAction = model.ActionTerminate
+			nodeStatusTmp.Status = model.StatusTerminated
+			nodeStatusTmp.SystemMessage = "terminated VM. No action is acceptable except deletion"
 		}
 	}
 
-	vmStatusTmp.PublicIp = vmInfo.PublicIP
-	vmStatusTmp.SSHPort = vmInfo.SSHPort
+	nodeStatusTmp.PublicIp = nodeInfo.PublicIP
+	nodeStatusTmp.SSHPort = nodeInfo.SSHPort
 
-	// Apply current status to vmInfo only if VM is not already terminated
+	// Apply current status to nodeInfo only if VM is not already terminated
 	// Prevent overwriting Terminated status with empty or other states
-	originalVmInfo, _ := GetVmObject(nsId, infraId, vmId)
-	if originalVmInfo.Status != model.StatusTerminated {
-		vmInfo.Status = vmStatusTmp.Status
-		vmInfo.TargetAction = vmStatusTmp.TargetAction
-		vmInfo.TargetStatus = vmStatusTmp.TargetStatus
-		vmInfo.SystemMessage = vmStatusTmp.SystemMessage
+	originalNodeInfo, _ := GetNodeObject(nsId, infraId, nodeId)
+	if originalNodeInfo.Status != model.StatusTerminated {
+		nodeInfo.Status = nodeStatusTmp.Status
+		nodeInfo.TargetAction = nodeStatusTmp.TargetAction
+		nodeInfo.TargetStatus = nodeStatusTmp.TargetStatus
+		nodeInfo.SystemMessage = nodeStatusTmp.SystemMessage
 
 		if cspResourceName != "" {
-			// don't update VM info, if cspResourceName is empty
-			UpdateVmInfo(nsId, infraId, vmInfo)
+			// don't update Node info, if cspResourceName is empty
+			UpdateNodeInfo(nsId, infraId, nodeInfo)
 		}
 	}
-	// else: VM is already terminated, skip status update
+	// else: Node is already terminated, skip status update
 
-	return vmStatusTmp, nil
+	return nodeStatusTmp, nil
 }
 
-// GetInfraVmStatus is func to Get InfraVm Status with option to control CSP API fetch
-func GetInfraVmStatus(nsId string, infraId string, vmId string, fetchFromCSP bool) (*model.VmStatusInfo, error) {
+// GetInfraNodeStatus is func to Get InfraNode Status with option to control CSP API fetch
+func GetInfraNodeStatus(nsId string, infraId string, nodeId string, fetchFromCSP bool) (*model.NodeStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &model.VmStatusInfo{}
+		temp := &model.NodeStatusInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(infraId)
 	if err != nil {
-		temp := &model.VmStatusInfo{}
+		temp := &model.NodeStatusInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
-		temp := &model.VmStatusInfo{}
+		temp := &model.NodeStatusInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	check, _ := CheckVm(nsId, infraId, vmId)
+	check, _ := CheckNode(nsId, infraId, nodeId)
 
 	if !check {
-		temp := &model.VmStatusInfo{}
-		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		temp := &model.NodeStatusInfo{}
+		err := fmt.Errorf("The node " + nodeId + " does not exist.")
 		return temp, err
 	}
 
-	var vmStatusResponse model.VmStatusInfo
+	var nodeStatusResponse model.NodeStatusInfo
 
 	if fetchFromCSP {
 		// Fetch current status from CSP API
-		vmStatusResponse, err = FetchVmStatus(nsId, infraId, vmId)
+		nodeStatusResponse, err = FetchNodeStatus(nsId, infraId, nodeId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 	} else {
 		// Use cached status from database (faster response)
-		vmObject, err := GetVmObject(nsId, infraId, vmId)
+		nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 
-		// Convert VmInfo to VmStatusInfo
-		vmStatusResponse = model.VmStatusInfo{
-			Id:              vmObject.Id,
-			Name:            vmObject.Name,
-			CspResourceName: vmObject.CspResourceName,
-			Status:          vmObject.Status,
-			TargetStatus:    vmObject.TargetStatus,
-			TargetAction:    vmObject.TargetAction,
-			PublicIp:        vmObject.PublicIP,
-			PrivateIp:       vmObject.PrivateIP,
-			SSHPort:         vmObject.SSHPort,
-			Location:        vmObject.Location,
-			MonAgentStatus:  vmObject.MonAgentStatus,
-			CreatedTime:     vmObject.CreatedTime,
-			SystemMessage:   vmObject.SystemMessage,
+		// Convert NodeInfo to NodeStatusInfo
+		nodeStatusResponse = model.NodeStatusInfo{
+			Id:              nodeObject.Id,
+			Name:            nodeObject.Name,
+			CspResourceName: nodeObject.CspResourceName,
+			Status:          nodeObject.Status,
+			TargetStatus:    nodeObject.TargetStatus,
+			TargetAction:    nodeObject.TargetAction,
+			PublicIp:        nodeObject.PublicIP,
+			PrivateIp:       nodeObject.PrivateIP,
+			SSHPort:         nodeObject.SSHPort,
+			Location:        nodeObject.Location,
+			MonAgentStatus:  nodeObject.MonAgentStatus,
+			CreatedTime:     nodeObject.CreatedTime,
+			SystemMessage:   nodeObject.SystemMessage,
 		}
 	}
 
-	return &vmStatusResponse, nil
+	return &nodeStatusResponse, nil
 }
 
-// GetInfraVmCurrentStatus is func to Get InfraVm Current Status from CSP API (real-time)
-func GetInfraVmCurrentStatus(nsId string, infraId string, vmId string) (*model.VmStatusInfo, error) {
-	// Simply delegate to GetInfraVmStatus with fetchFromCSP=true
-	return GetInfraVmStatus(nsId, infraId, vmId, true)
+// GetInfraNodeCurrentStatus is func to Get InfraNode Current Status from CSP API (real-time)
+func GetInfraNodeCurrentStatus(nsId string, infraId string, nodeId string) (*model.NodeStatusInfo, error) {
+	// Simply delegate to GetInfraNodeStatus with fetchFromCSP=true
+	return GetInfraNodeStatus(nsId, infraId, nodeId, true)
 }
 
-// [Update Infra and VM object]
+// [Update Infra and Node object]
 
-// UpdateInfraInfo is func to update Infra Info (without VM info in Infra)
+// UpdateInfraInfo is func to update Infra Info (without Node info in Infra)
 func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
 	infraInfoMutex.Lock()
 	defer infraInfoMutex.Unlock()
 
-	infraInfoData.Vm = nil
+	infraInfoData.Node = nil
 
 	key := common.GenInfraKey(nsId, infraInfoData.Id, "")
 
@@ -1983,14 +1983,14 @@ func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
 	}
 }
 
-// UpdateVmInfo is func to update VM Info
-func UpdateVmInfo(nsId string, infraId string, vmInfoData model.VmInfo) {
+// UpdateNodeInfo is func to update Node Info
+func UpdateNodeInfo(nsId string, infraId string, nodeInfoData model.NodeInfo) {
 	infraInfoMutex.Lock()
 	defer func() {
 		infraInfoMutex.Unlock()
 	}()
 
-	key := common.GenInfraKey(nsId, infraId, vmInfoData.Id)
+	key := common.GenInfraKey(nsId, infraId, nodeInfoData.Id)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, exists, err := kvstore.GetKv(key)
@@ -1998,11 +1998,11 @@ func UpdateVmInfo(nsId string, infraId string, vmInfoData model.VmInfo) {
 		return
 	}
 
-	vmTmp := model.VmInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
+	nodeTmp := model.NodeInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &nodeTmp)
 
-	if !reflect.DeepEqual(vmTmp, vmInfoData) {
-		val, _ := json.Marshal(vmInfoData)
+	if !reflect.DeepEqual(nodeTmp, nodeInfoData) {
+		val, _ := json.Marshal(nodeInfoData)
 		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -2030,60 +2030,60 @@ func GetInfraAssociatedResources(nsId string, infraId string) (model.InfraAssoci
 	specSet := make(map[string]struct{})
 	connNameSet := make(map[string]struct{})
 	providerNameSet := make(map[string]struct{})
-	vmIdSet := make(map[string]struct{})
+	nodeIdSet := make(map[string]struct{})
 	nodeGroupIdSet := make(map[string]struct{})
-	cspVmNameSet := make(map[string]struct{})
-	cspVmIdSet := make(map[string]struct{})
+	cspNodeNameSet := make(map[string]struct{})
+	cspNodeIdSet := make(map[string]struct{})
 
-	for _, vm := range infraInfo.Vm {
-		if vm.VNetId != "" {
-			vNetSet[vm.VNetId] = struct{}{}
+	for _, node := range infraInfo.Node {
+		if node.VNetId != "" {
+			vNetSet[node.VNetId] = struct{}{}
 		}
-		if vm.CspVNetId != "" {
-			cspVNetSet[vm.CspVNetId] = struct{}{}
+		if node.CspVNetId != "" {
+			cspVNetSet[node.CspVNetId] = struct{}{}
 		}
-		if vm.SubnetId != "" {
-			subnetSet[vm.SubnetId] = struct{}{}
+		if node.SubnetId != "" {
+			subnetSet[node.SubnetId] = struct{}{}
 		}
-		if vm.CspSubnetId != "" {
-			cspSubnetSet[vm.CspSubnetId] = struct{}{}
+		if node.CspSubnetId != "" {
+			cspSubnetSet[node.CspSubnetId] = struct{}{}
 		}
-		for _, sg := range vm.SecurityGroupIds {
+		for _, sg := range node.SecurityGroupIds {
 			if sg != "" {
 				sgSet[sg] = struct{}{}
 			}
 		}
-		for _, dd := range vm.DataDiskIds {
+		for _, dd := range node.DataDiskIds {
 			if dd != "" {
 				dataDiskSet[dd] = struct{}{}
 			}
 		}
-		if vm.SshKeyId != "" {
-			sshKeySet[vm.SshKeyId] = struct{}{}
+		if node.SshKeyId != "" {
+			sshKeySet[node.SshKeyId] = struct{}{}
 		}
-		if vm.ImageId != "" {
-			imageSet[vm.ImageId] = struct{}{}
+		if node.ImageId != "" {
+			imageSet[node.ImageId] = struct{}{}
 		}
-		if vm.SpecId != "" {
-			specSet[vm.SpecId] = struct{}{}
+		if node.SpecId != "" {
+			specSet[node.SpecId] = struct{}{}
 		}
-		if vm.ConnectionName != "" {
-			connNameSet[vm.ConnectionName] = struct{}{}
+		if node.ConnectionName != "" {
+			connNameSet[node.ConnectionName] = struct{}{}
 		}
-		if vm.ConnectionConfig.ProviderName != "" {
-			providerNameSet[vm.ConnectionConfig.ProviderName] = struct{}{}
+		if node.ConnectionConfig.ProviderName != "" {
+			providerNameSet[node.ConnectionConfig.ProviderName] = struct{}{}
 		}
-		if vm.Id != "" {
-			vmIdSet[vm.Id] = struct{}{}
+		if node.Id != "" {
+			nodeIdSet[node.Id] = struct{}{}
 		}
-		if vm.NodeGroupId != "" {
-			nodeGroupIdSet[vm.NodeGroupId] = struct{}{}
+		if node.NodeGroupId != "" {
+			nodeGroupIdSet[node.NodeGroupId] = struct{}{}
 		}
-		if vm.CspResourceName != "" {
-			cspVmNameSet[vm.CspResourceName] = struct{}{}
+		if node.CspResourceName != "" {
+			cspNodeNameSet[node.CspResourceName] = struct{}{}
 		}
-		if vm.CspResourceId != "" {
-			cspVmIdSet[vm.CspResourceId] = struct{}{}
+		if node.CspResourceId != "" {
+			cspNodeIdSet[node.CspResourceId] = struct{}{}
 		}
 	}
 
@@ -2107,24 +2107,24 @@ func GetInfraAssociatedResources(nsId string, infraId string) (model.InfraAssoci
 		SpecIds:          toSlice(specSet),
 		ConnectionNames:  toSlice(connNameSet),
 		ProviderNames:    toSlice(providerNameSet),
-		VmIds:            toSlice(vmIdSet),
+		NodeIds:          toSlice(nodeIdSet),
 		NodeGroupIds:     toSlice(nodeGroupIdSet),
-		CspVmNames:       toSlice(cspVmNameSet),
-		CspVmIds:         toSlice(cspVmIdSet),
+		CspNodeNames:       toSlice(cspNodeNameSet),
+		CspNodeIds:         toSlice(cspNodeIdSet),
 	}, nil
 }
 
-// ProvisionDataDisk is func to provision DataDisk to VM (create and attach to VM)
-func ProvisionDataDisk(ctx context.Context, nsId string, infraId string, vmId string, u *model.DataDiskVmReq) (model.VmInfo, error) {
-	vm, err := GetVmObject(nsId, infraId, vmId)
+// ProvisionDataDisk is func to provision DataDisk to Node (create and attach to Node)
+func ProvisionDataDisk(ctx context.Context, nsId string, infraId string, nodeId string, u *model.DataDiskNodeReq) (model.NodeInfo, error) {
+	node, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	createDiskReq := model.DataDiskReq{
 		Name:           u.Name,
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 		DiskType:       u.DiskType,
 		DiskSize:       u.DiskSize,
 		Description:    u.Description,
@@ -2133,45 +2133,45 @@ func ProvisionDataDisk(ctx context.Context, nsId string, infraId string, vmId st
 	newDataDisk, err := resource.CreateDataDisk(ctx, nsId, &createDiskReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 	retry := 3
 	for i := 0; i < retry; i++ {
-		vmInfo, err := AttachDetachDataDisk(nsId, infraId, vmId, model.AttachDataDisk, newDataDisk.Id, false)
+		nodeInfo, err := AttachDetachDataDisk(nsId, infraId, nodeId, model.AttachDataDisk, newDataDisk.Id, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
-			return vmInfo, nil
+			return nodeInfo, nil
 		}
 		time.Sleep(5 * time.Second)
 	}
-	return model.VmInfo{}, err
+	return model.NodeInfo{}, err
 }
 
-// AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
-func AttachDetachDataDisk(nsId string, infraId string, vmId string, command string, dataDiskId string, force bool) (model.VmInfo, error) {
-	vmKey := common.GenInfraKey(nsId, infraId, vmId)
+// AttachDetachDataDisk is func to attach/detach DataDisk to/from Node
+func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command string, dataDiskId string, force bool) (model.NodeInfo, error) {
+	nodeKey := common.GenInfraKey(nsId, infraId, nodeId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, exists, err := kvstore.GetKv(vmKey)
+	keyValue, exists, err := kvstore.GetKv(nodeKey)
 	if !exists || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/infra/vm': %s/%s/%s \n", nsId, infraId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/infra/node': %s/%s/%s \n", nsId, infraId, nodeId)
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
-	vm := model.VmInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &vm)
+	node := model.NodeInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &node)
 
-	isInList := common.CheckElement(dataDiskId, vm.DataDiskIds)
+	isInList := common.CheckElement(dataDiskId, node.DataDiskIds)
 	if strings.EqualFold(command, model.DetachDataDisk) && !isInList && !force {
-		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
+		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list %v", dataDiskId, node.DataDiskIds)
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	} else if strings.EqualFold(command, model.AttachDataDisk) && isInList && !force {
-		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
+		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list %v", dataDiskId, node.DataDiskIds)
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	dataDiskKey := common.GenResourceKey(nsId, model.StrDataDisk, dataDiskId)
@@ -2179,7 +2179,7 @@ func AttachDetachDataDisk(nsId string, infraId string, vmId string, command stri
 	// Check existence of the key. If no key, no update.
 	keyValue, exists, err = kvstore.GetKv(dataDiskKey)
 	if !exists || err != nil {
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	dataDisk := model.DataDiskInfo{}
@@ -2191,9 +2191,9 @@ func AttachDetachDataDisk(nsId string, infraId string, vmId string, command stri
 	//var requestBody interface{}
 
 	requestBody := model.SpiderDiskAttachDetachReqWrapper{
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 		ReqInfo: model.SpiderDiskAttachDetachReq{
-			VMName: vm.CspResourceName,
+			VMName: node.CspResourceName,
 		},
 	}
 
@@ -2230,15 +2230,15 @@ func AttachDetachDataDisk(nsId string, infraId string, vmId string, command stri
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
 
 	switch command {
 	case model.AttachDataDisk:
-		vm.DataDiskIds = append(vm.DataDiskIds, dataDiskId)
-		// resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, model.StrAdd, vmKey)
+		node.DataDiskIds = append(node.DataDiskIds, dataDiskId)
+		// resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, model.StrAdd, nodeKey)
 	case model.DetachDataDisk:
-		oldDataDiskIds := vm.DataDiskIds
+		oldDataDiskIds := node.DataDiskIds
 		newDataDiskIds := oldDataDiskIds
 
 		flag := false
@@ -2257,19 +2257,19 @@ func AttachDetachDataDisk(nsId string, infraId string, vmId string, command stri
 		if !flag && !force {
 			err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
 			log.Error().Err(err).Msg("")
-			return model.VmInfo{}, err
+			return model.NodeInfo{}, err
 		} else {
-			vm.DataDiskIds = newDataDiskIds
+			node.DataDiskIds = newDataDiskIds
 		}
 	}
 
 	time.Sleep(8 * time.Second)
 	method = "GET"
-	url = fmt.Sprintf("%s/vm/%s", model.SpiderRestUrl, vm.CspResourceName)
+	url = fmt.Sprintf("%s/node/%s", model.SpiderRestUrl, node.CspResourceName)
 	requestBodyConnection := model.SpiderConnectionName{
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 	}
-	var callResultSpiderVMInfo model.SpiderVMInfo
+	var callResultSpiderNodeInfo model.SpiderVMInfo
 
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
@@ -2278,22 +2278,22 @@ func AttachDetachDataDisk(nsId string, infraId string, vmId string, command stri
 		nil,
 		clientManager.SetUseBody(requestBodyConnection),
 		&requestBodyConnection,
-		&callResultSpiderVMInfo,
+		&callResultSpiderNodeInfo,
 		clientManager.MediumDuration,
 	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return vm, err
+		return node, err
 	}
 
-	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderVM.DataDiskIIDs: %s", updatedSpiderVM.DataDiskIIDs) // for debug
-	vm.AddtionalDetails = callResultSpiderVMInfo.KeyValueList
+	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderNode.DataDiskIIDs: %s", updatedSpiderNode.DataDiskIIDs) // for debug
+	node.AddtionalDetails = callResultSpiderNodeInfo.KeyValueList
 
-	UpdateVmInfo(nsId, infraId, vm)
+	UpdateNodeInfo(nsId, infraId, node)
 
 	// Update TB DataDisk object's 'associatedObjects' field
-	resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, cmdToUpdateAsso, vmKey)
+	resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, cmdToUpdateAsso, nodeKey)
 
 	// Update TB DataDisk object's 'status' field
 	// Directly set the final expected status after successful attach/detach operation
@@ -2323,7 +2323,7 @@ func AttachDetachDataDisk(nsId string, infraId string, vmId string, command stri
 			err := fmt.Errorf(string(resp.Body()))
 			fmt.Println("body: ", string(resp.Body()))
 			log.Error().Err(err).Msg("")
-			return vm, err
+			return node, err
 		}
 
 		updatedSpiderDisk := resp.Result().(*resource.SpiderDiskInfo)
@@ -2332,22 +2332,22 @@ func AttachDetachDataDisk(nsId string, infraId string, vmId string, command stri
 		resource.UpdateResourceObject(nsId, model.StrDataDisk, dataDisk)
 	*/
 
-	return vm, nil
+	return node, nil
 }
 
-func GetAvailableDataDisks(nsId string, infraId string, vmId string, option string) (interface{}, error) {
-	vmKey := common.GenInfraKey(nsId, infraId, vmId)
+func GetAvailableDataDisks(nsId string, infraId string, nodeId string, option string) (interface{}, error) {
+	nodeKey := common.GenInfraKey(nsId, infraId, nodeId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, exists, err := kvstore.GetKv(vmKey)
+	keyValue, exists, err := kvstore.GetKv(nodeKey)
 	if !exists || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/infra/vm': %s/%s/%s \n", nsId, infraId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/infra/node': %s/%s/%s \n", nsId, infraId, nodeId)
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	vm := model.VmInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &vm)
+	node := model.NodeInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &node)
 
 	tbDataDisksInterface, err := resource.ListResource(nsId, model.StrDataDisk, "", "")
 	if err != nil {
@@ -2380,7 +2380,7 @@ func GetAvailableDataDisks(nsId string, infraId string, vmId string, option stri
 			}
 			tempObj := newObj.(model.DataDiskInfo)
 
-			if v.ConnectionName == vm.ConnectionName && tempObj.Status == "Available" {
+			if v.ConnectionName == node.ConnectionName && tempObj.Status == "Available" {
 				idList = append(idList, v.Id)
 			}
 		}
@@ -2389,7 +2389,7 @@ func GetAvailableDataDisks(nsId string, infraId string, vmId string, option stri
 	}
 }
 
-// [Delete Infra and VM object]
+// [Delete Infra and Node object]
 
 // DelInfra is func to delete Infra object
 func DelInfra(nsId string, infraId string, option string) (model.IdList, error) {
@@ -2435,10 +2435,10 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 				log.Error().Err(err).Msg("")
 				return deletedResources, err
 			}
-			// Poll until all VMs reach Terminated (or a non-Terminating state),
+			// Poll until all Nodes reach Terminated (or a non-Terminating state),
 			// because ControlInfraAsync returns immediately while the CSP processes
 			// the termination request in the background (can take several minutes
-			// for bare-metal instances, but typically 10-30 s for regular VMs).
+			// for bare-metal instances, but typically 10-30 s for regular Nodes).
 			const terminateWaitInterval = 5 * time.Second
 			const terminateWaitTimeout = 10 * time.Minute
 			log.Info().Msgf("Waiting for Infra %s to become Terminated (polling every %s, timeout %s)", infraId, terminateWaitInterval, terminateWaitTimeout)
@@ -2450,7 +2450,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 					break
 				}
 				log.Info().Msgf("Infra %s status: %s", infraId, infraStatus.Status)
-				// Exit the loop once every VM has left the Terminating state
+				// Exit the loop once every Node has left the Terminating state
 				if !strings.Contains(infraStatus.Status, model.StatusTerminating) {
 					break
 				}
@@ -2492,49 +2492,49 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Policy: "+infraId)
 	}
 
-	vmList, err := ListVmId(nsId, infraId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
 
-	// delete vms info
-	for _, v := range vmList {
-		vmKey := common.GenInfraKey(nsId, infraId, v)
-		fmt.Println(vmKey)
+	// delete nodes info
+	for _, v := range nodeList {
+		nodeKey := common.GenInfraKey(nsId, infraId, v)
+		fmt.Println(nodeKey)
 
-		// get vm info
-		vmInfo, err := GetVmObject(nsId, infraId, v)
+		// get node info
+		nodeInfo, err := GetNodeObject(nsId, infraId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
 
-		err = kvstore.Delete(vmKey)
+		err = kvstore.Delete(nodeKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
 
-		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfo.ImageId, model.StrDelete, vmKey)
+		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfo.ImageId, model.StrDelete, nodeKey)
 		if err != nil {
-			resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfo.ImageId, model.StrDelete, vmKey)
+			resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, nodeInfo.ImageId, model.StrDelete, nodeKey)
 		}
 
-		//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, vmInfo.SpecId, model.StrDelete, vmKey)
-		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfo.SshKeyId, model.StrDelete, vmKey)
-		resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfo.VNetId, model.StrDelete, vmKey)
+		//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, nodeInfo.SpecId, model.StrDelete, nodeKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfo.SshKeyId, model.StrDelete, nodeKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrVNet, nodeInfo.VNetId, model.StrDelete, nodeKey)
 
-		for _, v2 := range vmInfo.SecurityGroupIds {
-			resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v2, model.StrDelete, vmKey)
+		for _, v2 := range nodeInfo.SecurityGroupIds {
+			resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v2, model.StrDelete, nodeKey)
 		}
 
-		for _, v2 := range vmInfo.DataDiskIds {
-			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v2, model.StrDelete, vmKey)
+		for _, v2 := range nodeInfo.DataDiskIds {
+			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v2, model.StrDelete, nodeKey)
 		}
-		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"VM: "+v)
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Node: "+v)
 
-		err = label.DeleteLabelObject(model.StrVM, vmInfo.Uid)
+		err = label.DeleteLabelObject(model.StrNode, nodeInfo.Uid)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
@@ -2608,8 +2608,8 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	return deletedResources, nil
 }
 
-// DelInfraVm is func to delete VM object
-func DelInfraVm(nsId string, infraId string, vmId string, option string) error {
+// DelInfraNode is func to delete Node object
+func DelInfraNode(nsId string, infraId string, nodeId string, option string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -2623,39 +2623,39 @@ func DelInfraVm(nsId string, infraId string, vmId string, option string) error {
 		return err
 	}
 
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	check, _ := CheckVm(nsId, infraId, vmId)
+	check, _ := CheckNode(nsId, infraId, nodeId)
 
 	if !check {
-		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		err := fmt.Errorf("The node " + nodeId + " does not exist.")
 		return err
 	}
 
-	log.Debug().Msg("Deleting VM " + vmId)
+	log.Debug().Msg("Deleting VM " + nodeId)
 
 	// skip termination if option is force
 	if option != "force" {
-		// ControlVm first
-		_, err := HandleInfraVmAction(nsId, infraId, vmId, model.ActionTerminate, false)
+		// ControlNode first
+		_, err := HandleInfraNodeAction(nsId, infraId, nodeId, model.ActionTerminate, false)
 		if err != nil {
 			log.Info().Msg(err.Error())
 			return err
 		}
 		// for deletion, need to wait until termination is finished
-		log.Info().Msg("Wait for VM termination in 1 second")
+		log.Info().Msg("Wait for Node termination in 1 second")
 		time.Sleep(1 * time.Second)
 
 	}
 
-	// get vm info
-	vmInfo, _ := GetVmObject(nsId, infraId, vmId)
+	// get node info
+	nodeInfo, _ := GetNodeObject(nsId, infraId, nodeId)
 
-	// delete vms info
-	key := common.GenInfraKey(nsId, infraId, vmId)
+	// delete nodes info
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -2669,12 +2669,12 @@ func DelInfraVm(nsId string, infraId string, vmId string, option string) error {
 		return err
 	}
 	for _, v := range nodeGroup {
-		vmListInNodeGroup, err := ListVmByNodeGroup(nsId, infraId, v)
+		nodeListInNodeGroup, err := ListNodeByNodeGroup(nsId, infraId, v)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to list vm in nodeGroup to remove")
+			log.Error().Err(err).Msg("Failed to list node in nodeGroup to remove")
 			return err
 		}
-		if len(vmListInNodeGroup) == 0 {
+		if len(nodeListInNodeGroup) == 0 {
 			nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, v)
 			err := kvstore.Delete(nodeGroupKey)
 			if err != nil {
@@ -2684,24 +2684,24 @@ func DelInfraVm(nsId string, infraId string, vmId string, option string) error {
 		}
 	}
 
-	_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfo.ImageId, model.StrDelete, key)
+	_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfo.ImageId, model.StrDelete, key)
 	if err != nil {
-		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfo.ImageId, model.StrDelete, key)
+		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, nodeInfo.ImageId, model.StrDelete, key)
 	}
 
-	//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, vmInfo.SpecId, model.StrDelete, key)
-	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfo.SshKeyId, model.StrDelete, key)
-	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfo.VNetId, model.StrDelete, key)
+	//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, nodeInfo.SpecId, model.StrDelete, key)
+	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfo.SshKeyId, model.StrDelete, key)
+	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, nodeInfo.VNetId, model.StrDelete, key)
 
-	for _, v := range vmInfo.SecurityGroupIds {
+	for _, v := range nodeInfo.SecurityGroupIds {
 		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrDelete, key)
 	}
 
-	for _, v := range vmInfo.DataDiskIds {
+	for _, v := range nodeInfo.DataDiskIds {
 		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrDelete, key)
 	}
 
-	err = label.DeleteLabelObject(model.StrVM, vmInfo.Uid)
+	err = label.DeleteLabelObject(model.StrNode, nodeInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
@@ -2709,15 +2709,15 @@ func DelInfraVm(nsId string, infraId string, vmId string, option string) error {
 	return nil
 }
 
-// DeregisterInfraVm deregisters VM from Spider and TB without deleting the actual CSP resource
-// This function only removes the VM mapping from Spider and TB internal storage
-// The actual CSP VM resource remains intact and can be re-registered later
-func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
+// DeregisterInfraNode deregisters Node from Spider and TB without deleting the actual CSP resource
+// This function only removes the Node mapping from Spider and TB internal storage
+// The actual CSP Node resource remains intact and can be re-registered later
+func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 
-	log.Debug().Msg("[Deregister VM] " + vmId)
+	log.Debug().Msg("[Deregister VM] " + nodeId)
 
-	// get vm info
-	vmInfo, err := GetVmObject(nsId, infraId, vmId)
+	// get node info
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -2727,7 +2727,7 @@ func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 	var relatedResources []string
 
 	// Check DataDisks
-	for _, dataDiskId := range vmInfo.DataDiskIds {
+	for _, dataDiskId := range nodeInfo.DataDiskIds {
 		exists, _ := resource.CheckResource(nsId, model.StrDataDisk, dataDiskId)
 		if exists {
 			relatedResources = append(relatedResources, fmt.Sprintf("DataDisk: %s", dataDiskId))
@@ -2735,7 +2735,7 @@ func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 	}
 
 	// Check SecurityGroups
-	for _, sgId := range vmInfo.SecurityGroupIds {
+	for _, sgId := range nodeInfo.SecurityGroupIds {
 		exists, _ := resource.CheckResource(nsId, model.StrSecurityGroup, sgId)
 		if exists {
 			relatedResources = append(relatedResources, fmt.Sprintf("SecurityGroup: %s", sgId))
@@ -2743,16 +2743,16 @@ func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 	}
 
 	// Check SSHKey
-	if vmInfo.SshKeyId != "" {
-		exists, _ := resource.CheckResource(nsId, model.StrSSHKey, vmInfo.SshKeyId)
+	if nodeInfo.SshKeyId != "" {
+		exists, _ := resource.CheckResource(nsId, model.StrSSHKey, nodeInfo.SshKeyId)
 		if exists {
-			relatedResources = append(relatedResources, fmt.Sprintf("SSHKey: %s", vmInfo.SshKeyId))
+			relatedResources = append(relatedResources, fmt.Sprintf("SSHKey: %s", nodeInfo.SshKeyId))
 		}
 	}
 
 	// If any resources are missing, return error
 	if len(relatedResources) > 0 {
-		err := fmt.Errorf("cannot deregister VM '%s': the following associated resources do not exist: %v", vmId, relatedResources)
+		err := fmt.Errorf("cannot deregister VM '%s': the following associated resources do not exist: %v", nodeId, relatedResources)
 		return err
 	}
 
@@ -2766,10 +2766,10 @@ func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 		ConnectionName string
 	}
 	requestBody := JsonTemplate{
-		ConnectionName: vmInfo.ConnectionName,
+		ConnectionName: nodeInfo.ConnectionName,
 	}
 
-	url := model.SpiderRestUrl + "/regvm/" + vmInfo.CspResourceName
+	url := model.SpiderRestUrl + "/regvm/" + nodeInfo.CspResourceName
 	log.Debug().Msg("Sending deregister DELETE request to " + url)
 
 	_, err = clientManager.ExecuteHttpRequest(
@@ -2789,8 +2789,8 @@ func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 	}
 	log.Debug().Msg("Deregister request finished from " + url)
 
-	// delete the VM info from TB
-	key := common.GenInfraKey(nsId, infraId, vmId)
+	// delete the Node info from TB
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -2798,13 +2798,13 @@ func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 	}
 
 	// remove empty NodeGroups
-	vmListInNodeGroup, err := ListVmByNodeGroup(nsId, infraId, vmInfo.NodeGroupId)
+	nodeListInNodeGroup, err := ListNodeByNodeGroup(nsId, infraId, nodeInfo.NodeGroupId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list vm in nodeGroup to remove")
+		log.Error().Err(err).Msg("Failed to list node in nodeGroup to remove")
 		return err
 	}
-	if len(vmListInNodeGroup) == 0 {
-		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, vmInfo.NodeGroupId)
+	if len(nodeListInNodeGroup) == 0 {
+		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeInfo.NodeGroupId)
 		err := kvstore.Delete(nodeGroupKey)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
@@ -2812,18 +2812,18 @@ func DeregisterInfraVm(nsId string, infraId string, vmId string) error {
 		}
 	}
 
-	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfo.SshKeyId, model.StrDelete, key)
-	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfo.VNetId, model.StrDelete, key)
+	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfo.SshKeyId, model.StrDelete, key)
+	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, nodeInfo.VNetId, model.StrDelete, key)
 
-	for _, v := range vmInfo.SecurityGroupIds {
+	for _, v := range nodeInfo.SecurityGroupIds {
 		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrDelete, key)
 	}
 
-	for _, v := range vmInfo.DataDiskIds {
+	for _, v := range nodeInfo.DataDiskIds {
 		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrDelete, key)
 	}
 
-	err = label.DeleteLabelObject(model.StrVM, vmInfo.Uid)
+	err = label.DeleteLabelObject(model.StrNode, nodeInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
@@ -2870,58 +2870,58 @@ func DelAllInfra(nsId string, option string) (string, error) {
 	}
 }
 
-// UpdateVmPublicIp is func to update VM public IP
-func UpdateVmPublicIp(nsId string, infraId string, vmInfoData model.VmInfo) error {
+// UpdateNodePublicIp is func to update Node public IP
+func UpdateNodePublicIp(nsId string, infraId string, nodeInfoData model.NodeInfo) error {
 
-	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, infraId, vmInfoData.Id)
+	nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfoData.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	if vmInfoData.PublicIP != vmInfoTmp.PublicIp || vmInfoData.SSHPort != vmInfoTmp.SSHPort {
-		vmInfoData.PublicIP = vmInfoTmp.PublicIp
-		vmInfoData.SSHPort = vmInfoTmp.SSHPort
-		UpdateVmInfo(nsId, infraId, vmInfoData)
+	if nodeInfoData.PublicIP != nodeInfoTmp.PublicIp || nodeInfoData.SSHPort != nodeInfoTmp.SSHPort {
+		nodeInfoData.PublicIP = nodeInfoTmp.PublicIp
+		nodeInfoData.SSHPort = nodeInfoTmp.SSHPort
+		UpdateNodeInfo(nsId, infraId, nodeInfoData)
 	}
 	return nil
 }
 
-// GetVmTemplate is func to get VM template
-func GetVmTemplate(nsId string, infraId string, algo string) (model.VmInfo, error) {
+// GetNodeTemplate is func to get Node template
+func GetNodeTemplate(nsId string, infraId string, algo string) (model.NodeInfo, error) {
 
-	log.Debug().Msg("[GetVmTemplate]" + infraId + " by algo: " + algo)
+	log.Debug().Msg("[GetNodeTemplate]" + infraId + " by algo: " + algo)
 
-	vmList, err := ListVmId(nsId, infraId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, err
+		return model.NodeInfo{}, err
 	}
-	if len(vmList) == 0 {
-		return model.VmInfo{}, nil
+	if len(nodeList) == 0 {
+		return model.NodeInfo{}, nil
 	}
 
 	rand.Seed(time.Now().UnixNano())
-	index := rand.Intn(len(vmList))
-	vmObj, vmErr := GetVmObject(nsId, infraId, vmList[index])
-	var vmTemplate model.VmInfo
+	index := rand.Intn(len(nodeList))
+	nodeObj, nodeErr := GetNodeObject(nsId, infraId, nodeList[index])
+	var nodeTemplate model.NodeInfo
 
-	// only take template required to create VM
-	vmTemplate.Name = vmObj.Name
-	vmTemplate.ConnectionName = vmObj.ConnectionName
-	vmTemplate.ImageId = vmObj.ImageId
-	vmTemplate.SpecId = vmObj.SpecId
-	vmTemplate.VNetId = vmObj.VNetId
-	vmTemplate.SubnetId = vmObj.SubnetId
-	vmTemplate.SecurityGroupIds = vmObj.SecurityGroupIds
-	vmTemplate.SshKeyId = vmObj.SshKeyId
-	vmTemplate.VmUserName = vmObj.VmUserName
-	vmTemplate.VmUserPassword = vmObj.VmUserPassword
+	// only take template required to create Node
+	nodeTemplate.Name = nodeObj.Name
+	nodeTemplate.ConnectionName = nodeObj.ConnectionName
+	nodeTemplate.ImageId = nodeObj.ImageId
+	nodeTemplate.SpecId = nodeObj.SpecId
+	nodeTemplate.VNetId = nodeObj.VNetId
+	nodeTemplate.SubnetId = nodeObj.SubnetId
+	nodeTemplate.SecurityGroupIds = nodeObj.SecurityGroupIds
+	nodeTemplate.SshKeyId = nodeObj.SshKeyId
+	nodeTemplate.NodeUserName = nodeObj.NodeUserName
+	nodeTemplate.NodeUserPassword = nodeObj.NodeUserPassword
 
-	if vmErr != nil {
+	if nodeErr != nil {
 		log.Error().Err(err).Msg("")
-		return model.VmInfo{}, vmErr
+		return model.NodeInfo{}, nodeErr
 	}
 
-	return vmTemplate, nil
+	return nodeTemplate, nil
 
 }

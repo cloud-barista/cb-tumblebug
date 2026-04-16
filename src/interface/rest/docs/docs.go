@@ -1545,7 +1545,7 @@ const docTemplate = `{
         },
         "/inspectResources": {
             "post": {
-                "description": "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP",
+                "description": "Inspect Resources (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug, CB-Spider, CSP",
                 "consumes": [
                     "application/json"
                 ],
@@ -1555,7 +1555,7 @@ const docTemplate = `{
                 "tags": [
                     "[Admin] System Management"
                 ],
-                "summary": "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP",
+                "summary": "Inspect Resources (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug, CB-Spider, CSP",
                 "operationId": "InspectResources",
                 "parameters": [
                     {
@@ -1598,7 +1598,7 @@ const docTemplate = `{
         },
         "/inspectResourcesOverview": {
             "get": {
-                "description": "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections",
+                "description": "Inspect Resources Overview (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug and CSP for all connections",
                 "consumes": [
                     "application/json"
                 ],
@@ -1608,7 +1608,7 @@ const docTemplate = `{
                 "tags": [
                     "[Admin] System Management"
                 ],
-                "summary": "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections",
+                "summary": "Inspect Resources Overview (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug and CSP for all connections",
                 "operationId": "InspectResourcesOverview",
                 "parameters": [
                     {
@@ -1824,7 +1824,7 @@ const docTemplate = `{
                             "ns",
                             "infra",
                             "nodeGroup",
-                            "vm",
+                            "node",
                             "k8s",
                             "vNet",
                             "subnet",
@@ -1895,7 +1895,7 @@ const docTemplate = `{
                             "ns",
                             "infra",
                             "nodeGroup",
-                            "vm",
+                            "node",
                             "k8s",
                             "vNet",
                             "subnet",
@@ -1977,7 +1977,7 @@ const docTemplate = `{
                             "ns",
                             "infra",
                             "nodeGroup",
-                            "vm",
+                            "node",
                             "k8s",
                             "vNet",
                             "subnet",
@@ -2386,7 +2386,7 @@ const docTemplate = `{
                             "ns",
                             "infra",
                             "nodeGroup",
-                            "vm",
+                            "node",
                             "k8s",
                             "vNet",
                             "subnet",
@@ -3122,7 +3122,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/cmd/infra/{infraId}": {
             "post": {
-                "description": "Send a command to specified Infra. Use query parameters to target specific nodeGroup or VM.\nWhen async=true, returns immediately with xRequestId and streams results via SSE at GET /stream/ns/{nsId}/cmd/infra/{infraId}?xRequestId={xRequestId}",
+                "description": "Send a command to specified Infra. Use query parameters to target specific nodeGroup or node.\nWhen async=true, returns immediately with xRequestId and streams results via SSE at GET /stream/ns/{nsId}/cmd/infra/{infraId}?xRequestId={xRequestId}",
                 "consumes": [
                     "application/json"
                 ],
@@ -3163,20 +3163,20 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1",
-                        "description": "nodeGroupId to apply the command only for VMs in nodeGroup of Infra",
+                        "description": "nodeGroupId to apply the command only for nodes in nodeGroup of Infra",
                         "name": "nodeGroupId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "vmId to apply the command only for a VM in Infra",
-                        "name": "vmId",
+                        "description": "nodeId to apply the command only for a node in Infra",
+                        "name": "nodeId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Target VM Label selector query. Example: sys.id=g1-1,role=worker",
+                        "description": "Target node Label selector query. Example: sys.id=g1-1,role=worker",
                         "name": "labelSelector",
                         "in": "query"
                     },
@@ -3233,7 +3233,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/cmd/infra/{infraId}/task": {
             "get": {
-                "description": "List all running and completed execution tasks for a specific Infra. These tasks can be cancelled if still in progress. The task list is based on persistent VM command status records.",
+                "description": "List all running and completed execution tasks for a specific Infra. These tasks can be cancelled if still in progress. The task list is based on persistent node command status records.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3339,7 +3339,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Task ID (format: xRequestId:vmId:index)",
+                        "description": "Task ID (format: xRequestId:nodeId:index)",
                         "name": "taskId",
                         "in": "path",
                         "required": true
@@ -3381,7 +3381,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/cmd/infra/{infraId}/task/{taskId}/cancel": {
             "post": {
-                "description": "Cancel a running execution task by task ID. This will send a cancellation signal to the task and update the VM command status.",
+                "description": "Cancel a running execution task by task ID. This will send a cancellation signal to the task and update the node command status.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3655,9 +3655,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/control/infra/{infraId}/vm/{vmId}": {
+        "/ns/{nsId}/control/infra/{infraId}/node/{nodeId}": {
             "get": {
-                "description": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
+                "description": "Control the lifecycle of node (suspend, resume, reboot, terminate)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3667,8 +3667,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Provisioning and Management"
                 ],
-                "summary": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
-                "operationId": "GetControlInfraVm",
+                "summary": "Control the lifecycle of node (suspend, resume, reboot, terminate)",
+                "operationId": "GetControlInfraNode",
                 "parameters": [
                     {
                         "type": "string",
@@ -3689,8 +3689,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -3947,9 +3947,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregisterResource/infra/{infraId}/vm/{vmId}": {
+        "/ns/{nsId}/deregisterResource/infra/{infraId}/node/{nodeId}": {
             "delete": {
-                "description": "Deregister VM from Spider and TB without deleting the actual CSP resource",
+                "description": "Deregister node from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
                     "application/json"
                 ],
@@ -3959,8 +3959,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Provisioning and Management"
                 ],
-                "summary": "Deregister VM in specified Infra",
-                "operationId": "DeregisterInfraVm",
+                "summary": "Deregister node in specified Infra",
+                "operationId": "DeregisterInfraNode",
                 "parameters": [
                     {
                         "type": "string",
@@ -3981,8 +3981,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -4274,9 +4274,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/downloadFile/infra/{infraId}/vm/{vmId}": {
+        "/ns/{nsId}/downloadFile/infra/{infraId}/node/{nodeId}": {
             "post": {
-                "description": "Download a file from a specific VM in Infra via SCP through bastion host.\nThe file size should be less than 200MB.",
+                "description": "Download a file from a specific node in Infra via SCP through bastion host.\nThe file size should be less than 200MB.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4287,8 +4287,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Download a file from a VM in Infra",
-                "operationId": "PostDownloadFileFromInfraVm",
+                "summary": "Download a file from a node in Infra",
+                "operationId": "PostDownloadFileFromInfraNode",
                 "parameters": [
                     {
                         "type": "string",
@@ -4309,8 +4309,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -4448,7 +4448,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create Infra with detailed VM specifications and resource configuration.\nThis endpoint creates a complete multi-cloud infrastructure by:\n1. **VM Provisioning**: Creates VMs across multiple cloud providers using predefined specs and images\n2. **Resource Management**: Automatically handles VPC/VNet, security groups, SSH keys, and network configuration\n3. **Status Tracking**: Monitors VM creation progress and handles failures based on policy settings\n4. **Post-Deployment**: Optionally installs monitoring agents and executes custom commands\n\n**Key Features:**\n- Multi-cloud VM deployment with heterogeneous configurations\n- Automatic resource dependency management (VPC → Security Group → VM)\n- Built-in failure handling with configurable policies (continue/rollback/refine)\n- Optional CB-Dragonfly monitoring agent installation\n- Post-deployment command execution support\n- Real-time status updates and progress tracking\n\n**VM Lifecycle:**\n1. Creating → Running (successful deployment)\n2. Creating → Failed (deployment error, handled by failure policy)\n3. Running → Terminated (manual or policy-driven cleanup)\n\n**Failure Policies:**\n- ` + "`" + `continue` + "`" + `: Keep successful VMs, mark failed ones for later refinement\n- ` + "`" + `rollback` + "`" + `: Delete entire Infra if any VM fails (all-or-nothing)\n- ` + "`" + `refine` + "`" + `: Automatically clean up failed VMs, keep successful ones\n\n**Resource Requirements:**\n- Valid VM specifications (must exist in system namespace)\n- Valid images (must be available in target CSP regions)\n- Sufficient CSP quotas and permissions\n- Network connectivity between components",
+                "description": "Create Infra with detailed node specifications and resource configuration.\nThis endpoint creates a complete multi-cloud infrastructure by:\n1. **node Provisioning**: Creates nodes across multiple cloud providers using predefined specs and images\n2. **Resource Management**: Automatically handles VPC/VNet, security groups, SSH keys, and network configuration\n3. **Status Tracking**: Monitors node creation progress and handles failures based on policy settings\n4. **Post-Deployment**: Optionally installs monitoring agents and executes custom commands\n\n**Key Features:**\n- Multi-cloud node deployment with heterogeneous configurations\n- Automatic resource dependency management (VPC → Security Group → node)\n- Built-in failure handling with configurable policies (continue/rollback/refine)\n- Optional CB-Dragonfly monitoring agent installation\n- Post-deployment command execution support\n- Real-time status updates and progress tracking\n\n**node Lifecycle:**\n1. Creating → Running (successful deployment)\n2. Creating → Failed (deployment error, handled by failure policy)\n3. Running → Terminated (manual or policy-driven cleanup)\n\n**Failure Policies:**\n- ` + "`" + `continue` + "`" + `: Keep successful nodes, mark failed ones for later refinement\n- ` + "`" + `rollback` + "`" + `: Delete entire Infra if any node fails (all-or-nothing)\n- ` + "`" + `refine` + "`" + `: Automatically clean up failed nodes, keep successful ones\n\n**Resource Requirements:**\n- Valid node specifications (must exist in system namespace)\n- Valid images (must be available in target CSP regions)\n- Sufficient CSP quotas and permissions\n- Network connectivity between components",
                 "consumes": [
                     "application/json"
                 ],
@@ -4470,7 +4470,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Infra creation request with VM specifications, networking, and deployment options",
+                        "description": "Infra creation request with node specifications, networking, and deployment options",
                         "name": "infraReq",
                         "in": "body",
                         "required": true,
@@ -4493,7 +4493,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Created Infra information with VM details, status, and resource mapping",
+                        "description": "Created Infra information with node details, status, and resource mapping",
                         "schema": {
                             "$ref": "#/definitions/model.InfraInfo"
                         }
@@ -4587,7 +4587,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/infra/template/{templateId}": {
             "post": {
-                "description": "Create a new Infra by applying an Infra Dynamic Template.\nThe template provides the base VM configuration, and the apply request\nallows overriding the Infra name and description.\n\n**Override Behavior (Phase 1):**\n- ` + "`" + `name` + "`" + ` (required): Name for the new Infra\n- ` + "`" + `description` + "`" + ` (optional): Overrides the template's description\n- All other configuration (specs, images, nodegroups) comes from the template",
+                "description": "Create a new Infra by applying an Infra Dynamic Template.\nThe template provides the base node configuration, and the apply request\nallows overriding the Infra name and description.\n\n**Override Behavior (Phase 1):**\n- ` + "`" + `name` + "`" + ` (required): Name for the new Infra\n- ` + "`" + `description` + "`" + ` (optional): Overrides the template's description\n- All other configuration (specs, images, nodegroups) comes from the template",
                 "consumes": [
                     "application/json"
                 ],
@@ -4629,7 +4629,7 @@ const docTemplate = `{
                             "hold"
                         ],
                         "type": "string",
-                        "description": "Deployment option: 'hold' to create Infra without immediate VM provisioning",
+                        "description": "Deployment option: 'hold' to create Infra without immediate node provisioning",
                         "name": "option",
                         "in": "query"
                     },
@@ -4676,7 +4676,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/infra/{infraId}": {
             "get": {
-                "description": "Get Infra object (option: status, accessInfo, vmId)",
+                "description": "Get Infra object (option: status, accessInfo, nodeId)",
                 "consumes": [
                     "application/json"
                 ],
@@ -4686,7 +4686,7 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Provisioning and Management"
                 ],
-                "summary": "Get Infra object (option: status, accessInfo, vmId)",
+                "summary": "Get Infra object (option: status, accessInfo, nodeId)",
                 "operationId": "GetInfra",
                 "parameters": [
                     {
@@ -5000,7 +5000,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/bastion/{bastionInfraId}/{bastionVmId}": {
+        "/ns/{nsId}/infra/{infraId}/bastion/{bastionInfraId}/{bastionNodeId}": {
             "delete": {
                 "description": "Remove a specific cross-Infra bastion from all vNets of the target Infra",
                 "consumes": [
@@ -5012,7 +5012,7 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Remove a bastion VM (cross-Infra) from all vNets",
+                "summary": "Remove a bastion node (cross-Infra) from all vNets",
                 "operationId": "RemoveBastionNodesWithInfra",
                 "parameters": [
                     {
@@ -5040,8 +5040,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Bastion VM ID",
-                        "name": "bastionVmId",
+                        "description": "Bastion Node ID",
+                        "name": "bastionNodeId",
                         "in": "path",
                         "required": true
                     },
@@ -5080,7 +5080,81 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionVmId}": {
+        "/ns/{nsId}/infra/{infraId}/bastion/{bastionNodeId}": {
+            "delete": {
+                "description": "Remove a bastion node from all vNets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Remote Command"
+                ],
+                "summary": "Remove a bastion node from all vNets",
+                "operationId": "RemoveBastionNodes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Bastion Node ID",
+                        "name": "bastionNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionNodeId}": {
             "delete": {
                 "description": "Remove a specific cross-namespace bastion from all vNets of the target Infra",
                 "consumes": [
@@ -5092,7 +5166,7 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Remove a bastion VM (cross-namespace) from all vNets",
+                "summary": "Remove a bastion node (cross-namespace) from all vNets",
                 "operationId": "RemoveBastionNodesWithNs",
                 "parameters": [
                     {
@@ -5127,82 +5201,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Bastion VM ID",
-                        "name": "bastionVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/bastion/{bastionVmId}": {
-            "delete": {
-                "description": "Remove a bastion VM from all vNets",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Remote Command"
-                ],
-                "summary": "Remove a bastion VM from all vNets",
-                "operationId": "RemoveBastionNodes",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Bastion VM ID",
-                        "name": "bastionVmId",
+                        "description": "Bastion Node ID",
+                        "name": "bastionNodeId",
                         "in": "path",
                         "required": true
                     },
@@ -5330,7 +5330,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/infra/{infraId}/handlingCount": {
             "get": {
-                "description": "Get the number of commands currently in 'Handling' status for all VMs in an Infra. Returns per-VM counts and total count.",
+                "description": "Get the number of commands currently in 'Handling' status for all nodes in an Infra. Returns per-node counts and total count.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5340,7 +5340,7 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Get count of currently handling commands for all VMs in Infra",
+                "summary": "Get count of currently handling commands for all nodes in Infra",
                 "operationId": "GetInfraHandlingCommandCount",
                 "parameters": [
                     {
@@ -5931,9 +5931,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/nlb/{nlbId}/vm": {
+        "/ns/{nsId}/infra/{infraId}/nlb/{nlbId}/node": {
             "post": {
-                "description": "Add VMs to NLB",
+                "description": "Add nodes to NLB",
                 "consumes": [
                     "application/json"
                 ],
@@ -5943,8 +5943,8 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] NLB Management (for developer)"
                 ],
-                "summary": "Add VMs to NLB",
-                "operationId": "AddNLBVMs",
+                "summary": "Add nodes to NLB",
+                "operationId": "AddNLBNodes",
                 "parameters": [
                     {
                         "type": "string",
@@ -5971,12 +5971,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "VMs to add to NLB",
-                        "name": "nlbAddRemoveVMReq",
+                        "description": "nodes to add to NLB",
+                        "name": "nlbAddRemoveNodeReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.NLBAddRemoveVMReq"
+                            "$ref": "#/definitions/model.NLBAddRemoveNodeReq"
                         }
                     },
                     {
@@ -6014,7 +6014,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete VMs from NLB",
+                "description": "Delete nodes from NLB",
                 "consumes": [
                     "application/json"
                 ],
@@ -6024,8 +6024,8 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] NLB Management (for developer)"
                 ],
-                "summary": "Delete VMs from NLB",
-                "operationId": "RemoveNLBVMs",
+                "summary": "Delete nodes from NLB",
+                "operationId": "RemoveNLBNodes",
                 "parameters": [
                     {
                         "type": "string",
@@ -6052,12 +6052,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Select VMs to remove from NLB",
-                        "name": "nlbAddRemoveVMReq",
+                        "description": "Select nodes to remove from NLB",
+                        "name": "nlbAddRemoveNodeReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.NLBAddRemoveVMReq"
+                            "$ref": "#/definitions/model.NLBAddRemoveNodeReq"
                         }
                     },
                     {
@@ -6089,9 +6089,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/nodeGroupDynamic": {
+        "/ns/{nsId}/infra/{infraId}/node": {
             "post": {
-                "description": "Dynamically add new virtual machines to an existing Infra using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running Infras:\n\n**Dynamic VM Addition Process:**\n1. **Infra Validation**: Verifies target Infra exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new VMs to use existing Infra network resources\n4. **NodeGroup Management**: Creates new nodegroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates Infra status and metadata to reflect new VM additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New VMs automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New VMs inherit monitoring configuration from parent Infra\n- **Label Propagation**: Applies Infra-level labels and policies to new VMs\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy VMs in new regions while maintaining Infra cohesion\n- **Provider Diversification**: Add VMs from different cloud providers for redundancy\n- **Workload Specialization**: Deploy VMs with different specifications for specific tasks\n\n**Configuration Requirements:**\n- ` + "`" + `specId` + "`" + `: Must specify valid VM specification from system namespace\n- ` + "`" + `imageId` + "`" + `: Must specify valid image compatible with target provider/region\n- ` + "`" + `name` + "`" + `: Becomes nodegroup name; VMs will be named with sequential suffixes\n- ` + "`" + `nodeGroupSize` + "`" + `: Number of identical VMs to create (default: 1)\n\n**Network and Security:**\n- New VMs automatically inherit security group rules from existing Infra\n- Network connectivity to existing VMs is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New VMs are immediately available for standard Infra operations\n- Can be individually managed or grouped with existing nodegroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
+                "description": "Create and add a group of identical virtual machines (nodegroup) to an existing Infra using detailed specifications.\nThis endpoint provides precise control over node configuration and placement within existing infrastructure:\n\n**NodeGroup Creation Process:**\n1. **Infra Integration**: Validates target Infra exists and can accommodate new nodes\n2. **Resource Validation**: Verifies all specified resources (specs, images, networks) exist and are accessible\n3. **Homogeneous Deployment**: Creates multiple identical nodes with consistent configuration\n4. **Network Integration**: Integrates new nodes with existing Infra networking and security policies\n5. **Group Management**: Establishes nodegroup for collective management and operations\n\n**Detailed Configuration Control:**\n- **Specific Resource References**: Uses exact resource IDs rather than common specifications\n- **Network Placement**: Precise control over VNet, subnet, and security group assignment\n- **Storage Configuration**: Detailed disk configuration including type, size, and performance tiers\n- **Instance Customization**: Full control over node specifications, images, and metadata\n- **Security Settings**: Explicit security group and SSH key configuration\n\n**NodeGroup Benefits:**\n- **Collective Operations**: Perform operations on entire nodegroup simultaneously\n- **Homogeneous Scaling**: All nodes in nodegroup share identical configuration\n- **Simplified Management**: Single configuration template for multiple nodes\n- **Consistent Naming**: Automatic sequential naming (e.g., web-1, web-2, web-3)\n- **Group Policies**: Apply scaling, monitoring, and lifecycle policies at nodegroup level\n\n**Use Cases:**\n- **Application Tiers**: Deploy multiple instances of web servers, application servers, or databases\n- **Load Distribution**: Create multiple identical nodes for load balancing scenarios\n- **High Availability**: Deploy redundant instances across availability zones\n- **Batch Processing**: Create worker nodes for distributed computing workloads\n- **Development Environments**: Provision identical development or testing instances\n\n**Configuration Requirements:**\n- **Resource IDs**: Must specify exact resource identifiers (not common specs)\n- **Network Configuration**: VNet, subnet, and security group must exist and be compatible\n- **SSH Keys**: Must specify valid SSH key pairs for access management\n- **Image Compatibility**: Specified image must be available in target region\n- **Quota Validation**: Sufficient CSP quotas must be available for all requested nodes\n\n**NodeGroup Size Considerations:**\n- **Small Groups (1-5 nodes)**: Fast deployment, minimal resource contention\n- **Medium Groups (6-20 nodes)**: Optimized parallel deployment with resource batching\n- **Large Groups (21+ nodes)**: Advanced deployment strategies to avoid CSP rate limits\n- **Resource Limits**: Respects CSP quotas and CB-Tumblebug configuration limits\n\n**Post-Deployment Integration:**\n- NodeGroup becomes integral part of parent Infra\n- All nodes inherit Infra-level monitoring and management policies\n- Can be scaled out further or individual nodes can be managed separately\n- Supports all standard CB-Tumblebug node lifecycle operations",
                 "consumes": [
                     "application/json"
                 ],
@@ -6101,8 +6101,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Provisioning and Management"
                 ],
-                "summary": "Add VM Dynamically to Existing Infra",
-                "operationId": "PostInfraNodeGroupDynamic",
+                "summary": "Add Homogeneous node NodeGroup to Existing Infra",
+                "operationId": "PostInfraNode",
                 "parameters": [
                     {
                         "type": "string",
@@ -6115,571 +6115,14 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "infra01",
-                        "description": "Infra ID to which new VMs will be added",
+                        "description": "Infra ID to which the node nodegroup will be added",
                         "name": "infraId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "NodeGroup dynamic request specifying specId, imageId, and scaling parameters",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreateNodeGroupDynamicReq"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID to select which credentials to use for provisioning (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Updated Infra information including newly added VMs and current status",
-                        "schema": {
-                            "$ref": "#/definitions/model.InfraInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid VM request or incompatible configuration parameters",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Target Infra not found or specified resources unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "409": {
-                        "description": "NodeGroup name conflicts or Infra in incompatible state",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "VM creation failed or network integration error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview": {
-            "post": {
-                "description": "Review and validate a VM dynamic addition request for an existing Infra before actual provisioning.\nThis endpoint provides comprehensive validation for adding new VMs to existing Infras without actually creating resources.\nIt checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.\n\n**Key Features:**\n- Validates VM specification and image against CSP availability\n- Checks compatibility with existing Infra configuration\n- Provides cost estimation for the new VM addition\n- Identifies potential configuration issues and warnings\n- Recommends optimization strategies\n- Non-invasive validation (no resources are created)\n\n**Review Status:**\n- ` + "`" + `Ready` + "`" + `: VM can be added successfully\n- ` + "`" + `Warning` + "`" + `: VM can be added but with configuration warnings\n- ` + "`" + `Error` + "`" + `: Critical errors prevent VM addition\n\n**Infra Integration Validation:**\n- Ensures target Infra exists and is in a compatible state\n- Validates network integration possibilities\n- Checks resource naming conflicts\n- Verifies security group and SSH key compatibility\n\n**Use Cases:**\n- Pre-validation before expensive VM addition operations\n- Cost estimation for scaling decisions\n- Configuration optimization before deployment\n- Risk assessment for VM addition to existing infrastructure",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Provisioning and Management"
-                ],
-                "summary": "Review VM Dynamic Addition Request for Existing Infra",
-                "operationId": "PostInfraDynamicNodeGroupVmReview",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID containing the target Infra",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID to which the VM will be added",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Request body to review VM dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreateNodeGroupDynamicReq"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID to select which credentials to use for review (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Comprehensive VM addition review result with validation status, cost estimation, and recommendations",
-                        "schema": {
-                            "$ref": "#/definitions/model.ReviewNodeGroupDynamicReqInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request format or parameters",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Target Infra not found or namespace not found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error during validation",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/nodegroup": {
-            "get": {
-                "description": "List NodeGroup IDs in a specified Infra",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Provisioning and Management"
-                ],
-                "summary": "List NodeGroup IDs in a specified Infra",
-                "operationId": "GetInfraGroupIds",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.IdList"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}": {
-            "get": {
-                "description": "List VMs with a NodeGroup label in a specified Infra",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Provisioning and Management"
-                ],
-                "summary": "List VMs with a NodeGroup label in a specified Infra",
-                "operationId": "GetInfraGroupVms",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1",
-                        "description": "nodeGroup ID",
-                        "name": "nodegroupId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "id"
-                        ],
-                        "type": "string",
-                        "description": "Option",
-                        "name": "option",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.IdList"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Horizontally scale an existing VM nodegroup by adding more identical instances for increased capacity.\nThis endpoint provides elastic scaling capabilities for running application tiers:\n\n**Scale-Out Process:**\n1. **NodeGroup Validation**: Verifies target nodegroup exists and is in scalable state\n2. **Template Replication**: Uses existing VM configuration as template for new instances\n3. **Resource Allocation**: Ensures sufficient CSP quotas and network resources\n4. **Parallel Deployment**: Deploys multiple new VMs simultaneously for faster scaling\n5. **Integration**: Seamlessly integrates new VMs into existing nodegroup and Infra\n\n**Configuration Inheritance:**\n- **VM Specifications**: New VMs inherit exact specifications from existing nodegroup members\n- **Network Settings**: Automatically placed in same VNet, subnet, and security groups\n- **SSH Keys**: Use same SSH key pairs for consistent access management\n- **Monitoring**: Inherit monitoring agent configuration and policies\n- **Labels and Metadata**: Propagate all labels and metadata from parent nodegroup\n\n**Scaling Scenarios:**\n- **Traffic Spikes**: Quickly add capacity during high-demand periods\n- **Seasonal Scaling**: Scale out for predictable demand increases\n- **Performance Optimization**: Add instances to reduce per-VM resource utilization\n- **Geographic Expansion**: Scale existing workloads to handle broader user base\n- **Fault Tolerance**: Increase redundancy by adding more instances\n\n**Intelligent Scaling:**\n- **Sequential Naming**: New VMs follow established naming pattern (e.g., web-4, web-5, web-6)\n- **Load Distribution**: New VMs are distributed optimally across availability zones\n- **Resource Efficiency**: Reuses existing network and security infrastructure\n- **Minimal Disruption**: Scaling occurs without affecting existing VM operations\n- **Consistent Configuration**: Ensures all VMs in nodegroup remain homogeneous\n\n**Operational Benefits:**\n- **Zero Downtime**: Existing VMs continue running during scale-out operation\n- **Immediate Availability**: New VMs are ready for traffic as soon as deployment completes\n- **Unified Management**: All VMs (old and new) managed through single nodegroup\n- **Policy Consistency**: All scaling and management policies apply uniformly\n- **Monitoring Integration**: New VMs automatically included in existing monitoring dashboards\n\n**Scale-Out Considerations:**\n- **CSP Quotas**: Verifies sufficient instance, network, and storage quotas\n- **Region Capacity**: Ensures target region has capacity for requested instance types\n- **Network Limits**: Validates that VNet can accommodate additional VMs\n- **Cost Impact**: Additional VMs incur proportional CSP billing costs\n- **Application Readiness**: Applications should be designed to handle additional instances\n\n**Post-Scale Operations:**\n- New VMs immediately participate in nodegroup operations\n- Can be individually managed while maintaining nodegroup membership\n- Support for further scaling operations (scale-out or scale-in)\n- Ready for application deployment and load balancer integration\n\n**Best Practices:**\n- Monitor application performance before and after scaling\n- Ensure load balancers are configured to include new instances\n- Verify application clustering and session management handle new instances\n- Consider database connection limits and other resource constraints",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Provisioning and Management"
-                ],
-                "summary": "Scale Out Existing NodeGroup in Infra",
-                "operationId": "PostInfraNodeGroupScaleOut",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID containing the target Infra and nodegroup",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID containing the nodegroup to scale",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1",
-                        "description": "NodeGroup ID to scale out (must exist and contain at least one VM)",
-                        "name": "nodegroupId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Scale-out request specifying the number of additional VMs to create",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ScaleOutNodeGroupReq"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Updated Infra information with scaled nodegroup showing all VMs including newly added instances",
-                        "schema": {
-                            "$ref": "#/definitions/model.InfraInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid scale-out request, insufficient quotas, or invalid VM count",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Target Infra or nodegroup not found, or namespace inaccessible",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "409": {
-                        "description": "NodeGroup in incompatible state for scaling or resource conflicts detected",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "VM provisioning failed, network configuration error, or CSP capacity limitations",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/site": {
-            "get": {
-                "description": "Get sites in Infra",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (preview)"
-                ],
-                "summary": "Get sites in Infra",
-                "operationId": "GetSitesInInfra",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SitesInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/snapshot": {
-            "post": {
-                "description": "Create snapshots for the first running VM in each nodegroup of an Infra in parallel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Image Management"
-                ],
-                "summary": "Create snapshots for all nodegroups in Infra (one VM per nodegroup in parallel)",
-                "operationId": "PostInfraSnapshot",
-                "parameters": [
-                    {
-                        "description": "Request body to create Infra snapshots",
-                        "name": "snapshotReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.SnapshotReq"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.InfraSnapshotResult"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/vm": {
-            "post": {
-                "description": "Create and add a group of identical virtual machines (nodegroup) to an existing Infra using detailed specifications.\nThis endpoint provides precise control over VM configuration and placement within existing infrastructure:\n\n**NodeGroup Creation Process:**\n1. **Infra Integration**: Validates target Infra exists and can accommodate new VMs\n2. **Resource Validation**: Verifies all specified resources (specs, images, networks) exist and are accessible\n3. **Homogeneous Deployment**: Creates multiple identical VMs with consistent configuration\n4. **Network Integration**: Integrates new VMs with existing Infra networking and security policies\n5. **Group Management**: Establishes nodegroup for collective management and operations\n\n**Detailed Configuration Control:**\n- **Specific Resource References**: Uses exact resource IDs rather than common specifications\n- **Network Placement**: Precise control over VNet, subnet, and security group assignment\n- **Storage Configuration**: Detailed disk configuration including type, size, and performance tiers\n- **Instance Customization**: Full control over VM specifications, images, and metadata\n- **Security Settings**: Explicit security group and SSH key configuration\n\n**NodeGroup Benefits:**\n- **Collective Operations**: Perform operations on entire nodegroup simultaneously\n- **Homogeneous Scaling**: All VMs in nodegroup share identical configuration\n- **Simplified Management**: Single configuration template for multiple VMs\n- **Consistent Naming**: Automatic sequential naming (e.g., web-1, web-2, web-3)\n- **Group Policies**: Apply scaling, monitoring, and lifecycle policies at nodegroup level\n\n**Use Cases:**\n- **Application Tiers**: Deploy multiple instances of web servers, application servers, or databases\n- **Load Distribution**: Create multiple identical VMs for load balancing scenarios\n- **High Availability**: Deploy redundant instances across availability zones\n- **Batch Processing**: Create worker nodes for distributed computing workloads\n- **Development Environments**: Provision identical development or testing instances\n\n**Configuration Requirements:**\n- **Resource IDs**: Must specify exact resource identifiers (not common specs)\n- **Network Configuration**: VNet, subnet, and security group must exist and be compatible\n- **SSH Keys**: Must specify valid SSH key pairs for access management\n- **Image Compatibility**: Specified image must be available in target region\n- **Quota Validation**: Sufficient CSP quotas must be available for all requested VMs\n\n**NodeGroup Size Considerations:**\n- **Small Groups (1-5 VMs)**: Fast deployment, minimal resource contention\n- **Medium Groups (6-20 VMs)**: Optimized parallel deployment with resource batching\n- **Large Groups (21+ VMs)**: Advanced deployment strategies to avoid CSP rate limits\n- **Resource Limits**: Respects CSP quotas and CB-Tumblebug configuration limits\n\n**Post-Deployment Integration:**\n- NodeGroup becomes integral part of parent Infra\n- All VMs inherit Infra-level monitoring and management policies\n- Can be scaled out further or individual VMs can be managed separately\n- Supports all standard CB-Tumblebug VM lifecycle operations",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Provisioning and Management"
-                ],
-                "summary": "Add Homogeneous VM NodeGroup to Existing Infra",
-                "operationId": "PostInfraVm",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID containing the target Infra",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID to which the VM nodegroup will be added",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Detailed VM nodegroup specification including exact resource IDs, networking, and scaling parameters",
-                        "name": "vmReq",
+                        "description": "Detailed node nodegroup specification including exact resource IDs, networking, and scaling parameters",
+                        "name": "nodeGroupReq",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -6701,13 +6144,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Updated Infra information including newly created VM nodegroup with individual VM details and status",
+                        "description": "Updated Infra information including newly created node nodegroup with individual node details and status",
                         "schema": {
                             "$ref": "#/definitions/model.InfraInfo"
                         }
                     },
                     "400": {
-                        "description": "Invalid VM request, missing required resources, or configuration conflicts",
+                        "description": "Invalid node request, missing required resources, or configuration conflicts",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -6725,7 +6168,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "VM provisioning failed, network configuration error, or CSP API communication failure",
+                        "description": "node provisioning failed, network configuration error, or CSP API communication failure",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -6733,356 +6176,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}": {
             "get": {
-                "description": "Get bastion nodes for a VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Remote Command"
-                ],
-                "summary": "Get bastion nodes for a VM",
-                "operationId": "GetBastionNodes",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Target VM ID",
-                        "name": "targetVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.BastionNode"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionInfraId}/{bastionVmId}": {
-            "put": {
-                "description": "Set bastion nodes for a target VM, specifying a bastion VM that belongs to a different Infra within the same namespace (cross-Infra bastion). This allows, for example, an AWS VM to serve as a bastion for an OpenStack VM.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Remote Command"
-                ],
-                "summary": "Set bastion nodes for a VM using a bastion from another Infra (same namespace)",
-                "operationId": "SetBastionNodesWithInfra",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Target Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Target VM ID",
-                        "name": "targetVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra-bastion",
-                        "description": "Bastion Infra ID (may differ from target Infra)",
-                        "name": "bastionInfraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Bastion VM ID",
-                        "name": "bastionVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionVmId}": {
-            "put": {
-                "description": "Set bastion nodes for a target VM, specifying a bastion VM that belongs to a different namespace and Infra (cross-namespace bastion). This allows, for example, a VM in a shared-services namespace to act as a bastion for VMs in other namespaces.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Remote Command"
-                ],
-                "summary": "Set bastion nodes for a VM using a bastion from a different namespace and Infra",
-                "operationId": "SetBastionNodesWithNs",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Target Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Target Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Target VM ID",
-                        "name": "targetVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ns-bastion",
-                        "description": "Bastion Namespace ID (may differ from target namespace)",
-                        "name": "bastionNsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra-bastion",
-                        "description": "Bastion Infra ID",
-                        "name": "bastionInfraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Bastion VM ID",
-                        "name": "bastionVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/vm/{targetVmId}/bastion/{bastionVmId}": {
-            "put": {
-                "description": "Set bastion nodes for a VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Remote Command"
-                ],
-                "summary": "Set bastion nodes for a VM",
-                "operationId": "SetBastionNodes",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "infra01",
-                        "description": "Infra ID",
-                        "name": "infraId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Target VM ID",
-                        "name": "targetVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "Bastion VM ID",
-                        "name": "bastionVmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}": {
-            "get": {
-                "description": "Get VM in specified Infra",
+                "description": "Get node in specified Infra",
                 "consumes": [
                     "application/json"
                 ],
@@ -7092,8 +6188,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Provisioning and Management"
                 ],
-                "summary": "Get VM in specified Infra",
-                "operationId": "GetInfraVm",
+                "summary": "Get node in specified Infra",
+                "operationId": "GetInfraNode",
                 "parameters": [
                     {
                         "type": "string",
@@ -7114,8 +6210,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7162,13 +6258,13 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/model.VmInfo"
+                                            "$ref": "#/definitions/model.NodeInfo"
                                         },
                                         "[IDNAME]": {
                                             "$ref": "#/definitions/model.IdNameInDetailInfo"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/model.VmStatusInfo"
+                                            "$ref": "#/definitions/model.NodeStatusInfo"
                                         }
                                     }
                                 }
@@ -7190,7 +6286,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete VM in specified Infra",
+                "description": "Delete node in specified Infra",
                 "consumes": [
                     "application/json"
                 ],
@@ -7200,8 +6296,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Provisioning and Management"
                 ],
-                "summary": "Delete VM in specified Infra",
-                "operationId": "DelInfraVm",
+                "summary": "Delete node in specified Infra",
+                "operationId": "DelInfraNode",
                 "parameters": [
                     {
                         "type": "string",
@@ -7222,8 +6318,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7232,7 +6328,7 @@ const docTemplate = `{
                             "force"
                         ],
                         "type": "string",
-                        "description": "Option for delete VM (support force delete)",
+                        "description": "Option for delete node (support force delete)",
                         "name": "option",
                         "in": "query"
                     },
@@ -7265,9 +6361,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus": {
             "get": {
-                "description": "List command status records for a VM with various filtering options",
+                "description": "List command status records for a node with various filtering options",
                 "consumes": [
                     "application/json"
                 ],
@@ -7277,8 +6373,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "List command status records for a VM with filtering",
-                "operationId": "ListVmCommandStatus",
+                "summary": "List command status records for a node with filtering",
+                "operationId": "ListNodeCommandStatus",
                 "parameters": [
                     {
                         "type": "string",
@@ -7299,8 +6395,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7406,7 +6502,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete multiple command status records for a VM based on filtering criteria",
+                "description": "Delete multiple command status records for a node based on filtering criteria",
                 "consumes": [
                     "application/json"
                 ],
@@ -7416,8 +6512,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Delete multiple command status records by criteria for a VM",
-                "operationId": "DeleteVmCommandStatusByCriteria",
+                "summary": "Delete multiple command status records by criteria for a node",
+                "operationId": "DeleteNodeCommandStatusByCriteria",
                 "parameters": [
                     {
                         "type": "string",
@@ -7438,8 +6534,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7531,9 +6627,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatus/{index}": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatus/{index}": {
             "get": {
-                "description": "Get a specific command status record by index for a VM",
+                "description": "Get a specific command status record by index for a node",
                 "consumes": [
                     "application/json"
                 ],
@@ -7543,8 +6639,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Get a specific command status by index for a VM",
-                "operationId": "GetVmCommandStatus",
+                "summary": "Get a specific command status by index for a node",
+                "operationId": "GetNodeCommandStatus",
                 "parameters": [
                     {
                         "type": "string",
@@ -7565,8 +6661,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7613,7 +6709,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a specific command status record by index for a VM",
+                "description": "Delete a specific command status record by index for a node",
                 "consumes": [
                     "application/json"
                 ],
@@ -7623,8 +6719,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Delete a specific command status by index for a VM",
-                "operationId": "DeleteVmCommandStatus",
+                "summary": "Delete a specific command status by index for a node",
+                "operationId": "DeleteNodeCommandStatus",
                 "parameters": [
                     {
                         "type": "string",
@@ -7645,8 +6741,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7693,9 +6789,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}/commandStatusAll": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}/commandStatusAll": {
             "delete": {
-                "description": "Delete all command status records for a VM",
+                "description": "Delete all command status records for a node",
                 "consumes": [
                     "application/json"
                 ],
@@ -7705,8 +6801,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Clear all command status records for a VM",
-                "operationId": "ClearAllVmCommandStatus",
+                "summary": "Clear all command status records for a node",
+                "operationId": "ClearAllNodeCommandStatus",
                 "parameters": [
                     {
                         "type": "string",
@@ -7727,8 +6823,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7767,9 +6863,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}/dataDisk": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk": {
             "get": {
-                "description": "Get available dataDisks for a VM",
+                "description": "Get available dataDisks for a node",
                 "consumes": [
                     "application/json"
                 ],
@@ -7779,8 +6875,8 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Data Disk Management"
                 ],
-                "summary": "Get available dataDisks for a VM",
-                "operationId": "GetVmDataDisk",
+                "summary": "Get available dataDisks for a node",
+                "operationId": "GetNodeDataDisk",
                 "parameters": [
                     {
                         "type": "string",
@@ -7801,8 +6897,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7867,7 +6963,7 @@ const docTemplate = `{
                     "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Attach/Detach available dataDisk",
-                "operationId": "PutVmDataDisk",
+                "operationId": "PutNodeDataDisk",
                 "parameters": [
                     {
                         "description": "Request body to attach/detach dataDisk",
@@ -7896,8 +6992,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -7918,7 +7014,7 @@ const docTemplate = `{
                             "false"
                         ],
                         "type": "string",
-                        "description": "Force to attach/detach even if VM info is not matched",
+                        "description": "Force to attach/detach even if node info is not matched",
                         "name": "force",
                         "in": "query"
                     },
@@ -7939,7 +7035,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.VmInfo"
+                            "$ref": "#/definitions/model.NodeInfo"
                         }
                     },
                     "404": {
@@ -7968,7 +7064,7 @@ const docTemplate = `{
                     "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Provisioning (Create and attach) dataDisk",
-                "operationId": "PostVmDataDisk",
+                "operationId": "PostNodeDataDisk",
                 "parameters": [
                     {
                         "description": "Details for an Data Disk object",
@@ -7976,7 +7072,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.DataDiskVmReq"
+                            "$ref": "#/definitions/model.DataDiskNodeReq"
                         }
                     },
                     {
@@ -7998,8 +7094,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -8020,7 +7116,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.VmInfo"
+                            "$ref": "#/definitions/model.NodeInfo"
                         }
                     },
                     "404": {
@@ -8032,9 +7128,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}/handlingCount": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}/handlingCount": {
             "get": {
-                "description": "Get the number of commands currently in 'Handling' status for a specific VM. Optimized for frequent polling.",
+                "description": "Get the number of commands currently in 'Handling' status for a specific node. Optimized for frequent polling.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8044,8 +7140,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Get count of currently handling commands for a VM",
-                "operationId": "GetVmHandlingCommandCount",
+                "summary": "Get count of currently handling commands for a node",
+                "operationId": "GetNodeHandlingCommandCount",
                 "parameters": [
                     {
                         "type": "string",
@@ -8066,8 +7162,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -8106,9 +7202,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}/snapshot": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}/snapshot": {
             "post": {
-                "description": "Snapshot VM and create a Custom Image Object using the Snapshot",
+                "description": "Snapshot node and create a Custom Image Object using the Snapshot",
                 "consumes": [
                     "application/json"
                 ],
@@ -8118,11 +7214,11 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Image Management"
                 ],
-                "summary": "Snapshot VM and create a Custom Image Object using the Snapshot",
-                "operationId": "PostInfraVmSnapshot",
+                "summary": "Snapshot node and create a Custom Image Object using the Snapshot",
+                "operationId": "PostInfraNodeSnapshot",
                 "parameters": [
                     {
-                        "description": "Request body to create VM snapshot",
+                        "description": "Request body to create node snapshot",
                         "name": "snapshotReq",
                         "in": "body",
                         "required": true,
@@ -8149,8 +7245,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -8189,9 +7285,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/infra/{infraId}/vm/{vmId}/sshHostKey": {
+        "/ns/{nsId}/infra/{infraId}/node/{nodeId}/sshHostKey": {
             "get": {
-                "description": "Get the stored SSH host key information for a specific VM. This is used for TOFU (Trust On First Use) verification.",
+                "description": "Get the stored SSH host key information for a specific node. This is used for TOFU (Trust On First Use) verification.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8201,8 +7297,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Get SSH host key information for a VM",
-                "operationId": "GetVmSshHostKey",
+                "summary": "Get SSH host key information for a node",
+                "operationId": "GetNodeSshHostKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -8223,8 +7319,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -8263,7 +7359,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Reset the stored SSH host key for a specific VM. This should be used when the VM's host key has legitimately changed (e.g., after VM recreation) and you trust the new key. The next SSH connection will store the new host key (TOFU).",
+                "description": "Reset the stored SSH host key for a specific node. This should be used when the node's host key has legitimately changed (e.g., after node recreation) and you trust the new key. The next SSH connection will store the new host key (TOFU).",
                 "consumes": [
                     "application/json"
                 ],
@@ -8273,8 +7369,8 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Remote Command"
                 ],
-                "summary": "Reset SSH host key for a VM",
-                "operationId": "DeleteVmSshHostKey",
+                "summary": "Reset SSH host key for a node",
+                "operationId": "DeleteNodeSshHostKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -8295,8 +7391,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -8318,6 +7414,910 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion": {
+            "get": {
+                "description": "Get bastion nodes for a node",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Remote Command"
+                ],
+                "summary": "Get bastion nodes for a node",
+                "operationId": "GetBastionNodes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Target Node ID",
+                        "name": "targetNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.BastionNode"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionInfraId}/{bastionNodeId}": {
+            "put": {
+                "description": "Set bastion nodes for a target node, specifying a bastion node that belongs to a different Infra within the same namespace (cross-Infra bastion). This allows, for example, an AWS node to serve as a bastion for an OpenStack node.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Remote Command"
+                ],
+                "summary": "Set bastion nodes for a node using a bastion from another Infra (same namespace)",
+                "operationId": "SetBastionNodesWithInfra",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Target Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Target Node ID",
+                        "name": "targetNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra-bastion",
+                        "description": "Bastion Infra ID (may differ from target Infra)",
+                        "name": "bastionInfraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Bastion Node ID",
+                        "name": "bastionNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionNodeId}": {
+            "put": {
+                "description": "Set bastion nodes for a node",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Remote Command"
+                ],
+                "summary": "Set bastion nodes for a node",
+                "operationId": "SetBastionNodes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Target Node ID",
+                        "name": "targetNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Bastion Node ID",
+                        "name": "bastionNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/node/{targetNodeId}/bastion/{bastionNsId}/{bastionInfraId}/{bastionNodeId}": {
+            "put": {
+                "description": "Set bastion nodes for a target node, specifying a bastion node that belongs to a different namespace and Infra (cross-namespace bastion). This allows, for example, a node in a shared-services namespace to act as a bastion for nodes in other namespaces.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Remote Command"
+                ],
+                "summary": "Set bastion nodes for a node using a bastion from a different namespace and Infra",
+                "operationId": "SetBastionNodesWithNs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Target Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Target Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Target Node ID",
+                        "name": "targetNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ns-bastion",
+                        "description": "Bastion Namespace ID (may differ from target namespace)",
+                        "name": "bastionNsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra-bastion",
+                        "description": "Bastion Infra ID",
+                        "name": "bastionInfraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "Bastion Node ID",
+                        "name": "bastionNodeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/nodeGroupDynamic": {
+            "post": {
+                "description": "Dynamically add new virtual machines to an existing Infra using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running Infras:\n\n**Dynamic node Addition Process:**\n1. **Infra Validation**: Verifies target Infra exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new nodes to use existing Infra network resources\n4. **NodeGroup Management**: Creates new nodegroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates Infra status and metadata to reflect new node additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New nodes automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New nodes inherit monitoring configuration from parent Infra\n- **Label Propagation**: Applies Infra-level labels and policies to new nodes\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy nodes in new regions while maintaining Infra cohesion\n- **Provider Diversification**: Add nodes from different cloud providers for redundancy\n- **Workload Specialization**: Deploy nodes with different specifications for specific tasks\n\n**Configuration Requirements:**\n- ` + "`" + `specId` + "`" + `: Must specify valid node specification from system namespace\n- ` + "`" + `imageId` + "`" + `: Must specify valid image compatible with target provider/region\n- ` + "`" + `name` + "`" + `: Becomes nodegroup name; nodes will be named with sequential suffixes\n- ` + "`" + `nodeGroupSize` + "`" + `: Number of identical nodes to create (default: 1)\n\n**Network and Security:**\n- New nodes automatically inherit security group rules from existing Infra\n- Network connectivity to existing nodes is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New nodes are immediately available for standard Infra operations\n- Can be individually managed or grouped with existing nodegroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Add node Dynamically to Existing Infra",
+                "operationId": "PostInfraNodeGroupDynamic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID containing the target Infra",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID to which new nodes will be added",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "NodeGroup dynamic request specifying specId, imageId, and scaling parameters",
+                        "name": "nodeGroupReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateNodeGroupDynamicReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID to select which credentials to use for provisioning (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated Infra information including newly added nodes and current status",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid node request or incompatible configuration parameters",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Target Infra not found or specified resources unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "NodeGroup name conflicts or Infra in incompatible state",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "node creation failed or network integration error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview": {
+            "post": {
+                "description": "Review and validate a node dynamic addition request for an existing Infra before actual provisioning.\nThis endpoint provides comprehensive validation for adding new nodes to existing Infras without actually creating resources.\nIt checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.\n\n**Key Features:**\n- Validates node specification and image against CSP availability\n- Checks compatibility with existing Infra configuration\n- Provides cost estimation for the new node addition\n- Identifies potential configuration issues and warnings\n- Recommends optimization strategies\n- Non-invasive validation (no resources are created)\n\n**Review Status:**\n- ` + "`" + `Ready` + "`" + `: node can be added successfully\n- ` + "`" + `Warning` + "`" + `: node can be added but with configuration warnings\n- ` + "`" + `Error` + "`" + `: Critical errors prevent node addition\n\n**Infra Integration Validation:**\n- Ensures target Infra exists and is in a compatible state\n- Validates network integration possibilities\n- Checks resource naming conflicts\n- Verifies security group and SSH key compatibility\n\n**Use Cases:**\n- Pre-validation before expensive node addition operations\n- Cost estimation for scaling decisions\n- Configuration optimization before deployment\n- Risk assessment for node addition to existing infrastructure",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Review node Dynamic Addition Request for Existing Infra",
+                "operationId": "PostInfraDynamicNodeGroupNodeReview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID containing the target Infra",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID to which the node will be added",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body to review node dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})",
+                        "name": "nodeGroupReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateNodeGroupDynamicReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID to select which credentials to use for review (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comprehensive node addition review result with validation status, cost estimation, and recommendations",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReviewNodeGroupDynamicReqInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or parameters",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Target Infra not found or namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during validation",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/nodegroup": {
+            "get": {
+                "description": "List NodeGroup IDs in a specified Infra",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "List NodeGroup IDs in a specified Infra",
+                "operationId": "GetInfraGroupIds",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}": {
+            "get": {
+                "description": "List nodes with a NodeGroup label in a specified Infra",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "List nodes with a NodeGroup label in a specified Infra",
+                "operationId": "GetInfraGroupNodes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1",
+                        "description": "nodeGroup ID",
+                        "name": "nodegroupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Horizontally scale an existing node nodegroup by adding more identical instances for increased capacity.\nThis endpoint provides elastic scaling capabilities for running application tiers:\n\n**Scale-Out Process:**\n1. **NodeGroup Validation**: Verifies target nodegroup exists and is in scalable state\n2. **Template Replication**: Uses existing node configuration as template for new instances\n3. **Resource Allocation**: Ensures sufficient CSP quotas and network resources\n4. **Parallel Deployment**: Deploys multiple new nodes simultaneously for faster scaling\n5. **Integration**: Seamlessly integrates new nodes into existing nodegroup and Infra\n\n**Configuration Inheritance:**\n- **node Specifications**: New nodes inherit exact specifications from existing nodegroup members\n- **Network Settings**: Automatically placed in same VNet, subnet, and security groups\n- **SSH Keys**: Use same SSH key pairs for consistent access management\n- **Monitoring**: Inherit monitoring agent configuration and policies\n- **Labels and Metadata**: Propagate all labels and metadata from parent nodegroup\n\n**Scaling Scenarios:**\n- **Traffic Spikes**: Quickly add capacity during high-demand periods\n- **Seasonal Scaling**: Scale out for predictable demand increases\n- **Performance Optimization**: Add instances to reduce per-node resource utilization\n- **Geographic Expansion**: Scale existing workloads to handle broader user base\n- **Fault Tolerance**: Increase redundancy by adding more instances\n\n**Intelligent Scaling:**\n- **Sequential Naming**: New nodes follow established naming pattern (e.g., web-4, web-5, web-6)\n- **Load Distribution**: New nodes are distributed optimally across availability zones\n- **Resource Efficiency**: Reuses existing network and security infrastructure\n- **Minimal Disruption**: Scaling occurs without affecting existing node operations\n- **Consistent Configuration**: Ensures all nodes in nodegroup remain homogeneous\n\n**Operational Benefits:**\n- **Zero Downtime**: Existing nodes continue running during scale-out operation\n- **Immediate Availability**: New nodes are ready for traffic as soon as deployment completes\n- **Unified Management**: All nodes (old and new) managed through single nodegroup\n- **Policy Consistency**: All scaling and management policies apply uniformly\n- **Monitoring Integration**: New nodes automatically included in existing monitoring dashboards\n\n**Scale-Out Considerations:**\n- **CSP Quotas**: Verifies sufficient instance, network, and storage quotas\n- **Region Capacity**: Ensures target region has capacity for requested instance types\n- **Network Limits**: Validates that VNet can accommodate additional nodes\n- **Cost Impact**: Additional nodes incur proportional CSP billing costs\n- **Application Readiness**: Applications should be designed to handle additional instances\n\n**Post-Scale Operations:**\n- New nodes immediately participate in nodegroup operations\n- Can be individually managed while maintaining nodegroup membership\n- Support for further scaling operations (scale-out or scale-in)\n- Ready for application deployment and load balancer integration\n\n**Best Practices:**\n- Monitor application performance before and after scaling\n- Ensure load balancers are configured to include new instances\n- Verify application clustering and session management handle new instances\n- Consider database connection limits and other resource constraints",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Scale Out Existing NodeGroup in Infra",
+                "operationId": "PostInfraNodeGroupScaleOut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID containing the target Infra and nodegroup",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID containing the nodegroup to scale",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1",
+                        "description": "NodeGroup ID to scale out (must exist and contain at least one node)",
+                        "name": "nodegroupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Scale-out request specifying the number of additional nodes to create",
+                        "name": "nodeGroupReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ScaleOutNodeGroupReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated Infra information with scaled nodegroup showing all nodes including newly added instances",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid scale-out request, insufficient quotas, or invalid node count",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Target Infra or nodegroup not found, or namespace inaccessible",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "NodeGroup in incompatible state for scaling or resource conflicts detected",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "node provisioning failed, network configuration error, or CSP capacity limitations",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/site": {
+            "get": {
+                "description": "Get sites in Infra",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Site-to-site VPN Management (preview)"
+                ],
+                "summary": "Get sites in Infra",
+                "operationId": "GetSitesInInfra",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SitesInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/snapshot": {
+            "post": {
+                "description": "Create snapshots for the first running node in each nodegroup of an Infra in parallel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Create snapshots for all nodegroups in Infra (one node per nodegroup in parallel)",
+                "operationId": "PostInfraSnapshot",
+                "parameters": [
+                    {
+                        "description": "Request body to create Infra snapshots",
+                        "name": "snapshotReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SnapshotReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraSnapshotResult"
                         }
                     },
                     "404": {
@@ -8673,7 +8673,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/infra/{infraId}/vpn/{vpnId}/health": {
             "post": {
-                "description": "Perform a bidirectional ping test on a site-to-site VPN using existing Infra VMs and return the results.\n\nIt finds VMs that belong to the VPN's two sites and runs ping tests\nin both directions (site1→site2 and site2→site1) via private IP.\nThe VPN is considered healthy only when both directions succeed.\n\nA retry strategy is used with configurable interval and max attempts\n(default: 15s interval, 20 attempts).",
+                "description": "Perform a bidirectional ping test on a site-to-site VPN using existing Infra nodes and return the results.\n\nIt finds nodes that belong to the VPN's two sites and runs ping tests\nin both directions (site1→site2 and site2→site1) via private IP.\nThe VPN is considered healthy only when both directions succeed.\n\nA retry strategy is used with configurable interval and max attempts\n(default: 15s interval, 20 attempts).",
                 "consumes": [
                     "application/json"
                 ],
@@ -8843,7 +8843,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/infraDynamic": {
             "post": {
-                "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for Infra creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static Infra:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use ` + "`" + `/recommendSpec` + "`" + ` to find suitable VM specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use ` + "`" + `/infraDynamicCheckRequest` + "`" + ` to validate configuration before deployment\n4. **Optional Preview**: Use ` + "`" + `/infraDynamicReview` + "`" + ` to estimate costs and review configuration\n5. **Deployment**: Submit Infra dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **` + "`" + `continue` + "`" + `** (default): Create Infra with successful VMs, failed VMs remain for manual refinement\n- **` + "`" + `rollback` + "`" + `**: Delete entire Infra if any VM fails (all-or-nothing deployment)\n- **` + "`" + `refine` + "`" + `**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **` + "`" + `hold` + "`" + `**: Create Infra object but hold VM provisioning for manual approval\n- **Normal**: Proceed with immediate VM provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"vm\": [\n{\n\"name\": \"aws-web-servers\",\n\"nodeGroupSize\": \"3\",\n\"specId\": \"aws+us-east-1+t3.medium\",\n\"imageId\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"nodeGroupSize\": \"2\",\n\"specId\": \"azure+eastus+Standard_B2s\",\n\"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**Performance Considerations:**\n- VM provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 VMs) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
+                "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for Infra creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal node specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates node provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static Infra:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use ` + "`" + `/recommendSpec` + "`" + ` to find suitable node specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use ` + "`" + `/infraDynamicCheckRequest` + "`" + ` to validate configuration before deployment\n4. **Optional Preview**: Use ` + "`" + `/infraDynamicReview` + "`" + ` to estimate costs and review configuration\n5. **Deployment**: Submit Infra dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **` + "`" + `continue` + "`" + `** (default): Create Infra with successful nodes, failed nodes remain for manual refinement\n- **` + "`" + `rollback` + "`" + `**: Delete entire Infra if any node fails (all-or-nothing deployment)\n- **` + "`" + `refine` + "`" + `**: Automatically clean up failed nodes, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **` + "`" + `hold` + "`" + `**: Create Infra object but hold node provisioning for manual approval\n- **Normal**: Proceed with immediate node provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"nodeGroups\": [\n{\n\"name\": \"aws-web-servers\",\n\"nodeGroupSize\": \"3\",\n\"specId\": \"aws+us-east-1+t3.medium\",\n\"imageId\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"nodeGroupSize\": \"2\",\n\"specId\": \"azure+eastus+Standard_B2s\",\n\"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**Performance Considerations:**\n- node provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 nodes) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
                 "consumes": [
                     "application/json"
                 ],
@@ -8865,7 +8865,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Dynamic Infra request with common specifications. Must include specId and imageId for each VM group. See description for detailed example.",
+                        "description": "Dynamic Infra request with common specifications. Must include specId and imageId for each node group. See description for detailed example.",
                         "name": "infraReq",
                         "in": "body",
                         "required": true,
@@ -8878,7 +8878,7 @@ const docTemplate = `{
                             "hold"
                         ],
                         "type": "string",
-                        "description": "Deployment option: 'hold' to create Infra without immediate VM provisioning",
+                        "description": "Deployment option: 'hold' to create Infra without immediate node provisioning",
                         "name": "option",
                         "in": "query"
                     },
@@ -8897,7 +8897,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully created Infra with VM deployment status, resource mappings, and configuration details",
+                        "description": "Successfully created Infra with node deployment status, resource mappings, and configuration details",
                         "schema": {
                             "$ref": "#/definitions/model.InfraInfo"
                         }
@@ -8931,7 +8931,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/infraDynamicReview": {
             "post": {
-                "description": "Review and validate Infra dynamic request comprehensively before actual provisioning.\nThis endpoint performs comprehensive validation of Infra dynamic creation requests without actually creating resources.\nIt checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.\n\n**Key Features:**\n- Validates all VM specifications and images against CSP availability\n- Provides cost estimation (including partial estimates when some costs are unknown)\n- Identifies potential configuration issues and warnings\n- Recommends optimization strategies\n- Shows provider and region distribution\n- Non-invasive validation (no resources are created)\n\n**Review Status:**\n- ` + "`" + `Ready` + "`" + `: All VMs can be created successfully\n- ` + "`" + `Warning` + "`" + `: VMs can be created but with configuration warnings\n- ` + "`" + `Error` + "`" + `: Critical errors prevent Infra creation\n\n**Use Cases:**\n- Pre-validation before expensive Infra creation\n- Cost estimation and planning\n- Configuration optimization\n- Multi-cloud resource planning",
+                "description": "Review and validate Infra dynamic request comprehensively before actual provisioning.\nThis endpoint performs comprehensive validation of Infra dynamic creation requests without actually creating resources.\nIt checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.\n\n**Key Features:**\n- Validates all node specifications and images against CSP availability\n- Provides cost estimation (including partial estimates when some costs are unknown)\n- Identifies potential configuration issues and warnings\n- Recommends optimization strategies\n- Shows provider and region distribution\n- Non-invasive validation (no resources are created)\n\n**Review Status:**\n- ` + "`" + `Ready` + "`" + `: All nodes can be created successfully\n- ` + "`" + `Warning` + "`" + `: nodes can be created but with configuration warnings\n- ` + "`" + `Error` + "`" + `: Critical errors prevent Infra creation\n\n**Use Cases:**\n- Pre-validation before expensive Infra creation\n- Cost estimation and planning\n- Configuration optimization\n- Multi-cloud resource planning",
                 "consumes": [
                     "application/json"
                 ],
@@ -8953,7 +8953,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to review Infra dynamic provisioning. Must include specId and imageId info of each VM request. Same format as /infraDynamic endpoint. (ex: {name: infra01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})",
+                        "description": "Request body to review Infra dynamic provisioning. Must include specId and imageId info of each node request. Same format as /infraDynamic endpoint. (ex: {name: infra01, nodeGroups: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})",
                         "name": "infraReq",
                         "in": "body",
                         "required": true,
@@ -10396,9 +10396,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/monitoring/status/infra/{infraId}/vm/{vmId}": {
+        "/ns/{nsId}/monitoring/status/infra/{infraId}/node/{nodeId}": {
             "put": {
-                "description": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)",
+                "description": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows node only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -10408,7 +10408,7 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Resource Monitor (for developer)"
                 ],
-                "summary": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)",
+                "summary": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows node only)",
                 "operationId": "PutMonitorAgentStatusInstalled",
                 "parameters": [
                     {
@@ -10429,9 +10429,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
-                        "description": "VM ID",
-                        "name": "vmId",
+                        "default": "node01",
+                        "description": "Node ID",
+                        "name": "nodeId",
                         "in": "path",
                         "required": true
                     },
@@ -10452,7 +10452,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.VmInfo"
+                            "$ref": "#/definitions/model.NodeInfo"
                         }
                     },
                     "404": {
@@ -10775,6 +10775,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/registerCspNode": {
+            "post": {
+                "description": "Import and register pre-existing virtual machines from cloud service providers into CB-Tumblebug management.\nThis endpoint allows you to bring existing CSP resources under CB-Tumblebug control without recreating them:\n\n**Registration Process:**\n1. **Discovery**: Validates that the specified node exists in the target CSP\n2. **Metadata Import**: Retrieves node configuration, network settings, and current status\n3. **Resource Mapping**: Creates CB-Tumblebug resource objects that reference the existing CSP resources\n4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP node state\n5. **Management Integration**: Enables CB-Tumblebug operations on the registered nodes\n\n**Supported node States:**\n- Running nodes (most common use case)\n- Stopped nodes (will be registered with current state)\n- nodes with attached storage and network interfaces\n\n**Resource Compatibility:**\n- node must exist in a supported CSP (AWS, Azure, GCP, etc.)\n- Network resources (VPC, subnets, security groups) will be discovered and mapped\n- Storage volumes and attached disks will be registered automatically\n- SSH keys and security configurations will be imported\n\n**Post-Registration Capabilities:**\n- Standard CB-Tumblebug node lifecycle operations (start, stop, terminate)\n- Monitoring agent installation (if CB-Dragonfly is configured)\n- Command execution and automation\n- Integration with other CB-Tumblebug Infras\n\n**Important Notes:**\n- Registration does not modify the existing node configuration\n- Original CSP billing and resource management still applies\n- CB-Tumblebug provides additional management layer and automation\n- Ensure proper CSP credentials and permissions are configured",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Register Existing CSP nodes into Cloud-Barista Infra",
+                "operationId": "PostRegisterCSPNativeNode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID for organizing registered resources",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Infra registration request containing existing CSP node IDs and connection details",
+                        "name": "infraReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Registered Infra information with imported node details and current status",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or missing required CSP node identifiers",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Specified nodes not found in target CSP or namespace doesn't exist",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "node already registered or Infra name conflicts",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "CSP communication error or registration process failure",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/registerCspResource/vNet": {
             "post": {
                 "description": "Register the VNet, which was created in CSP",
@@ -10909,85 +10988,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/registerCspVm": {
-            "post": {
-                "description": "Import and register pre-existing virtual machines from cloud service providers into CB-Tumblebug management.\nThis endpoint allows you to bring existing CSP resources under CB-Tumblebug control without recreating them:\n\n**Registration Process:**\n1. **Discovery**: Validates that the specified VM exists in the target CSP\n2. **Metadata Import**: Retrieves VM configuration, network settings, and current status\n3. **Resource Mapping**: Creates CB-Tumblebug resource objects that reference the existing CSP resources\n4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP VM state\n5. **Management Integration**: Enables CB-Tumblebug operations on the registered VMs\n\n**Supported VM States:**\n- Running VMs (most common use case)\n- Stopped VMs (will be registered with current state)\n- VMs with attached storage and network interfaces\n\n**Resource Compatibility:**\n- VM must exist in a supported CSP (AWS, Azure, GCP, etc.)\n- Network resources (VPC, subnets, security groups) will be discovered and mapped\n- Storage volumes and attached disks will be registered automatically\n- SSH keys and security configurations will be imported\n\n**Post-Registration Capabilities:**\n- Standard CB-Tumblebug VM lifecycle operations (start, stop, terminate)\n- Monitoring agent installation (if CB-Dragonfly is configured)\n- Command execution and automation\n- Integration with other CB-Tumblebug Infras\n\n**Important Notes:**\n- Registration does not modify the existing VM configuration\n- Original CSP billing and resource management still applies\n- CB-Tumblebug provides additional management layer and automation\n- Ensure proper CSP credentials and permissions are configured",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] Infra Provisioning and Management"
-                ],
-                "summary": "Register Existing CSP VMs into Cloud-Barista Infra",
-                "operationId": "PostRegisterCSPNativeVM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID for organizing registered resources",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Infra registration request containing existing CSP VM IDs and connection details",
-                        "name": "infraReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.InfraReq"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Registered Infra information with imported VM details and current status",
-                        "schema": {
-                            "$ref": "#/definitions/model.InfraInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request format or missing required CSP VM identifiers",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Specified VMs not found in target CSP or namespace doesn't exist",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "409": {
-                        "description": "VM already registered or Infra name conflicts",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "CSP communication error or registration process failure",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -15317,7 +15317,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/sshKey/{sshKeyId}/complement": {
             "put": {
-                "description": "Update username and privateKey to enable remote command execution on registered VMs",
+                "description": "Update username and privateKey to enable remote command execution on registered nodes",
                 "consumes": [
                     "application/json"
                 ],
@@ -16346,7 +16346,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a reusable Infra Dynamic Template. Templates store Infra dynamic creation\nrequest configurations that can be applied later to create Infras with consistent settings.\n\n**Template Contents:**\n- VM specifications (specId, imageId) for each nodegroup\n- NodeGroup sizing and naming\n- Network and disk configuration\n- Post-deployment commands\n- Monitoring agent options\n\nTemplates can be created manually or extracted from existing Infras.",
+                "description": "Create a reusable Infra Dynamic Template. Templates store Infra dynamic creation\nrequest configurations that can be applied later to create Infras with consistent settings.\n\n**Template Contents:**\n- node specifications (specId, imageId) for each nodegroup\n- NodeGroup sizing and naming\n- Network and disk configuration\n- Post-deployment commands\n- Monitoring agent options\n\nTemplates can be created manually or extracted from existing Infras.",
                 "consumes": [
                     "application/json"
                 ],
@@ -17477,15 +17477,15 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "g1",
-                        "description": "nodeGroupId to apply the file transfer only for VMs in nodeGroup of Infra",
+                        "description": "nodeGroupId to apply the file transfer only for nodes in nodeGroup of Infra",
                         "name": "nodeGroupId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "vmId to apply the file transfer only for a VM in Infra",
-                        "name": "vmId",
+                        "description": "nodeId to apply the file transfer only for a node in Infra",
+                        "name": "nodeId",
                         "in": "query"
                     },
                     {
@@ -17643,7 +17643,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/transferFileAndCmd/infra/{infraId}": {
             "post": {
-                "description": "Transfer a file to all targeted VMs in Infra via SCP, then optionally run a shell command on each VM where the transfer succeeded.\nUseful for deploying files directly to privileged locations (e.g., nginx document root) in a single API call.\nExample: upload index.html to /tmp and run \"sudo mv /tmp/index.html /var/www/html/\" as the post-transfer command.\nThe file size should be less than 50MB.",
+                "description": "Transfer a file to all targeted nodes in Infra via SCP, then optionally run a shell command on each node where the transfer succeeded.\nUseful for deploying files directly to privileged locations (e.g., nginx document root) in a single API call.\nExample: upload index.html to /tmp and run \"sudo mv /tmp/index.html /var/www/html/\" as the post-transfer command.\nThe file size should be less than 50MB.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -17674,20 +17674,20 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "NodeGroup ID to limit file transfer scope to VMs in a nodeGroup",
+                        "description": "NodeGroup ID to limit file transfer scope to nodes in a nodeGroup",
                         "name": "nodeGroupId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "VM ID to limit file transfer scope to a single VM",
-                        "name": "vmId",
+                        "description": "Node ID to limit file transfer scope to a single node",
+                        "name": "nodeId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "default": "/tmp",
-                        "description": "Target directory path on the VM where the file will be stored",
+                        "description": "Target directory path on the node where the file will be stored",
                         "name": "path",
                         "in": "formData",
                         "required": true
@@ -17701,7 +17701,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Shell command to execute on each VM after successful file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)",
+                        "description": "Shell command to execute on each node after successful file transfer (e.g., sudo mv /tmp/index.html /var/www/html/)",
                         "name": "command",
                         "in": "formData"
                     },
@@ -18283,7 +18283,7 @@ const docTemplate = `{
         },
         "/provisioning/log/{specId}": {
             "get": {
-                "description": "Retrieve detailed provisioning history for a specific VM specification including success/failure patterns and risk analysis.\nThis endpoint provides comprehensive insights into provisioning reliability:\n\n**Historical Data Includes:**\n- Success and failure counts with timestamps\n- CSP-specific error messages and failure patterns\n- Image compatibility tracking across different attempts\n- Failure rate analysis and risk assessment\n- Regional and provider-specific reliability metrics\n\n**Use Cases:**\n- **Pre-deployment Risk Assessment**: Check if a spec has historical failures before creating Infra\n- **Troubleshooting**: Analyze failure patterns to identify root causes\n- **Capacity Planning**: Understand reliability patterns for different specs and regions\n- **Cost Optimization**: Avoid specs with high failure rates that waste resources\n\n**Response Details:**\n- ` + "`" + `failureCount` + "`" + `: Total number of provisioning failures\n- ` + "`" + `successCount` + "`" + `: Number of successes (only tracked after failures occur)\n- ` + "`" + `failureImages` + "`" + `: List of CSP images that failed with this spec\n- ` + "`" + `successImages` + "`" + `: List of CSP images that succeeded with this spec\n- ` + "`" + `failureMessages` + "`" + `: Detailed error messages from CSP\n- ` + "`" + `lastUpdated` + "`" + `: Timestamp of most recent provisioning attempt",
+                "description": "Retrieve detailed provisioning history for a specific node specification including success/failure patterns and risk analysis.\nThis endpoint provides comprehensive insights into provisioning reliability:\n\n**Historical Data Includes:**\n- Success and failure counts with timestamps\n- CSP-specific error messages and failure patterns\n- Image compatibility tracking across different attempts\n- Failure rate analysis and risk assessment\n- Regional and provider-specific reliability metrics\n\n**Use Cases:**\n- **Pre-deployment Risk Assessment**: Check if a spec has historical failures before creating Infra\n- **Troubleshooting**: Analyze failure patterns to identify root causes\n- **Capacity Planning**: Understand reliability patterns for different specs and regions\n- **Cost Optimization**: Avoid specs with high failure rates that waste resources\n\n**Response Details:**\n- ` + "`" + `failureCount` + "`" + `: Total number of provisioning failures\n- ` + "`" + `successCount` + "`" + `: Number of successes (only tracked after failures occur)\n- ` + "`" + `failureImages` + "`" + `: List of CSP images that failed with this spec\n- ` + "`" + `successImages` + "`" + `: List of CSP images that succeeded with this spec\n- ` + "`" + `failureMessages` + "`" + `: Detailed error messages from CSP\n- ` + "`" + `lastUpdated` + "`" + `: Timestamp of most recent provisioning attempt",
                 "consumes": [
                     "application/json"
                 ],
@@ -18293,12 +18293,12 @@ const docTemplate = `{
                 "tags": [
                     "[Admin] Provisioning History and Analytics"
                 ],
-                "summary": "Get Provisioning History Log for VM Specification",
+                "summary": "Get Provisioning History Log for node Specification",
                 "operationId": "GetProvisioningLog",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "VM Specification ID (format: provider+region+spec_name, e.g., aws+ap-northeast-2+t2.micro)",
+                        "description": "node Specification ID (format: provider+region+spec_name, e.g., aws+ap-northeast-2+t2.micro)",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -18318,7 +18318,7 @@ const docTemplate = `{
                         }
                     },
                     "204": {
-                        "description": "No provisioning history found for the specified VM specification"
+                        "description": "No provisioning history found for the specified node specification"
                     },
                     "400": {
                         "description": "Invalid specification ID format or missing required parameters",
@@ -18335,7 +18335,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Remove all provisioning history data for a specific VM specification.\nThis operation permanently deletes historical failure and success records:\n\n**Warning**: This action is irreversible and will remove:\n- All failure and success statistics\n- Historical error messages and troubleshooting data\n- Risk analysis baseline for future deployments\n- Failure pattern analysis data\n\n**When to Use:**\n- **Data Cleanup**: Remove outdated or irrelevant provisioning history\n- **Fresh Start**: Clear history after infrastructure changes that resolve previous issues\n- **Privacy Compliance**: Remove logs containing sensitive error information\n- **Storage Management**: Clean up logs to manage kvstore space\n\n**Impact on System:**\n- Future risk analysis for this spec will have no historical baseline\n- Infra review process will not show historical warnings for this spec\n- Provisioning reliability metrics will be reset to zero",
+                "description": "Remove all provisioning history data for a specific node specification.\nThis operation permanently deletes historical failure and success records:\n\n**Warning**: This action is irreversible and will remove:\n- All failure and success statistics\n- Historical error messages and troubleshooting data\n- Risk analysis baseline for future deployments\n- Failure pattern analysis data\n\n**When to Use:**\n- **Data Cleanup**: Remove outdated or irrelevant provisioning history\n- **Fresh Start**: Clear history after infrastructure changes that resolve previous issues\n- **Privacy Compliance**: Remove logs containing sensitive error information\n- **Storage Management**: Clean up logs to manage kvstore space\n\n**Impact on System:**\n- Future risk analysis for this spec will have no historical baseline\n- Infra review process will not show historical warnings for this spec\n- Provisioning reliability metrics will be reset to zero",
                 "consumes": [
                     "application/json"
                 ],
@@ -18350,7 +18350,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "VM Specification ID to delete history for (format: provider+region+spec_name)",
+                        "description": "node Specification ID to delete history for (format: provider+region+spec_name)",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -18389,7 +18389,7 @@ const docTemplate = `{
         },
         "/provisioning/risk/{specId}": {
             "get": {
-                "description": "Evaluate the likelihood of provisioning failure based on historical data for a specific VM specification and image combination.\nThis endpoint provides intelligent risk assessment to help prevent deployment failures:\n\n**Risk Analysis Factors:**\n- Historical failure rate for the VM specification\n- Image-specific compatibility with the spec\n- Recent failure patterns and trends\n- Cross-reference of spec+image combination success rates\n\n**Risk Levels:**\n- ` + "`" + `high` + "`" + `: Very likely to fail (\u003e80% failure rate or image-specific failures)\n- ` + "`" + `medium` + "`" + `: Moderate risk (50-80% failure rate or mixed results)\n- ` + "`" + `low` + "`" + `: Low risk (\u003c50% failure rate or no previous failures)\n- ` + "`" + `unknown` + "`" + `: Insufficient data for analysis\n\n**Recommended Actions by Risk Level:**\n- **High Risk**: Consider alternative specs or images, verify CSP quotas and permissions\n- **Medium Risk**: Proceed with caution, have backup plans ready\n- **Low Risk**: Safe to proceed with normal deployment\n\n**Integration Points:**\n- Automatically called during Infra review process\n- Can be used in CI/CD pipelines for deployment validation\n- Helpful for capacity planning and resource selection",
+                "description": "Evaluate the likelihood of provisioning failure based on historical data for a specific node specification and image combination.\nThis endpoint provides intelligent risk assessment to help prevent deployment failures:\n\n**Risk Analysis Factors:**\n- Historical failure rate for the node specification\n- Image-specific compatibility with the spec\n- Recent failure patterns and trends\n- Cross-reference of spec+image combination success rates\n\n**Risk Levels:**\n- ` + "`" + `high` + "`" + `: Very likely to fail (\u003e80% failure rate or image-specific failures)\n- ` + "`" + `medium` + "`" + `: Moderate risk (50-80% failure rate or mixed results)\n- ` + "`" + `low` + "`" + `: Low risk (\u003c50% failure rate or no previous failures)\n- ` + "`" + `unknown` + "`" + `: Insufficient data for analysis\n\n**Recommended Actions by Risk Level:**\n- **High Risk**: Consider alternative specs or images, verify CSP quotas and permissions\n- **Medium Risk**: Proceed with caution, have backup plans ready\n- **Low Risk**: Safe to proceed with normal deployment\n\n**Integration Points:**\n- Automatically called during Infra review process\n- Can be used in CI/CD pipelines for deployment validation\n- Helpful for capacity planning and resource selection",
                 "consumes": [
                     "application/json"
                 ],
@@ -18404,7 +18404,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "VM Specification ID (format: provider+region+spec_name)",
+                        "description": "node Specification ID (format: provider+region+spec_name)",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -18713,7 +18713,7 @@ const docTemplate = `{
         },
         "/registerCspResources": {
             "post": {
-                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.\n\n**New filtering approach (recommended):**\n- Provider only: Registers resources from all connections of the specified provider\n- Provider + Region: Registers resources from all zones within the region\n- Provider + Region + Zone: Registers resources from specific zone\n- All empty: Registers resources from **all available connections**\n\n**Backward compatibility:**\n- ` + "`" + `connectionName` + "`" + ` is still supported but deprecated. Use provider/region/zone instead.\n\n**Usage Examples:**\n- All AWS: ` + "`" + `{\"provider\": \"aws\", \"nsId\": \"default\"}` + "`" + `\n- AWS Seoul region: ` + "`" + `{\"provider\": \"aws\", \"region\": \"ap-northeast-2\", \"nsId\": \"default\"}` + "`" + `\n- AWS Seoul zone 2a: ` + "`" + `{\"provider\": \"aws\", \"region\": \"ap-northeast-2\", \"zone\": \"ap-northeast-2a\", \"nsId\": \"default\"}` + "`" + `\n- All connections: ` + "`" + `{\"nsId\": \"default\", \"infraNamePrefix\": \"infra-all\"}` + "`" + `\n- Single connection (deprecated): ` + "`" + `{\"connectionName\": \"aws-ap-northeast-2\", \"nsId\": \"default\"}` + "`" + `",
+                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, node) to CB-Tumblebug.\n\n**New filtering approach (recommended):**\n- Provider only: Registers resources from all connections of the specified provider\n- Provider + Region: Registers resources from all zones within the region\n- Provider + Region + Zone: Registers resources from specific zone\n- All empty: Registers resources from **all available connections**\n\n**Backward compatibility:**\n- ` + "`" + `connectionName` + "`" + ` is still supported but deprecated. Use provider/region/zone instead.\n\n**Usage Examples:**\n- All AWS: ` + "`" + `{\"provider\": \"aws\", \"nsId\": \"default\"}` + "`" + `\n- AWS Seoul region: ` + "`" + `{\"provider\": \"aws\", \"region\": \"ap-northeast-2\", \"nsId\": \"default\"}` + "`" + `\n- AWS Seoul zone 2a: ` + "`" + `{\"provider\": \"aws\", \"region\": \"ap-northeast-2\", \"zone\": \"ap-northeast-2a\", \"nsId\": \"default\"}` + "`" + `\n- All connections: ` + "`" + `{\"nsId\": \"default\", \"infraNamePrefix\": \"infra-all\"}` + "`" + `\n- Single connection (deprecated): ` + "`" + `{\"connectionName\": \"aws-ap-northeast-2\", \"nsId\": \"default\"}` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -18723,7 +18723,7 @@ const docTemplate = `{
                 "tags": [
                     "[Admin] System Management"
                 ],
-                "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug",
+                "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, node) to CB-Tumblebug",
                 "operationId": "RegisterCspNativeResources",
                 "parameters": [
                     {
@@ -18742,7 +18742,7 @@ const docTemplate = `{
                                 "vNet",
                                 "securityGroup",
                                 "sshKey",
-                                "vm",
+                                "node",
                                 "dataDisk",
                                 "customImage"
                             ],
@@ -18760,7 +18760,7 @@ const docTemplate = `{
                         ],
                         "type": "string",
                         "default": "y",
-                        "description": "Flag to show VMs in a collective Infra form (y,n)",
+                        "description": "Flag to show Nodes in a collective Infra form (y,n)",
                         "name": "infraFlag",
                         "in": "query"
                     },
@@ -18843,7 +18843,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, vm) into CB-Tumblebug\n\n**Resource Registration Behavior:**\nThis job registers CSP-native resources based on the ` + "`" + `connectionName` + "`" + ` field:\n- If ` + "`" + `connectionName` + "`" + ` is specified: Registers resources from the **specified connection only**\n- If ` + "`" + `connectionName` + "`" + ` is empty or omitted: Registers resources from **all available connections**\n\n**Usage Examples:**\n- Single connection: ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"connectionName\": \"aws-ap-northeast-2\", \"infraNamePrefix\": \"infra-01\"}` + "`" + `\n- All connections: ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"connectionName\": \"\", \"infraNamePrefix\": \"infra-all\"}` + "`" + ` or ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"infraNamePrefix\": \"infra-all\"}` + "`" + `\n\n**Job Status Values:**\n- ` + "`" + `Scheduled` + "`" + `: Job is scheduled and waiting for the next execution time\n- ` + "`" + `Executing` + "`" + `: Job is currently running the task\n- ` + "`" + `Stopped` + "`" + `: Job has been stopped and deleted\n\n**Job Lifecycle:**\n1. Create job (this API) → Status: ` + "`" + `Scheduled` + "`" + `, **executes immediately**\n2. First execution starts → Status: ` + "`" + `Executing` + "`" + `\n3. Execution completes → Status: ` + "`" + `Scheduled` + "`" + ` (waits for interval)\n4. After interval → Status: ` + "`" + `Executing` + "`" + ` (cycles back to step 3)\n5. Pause job → ` + "`" + `enabled: false` + "`" + `, Status: ` + "`" + `Scheduled` + "`" + ` (no execution)\n6. Resume job → ` + "`" + `enabled: true` + "`" + `, Status: ` + "`" + `Scheduled` + "`" + ` (resumes execution)\n7. Delete job → Status: ` + "`" + `Stopped` + "`" + `, job removed permanently\n\n**Failure Handling:**\n- Tracks ` + "`" + `successCount` + "`" + `, ` + "`" + `failureCount` + "`" + `, ` + "`" + `consecutiveFailures` + "`" + `\n- Auto-disables after 5 consecutive failures (` + "`" + `autoDisabled: true` + "`" + `)\n- Auto-recovers when next execution succeeds\n\n**Timeout Protection:**\n- Default execution timeout: 30 minutes\n- Jobs exceeding timeout are marked as failed\n- Server restart during execution marks job as interrupted\n\n**Duplicate Prevention:**\n- System checks for existing jobs with same configuration\n- Configuration uniqueness based on: jobType + nsId + connectionName + infraNamePrefix + option + infraFlag\n- Returns 409 Conflict if duplicate job exists with existing job ID",
+                "description": "Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, node) into CB-Tumblebug\n\n**Resource Registration Behavior:**\nThis job registers CSP-native resources based on the ` + "`" + `connectionName` + "`" + ` field:\n- If ` + "`" + `connectionName` + "`" + ` is specified: Registers resources from the **specified connection only**\n- If ` + "`" + `connectionName` + "`" + ` is empty or omitted: Registers resources from **all available connections**\n\n**Usage Examples:**\n- Single connection: ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"connectionName\": \"aws-ap-northeast-2\", \"infraNamePrefix\": \"infra-01\"}` + "`" + `\n- All connections: ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"connectionName\": \"\", \"infraNamePrefix\": \"infra-all\"}` + "`" + ` or ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"infraNamePrefix\": \"infra-all\"}` + "`" + `\n\n**Job Status Values:**\n- ` + "`" + `Scheduled` + "`" + `: Job is scheduled and waiting for the next execution time\n- ` + "`" + `Executing` + "`" + `: Job is currently running the task\n- ` + "`" + `Stopped` + "`" + `: Job has been stopped and deleted\n\n**Job Lifecycle:**\n1. Create job (this API) → Status: ` + "`" + `Scheduled` + "`" + `, **executes immediately**\n2. First execution starts → Status: ` + "`" + `Executing` + "`" + `\n3. Execution completes → Status: ` + "`" + `Scheduled` + "`" + ` (waits for interval)\n4. After interval → Status: ` + "`" + `Executing` + "`" + ` (cycles back to step 3)\n5. Pause job → ` + "`" + `enabled: false` + "`" + `, Status: ` + "`" + `Scheduled` + "`" + ` (no execution)\n6. Resume job → ` + "`" + `enabled: true` + "`" + `, Status: ` + "`" + `Scheduled` + "`" + ` (resumes execution)\n7. Delete job → Status: ` + "`" + `Stopped` + "`" + `, job removed permanently\n\n**Failure Handling:**\n- Tracks ` + "`" + `successCount` + "`" + `, ` + "`" + `failureCount` + "`" + `, ` + "`" + `consecutiveFailures` + "`" + `\n- Auto-disables after 5 consecutive failures (` + "`" + `autoDisabled: true` + "`" + `)\n- Auto-recovers when next execution succeeds\n\n**Timeout Protection:**\n- Default execution timeout: 30 minutes\n- Jobs exceeding timeout are marked as failed\n- Server restart during execution marks job as interrupted\n\n**Duplicate Prevention:**\n- System checks for existing jobs with same configuration\n- Configuration uniqueness based on: jobType + nsId + connectionName + infraNamePrefix + option + infraFlag\n- Returns 409 Conflict if duplicate job exists with existing job ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -19282,7 +19282,7 @@ const docTemplate = `{
                                 "vNet",
                                 "securityGroup",
                                 "sshKey",
-                                "vm",
+                                "node",
                                 "dataDisk",
                                 "customImage"
                             ],
@@ -19300,7 +19300,7 @@ const docTemplate = `{
                         ],
                         "type": "string",
                         "default": "y",
-                        "description": "Flag to show VMs in a collective Infra form (y,n)",
+                        "description": "Flag to show Nodes in a collective Infra form (y,n)",
                         "name": "infraFlag",
                         "in": "query"
                     },
@@ -19704,7 +19704,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update (UPSERT) a DNS record for a domain in Route53.\nSupports two routing policies: \"simple\" (default) and \"geoproximity\" (location-based).\nChoose exactly one IP source method in 'setBy':\n1. Infra ID (infraId): Fetch Public IPs of all VMs in the Infra.\n2. Label Selector (labelSelector): Fetch IPs of matching resources.\n3. Manual IP Values (values): Manually provide IP addresses (simple routing only).",
+                "description": "Update (UPSERT) a DNS record for a domain in Route53.\nSupports two routing policies: \"simple\" (default) and \"geoproximity\" (location-based).\nChoose exactly one IP source method in 'setBy':\n1. Infra ID (infraId): Fetch Public IPs of all nodes in the Infra.\n2. Label Selector (labelSelector): Fetch IPs of matching resources.\n3. Manual IP Values (values): Manually provide IP addresses (simple routing only).",
                 "consumes": [
                     "application/json"
                 ],
@@ -20915,7 +20915,7 @@ const docTemplate = `{
                             "ns",
                             "infra",
                             "nodeGroup",
-                            "vm",
+                            "node",
                             "k8s",
                             "vNet",
                             "subnet",
@@ -20970,7 +20970,7 @@ const docTemplate = `{
         },
         "/specImagePairReview": {
             "post": {
-                "description": "Validate whether a spec and image pair is compatible for VM provisioning.\nThis lightweight API checks:\n- Spec availability in DB and CSP\n- Image availability in DB and CSP (auto-registers if found in CSP but not in DB)\n- Cost estimation based on spec\n\n**Use Cases:**\n- Quick validation before VM creation\n- Pre-check for dynamic provisioning\n- Verify custom image IDs entered by user",
+                "description": "Validate whether a spec and image pair is compatible for node provisioning.\nThis lightweight API checks:\n- Spec availability in DB and CSP\n- Image availability in DB and CSP (auto-registers if found in CSP but not in DB)\n- Cost estimation based on spec\n\n**Use Cases:**\n- Quick validation before node creation\n- Pre-check for dynamic provisioning\n- Verify custom image IDs entered by user",
                 "consumes": [
                     "application/json"
                 ],
@@ -21029,7 +21029,7 @@ const docTemplate = `{
         },
         "/systemInfra": {
             "post": {
-                "description": "Create specialized Infra instances for CB-Tumblebug system operations and infrastructure probing.\nThis endpoint provisions system-level infrastructure that supports CB-Tumblebug's internal functions:\n\n**System Infra Types:**\n- ` + "`" + `probe` + "`" + `: Creates lightweight VMs for network connectivity testing and CSP capability discovery\n- ` + "`" + `monitor` + "`" + `: Deploys monitoring infrastructure for system health and performance tracking\n- ` + "`" + `test` + "`" + `: Provisions test environments for validating CSP integrations and features\n\n**Probe Infra Features:**\n- **Connectivity Testing**: Validates network paths between different CSP regions\n- **Latency Measurement**: Measures inter-region and inter-provider network performance\n- **Feature Discovery**: Tests CSP-specific capabilities and service availability\n- **Resource Validation**: Verifies that CB-Tumblebug can successfully provision resources\n\n**System Namespace:**\n- All system Infras are created in the special ` + "`" + `system` + "`" + ` namespace\n- Isolated from user workloads and regular Infra operations\n- Managed automatically by CB-Tumblebug internal processes\n- May be used for background maintenance and monitoring tasks\n\n**Automatic Configuration:**\n- Uses optimized VM specifications for system tasks (typically minimal resources)\n- Automatically selects appropriate regions and providers based on probe requirements\n- Configures necessary network access and security policies\n- Deploys with minimal attack surface and security hardening\n\n**Lifecycle Management:**\n- System Infras may be automatically created, updated, or destroyed by CB-Tumblebug\n- Typically short-lived for specific system tasks\n- Resource cleanup is handled automatically\n- Status and results are logged for system administrators\n\n**Use Cases:**\n- Infrastructure health checks and validation\n- Performance benchmarking across cloud providers\n- Automated testing of new CSP integrations\n- Network topology discovery and optimization",
+                "description": "Create specialized Infra instances for CB-Tumblebug system operations and infrastructure probing.\nThis endpoint provisions system-level infrastructure that supports CB-Tumblebug's internal functions:\n\n**System Infra Types:**\n- ` + "`" + `probe` + "`" + `: Creates lightweight nodes for network connectivity testing and CSP capability discovery\n- ` + "`" + `monitor` + "`" + `: Deploys monitoring infrastructure for system health and performance tracking\n- ` + "`" + `test` + "`" + `: Provisions test environments for validating CSP integrations and features\n\n**Probe Infra Features:**\n- **Connectivity Testing**: Validates network paths between different CSP regions\n- **Latency Measurement**: Measures inter-region and inter-provider network performance\n- **Feature Discovery**: Tests CSP-specific capabilities and service availability\n- **Resource Validation**: Verifies that CB-Tumblebug can successfully provision resources\n\n**System Namespace:**\n- All system Infras are created in the special ` + "`" + `system` + "`" + ` namespace\n- Isolated from user workloads and regular Infra operations\n- Managed automatically by CB-Tumblebug internal processes\n- May be used for background maintenance and monitoring tasks\n\n**Automatic Configuration:**\n- Uses optimized node specifications for system tasks (typically minimal resources)\n- Automatically selects appropriate regions and providers based on probe requirements\n- Configures necessary network access and security policies\n- Deploys with minimal attack surface and security hardening\n\n**Lifecycle Management:**\n- System Infras may be automatically created, updated, or destroyed by CB-Tumblebug\n- Typically short-lived for specific system tasks\n- Resource cleanup is handled automatically\n- Status and results are logged for system administrators\n\n**Use Cases:**\n- Infrastructure health checks and validation\n- Performance benchmarking across cloud providers\n- Automated testing of new CSP integrations\n- Network topology discovery and optimization",
                 "consumes": [
                     "application/json"
                 ],
@@ -21166,7 +21166,7 @@ const docTemplate = `{
         },
         "/tumblebug/provisioning/risk/detailed": {
             "get": {
-                "description": "Provides comprehensive risk analysis with separate assessments for VM specification and image risks, plus actionable recommendations.\nThis endpoint offers enhanced risk analysis by separating spec-level and image-level risk factors:\n\n**Risk Analysis Breakdown:**\n- **Spec Risk**: Analyzes whether the VM specification itself has compatibility or resource issues\n- **Image Risk**: Evaluates the track record of the specific image with this spec\n- **Overall Risk**: Combines both factors to determine the primary risk source\n- **Recommendations**: Provides actionable guidance based on risk analysis\n\n**Spec Risk Factors:**\n- Number of different images that failed with this spec (indicates spec-level issues)\n- Overall failure rate across all images\n- Success/failure ratio with various images\n\n**Image Risk Factors:**\n- Previous success/failure history of this specific image with this spec\n- Whether this is a new, untested combination\n\n**Recommendation Types:**\n- Change VM specification (when spec is the primary risk factor)\n- Try different image (when image is the primary risk factor)\n- Monitor deployment closely (for new combinations or medium risk)\n- Proceed with confidence (for low-risk combinations)",
+                "description": "Provides comprehensive risk analysis with separate assessments for node specification and image risks, plus actionable recommendations.\nThis endpoint offers enhanced risk analysis by separating spec-level and image-level risk factors:\n\n**Risk Analysis Breakdown:**\n- **Spec Risk**: Analyzes whether the node specification itself has compatibility or resource issues\n- **Image Risk**: Evaluates the track record of the specific image with this spec\n- **Overall Risk**: Combines both factors to determine the primary risk source\n- **Recommendations**: Provides actionable guidance based on risk analysis\n\n**Spec Risk Factors:**\n- Number of different images that failed with this spec (indicates spec-level issues)\n- Overall failure rate across all images\n- Success/failure ratio with various images\n\n**Image Risk Factors:**\n- Previous success/failure history of this specific image with this spec\n- Whether this is a new, untested combination\n\n**Recommendation Types:**\n- Change node specification (when spec is the primary risk factor)\n- Try different image (when image is the primary risk factor)\n- Monitor deployment closely (for new combinations or medium risk)\n- Proceed with confidence (for low-risk combinations)",
                 "consumes": [
                     "application/json"
                 ],
@@ -21181,7 +21181,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')",
+                        "description": "node specification ID (e.g., 'gcp+europe-north1+f1-micro')",
                         "name": "specId",
                         "in": "query",
                         "required": true
@@ -21676,13 +21676,13 @@ const docTemplate = `{
                 "infraId": {
                     "type": "string"
                 },
+                "nodeId": {
+                    "type": "string"
+                },
+                "nodeIp": {
+                    "type": "string"
+                },
                 "result": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmIp": {
                     "type": "string"
                 }
             }
@@ -21769,7 +21769,7 @@ const docTemplate = `{
                     "example": "random"
                 },
                 "postCommand": {
-                    "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
+                    "description": "PostCommand is field for providing command to Nodes after their creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.InfraCmdReq"
@@ -22030,10 +22030,10 @@ const docTemplate = `{
                 "infraId": {
                     "type": "string"
                 },
-                "nsId": {
+                "nodeId": {
                     "type": "string"
                 },
-                "vmId": {
+                "nsId": {
                     "type": "string"
                 }
             }
@@ -22415,8 +22415,8 @@ const docTemplate = `{
         "model.CommandDoneSummary": {
             "type": "object",
             "properties": {
-                "completedVms": {
-                    "description": "CompletedVms is the number of VMs that completed successfully",
+                "completedNodes": {
+                    "description": "CompletedNodes is the number of Nodes that completed successfully",
                     "type": "integer",
                     "example": 2
                 },
@@ -22426,17 +22426,17 @@ const docTemplate = `{
                     "example": 45
                 },
                 "error": {
-                    "description": "Error is set when the command execution failed before reaching VMs (e.g., preprocessing error)",
+                    "description": "Error is set when the command execution failed before reaching Nodes (e.g., preprocessing error)",
                     "type": "string",
-                    "example": "built-in function GetPublicIP error: no VM found"
+                    "example": "built-in function GetPublicIP error: no Node found"
                 },
-                "failedVms": {
-                    "description": "FailedVms is the number of VMs that failed",
+                "failedNodes": {
+                    "description": "FailedNodes is the number of Nodes that failed",
                     "type": "integer",
                     "example": 1
                 },
-                "totalVms": {
-                    "description": "TotalVms is the number of VMs that were targeted",
+                "totalNodes": {
+                    "description": "TotalNodes is the number of Nodes that were targeted",
                     "type": "integer",
                     "example": 3
                 }
@@ -22472,7 +22472,7 @@ const docTemplate = `{
                     "example": "total 8"
                 },
                 "lineNumber": {
-                    "description": "LineNumber is the sequential line number within this stream for this VM",
+                    "description": "LineNumber is the sequential line number within this stream for this Node",
                     "type": "integer",
                     "example": 1
                 },
@@ -22487,7 +22487,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "commandExecuted": {
-                    "description": "CommandExecuted is the actual SSH command executed on the VM (may be adjusted)",
+                    "description": "CommandExecuted is the actual SSH command executed on the Node (may be adjusted)",
                     "type": "string",
                     "example": "ls -la"
                 },
@@ -22583,7 +22583,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "commandIndex": {
-                    "description": "CommandIndex is the command status index in VmInfo.CommandStatus",
+                    "description": "CommandIndex is the command status index in NodeInfo.CommandStatus",
                     "type": "integer",
                     "example": 1
                 },
@@ -22594,6 +22594,11 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.CommandLogEntry"
                         }
                     ]
+                },
+                "nodeId": {
+                    "description": "NodeId identifies which Node this event belongs to",
+                    "type": "string",
+                    "example": "g1-1"
                 },
                 "status": {
                     "description": "Status is populated for EventCommandStatus events (reuses existing CommandStatusInfo)",
@@ -22624,11 +22629,6 @@ const docTemplate = `{
                         }
                     ],
                     "example": "CommandLog"
-                },
-                "vmId": {
-                    "description": "VmId identifies which VM this event belongs to",
-                    "type": "string",
-                    "example": "g1-1"
                 }
             }
         },
@@ -22821,7 +22821,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "connectionName": {
-                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
+                    "description": "if ConnectionName is given, the Node tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
                     "type": "string",
                     "example": "aws-ap-northeast-2"
                 },
@@ -22846,14 +22846,18 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "description": "NodeGroup name, actual VM name will be generated with -N postfix.",
+                    "description": "NodeGroup name, actual Node name will be generated with -N postfix.",
                     "type": "string",
                     "example": "g1"
                 },
                 "nodeGroupSize": {
-                    "description": "NodeGroupSize is the number of VMs to create in this NodeGroup. If \u003e 0, nodeGroup will be generated. Default is 1.",
+                    "description": "NodeGroupSize is the number of Nodes to create in this NodeGroup. If \u003e 0, nodeGroup will be generated. Default is 1.",
                     "type": "integer",
                     "example": 3
+                },
+                "nodeUserPassword": {
+                    "type": "string",
+                    "example": ""
                 },
                 "rootDiskSize": {
                     "description": "Root disk size in GB. 0 = use CSP default.",
@@ -22881,12 +22885,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": ""
                 },
-                "vmUserPassword": {
-                    "type": "string",
-                    "example": ""
-                },
                 "zone": {
-                    "description": "Zone is an optional field to specify the availability zone for VM placement.\nIf specified, subnet will be created in this zone for resources like GPU VMs\nthat may only be available in specific zones. If empty, auto-selection applies.",
+                    "description": "Zone is an optional field to specify the availability zone for Node placement.\nIf specified, subnet will be created in this zone for resources like GPU Nodes\nthat may only be available in specific zones. If empty, auto-selection applies.",
                     "type": "string",
                     "example": "ap-northeast-2a"
                 }
@@ -22936,14 +22936,20 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "description": "NodeGroup name of VMs. Actual VM name will be generated with -N postfix.",
+                    "description": "NodeGroup name of Nodes. Actual Node name will be generated with -N postfix.",
                     "type": "string",
                     "example": "g1-1"
                 },
                 "nodeGroupSize": {
-                    "description": "NodeGroupSize is the number of VMs to create in this NodeGroup. If \u003e 0, nodeGroup will be generated.",
+                    "description": "NodeGroupSize is the number of Nodes to create in this NodeGroup. If \u003e 0, nodeGroup will be generated.",
                     "type": "integer",
                     "example": 3
+                },
+                "nodeUserName": {
+                    "type": "string"
+                },
+                "nodeUserPassword": {
+                    "type": "string"
                 },
                 "rootDiskSize": {
                     "description": "Root disk size in GB. 0 = use CSP default.",
@@ -22971,12 +22977,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vNetId": {
-                    "type": "string"
-                },
-                "vmUserName": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
                     "type": "string"
                 }
             }
@@ -23131,7 +23131,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "sourceVmId": {
+                "sourceNodeId": {
                     "type": "string"
                 }
             }
@@ -23145,7 +23145,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "/ns/default/infra/infra01/vm/aws-ap-southeast-1-1"
+                        "/ns/default/infra/infra01/node/aws-ap-southeast-1-1"
                     ]
                 },
                 "connectionConfig": {
@@ -23231,6 +23231,31 @@ const docTemplate = `{
                 }
             }
         },
+        "model.DataDiskNodeReq": {
+            "type": "object",
+            "required": [
+                "diskSize",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "diskSize": {
+                    "description": "Disk size in GB",
+                    "type": "integer",
+                    "example": 77
+                },
+                "diskType": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
+                }
+            }
+        },
         "model.DataDiskReq": {
             "type": "object",
             "required": [
@@ -23277,31 +23302,6 @@ const docTemplate = `{
                 "diskSize": {
                     "description": "Disk size in GB",
                     "type": "integer"
-                }
-            }
-        },
-        "model.DataDiskVmReq": {
-            "type": "object",
-            "required": [
-                "diskSize",
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "diskSize": {
-                    "description": "Disk size in GB",
-                    "type": "integer",
-                    "example": 77
-                },
-                "diskType": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-datadisk"
                 }
             }
         },
@@ -23358,7 +23358,7 @@ const docTemplate = `{
                     ]
                 },
                 "commandIndex": {
-                    "description": "CommandIndex is the index of this command in the VM's command history",
+                    "description": "CommandIndex is the index of this command in the Node's command history",
                     "type": "integer",
                     "example": 1
                 },
@@ -23367,8 +23367,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-15T10:35:00Z"
                 },
-                "completedVmCount": {
-                    "description": "CompletedVmCount is the number of VMs that have completed execution",
+                "completedNodeCount": {
+                    "description": "CompletedNodeCount is the number of Nodes that have completed execution",
                     "type": "integer",
                     "example": 1
                 },
@@ -23385,12 +23385,17 @@ const docTemplate = `{
                 "message": {
                     "description": "Message provides additional status information",
                     "type": "string",
-                    "example": "Executing command on 3 VMs"
+                    "example": "Executing command on 3 Nodes"
                 },
                 "nodeGroupId": {
                     "description": "NodeGroupId is the target nodegroup ID (empty if not specified)",
                     "type": "string",
                     "example": "g1"
+                },
+                "nodeId": {
+                    "description": "NodeId is the target Node ID",
+                    "type": "string",
+                    "example": "g1-1"
                 },
                 "nsId": {
                     "description": "NsId is the namespace ID",
@@ -23411,25 +23416,20 @@ const docTemplate = `{
                     ],
                     "example": "Handling"
                 },
-                "targetVmCount": {
-                    "description": "TargetVmCount is the number of VMs targeted by this task",
+                "targetNodeCount": {
+                    "description": "TargetNodeCount is the number of Nodes targeted by this task",
                     "type": "integer",
                     "example": 3
                 },
                 "taskId": {
-                    "description": "TaskId is the unique identifier for this execution task (format: xRequestId:vmId:index)",
+                    "description": "TaskId is the unique identifier for this execution task (format: xRequestId:nodeId:index)",
                     "type": "string",
-                    "example": "req-12345678:vm-01:1"
+                    "example": "req-12345678:node-01:1"
                 },
                 "timeoutMinutes": {
                     "description": "TimeoutMinutes is the timeout setting for this task",
                     "type": "integer",
                     "example": 30
-                },
-                "vmId": {
-                    "description": "VmId is the target VM ID",
-                    "type": "string",
-                    "example": "g1-1"
                 },
                 "xRequestId": {
                     "description": "XRequestId is the X-Request-ID header value, the unique identifier for the request",
@@ -24032,8 +24032,8 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3
                 },
-                "vmId": {
-                    "description": "VmId is the VM identifier",
+                "nodeId": {
+                    "description": "NodeId is the Node identifier",
                     "type": "string",
                     "example": "g1-1"
                 }
@@ -24269,8 +24269,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
                 },
-                "sourceVmUid": {
-                    "description": "SourceVmUid is the UID of the source VM from which this image was created",
+                "sourceNodeUid": {
+                    "description": "SourceNodeUid is the UID of the source Node from which this image was created",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
                 },
@@ -24422,6 +24422,18 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "cspNodeIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cspNodeNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "cspSubnetIds": {
                     "type": "array",
                     "items": {
@@ -24429,18 +24441,6 @@ const docTemplate = `{
                     }
                 },
                 "cspVNetIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "cspVmIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "cspVmNames": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -24459,6 +24459,12 @@ const docTemplate = `{
                     }
                 },
                 "nodeGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nodeIds": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -24495,12 +24501,6 @@ const docTemplate = `{
                     }
                 },
                 "vNetIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "vmIds": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -24559,35 +24559,35 @@ const docTemplate = `{
         "model.InfraCreationErrors": {
             "type": "object",
             "properties": {
-                "failedVmCount": {
-                    "description": "FailedVmCount is the number of VMs that failed to be created",
+                "failedNodeCount": {
+                    "description": "FailedNodeCount is the number of Nodes that failed to be created",
                     "type": "integer"
                 },
                 "failureHandlingStrategy": {
                     "description": "FailureHandlingStrategy indicates how failures were handled",
                     "type": "string"
                 },
-                "successfulVmCount": {
-                    "description": "SuccessfulVmCount is the number of VMs that were successfully created",
-                    "type": "integer"
-                },
-                "totalVmCount": {
-                    "description": "TotalVmCount is the total number of VMs that were supposed to be created",
-                    "type": "integer"
-                },
-                "vmCreationErrors": {
-                    "description": "VmCreationErrors contains errors from actual VM creation phase",
+                "nodeCreationErrors": {
+                    "description": "NodeCreationErrors contains errors from actual Node creation phase",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.VmCreationError"
+                        "$ref": "#/definitions/model.NodeCreationError"
                     }
                 },
-                "vmObjectCreationErrors": {
-                    "description": "VmObjectCreationErrors contains errors from VM object creation phase",
+                "nodeObjectCreationErrors": {
+                    "description": "NodeObjectCreationErrors contains errors from Node object creation phase",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.VmCreationError"
+                        "$ref": "#/definitions/model.NodeCreationError"
                     }
+                },
+                "successfulNodeCount": {
+                    "description": "SuccessfulNodeCount is the number of Nodes that were successfully created",
+                    "type": "integer"
+                },
+                "totalNodeCount": {
+                    "description": "TotalNodeCount is the total number of Nodes that were supposed to be created",
+                    "type": "integer"
                 }
             }
         },
@@ -24624,14 +24624,14 @@ const docTemplate = `{
                     "example": "infra01"
                 },
                 "nodeGroups": {
-                    "description": "NodeGroups is array of VM requests for multi-cloud infrastructure\nExample: Multiple VM groups across different CSPs\n[\n  {\n    \"name\": \"aws-group\",\n    \"nodeGroupSize\": \"3\",\n    \"specId\": \"aws+ap-northeast-2+t3.nano\",\n    \"imageId\": \"ami-01f71f215b23ba262\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"worker\", \"csp\": \"aws\"}\n  },\n  {\n    \"name\": \"azure-group\",\n    \"nodeGroupSize\": \"2\",\n    \"specId\": \"azure+koreasouth+standard_b1s\",\n    \"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"head\", \"csp\": \"azure\"}\n  },\n  {\n    \"name\": \"gcp-group\",\n    \"nodeGroupSize\": \"1\",\n    \"specId\": \"gcp+asia-northeast3+g1-small\",\n    \"imageId\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"test\", \"csp\": \"gcp\"}\n  }\n]",
+                    "description": "NodeGroups is array of Node requests for multi-cloud infrastructure\nExample: Multiple Node groups across different CSPs\n[\n  {\n    \"name\": \"aws-group\",\n    \"nodeGroupSize\": \"3\",\n    \"specId\": \"aws+ap-northeast-2+t3.nano\",\n    \"imageId\": \"ami-01f71f215b23ba262\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"worker\", \"csp\": \"aws\"}\n  },\n  {\n    \"name\": \"azure-group\",\n    \"nodeGroupSize\": \"2\",\n    \"specId\": \"azure+koreasouth+standard_b1s\",\n    \"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"head\", \"csp\": \"azure\"}\n  },\n  {\n    \"name\": \"gcp-group\",\n    \"nodeGroupSize\": \"1\",\n    \"specId\": \"gcp+asia-northeast3+g1-small\",\n    \"imageId\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"test\", \"csp\": \"gcp\"}\n  }\n]",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.CreateNodeGroupDynamicReq"
                     }
                 },
                 "policyOnPartialFailure": {
-                    "description": "PolicyOnPartialFailure determines how to handle VM creation failures\n- \"continue\": Continue with partial Infra creation (default)\n- \"rollback\": Cleanup entire Infra when any VM fails\n- \"refine\": Mark failed VMs for refinement",
+                    "description": "PolicyOnPartialFailure determines how to handle Node creation failures\n- \"continue\": Continue with partial Infra creation (default)\n- \"rollback\": Cleanup entire Infra when any Node fails\n- \"refine\": Mark failed Nodes for refinement",
                     "type": "string",
                     "default": "continue",
                     "enum": [
@@ -24642,7 +24642,7 @@ const docTemplate = `{
                     "example": "continue"
                 },
                 "postCommand": {
-                    "description": "PostCommand is for the command to bootstrap the VMs",
+                    "description": "PostCommand is for the command to bootstrap the Nodes",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.InfraCmdReq"
@@ -24771,17 +24771,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "infra01"
                 },
-                "totalHandlingCount": {
-                    "description": "TotalHandlingCount is the total number of handling commands across all VMs in the Infra",
-                    "type": "integer",
-                    "example": 3
-                },
-                "vmHandlingCounts": {
-                    "description": "VmHandlingCounts is a map of VM ID to handling command count",
+                "nodeHandlingCounts": {
+                    "description": "NodeHandlingCounts is a map of Node ID to handling command count",
                     "type": "object",
                     "additionalProperties": {
                         "type": "integer"
                     }
+                },
+                "totalHandlingCount": {
+                    "description": "TotalHandlingCount is the total number of handling commands across all Nodes in the Infra",
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },
@@ -24799,7 +24799,7 @@ const docTemplate = `{
                     "example": "yes"
                 },
                 "creationErrors": {
-                    "description": "CreationErrors contains information about VM creation failures (if any)",
+                    "description": "CreationErrors contains information about Node creation failures (if any)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.InfraCreationErrors"
@@ -24836,18 +24836,24 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "newVmList": {
-                    "description": "List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.",
+                "newNodeList": {
+                    "description": "List of IDs for new nodes. Return IDs if the nodes are newly added. This field should be used for return body only.",
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                },
+                "node": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeInfo"
                     }
                 },
                 "placementAlgo": {
                     "type": "string"
                 },
                 "postCommand": {
-                    "description": "PostCommand is for the command to bootstrap the VMs",
+                    "description": "PostCommand is for the command to bootstrap the Nodes",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.InfraCmdReq"
@@ -24855,7 +24861,7 @@ const docTemplate = `{
                     ]
                 },
                 "postCommandResult": {
-                    "description": "PostCommandResult is the result of the command for bootstraping the VMs",
+                    "description": "PostCommandResult is the result of the command for bootstraping the Nodes",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.InfraSshCmdResult"
@@ -24894,29 +24900,52 @@ const docTemplate = `{
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
+                }
+            }
+        },
+        "model.InfraNodeAccessInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
                 },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.VmInfo"
-                    }
+                "nodeId": {
+                    "type": "string"
+                },
+                "nodeUserName": {
+                    "type": "string"
+                },
+                "nodeUserPassword": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "integer"
                 }
             }
         },
         "model.InfraNodeGroupAccessInfo": {
             "type": "object",
             "properties": {
-                "bastionVmId": {
+                "bastionNodeId": {
                     "type": "string"
-                },
-                "infraVmAccessInfo": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.InfraVmAccessInfo"
-                    }
                 },
                 "nlbListener": {
                     "$ref": "#/definitions/model.NLBListenerInfo"
+                },
+                "nodeAccessInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.InfraNodeAccessInfo"
+                    }
                 },
                 "nodeGroupId": {
                     "type": "string"
@@ -25006,7 +25035,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "policyOnPartialFailure": {
-                    "description": "PolicyOnPartialFailure determines how to handle VM creation failures\n- \"continue\": Continue with partial Infra creation (default)\n- \"rollback\": Cleanup entire Infra when any VM fails\n- \"refine\": Mark failed VMs for refinement",
+                    "description": "PolicyOnPartialFailure determines how to handle Node creation failures\n- \"continue\": Continue with partial Infra creation (default)\n- \"rollback\": Cleanup entire Infra when any Node fails\n- \"refine\": Mark failed Nodes for refinement",
                     "type": "string",
                     "default": "continue",
                     "enum": [
@@ -25017,7 +25046,7 @@ const docTemplate = `{
                     "example": "continue"
                 },
                 "postCommand": {
-                    "description": "PostCommand is for the command to bootstrap the VMs",
+                    "description": "PostCommand is for the command to bootstrap the Nodes",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.InfraCmdReq"
@@ -25049,7 +25078,7 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.VmSnapshotResult"
+                        "$ref": "#/definitions/model.NodeSnapshotResult"
                     }
                 },
                 "successCount": {
@@ -25102,15 +25131,21 @@ const docTemplate = `{
                     "type": "string",
                     "example": "32.201.134.113"
                 },
+                "masterNodeId": {
+                    "type": "string",
+                    "example": "node-asiaeast1-cb-01"
+                },
                 "masterSSHPort": {
                     "type": "integer"
                 },
-                "masterVmId": {
-                    "type": "string",
-                    "example": "vm-asiaeast1-cb-01"
-                },
                 "name": {
                     "type": "string"
+                },
+                "node": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeStatusInfo"
+                    }
                 },
                 "status": {
                     "type": "string"
@@ -25127,41 +25162,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "targetStatus": {
-                    "type": "string"
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.VmStatusInfo"
-                    }
-                }
-            }
-        },
-        "model.InfraVmAccessInfo": {
-            "type": "object",
-            "properties": {
-                "connectionConfig": {
-                    "$ref": "#/definitions/model.ConnConfig"
-                },
-                "privateIP": {
-                    "type": "string"
-                },
-                "privateKey": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "integer"
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmUserName": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
                     "type": "string"
                 }
             }
@@ -25246,7 +25246,7 @@ const docTemplate = `{
                         "subnet",
                         "securityGroup",
                         "sshKey",
-                        "vm"
+                        "node"
                     ],
                     "example": "vNet"
                 }
@@ -26234,10 +26234,10 @@ const docTemplate = `{
                 "metric": {
                     "type": "string"
                 },
-                "value": {
+                "nodeId": {
                     "type": "string"
                 },
-                "vmId": {
+                "value": {
                     "type": "string"
                 }
             }
@@ -26259,7 +26259,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.NLBAddRemoveVMReq": {
+        "model.NLBAddRemoveNodeReq": {
             "type": "object",
             "properties": {
                 "targetGroup": {
@@ -26292,12 +26292,12 @@ const docTemplate = `{
                     "example": "TCP"
                 },
                 "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "description": "num, The number of continuous health checks to change the node status.",
                     "type": "integer",
                     "example": 3
                 },
                 "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "description": "secs, Waiting time to decide an unhealthy node when no response.",
                     "type": "integer",
                     "example": 10
                 }
@@ -26532,6 +26532,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "g1"
                 },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "port": {
                     "description": "Listener Port or 1-65535",
                     "type": "string",
@@ -26541,12 +26547,6 @@ const docTemplate = `{
                     "description": "TCP|HTTP|HTTPS",
                     "type": "string",
                     "example": "TCP"
-                },
-                "vms": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 }
             }
         },
@@ -26566,6 +26566,327 @@ const docTemplate = `{
                     "description": "TCP|HTTP|HTTPS",
                     "type": "string",
                     "example": "TCP"
+                }
+            }
+        },
+        "model.NodeCreationError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "Error is the error message",
+                    "type": "string"
+                },
+                "nodeName": {
+                    "description": "NodeName is the name of the Node that failed",
+                    "type": "string"
+                },
+                "phase": {
+                    "description": "Phase indicates when the error occurred",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "Timestamp when the error occurred",
+                    "type": "string"
+                }
+            }
+        },
+        "model.NodeInfo": {
+            "type": "object",
+            "properties": {
+                "RootDeviceName": {
+                    "type": "string"
+                },
+                "addtionalDetails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "commandStatus": {
+                    "description": "CommandStatus stores the status and history of remote commands executed on this Node",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CommandStatusInfo"
+                    }
+                },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
+                "cspImageName": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "cspSshKeyId": {
+                    "type": "string"
+                },
+                "cspSubnetId": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "image": {
+                    "$ref": "#/definitions/model.ImageSummary"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "networkAgentStatus": {
+                    "description": "NetworkAgent status",
+                    "type": "string",
+                    "example": "[notInstalled, installing, installed, failed]"
+                },
+                "networkInterface": {
+                    "type": "string"
+                },
+                "nodeGroupId": {
+                    "description": "defined if the Node is in a group",
+                    "type": "string"
+                },
+                "nodeUserName": {
+                    "type": "string"
+                },
+                "nodeUserPassword": {
+                    "type": "string"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.RegionInfo"
+                        }
+                    ]
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "type": "integer"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "spec": {
+                    "$ref": "#/definitions/model.SpecSummary"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshHostKeyInfo": {
+                    "description": "SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SshHostKeyInfo"
+                        }
+                    ]
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "Required by CB-Tumblebug",
+                    "type": "string"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.NodeSnapshotResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "imageId": {
+                    "type": "string",
+                    "example": "custom-image-g1"
+                },
+                "imageInfo": {
+                    "$ref": "#/definitions/model.ImageInfo"
+                },
+                "nodeGroupId": {
+                    "type": "string",
+                    "example": "g1"
+                },
+                "nodeId": {
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "nodeName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2-g1-1"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "Success",
+                        "Failed"
+                    ],
+                    "example": "Success"
+                }
+            }
+        },
+        "model.NodeStatusInfo": {
+            "type": "object",
+            "properties": {
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "nativeStatus": {
+                    "type": "string"
+                },
+                "privateIp": {
+                    "type": "string"
+                },
+                "publicIp": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -27303,16 +27624,16 @@ const docTemplate = `{
                     "description": "IsSuccess indicates if the provisioning was successful",
                     "type": "boolean"
                 },
+                "nodeName": {
+                    "description": "NodeName is the name of the VM that was being provisioned",
+                    "type": "string"
+                },
                 "specId": {
-                    "description": "SpecId is the VM specification ID",
+                    "description": "SpecId is the Node specification ID",
                     "type": "string"
                 },
                 "timestamp": {
                     "description": "Timestamp is when this provisioning event occurred",
-                    "type": "string"
-                },
-                "vmName": {
-                    "description": "VmName is the name of the VM that was being provisioned",
                     "type": "string"
                 }
             }
@@ -27369,7 +27690,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "specId": {
-                    "description": "SpecId is the VM specification ID",
+                    "description": "SpecId is the Node specification ID",
                     "type": "string"
                 },
                 "successCount": {
@@ -27660,6 +27981,9 @@ const docTemplate = `{
                 "nlb": {
                     "type": "integer"
                 },
+                "node": {
+                    "type": "integer"
+                },
                 "securityGroup": {
                     "type": "integer"
                 },
@@ -27667,9 +27991,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "vNet": {
-                    "type": "integer"
-                },
-                "vm": {
                     "type": "integer"
                 }
             }
@@ -28079,9 +28400,16 @@ const docTemplate = `{
                     "description": "Infra-level information",
                     "type": "string"
                 },
+                "nodeReviews": {
+                    "description": "Node-level validation results",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ReviewNodeGroupDynamicReqInfo"
+                    }
+                },
                 "overallMessage": {
                     "type": "string",
-                    "example": "All VMs can be created successfully"
+                    "example": "All Nodes can be created successfully"
                 },
                 "overallStatus": {
                     "description": "Overall assessment of the Infra request",
@@ -28090,7 +28418,7 @@ const docTemplate = `{
                 },
                 "policyDescription": {
                     "type": "string",
-                    "example": "If some VMs fail during creation, Infra will be created with successfully provisioned VMs only"
+                    "example": "If some Nodes fail during creation, Infra will be created with successfully provisioned Nodes only"
                 },
                 "policyOnPartialFailure": {
                     "description": "Failure policy analysis",
@@ -28099,7 +28427,7 @@ const docTemplate = `{
                 },
                 "policyRecommendation": {
                     "type": "string",
-                    "example": "Consider 'refine' policy for automatic cleanup of failed VMs"
+                    "example": "Consider 'refine' policy for automatic cleanup of failed Nodes"
                 },
                 "recommendations": {
                     "description": "Recommendations for improvement",
@@ -28116,15 +28444,8 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "totalVmCount": {
+                "totalNodeCount": {
                     "type": "integer"
-                },
-                "vmReviews": {
-                    "description": "VM-level validation results",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ReviewNodeGroupDynamicReqInfo"
-                    }
                 }
             }
         },
@@ -28161,10 +28482,14 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string",
-                    "example": "VM can be created successfully"
+                    "example": "Node can be created successfully"
                 },
                 "nodeGroupSize": {
                     "type": "integer"
+                },
+                "nodeName": {
+                    "description": "Node request information",
+                    "type": "string"
                 },
                 "providerName": {
                     "type": "string"
@@ -28184,10 +28509,6 @@ const docTemplate = `{
                     "description": "Validation status",
                     "type": "string",
                     "example": "Ready/Warning/Error"
-                },
-                "vmName": {
-                    "description": "VM request information",
-                    "type": "string"
                 },
                 "warnings": {
                     "description": "Warnings and errors",
@@ -28323,11 +28644,11 @@ const docTemplate = `{
         "model.ScaleOutNodeGroupReq": {
             "type": "object",
             "required": [
-                "numVMsToAdd"
+                "numNodesToAdd"
             ],
             "properties": {
-                "numVMsToAdd": {
-                    "description": "Define addtional VMs to scaleOut",
+                "numNodesToAdd": {
+                    "description": "Define additional Nodes to scaleOut",
                     "type": "integer",
                     "example": 2
                 }
@@ -30092,6 +30413,12 @@ const docTemplate = `{
                 "infraId": {
                     "type": "string"
                 },
+                "nodeId": {
+                    "type": "string"
+                },
+                "nodeIp": {
+                    "type": "string"
+                },
                 "stderr": {
                     "type": "object",
                     "additionalProperties": {
@@ -30103,12 +30430,6 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmIp": {
-                    "type": "string"
                 }
             }
         },
@@ -30128,6 +30449,12 @@ const docTemplate = `{
                 "infraId": {
                     "type": "string"
                 },
+                "nodeId": {
+                    "type": "string"
+                },
+                "nodeIp": {
+                    "type": "string"
+                },
                 "stderr": {
                     "type": "object",
                     "additionalProperties": {
@@ -30139,12 +30466,6 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmIp": {
-                    "type": "string"
                 }
             }
         },
@@ -30365,7 +30686,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "countTotal": {
-                    "description": "CountTotal is for Total VMs",
+                    "description": "CountTotal is for Total Nodes",
                     "type": "integer"
                 },
                 "countUndefined": {
@@ -30837,327 +31158,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.VmCreationError": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "description": "Error is the error message",
-                    "type": "string"
-                },
-                "phase": {
-                    "description": "Phase indicates when the error occurred",
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "Timestamp when the error occurred",
-                    "type": "string"
-                },
-                "vmName": {
-                    "description": "VmName is the name of the VM that failed",
-                    "type": "string"
-                }
-            }
-        },
-        "model.VmInfo": {
-            "type": "object",
-            "properties": {
-                "RootDeviceName": {
-                    "type": "string"
-                },
-                "addtionalDetails": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
-                "commandStatus": {
-                    "description": "CommandStatus stores the status and history of remote commands executed on this VM",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.CommandStatusInfo"
-                    }
-                },
-                "connectionConfig": {
-                    "$ref": "#/definitions/model.ConnConfig"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "createdTime": {
-                    "description": "Created time",
-                    "type": "string",
-                    "example": "2022-11-10 23:00:00"
-                },
-                "cspImageName": {
-                    "type": "string"
-                },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
-                    "type": "string",
-                    "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
-                "cspSpecName": {
-                    "type": "string"
-                },
-                "cspSshKeyId": {
-                    "type": "string"
-                },
-                "cspSubnetId": {
-                    "type": "string"
-                },
-                "cspVNetId": {
-                    "type": "string"
-                },
-                "dataDiskIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "Id is unique identifier for the object",
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "image": {
-                    "$ref": "#/definitions/model.ImageSummary"
-                },
-                "imageId": {
-                    "type": "string"
-                },
-                "label": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "location": {
-                    "$ref": "#/definitions/model.Location"
-                },
-                "monAgentStatus": {
-                    "description": "Montoring agent status",
-                    "type": "string",
-                    "example": "[installed, notInstalled, failed]"
-                },
-                "name": {
-                    "description": "Name is human-readable string to represent the object",
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "networkAgentStatus": {
-                    "description": "NetworkAgent status",
-                    "type": "string",
-                    "example": "[notInstalled, installing, installed, failed]"
-                },
-                "networkInterface": {
-                    "type": "string"
-                },
-                "nodeGroupId": {
-                    "description": "defined if the VM is in a group",
-                    "type": "string"
-                },
-                "privateDNS": {
-                    "type": "string"
-                },
-                "privateIP": {
-                    "type": "string"
-                },
-                "publicDNS": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "region": {
-                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.RegionInfo"
-                        }
-                    ]
-                },
-                "resourceType": {
-                    "description": "ResourceType is the type of the resource",
-                    "type": "string"
-                },
-                "rootDiskSize": {
-                    "type": "integer"
-                },
-                "rootDiskType": {
-                    "type": "string"
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "spec": {
-                    "$ref": "#/definitions/model.SpecSummary"
-                },
-                "specId": {
-                    "type": "string"
-                },
-                "sshHostKeyInfo": {
-                    "description": "SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.SshHostKeyInfo"
-                        }
-                    ]
-                },
-                "sshKeyId": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "Required by CB-Tumblebug",
-                    "type": "string"
-                },
-                "subnetId": {
-                    "type": "string"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
-                    "type": "string",
-                    "example": "wef12awefadf1221edcf"
-                },
-                "vNetId": {
-                    "type": "string"
-                },
-                "vmUserName": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.VmSnapshotResult": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                },
-                "imageId": {
-                    "type": "string",
-                    "example": "custom-image-g1"
-                },
-                "imageInfo": {
-                    "$ref": "#/definitions/model.ImageInfo"
-                },
-                "nodeGroupId": {
-                    "type": "string",
-                    "example": "g1"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "Success",
-                        "Failed"
-                    ],
-                    "example": "Success"
-                },
-                "vmId": {
-                    "type": "string",
-                    "example": "g1-1"
-                },
-                "vmName": {
-                    "type": "string",
-                    "example": "aws-ap-northeast-2-g1-1"
-                }
-            }
-        },
-        "model.VmStatusInfo": {
-            "type": "object",
-            "properties": {
-                "createdTime": {
-                    "description": "Created time",
-                    "type": "string",
-                    "example": "2022-11-10 23:00:00"
-                },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
-                    "type": "string",
-                    "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
-                "id": {
-                    "description": "Id is unique identifier for the object",
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "location": {
-                    "$ref": "#/definitions/model.Location"
-                },
-                "monAgentStatus": {
-                    "description": "Montoring agent status",
-                    "type": "string",
-                    "example": "[installed, notInstalled, failed]"
-                },
-                "name": {
-                    "description": "Name is human-readable string to represent the object",
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "nativeStatus": {
-                    "type": "string"
-                },
-                "privateIp": {
-                    "type": "string"
-                },
-                "publicIp": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
-                    "type": "string",
-                    "example": "wef12awefadf1221edcf"
-                }
-            }
-        },
         "model.VpnHealthCheckRequest": {
             "type": "object",
             "properties": {
@@ -31210,37 +31210,37 @@ const docTemplate = `{
                 }
             }
         },
-        "model.VpnHealthCheckSourceVmInfo": {
+        "model.VpnHealthCheckSourceNodeInfo": {
             "type": "object",
             "properties": {
                 "csp": {
                     "type": "string",
                     "example": "aws"
                 },
+                "nodeId": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2-1"
+                },
                 "privateIp": {
                     "type": "string",
                     "example": "10.1.0.4"
-                },
-                "vmId": {
-                    "type": "string",
-                    "example": "aws-ap-northeast-2-1"
                 }
             }
         },
-        "model.VpnHealthCheckTargetVmInfo": {
+        "model.VpnHealthCheckTargetNodeInfo": {
             "type": "object",
             "properties": {
                 "csp": {
                     "type": "string",
                     "example": "gcp"
                 },
+                "nodeId": {
+                    "type": "string",
+                    "example": "gcp-asia-northeast3-1"
+                },
                 "privateIp": {
                     "type": "string",
                     "example": "10.2.0.4"
-                },
-                "vmId": {
-                    "type": "string",
-                    "example": "gcp-asia-northeast3-1"
                 }
             }
         },
@@ -31333,11 +31333,11 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
-                "sourceVm": {
-                    "$ref": "#/definitions/model.VpnHealthCheckSourceVmInfo"
+                "sourceNode": {
+                    "$ref": "#/definitions/model.VpnHealthCheckSourceNodeInfo"
                 },
-                "targetVm": {
-                    "$ref": "#/definitions/model.VpnHealthCheckTargetVmInfo"
+                "targetNode": {
+                    "$ref": "#/definitions/model.VpnHealthCheckTargetNodeInfo"
                 }
             }
         },
@@ -31392,6 +31392,9 @@ const docTemplate = `{
                 "nlb": {
                     "type": "integer"
                 },
+                "node": {
+                    "type": "integer"
+                },
                 "securityGroup": {
                     "type": "integer"
                 },
@@ -31399,9 +31402,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "vNet": {
-                    "type": "integer"
-                },
-                "vm": {
                     "type": "integer"
                 }
             }

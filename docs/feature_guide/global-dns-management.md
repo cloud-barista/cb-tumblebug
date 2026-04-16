@@ -1,6 +1,6 @@
 # Global DNS Management
 
-Guide for managing DNS records across multi-cloud infrastructures using AWS Route53. Supports automatic IP resolution from Infra VMs, label-based VM selection, and geoproximity routing for location-aware traffic distribution.
+Guide for managing DNS records across multi-cloud infrastructures using AWS Route53. Supports automatic IP resolution from Infra Nodes, label-based Node selection, and geoproximity routing for location-aware traffic distribution.
 
 ## 📑 Table of Contents
 
@@ -18,7 +18,7 @@ Guide for managing DNS records across multi-cloud infrastructures using AWS Rout
 
 ### What is Global DNS Management?
 
-**Global DNS Management** enables users to create, update, query, and delete DNS records in AWS Route53 through a unified CB-Tumblebug API. Instead of manually managing DNS entries, users can point a DNS record at an Infra — Tumblebug automatically resolves VM public IPs and creates the appropriate Route53 records.
+**Global DNS Management** enables users to create, update, query, and delete DNS records in AWS Route53 through a unified CB-Tumblebug API. Instead of manually managing DNS entries, users can point a DNS record at an Infra — Tumblebug automatically resolves Node public IPs and creates the appropriate Route53 records.
 
 ### Why Use This Feature?
 
@@ -28,9 +28,9 @@ Guide for managing DNS records across multi-cloud infrastructures using AWS Rout
 - Standard DNS (simple routing) sends all traffic to one region, ignoring user proximity
 
 **Solution:**
-- **Infra-Aware DNS**: Automatically resolve public IPs from Infra VMs and create DNS records
+- **Infra-Aware DNS**: Automatically resolve public IPs from Infra Nodes and create DNS records
 - **Label-Based Selection**: Target specific VMs using label selectors (e.g., `role=web`)
-- **Geoproximity Routing**: Route users to the nearest VM based on geographic coordinates
+- **Geoproximity Routing**: Route users to the nearest Node based on geographic coordinates
 - **Bulk Operations**: Delete multiple records in a single API call
 
 ---
@@ -43,8 +43,8 @@ When creating or updating a DNS record, users must choose **exactly one** method
 
 | Method | Field | Description | Geoproximity Support |
 |--------|-------|-------------|---------------------|
-| **Infra** | `setBy.infra` | All public IPs from VMs in the specified Infra | ✅ (uses VM location) |
-| **Label** | `setBy.label` | Public IPs from VMs matching a label selector | ✅ (uses VM location) |
+| **Infra** | `setBy.infra` | All public IPs from Nodes in the specified Infra | ✅ (uses Node location) |
+| **Label** | `setBy.label` | Public IPs from Nodes matching a label selector | ✅ (uses Node location) |
 | **Manual IPs** | `setBy.ips` | User-provided IP addresses | ❌ (no location data) |
 
 ### Record Name Resolution
@@ -82,8 +82,8 @@ sequenceDiagram
     OpenBao-->>API: AccessKeyID, SecretAccessKey, Region
 
     alt Infra Source
-        API->>KVStore: Get VMs from /ns/{nsId}/infra/{infraId}/vm/
-        KVStore-->>API: VM list (PublicIP, Location)
+        API->>KVStore: Get Nodes from /ns/{nsId}/infra/{infraId}/node/
+        KVStore-->>API: Node list (PublicIP, Location)
     else Label Source
         API->>KVStore: Get VMs by label selector
         KVStore-->>API: Matching VMs (PublicIP, Location)
@@ -378,7 +378,7 @@ curl -X PUT "http://localhost:1323/tumblebug/resources/globalDns/record" \
 
 ### Example 2: Geoproximity Record from Infra
 
-Route users to the nearest VM based on geographic proximity:
+Route users to the nearest Node based on geographic proximity:
 
 ```bash
 curl -X PUT "http://localhost:1323/tumblebug/resources/globalDns/record" \

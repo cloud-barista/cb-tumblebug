@@ -374,12 +374,12 @@ func createInfraInternal(nsId, infraId, filePath string, tbAuth map[string]strin
 
 	// Check if all VMs reached Running state and have IPs
 	allRunning := true
-	for _, vm := range infraInfo.Vm {
-		if strings.ToLower(vm.Status) != "running" {
-			log.Error().Msgf("VM %s is in state %s. System Message: %s", vm.Id, vm.Status, vm.SystemMessage)
+	for _, node := range infraInfo.Node {
+		if strings.ToLower(node.Status) != "running" {
+			log.Error().Msgf("VM %s is in state %s. System Message: %s", node.Id, node.Status, node.SystemMessage)
 			allRunning = false
-		} else if vm.PrivateIP == "" {
-			log.Warn().Msgf("VM %s is Running but missing PrivateIP", vm.Id)
+		} else if node.PrivateIP == "" {
+			log.Warn().Msgf("VM %s is Running but missing PrivateIP", node.Id)
 			allRunning = false
 		}
 	}
@@ -506,23 +506,23 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("[Response] %+v", string(prettyInfraInfo))
 
 	// Print the infraInfo
-	for _, vm := range infraInfo.Vm {
+	for _, node := range infraInfo.Node {
 		log.Debug().
-			Str("ProviderName", vm.ConnectionConfig.ProviderName).
-			Str("ConfigName", vm.ConnectionConfig.ConfigName).
+			Str("ProviderName", node.ConnectionConfig.ProviderName).
+			Str("ConfigName", node.ConnectionConfig.ConfigName).
 			Msg("ConnectionConfig managed by Cloud-Barista system")
 
 		log.Debug().
-			Str("VM ID", vm.Id).
-			Str("VNet ID", vm.VNetId).
-			Str("Subnet ID", vm.SubnetId).
+			Str("VM ID", node.Id).
+			Str("VNet ID", node.VNetId).
+			Str("Subnet ID", node.SubnetId).
 			Msg("IDs managed by Cloud-Barista system")
 
 		log.Debug().
-			Str("VPC/vNet ID", vm.CspVNetId).
-			Str("Subnet ID", vm.CspSubnetId).
-			Str("Region", vm.Region.Region).
-			Str("Region", vm.Region.Zone).
+			Str("VPC/vNet ID", node.CspVNetId).
+			Str("Subnet ID", node.CspSubnetId).
+			Str("Region", node.Region.Region).
+			Str("Region", node.Region.Zone).
 			Msg("IDs managed by CSPs")
 
 	}
@@ -536,12 +536,12 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 
 	// Extract info from infraInfo
 	targetCspLower := strings.ToLower(targetCsp)
-	for _, vm := range infraInfo.Vm {
-		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
+	for _, node := range infraInfo.Node {
+		providerName := strings.ToLower(node.ConnectionConfig.ProviderName)
 		if providerName == "aws" {
-			awsVNetId = vm.VNetId
+			awsVNetId = node.VNetId
 		} else if providerName == targetCspLower {
-			targetVNetId = vm.VNetId
+			targetVNetId = node.VNetId
 		}
 	}
 
@@ -1179,12 +1179,12 @@ func runVpnTestCase(nsId, infraId string, infraInfo *model.InfraInfo, tc TestCas
 	awsVNetId := ""
 	targetVNetId := ""
 
-	for _, vm := range infraInfo.Vm {
-		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
+	for _, node := range infraInfo.Node {
+		providerName := strings.ToLower(node.ConnectionConfig.ProviderName)
 		if providerName == "aws" {
-			awsVNetId = vm.VNetId
+			awsVNetId = node.VNetId
 		} else if providerName == strings.ToLower(tc.Site2) {
-			targetVNetId = vm.VNetId
+			targetVNetId = node.VNetId
 		}
 	}
 
