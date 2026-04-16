@@ -22,7 +22,7 @@ field. A `SystemMessage` field provides human-readable error details on failure.
 - **Status is derived, not set directly.** All status transitions go through `SetCondition()` + `Derive*Status()`.
 - **Failed states are explicit.** When an API call fails, the resource transitions to `Failed` with a `Reason` indicating the failed operation (e.g., `DeletionFailed`). This prevents resources from being stuck in transitional states like `Deleting`.
 - **Labels do not carry status.** Following Kubernetes practice, `sys.status` is not stored in Labels. Status is queried from the resource object itself.
-- **Status constants are defined in `model/condition.go`** as the single source of truth (`NetworkStatus*` constants). All values are literal strings, intentionally decoupled from MCI status constants (`mci.go`) to prevent cross-domain side effects.
+- **Status constants are defined in `model/condition.go`** as the single source of truth (`NetworkStatus*` constants). All values are literal strings, intentionally decoupled from Infra status constants (`infra.go`) to prevent cross-domain side effects.
 
 ---
 

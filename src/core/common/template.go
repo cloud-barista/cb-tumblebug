@@ -26,9 +26,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// CreateMciDynamicTemplate creates a new MCI Dynamic Template
-func CreateMciDynamicTemplate(nsId string, req *model.MciDynamicTemplateReq) (model.MciDynamicTemplateInfo, error) {
-	emptyResult := model.MciDynamicTemplateInfo{}
+// CreateInfraDynamicTemplate creates a new Infra Dynamic Template
+func CreateInfraDynamicTemplate(nsId string, req *model.InfraDynamicTemplateReq) (model.InfraDynamicTemplateInfo, error) {
+	emptyResult := model.InfraDynamicTemplateInfo{}
 
 	err := CheckString(req.Name)
 	if err != nil {
@@ -47,7 +47,7 @@ func CreateMciDynamicTemplate(nsId string, req *model.MciDynamicTemplateReq) (mo
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "mci", req.Name)
+	key := GenTemplateKey(nsId, model.StrInfra, req.Name)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -58,15 +58,15 @@ func CreateMciDynamicTemplate(nsId string, req *model.MciDynamicTemplateReq) (mo
 	}
 
 	now := time.Now().Format(time.RFC3339)
-	templateInfo := model.MciDynamicTemplateInfo{
-		ResourceType:  model.StrMCI,
-		Id:            req.Name,
-		Name:          req.Name,
-		Description:   req.Description,
-		Source:        "user",
-		CreatedAt:     now,
-		UpdatedAt:     now,
-		MciDynamicReq: req.MciDynamicReq,
+	templateInfo := model.InfraDynamicTemplateInfo{
+		ResourceType:    model.StrInfra,
+		Id:              req.Name,
+		Name:            req.Name,
+		Description:     req.Description,
+		Source:          "user",
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		InfraDynamicReq: req.InfraDynamicReq,
 	}
 
 	val, err := json.Marshal(templateInfo)
@@ -84,9 +84,9 @@ func CreateMciDynamicTemplate(nsId string, req *model.MciDynamicTemplateReq) (mo
 	return templateInfo, nil
 }
 
-// GetMciDynamicTemplate retrieves an MCI Dynamic Template by ID
-func GetMciDynamicTemplate(nsId string, templateId string) (model.MciDynamicTemplateInfo, error) {
-	emptyResult := model.MciDynamicTemplateInfo{}
+// GetInfraDynamicTemplate retrieves an Infra Dynamic Template by ID
+func GetInfraDynamicTemplate(nsId string, templateId string) (model.InfraDynamicTemplateInfo, error) {
+	emptyResult := model.InfraDynamicTemplateInfo{}
 
 	err := CheckString(nsId)
 	if err != nil {
@@ -110,7 +110,7 @@ func GetMciDynamicTemplate(nsId string, templateId string) (model.MciDynamicTemp
 		return emptyResult, err
 	}
 
-	key := GenTemplateKey(nsId, "mci", templateId)
+	key := GenTemplateKey(nsId, model.StrInfra, templateId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -120,7 +120,7 @@ func GetMciDynamicTemplate(nsId string, templateId string) (model.MciDynamicTemp
 		return emptyResult, fmt.Errorf("template '%s' not found in namespace '%s'", templateId, nsId)
 	}
 
-	result := model.MciDynamicTemplateInfo{}
+	result := model.InfraDynamicTemplateInfo{}
 	err = json.Unmarshal([]byte(keyValue.Value), &result)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to unmarshal template info")
@@ -130,10 +130,10 @@ func GetMciDynamicTemplate(nsId string, templateId string) (model.MciDynamicTemp
 	return result, nil
 }
 
-// ListMciDynamicTemplate lists all MCI Dynamic Templates in a namespace
+// ListInfraDynamicTemplate lists all Infra Dynamic Templates in a namespace
 // filterKeyword is optional; if non-empty, only templates whose Name or Description
 // contains the keyword (case-insensitive) are returned.
-func ListMciDynamicTemplate(nsId string, filterKeyword string) ([]model.MciDynamicTemplateInfo, error) {
+func ListInfraDynamicTemplate(nsId string, filterKeyword string) ([]model.InfraDynamicTemplateInfo, error) {
 	err := CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -150,7 +150,7 @@ func ListMciDynamicTemplate(nsId string, filterKeyword string) ([]model.MciDynam
 		return nil, err
 	}
 
-	key := GenTemplateKey(nsId, "mci", "")
+	key := GenTemplateKey(nsId, model.StrInfra, "")
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
@@ -159,10 +159,10 @@ func ListMciDynamicTemplate(nsId string, filterKeyword string) ([]model.MciDynam
 		return nil, err
 	}
 
-	var templates []model.MciDynamicTemplateInfo
+	var templates []model.InfraDynamicTemplateInfo
 	keyword := strings.ToLower(strings.TrimSpace(filterKeyword))
 	for _, v := range keyValue {
-		tempObj := model.MciDynamicTemplateInfo{}
+		tempObj := model.InfraDynamicTemplateInfo{}
 		err = json.Unmarshal([]byte(v.Value), &tempObj)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to unmarshal template")
@@ -181,9 +181,9 @@ func ListMciDynamicTemplate(nsId string, filterKeyword string) ([]model.MciDynam
 	return templates, nil
 }
 
-// UpdateMciDynamicTemplate updates an existing MCI Dynamic Template
-func UpdateMciDynamicTemplate(nsId string, templateId string, req *model.MciDynamicTemplateReq) (model.MciDynamicTemplateInfo, error) {
-	emptyResult := model.MciDynamicTemplateInfo{}
+// UpdateInfraDynamicTemplate updates an existing Infra Dynamic Template
+func UpdateInfraDynamicTemplate(nsId string, templateId string, req *model.InfraDynamicTemplateReq) (model.InfraDynamicTemplateInfo, error) {
+	emptyResult := model.InfraDynamicTemplateInfo{}
 
 	err := CheckString(nsId)
 	if err != nil {
@@ -198,7 +198,7 @@ func UpdateMciDynamicTemplate(nsId string, templateId string, req *model.MciDyna
 	}
 
 	// Get existing template
-	existing, err := GetMciDynamicTemplate(nsId, templateId)
+	existing, err := GetInfraDynamicTemplate(nsId, templateId)
 	if err != nil {
 		return emptyResult, err
 	}
@@ -210,9 +210,9 @@ func UpdateMciDynamicTemplate(nsId string, templateId string, req *model.MciDyna
 	now := time.Now().Format(time.RFC3339)
 	existing.Description = req.Description
 	existing.UpdatedAt = now
-	existing.MciDynamicReq = req.MciDynamicReq
+	existing.InfraDynamicReq = req.InfraDynamicReq
 
-	key := GenTemplateKey(nsId, "mci", templateId)
+	key := GenTemplateKey(nsId, model.StrInfra, templateId)
 	val, err := json.Marshal(existing)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal template info")
@@ -228,8 +228,8 @@ func UpdateMciDynamicTemplate(nsId string, templateId string, req *model.MciDyna
 	return existing, nil
 }
 
-// DeleteMciDynamicTemplate deletes an MCI Dynamic Template
-func DeleteMciDynamicTemplate(nsId string, templateId string) error {
+// DeleteInfraDynamicTemplate deletes an Infra Dynamic Template
+func DeleteInfraDynamicTemplate(nsId string, templateId string) error {
 	err := CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -243,7 +243,7 @@ func DeleteMciDynamicTemplate(nsId string, templateId string) error {
 	}
 
 	// Check if template exists
-	key := GenTemplateKey(nsId, "mci", templateId)
+	key := GenTemplateKey(nsId, model.StrInfra, templateId)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -262,21 +262,21 @@ func DeleteMciDynamicTemplate(nsId string, templateId string) error {
 	return nil
 }
 
-// DeleteAllMciDynamicTemplate deletes all MCI Dynamic Templates in a namespace
-func DeleteAllMciDynamicTemplate(nsId string) error {
+// DeleteAllInfraDynamicTemplate deletes all Infra Dynamic Templates in a namespace
+func DeleteAllInfraDynamicTemplate(nsId string) error {
 	err := CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	templates, err := ListMciDynamicTemplate(nsId, "")
+	templates, err := ListInfraDynamicTemplate(nsId, "")
 	if err != nil {
 		return err
 	}
 
 	for _, t := range templates {
-		err := DeleteMciDynamicTemplate(nsId, t.Id)
+		err := DeleteInfraDynamicTemplate(nsId, t.Id)
 		if err != nil {
 			log.Error().Err(err).Msgf("failed to delete template '%s'", t.Id)
 			return err
@@ -286,9 +286,9 @@ func DeleteAllMciDynamicTemplate(nsId string) error {
 	return nil
 }
 
-// CreateMciDynamicTemplateWithReq creates a template from an MciDynamicReq (used for extraction from existing MCI)
-func CreateMciDynamicTemplateWithReq(nsId string, templateName string, description string, source string, mciDynamicReq *model.MciDynamicReq) (model.MciDynamicTemplateInfo, error) {
-	emptyResult := model.MciDynamicTemplateInfo{}
+// CreateInfraDynamicTemplateWithReq creates a template from an InfraDynamicReq (used for extraction from existing Infra)
+func CreateInfraDynamicTemplateWithReq(nsId string, templateName string, description string, source string, infraDynamicReq *model.InfraDynamicReq) (model.InfraDynamicTemplateInfo, error) {
+	emptyResult := model.InfraDynamicTemplateInfo{}
 
 	err := CheckString(templateName)
 	if err != nil {
@@ -307,7 +307,7 @@ func CreateMciDynamicTemplateWithReq(nsId string, templateName string, descripti
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "mci", templateName)
+	key := GenTemplateKey(nsId, model.StrInfra, templateName)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -318,15 +318,15 @@ func CreateMciDynamicTemplateWithReq(nsId string, templateName string, descripti
 	}
 
 	now := time.Now().Format(time.RFC3339)
-	templateInfo := model.MciDynamicTemplateInfo{
-		ResourceType:  model.StrMCI,
-		Id:            templateName,
-		Name:          templateName,
-		Description:   description,
-		Source:        source,
-		CreatedAt:     now,
-		UpdatedAt:     now,
-		MciDynamicReq: *mciDynamicReq,
+	templateInfo := model.InfraDynamicTemplateInfo{
+		ResourceType:    model.StrInfra,
+		Id:              templateName,
+		Name:            templateName,
+		Description:     description,
+		Source:          source,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		InfraDynamicReq: *infraDynamicReq,
 	}
 
 	val, err := json.Marshal(templateInfo)
@@ -377,7 +377,7 @@ func CreateVNetTemplate(nsId string, req *model.VNetTemplateReq) (model.VNetTemp
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "vNet", req.Name)
+	key := GenTemplateKey(nsId, model.StrVNet, req.Name)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -441,7 +441,7 @@ func GetVNetTemplate(nsId string, templateId string) (model.VNetTemplateInfo, er
 		return emptyResult, err
 	}
 
-	key := GenTemplateKey(nsId, "vNet", templateId)
+	key := GenTemplateKey(nsId, model.StrVNet, templateId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -481,7 +481,7 @@ func ListVNetTemplate(nsId string, filterKeyword string) ([]model.VNetTemplateIn
 		return nil, err
 	}
 
-	key := GenTemplateKey(nsId, "vNet", "")
+	key := GenTemplateKey(nsId, model.StrVNet, "")
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
@@ -552,7 +552,7 @@ func UpdateVNetTemplate(nsId string, templateId string, req *model.VNetTemplateR
 	existing.VNetPolicy = req.VNetPolicy
 	existing.VNetReq = req.VNetReq
 
-	key := GenTemplateKey(nsId, "vNet", templateId)
+	key := GenTemplateKey(nsId, model.StrVNet, templateId)
 	val, err := json.Marshal(existing)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal vNet template info")
@@ -583,7 +583,7 @@ func DeleteVNetTemplate(nsId string, templateId string) error {
 	}
 
 	// Check if template exists
-	key := GenTemplateKey(nsId, "vNet", templateId)
+	key := GenTemplateKey(nsId, model.StrVNet, templateId)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -651,7 +651,7 @@ func CreateSecurityGroupTemplate(nsId string, req *model.SecurityGroupTemplateRe
 	}
 
 	// Check if template already exists
-	key := GenTemplateKey(nsId, "securityGroup", req.Name)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, req.Name)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -714,7 +714,7 @@ func GetSecurityGroupTemplate(nsId string, templateId string) (model.SecurityGro
 		return emptyResult, err
 	}
 
-	key := GenTemplateKey(nsId, "securityGroup", templateId)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, templateId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -754,7 +754,7 @@ func ListSecurityGroupTemplate(nsId string, filterKeyword string) ([]model.Secur
 		return nil, err
 	}
 
-	key := GenTemplateKey(nsId, "securityGroup", "")
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, "")
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
@@ -816,7 +816,7 @@ func UpdateSecurityGroupTemplate(nsId string, templateId string, req *model.Secu
 	existing.UpdatedAt = now
 	existing.SecurityGroupReq = req.SecurityGroupReq
 
-	key := GenTemplateKey(nsId, "securityGroup", templateId)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, templateId)
 	val, err := json.Marshal(existing)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal securityGroup template info")
@@ -847,7 +847,7 @@ func DeleteSecurityGroupTemplate(nsId string, templateId string) error {
 	}
 
 	// Check if template exists
-	key := GenTemplateKey(nsId, "securityGroup", templateId)
+	key := GenTemplateKey(nsId, model.StrSecurityGroup, templateId)
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")

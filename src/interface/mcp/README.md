@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) server implementation for Cloud-Barista CB-Tumble
 
 The CB-Tumblebug MCP Server provides a standardized interface for AI assistants to:
 - Manage cloud namespaces and resources
-- Create and control Multi-Cloud Infrastructure (MCI)
+- Create and control Multi-Cloud Infrastructure (Infra)
 - Search for cloud images and VM specifications
 - Execute remote commands on cloud instances
 - Monitor and manage cloud resources across multiple providers
@@ -324,16 +324,16 @@ For a visual overview of all available tools and their API mappings, see:
 - Get VM specification recommendations
 - Filter by OS type, architecture, provider, region
 
-### 3. Multi-Cloud Infrastructure (MCI) Management
-- **Complete MCI Creation Workflow**:
+### 3. Multi-Cloud Infrastructure (Infra) Management
+- **Complete Infra Creation Workflow**:
   1. `get_image_search_options()` - Discover available search parameters
   2. `search_images()` - Find suitable OS images
   3. `recommend_vm_spec()` - Get optimal VM specifications
-  4. `create_mci_dynamic()` - Create infrastructure with found parameters
+  4. `create_infra_dynamic()` - Create infrastructure with found parameters
 
-- **MCI Operations**:
-  - Control MCI lifecycle (suspend, resume, reboot, terminate)
-  - Monitor MCI status and health
+- **Infra Operations**:
+  - Control Infra lifecycle (suspend, resume, reboot, terminate)
+  - Monitor Infra status and health
   - Scale infrastructure dynamically
 
 ### 4. Remote Operations

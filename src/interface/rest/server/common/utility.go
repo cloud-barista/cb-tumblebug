@@ -562,8 +562,8 @@ func RestDeleteObjects(c echo.Context) error {
 
 // RestInspectResources godoc
 // @ID InspectResources
-// @Summary Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
-// @Description Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
+// @Summary Inspect Resources (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug, CB-Spider, CSP
+// @Description Inspect Resources (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug, CB-Spider, CSP
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
@@ -587,7 +587,7 @@ func RestInspectResources(c echo.Context) error {
 	// if u.Type == model.StrVNet || u.Type == model.StrSecurityGroup || u.Type == model.StrSSHKey {
 	// 	content, err = infra.InspectResources(u.ConnectionName, u.Type)
 	// } else if u.Type == "vm" {
-	// 	content, err = infra.InspectVMs(u.ConnectionName)
+	// 	content, err = infra.InspectNodes(u.ConnectionName)
 	// }
 	content, err = infra.InspectResources(u.ConnectionName, u.ResourceType)
 	return clientManager.EndRequestWithLog(c, err, content)
@@ -596,8 +596,8 @@ func RestInspectResources(c echo.Context) error {
 
 // RestInspectResourcesOverview godoc
 // @ID InspectResourcesOverview
-// @Summary Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
-// @Description Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
+// @Summary Inspect Resources Overview (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug and CSP for all connections
+// @Description Inspect Resources Overview (vNet, securityGroup, sshKey, node) registered in CB-Tumblebug and CSP for all connections
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
@@ -636,18 +636,18 @@ func RestGetAssetsSummary(c echo.Context) error {
 
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequest struct {
-	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"` // (Deprecated) Optional: if empty or omitted, registers resources from all connections. Use Provider/Region/Zone instead
-	Provider       string `json:"provider" example:"aws"`                      // Optional: Cloud provider name. Empty: all providers
-	Region         string `json:"region" example:"ap-northeast-2"`             // Optional: Region name. Requires Provider. Empty: all regions for the provider
-	Zone           string `json:"zone" example:"ap-northeast-2a"`              // Optional: Zone name. Requires Provider and Region. Empty: all zones for the region
-	NsId           string `json:"nsId" example:"default"`
-	MciNamePrefix  string `json:"mciNamePrefix" example:"csp"`
+	ConnectionName  string `json:"connectionName" example:"aws-ap-southeast-1"` // (Deprecated) Optional: if empty or omitted, registers resources from all connections. Use Provider/Region/Zone instead
+	Provider        string `json:"provider" example:"aws"`                      // Optional: Cloud provider name. Empty: all providers
+	Region          string `json:"region" example:"ap-northeast-2"`             // Optional: Region name. Requires Provider. Empty: all regions for the provider
+	Zone            string `json:"zone" example:"ap-northeast-2a"`              // Optional: Zone name. Requires Provider and Region. Empty: all zones for the region
+	NsId            string `json:"nsId" example:"default"`
+	InfraNamePrefix string `json:"infraNamePrefix" example:"csp"`
 }
 
 // RestRegisterCspNativeResources godoc
 // @ID RegisterCspNativeResources
-// @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
-// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.
+// @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, node) to CB-Tumblebug
+// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, node) to CB-Tumblebug.
 // @Description
 // @Description **New filtering approach (recommended):**
 // @Description - Provider only: Registers resources from all connections of the specified provider
@@ -662,14 +662,14 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Description - All AWS: `{"provider": "aws", "nsId": "default"}`
 // @Description - AWS Seoul region: `{"provider": "aws", "region": "ap-northeast-2", "nsId": "default"}`
 // @Description - AWS Seoul zone 2a: `{"provider": "aws", "region": "ap-northeast-2", "zone": "ap-northeast-2a", "nsId": "default"}`
-// @Description - All connections: `{"nsId": "default", "mciNamePrefix": "mci-all"}`
+// @Description - All connections: `{"nsId": "default", "infraNamePrefix": "infra-all"}`
 // @Description - Single connection (deprecated): `{"connectionName": "aws-ap-northeast-2", "nsId": "default"}`
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify provider/region/zone or connectionName (deprecated), NS Id, and MCI Name Prefix"
-// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, vm, dataDisk, customImage)
-// @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
+// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify provider/region/zone or connectionName (deprecated), NS Id, and Infra Name Prefix"
+// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, node, dataDisk, customImage)
+// @Param infraFlag query string false "Flag to show Nodes in a collective Infra form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceResult "Single connection result"
 // @Success 200 {object} model.RegisterResourceAllResult "Multiple connections result"
 // @Failure 400 {object} model.SimpleMsg "Invalid request (e.g., region without provider)"
@@ -685,7 +685,7 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	option := c.QueryParam("option")
-	mciFlag := c.QueryParam("mciFlag")
+	infraFlag := c.QueryParam("infraFlag")
 
 	// Determine connection names to process
 	var connectionNames []string
@@ -719,14 +719,14 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	} else {
 		// Priority 3: Empty - process all connections
 		log.Info().Msg("No filter specified, registering resources from all connections")
-		content, err := infra.RegisterCspNativeResourcesAll(ctx, u.NsId, u.MciNamePrefix, option, mciFlag)
+		content, err := infra.RegisterCspNativeResourcesAll(ctx, u.NsId, u.InfraNamePrefix, option, infraFlag)
 		return clientManager.EndRequestWithLog(c, err, content)
 	}
 
 	// Process single connection
 	if len(connectionNames) == 1 {
 		log.Info().Msgf("Registering resources from single connection: %s", connectionNames[0])
-		content, err := infra.RegisterCspNativeResources(ctx, u.NsId, connectionNames[0], u.MciNamePrefix, option, mciFlag)
+		content, err := infra.RegisterCspNativeResources(ctx, u.NsId, connectionNames[0], u.InfraNamePrefix, option, infraFlag)
 		return clientManager.EndRequestWithLog(c, err, content)
 	}
 
@@ -739,7 +739,7 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	startTime := time.Now()
 	for _, connName := range connectionNames {
 		log.Info().Msgf("Processing connection: %s", connName)
-		connResult, err := infra.RegisterCspNativeResources(ctx, u.NsId, connName, u.MciNamePrefix, option, mciFlag)
+		connResult, err := infra.RegisterCspNativeResources(ctx, u.NsId, connName, u.InfraNamePrefix, option, infraFlag)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to register resources for connection: %s", connName)
 			connResult.SystemMessage = fmt.Sprintf("Error: %v", err)
@@ -756,8 +756,8 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 
 // Request struct for RestRegisterCspNativeResourcesAll (Deprecated)
 type RestRegisterCspNativeResourcesRequestAll struct {
-	NsId          string `json:"nsId" example:"default"`
-	MciNamePrefix string `json:"mciNamePrefix" example:"csp"`
+	NsId            string `json:"nsId" example:"default"`
+	InfraNamePrefix string `json:"infraNamePrefix" example:"csp"`
 }
 
 // RestRegisterCspNativeResourcesAll godoc
@@ -768,14 +768,14 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Description This endpoint now redirects to `/registerCspResources` for unified API behavior.
 // @Description
 // @Description **Migration Guide:**
-// @Description - Old: `POST /registerCspResourcesAll` with `{"nsId": "default", "mciNamePrefix": "mci-all"}`
-// @Description - New: `POST /registerCspResources` with `{"connectionName": "", "nsId": "default", "mciNamePrefix": "mci-all"}`
+// @Description - Old: `POST /registerCspResourcesAll` with `{"nsId": "default", "infraNamePrefix": "infra-all"}`
+// @Description - New: `POST /registerCspResources` with `{"connectionName": "", "nsId": "default", "infraNamePrefix": "infra-all"}`
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name Prefix"
-// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, vm, dataDisk, customImage)
-// @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
+// @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and Infra Name Prefix"
+// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, node, dataDisk, customImage)
+// @Param infraFlag query string false "Flag to show Nodes in a collective Infra form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceAllResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -790,11 +790,11 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	option := c.QueryParam("option")
-	mciFlag := c.QueryParam("mciFlag")
+	infraFlag := c.QueryParam("infraFlag")
 
 	log.Warn().Msg("[DEPRECATED] /registerCspResourcesAll is deprecated. Use /registerCspResources with empty connectionName instead.")
 
-	content, err := infra.RegisterCspNativeResourcesAll(ctx, u.NsId, u.MciNamePrefix, option, mciFlag)
+	content, err := infra.RegisterCspNativeResourcesAll(ctx, u.NsId, u.InfraNamePrefix, option, infraFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

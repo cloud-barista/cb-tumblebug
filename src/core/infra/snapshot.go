@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -31,9 +31,9 @@ func mapSpiderToTumblebugImageStatus(spiderStatus string) model.ImageStatus {
 	return resource.MapSpiderToTumblebugImageStatus(spiderStatus)
 }
 
-// CreateVmSnapshot is func to create VM snapshot
-func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.SnapshotReq) (model.ImageInfo, error) {
-	vm, err := GetVmObject(nsId, mciId, vmId)
+// CreateNodeSnapshot is func to create Node snapshot
+func CreateNodeSnapshot(nsId string, infraId string, nodeId string, snapshotReq model.SnapshotReq) (model.ImageInfo, error) {
+	node, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.ImageInfo{}, err
@@ -46,19 +46,19 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 	}
 
 	requestBody := model.SpiderMyImageReq{
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 		ReqInfo: struct {
 			Name     string
-			SourceVM string
+			SourceNode string
 		}{
 			Name:     snapshotName,
-			SourceVM: vm.CspResourceName,
+			SourceNode: node.CspResourceName,
 		},
 	}
 
-	// Inspect DataDisks before creating VM snapshot
-	// Disabled because: there is no difference in dataDisks before and after creating VM snapshot
-	// inspect_result_before_snapshot, err := InspectResources(vm.ConnectionName, model.StrDataDisk)
+	// Inspect DataDisks before creating Node snapshot
+	// Disabled because: there is no difference in dataDisks before and after creating Node snapshot
+	// inspect_result_before_snapshot, err := InspectResources(node.ConnectionName, model.StrDataDisk)
 	// dataDisks_before_snapshot := inspect_result_before_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
@@ -66,7 +66,7 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 	// 	return model.ImageInfo{}, err
 	// }
 
-	// Create VM snapshot using ExecuteHttpRequest
+	// Create Node snapshot using ExecuteHttpRequest
 	var tempSpiderMyImageInfo model.SpiderMyImageInfo
 	client := clientManager.NewHttpClient()
 	client.SetTimeout(5 * time.Minute)
@@ -89,38 +89,38 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 		return model.ImageInfo{}, err
 	}
 
-	// Get the source VM's image information to inherit properties
+	// Get the source Node's image information to inherit properties
 	// Try to get image using CspImageName with provider/region information
 	var sourceImageInfo model.ImageInfo
 	var imgErr error
 
 	// First, try to get by composite primary key (ProviderName + CspImageName)
-	if vm.CspImageName != "" && vm.ConnectionConfig.ProviderName != "" {
-		sourceImageInfo, imgErr = resource.GetImageByPrimaryKey(model.SystemCommonNs, vm.ConnectionConfig.ProviderName, vm.CspImageName)
+	if node.CspImageName != "" && node.ConnectionConfig.ProviderName != "" {
+		sourceImageInfo, imgErr = resource.GetImageByPrimaryKey(model.SystemCommonNs, node.ConnectionConfig.ProviderName, node.CspImageName)
 		if imgErr != nil {
-			log.Debug().Err(imgErr).Msgf("Failed to get image by primary key (provider: %s, cspImageName: %s)", vm.ConnectionConfig.ProviderName, vm.CspImageName)
+			log.Debug().Err(imgErr).Msgf("Failed to get image by primary key (provider: %s, cspImageName: %s)", node.ConnectionConfig.ProviderName, node.CspImageName)
 		}
 	}
 
 	// If not found, try using ImageId (TB image ID)
-	if imgErr != nil && vm.ImageId != "" {
-		sourceImageInfo, imgErr = resource.GetImage(nsId, vm.ImageId)
+	if imgErr != nil && node.ImageId != "" {
+		sourceImageInfo, imgErr = resource.GetImage(nsId, node.ImageId)
 		if imgErr != nil {
-			log.Debug().Err(imgErr).Msgf("Failed to get image by ImageId: %s", vm.ImageId)
+			log.Debug().Err(imgErr).Msgf("Failed to get image by ImageId: %s", node.ImageId)
 		}
 	}
 
 	// If still not found, use minimal information
 	if imgErr != nil {
-		log.Warn().Msgf("Failed to get source image info for VM %s (ImageId: %s, CspImageName: %s), using minimal information",
-			vmId, vm.ImageId, vm.CspImageName)
+		log.Warn().Msgf("Failed to get source image info for Node %s (ImageId: %s, CspImageName: %s), using minimal information",
+			nodeId, node.ImageId, node.CspImageName)
 		sourceImageInfo = model.ImageInfo{}
 	} else {
-		log.Debug().Msgf("Successfully retrieved source image info for VM %s", vmId)
+		log.Debug().Msgf("Successfully retrieved source image info for VM %s", nodeId)
 	}
 
 	commandHistory := []model.ImageSourceCommandHistory{}
-	for _, cmd := range vm.CommandStatus {
+	for _, cmd := range node.CommandStatus {
 		commandHistory = append(commandHistory, model.ImageSourceCommandHistory{
 			Index:           cmd.Index,
 			CommandExecuted: cmd.CommandExecuted,
@@ -128,26 +128,26 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 	}
 
 	// Create ImageInfo inheriting from source image
-	// Use ConnectionConfig from VM (already contains all necessary information)
+	// Use ConnectionConfig from Node (already contains all necessary information)
 	tempImageInfo := model.ImageInfo{
 		// CustomImage-specific fields
 		ResourceType: model.StrCustomImage,
 		CspImageId:   tempSpiderMyImageInfo.IId.SystemId,
-		SourceVmUid:  vm.Uid,
+		SourceNodeUid:  node.Uid,
 
 		// Composite primary key fields (inherited from source image)
 		Namespace:    nsId,
-		ProviderName: vm.ConnectionConfig.ProviderName,
+		ProviderName: node.ConnectionConfig.ProviderName,
 		CspImageName: tempSpiderMyImageInfo.IId.NameId, // Custom image's CSP name
 
 		// Array field
-		RegionList: []string{vm.Region.Region},
+		RegionList: []string{node.Region.Region},
 
 		// Identifiers
 		Id:             snapshotName,
 		Uid:            common.GenUid(),
 		Name:           snapshotName,
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 		InfraType:      sourceImageInfo.InfraType,
 
 		// Time fields - Update creation date to custom image's creation date
@@ -173,8 +173,8 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 
 		// Additional information
 		Details:     tempSpiderMyImageInfo.KeyValueList,
-		SystemLabel: "Created from VM snapshot",
-		Description: fmt.Sprintf("Custom image from MCI/VM: %s/%s (Uid: %s): %s", mciId, vm.Name, vm.Uid, snapshotReq.Description),
+		SystemLabel: "Created from Node snapshot",
+		Description: fmt.Sprintf("Custom image from Infra/Node: %s/%s (Uid: %s): %s", infraId, node.Name, node.Uid, snapshotReq.Description),
 
 		CommandHistory: commandHistory,
 	}
@@ -185,9 +185,9 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 		return model.ImageInfo{}, err
 	}
 
-	// Inspect DataDisks after creating VM snapshot
-	// Disabled because: there is no difference in dataDisks before and after creating VM snapshot
-	// inspect_result_after_snapshot, err := InspectResources(vm.ConnectionName, model.StrDataDisk)
+	// Inspect DataDisks after creating Node snapshot
+	// Disabled because: there is no difference in dataDisks before and after creating Node snapshot
+	// inspect_result_after_snapshot, err := InspectResources(node.ConnectionName, model.StrDataDisk)
 	// dataDisks_after_snapshot := inspect_result_after_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
@@ -200,8 +200,8 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 	// // create 'n' dataDisks
 	// for _, v := range difference_dataDisks {
 	// 	tempDataDiskReq := model.DataDiskReq{
-	// 		Name:           fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5)),
-	// 		ConnectionName: vm.ConnectionName,
+	// 		Name:           fmt.Sprintf("%s-%s", node.Name, common.GenerateNewRandomString(5)),
+	// 		ConnectionName: node.ConnectionName,
 	// 		CspResourceId:  v.CspResourceId,
 	// 	}
 
@@ -216,62 +216,62 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 	return result, nil
 }
 
-// CreateMciSnapshot creates snapshots for the first running VM in each subgroup of an MCI in parallel
+// CreateInfraSnapshot creates snapshots for the first running Node in each nodegroup of an Infra in parallel
 // Snapshots are created with provider-specific semaphores to safely limit concurrent requests per CSP
-func CreateMciSnapshot(nsId string, mciId string, snapshotReq model.SnapshotReq) (model.MciSnapshotResult, error) {
-	// Get MCI information
-	mci, _, err := GetMciObject(nsId, mciId)
+func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.SnapshotReq) (model.InfraSnapshotResult, error) {
+	// Get Infra information
+	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get MCI object")
-		return model.MciSnapshotResult{}, err
+		log.Error().Err(err).Msg("Failed to get Infra object")
+		return model.InfraSnapshotResult{}, err
 	}
 
 	// Result structure
-	result := model.MciSnapshotResult{
-		MciId:     mciId,
+	result := model.InfraSnapshotResult{
+		InfraId:   infraId,
 		Namespace: nsId,
-		Results:   []model.VmSnapshotResult{},
+		Results:   []model.NodeSnapshotResult{},
 	}
 
 	// Snapshot task structure with provider information
 	type snapshotTask struct {
-		subgroupId     string
-		vmId           string
-		vmName         string
+		nodegroupId    string
+		nodeId           string
+		nodeName         string
 		providerName   string
 		connectionName string
 	}
 
-	// Find first running VM in each subgroup
+	// Find first running Node in each nodegroup
 	var tasks []snapshotTask
-	subgroupMap := make(map[string]bool)
+	nodegroupMap := make(map[string]bool)
 
-	for _, vm := range mci.Vm {
-		// Skip if we already have a VM from this subgroup
-		if subgroupMap[vm.SubGroupId] {
+	for _, node := range infra.Node {
+		// Skip if we already have a Node from this nodegroup
+		if nodegroupMap[node.NodeGroupId] {
 			continue
 		}
 
-		// Check if VM is running
-		if vm.Status == model.StatusRunning {
+		// Check if Node is running
+		if node.Status == model.StatusRunning {
 			tasks = append(tasks, snapshotTask{
-				subgroupId:     vm.SubGroupId,
-				vmId:           vm.Id,
-				vmName:         vm.Name,
-				providerName:   vm.ConnectionConfig.ProviderName,
-				connectionName: vm.ConnectionName,
+				nodegroupId:    node.NodeGroupId,
+				nodeId:           node.Id,
+				nodeName:         node.Name,
+				providerName:   node.ConnectionConfig.ProviderName,
+				connectionName: node.ConnectionName,
 			})
-			subgroupMap[vm.SubGroupId] = true
+			nodegroupMap[node.NodeGroupId] = true
 		}
 	}
 
 	if len(tasks) == 0 {
-		err := fmt.Errorf("no running VMs found in any subgroup")
+		err := fmt.Errorf("no running VMs found in any nodegroup")
 		log.Error().Err(err).Msg("")
 		return result, err
 	}
 
-	log.Info().Msgf("Creating snapshots for %d VMs (one per subgroup) with provider-specific semaphores", len(tasks))
+	log.Info().Msgf("Creating snapshots for %d VMs (one per nodegroup) with provider-specific semaphores", len(tasks))
 
 	// Group tasks by provider
 	providerGroups := make(map[string][]snapshotTask)
@@ -293,7 +293,7 @@ func CreateMciSnapshot(nsId string, mciId string, snapshotReq model.SnapshotReq)
 	}
 
 	// Channel for collecting results
-	resultChan := make(chan model.VmSnapshotResult, len(tasks))
+	resultChan := make(chan model.NodeSnapshotResult, len(tasks))
 
 	// Execute snapshots in parallel with provider-specific semaphores
 	for _, task := range tasks {
@@ -309,50 +309,50 @@ func CreateMciSnapshot(nsId string, mciId string, snapshotReq model.SnapshotReq)
 			semaphore <- struct{}{}        // Acquire
 			defer func() { <-semaphore }() // Release
 
-			log.Debug().Msgf("Creating snapshot for VM %s (Provider: %s, SubGroup: %s)",
-				t.vmId, providerName, t.subgroupId)
+			log.Debug().Msgf("Creating snapshot for VM %s (Provider: %s, NodeGroup: %s)",
+				t.nodeId, providerName, t.nodegroupId)
 
-			vmResult := model.VmSnapshotResult{
-				SubGroupId: t.subgroupId,
-				VmId:       t.vmId,
-				VmName:     t.vmName,
+			nodeResult := model.NodeSnapshotResult{
+				NodeGroupId: t.nodegroupId,
+				NodeId:        t.nodeId,
+				NodeName:      t.nodeName,
 			}
 
 			// Generate unique snapshot name per VM
-			vmSnapshotName := snapshotReq.Name
-			if vmSnapshotName == "" {
-				vmSnapshotName = fmt.Sprintf("%s-%s-%s", mciId, t.subgroupId, common.GenUid())
+			nodeSnapshotName := snapshotReq.Name
+			if nodeSnapshotName == "" {
+				nodeSnapshotName = fmt.Sprintf("%s-%s-%s", infraId, t.nodegroupId, common.GenUid())
 			} else {
-				vmSnapshotName = fmt.Sprintf("%s-%s", vmSnapshotName, t.subgroupId)
+				nodeSnapshotName = fmt.Sprintf("%s-%s", nodeSnapshotName, t.nodegroupId)
 			}
 
-			vmSnapshotReq := model.SnapshotReq{
-				Name:        vmSnapshotName,
-				Description: fmt.Sprintf("%s (SubGroup: %s, Provider: %s)", snapshotReq.Description, t.subgroupId, providerName),
+			nodeSnapshotReq := model.SnapshotReq{
+				Name:        nodeSnapshotName,
+				Description: fmt.Sprintf("%s (NodeGroup: %s, Provider: %s)", snapshotReq.Description, t.nodegroupId, providerName),
 			}
 
 			// Create snapshot
-			imageInfo, err := CreateVmSnapshot(nsId, mciId, t.vmId, vmSnapshotReq)
+			imageInfo, err := CreateNodeSnapshot(nsId, infraId, t.nodeId, nodeSnapshotReq)
 			if err != nil {
-				log.Error().Err(err).Msgf("Failed to create snapshot for VM %s (Provider: %s)", t.vmId, providerName)
-				vmResult.Status = "Failed"
-				vmResult.Error = err.Error()
+				log.Error().Err(err).Msgf("Failed to create snapshot for VM %s (Provider: %s)", t.nodeId, providerName)
+				nodeResult.Status = "Failed"
+				nodeResult.Error = err.Error()
 			} else {
-				log.Info().Msgf("Successfully created snapshot for VM %s (Provider: %s): %s", t.vmId, providerName, imageInfo.Id)
-				vmResult.Status = "Success"
-				vmResult.ImageId = imageInfo.Id
-				vmResult.ImageInfo = imageInfo
+				log.Info().Msgf("Successfully created snapshot for VM %s (Provider: %s): %s", t.nodeId, providerName, imageInfo.Id)
+				nodeResult.Status = "Success"
+				nodeResult.ImageId = imageInfo.Id
+				nodeResult.ImageInfo = imageInfo
 			}
 
-			resultChan <- vmResult
+			resultChan <- nodeResult
 		}(task)
 	}
 
 	// Collect results
 	for i := 0; i < len(tasks); i++ {
-		vmResult := <-resultChan
-		result.Results = append(result.Results, vmResult)
-		if vmResult.Status == "Success" {
+		nodeResult := <-resultChan
+		result.Results = append(result.Results, nodeResult)
+		if nodeResult.Status == "Success" {
 			result.SuccessCount++
 		} else {
 			result.FailCount++
@@ -360,13 +360,13 @@ func CreateMciSnapshot(nsId string, mciId string, snapshotReq model.SnapshotReq)
 	}
 	close(resultChan)
 
-	log.Info().Msgf("MCI snapshot completed: %d success, %d failed out of %d total",
+	log.Info().Msgf("Infra snapshot completed: %d success, %d failed out of %d total",
 		result.SuccessCount, result.FailCount, len(tasks))
 
 	return result, nil
 }
 
-// BuildAgnosticImage creates an MCI, executes post commands, creates snapshots, and optionally cleans up
+// BuildAgnosticImage creates an Infra, executes post commands, creates snapshots, and optionally cleans up
 // This is a complete workflow for building agnostic (CSP-independent) custom images
 func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.BuildAgnosticImageResult, error) {
 	startTime := time.Now()
@@ -376,60 +376,60 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 	}
 
 	// Step 1: Set PolicyOnPartialFailure to "refine" for better error handling
-	req.SourceMciReq.PolicyOnPartialFailure = "refine"
+	req.SourceInfraReq.PolicyOnPartialFailure = "refine"
 
-	log.Info().Msgf("Starting BuildAgnosticImage workflow for MCI: %s", req.SourceMciReq.Name)
+	log.Info().Msgf("Starting BuildAgnosticImage workflow for Infra: %s", req.SourceInfraReq.Name)
 
-	// Step 2: Create MCI with dynamic provisioning
-	log.Info().Msg("Step 1/4: Creating MCI infrastructure...")
+	// Step 2: Create Infra with dynamic provisioning
+	log.Info().Msg("Step 1/4: Creating Infra infrastructure...")
 	reqId := common.GenUid() // Generate unique request ID
 	ctx := common.WithRequestID(common.NewDefaultContext(), reqId)
-	mciInfo, err := CreateMciDynamic(ctx, nsId, &req.SourceMciReq, "")
+	infraInfo, err := CreateInfraDynamic(ctx, nsId, &req.SourceInfraReq, "")
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create MCI")
-		return result, fmt.Errorf("failed to create MCI: %w", err)
+		log.Error().Err(err).Msg("Failed to create Infra")
+		return result, fmt.Errorf("failed to create Infra: %w", err)
 	}
 
-	result.MciId = mciInfo.Id
-	result.MciStatus = string(mciInfo.Status)
-	log.Info().Msgf("MCI created successfully: %s (Status: %s)", mciInfo.Id, mciInfo.Status)
+	result.InfraId = infraInfo.Id
+	result.InfraStatus = string(infraInfo.Status)
+	log.Info().Msgf("Infra created successfully: %s (Status: %s)", infraInfo.Id, infraInfo.Status)
 
-	// Step 3: Wait for MCI to be fully running
+	// Step 3: Wait for Infra to be fully running
 	// Check if there are any failed VMs after "refine" policy
-	log.Info().Msg("Step 2/4: Verifying MCI status...")
+	log.Info().Msg("Step 2/4: Verifying Infra status...")
 
-	// Get updated MCI status
-	mciStatus, err := GetMciStatus(nsId, mciInfo.Id)
+	// Get updated Infra status
+	infraStatus, err := GetInfraStatus(nsId, infraInfo.Id)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get MCI status")
+		log.Error().Err(err).Msg("Failed to get Infra status")
 		// Don't fail here, try to continue with snapshot creation
 	} else {
-		log.Info().Msgf("MCI status - Total VMs: %d, Running: %d, Failed: %d",
-			mciStatus.StatusCount.CountTotal,
-			mciStatus.StatusCount.CountRunning,
-			mciStatus.StatusCount.CountFailed)
+		log.Info().Msgf("Infra status - Total VMs: %d, Running: %d, Failed: %d",
+			infraStatus.StatusCount.CountTotal,
+			infraStatus.StatusCount.CountRunning,
+			infraStatus.StatusCount.CountFailed)
 	}
 
 	// Check if we have any running VMs
-	if mciStatus != nil && mciStatus.StatusCount.CountRunning == 0 {
-		err := fmt.Errorf("no running VMs found in MCI after provisioning")
+	if infraStatus != nil && infraStatus.StatusCount.CountRunning == 0 {
+		err := fmt.Errorf("no running VMs found in Infra after provisioning")
 		log.Error().Err(err).Msg("")
 		return result, err
 	}
 
-	// Step 4: Create snapshots from the MCI (one per subgroup)
+	// Step 4: Create snapshots from the Infra (one per nodegroup)
 	log.Info().Msg("Step 3/4: Creating snapshots from running VMs...")
-	snapshotResult, err := CreateMciSnapshot(nsId, mciInfo.Id, req.SnapshotReq)
+	snapshotResult, err := CreateInfraSnapshot(nsId, infraInfo.Id, req.SnapshotReq)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create MCI snapshots")
+		log.Error().Err(err).Msg("Failed to create Infra snapshots")
 		// Even if snapshot fails, we should still cleanup if requested
-		if req.CleanupMciAfterSnapshot {
-			log.Info().Msg("Attempting to cleanup MCI despite snapshot failure...")
-			_, cleanupErr := DelMci(nsId, mciInfo.Id, model.ActionTerminate)
+		if req.CleanupInfraAfterSnapshot {
+			log.Info().Msg("Attempting to cleanup Infra despite snapshot failure...")
+			_, cleanupErr := DelInfra(nsId, infraInfo.Id, model.ActionTerminate)
 			if cleanupErr != nil {
-				log.Error().Err(cleanupErr).Msg("Failed to cleanup MCI")
+				log.Error().Err(cleanupErr).Msg("Failed to cleanup Infra")
 			} else {
-				result.MciCleanedUp = true
+				result.InfraCleanedUp = true
 			}
 		}
 		return result, fmt.Errorf("failed to create snapshots: %w", err)
@@ -440,7 +440,7 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 		snapshotResult.SuccessCount, snapshotResult.FailCount)
 
 	// Step 5: Wait for custom images to become Available before cleanup
-	if req.CleanupMciAfterSnapshot && snapshotResult.SuccessCount > 0 {
+	if req.CleanupInfraAfterSnapshot && snapshotResult.SuccessCount > 0 {
 		log.Info().Msg("Step 4a/5: Waiting for custom images to become Available...")
 		// Wait a short moment before starting checks
 		initiatingInterval := 15 * time.Second
@@ -448,15 +448,15 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 
 		// Collect all successfully created image IDs
 		imageIds := make([]string, 0, snapshotResult.SuccessCount)
-		for _, vmResult := range snapshotResult.Results {
-			if vmResult.Status == "Success" && vmResult.ImageId != "" {
-				imageIds = append(imageIds, vmResult.ImageId)
+		for _, nodeResult := range snapshotResult.Results {
+			if nodeResult.Status == "Success" && nodeResult.ImageId != "" {
+				imageIds = append(imageIds, nodeResult.ImageId)
 			}
 		}
 
 		// Wait for all images to become Available
 		maxWaitTime := resource.CustomImageCreationTimeout // Use shared timeout constant
-		checkInterval := 10 * time.Second // Check every 10 seconds
+		checkInterval := 10 * time.Second                  // Check every 10 seconds
 		startWait := time.Now()
 
 		allAvailable := false
@@ -496,28 +496,28 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 		}
 	}
 
-	// Step 6: Cleanup MCI if requested
-	if req.CleanupMciAfterSnapshot {
-		log.Info().Msg("Step 5/5: Cleaning up MCI after snapshot creation...")
-		// Use DelMci with "terminate" option (refine → terminate → delete)
+	// Step 6: Cleanup Infra if requested
+	if req.CleanupInfraAfterSnapshot {
+		log.Info().Msg("Step 5/5: Cleaning up Infra after snapshot creation...")
+		// Use DelInfra with "terminate" option (refine → terminate → delete)
 		// This is the proper way instead of using "force" option
-		_, err := DelMci(nsId, mciInfo.Id, model.ActionTerminate)
+		_, err := DelInfra(nsId, infraInfo.Id, model.ActionTerminate)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to cleanup MCI")
+			log.Error().Err(err).Msg("Failed to cleanup Infra")
 			// Don't fail the entire operation if cleanup fails
 			if result.Message == "" {
-				result.Message = fmt.Sprintf("Successfully created %d custom images, but MCI cleanup failed: %v",
+				result.Message = fmt.Sprintf("Successfully created %d custom images, but Infra cleanup failed: %v",
 					snapshotResult.SuccessCount, err)
 			} else {
-				result.Message += fmt.Sprintf(" and MCI cleanup failed: %v", err)
+				result.Message += fmt.Sprintf(" and Infra cleanup failed: %v", err)
 			}
 		} else {
-			result.MciCleanedUp = true
-			result.MciStatus = "Terminated"
-			log.Info().Msg("MCI cleaned up successfully")
+			result.InfraCleanedUp = true
+			result.InfraStatus = "Terminated"
+			log.Info().Msg("Infra cleaned up successfully")
 		}
 	} else {
-		log.Info().Msg("Step 5/5: Skipping MCI cleanup (CleanupMciAfterSnapshot=false)")
+		log.Info().Msg("Step 5/5: Skipping Infra cleanup (CleanupInfraAfterSnapshot=false)")
 	}
 
 	// Calculate total duration
@@ -526,12 +526,12 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 
 	// Set final message
 	if result.Message == "" {
-		if req.CleanupMciAfterSnapshot {
-			result.Message = fmt.Sprintf("Successfully created %d custom images from MCI %s and cleaned up infrastructure",
-				snapshotResult.SuccessCount, mciInfo.Id)
+		if req.CleanupInfraAfterSnapshot {
+			result.Message = fmt.Sprintf("Successfully created %d custom images from Infra %s and cleaned up infrastructure",
+				snapshotResult.SuccessCount, infraInfo.Id)
 		} else {
-			result.Message = fmt.Sprintf("Successfully created %d custom images from MCI %s (infrastructure preserved)",
-				snapshotResult.SuccessCount, mciInfo.Id)
+			result.Message = fmt.Sprintf("Successfully created %d custom images from Infra %s (infrastructure preserved)",
+				snapshotResult.SuccessCount, infraInfo.Id)
 		}
 	}
 

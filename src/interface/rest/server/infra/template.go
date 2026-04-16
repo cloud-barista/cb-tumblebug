@@ -17,147 +17,147 @@ package infra
 import (
 	"net/http"
 
-	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
-// RestPostMciDynamicTemplate godoc
-// @ID PostMciDynamicTemplate
-// @Summary Create an MCI Dynamic Template
-// @Description Create a reusable MCI Dynamic Template. Templates store MCI dynamic creation
-// @Description request configurations that can be applied later to create MCIs with consistent settings.
+// RestPostInfraDynamicTemplate godoc
+// @ID PostInfraDynamicTemplate
+// @Summary Create an Infra Dynamic Template
+// @Description Create a reusable Infra Dynamic Template. Templates store Infra dynamic creation
+// @Description request configurations that can be applied later to create Infras with consistent settings.
 // @Description
 // @Description **Template Contents:**
-// @Description - VM specifications (specId, imageId) for each subgroup
-// @Description - Subgroup sizing and naming
+// @Description - node specifications (specId, imageId) for each nodegroup
+// @Description - NodeGroup sizing and naming
 // @Description - Network and disk configuration
 // @Description - Post-deployment commands
 // @Description - Monitoring agent options
 // @Description
-// @Description Templates can be created manually or extracted from existing MCIs.
-// @Tags [MC-Infra] MCI Template Management
+// @Description Templates can be created manually or extracted from existing Infras.
+// @Tags [MC-Infra] Infra Template Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param templateReq body model.MciDynamicTemplateReq true "MCI Dynamic Template request"
-// @Success 200 {object} model.MciDynamicTemplateInfo "Successfully created template"
+// @Param templateReq body model.InfraDynamicTemplateReq true "Infra Dynamic Template request"
+// @Success 200 {object} model.InfraDynamicTemplateInfo "Successfully created template"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or template name"
 // @Failure 409 {object} model.SimpleMsg "Template already exists"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/template/mci [post]
-func RestPostMciDynamicTemplate(c echo.Context) error {
+// @Router /ns/{nsId}/template/infra [post]
+func RestPostInfraDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
 
-	req := &model.MciDynamicTemplateReq{}
+	req := &model.InfraDynamicTemplateReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := common.CreateMciDynamicTemplate(nsId, req)
+	result, err := common.CreateInfraDynamicTemplate(nsId, req)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create MCI dynamic template")
+		log.Error().Err(err).Msg("failed to create Infra dynamic template")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// RestGetMciDynamicTemplate godoc
-// @ID GetMciDynamicTemplate
-// @Summary Get an MCI Dynamic Template
-// @Description Retrieve a specific MCI Dynamic Template by ID.
-// @Tags [MC-Infra] MCI Template Management
+// RestGetInfraDynamicTemplate godoc
+// @ID GetInfraDynamicTemplate
+// @Summary Get an Infra Dynamic Template
+// @Description Retrieve a specific Infra Dynamic Template by ID.
+// @Tags [MC-Infra] Infra Template Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param templateId path string true "Template ID"
-// @Success 200 {object} model.MciDynamicTemplateInfo "Template information"
+// @Success 200 {object} model.InfraDynamicTemplateInfo "Template information"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/template/mci/{templateId} [get]
-func RestGetMciDynamicTemplate(c echo.Context) error {
+// @Router /ns/{nsId}/template/infra/{templateId} [get]
+func RestGetInfraDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
 
-	result, err := common.GetMciDynamicTemplate(nsId, templateId)
+	result, err := common.GetInfraDynamicTemplate(nsId, templateId)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestGetAllMciDynamicTemplate godoc
-// @ID GetAllMciDynamicTemplate
-// @Summary List all MCI Dynamic Templates
-// @Description List all MCI Dynamic Templates in a namespace.
+// RestGetAllInfraDynamicTemplate godoc
+// @ID GetAllInfraDynamicTemplate
+// @Summary List all Infra Dynamic Templates
+// @Description List all Infra Dynamic Templates in a namespace.
 // @Description Optionally filter by keyword matching against template name or description (case-insensitive).
-// @Tags [MC-Infra] MCI Template Management
+// @Tags [MC-Infra] Infra Template Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param filterKeyword query string false "Keyword to filter templates by name or description"
-// @Success 200 {object} model.MciDynamicTemplateListResponse "List of templates"
+// @Success 200 {object} model.InfraDynamicTemplateListResponse "List of templates"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/template/mci [get]
-func RestGetAllMciDynamicTemplate(c echo.Context) error {
+// @Router /ns/{nsId}/template/infra [get]
+func RestGetAllInfraDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
 	filterKeyword := c.QueryParam("filterKeyword")
 
-	result, err := common.ListMciDynamicTemplate(nsId, filterKeyword)
+	result, err := common.ListInfraDynamicTemplate(nsId, filterKeyword)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
-	response := model.MciDynamicTemplateListResponse{Templates: result}
+	response := model.InfraDynamicTemplateListResponse{Templates: result}
 	return clientManager.EndRequestWithLog(c, nil, response)
 }
 
-// RestPutMciDynamicTemplate godoc
-// @ID PutMciDynamicTemplate
-// @Summary Update an MCI Dynamic Template
-// @Description Update an existing MCI Dynamic Template.
-// @Tags [MC-Infra] MCI Template Management
+// RestPutInfraDynamicTemplate godoc
+// @ID PutInfraDynamicTemplate
+// @Summary Update an Infra Dynamic Template
+// @Description Update an existing Infra Dynamic Template.
+// @Tags [MC-Infra] Infra Template Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param templateId path string true "Template ID"
-// @Param templateReq body model.MciDynamicTemplateReq true "MCI Dynamic Template request"
-// @Success 200 {object} model.MciDynamicTemplateInfo "Updated template information"
+// @Param templateReq body model.InfraDynamicTemplateReq true "Infra Dynamic Template request"
+// @Success 200 {object} model.InfraDynamicTemplateInfo "Updated template information"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template not found"
 // @Failure 500 {object} model.SimpleMsg "Internal error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/template/mci/{templateId} [put]
-func RestPutMciDynamicTemplate(c echo.Context) error {
+// @Router /ns/{nsId}/template/infra/{templateId} [put]
+func RestPutInfraDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
 
-	req := &model.MciDynamicTemplateReq{}
+	req := &model.InfraDynamicTemplateReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := common.UpdateMciDynamicTemplate(nsId, templateId, req)
+	result, err := common.UpdateInfraDynamicTemplate(nsId, templateId, req)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to update MCI dynamic template")
+		log.Error().Err(err).Msg("failed to update Infra dynamic template")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// RestDeleteMciDynamicTemplate godoc
-// @ID DeleteMciDynamicTemplate
-// @Summary Delete an MCI Dynamic Template
-// @Description Delete a specific MCI Dynamic Template.
-// @Tags [MC-Infra] MCI Template Management
+// RestDeleteInfraDynamicTemplate godoc
+// @ID DeleteInfraDynamicTemplate
+// @Summary Delete an Infra Dynamic Template
+// @Description Delete a specific Infra Dynamic Template.
+// @Tags [MC-Infra] Infra Template Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -167,24 +167,24 @@ func RestPutMciDynamicTemplate(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/template/mci/{templateId} [delete]
-func RestDeleteMciDynamicTemplate(c echo.Context) error {
+// @Router /ns/{nsId}/template/infra/{templateId} [delete]
+func RestDeleteInfraDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
 
-	err := common.DeleteMciDynamicTemplate(nsId, templateId)
+	err := common.DeleteInfraDynamicTemplate(nsId, templateId)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to delete MCI dynamic template")
+		log.Error().Err(err).Msg("failed to delete Infra dynamic template")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return clientManager.EndRequestWithLog(c, nil, model.SimpleMsg{Message: "Template '" + templateId + "' has been deleted"})
 }
 
-// RestDeleteAllMciDynamicTemplate godoc
-// @ID DeleteAllMciDynamicTemplate
-// @Summary Delete all MCI Dynamic Templates
-// @Description Delete all MCI Dynamic Templates in a namespace.
-// @Tags [MC-Infra] MCI Template Management
+// RestDeleteAllInfraDynamicTemplate godoc
+// @ID DeleteAllInfraDynamicTemplate
+// @Summary Delete all Infra Dynamic Templates
+// @Description Delete all Infra Dynamic Templates in a namespace.
+// @Tags [MC-Infra] Infra Template Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -192,44 +192,44 @@ func RestDeleteMciDynamicTemplate(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/template/mci [delete]
-func RestDeleteAllMciDynamicTemplate(c echo.Context) error {
+// @Router /ns/{nsId}/template/infra [delete]
+func RestDeleteAllInfraDynamicTemplate(c echo.Context) error {
 	nsId := c.Param("nsId")
 
-	err := common.DeleteAllMciDynamicTemplate(nsId)
+	err := common.DeleteAllInfraDynamicTemplate(nsId)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to delete all MCI dynamic templates")
+		log.Error().Err(err).Msg("failed to delete all Infra dynamic templates")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
-	return clientManager.EndRequestWithLog(c, nil, model.SimpleMsg{Message: "All MCI dynamic templates have been deleted"})
+	return clientManager.EndRequestWithLog(c, nil, model.SimpleMsg{Message: "All Infra dynamic templates have been deleted"})
 }
 
-// RestPostMciDynamicFromTemplate godoc
-// @ID PostMciDynamicFromTemplate
-// @Summary Create MCI from a Template
-// @Description Create a new MCI by applying an MCI Dynamic Template.
-// @Description The template provides the base VM configuration, and the apply request
-// @Description allows overriding the MCI name and description.
+// RestPostInfraDynamicFromTemplate godoc
+// @ID PostInfraDynamicFromTemplate
+// @Summary Create Infra from a Template
+// @Description Create a new Infra by applying an Infra Dynamic Template.
+// @Description The template provides the base node configuration, and the apply request
+// @Description allows overriding the Infra name and description.
 // @Description
 // @Description **Override Behavior (Phase 1):**
-// @Description - `name` (required): Name for the new MCI
+// @Description - `name` (required): Name for the new Infra
 // @Description - `description` (optional): Overrides the template's description
-// @Description - All other configuration (specs, images, subgroups) comes from the template
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Description - All other configuration (specs, images, nodegroups) comes from the template
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param templateId path string true "Template ID to apply"
-// @Param applyReq body model.TemplateApplyReq true "Template apply request with MCI name and optional description"
-// @Param option query string false "Deployment option: 'hold' to create MCI without immediate VM provisioning" Enums(hold)
+// @Param applyReq body model.TemplateApplyReq true "Template apply request with Infra name and optional description"
+// @Param option query string false "Deployment option: 'hold' to create Infra without immediate node provisioning" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking"
-// @Success 200 {object} model.MciInfo "Successfully created MCI from template"
+// @Success 200 {object} model.InfraInfo "Successfully created Infra from template"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format"
 // @Failure 404 {object} model.SimpleMsg "Template or namespace not found"
 // @Failure 500 {object} model.SimpleMsg "Internal deployment error"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/template/{templateId} [post]
-func RestPostMciDynamicFromTemplate(c echo.Context) error {
+// @Router /ns/{nsId}/infra/template/{templateId} [post]
+func RestPostInfraDynamicFromTemplate(c echo.Context) error {
 	ctx := c.Request().Context()
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
@@ -241,9 +241,9 @@ func RestPostMciDynamicFromTemplate(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CreateMciDynamicFromTemplate(ctx, nsId, templateId, req, option)
+	result, err := infra.CreateInfraDynamicFromTemplate(ctx, nsId, templateId, req, option)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create MCI from template")
+		log.Error().Err(err).Msg("failed to create Infra from template")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)

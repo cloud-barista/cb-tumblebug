@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package infra
 
 import (
@@ -21,40 +21,40 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// RestPostInstallBenchmarkAgentToMci godoc
-// @ID PostInstallBenchmarkAgentToMci
-// @Summary Install the benchmark agent to specified MCI
-// @Description Install the benchmark agent to specified MCI
-// @Tags [MC-Infra] MCI Performance Benchmarking (WIP)
+// RestPostInstallBenchmarkAgentToInfra godoc
+// @ID PostInstallBenchmarkAgentToInfra
+// @Summary Install the benchmark agent to specified Infra
+// @Description Install the benchmark agent to specified Infra
+// @Tags [MC-Infra] Infra Performance Benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param mciCmdReq body model.MciCmdReq true "MCI Command Request"
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param infraCmdReq body model.InfraCmdReq true "Infra Command Request"
 // @Param option query string false "Option for checking update" Enums(update)
-// @Success 200 {object} model.MciSshCmdResult
+// @Success 200 {object} model.InfraSshCmdResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/installBenchmarkAgent/mci/{mciId} [post]
-func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
+// @Router /ns/{nsId}/installBenchmarkAgent/infra/{infraId} [post]
+func RestPostInstallBenchmarkAgentToInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	option := c.QueryParam("option")
 
-	req := &model.MciCmdReq{}
+	req := &model.InfraCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	resultArray, err := infra.InstallBenchmarkAgentToMci(nsId, mciId, req, option)
+	resultArray, err := infra.InstallBenchmarkAgentToInfra(nsId, infraId, req, option)
 	if err != nil {
 		clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content := model.MciSshCmdResult{}
+	content := model.InfraSshCmdResult{}
 	for _, v := range resultArray {
 		content.Results = append(content.Results, v)
 	}
@@ -70,55 +70,55 @@ type RestGetAllBenchmarkRequest struct {
 
 // RestGetAllBenchmark godoc
 // @ID GetAllBenchmark
-// @Summary Run MCI benchmark for all performance metrics and return results
-// @Description Run MCI benchmark for all performance metrics and return results
-// @Tags [MC-Infra] MCI Performance Benchmarking (WIP)
+// @Summary Run Infra benchmark for all performance metrics and return results
+// @Description Run Infra benchmark for all performance metrics and return results
+// @Tags [MC-Infra] Infra Performance Benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param hostIP body RestGetAllBenchmarkRequest true "Host IP address to benchmark"
 // @Success 200 {object} model.BenchmarkInfoArray
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/benchmarkAll/mci/{mciId} [post]
+// @Router /ns/{nsId}/benchmarkAll/infra/{infraId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	req := &RestGetAllBenchmarkRequest{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	content, err := infra.RunAllBenchmarks(nsId, mciId, req.Host)
+	content, err := infra.RunAllBenchmarks(nsId, infraId, req.Host)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetLatencyBenchmark godoc
 // @ID GetLatencyBenchmark
-// @Summary Run MCI benchmark for network latency
-// @Description Run MCI benchmark for network latency
-// @Tags [MC-Infra] MCI Performance Benchmarking (WIP)
+// @Summary Run Infra benchmark for network latency
+// @Description Run Infra benchmark for network latency
+// @Tags [MC-Infra] Infra Performance Benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param mciId path string true "MCI ID" default(probe)
+// @Param infraId path string true "Infra ID" default(probe)
 // @Success 200 {object} model.BenchmarkInfoArray
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/benchmarkLatency/mci/{mciId} [get]
+// @Router /ns/{nsId}/benchmarkLatency/infra/{infraId} [get]
 func RestGetBenchmarkLatency(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
-	content, err := infra.RunLatencyBenchmark(nsId, mciId, "")
+	content, err := infra.RunLatencyBenchmark(nsId, infraId, "")
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -128,25 +128,25 @@ type RestGetBenchmarkRequest struct {
 
 // RestGetBenchmark godoc
 // @ID GetBenchmark
-// @Summary Run MCI benchmark for a single performance metric and return results
-// @Description Run MCI benchmark for a single performance metric and return results
-// @Tags [MC-Infra] MCI Performance Benchmarking (WIP)
+// @Summary Run Infra benchmark for a single performance metric and return results
+// @Description Run Infra benchmark for a single performance metric and return results
+// @Tags [MC-Infra] Infra Performance Benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param hostIP body RestGetBenchmarkRequest true "Host IP address to benchmark"
-// @Param action query string true "Benchmark Action to MCI" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)
+// @Param action query string true "Benchmark Action to Infra" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)
 // @Success 200 {object} model.BenchmarkInfoArray
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/benchmark/mci/{mciId} [post]
+// @Router /ns/{nsId}/benchmark/infra/{infraId} [post]
 func RestGetBenchmark(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	action := c.QueryParam("action")
 
 	req := &RestGetBenchmarkRequest{}
@@ -154,6 +154,6 @@ func RestGetBenchmark(c echo.Context) error {
 		return err
 	}
 
-	content, err := infra.CoreGetBenchmark(nsId, mciId, action, req.Host)
+	content, err := infra.CoreGetBenchmark(nsId, infraId, action, req.Host)
 	return clientManager.EndRequestWithLog(c, err, content)
 }

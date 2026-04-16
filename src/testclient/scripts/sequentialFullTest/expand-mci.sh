@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function add-vm-to-mci() {
+#function add-vm-to-infra() {
 
 
 	TestSetFile=${6:-../testSet.env}
@@ -13,38 +13,38 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## 8. vm: Create MCI"
+	echo "## 8. vm: Create Infra"
 	echo "####################################################################"
 
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
 	EXPAND=${4:-1}
-	MCINAME=${5:-noname}
+	InfraNAME=${5:-noname}
 	
 
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
-	if [ "${MCINAME}" != "noname" ]; then
-		echo "[MCI name is given]"
-		MCIID=${MCINAME}
+	if [ "${InfraNAME}" != "noname" ]; then
+		echo "[Infra name is given]"
+		InfraID=${InfraNAME}
 	else
-		MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+		InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 	fi
 
 	#echo $i
 	INDEXY=${EXPAND}
 	for ((cspj=4;cspj<INDEXY+4;cspj++)); do
 		#echo $j
-		VMID=${MCIID}-0${cspj}
+		VMID=${InfraID}-0${cspj}
 
-		echo $MCIID
+		echo $InfraID
 		echo $VMID
 
-		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci/$MCIID/vm -H 'Content-Type: application/json' -d \
+		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/infra/$InfraID/vm -H 'Content-Type: application/json' -d \
 		'{
 			"name": "'${VMID}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
@@ -67,4 +67,4 @@
 
 
 
-#add-vm-to-mci
+#add-vm-to-infra

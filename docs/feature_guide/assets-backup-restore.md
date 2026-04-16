@@ -1,6 +1,6 @@
 # Assets Backup & Restore
 
-CB-Tumblebug stores VM specs, OS images, and pricing data in PostgreSQL. Fetching this from all cloud providers takes 20–50 minutes. A pre-built backup reduces that to **~1 minute**.
+CB-Tumblebug stores compute specs, OS images, and pricing data in PostgreSQL. Fetching this from all cloud providers takes 20–50 minutes. A pre-built backup reduces that to **~1 minute**.
 
 ## Time Comparison
 
@@ -102,15 +102,15 @@ flowchart LR
     style G fill:#e8f5e9,stroke:#2e7d32
 ```
 
-> Restore replaces all data in PostgreSQL. It does **not** affect etcd (namespaces, MCI state, credentials).
+> Restore replaces all data in PostgreSQL. It does **not** affect etcd (namespaces, Infra state, credentials).
 
 ---
 
 ## What Gets Backed Up
 
-**Included (PostgreSQL):** VM specs, OS images, pricing, region info
+**Included (PostgreSQL):** Compute specs, OS images, pricing, region info
 
-**Not included (stored in etcd):** Running MCIs, namespaces, credentials
+**Not included (stored in etcd):** Running Infras, namespaces, credentials
 
 ---
 

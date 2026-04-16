@@ -820,10 +820,10 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 	return nil
 }
 
-// CheckSubnetInUseByVMs checks if a subnet is being used by any VMs
+// CheckSubnetInUseByNodes checks if a subnet is being used by any VMs
 // It retrieves the VNet's associatedObjectList and checks each VM's subnetId field
-func CheckSubnetInUseByVMs(nsId string, vNetId string, subnetId string) (bool, error) {
-	resources, err := label.GetResourcesByLabelSelector(model.StrVM, "sys.subnetId="+subnetId+",sys.vNetId="+vNetId)
+func CheckSubnetInUseByNodes(nsId string, vNetId string, subnetId string) (bool, error) {
+	resources, err := label.GetResourcesByLabelSelector(model.StrNode, "sys.subnetId="+subnetId+",sys.vNetId="+vNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get VMs by subnetId and vNetId labels")
 		return false, err
@@ -1307,7 +1307,7 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 	return nil, err
 }
 
-// UpdateAssociatedObjectList adds or deletes the objectKey (currently, vmKey) to/from TB object's associatedObjectList
+// UpdateAssociatedObjectList adds or deletes the objectKey (currently, nodeKey) to/from TB object's associatedObjectList
 func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId string, cmd string, objectKey string) ([]string, error) {
 
 	err := common.CheckString(nsId)
@@ -2695,8 +2695,8 @@ func expandInfraType(infraType string) string {
 	expInfraTypeList := []string{}
 	lowerInfraType := strings.ToLower(infraType)
 
-	if strings.Contains(lowerInfraType, model.StrVM) {
-		expInfraTypeList = append(expInfraTypeList, model.StrVM)
+	if strings.Contains(lowerInfraType, model.StrNode) {
+		expInfraTypeList = append(expInfraTypeList, model.StrNode)
 	}
 	if strings.Contains(lowerInfraType, model.StrK8s) ||
 		strings.Contains(lowerInfraType, model.StrKubernetes) ||
@@ -2845,7 +2845,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 //
 // Parameters:
 //   - connConfig: Connection configuration name for the target CSP
-//   - resourceType: Type of resource to query (e.g., model.StrVM, model.StrVNet, etc.)
+//   - resourceType: Type of resource to query (e.g., model.StrNode, model.StrVNet, etc.)
 //
 // Returns:
 //   - model.CspResourceStatusResponse: Structured response containing resource lists and metadata
@@ -2853,7 +2853,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 //
 // Example usage:
 //
-//	response, err := GetCspResourceStatus("aws-connection", model.StrVM)
+//	response, err := GetCspResourceStatus("aws-connection", model.StrNode)
 //	if err != nil {
 //	    log.Error().Err(err).Msg("Failed to get CSP resource status")
 //	    return err
@@ -2884,7 +2884,7 @@ func GetCspResourceStatus(connConfig string, resourceType string) (model.CspReso
 	switch resourceType {
 	case model.StrNLB:
 		spiderRequestURL = model.SpiderRestUrl + "/allnlb"
-	case model.StrVM:
+	case model.StrNode:
 		spiderRequestURL = model.SpiderRestUrl + "/allvm"
 	case model.StrVNet:
 		spiderRequestURL = model.SpiderRestUrl + "/allvpc"
@@ -3014,7 +3014,7 @@ func GetCspResourceStatus(connConfig string, resourceType string) (model.CspReso
 //
 // Example usage:
 //
-//	resourceTypes := []string{model.StrVM, model.StrVNet, model.StrSecurityGroup}
+//	resourceTypes := []string{model.StrNode, model.StrVNet, model.StrSecurityGroup}
 //	responses, err := GetCspResourceStatusBatch("aws-connection", resourceTypes)
 //	if err != nil {
 //	    log.Error().Err(err).Msg("Failed to get batch CSP resource status")
@@ -3051,7 +3051,7 @@ func GetCspResourceStatusBatch(connConfig string, resourceTypes []string) (map[s
 //
 // Parameters:
 //   - nsId: Namespace ID of the CB-TB resource
-//   - resourceType: Type of the CB-TB resource (e.g., model.StrVM, model.StrVNet, etc.)
+//   - resourceType: Type of the CB-TB resource (e.g., model.StrNode, model.StrVNet, etc.)
 //   - resourceId: ID of the CB-TB resource
 //   - connConfig: Connection configuration name for the target CSP
 //
@@ -3062,7 +3062,7 @@ func GetCspResourceStatusBatch(connConfig string, resourceTypes []string) (map[s
 //
 // Example usage:
 //
-//	onCsp, onSpider, err := CheckAssociatedCspResourceExistence("default", model.StrVM, "my-vm-01", "aws-connection")
+//	onCsp, onSpider, err := CheckAssociatedCspResourceExistence("default", model.StrNode, "my-vm-01", "aws-connection")
 //	if err != nil {
 //	    log.Error().Err(err).Msg("Failed to check resource existence")
 //	    return err

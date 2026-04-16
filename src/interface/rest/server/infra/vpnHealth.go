@@ -27,9 +27,9 @@ import (
 // RestPostVpnHealthCheck godoc
 // @ID PostVpnHealthCheck
 // @Summary Check the health of a site-to-site VPN by bidirectional ping test
-// @Description Perform a bidirectional ping test on a site-to-site VPN using existing MCI VMs and return the results.
+// @Description Perform a bidirectional ping test on a site-to-site VPN using existing Infra nodes and return the results.
 // @Description
-// @Description It finds VMs that belong to the VPN's two sites and runs ping tests
+// @Description It finds nodes that belong to the VPN's two sites and runs ping tests
 // @Description in both directions (site1→site2 and site2→site1) via private IP.
 // @Description The VPN is considered healthy only when both directions succeed.
 // @Description
@@ -39,7 +39,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param healthCheckReq body model.VpnHealthCheckRequest true "Health check options"
 // @Success 200 {object} model.VpnHealthCheckResponse "OK"
@@ -47,16 +47,16 @@ import (
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/health [post]
+// @Router /ns/{nsId}/infra/{infraId}/vpn/{vpnId}/health [post]
 func RestPostVpnHealthCheck(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	if err := common.CheckString(nsId); err != nil {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: fmt.Sprintf("invalid nsId (%s)", nsId)})
 	}
-	mciId := c.Param("mciId")
-	if err := common.CheckString(mciId); err != nil {
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: fmt.Sprintf("invalid mciId (%s)", mciId)})
+	infraId := c.Param("infraId")
+	if err := common.CheckString(infraId); err != nil {
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: fmt.Sprintf("invalid infraId (%s)", infraId)})
 	}
 	vpnId := c.Param("vpnId")
 	if err := common.CheckString(vpnId); err != nil {
@@ -70,7 +70,7 @@ func RestPostVpnHealthCheck(c echo.Context) error {
 	}
 
 	// Delegate to core function
-	resp, err := infra.CheckVpnHealth(c.Request().Context(), nsId, mciId, vpnId, req)
+	resp, err := infra.CheckVpnHealth(c.Request().Context(), nsId, infraId, vpnId, req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 	}

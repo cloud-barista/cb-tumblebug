@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Check test config file (-n deveoperPrefix -f ../testSetCustom.env -x numOfVMsInEachSubGroup)"
+echo "## Check test config file (-n deveoperPrefix -f ../testSetCustom.env -x numOfVMsInEachNodeGroup)"
 echo "####################################################################"
 
 source ../init.sh
@@ -54,9 +54,9 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	TotalVM=$(($TotalVM + $((1 * INDEXY * NUMVM))))
 done
 
-echo -e "${BOLD}3) MCI Configuration${NC}"
+echo -e "${BOLD}3) Infra Configuration${NC}"
 echo -e " - NameSpace ID :${GREEN}${BOLD} $NSID${NC}"
-echo -e " - MCI ID :${GREEN}${BOLD} $MCIID${NC}"
+echo -e " - Infra ID :${GREEN}${BOLD} $InfraID${NC}"
 echo -e " - Number of Total VMs :${GREEN}${BOLD} $TotalVM${NC}"
 
 for ((cspi = 1; cspi <= INDEXX; cspi++)); do

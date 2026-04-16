@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package infra
 
 import (
@@ -29,7 +29,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspResourceId" Enums(register)
 // @Param nlbReq body model.NLBReq true "Details of the NLB object"
 // @Success 200 {object} model.NLBInfo
@@ -37,11 +37,11 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb [post]
+// @Router /ns/{nsId}/infra/{infraId}/nlb [post]
 func RestPostNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	optionFlag := c.QueryParam("option")
 
@@ -50,37 +50,37 @@ func RestPostNLB(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := infra.CreateNLB(nsId, mciId, u, optionFlag)
+	content, err := infra.CreateNLB(nsId, infraId, u, optionFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPostMcNLB godoc
 // @ID PostMcNLB
-// @Summary Create a special purpose MCI for NLB and depoly and setting SW NLB
-// @Description Create a special purpose MCI for NLB and depoly and setting SW NLB
+// @Summary Create a special purpose Infra for NLB and depoly and setting SW NLB
+// @Description Create a special purpose Infra for NLB and depoly and setting SW NLB
 // @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbReq body model.NLBReq true "Details of the NLB object"
 // @Success 200 {object} model.McNlbInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/mcSwNlb [post]
+// @Router /ns/{nsId}/infra/{infraId}/mcSwNlb [post]
 func RestPostMcNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	u := &model.NLBReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := infra.CreateMcSwNlb(nsId, mciId, u, "")
+	content, err := infra.CreateMcSwNlb(nsId, infraId, u, "")
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -95,7 +95,7 @@ func RestPostMcNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Param nlbInfo body model.NLBInfo true "Details of the NLB object"
 // @Success 200 {object} model.NLBInfo
@@ -103,11 +103,11 @@ func RestPostMcNLB(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [put]
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId} [put]
 */
 func RestPutNLB(c echo.Context) error {
 	// nsId := c.Param("nsId")
-	// mciId := c.Param("mciId")
+	// infraId := c.Param("infraId")
 
 	return nil
 }
@@ -120,21 +120,21 @@ func RestPutNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [get]
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId} [get]
 func RestGetNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	resourceId := c.Param("resourceId")
 
-	res, err := infra.GetNLB(nsId, mciId, resourceId)
+	res, err := infra.GetNLB(nsId, infraId, resourceId)
 	return clientManager.EndRequestWithLog(c, err, res)
 }
 
@@ -151,7 +151,7 @@ type RestGetAllNLBResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: cspResourceName)"
 // @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
@@ -160,11 +160,11 @@ type RestGetAllNLBResponse struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb [get]
+// @Router /ns/{nsId}/infra/{infraId}/nlb [get]
 func RestGetAllNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	optionFlag := c.QueryParam("option")
 	filterKey := c.QueryParam("filterKey")
@@ -173,11 +173,11 @@ func RestGetAllNLB(c echo.Context) error {
 	if optionFlag == "id" {
 		content := model.IdList{}
 		var err error
-		content.IdList, err = infra.ListNLBId(nsId, mciId)
+		content.IdList, err = infra.ListNLBId(nsId, infraId)
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else {
 
-		resourceList, err := infra.ListNLB(nsId, mciId, filterKey, filterVal)
+		resourceList, err := infra.ListNLB(nsId, infraId, filterKey, filterVal)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
@@ -199,22 +199,22 @@ func RestGetAllNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [delete]
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId} [delete]
 func RestDelNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	resourceId := c.Param("resourceId")
 
 	forceFlag := c.QueryParam("force")
 
-	err := infra.DelNLB(nsId, mciId, resourceId, forceFlag)
+	err := infra.DelNLB(nsId, infraId, resourceId, forceFlag)
 	content := map[string]string{"message": "The NLB " + resourceId + " has been deleted"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
@@ -227,22 +227,22 @@ func RestDelNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb [delete]
+// @Router /ns/{nsId}/infra/{infraId}/nlb [delete]
 func RestDelAllNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	forceFlag := c.QueryParam("force")
 	subString := c.QueryParam("match")
 
-	content, err := infra.DelAllNLB(nsId, mciId, subString, forceFlag)
+	content, err := infra.DelAllNLB(nsId, infraId, subString, forceFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -254,85 +254,85 @@ func RestDelAllNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/healthz [get]
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/healthz [get]
 func RestGetNLBHealth(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	resourceId := c.Param("resourceId")
 
-	content, err := infra.GetNLBHealth(nsId, mciId, resourceId)
+	content, err := infra.GetNLBHealth(nsId, infraId, resourceId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // The REST APIs below are for dev/test only
 
-// RestAddNLBVMs godoc
-// @ID AddNLBVMs
-// @Summary Add VMs to NLB
-// @Description Add VMs to NLB
+// RestAddNLBNodes godoc
+// @ID AddNLBNodes
+// @Summary Add nodes to NLB
+// @Description Add nodes to NLB
 // @Tags [Infra Resource] NLB Management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbAddRemoveVMReq body model.NLBAddRemoveVMReq true "VMs to add to NLB"
+// @Param nlbAddRemoveNodeReq body model.NLBAddRemoveNodeReq true "nodes to add to NLB"
 // @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [post]
-func RestAddNLBVMs(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/node [post]
+func RestAddNLBNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	resourceId := c.Param("resourceId")
 
-	u := &model.NLBAddRemoveVMReq{}
+	u := &model.NLBAddRemoveNodeReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-	content, err := infra.AddNLBVMs(nsId, mciId, resourceId, u)
+	content, err := infra.AddNLBNodes(nsId, infraId, resourceId, u)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestRemoveNLBVMs godoc
-// @ID RemoveNLBVMs
-// @Summary Delete VMs from NLB
-// @Description Delete VMs from NLB
+// RestRemoveNLBNodes godoc
+// @ID RemoveNLBNodes
+// @Summary Delete nodes from NLB
+// @Description Delete nodes from NLB
 // @Tags [Infra Resource] NLB Management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbAddRemoveVMReq body model.NLBAddRemoveVMReq true "Select VMs to remove from NLB"
+// @Param nlbAddRemoveNodeReq body model.NLBAddRemoveNodeReq true "Select nodes to remove from NLB"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [delete]
-func RestRemoveNLBVMs(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/nlb/{nlbId}/node [delete]
+func RestRemoveNLBNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	resourceId := c.Param("resourceId")
 
-	u := &model.NLBAddRemoveVMReq{}
+	u := &model.NLBAddRemoveNodeReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	err := infra.RemoveNLBVMs(nsId, mciId, resourceId, u)
-	content := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
+	err := infra.RemoveNLBNodes(nsId, infraId, resourceId, u)
+	content := map[string]string{"message": "Removed Nodes from the NLB " + resourceId}
 	return clientManager.EndRequestWithLog(c, err, content)
 }

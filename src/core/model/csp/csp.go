@@ -62,12 +62,12 @@ type RateLimitConfig struct {
 	// VM creation: max regions processed in parallel per CSP
 	MaxConcurrentRegions int
 	// VM creation: max VMs created in parallel per region
-	MaxVMsPerRegion int
+	MaxNodesPerRegion int
 
 	// VM status fetching: max regions queried in parallel per CSP
 	MaxConcurrentRegionsForStatus int
 	// VM status fetching: max VMs queried in parallel per region
-	MaxVMsPerRegionForStatus int
+	MaxNodesPerRegionForStatus int
 }
 
 // Default rate limit values for CSPs not explicitly configured.
@@ -77,9 +77,9 @@ var defaultRateLimitConfig = RateLimitConfig{
 	RegistrationDelayMinMs:        1000,
 	RegistrationDelayMaxMs:        3000,
 	MaxConcurrentRegions:          30,
-	MaxVMsPerRegion:               20,
+	MaxNodesPerRegion:               20,
 	MaxConcurrentRegionsForStatus: 10,
-	MaxVMsPerRegionForStatus:      30,
+	MaxNodesPerRegionForStatus:      30,
 }
 
 // GlobalMaxConcurrentConnections caps the total number of goroutines
@@ -104,90 +104,90 @@ var rateLimitConfigs = map[string]RateLimitConfig{
 		RegistrationDelayMinMs:        500,
 		RegistrationDelayMaxMs:        2000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 10,
-		MaxVMsPerRegionForStatus:      30,
+		MaxNodesPerRegionForStatus:      30,
 	},
 	Azure: {
 		MaxConcurrentRegistrations:    4,
 		RegistrationDelayMinMs:        500,
 		RegistrationDelayMaxMs:        2000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 8,
-		MaxVMsPerRegionForStatus:      25,
+		MaxNodesPerRegionForStatus:      25,
 	},
 	GCP: {
 		MaxConcurrentRegistrations:    4,
 		RegistrationDelayMinMs:        1000,
 		RegistrationDelayMaxMs:        3000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 12,
-		MaxVMsPerRegionForStatus:      35,
+		MaxNodesPerRegionForStatus:      35,
 	},
 	Alibaba: {
 		MaxConcurrentRegistrations:    3,
 		RegistrationDelayMinMs:        1000,
 		RegistrationDelayMaxMs:        3000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 6,
-		MaxVMsPerRegionForStatus:      20,
+		MaxNodesPerRegionForStatus:      20,
 	},
 	Tencent: {
 		MaxConcurrentRegistrations:    2,
 		RegistrationDelayMinMs:        2000,
 		RegistrationDelayMaxMs:        5000, // strict 10 req/sec limit
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 6,
-		MaxVMsPerRegionForStatus:      20,
+		MaxNodesPerRegionForStatus:      20,
 	},
 	IBM: {
 		MaxConcurrentRegistrations:    3,
 		RegistrationDelayMinMs:        500,
 		RegistrationDelayMaxMs:        2000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 10,
-		MaxVMsPerRegionForStatus:      30,
+		MaxNodesPerRegionForStatus:      30,
 	},
 	NCP: {
 		MaxConcurrentRegistrations:    2,
 		RegistrationDelayMinMs:        1000,
 		RegistrationDelayMaxMs:        3000,
 		MaxConcurrentRegions:          5,
-		MaxVMsPerRegion:               15, // NCP has stricter limits
+		MaxNodesPerRegion:               15, // NCP has stricter limits
 		MaxConcurrentRegionsForStatus: 3,
-		MaxVMsPerRegionForStatus:      15,
+		MaxNodesPerRegionForStatus:      15,
 	},
 	NHN: {
 		MaxConcurrentRegistrations:    2,
 		RegistrationDelayMinMs:        1000,
 		RegistrationDelayMaxMs:        3000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 5,
-		MaxVMsPerRegionForStatus:      20,
+		MaxNodesPerRegionForStatus:      20,
 	},
 	KT: {
 		MaxConcurrentRegistrations:    2,
 		RegistrationDelayMinMs:        1000,
 		RegistrationDelayMaxMs:        3000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 10,
-		MaxVMsPerRegionForStatus:      30,
+		MaxNodesPerRegionForStatus:      30,
 	},
 	OpenStack: {
 		MaxConcurrentRegistrations:    3,
 		RegistrationDelayMinMs:        500,
 		RegistrationDelayMaxMs:        2000,
 		MaxConcurrentRegions:          30,
-		MaxVMsPerRegion:               20,
+		MaxNodesPerRegion:               20,
 		MaxConcurrentRegionsForStatus: 5,
-		MaxVMsPerRegionForStatus:      15,
+		MaxNodesPerRegionForStatus:      15,
 	},
 }
 

@@ -14,12 +14,12 @@ limitations under the License.
 // Package model is to handle object of CB-Tumblebug
 package model
 
-// [Template for MCI Dynamic Provisioning]
+// [Template for Infra Dynamic Provisioning]
 
-// MciDynamicTemplateInfo is struct for MCI Dynamic Template information stored in ETCD
-type MciDynamicTemplateInfo struct {
+// InfraDynamicTemplateInfo is struct for Infra Dynamic Template information stored in ETCD
+type InfraDynamicTemplateInfo struct {
 	// ResourceType is the type of the resource
-	ResourceType string `json:"resourceType" example:"mci"`
+	ResourceType string `json:"resourceType" example:"infra"`
 
 	// Id is unique identifier for the template
 	Id string `json:"id" example:"my-template"`
@@ -32,7 +32,7 @@ type MciDynamicTemplateInfo struct {
 
 	// Source indicates where this template was created from
 	// - "user": manually created by user
-	// - "mci:{nsId}/{mciId}": extracted from an existing MCI
+	// - "infra:{nsId}/{infraId}": extracted from an existing Infra
 	Source string `json:"source" example:"user"`
 
 	// CreatedAt is the creation timestamp
@@ -41,35 +41,35 @@ type MciDynamicTemplateInfo struct {
 	// UpdatedAt is the last update timestamp
 	UpdatedAt string `json:"updatedAt" example:"2024-01-01T00:00:00Z"`
 
-	// MciDynamicReq is the template body (MCI dynamic request)
-	MciDynamicReq MciDynamicReq `json:"mciDynamicReq"`
+	// InfraDynamicReq is the template body (Infra dynamic request)
+	InfraDynamicReq InfraDynamicReq `json:"infraDynamicReq"`
 }
 
-// MciDynamicTemplateReq is struct for creating/updating an MCI Dynamic Template
-type MciDynamicTemplateReq struct {
+// InfraDynamicTemplateReq is struct for creating/updating an Infra Dynamic Template
+type InfraDynamicTemplateReq struct {
 	// Name is the template ID and name
 	Name string `json:"name" validate:"required" example:"my-template"`
 
 	// Description of the template
 	Description string `json:"description" example:"3-tier web application template"`
 
-	// MciDynamicReq is the template body (MCI dynamic request configuration)
-	MciDynamicReq MciDynamicReq `json:"mciDynamicReq" validate:"required"`
+	// InfraDynamicReq is the template body (Infra dynamic request configuration)
+	InfraDynamicReq InfraDynamicReq `json:"infraDynamicReq" validate:"required"`
 }
 
-// TemplateApplyReq is struct for applying a template to create an MCI
+// TemplateApplyReq is struct for applying a template to create an Infra
 // Phase 1: Only name and description overrides are supported
 type TemplateApplyReq struct {
-	// Name for the new MCI to be created from the template
-	Name string `json:"name" validate:"required" example:"my-new-mci"`
+	// Name for the new Infra to be created from the template
+	Name string `json:"name" validate:"required" example:"my-new-infra"`
 
-	// Description for the new MCI (optional, overrides template description)
-	Description string `json:"description" example:"MCI created from template"`
+	// Description for the new Infra (optional, overrides template description)
+	Description string `json:"description" example:"Infra created from template"`
 }
 
-// MciDynamicTemplateListResponse is struct for listing MCI Dynamic Templates
-type MciDynamicTemplateListResponse struct {
-	Templates []MciDynamicTemplateInfo `json:"templates"`
+// InfraDynamicTemplateListResponse is struct for listing Infra Dynamic Templates
+type InfraDynamicTemplateListResponse struct {
+	Templates []InfraDynamicTemplateInfo `json:"templates"`
 }
 
 // [Template for vNet Resource]

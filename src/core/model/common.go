@@ -66,13 +66,13 @@ type ScheduleJobRequest struct {
 	IntervalSeconds int    `json:"intervalSeconds" validate:"required,min=10" example:"60"`    // Execution interval in seconds
 
 	// Job-specific parameters (for registerCspResources)
-	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // (Deprecated) Connection configuration name. Use Provider/Region/Zone instead
-	Provider       string `json:"provider,omitempty" example:"aws"`                      // Cloud provider name. Empty: all providers
-	Region         string `json:"region,omitempty" example:"ap-northeast-2"`             // Region name. Requires Provider. Empty: all regions for the provider
-	Zone           string `json:"zone,omitempty" example:"ap-northeast-2a"`              // Zone name. Requires Provider and Region. Empty: all zones for the region
-	MciNamePrefix  string `json:"mciNamePrefix,omitempty" example:"mci-01"`              // MCI name prefix
-	Option         string `json:"option,omitempty" example:"vNet,securityGroup"`         // Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk, customImage. Empty: all
-	MciFlag        string `json:"mciFlag,omitempty" example:"y"`                         // MCI flag: y or n
+	ConnectionName  string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // (Deprecated) Connection configuration name. Use Provider/Region/Zone instead
+	Provider        string `json:"provider,omitempty" example:"aws"`                      // Cloud provider name. Empty: all providers
+	Region          string `json:"region,omitempty" example:"ap-northeast-2"`             // Region name. Requires Provider. Empty: all regions for the provider
+	Zone            string `json:"zone,omitempty" example:"ap-northeast-2a"`              // Zone name. Requires Provider and Region. Empty: all zones for the region
+	InfraNamePrefix string `json:"infraNamePrefix,omitempty" example:"infra-01"`          // Infra name prefix
+	Option          string `json:"option,omitempty" example:"vNet,securityGroup"`         // Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk, customImage. Empty: all
+	InfraFlag       string `json:"infraFlag,omitempty" example:"y"`                       // Infra flag: y or n
 }
 
 // UpdateScheduleJobRequest is struct for updating a scheduled job
@@ -101,13 +101,13 @@ type ScheduleJobStatus struct {
 	LastResult          string    `json:"lastResult,omitempty" example:"Success (execution #5)"`
 
 	// Job-specific parameters
-	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // (Deprecated)
-	Provider       string `json:"provider,omitempty" example:"aws"`
-	Region         string `json:"region,omitempty" example:"ap-northeast-2"`
-	Zone           string `json:"zone,omitempty" example:"ap-northeast-2a"`
-	MciNamePrefix  string `json:"mciNamePrefix,omitempty" example:"mci-01"`
-	Option         string `json:"option,omitempty" example:""`
-	MciFlag        string `json:"mciFlag,omitempty" example:"y"`
+	ConnectionName  string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // (Deprecated)
+	Provider        string `json:"provider,omitempty" example:"aws"`
+	Region          string `json:"region,omitempty" example:"ap-northeast-2"`
+	Zone            string `json:"zone,omitempty" example:"ap-northeast-2a"`
+	InfraNamePrefix string `json:"infraNamePrefix,omitempty" example:"infra-01"`
+	Option          string `json:"option,omitempty" example:""`
+	InfraFlag       string `json:"infraFlag,omitempty" example:"y"`
 }
 
 // ScheduleJobListResponse is struct for list of scheduled jobs
@@ -163,7 +163,7 @@ type ResourceDeleteResults struct {
 	Results []ResourceDeleteResult `json:"results"`
 }
 
-// OptionalParameter is struct for optional parameter for function (ex. VmId)
+// OptionalParameter is struct for optional parameter for function (ex. NodeId)
 type OptionalParameter struct {
 	Value string
 	Set   bool
@@ -235,12 +235,12 @@ const (
 	StrDataDisk              string = "dataDisk"
 	StrDisk                  string = "disk"
 	StrNLB                   string = "nlb"
-	StrVM                    string = "vm"
-	StrMCI                   string = "mci"
-	StrSubGroup              string = "subGroup"
+	StrNode                  string = "node"
+	StrSpiderVM              string = "vm" // CB-Spider uses "vm" as the resource type for VMs
+	StrInfra                 string = "infra"
+	StrNodeGroup             string = "nodeGroup"
 	StrK8s                   string = "k8s"
 	StrKubernetes            string = "kubernetes"
-	StrNodeGroup             string = "nodegroup"
 	StrCluster               string = "cluster"
 	StrContainer             string = "container"
 	StrNamespace             string = "ns"
@@ -293,8 +293,8 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 	StrSubnet:        func() interface{} { return &SubnetInfo{} },
 	StrDataDisk:      func() interface{} { return &DataDiskInfo{} },
 	StrNLB:           func() interface{} { return &NLBInfo{} },
-	StrVM:            func() interface{} { return &VmInfo{} },
-	StrMCI:           func() interface{} { return &MciInfo{} },
+	StrNode:            func() interface{} { return &NodeInfo{} },
+	StrInfra:         func() interface{} { return &InfraInfo{} },
 	StrK8s:           func() interface{} { return &K8sClusterInfo{} },
 	StrNamespace:     func() interface{} { return &NsInfo{} },
 	StrVPN:           func() interface{} { return &VpnInfo{} },
@@ -444,7 +444,7 @@ type inspectOverview struct {
 	SshKey        int `json:"sshKey"`
 	DataDisk      int `json:"dataDisk"`
 	CustomImage   int `json:"customImage"`
-	Vm            int `json:"vm"`
+	Node            int `json:"node"`
 	NLB           int `json:"nlb"`
 }
 
@@ -532,7 +532,7 @@ type ResourceOnTumblebugInfo struct {
 	IdByTb        string `json:"idByTb"`
 	CspResourceId string `json:"cspResourceId"`
 	NsId          string `json:"nsId"`
-	MciId         string `json:"mciId,omitempty"`
+	InfraId       string `json:"infraId,omitempty"`
 	ObjectKey     string `json:"objectKey"`
 }
 
@@ -561,7 +561,7 @@ type RegisterationOverview struct {
 	SshKey        int `json:"sshKey"`
 	DataDisk      int `json:"dataDisk"`
 	CustomImage   int `json:"customImage"`
-	Vm            int `json:"vm"`
+	Node            int `json:"node"`
 	NLB           int `json:"nlb"`
 	Failed        int `json:"failed"`
 }
@@ -569,7 +569,7 @@ type RegisterationOverview struct {
 // InspectResourcesRequest struct for Inspect Resources Request
 type InspectResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
-	ResourceType   string `json:"resourceType" example:"vNet" enums:"vNet,subnet,securityGroup,sshKey,vm"`
+	ResourceType   string `json:"resourceType" example:"vNet" enums:"vNet,subnet,securityGroup,sshKey,node"`
 }
 
 // CspResourceStatusRequest is struct for requesting CSP resource status from CB-Spider

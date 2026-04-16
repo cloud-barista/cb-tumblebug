@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package infra
 
 import (
@@ -20,12 +20,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func RestCheckMci(c echo.Context) error {
+func RestCheckInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
-	exists, err := infra.CheckMci(nsId, mciId)
+	exists, err := infra.CheckInfra(nsId, infraId)
 
 	type JsonTemplate struct {
 		Exists bool `json:"exists"`
@@ -35,13 +35,13 @@ func RestCheckMci(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-func RestCheckVm(c echo.Context) error {
+func RestCheckNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
-	vmId := c.Param("vmId")
+	infraId := c.Param("infraId")
+	nodeId := c.Param("nodeId")
 
-	exists, err := infra.CheckVm(nsId, mciId, vmId)
+	exists, err := infra.CheckNode(nsId, infraId, nodeId)
 
 	type JsonTemplate struct {
 		Exists bool `json:"exists"`

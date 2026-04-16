@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package resource
 
 import (
@@ -30,24 +30,24 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// RestGetSitesInMci godoc
-// @ID GetSitesInMci
-// @Summary Get sites in MCI
-// @Description Get sites in MCI
+// RestGetSitesInInfra godoc
+// @ID GetSitesInInfra
+// @Summary Get sites in Infra
+// @Description Get sites in Infra
 // @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Success 200 {object} model.SitesInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/site [get]
-func RestGetSitesInMci(c echo.Context) error {
-	// ctx := c.Request().Context() // ctx is defined but not used here as ExtractSitesInfoFromMciInfo doesn't take context yet, but following the requested pattern.
+// @Router /ns/{nsId}/infra/{infraId}/site [get]
+func RestGetSitesInInfra(c echo.Context) error {
+	// ctx := c.Request().Context() // ctx is defined but not used here as ExtractSitesInfoFromInfraInfo doesn't take context yet, but following the requested pattern.
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -57,15 +57,15 @@ func RestGetSitesInMci(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
+	infraId := c.Param("infraId")
+	err = common.CheckString(infraId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	SitesInfo, err := ExtractSitesInfoFromMciInfo(nsId, mciId)
+	SitesInfo, err := ExtractSitesInfoFromInfraInfo(nsId, infraId)
 	if err != nil {
 		log.Err(err).Msg("")
 		res := model.SimpleMsg{
@@ -77,9 +77,9 @@ func RestGetSitesInMci(c echo.Context) error {
 	return c.JSON(http.StatusOK, SitesInfo)
 }
 
-func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
-	// Get MCI info
-	mciInfo, err := infra.GetMciInfo(nsId, mciId)
+func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, error) {
+	// Get Infra info
+	infraInfo, err := infra.GetInfraInfo(nsId, infraId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return nil, err
@@ -89,7 +89,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	checkedVpcs := make(map[string]bool)
 
 	// Newly create the SitesInfo structure
-	sitesInfo := model.NewSiteInfo(nsId, mciId)
+	sitesInfo := model.NewSiteInfo(nsId, infraId)
 
 	sitesInAws := []model.SiteDetail{}
 	sitesInAzure := []model.SiteDetail{}
@@ -98,11 +98,11 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	sitesInTencent := []model.SiteDetail{}
 	sitesInIbm := []model.SiteDetail{}
 	sitesInOpenStack := []model.SiteDetail{}
-	for _, vm := range mciInfo.Vm {
+	for _, node := range infraInfo.Node {
 
-		vNetId := vm.VNetId
+		vNetId := node.VNetId
 		if vNetId == "" {
-			log.Warn().Msgf("VNet ID is empty for VM ID: %s", vm.Id)
+			log.Warn().Msgf("VNet ID is empty for Node ID: %s", node.Id)
 			continue
 		}
 
@@ -111,16 +111,16 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 		}
 		checkedVpcs[vNetId] = true
 
-		providerName := vm.ConnectionConfig.ProviderName
+		providerName := node.ConnectionConfig.ProviderName
 		if providerName == "" {
-			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
+			log.Warn().Msgf("Provider name is empty for Node ID: %s", node.Id)
 			continue
 		}
 
 		// Create and set a site details
 		var site = model.SiteDetail{}
-		site.CSP = vm.ConnectionConfig.ProviderName
-		site.Region = vm.Region.Region
+		site.CSP = node.ConnectionConfig.ProviderName
+		site.Region = node.Region.Region
 
 		// Lowercase the provider name
 		providerName = strings.ToLower(providerName)
@@ -130,7 +130,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 
 			// // Get vNet info
 			// resourceType := "vNet"
-			// resourceId := vm.VNetId
+			// resourceId := node.VNetId
 			// result, err := resource.GetResource(nsId, resourceType, resourceId)
 			// if err != nil {
 			// 	log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
@@ -147,20 +147,20 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 			// lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
 
 			// Set VNet and the last subnet IDs
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 			// site.SubnetId = lastSubnet.CspResourceId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 
 			sitesInAws = append(sitesInAws, site)
 
 		case csp.Azure:
 			// Parse vNet and resource group names
-			parts := strings.Split(vm.CspVNetId, "/")
+			parts := strings.Split(node.CspVNetId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
 			if len(parts) < 9 {
-				log.Warn().Msgf("Invalid VNet ID format for Azure VM ID: %s", vm.Id)
+				log.Warn().Msgf("Invalid VNet ID format for Azure Node ID: %s", node.Id)
 				continue
 			}
 			parsedResourceGroupName := parts[4]
@@ -168,12 +168,12 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 
 			// Set VNet and resource group names
 			// site.VNetId = parsedVirtualNetworkName
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 			site.ResourceGroup = parsedResourceGroupName
 
 			// Get vNet info
 			resourceType := "vNet"
-			resourceId := vm.VNetId
+			resourceId := node.VNetId
 			result, err := resource.GetResource(nsId, resourceType, resourceId)
 			if err != nil {
 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
@@ -200,52 +200,52 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 			site.GatewaySubnetCidr = nextCidr
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 
 			sitesInAzure = append(sitesInAzure, site)
 
 		case csp.GCP:
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 
 			sitesInGcp = append(sitesInGcp, site)
 
 		case csp.Alibaba:
 
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInAlibaba = append(sitesInAlibaba, site)
 
 		case csp.Tencent:
 
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInTencent = append(sitesInTencent, site)
 
 		case csp.IBM:
 			// Set vNet ID
-			site.VNetId = vm.VNetId
+			site.VNetId = node.VNetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInIbm = append(sitesInIbm, site)
 
 		case csp.OpenStack:
 			// Set vNet ID
-			site.VNetId = vm.VNetId
-			site.SubnetId = vm.SubnetId
+			site.VNetId = node.VNetId
+			site.SubnetId = node.SubnetId
 
 			// Set connection name
-			site.ConnectionName = vm.ConnectionName
+			site.ConnectionName = node.ConnectionName
 			sitesInOpenStack = append(sitesInOpenStack, site)
 
 		default:
@@ -283,7 +283,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vpnReq body model.RestPostVpnRequest true "Sites info for VPN configuration"
 // @Param action query string false "Action" Enums(retry)
 // @Success 200 {object} model.SimpleMsg "OK"
@@ -292,7 +292,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vpn [post]
+// @Router /ns/{nsId}/infra/{infraId}/vpn [post]
 func RestPostSiteToSiteVpn(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -304,10 +304,10 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
+	infraId := c.Param("infraId")
+	err = common.CheckString(infraId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
@@ -343,7 +343,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.CreateSiteToSiteVPN(ctx, nsId, mciId, vpnReq, action)
+	resp, err := resource.CreateSiteToSiteVPN(ctx, nsId, infraId, vpnReq, action)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -361,7 +361,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param option query string false "Option" Enums(InfoList, IdList) default(IdList)
 // @Success 200 {object} model.VpnInfoList "OK"
 // @Success 200 {object} model.VpnIdList "OK"
@@ -370,7 +370,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vpn [get]
+// @Router /ns/{nsId}/infra/{infraId}/vpn [get]
 func RestGetAllSiteToSiteVpn(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -382,10 +382,10 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
+	infraId := c.Param("infraId")
+	err = common.CheckString(infraId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
@@ -399,14 +399,14 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 
 	switch option {
 	case "InfoList":
-		vpnInfoList, err := resource.GetAllSiteToSiteVPN(ctx, nsId, mciId)
+		vpnInfoList, err := resource.GetAllSiteToSiteVPN(ctx, nsId, infraId)
 		if err != nil {
 			log.Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 		}
 		return c.JSON(http.StatusOK, vpnInfoList)
 	case "IdList":
-		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(ctx, nsId, mciId)
+		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(ctx, nsId, infraId)
 		if err != nil {
 			log.Err(err).Msg("")
 			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -428,7 +428,7 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param refresh query boolean false "Refresh the resource info from CSPs" default(true)
 // @Success 200 {object} model.VpnInfo "OK"
@@ -437,7 +437,7 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [get]
+// @Router /ns/{nsId}/infra/{infraId}/vpn/{vpnId} [get]
 func RestGetSiteToSiteVpn(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -448,10 +448,10 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
+	infraId := c.Param("infraId")
+	err = common.CheckString(infraId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
@@ -475,7 +475,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	// * Only provide the "refined" detail level for now
 	detail := "refined"
-	resp, err := resource.GetSiteToSiteVPN(ctx, nsId, mciId, vpnId, detail, refreshBool)
+	resp, err := resource.GetSiteToSiteVPN(ctx, nsId, infraId, vpnId, detail, refreshBool)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -495,7 +495,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Success 200 {object} model.SimpleMsg "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
@@ -503,7 +503,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [delete]
+// @Router /ns/{nsId}/infra/{infraId}/vpn/{vpnId} [delete]
 func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -515,10 +515,10 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
+	infraId := c.Param("infraId")
+	err = common.CheckString(infraId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
@@ -531,7 +531,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.DeleteSiteToSiteVPN(ctx, nsId, mciId, vpnId)
+	resp, err := resource.DeleteSiteToSiteVPN(ctx, nsId, infraId, vpnId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -548,7 +548,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param requestId path string true "Request ID"
 // @Success 200 {object} model.Response "OK"
@@ -557,7 +557,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId} [get]
+// @Router /ns/{nsId}/infra/{infraId}/vpn/{vpnId}/request/{requestId} [get]
 func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -568,10 +568,10 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
+	infraId := c.Param("infraId")
+	err = common.CheckString(infraId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
@@ -591,7 +591,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	}
 	reqId = strings.TrimSpace(reqId)
 
-	resp, err := resource.GetRequestStatusOfSiteToSiteVpn(ctx, nsId, mciId, vpnId, reqId)
+	resp, err := resource.GetRequestStatusOfSiteToSiteVpn(ctx, nsId, infraId, vpnId, reqId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

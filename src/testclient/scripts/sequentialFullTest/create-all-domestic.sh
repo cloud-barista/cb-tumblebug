@@ -30,7 +30,7 @@ done
 
 ./create-resource-ns-cloud-domestic.sh "$@"
 
-./create-mci-only.sh "$@"
+./create-infra-only.sh "$@"
 
 duration=$SECONDS
 

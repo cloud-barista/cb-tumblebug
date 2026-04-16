@@ -57,10 +57,10 @@ var RequestSkipPatterns = []SkipRule{
 	// High-frequency polling endpoints from UI (cb-mapui)
 	// These are called every 5-10 seconds and storing their large response bodies
 	// in RequestMap causes unbounded memory growth (memory leak).
-	// MCI list/status polling
-	{Method: "GET", Patterns: []string{"/mci", "option=status"}},
-	{Method: "GET", Patterns: []string{"/mci", "option=id"}},
-	{Method: "GET", Patterns: []string{"/mci", "option=simple"}},
+	// Infra list/status polling
+	{Method: "GET", Patterns: []string{"/infra", "option=status"}},
+	{Method: "GET", Patterns: []string{"/infra", "option=id"}},
+	{Method: "GET", Patterns: []string{"/infra", "option=simple"}},
 
 	// Kubernetes cluster polling
 	{Method: "GET", Patterns: []string{"/k8sCluster"}},
@@ -88,9 +88,9 @@ var APISkipPatterns = []SkipRule{
 	{Patterns: []string{"/tumblebug/readyz"}},
 	{Patterns: []string{"/tumblebug/httpVersion"}},
 
-	// MCI status polling (very frequent) - GET only
-	{Method: "GET", Patterns: []string{"/mci", "option=status"}},
-	{Method: "GET", Patterns: []string{"/mci"}},
+	// Infra status polling (very frequent) - GET only
+	{Method: "GET", Patterns: []string{"/infra", "option=status"}},
+	{Method: "GET", Patterns: []string{"/infra"}},
 
 	// Kubernetes cluster operations - GET only
 	{Method: "GET", Patterns: []string{"/k8sCluster"}},

@@ -2,15 +2,15 @@ tumblebug:
   # Tumblebug API endpoint
   endpoint: http://localhost:1323
   
-  # Namespace and MCI IDs
+  # Namespace and Infra IDs
   demo:
     nsId: default
-    mciId: mci01
+    infraId: infra01
   
-  # MCI Dynamics request body template (JSON)
+  # Infra Dynamics request body template (JSON)
   api:
-    mciDynamic:
-      reqBody: mciDynamic.json
+    infraDynamic:
+      reqBody: infraDynamic.json
 
 # Site-to-site VPN test cases
 # Copy this file to test-config.yaml and modify the test cases as needed.

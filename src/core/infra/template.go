@@ -23,54 +23,54 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// CreateMciDynamicFromTemplate creates an MCI from a template with overrides
-func CreateMciDynamicFromTemplate(ctx context.Context, nsId string, templateId string, applyReq *model.TemplateApplyReq, option string) (*model.MciInfo, error) {
+// CreateInfraDynamicFromTemplate creates an Infra from a template with overrides
+func CreateInfraDynamicFromTemplate(ctx context.Context, nsId string, templateId string, applyReq *model.TemplateApplyReq, option string) (*model.InfraInfo, error) {
 
 	// Get the template
-	templateInfo, err := common.GetMciDynamicTemplate(nsId, templateId)
+	templateInfo, err := common.GetInfraDynamicTemplate(nsId, templateId)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to get template '%s'", templateId)
 		return nil, fmt.Errorf("failed to get template '%s': %w", templateId, err)
 	}
 
-	// Create a copy of MciDynamicReq from the template
-	mciReq := templateInfo.MciDynamicReq
+	// Create a copy of InfraDynamicReq from the template
+	infraReq := templateInfo.InfraDynamicReq
 
 	// Apply overrides (Phase 1: name and description only)
-	mciReq.Name = applyReq.Name
+	infraReq.Name = applyReq.Name
 	if applyReq.Description != "" {
-		mciReq.Description = applyReq.Description
+		infraReq.Description = applyReq.Description
 	}
 
-	// Call the existing CreateMciDynamic function
-	result, err := CreateMciDynamic(ctx, nsId, &mciReq, option)
+	// Call the existing CreateInfraDynamic function
+	result, err := CreateInfraDynamic(ctx, nsId, &infraReq, option)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create MCI from template")
+		log.Error().Err(err).Msg("failed to create Infra from template")
 		return nil, err
 	}
 
 	return result, nil
 }
 
-// ExtractAndCreateTemplate extracts an MCI configuration and creates a template from it
-func ExtractAndCreateTemplate(nsId string, mciId string, templateName string) (model.MciDynamicTemplateInfo, error) {
-	emptyResult := model.MciDynamicTemplateInfo{}
+// ExtractAndCreateTemplate extracts an Infra configuration and creates a template from it
+func ExtractAndCreateTemplate(nsId string, infraId string, templateName string) (model.InfraDynamicTemplateInfo, error) {
+	emptyResult := model.InfraDynamicTemplateInfo{}
 
-	// Extract MCI configuration
-	mciDynamicReq, err := ExtractMciDynamicReqFromMciInfo(nsId, mciId)
+	// Extract Infra configuration
+	infraDynamicReq, err := ExtractInfraDynamicReqFromInfraInfo(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to extract MCI config from '%s'", mciId)
-		return emptyResult, fmt.Errorf("failed to extract MCI config: %w", err)
+		log.Error().Err(err).Msgf("failed to extract Infra config from '%s'", infraId)
+		return emptyResult, fmt.Errorf("failed to extract Infra config: %w", err)
 	}
 
 	// Source info
-	source := fmt.Sprintf("mci:%s/%s", nsId, mciId)
-	description := fmt.Sprintf("Template extracted from MCI '%s' in namespace '%s'", mciId, nsId)
+	source := fmt.Sprintf("infra:%s/%s", nsId, infraId)
+	description := fmt.Sprintf("Template extracted from Infra '%s' in namespace '%s'", infraId, nsId)
 
 	// Create the template using the common package
-	result, err := common.CreateMciDynamicTemplateWithReq(nsId, templateName, description, source, mciDynamicReq)
+	result, err := common.CreateInfraDynamicTemplateWithReq(nsId, templateName, description, source, infraDynamicReq)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create template from MCI")
+		log.Error().Err(err).Msg("failed to create template from Infra")
 		return emptyResult, err
 	}
 

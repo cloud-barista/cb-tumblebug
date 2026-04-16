@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -80,7 +80,7 @@ func releaseBastionSlot(bastionEndpoint string) {
 // can publish real-time log lines without changing its function signature.
 type sshLogMeta struct {
 	XRequestId   string
-	VmId         string
+	NodeId         string
 	CommandIndex int
 }
 
@@ -105,46 +105,46 @@ func getSSHLogMeta(ctx context.Context) *sshLogMeta {
 type cancelInfo struct {
 	CancelFunc context.CancelFunc
 	NsId       string
-	MciId      string
-	VmId       string
+	InfraId    string
+	NodeId       string
 	XRequestId string
 	Index      int
 }
 
 // cancelFuncs stores cancel functions for active command executions
-// Key: "xRequestId:vmId", Value: cancelInfo
-// This allows cancelling running SSH commands per VM and updating their status
+// Key: "xRequestId:nodeId", Value: cancelInfo
+// This allows cancelling running SSH commands per Node and updating their status
 var cancelFuncs sync.Map
 
 // makeCancelKey creates a unique key for cancel function storage
-func makeCancelKey(xRequestId, vmId string) string {
-	return xRequestId + ":" + vmId
+func makeCancelKey(xRequestId, nodeId string) string {
+	return xRequestId + ":" + nodeId
 }
 
-// registerCancelFunc registers a cancel function for an xRequestId and vmId with metadata
-func registerCancelFunc(xRequestId, vmId, nsId, mciId string, index int, cancel context.CancelFunc) {
-	key := makeCancelKey(xRequestId, vmId)
+// registerCancelFunc registers a cancel function for an xRequestId and nodeId with metadata
+func registerCancelFunc(xRequestId, nodeId, nsId, infraId string, index int, cancel context.CancelFunc) {
+	key := makeCancelKey(xRequestId, nodeId)
 	info := cancelInfo{
 		CancelFunc: cancel,
 		NsId:       nsId,
-		MciId:      mciId,
-		VmId:       vmId,
+		InfraId:    infraId,
+		NodeId:     nodeId,
 		XRequestId: xRequestId,
 		Index:      index,
 	}
 	cancelFuncs.Store(key, info)
 }
 
-// unregisterCancelFunc removes a cancel function for an xRequestId and vmId
-func unregisterCancelFunc(xRequestId, vmId string) {
-	key := makeCancelKey(xRequestId, vmId)
+// unregisterCancelFunc removes a cancel function for an xRequestId and nodeId
+func unregisterCancelFunc(xRequestId, nodeId string) {
+	key := makeCancelKey(xRequestId, nodeId)
 	cancelFuncs.Delete(key)
 }
 
-// cancelByKey cancels the command execution for a specific xRequestId and vmId
+// cancelByKey cancels the command execution for a specific xRequestId and nodeId
 // Returns true if the cancel function was found and called
-func cancelByKey(xRequestId, vmId string) bool {
-	key := makeCancelKey(xRequestId, vmId)
+func cancelByKey(xRequestId, nodeId string) bool {
+	key := makeCancelKey(xRequestId, nodeId)
 	if value, ok := cancelFuncs.LoadAndDelete(key); ok {
 		if info, ok := value.(cancelInfo); ok {
 			info.CancelFunc()
@@ -154,30 +154,30 @@ func cancelByKey(xRequestId, vmId string) bool {
 	return false
 }
 
-// CancelActiveCommandsForVm cancels all active command executions for a specific VM
-// This is called when a VM is being terminated to immediately stop SSH sessions
+// CancelActiveCommandsForNode cancels all active command executions for a specific Node
+// This is called when a Node is being terminated to immediately stop SSH sessions
 // It also updates the command status to Cancelled in kvstore
 // Returns the number of cancelled executions
-func CancelActiveCommandsForVm(vmId string) int {
+func CancelActiveCommandsForNode(nodeId string) int {
 	cancelled := 0
 	cancelFuncs.Range(func(key, value interface{}) bool {
 		keyStr, ok := key.(string)
 		if !ok {
 			return true
 		}
-		// Key format is "xRequestId:vmId", check if it ends with ":vmId"
-		suffix := ":" + vmId
+		// Key format is "xRequestId:nodeId", check if it ends with ":nodeId"
+		suffix := ":" + nodeId
 		if len(keyStr) > len(suffix) && keyStr[len(keyStr)-len(suffix):] == suffix {
 			if info, ok := value.(cancelInfo); ok {
-				log.Info().Str("vmId", vmId).Str("key", keyStr).Msg("Cancelling active SSH command due to VM termination")
+				log.Info().Str("nodeId", nodeId).Str("key", keyStr).Msg("Cancelling active SSH command due to VM termination")
 				info.CancelFunc()
 				cancelFuncs.Delete(key)
 
 				// Update command status to Cancelled in kvstore
-				err := UpdateCommandStatusInfo(info.NsId, info.MciId, info.VmId, info.Index,
-					model.CommandStatusCancelled, "Command cancelled due to VM termination", "", "", "")
+				err := UpdateCommandStatusInfo(info.NsId, info.InfraId, info.NodeId, info.Index,
+					model.CommandStatusCancelled, "Command cancelled due to Node termination", "", "", "")
 				if err != nil {
-					log.Warn().Err(err).Str("vmId", vmId).Int("index", info.Index).Msg("Failed to update command status to Cancelled")
+					log.Warn().Err(err).Str("nodeId", nodeId).Int("index", info.Index).Msg("Failed to update command status to Cancelled")
 				}
 
 				cancelled++
@@ -186,15 +186,15 @@ func CancelActiveCommandsForVm(vmId string) int {
 		return true
 	})
 	if cancelled > 0 {
-		log.Info().Str("vmId", vmId).Int("cancelled", cancelled).Msg("Cancelled active SSH commands for terminating VM")
+		log.Info().Str("nodeId", nodeId).Int("cancelled", cancelled).Msg("Cancelled active SSH commands for terminating VM")
 	}
 	return cancelled
 }
 
-// TbMciCmdReqStructLevelValidation is func to validate fields in model.MciCmdReq
-func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
+// TbInfraCmdReqStructLevelValidation is func to validate fields in model.InfraCmdReq
+func TbInfraCmdReqStructLevelValidation(sl validator.StructLevel) {
 
-	// u := sl.Current().Interface().(model.MciCmdReq)
+	// u := sl.Current().Interface().(model.InfraCmdReq)
 
 	// err := common.CheckString(u.Command)
 	// if err != nil {
@@ -203,10 +203,10 @@ func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 	// }
 }
 
-// RemoteCommandToMci is func to command to all VMs in MCI by SSH
-// It now supports user-configurable timeout via MciCmdReq.TimeoutMinutes
+// RemoteCommandToInfra is func to command to all Nodes in Infra by SSH
+// It now supports user-configurable timeout via InfraCmdReq.TimeoutMinutes
 // Returns the task ID in x-task-id for tracking and cancellation
-func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, labelSelector string, req *model.MciCmdReq, xRequestId string) ([]model.SshCmdResult, error) {
+func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeId string, labelSelector string, req *model.InfraCmdReq, xRequestId string) ([]model.SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -214,7 +214,7 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		return nil, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -237,50 +237,50 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		return temp, err
 	}
 
-	check, _ := CheckMci(nsId, mciId)
+	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
 		temp := []model.SshCmdResult{}
-		err := fmt.Errorf("The mci " + mciId + " does not exist.")
+		err := fmt.Errorf("The infra " + infraId + " does not exist.")
 		return temp, err
 	}
 
-	vmList, err := ListVmId(nsId, mciId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if len(vmList) == 0 {
-		err := fmt.Errorf("MCI %s has no VMs to execute commands (status: Empty)", mciId)
+	if len(nodeList) == 0 {
+		err := fmt.Errorf("Infra %s has no Nodes to execute commands (status: Empty)", infraId)
 		return nil, err
 	}
-	if subGroupId != "" {
-		vmListInGroup, err := ListVmBySubGroup(nsId, mciId, subGroupId)
+	if nodeGroupId != "" {
+		nodeListInGroup, err := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
-		if vmListInGroup == nil {
-			err := fmt.Errorf("there is no %s subGroup or VM in the subGroup ", subGroupId)
+		if nodeListInGroup == nil {
+			err := fmt.Errorf("there is no %s nodeGroup or VM in the nodeGroup ", nodeGroupId)
 			return nil, err
 		}
-		vmList = vmListInGroup
+		nodeList = nodeListInGroup
 	}
 
-	if vmId != "" {
-		vmList = []string{vmId}
+	if nodeId != "" {
+		nodeList = []string{nodeId}
 	}
 
 	// Apply label-based filtering if labelSelector is specified
 	if labelSelector != "" {
-		log.Info().Str("labelSelector", labelSelector).Msg("Filtering VMs by label selector")
+		log.Info().Str("labelSelector", labelSelector).Msg("Filtering Nodes by label selector")
 
 		// Add system label conditions
-		systemLabelConditions := fmt.Sprintf("sys.mciId=%s", mciId)
+		systemLabelConditions := fmt.Sprintf("sys.infraId=%s", infraId)
 
-		// Also add subGroupId condition if specified
-		if subGroupId != "" {
-			systemLabelConditions += fmt.Sprintf(",sys.subGroupId=%s", subGroupId)
+		// Also add nodeGroupId condition if specified
+		if nodeGroupId != "" {
+			systemLabelConditions += fmt.Sprintf(",sys.nodeGroupId=%s", nodeGroupId)
 		}
 
 		labelSelector = systemLabelConditions + "," + labelSelector
@@ -288,39 +288,39 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		log.Debug().Str("combinedLabelSelector", labelSelector).Msg("Combined label selector")
 
 		// Query resources using label selector
-		matchedResources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)
+		matchedResources, err := label.GetResourcesByLabelSelector(model.StrNode, labelSelector)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get resources by label selector")
 			return nil, fmt.Errorf("label selector error: %v", err)
 		}
 
 		if len(matchedResources) == 0 {
-			log.Warn().Msg("No VMs matched the label selector criteria")
-			return nil, fmt.Errorf("no VMs matched the label selector: %s", labelSelector)
+			log.Warn().Msg("No Nodes matched the label selector criteria")
+			return nil, fmt.Errorf("no Nodes matched the label selector: %s", labelSelector)
 		}
 
-		// Extract matching VM IDs only
-		filteredVmIds := make([]string, 0, len(matchedResources))
+		// Extract matching Node IDs only
+		filteredNodeIds := make([]string, 0, len(matchedResources))
 		for _, resource := range matchedResources {
-			if vmInfo, ok := resource.(*model.VmInfo); ok {
-				filteredVmIds = append(filteredVmIds, vmInfo.Id)
+			if nodeInfo, ok := resource.(*model.NodeInfo); ok {
+				filteredNodeIds = append(filteredNodeIds, nodeInfo.Id)
 			}
 		}
 
 		log.Info().
-			Int("matchedVMsCount", len(filteredVmIds)).
+			Int("matchedNodesCount", len(filteredNodeIds)).
 			Str("labelSelector", labelSelector).
-			Msg("VMs filtered by label selector")
+			Msg("Nodes filtered by label selector")
 
-		// Replace VM list with label selector filtered VMs
-		vmList = filteredVmIds
+		// Replace Node list with label selector filtered Nodes
+		nodeList = filteredNodeIds
 	}
 
 	// Get effective timeout from request (with validation and defaults)
 	timeoutMinutes := req.GetEffectiveTimeout()
 
 	// Create a parent context with timeout for overall execution
-	// Each VM will have its own child context for individual cancellation
+	// Each Node will have its own child context for individual cancellation
 	timeout := time.Duration(timeoutMinutes) * time.Minute
 	parentCtx, parentCancel := context.WithTimeout(context.Background(), timeout)
 	defer parentCancel() // Ensure parent context is cancelled when function returns
@@ -328,7 +328,7 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 	log.Info().
 		Str("xRequestId", xRequestId).
 		Int("timeoutMinutes", timeoutMinutes).
-		Int("vmCount", len(vmList)).
+		Int("nodeCount", len(nodeList)).
 		Strs("commands", req.Command).
 		Msg("Starting remote command execution")
 
@@ -339,74 +339,74 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 	var resultArray []model.SshCmdResult
 	var completedCount int32
 
-	// Preprocess commands for each VM and add command status info
-	vmCommands := make(map[string][]string)
-	vmCommandIndices := make(map[string]int) // Track command index for each VM
+	// Preprocess commands for each Node and add command status info
+	nodeCommands := make(map[string][]string)
+	nodeCommandIndices := make(map[string]int) // Track command index for each VM
 
-	for i, targetVmId := range vmList {
+	for i, targetNodeId := range nodeList {
 		processedCommands := make([]string, len(req.Command))
 		for j, cmd := range req.Command {
-			processedCmd, err := processCommand(cmd, nsId, mciId, targetVmId, i)
+			processedCmd, err := processCommand(cmd, nsId, infraId, targetNodeId, i)
 			if err != nil {
 				return nil, err
 			}
 			processedCommands[j] = processedCmd
 		}
-		vmCommands[targetVmId] = processedCommands
+		nodeCommands[targetNodeId] = processedCommands
 
-		// Add command status info for this VM
+		// Add command status info for this Node
 		combinedCommand := strings.Join(req.Command, " && ")
 		combinedProcessedCommand := strings.Join(processedCommands, " && ")
 
-		cmdIndex, err := AddCommandStatusInfo(nsId, mciId, targetVmId, xRequestId, combinedCommand, combinedProcessedCommand)
+		cmdIndex, err := AddCommandStatusInfo(nsId, infraId, targetNodeId, xRequestId, combinedCommand, combinedProcessedCommand)
 		if err != nil {
-			log.Error().Err(err).Str("vmId", targetVmId).Msg("Failed to add command status info")
+			log.Error().Err(err).Str("nodeId", targetNodeId).Msg("Failed to add command status info")
 			// Continue with execution even if status tracking fails
 		} else {
-			vmCommandIndices[targetVmId] = cmdIndex
+			nodeCommandIndices[targetNodeId] = cmdIndex
 		}
 	}
 
-	// Execute commands in parallel using goroutines with per-VM context
-	for targetVmId, commands := range vmCommands {
+	// Execute commands in parallel using goroutines with per-Node context
+	for targetNodeId, commands := range nodeCommands {
 		wg.Add(1)
-		go func(vmId string, cmds []string, cmdIndex int) {
+		go func(nodeId string, cmds []string, cmdIndex int) {
 			defer wg.Done()
 
-			// Create per-VM cancellable context (child of parent context)
-			vmCtx, vmCancel := context.WithCancel(parentCtx)
-			registerCancelFunc(xRequestId, vmId, nsId, mciId, cmdIndex, vmCancel)
+			// Create per-Node cancellable context (child of parent context)
+			nodeCtx, nodeCancel := context.WithCancel(parentCtx)
+			registerCancelFunc(xRequestId, nodeId, nsId, infraId, cmdIndex, nodeCancel)
 
 			// Inject SSE streaming metadata into context so runSSHWithContext can publish log lines
-			vmCtx = withSSHLogMeta(vmCtx, &sshLogMeta{
+			nodeCtx = withSSHLogMeta(nodeCtx, &sshLogMeta{
 				XRequestId:   xRequestId,
-				VmId:         vmId,
+				NodeId:       nodeId,
 				CommandIndex: cmdIndex,
 			})
 
 			// Execute and clean up
-			result := runRemoteCommandWithContextAndStatus(vmCtx, nsId, mciId, vmId, req.UserName, cmds, cmdIndex)
+			result := runRemoteCommandWithContextAndStatus(nodeCtx, nsId, infraId, nodeId, req.UserName, cmds, cmdIndex)
 
 			// Unregister cancel func after completion
-			unregisterCancelFunc(xRequestId, vmId)
-			vmCancel() // Release resources
+			unregisterCancelFunc(xRequestId, nodeId)
+			nodeCancel() // Release resources
 
 			resultMutex.Lock()
 			resultArray = append(resultArray, result)
 			completedCount++
 			resultMutex.Unlock()
-		}(targetVmId, commands, vmCommandIndices[targetVmId])
+		}(targetNodeId, commands, nodeCommandIndices[targetNodeId])
 	}
 	wg.Wait() // goroutine sync wg
 
 	// Publish CommandDone event to SSE subscribers
-	completedVms := 0
-	failedVms := 0
+	completedNodes := 0
+	failedNodes := 0
 	for _, r := range resultArray {
 		if r.Err != nil {
-			failedVms++
+			failedNodes++
 		} else {
-			completedVms++
+			completedNodes++
 		}
 	}
 	// Calculate wall clock elapsed from the start of the parent context
@@ -421,9 +421,9 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		Type:      model.EventCommandDone,
 		Timestamp: time.Now().Format(time.RFC3339Nano),
 		Summary: &model.CommandDoneSummary{
-			TotalVms:       len(vmList),
-			CompletedVms:   completedVms,
-			FailedVms:      failedVms,
+			TotalNodes:       len(nodeList),
+			CompletedNodes:   completedNodes,
+			FailedNodes:      failedNodes,
 			ElapsedSeconds: elapsedSec,
 		},
 	})
@@ -432,13 +432,13 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 }
 
 // runRemoteCommandWithContextAndStatus executes SSH command with context and updates status
-func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId, userName string, cmds []string, cmdIndex int) model.SshCmdResult {
-	vmIP, _, _, err := GetVmIp(nsId, mciId, vmId)
+func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, nodeId, userName string, cmds []string, cmdIndex int) model.SshCmdResult {
+	nodeIP, _, _, err := GetNodeIp(nsId, infraId, nodeId)
 
 	result := model.SshCmdResult{
-		MciId:   mciId,
-		VmId:    vmId,
-		VmIp:    vmIP,
+		InfraId: infraId,
+		NodeId:    nodeId,
+		NodeIp:    nodeIP,
 		Command: make(map[int]string),
 		Stdout:  make(map[int]string),
 		Stderr:  make(map[int]string),
@@ -450,7 +450,7 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId
 
 	// Update status to Handling
 	if cmdIndex > 0 {
-		if updateErr := UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusHandling, "", "", "", ""); updateErr != nil {
+		if updateErr := UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusHandling, "", "", "", ""); updateErr != nil {
 			log.Error().Err(updateErr).Int("cmdIndex", cmdIndex).Msg("Failed to update command status to Handling")
 		}
 	}
@@ -458,38 +458,38 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId
 	if err != nil {
 		result.Err = err
 		if cmdIndex > 0 {
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM IP", err.Error(), "", "")
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Failed to get Node IP", err.Error(), "", "")
 		}
 		return result
 	}
 
-	// Check VM status before executing SSH command
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	// Check Node status before executing SSH command
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		result.Err = fmt.Errorf("failed to get VM status: %v", err)
+		result.Err = fmt.Errorf("failed to get Node status: %v", err)
 		if cmdIndex > 0 {
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM status", err.Error(), "", "")
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Failed to get Node status", err.Error(), "", "")
 		}
 		return result
 	}
 
-	// Validate VM status for SSH execution
-	if vmInfo.Status != model.StatusRunning {
+	// Validate Node status for SSH execution
+	if nodeInfo.Status != model.StatusRunning {
 		var errorMsg string
-		if vmInfo.Status == model.StatusTerminated {
-			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. SSH connection is impossible for terminated VMs", vmId, vmInfo.Status)
+		if nodeInfo.Status == model.StatusTerminated {
+			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status. SSH connection is impossible for terminated Nodes", nodeId, nodeInfo.Status)
 		} else {
-			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 		}
 		result.Err = fmt.Errorf(errorMsg)
 		if cmdIndex > 0 {
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "VM not in running status", errorMsg, "", "")
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Node not in running status", errorMsg, "", "")
 		}
 		return result
 	}
 
 	// Execute command with context
-	stdout, stderr, err := RunRemoteCommandWithContext(ctx, nsId, mciId, vmId, userName, cmds)
+	stdout, stderr, err := RunRemoteCommandWithContext(ctx, nsId, infraId, nodeId, userName, cmds)
 
 	result.Stdout = stdout
 	result.Stderr = stderr
@@ -505,20 +505,20 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId
 			status = model.CommandStatusTimeout
 			summary = "Command execution timed out"
 		} else if ctx.Err() == context.Canceled {
-			// Context was cancelled - could be user cancel or VM termination
+			// Context was cancelled - could be user cancel or Node termination
 			// Check if status was already updated to Cancelled, if not, update it now
 			if cmdIndex > 0 {
-				existingStatus, getErr := GetCommandStatusInfo(nsId, mciId, vmId, cmdIndex)
+				existingStatus, getErr := GetCommandStatusInfo(nsId, infraId, nodeId, cmdIndex)
 				if getErr == nil && existingStatus != nil && existingStatus.Status != model.CommandStatusCancelled {
 					// Status not yet updated to Cancelled, do it now
 					stdoutStr := mapToString(stdout)
 					stderrStr := mapToString(stderr)
-					UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCancelled,
+					UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusCancelled,
 						"Command execution cancelled", err.Error(), stdoutStr, stderrStr)
 				}
 			}
 			log.Info().
-				Str("vmId", vmId).
+				Str("nodeId", nodeId).
 				Int("cmdIndex", cmdIndex).
 				Msg("Command execution was cancelled")
 			return result
@@ -530,7 +530,7 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId
 		if cmdIndex > 0 {
 			stdoutStr := mapToString(stdout)
 			stderrStr := mapToString(stderr)
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, status, summary, err.Error(), stdoutStr, stderrStr)
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, status, summary, err.Error(), stdoutStr, stderrStr)
 		}
 		return result
 	}
@@ -539,10 +539,10 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId
 	if cmdIndex > 0 {
 		stdoutStr := mapToString(stdout)
 		stderrStr := mapToString(stderr)
-		UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr, stderrStr)
+		UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr, stderrStr)
 	}
 
-	log.Debug().Str("vmId", vmId).Msg("Command executed successfully")
+	log.Debug().Str("nodeId", nodeId).Msg("Command executed successfully")
 	return result
 }
 
@@ -556,45 +556,45 @@ func mapToString(m map[int]string) string {
 }
 
 // resolveTargetIpForBastion returns the IP that should be used as the SSH tunnel
-// destination for the given target VM.
+// destination for the given target Node.
 //
-// For same-MCI/same-NS bastions the target's privateIP is returned unchanged, because
+// For same-Infra/same-NS bastions the target's privateIP is returned unchanged, because
 // the bastion is on the same network and can reach it directly.
 //
-// For cross-MCI or cross-NS bastions the bastion host likely cannot route to the target's
+// For cross-Infra or cross-NS bastions the bastion host likely cannot route to the target's
 // private network (e.g. OpenStack Neutron subnet). In that case the function prefers the
-// public IP (e.g. OpenStack floating IP) retrieved first from the stored VM record and,
-// if that is empty, via a live CSP fetch (same path as GetMciAccessInfo).
+// public IP (e.g. OpenStack floating IP) retrieved first from the stored Node record and,
+// if that is empty, via a live CSP fetch (same path as GetInfraAccessInfo).
 //
-// nsId/mciId/vmId identify the *target* VM; bastionNode identifies the bastion.
-func resolveTargetIpForBastion(nsId, mciId, vmId string, bastionNode model.BastionNode) string {
+// nsId/infraId/nodeId identify the *target* VM; bastionNode identifies the bastion.
+func resolveTargetIpForBastion(nsId, infraId, nodeId string, bastionNode model.BastionNode) string {
 	bastionNsId := bastionNode.NsId
 	if bastionNsId == "" {
 		bastionNsId = nsId
 	}
 
-	isCrossMci := bastionNode.MciId != mciId || bastionNsId != nsId
-	if !isCrossMci {
-		// Same MCI/NS — the bastion can reach the private IP directly.
-		_, privateIP, _, err := GetVmIp(nsId, mciId, vmId)
+	isCrossInfra := bastionNode.InfraId != infraId || bastionNsId != nsId
+	if !isCrossInfra {
+		// Same Infra/NS — the bastion can reach the private IP directly.
+		_, privateIP, _, err := GetNodeIp(nsId, infraId, nodeId)
 		if err != nil {
 			return ""
 		}
 		return privateIP
 	}
 
-	// Cross-MCI/cross-NS: prefer public IP.
-	publicIP, privateIP, _, err := GetVmIp(nsId, mciId, vmId)
+	// Cross-Infra/cross-NS: prefer public IP.
+	publicIP, privateIP, _, err := GetNodeIp(nsId, infraId, nodeId)
 	if err != nil {
 		return ""
 	}
 	if publicIP == "" {
-		// publicIP not in etcd — do a live CSP fetch (same path as GetMciAccessInfo).
-		if liveInfo, liveErr := GetVmCurrentPublicIp(nsId, mciId, vmId); liveErr == nil && liveInfo.PublicIp != "" {
+		// publicIP not in etcd — do a live CSP fetch (same path as GetInfraAccessInfo).
+		if liveInfo, liveErr := GetNodeCurrentPublicIp(nsId, infraId, nodeId); liveErr == nil && liveInfo.PublicIp != "" {
 			log.Info().
-				Str("vmId", vmId).
+				Str("nodeId", nodeId).
 				Str("publicIP", liveInfo.PublicIp).
-				Msg("Cross-MCI bastion: retrieved publicIP from CSP (not in stored VM info)")
+				Msg("Cross-Infra bastion: retrieved publicIP from CSP (not in stored Node info)")
 			publicIP = liveInfo.PublicIp
 		}
 	}
@@ -602,15 +602,15 @@ func resolveTargetIpForBastion(nsId, mciId, vmId string, bastionNode model.Basti
 		log.Info().
 			Str("privateIP", privateIP).
 			Str("publicIP", publicIP).
-			Msg("Cross-MCI bastion: using publicIP as tunnel target (privateIP may not be routable from bastion)")
+			Msg("Cross-Infra bastion: using publicIP as tunnel target (privateIP may not be routable from bastion)")
 		return publicIP
 	}
 	return privateIP
 }
 
-// RunRemoteCommandWithContext executes SSH commands to a VM with context-based timeout and cancellation
+// RunRemoteCommandWithContext executes SSH commands to a Node with context-based timeout and cancellation
 // This is the enhanced version that properly propagates context for cancellation support
-func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
+func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId string, nodeId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
 
 	// Check if context is already cancelled
 	select {
@@ -619,14 +619,14 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 	default:
 	}
 
-	// Get the private IP and SSH port; public IP resolution (for cross-MCI bastions) is
+	// Get the private IP and SSH port; public IP resolution (for cross-Infra bastions) is
 	// deferred until after the bastion node is known (see resolveTargetIpForBastion below).
-	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
+	_, targetNodeIP, targetSshPort, err := GetNodeIp(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
-	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, givenUserName)
+	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, infraId, nodeId, targetNodeIP, targetSshPort, givenUserName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
@@ -640,23 +640,23 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 	}
 
 	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
-	bastionNodes, err := GetBastionNodes(nsId, mciId, vmId)
+	bastionNodes, err := GetBastionNodes(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 
 	if len(bastionNodes) == 0 {
-		err = fmt.Errorf("no bastion nodes available for VM (ID: %s) in MCI (ID: %s)", vmId, mciId)
+		err = fmt.Errorf("no bastion nodes available for VM (ID: %s) in Infra (ID: %s)", nodeId, infraId)
 		log.Error().Err(err).Msg("")
 
 		// Assign a Bastion if none (randomly)
-		_, err = SetBastionNodes(nsId, mciId, vmId, "", "", "")
+		_, err = SetBastionNodes(nsId, infraId, nodeId, "", "", "")
 		if err != nil {
 			log.Error().Err(err).Msg("no bastion nodes available")
 			return map[int]string{}, map[int]string{}, err
 		}
-		bastionNodes, err = GetBastionNodes(nsId, mciId, vmId)
+		bastionNodes, err = GetBastionNodes(nsId, infraId, nodeId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return map[int]string{}, map[int]string{}, err
@@ -670,9 +670,9 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 
 	bastionNode := bastionNodes[0]
 
-	// Validate bastion node has valid VM ID
-	if bastionNode.VmId == "" {
-		err = fmt.Errorf("bastion node has empty VM ID")
+	// Validate bastion node has valid Node ID
+	if bastionNode.NodeId == "" {
+		err = fmt.Errorf("bastion node has empty Node ID")
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
@@ -683,15 +683,15 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 		bastionNsId = nsId
 	}
 
-	// For cross-MCI/cross-NS bastions the bastion may not be able to route to the target's
+	// For cross-Infra/cross-NS bastions the bastion may not be able to route to the target's
 	// private network (e.g. OpenStack Neutron). resolveTargetIpForBastion handles this by
 	// preferring the public IP (with a live CSP fetch fallback if etcd has no public IP).
-	if resolved := resolveTargetIpForBastion(nsId, mciId, vmId, bastionNode); resolved != "" {
-		targetVmIP = resolved
+	if resolved := resolveTargetIpForBastion(nsId, infraId, nodeId, bastionNode); resolved != "" {
+		targetNodeIP = resolved
 	}
 
-	// use public IP of the bastion VM
-	bastionIp, _, bastionSshPort, err := GetVmIp(bastionNsId, bastionNode.MciId, bastionNode.VmId)
+	// use public IP of the bastion Node
+	bastionIp, _, bastionSshPort, err := GetNodeIp(bastionNsId, bastionNode.InfraId, bastionNode.NodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
@@ -699,19 +699,19 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 
 	// Validate bastion IP before proceeding
 	if bastionIp == "" {
-		err = fmt.Errorf("bastion VM (ID: %s) does not have a public IP address", bastionNode.VmId)
+		err = fmt.Errorf("bastion VM (ID: %s) does not have a public IP address", bastionNode.NodeId)
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 
 	// Validate IP address format
 	if net.ParseIP(bastionIp) == nil {
-		err = fmt.Errorf("bastion VM (ID: %s) has invalid IP address: %s", bastionNode.VmId, bastionIp)
+		err = fmt.Errorf("bastion VM (ID: %s) has invalid IP address: %s", bastionNode.NodeId, bastionIp)
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 
-	bastionUserName, bastionSshKey, err := VerifySshUserName(bastionNsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
+	bastionUserName, bastionSshKey, err := VerifySshUserName(bastionNsId, bastionNode.InfraId, bastionNode.NodeId, bastionIp, bastionSshPort, givenUserName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
@@ -721,7 +721,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 
 	// Log bastion connection details for debugging
 	log.Debug().
-		Str("bastionVmId", bastionNode.VmId).
+		Str("bastionNodeId", bastionNode.NodeId).
 		Str("bastionIp", bastionIp).
 		Int("bastionPort", bastionSshPort).
 		Str("bastionEndpoint", bastionEndpoint).
@@ -734,13 +734,13 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 		PrivateKey: []byte(bastionSshKey),
 	}
 
-	log.Debug().Msg("[SSH] " + mciId + "." + vmId + "(" + targetVmIP + ")" + " with userName: " + targetUserName)
+	log.Debug().Msg("[SSH] " + infraId + "." + nodeId + "(" + targetNodeIP + ")" + " with userName: " + targetUserName)
 	for i, v := range cmds {
 		log.Debug().Msg("[SSH] cmd[" + fmt.Sprint(i) + "]: " + v)
 	}
 
-	// Set VM SSH config (targetEndpoint, userName, Private Key)
-	targetEndpoint := fmt.Sprintf("%s:%d", targetVmIP, targetSshPort)
+	// Set Node SSH config (targetEndpoint, userName, Private Key)
+	targetEndpoint := fmt.Sprintf("%s:%d", targetNodeIP, targetSshPort)
 	targetSshInfo := model.SshInfo{
 		EndPoint:   targetEndpoint,
 		UserName:   targetUserName,
@@ -749,14 +749,14 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 
 	// Set TOFU context for bastion and target VMs
 	bastionTofuCtx := tofuContext{
-		NsId:  bastionNsId,
-		MciId: bastionNode.MciId,
-		VmId:  bastionNode.VmId,
+		NsId:    bastionNsId,
+		InfraId: bastionNode.InfraId,
+		NodeId:  bastionNode.NodeId,
 	}
 	targetTofuCtx := tofuContext{
-		NsId:  nsId,
-		MciId: mciId,
-		VmId:  vmId,
+		NsId:    nsId,
+		InfraId: infraId,
+		NodeId:  nodeId,
 	}
 
 	// Execute SSH with context-based timeout and cancellation
@@ -771,21 +771,21 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 // RunRemoteCommand is the legacy function for backward compatibility
 // It calls RunRemoteCommandWithContext with a background context (no timeout)
 // Deprecated: Use RunRemoteCommandWithContext for new implementations
-func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
-	return RunRemoteCommandWithContext(context.Background(), nsId, mciId, vmId, givenUserName, cmds)
+func RunRemoteCommand(nsId string, infraId string, nodeId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
+	return RunRemoteCommandWithContext(context.Background(), nsId, infraId, nodeId, givenUserName, cmds)
 }
 
-// RunRemoteCommandAsync is func to execute a SSH command to a VM (async call)
-func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, givenUserName string, cmd []string, returnResult *[]model.SshCmdResult) {
+// RunRemoteCommandAsync is func to execute a SSH command to a Node (async call)
+func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId string, givenUserName string, cmd []string, returnResult *[]model.SshCmdResult) {
 
 	defer wg.Done() //goroutine sync done
 
-	vmIP, _, _, err := GetVmIp(nsId, mciId, vmId)
+	nodeIP, _, _, err := GetNodeIp(nsId, infraId, nodeId)
 
 	sshResultTmp := model.SshCmdResult{}
-	sshResultTmp.MciId = mciId
-	sshResultTmp.VmId = vmId
-	sshResultTmp.VmIp = vmIP
+	sshResultTmp.InfraId = infraId
+	sshResultTmp.NodeId = nodeId
+	sshResultTmp.NodeIp = nodeIP
 	sshResultTmp.Command = make(map[int]string)
 	for i, c := range cmd {
 		sshResultTmp.Command[i] = c
@@ -797,21 +797,21 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 		return
 	}
 
-	// Check VM status before executing SSH command
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	// Check Node status before executing SSH command
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		sshResultTmp.Err = fmt.Errorf("failed to get VM status: %v", err)
+		sshResultTmp.Err = fmt.Errorf("failed to get Node status: %v", err)
 		*returnResult = append(*returnResult, sshResultTmp)
 		return
 	}
 
-	// Validate VM status for SSH execution
-	if vmInfo.Status != model.StatusRunning {
+	// Validate Node status for SSH execution
+	if nodeInfo.Status != model.StatusRunning {
 		var errorMsg string
-		if vmInfo.Status == model.StatusTerminated {
-			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. SSH connection is impossible for terminated VMs", vmId, vmInfo.Status)
+		if nodeInfo.Status == model.StatusTerminated {
+			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status. SSH connection is impossible for terminated Nodes", nodeId, nodeInfo.Status)
 		} else {
-			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 		}
 		sshResultTmp.Err = fmt.Errorf(errorMsg)
 		*returnResult = append(*returnResult, sshResultTmp)
@@ -819,7 +819,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 	}
 
 	// RunRemoteCommand
-	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, mciId, vmId, givenUserName, cmd)
+	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, infraId, nodeId, givenUserName, cmd)
 
 	if err != nil {
 		sshResultTmp.Stdout = stdoutResults
@@ -839,18 +839,18 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 	*returnResult = append(*returnResult, sshResultTmp)
 }
 
-// RunRemoteCommandAsyncWithStatus is func to execute a SSH command to a VM (async call) with command status tracking
+// RunRemoteCommandAsyncWithStatus is func to execute a SSH command to a Node (async call) with command status tracking
 // Deprecated: Use runRemoteCommandWithContextAndStatus instead, which supports context-based cancellation
-func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId string, vmId string, givenUserName string, cmd []string, cmdIndex int, returnResult *[]model.SshCmdResult) {
+func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, infraId string, nodeId string, givenUserName string, cmd []string, cmdIndex int, returnResult *[]model.SshCmdResult) {
 
 	defer wg.Done() //goroutine sync done
 
-	vmIP, _, _, err := GetVmIp(nsId, mciId, vmId)
+	nodeIP, _, _, err := GetNodeIp(nsId, infraId, nodeId)
 
 	sshResultTmp := model.SshCmdResult{}
-	sshResultTmp.MciId = mciId
-	sshResultTmp.VmId = vmId
-	sshResultTmp.VmIp = vmIP
+	sshResultTmp.InfraId = infraId
+	sshResultTmp.NodeId = nodeId
+	sshResultTmp.NodeIp = nodeIP
 	sshResultTmp.Command = make(map[int]string)
 	for i, c := range cmd {
 		sshResultTmp.Command[i] = c
@@ -858,7 +858,7 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 
 	// Update status to Handling
 	if cmdIndex > 0 {
-		err := UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusHandling, "", "", "", "")
+		err := UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusHandling, "", "", "", "")
 		if err != nil {
 			log.Error().Err(err).Int("cmdIndex", cmdIndex).Msg("Failed to update command status to Handling")
 		}
@@ -868,36 +868,36 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 		sshResultTmp.Err = err
 		// Update status to Failed
 		if cmdIndex > 0 {
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM IP", err.Error(), "", "")
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Failed to get Node IP", err.Error(), "", "")
 		}
 		*returnResult = append(*returnResult, sshResultTmp)
 		return
 	}
 
-	// Check VM status before executing SSH command
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	// Check Node status before executing SSH command
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		sshResultTmp.Err = fmt.Errorf("failed to get VM status: %v", err)
+		sshResultTmp.Err = fmt.Errorf("failed to get Node status: %v", err)
 		// Update status to Failed
 		if cmdIndex > 0 {
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM status", err.Error(), "", "")
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Failed to get Node status", err.Error(), "", "")
 		}
 		*returnResult = append(*returnResult, sshResultTmp)
 		return
 	}
 
-	// Validate VM status for SSH execution
-	if vmInfo.Status != model.StatusRunning {
+	// Validate Node status for SSH execution
+	if nodeInfo.Status != model.StatusRunning {
 		var errorMsg string
-		if vmInfo.Status == model.StatusTerminated {
-			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. SSH connection is impossible for terminated VMs", vmId, vmInfo.Status)
+		if nodeInfo.Status == model.StatusTerminated {
+			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status. SSH connection is impossible for terminated Nodes", nodeId, nodeInfo.Status)
 		} else {
-			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 		}
 		sshResultTmp.Err = fmt.Errorf(errorMsg)
 		// Update status to Failed
 		if cmdIndex > 0 {
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "VM not in running status", errorMsg, "", "")
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Node not in running status", errorMsg, "", "")
 		}
 		*returnResult = append(*returnResult, sshResultTmp)
 		return
@@ -916,7 +916,7 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 
 	// Execute command in a separate goroutine
 	go func() {
-		stdout, stderr, err := RunRemoteCommand(nsId, mciId, vmId, givenUserName, cmd)
+		stdout, stderr, err := RunRemoteCommand(nsId, infraId, nodeId, givenUserName, cmd)
 		resultChan <- struct {
 			stdout map[int]string
 			stderr map[int]string
@@ -944,7 +944,7 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 				for _, v := range result.stderr {
 					stderrStr += v + "\n"
 				}
-				UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Command execution failed", result.err.Error(), stdoutStr, stderrStr)
+				UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Command execution failed", result.err.Error(), stdoutStr, stderrStr)
 			}
 			*returnResult = append(*returnResult, sshResultTmp)
 			return
@@ -969,7 +969,7 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 			for _, v := range result.stderr {
 				stderrStr += v + "\n"
 			}
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr, stderrStr)
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr, stderrStr)
 		}
 		*returnResult = append(*returnResult, sshResultTmp)
 
@@ -980,13 +980,13 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 
 		// Update status to Timeout
 		if cmdIndex > 0 {
-			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusTimeout, "Command execution timed out", timeoutErr.Error(), "", "")
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusTimeout, "Command execution timed out", timeoutErr.Error(), "", "")
 		}
 
 		log.Error().
 			Str("nsId", nsId).
-			Str("mciId", mciId).
-			Str("vmId", vmId).
+			Str("infraId", infraId).
+			Str("nodeId", nodeId).
 			Int("cmdIndex", cmdIndex).
 			Msg("Command execution timed out")
 
@@ -995,12 +995,12 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 }
 
 // VerifySshUserName is func to verify SSH username
-func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshPort int, givenUserName string) (string, string, error) {
+func VerifySshUserName(nsId string, infraId string, nodeId string, nodeIp string, sshPort int, givenUserName string) (string, string, error) {
 
 	// Disable the verification of SSH username (until bastion host is supported)
 
 	// // find vaild username
-	// userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mciId, vmId)
+	// userName, verifiedUserName, privateKey := GetNodeSshKey(nsId, infraId, nodeId)
 	// userNames := []string{
 	// 	model.SshDefaultUserName[0],
 	// 	userName,
@@ -1015,8 +1015,8 @@ func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshP
 
 	// if verifiedUserName != "" {
 	// 	/* Code for strict check in advance with real SSH (but slow down speed)
-	// 	fmt.Printf("\n[Check SSH] (%s) with userName: %s\n", vmIp, verifiedUserName)
-	// 	_, err := RunRemoteCommand(vmIp, sshPort, verifiedUserName, privateKey, cmd)
+	// 	fmt.Printf("\n[Check SSH] (%s) with userName: %s\n", nodeIp, verifiedUserName)
+	// 	_, err := RunRemoteCommand(nodeIp, sshPort, verifiedUserName, privateKey, cmd)
 	// 	if err != nil {
 	// 		return "", "", fmt.Errorf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
 	// 	}*/
@@ -1029,8 +1029,8 @@ func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshP
 	// log.Debug().Msg("[Retrieve ssh username from the given list]")
 	// for _, v := range userNames {
 	// 	if v != "" {
-	// 		fmt.Printf("[Check SSH] (%s) with userName: %s\n", vmIp, v)
-	// 		_, err := RunRemoteCommand(vmIp, sshPort, v, privateKey, cmd)
+	// 		fmt.Printf("[Check SSH] (%s) with userName: %s\n", nodeIp, v)
+	// 		_, err := RunRemoteCommand(nodeIp, sshPort, v, privateKey, cmd)
 	// 		if err != nil {
 	// 			fmt.Printf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
 	// 		} else {
@@ -1042,7 +1042,7 @@ func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshP
 	// 	}
 	// }
 
-	userName, _, privateKey, err := GetVmSshKey(nsId, mciId, vmId)
+	userName, _, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", "", err
@@ -1066,7 +1066,7 @@ func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshP
 	// Disable the verification of SSH username (until bastion host is supported)
 
 	// if theUserName != "" {
-	// 	err := UpdateVmSshKey(nsId, mciId, vmId, theUserName)
+	// 	err := UpdateNodeSshKey(nsId, infraId, nodeId, theUserName)
 	// 	if err != nil {
 	// 		log.Error().Err(err).Msg("")
 	// 		return "", "", err
@@ -1117,14 +1117,14 @@ func CheckConnectivity(host string, port string) error {
 	return fmt.Errorf("SSH Port is NOT accessible after %d attempts: %v", retrycheck, lastErr)
 }
 
-// GetVmSshKey is func to get VM SShKey. Returns username, verifiedUsername, privateKey
-func GetVmSshKey(nsId string, mciId string, vmId string) (string, string, string, error) {
+// GetNodeSshKey is func to get Node SshKey. Returns username, verifiedUsername, privateKey
+func GetNodeSshKey(nsId string, infraId string, nodeId string) (string, string, string, error) {
 
 	var content struct {
 		SshKeyId string `json:"sshKeyId"`
 	}
 
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
@@ -1169,18 +1169,18 @@ func GetVmSshKey(nsId string, mciId string, vmId string) (string, string, string
 	return keyContent.Username, keyContent.VerifiedUsername, privateKey, nil
 }
 
-// UpdateVmSshKey is func to update VM SShKey
-func UpdateVmSshKey(nsId string, mciId string, vmId string, verifiedUserName string) error {
+// UpdateNodeSshKey is func to update Node SshKey
+func UpdateNodeSshKey(nsId string, infraId string, nodeId string, verifiedUserName string) error {
 
 	var content struct {
 		SshKeyId string `json:"sshKeyId"`
 	}
 
-	key := common.GenMciKey(nsId, mciId, vmId)
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In UpdateVmSshKey(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In UpdateNodeSshKey(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -1212,7 +1212,7 @@ func init() {
 // SshHostKeyMismatchError represents an SSH host key verification failure
 // This error occurs when the stored host key doesn't match the server's current host key
 type SshHostKeyMismatchError struct {
-	VmId                string
+	NodeId              string
 	StoredKeyType       string
 	StoredFingerprint   string
 	ReceivedKeyType     string
@@ -1220,10 +1220,10 @@ type SshHostKeyMismatchError struct {
 }
 
 func (e *SshHostKeyMismatchError) Error() string {
-	return fmt.Sprintf("SSH host key verification failed for VM '%s': stored key fingerprint (%s %s) does not match received key (%s %s). "+
-		"This could indicate a man-in-the-middle attack or the VM's host key has changed. "+
+	return fmt.Sprintf("SSH host key verification failed for Node '%s': stored key fingerprint (%s %s) does not match received key (%s %s). "+
+		"This could indicate a man-in-the-middle attack or the Node's host key has changed. "+
 		"If you trust the new key, use the SSH host key reset API to update it.",
-		e.VmId, e.StoredKeyType, e.StoredFingerprint, e.ReceivedKeyType, e.ReceivedFingerprint)
+		e.NodeId, e.StoredKeyType, e.StoredFingerprint, e.ReceivedKeyType, e.ReceivedFingerprint)
 }
 
 // calculateHostKeyFingerprint calculates SHA256 fingerprint of an SSH public key
@@ -1236,11 +1236,11 @@ func calculateHostKeyFingerprint(publicKey ssh.PublicKey) string {
 	return "SHA256:" + encoded
 }
 
-// tofuContext contains VM identification info for TOFU host key verification (internal use only)
+// tofuContext contains Node identification info for TOFU host key verification (internal use only)
 type tofuContext struct {
-	NsId  string
-	MciId string
-	VmId  string
+	NsId    string
+	InfraId string
+	NodeId  string
 }
 
 // createTOFUHostKeyCallback creates a HostKeyCallback that implements TOFU (Trust On First Use)
@@ -1253,64 +1253,64 @@ func createTOFUHostKeyCallback(ctx tofuContext) ssh.HostKeyCallback {
 		fingerprint := calculateHostKeyFingerprint(key)
 
 		log.Debug().
-			Str("vmId", ctx.VmId).
+			Str("nodeId", ctx.NodeId).
 			Str("hostname", hostname).
 			Str("keyType", keyType).
 			Str("fingerprint", fingerprint).
 			Msg("SSH host key verification")
 
-		// Get current VM info
-		vmInfo, err := GetVmObject(ctx.NsId, ctx.MciId, ctx.VmId)
+		// Get current Node info
+		nodeInfo, err := GetNodeObject(ctx.NsId, ctx.InfraId, ctx.NodeId)
 		if err != nil {
-			// If VM info cannot be retrieved, reject connection for security
+			// If Node info cannot be retrieved, reject connection for security
 			log.Warn().
 				Err(err).
-				Str("vmId", ctx.VmId).
-				Msg("Cannot retrieve VM info for TOFU verification, rejecting connection")
-			return fmt.Errorf("cannot retrieve VM info for TOFU verification: %w", err)
+				Str("nodeId", ctx.NodeId).
+				Msg("Cannot retrieve Node info for TOFU verification, rejecting connection")
+			return fmt.Errorf("cannot retrieve Node info for TOFU verification: %w", err)
 		}
 
 		// First connection (TOFU): store the host key
-		if vmInfo.SshHostKeyInfo == nil || vmInfo.SshHostKeyInfo.HostKey == "" {
+		if nodeInfo.SshHostKeyInfo == nil || nodeInfo.SshHostKeyInfo.HostKey == "" {
 			log.Info().
-				Str("vmId", ctx.VmId).
+				Str("nodeId", ctx.NodeId).
 				Str("keyType", keyType).
 				Str("fingerprint", fingerprint).
 				Msg("First SSH connection - storing host key (TOFU)")
 
-			vmInfo.SshHostKeyInfo = &model.SshHostKeyInfo{
+			nodeInfo.SshHostKeyInfo = &model.SshHostKeyInfo{
 				HostKey:     keyData,
 				KeyType:     keyType,
 				Fingerprint: fingerprint,
 				FirstUsedAt: time.Now().Format(time.RFC3339),
 			}
 
-			UpdateVmInfo(ctx.NsId, ctx.MciId, vmInfo)
+			UpdateNodeInfo(ctx.NsId, ctx.InfraId, nodeInfo)
 
 			return nil
 		}
 
 		// Subsequent connections: verify the host key
-		if vmInfo.SshHostKeyInfo.HostKey != keyData {
+		if nodeInfo.SshHostKeyInfo.HostKey != keyData {
 			log.Warn().
-				Str("vmId", ctx.VmId).
-				Str("storedKeyType", vmInfo.SshHostKeyInfo.KeyType).
-				Str("storedFingerprint", vmInfo.SshHostKeyInfo.Fingerprint).
+				Str("nodeId", ctx.NodeId).
+				Str("storedKeyType", nodeInfo.SshHostKeyInfo.KeyType).
+				Str("storedFingerprint", nodeInfo.SshHostKeyInfo.Fingerprint).
 				Str("receivedKeyType", keyType).
 				Str("receivedFingerprint", fingerprint).
 				Msg("SSH host key mismatch detected")
 
 			return &SshHostKeyMismatchError{
-				VmId:                ctx.VmId,
-				StoredKeyType:       vmInfo.SshHostKeyInfo.KeyType,
-				StoredFingerprint:   vmInfo.SshHostKeyInfo.Fingerprint,
+				NodeId:              ctx.NodeId,
+				StoredKeyType:       nodeInfo.SshHostKeyInfo.KeyType,
+				StoredFingerprint:   nodeInfo.SshHostKeyInfo.Fingerprint,
 				ReceivedKeyType:     keyType,
 				ReceivedFingerprint: fingerprint,
 			}
 		}
 
 		log.Debug().
-			Str("vmId", ctx.VmId).
+			Str("nodeId", ctx.NodeId).
 			Str("fingerprint", fingerprint).
 			Msg("SSH host key verified successfully")
 
@@ -1318,75 +1318,75 @@ func createTOFUHostKeyCallback(ctx tofuContext) ssh.HostKeyCallback {
 	}
 }
 
-// ResetVmSshHostKey resets the stored SSH host key for a VM
+// ResetNodeSshHostKey resets the stored SSH host key for a Node
 // This should be called when the user trusts a new host key after verification failure
-func ResetVmSshHostKey(nsId string, mciId string, vmId string) error {
+func ResetNodeSshHostKey(nsId string, infraId string, nodeId string) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		return fmt.Errorf("invalid nsId: %w", err)
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
-		return fmt.Errorf("invalid mciId: %w", err)
+		return fmt.Errorf("invalid infraId: %w", err)
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
-		return fmt.Errorf("invalid vmId: %w", err)
+		return fmt.Errorf("invalid nodeId: %w", err)
 	}
 
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		return fmt.Errorf("failed to get VM info: %w", err)
+		return fmt.Errorf("failed to get Node info: %w", err)
 	}
 
 	log.Info().
-		Str("vmId", vmId).
+		Str("nodeId", nodeId).
 		Str("previousKeyType", func() string {
-			if vmInfo.SshHostKeyInfo != nil {
-				return vmInfo.SshHostKeyInfo.KeyType
+			if nodeInfo.SshHostKeyInfo != nil {
+				return nodeInfo.SshHostKeyInfo.KeyType
 			}
 			return ""
 		}()).
 		Str("previousFingerprint", func() string {
-			if vmInfo.SshHostKeyInfo != nil {
-				return vmInfo.SshHostKeyInfo.Fingerprint
+			if nodeInfo.SshHostKeyInfo != nil {
+				return nodeInfo.SshHostKeyInfo.Fingerprint
 			}
 			return ""
 		}()).
-		Msg("Resetting SSH host key for VM")
+		Msg("Resetting SSH host key for Node")
 
-	vmInfo.SshHostKeyInfo = nil
+	nodeInfo.SshHostKeyInfo = nil
 
-	UpdateVmInfo(nsId, mciId, vmInfo)
+	UpdateNodeInfo(nsId, infraId, nodeInfo)
 
 	return nil
 }
 
-// GetVmSshHostKey returns the stored SSH host key information for a VM
-func GetVmSshHostKey(nsId string, mciId string, vmId string) (model.SshHostKeyInfo, error) {
+// GetNodeSshHostKey returns the stored SSH host key information for a Node
+func GetNodeSshHostKey(nsId string, infraId string, nodeId string) (model.SshHostKeyInfo, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		return model.SshHostKeyInfo{}, fmt.Errorf("invalid nsId: %w", err)
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
-		return model.SshHostKeyInfo{}, fmt.Errorf("invalid mciId: %w", err)
+		return model.SshHostKeyInfo{}, fmt.Errorf("invalid infraId: %w", err)
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
-		return model.SshHostKeyInfo{}, fmt.Errorf("invalid vmId: %w", err)
-	}
-
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
-	if err != nil {
-		return model.SshHostKeyInfo{}, fmt.Errorf("failed to get VM info: %w", err)
+		return model.SshHostKeyInfo{}, fmt.Errorf("invalid nodeId: %w", err)
 	}
 
-	if vmInfo.SshHostKeyInfo == nil {
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
+	if err != nil {
+		return model.SshHostKeyInfo{}, fmt.Errorf("failed to get Node info: %w", err)
+	}
+
+	if nodeInfo.SshHostKeyInfo == nil {
 		return model.SshHostKeyInfo{}, nil
 	}
 
-	return *vmInfo.SshHostKeyInfo, nil
+	return *nodeInfo.SshHostKeyInfo, nil
 }
 
 // runSSHWithContext executes SSH commands with context-based timeout and cancellation support
@@ -1669,7 +1669,7 @@ CONNECTION_ESTABLISHED:
 					}
 					PublishCommandEvent(logMeta.XRequestId, model.CommandStreamEvent{
 						Type:         model.EventCommandLog,
-						VmId:         logMeta.VmId,
+						NodeId:         logMeta.NodeId,
 						CommandIndex: logMeta.CommandIndex,
 						Timestamp:    time.Now().Format(time.RFC3339Nano),
 						Log: &model.CommandLogEntry{
@@ -1699,7 +1699,7 @@ CONNECTION_ESTABLISHED:
 					}
 					PublishCommandEvent(logMeta.XRequestId, model.CommandStreamEvent{
 						Type:         model.EventCommandLog,
-						VmId:         logMeta.VmId,
+						NodeId:         logMeta.NodeId,
 						CommandIndex: logMeta.CommandIndex,
 						Timestamp:    time.Now().Format(time.RFC3339Nano),
 						Log: &model.CommandLogEntry{
@@ -1778,24 +1778,24 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, 
 	return runSSHWithContext(context.Background(), bastionInfo, targetInfo, cmds, bastionCtx, targetCtx)
 }
 
-// TransferFileToMci is a function to transfer a file to all VMs in MCI by SSH through bastion hosts
-func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string, fileData []byte, fileName string, targetPath string) ([]model.SshCmdResult, error) {
-	// Get the list of VMs in the MCI
-	vmList, err := ListVmId(nsId, mciId)
+// TransferFileToInfra is a function to transfer a file to all VMs in Infra by SSH through bastion hosts
+func TransferFileToInfra(nsId string, infraId string, nodeGroupId string, nodeId string, fileData []byte, fileName string, targetPath string) ([]model.SshCmdResult, error) {
+	// Get the list of VMs in the Infra
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		return nil, err
 	}
-	// If a subGroupId is provided, filter the VM list by subGroup
-	if subGroupId != "" {
-		vmListInGroup, err := ListVmBySubGroup(nsId, mciId, subGroupId)
+	// If a nodeGroupId is provided, filter the VM list by nodeGroup
+	if nodeGroupId != "" {
+		nodeListInGroup, err := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
 		if err != nil {
 			return nil, err
 		}
-		vmList = vmListInGroup
+		nodeList = nodeListInGroup
 	}
-	// If a specific vmId is provided, limit the transfer to that VM only
-	if vmId != "" {
-		vmList = []string{vmId}
+	// If a specific nodeId is provided, limit the transfer to that VM only
+	if nodeId != "" {
+		nodeList = []string{nodeId}
 	}
 
 	// Create a wait group to sync goroutines
@@ -1803,20 +1803,20 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 	var resultArray []model.SshCmdResult
 	var resultMutex sync.Mutex // To safely append to resultArray in concurrent goroutines
 
-	// Iterate over the VM list to transfer the file
-	for _, vmId := range vmList {
+	// Iterate over the Node list to transfer the file
+	for _, nodeId := range nodeList {
 		wg.Add(1)
-		go func(vmId string) {
+		go func(nodeId string) {
 			defer wg.Done()
-			log.Info().Msgf("Transferring file to VM: %s", vmId)
+			log.Info().Msgf("Transferring file to VM: %s", nodeId)
 
-			_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
+			_, targetNodeIP, targetSshPort, err := GetNodeIp(nsId, infraId, nodeId)
 
-			// Create the result for this VM
+			// Create the result for this Node
 			result := model.SshCmdResult{
-				MciId:   mciId,
-				VmId:    vmId,
-				VmIp:    targetVmIP,
+				InfraId: infraId,
+				NodeId:    nodeId,
+				NodeIp:    targetNodeIP,
 				Command: map[int]string{0: fmt.Sprintf("scp %s to %s", fileName, targetPath)},
 				Stdout:  map[int]string{},
 				Stderr:  map[int]string{},
@@ -1824,31 +1824,31 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 
 			if err != nil {
 				result.Err = err
-				result.Stderr[0] = fmt.Sprintf("Failed to get VM IP: %v", err)
+				result.Stderr[0] = fmt.Sprintf("Failed to get Node IP: %v", err)
 				resultMutex.Lock()
 				resultArray = append(resultArray, result)
 				resultMutex.Unlock()
 				return
 			}
 
-			// Check VM status before executing file transfer
-			vmInfo, err := GetVmObject(nsId, mciId, vmId)
+			// Check Node status before executing file transfer
+			nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 			if err != nil {
-				result.Err = fmt.Errorf("failed to get VM status: %v", err)
-				result.Stderr[0] = fmt.Sprintf("Failed to get VM status: %v", err)
+				result.Err = fmt.Errorf("failed to get Node status: %v", err)
+				result.Stderr[0] = fmt.Sprintf("Failed to get Node status: %v", err)
 				resultMutex.Lock()
 				resultArray = append(resultArray, result)
 				resultMutex.Unlock()
 				return
 			}
 
-			// Validate VM status for file transfer
-			if vmInfo.Status != model.StatusRunning {
+			// Validate Node status for file transfer
+			if nodeInfo.Status != model.StatusRunning {
 				var errorMsg string
-				if vmInfo.Status == model.StatusTerminated {
-					errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. File transfer is impossible for terminated VMs", vmId, vmInfo.Status)
+				if nodeInfo.Status == model.StatusTerminated {
+					errorMsg = fmt.Sprintf("Node '%s' is in '%s' status. File transfer is impossible for terminated Nodes", nodeId, nodeInfo.Status)
 				} else {
-					errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+					errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 				}
 				result.Err = fmt.Errorf(errorMsg)
 				result.Stderr[0] = errorMsg
@@ -1858,7 +1858,7 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 				return
 			}
 
-			targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, "")
+			targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, infraId, nodeId, targetNodeIP, targetSshPort, "")
 			if err != nil {
 				result.Err = fmt.Errorf("failed to verify SSH username: %v", err)
 				result.Stderr[0] = fmt.Sprintf("Failed to verify SSH username: %v", err)
@@ -1869,41 +1869,41 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 			}
 
 			targetSshInfo := model.SshInfo{
-				EndPoint:   fmt.Sprintf("%s:%d", targetVmIP, targetSshPort),
+				EndPoint:   fmt.Sprintf("%s:%d", targetNodeIP, targetSshPort),
 				UserName:   targetUserName,
 				PrivateKey: []byte(targetPrivateKey),
 			}
 
-			// Transfer file to the VM via bastion
-			err = transferFileToVmViaBastion(nsId, mciId, vmId, targetSshInfo, fileData, fileName, targetPath)
+			// Transfer file to the Node via bastion
+			err = transferFileToNodeViaBastion(nsId, infraId, nodeId, targetSshInfo, fileData, fileName, targetPath)
 
 			if err != nil {
 				result.Stderr[0] = fmt.Sprintf("Failed to transfer file: %v", err)
 				result.Err = fmt.Errorf("file transfer failed: %v", err)
-				log.Error().Err(err).Msgf("Failed to transfer file to VM: %s", vmId)
+				log.Error().Err(err).Msgf("Failed to transfer file to VM: %s", nodeId)
 			} else {
 				result.Stdout[0] = fmt.Sprintf("File transfer successful: %s%s", targetPath, fileName)
-				log.Info().Msgf("Successfully transferred file to VM: %s", vmId)
+				log.Info().Msgf("Successfully transferred file to VM: %s", nodeId)
 			}
 
 			// Safely append to resultArray
 			resultMutex.Lock()
 			resultArray = append(resultArray, result)
 			resultMutex.Unlock()
-		}(vmId)
+		}(nodeId)
 	}
 	wg.Wait()
 
 	return resultArray, nil
 }
 
-// TransferFileAndCmdToMci transfers a file to all VMs in MCI and optionally runs a shell command
-// on each VM where the file transfer succeeded.
-func TransferFileAndCmdToMci(nsId string, mciId string, subGroupId string, vmId string, fileData []byte, fileName string, targetPath string, command string) (model.MciFileTransferAndCmdResult, error) {
-	result := model.MciFileTransferAndCmdResult{}
+// TransferFileAndCmdToInfra transfers a file to all VMs in Infra and optionally runs a shell command
+// on each Node where the file transfer succeeded.
+func TransferFileAndCmdToInfra(nsId string, infraId string, nodeGroupId string, nodeId string, fileData []byte, fileName string, targetPath string, command string) (model.InfraFileTransferAndCmdResult, error) {
+	result := model.InfraFileTransferAndCmdResult{}
 
 	// Step 1: transfer file to all targeted VMs
-	transferResults, err := TransferFileToMci(nsId, mciId, subGroupId, vmId, fileData, fileName, targetPath)
+	transferResults, err := TransferFileToInfra(nsId, infraId, nodeGroupId, nodeId, fileData, fileName, targetPath)
 	if err != nil {
 		return result, err
 	}
@@ -1923,9 +1923,9 @@ func TransferFileAndCmdToMci(nsId string, mciId string, subGroupId string, vmId 
 			continue // skip VMs where transfer failed
 		}
 		wg.Add(1)
-		go func(vmId string, vmIp string) {
+		go func(nodeId string, nodeIp string) {
 			defer wg.Done()
-			stdout, stderr, cmdErr := RunRemoteCommand(nsId, mciId, vmId, "", []string{command})
+			stdout, stderr, cmdErr := RunRemoteCommand(nsId, infraId, nodeId, "", []string{command})
 			if stdout == nil {
 				stdout = map[int]string{}
 			}
@@ -1933,9 +1933,9 @@ func TransferFileAndCmdToMci(nsId string, mciId string, subGroupId string, vmId 
 				stderr = map[int]string{}
 			}
 			cmdResult := model.SshCmdResult{
-				MciId:   mciId,
-				VmId:    vmId,
-				VmIp:    vmIp,
+				InfraId: infraId,
+				NodeId:    nodeId,
+				NodeIp:    nodeIp,
 				Command: map[int]string{0: command},
 				Stdout:  stdout,
 				Stderr:  stderr,
@@ -1944,7 +1944,7 @@ func TransferFileAndCmdToMci(nsId string, mciId string, subGroupId string, vmId 
 			mu.Lock()
 			cmdResultArray = append(cmdResultArray, cmdResult)
 			mu.Unlock()
-		}(tr.VmId, tr.VmIp)
+		}(tr.NodeId, tr.NodeIp)
 	}
 	wg.Wait()
 	result.CmdResults = cmdResultArray
@@ -1952,10 +1952,10 @@ func TransferFileAndCmdToMci(nsId string, mciId string, subGroupId string, vmId 
 	return result, nil
 }
 
-// transferFileToVmViaBastion is a function to transfer a file to a specific VM via Bastion Host
-func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSshInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
+// transferFileToNodeViaBastion is a function to transfer a file to a specific Node via Bastion Host
+func transferFileToNodeViaBastion(nsId string, infraId string, nodeId string, targetSshInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
 
-	bastionNodes, err := GetBastionNodes(nsId, mciId, vmId)
+	bastionNodes, err := GetBastionNodes(nsId, infraId, nodeId)
 	if err != nil || len(bastionNodes) == 0 {
 		return fmt.Errorf("failed to get bastion nodes: %v", err)
 	}
@@ -1965,20 +1965,20 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 	if bastionNsId == "" {
 		bastionNsId = nsId
 	}
-	bastionIp, _, bastionSshPort, err := GetVmIp(bastionNsId, bastionNode.MciId, bastionNode.VmId)
+	bastionIp, _, bastionSshPort, err := GetNodeIp(bastionNsId, bastionNode.InfraId, bastionNode.NodeId)
 	if err != nil {
-		return fmt.Errorf("failed to get bastion VM IP and SSH port: %v", err)
+		return fmt.Errorf("failed to get bastion Node IP and SSH port: %v", err)
 	}
 
-	// For cross-MCI/cross-NS bastions, override the target endpoint with the public IP.
-	_, _, targetSshPort, ipErr := GetVmIp(nsId, mciId, vmId)
+	// For cross-Infra/cross-NS bastions, override the target endpoint with the public IP.
+	_, _, targetSshPort, ipErr := GetNodeIp(nsId, infraId, nodeId)
 	if ipErr == nil {
-		if resolved := resolveTargetIpForBastion(nsId, mciId, vmId, bastionNode); resolved != "" {
+		if resolved := resolveTargetIpForBastion(nsId, infraId, nodeId, bastionNode); resolved != "" {
 			targetSshInfo.EndPoint = fmt.Sprintf("%s:%d", resolved, targetSshPort)
 		}
 	}
 
-	bastionUserName, bastionPrivateKey, err := VerifySshUserName(bastionNsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
+	bastionUserName, bastionPrivateKey, err := VerifySshUserName(bastionNsId, bastionNode.InfraId, bastionNode.NodeId, bastionIp, bastionSshPort, "")
 	if err != nil {
 		return fmt.Errorf("failed to verify SSH username for bastion: %v", err)
 	}
@@ -1991,14 +1991,14 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 
 	// Set TOFU context for bastion and target VMs
 	bastionCtx := tofuContext{
-		NsId:  bastionNsId,
-		MciId: bastionNode.MciId,
-		VmId:  bastionNode.VmId,
+		NsId:    bastionNsId,
+		InfraId: bastionNode.InfraId,
+		NodeId:  bastionNode.NodeId,
 	}
 	targetCtx := tofuContext{
-		NsId:  nsId,
-		MciId: mciId,
-		VmId:  vmId,
+		NsId:    nsId,
+		InfraId: infraId,
+		NodeId:  nodeId,
 	}
 
 	scpRetryCount := 3
@@ -2016,15 +2016,15 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 			strings.Contains(err.Error(), "EOF")
 
 		if !isTransient || attempt == scpRetryCount-1 {
-			return fmt.Errorf("failed to transfer file to VM via bastion: %v", err)
+			return fmt.Errorf("failed to transfer file to Node via bastion: %v", err)
 		}
 
 		waitTime := time.Duration(3*(attempt+1)) * time.Second
-		log.Warn().Err(err).Msgf("SCP transient failure to VM %s, retrying in %v (attempt %d/%d)", vmId, waitTime, attempt+1, scpRetryCount)
+		log.Warn().Err(err).Msgf("SCP transient failure to VM %s, retrying in %v (attempt %d/%d)", nodeId, waitTime, attempt+1, scpRetryCount)
 		time.Sleep(waitTime)
 	}
 
-	log.Info().Msgf("File successfully transferred to VM %s via bastion", vmId)
+	log.Info().Msgf("File successfully transferred to VM %s via bastion", nodeId)
 	return nil
 }
 
@@ -2160,53 +2160,53 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 	return nil
 }
 
-// DownloadFileFromMciVm downloads a file from a specific VM in MCI by SCP through bastion hosts
-func DownloadFileFromMciVm(nsId string, mciId string, vmId string, sourcePath string) ([]byte, string, error) {
+// DownloadFileFromInfraNode downloads a file from a specific Node in Infra by SCP through bastion hosts
+func DownloadFileFromInfraNode(nsId string, infraId string, nodeId string, sourcePath string) ([]byte, string, error) {
 
-	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
+	_, targetNodeIP, targetSshPort, err := GetNodeIp(nsId, infraId, nodeId)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get VM IP: %v", err)
+		return nil, "", fmt.Errorf("failed to get Node IP: %v", err)
 	}
 
-	// Check VM status before executing file download
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	// Check Node status before executing file download
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get VM status: %v", err)
+		return nil, "", fmt.Errorf("failed to get Node status: %v", err)
 	}
-	if vmInfo.Status != model.StatusRunning {
-		return nil, "", fmt.Errorf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+	if nodeInfo.Status != model.StatusRunning {
+		return nil, "", fmt.Errorf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 	}
 
-	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, "")
+	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, infraId, nodeId, targetNodeIP, targetSshPort, "")
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to verify SSH username: %v", err)
 	}
 
 	targetSshInfo := model.SshInfo{
-		EndPoint:   fmt.Sprintf("%s:%d", targetVmIP, targetSshPort),
+		EndPoint:   fmt.Sprintf("%s:%d", targetNodeIP, targetSshPort),
 		UserName:   targetUserName,
 		PrivateKey: []byte(targetPrivateKey),
 	}
 
 	// Download file from VM via bastion
-	fileData, fileName, err := downloadFileFromVmViaBastion(nsId, mciId, vmId, targetSshInfo, sourcePath)
+	fileData, fileName, err := downloadFileFromNodeViaBastion(nsId, infraId, nodeId, targetSshInfo, sourcePath)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to download file from VM: %v", err)
 	}
 
-	log.Info().Msgf("Successfully downloaded file '%s' (%d bytes) from VM %s", fileName, len(fileData), vmId)
+	log.Info().Msgf("Successfully downloaded file '%s' (%d bytes) from VM %s", fileName, len(fileData), nodeId)
 	return fileData, fileName, nil
 }
 
-// downloadFileFromVmViaBastion downloads a file from a specific VM via Bastion Host using SCP
-func downloadFileFromVmViaBastion(nsId string, mciId string, vmId string, targetSshInfo model.SshInfo, sourcePath string) ([]byte, string, error) {
+// downloadFileFromNodeViaBastion downloads a file from a specific VM via Bastion Host using SCP
+func downloadFileFromNodeViaBastion(nsId string, infraId string, nodeId string, targetSshInfo model.SshInfo, sourcePath string) ([]byte, string, error) {
 
-	bastionNodes, err := GetBastionNodes(nsId, mciId, vmId)
+	bastionNodes, err := GetBastionNodes(nsId, infraId, nodeId)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to get bastion nodes: %w", err)
 	}
 	if len(bastionNodes) == 0 {
-		return nil, "", fmt.Errorf("no bastion nodes configured for MCI %s VM %s", mciId, vmId)
+		return nil, "", fmt.Errorf("no bastion nodes configured for Infra %s VM %s", infraId, nodeId)
 	}
 
 	bastionNode := bastionNodes[0]
@@ -2214,20 +2214,20 @@ func downloadFileFromVmViaBastion(nsId string, mciId string, vmId string, target
 	if bastionNsId == "" {
 		bastionNsId = nsId
 	}
-	bastionIp, _, bastionSshPort, err := GetVmIp(bastionNsId, bastionNode.MciId, bastionNode.VmId)
+	bastionIp, _, bastionSshPort, err := GetNodeIp(bastionNsId, bastionNode.InfraId, bastionNode.NodeId)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get bastion VM IP and SSH port: %v", err)
+		return nil, "", fmt.Errorf("failed to get bastion Node IP and SSH port: %v", err)
 	}
 
-	// For cross-MCI/cross-NS bastions, override the target endpoint with the public IP.
-	_, _, targetSshPort, ipErr := GetVmIp(nsId, mciId, vmId)
+	// For cross-Infra/cross-NS bastions, override the target endpoint with the public IP.
+	_, _, targetSshPort, ipErr := GetNodeIp(nsId, infraId, nodeId)
 	if ipErr == nil {
-		if resolved := resolveTargetIpForBastion(nsId, mciId, vmId, bastionNode); resolved != "" {
+		if resolved := resolveTargetIpForBastion(nsId, infraId, nodeId, bastionNode); resolved != "" {
 			targetSshInfo.EndPoint = fmt.Sprintf("%s:%d", resolved, targetSshPort)
 		}
 	}
 
-	bastionUserName, bastionPrivateKey, err := VerifySshUserName(bastionNsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
+	bastionUserName, bastionPrivateKey, err := VerifySshUserName(bastionNsId, bastionNode.InfraId, bastionNode.NodeId, bastionIp, bastionSshPort, "")
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to verify SSH username for bastion: %v", err)
 	}
@@ -2240,14 +2240,14 @@ func downloadFileFromVmViaBastion(nsId string, mciId string, vmId string, target
 
 	// Set TOFU context for bastion and target VMs
 	bastionCtx := tofuContext{
-		NsId:  bastionNsId,
-		MciId: bastionNode.MciId,
-		VmId:  bastionNode.VmId,
+		NsId:    bastionNsId,
+		InfraId: bastionNode.InfraId,
+		NodeId:  bastionNode.NodeId,
 	}
 	targetCtx := tofuContext{
-		NsId:  nsId,
-		MciId: mciId,
-		VmId:  vmId,
+		NsId:    nsId,
+		InfraId: infraId,
+		NodeId:  nodeId,
 	}
 
 	fileData, fileName, err := runSCPDownloadWithBastion(bastionSshInfo, targetSshInfo, sourcePath, bastionCtx, targetCtx)
@@ -2439,34 +2439,34 @@ func runSCPDownloadWithBastion(bastionInfo model.SshInfo, targetInfo model.SshIn
 }
 
 // SetBastionNodes func sets bastion nodes
-func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionNsId string, bastionMciId string, bastionVmId string) (string, error) {
+func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNsId string, bastionInfraId string, bastionNodeId string) (string, error) {
 
-	// Default bastionNsId/bastionMciId to the target's values when not specified
+	// Default bastionNsId/bastionInfraId to the target's values when not specified
 	if bastionNsId == "" {
 		bastionNsId = nsId
 	}
-	if bastionMciId == "" {
-		bastionMciId = mciId
+	if bastionInfraId == "" {
+		bastionInfraId = infraId
 	}
 
 	// Check if bastion node already exists for the target VM (for random assignment)
-	currentBastion, err := GetBastionNodes(nsId, mciId, targetVmId)
+	currentBastion, err := GetBastionNodes(nsId, infraId, targetNodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	if len(currentBastion) > 0 && bastionVmId == "" {
-		return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in MCI (ID: %s) under namespace (ID: %s)",
-			targetVmId, mciId, nsId)
+	if len(currentBastion) > 0 && bastionNodeId == "" {
+		return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in Infra (ID: %s) under namespace (ID: %s)",
+			targetNodeId, infraId, nsId)
 	}
 
-	vmObj, err := GetVmObject(nsId, mciId, targetVmId)
+	nodeObj, err := GetNodeObject(nsId, infraId, targetNodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
-	res, err := resource.GetResource(nsId, model.StrVNet, vmObj.VNetId)
+	res, err := resource.GetResource(nsId, model.StrVNet, nodeObj.VNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
@@ -2480,52 +2480,52 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionNsId s
 
 	// find subnet and append bastion node
 	for i, subnetInfo := range tempVNetInfo.SubnetInfoList {
-		if subnetInfo.Id == vmObj.SubnetId {
+		if subnetInfo.Id == nodeObj.SubnetId {
 
-			if bastionVmId == "" {
+			if bastionNodeId == "" {
 				// Auto-select: find a VM with a public IP.
-				// For same-MCI, prefer VMs in the same subnet (original behaviour).
-				// For cross-MCI/cross-NS, search all VMs in bastionNsId/bastionMciId.
-				isSameMci := bastionNsId == nsId && bastionMciId == mciId
-				var candidateVms []string
+				// For same-Infra, prefer VMs in the same subnet (original behaviour).
+				// For cross-Infra/cross-NS, search all VMs in bastionNsId/bastionInfraId.
+				isSameInfra := bastionNsId == nsId && bastionInfraId == infraId
+				var candidateNodes []string
 				var listErr error
-				if isSameMci {
-					candidateVms, listErr = ListVmByFilter(nsId, mciId, "subnetId", vmObj.SubnetId)
-					if listErr != nil || len(candidateVms) == 0 {
-						// Fall back to all VMs in the MCI if no VM found in the subnet
-						candidateVms, listErr = ListVmByFilter(nsId, mciId, "", "")
+				if isSameInfra {
+					candidateNodes, listErr = ListNodeByFilter(nsId, infraId, "subnetId", nodeObj.SubnetId)
+					if listErr != nil || len(candidateNodes) == 0 {
+						// Fall back to all VMs in the Infra if no VM found in the subnet
+						candidateNodes, listErr = ListNodeByFilter(nsId, infraId, "", "")
 					}
 				} else {
-					candidateVms, listErr = ListVmByFilter(bastionNsId, bastionMciId, "", "")
+					candidateNodes, listErr = ListNodeByFilter(bastionNsId, bastionInfraId, "", "")
 				}
 				if listErr != nil {
 					log.Error().Err(listErr).Msg("")
-					return "", fmt.Errorf("failed to list VMs in MCI (ID: %s): %w", bastionMciId, listErr)
+					return "", fmt.Errorf("failed to list VMs in Infra (ID: %s): %w", bastionInfraId, listErr)
 				}
 
 				// Find a VM with public IP to use as bastion
-				for _, v := range candidateVms {
-					tmpPublicIp, _, _, err := GetVmIp(bastionNsId, bastionMciId, v)
+				for _, v := range candidateNodes {
+					tmpPublicIp, _, _, err := GetNodeIp(bastionNsId, bastionInfraId, v)
 					if err != nil {
 						log.Error().Err(err).Msgf("failed to get IP for VM %s", v)
 						continue
 					}
 					if tmpPublicIp != "" {
-						bastionVmId = v
-						log.Info().Msgf("Selected VM %s in NS %s / MCI %s as bastion (public IP: %s)", v, bastionNsId, bastionMciId, tmpPublicIp)
+						bastionNodeId = v
+						log.Info().Msgf("Selected VM %s in NS %s / Infra %s as bastion (public IP: %s)", v, bastionNsId, bastionInfraId, tmpPublicIp)
 						break
 					}
 				}
 
 				// If no suitable bastion VM found, return error
-				if bastionVmId == "" {
-					return "", fmt.Errorf("no VM with public IP found in NS (ID: %s) MCI (ID: %s) to use as bastion", bastionNsId, bastionMciId)
+				if bastionNodeId == "" {
+					return "", fmt.Errorf("no VM with public IP found in NS (ID: %s) Infra (ID: %s) to use as bastion", bastionNsId, bastionInfraId)
 				}
 			} else {
-				// Validate that the specified bastion VM exists in bastionNsId/bastionMciId
-				_, err := GetVmObject(bastionNsId, bastionMciId, bastionVmId)
+				// Validate that the specified bastion VM exists in bastionNsId/bastionInfraId
+				_, err := GetNodeObject(bastionNsId, bastionInfraId, bastionNodeId)
 				if err != nil {
-					return "", fmt.Errorf("bastion VM (ID: %s) not found in NS (ID: %s) MCI (ID: %s): %w", bastionVmId, bastionNsId, bastionMciId, err)
+					return "", fmt.Errorf("bastion VM (ID: %s) not found in NS (ID: %s) Infra (ID: %s): %w", bastionNodeId, bastionNsId, bastionInfraId, err)
 				}
 
 				// Duplicate check: normalize legacy BastionNode entries that have empty NsId
@@ -2536,31 +2536,31 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionNsId s
 					if effectiveNsId == "" {
 						effectiveNsId = nsId
 					}
-					if effectiveNsId == bastionNsId && existingNode.MciId == bastionMciId && existingNode.VmId == bastionVmId {
-						return fmt.Sprintf("Bastion (NS: %s, MCI: %s, VM: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
-							bastionNsId, bastionMciId, bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
+					if effectiveNsId == bastionNsId && existingNode.InfraId == bastionInfraId && existingNode.NodeId == bastionNodeId {
+						return fmt.Sprintf("Bastion (NS: %s, Infra: %s, VM: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
+							bastionNsId, bastionInfraId, bastionNodeId, subnetInfo.Id, nodeObj.VNetId), nil
 					}
 				}
 			}
 
-			bastionCandidate := model.BastionNode{NsId: bastionNsId, MciId: bastionMciId, VmId: bastionVmId}
+			bastionCandidate := model.BastionNode{NsId: bastionNsId, InfraId: bastionInfraId, NodeId: bastionNodeId}
 			subnetInfo.BastionNodes = append(subnetInfo.BastionNodes, bastionCandidate)
 			tempVNetInfo.SubnetInfoList[i] = subnetInfo
 			resource.UpdateResourceObject(nsId, model.StrVNet, tempVNetInfo)
 
-			return fmt.Sprintf("Successfully set the bastion (NS: %s, MCI: %s, VM: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in MCI (ID: %s).",
-				bastionNsId, bastionMciId, bastionVmId, subnetInfo.Id, vmObj.VNetId, targetVmId, mciId), nil
+			return fmt.Sprintf("Successfully set the bastion (NS: %s, Infra: %s, VM: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in Infra (ID: %s).",
+				bastionNsId, bastionInfraId, bastionNodeId, subnetInfo.Id, nodeObj.VNetId, targetNodeId, infraId), nil
 		}
 	}
-	return "", fmt.Errorf("failed to set bastion. Subnet (ID: %s) not found in VNet (ID: %s) for VM (ID: %s) in MCI (ID: %s) under namespace (ID: %s)",
-		vmObj.SubnetId, vmObj.VNetId, targetVmId, mciId, nsId)
+	return "", fmt.Errorf("failed to set bastion. Subnet (ID: %s) not found in VNet (ID: %s) for VM (ID: %s) in Infra (ID: %s) under namespace (ID: %s)",
+		nodeObj.SubnetId, nodeObj.VNetId, targetNodeId, infraId, nsId)
 }
 
 // RemoveBastionNodes func removes existing bastion nodes info.
-// bastionNsId and bastionMciId narrow the match to a specific bastion identity;
-// pass empty strings to match by bastionVmId alone (legacy / cleanup on VM deletion).
-func RemoveBastionNodes(nsId string, mciId string, bastionNsId string, bastionMciId string, bastionVmId string) (string, error) {
-	resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "mciId", mciId)
+// bastionNsId and bastionInfraId narrow the match to a specific bastion identity;
+// pass empty strings to match by bastionNodeId alone (legacy / cleanup on VM deletion).
+func RemoveBastionNodes(nsId string, infraId string, bastionNsId string, bastionInfraId string, bastionNodeId string) (string, error) {
+	resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "infraId", infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
@@ -2571,13 +2571,13 @@ func RemoveBastionNodes(nsId string, mciId string, bastionNsId string, bastionMc
 			for i, subnet := range vNet.SubnetInfoList {
 				for j := len(subnet.BastionNodes) - 1; j >= 0; j-- {
 					node := subnet.BastionNodes[j]
-					if node.VmId != bastionVmId {
+					if node.NodeId != bastionNodeId {
 						continue
 					}
-					// When bastionNsId/bastionMciId are provided, also match on them
-					// so that two bastions with the same VmId but different MCIs are
+					// When bastionNsId/bastionInfraId are provided, also match on them
+					// so that two bastions with the same NodeId but different Infras are
 					// not accidentally conflated.
-					if bastionMciId != "" {
+					if bastionInfraId != "" {
 						effectiveNsId := node.NsId
 						if effectiveNsId == "" {
 							effectiveNsId = nsId
@@ -2586,7 +2586,7 @@ func RemoveBastionNodes(nsId string, mciId string, bastionNsId string, bastionMc
 						if effectiveBastionNsId == "" {
 							effectiveBastionNsId = nsId
 						}
-						if node.MciId != bastionMciId || effectiveNsId != effectiveBastionNsId {
+						if node.InfraId != bastionInfraId || effectiveNsId != effectiveBastionNsId {
 							continue
 						}
 					}
@@ -2600,21 +2600,21 @@ func RemoveBastionNodes(nsId string, mciId string, bastionNsId string, bastionMc
 			}
 		}
 	}
-	return fmt.Sprintf("Successfully removed the bastion (ID: %s) in MCI (ID: %s) from all subnets", bastionVmId, mciId), nil
+	return fmt.Sprintf("Successfully removed the bastion (ID: %s) in Infra (ID: %s) from all subnets", bastionNodeId, infraId), nil
 }
 
 // GetBastionNodes func retrieves bastion nodes for a given VM
-func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]model.BastionNode, error) {
+func GetBastionNodes(nsId string, infraId string, targetNodeId string) ([]model.BastionNode, error) {
 	returnValue := []model.BastionNode{}
-	// Fetch VM object based on nsId, mciId, and targetVmId
-	vmObj, err := GetVmObject(nsId, mciId, targetVmId)
+	// Fetch VM object based on nsId, infraId, and targetNodeId
+	nodeObj, err := GetNodeObject(nsId, infraId, targetNodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return returnValue, err
 	}
 
 	// Fetch VNet resource information
-	res, err := resource.GetResource(nsId, model.StrVNet, vmObj.VNetId)
+	res, err := resource.GetResource(nsId, model.StrVNet, nodeObj.VNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return returnValue, err
@@ -2629,7 +2629,7 @@ func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]model.Bast
 
 	// Find the subnet corresponding to the VM and return the BastionNodeIds
 	for _, subnetInfo := range tempVNetInfo.SubnetInfoList {
-		if subnetInfo.Id == vmObj.SubnetId {
+		if subnetInfo.Id == nodeObj.SubnetId {
 			if subnetInfo.BastionNodes == nil {
 				return returnValue, nil
 			}
@@ -2639,7 +2639,7 @@ func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]model.Bast
 	}
 
 	return returnValue, fmt.Errorf("failed to get bastion in Subnet (ID: %s) of VNet (ID: %s) for VM (ID: %s)",
-		vmObj.SubnetId, vmObj.VNetId, targetVmId)
+		nodeObj.SubnetId, nodeObj.VNetId, targetNodeId)
 }
 
 // Helper function to extract function name and parameters from the string
@@ -2703,7 +2703,7 @@ func splitParams(paramsPart string) []string {
 }
 
 // processCommand processes a command string and replaces all $$Func(...) occurrences with their computed values
-func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, error) {
+func processCommand(command, nsId, infraId, nodeId string, nodeIndex int) (string, error) {
 	// Keep track of the processed command throughout iterations
 	processedCommand := command
 
@@ -2756,27 +2756,27 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 		// Process different built-in functions
 		var replacement string
 		if strings.EqualFold(funcName, "GetPublicIP") || strings.EqualFold(funcName, "GetPrivateIP") {
-			targetMciId := mciId
-			targetVmId := vmId
+			targetInfraId := infraId
+			targetNodeId := nodeId
 			if val, ok := params["target"]; ok {
 				parts := strings.Split(val, ".")
 				if len(parts) == 2 {
-					targetMciId = parts[0]
-					targetVmId = parts[1]
-					if targetMciId == "this" {
-						targetMciId = mciId
+					targetInfraId = parts[0]
+					targetNodeId = parts[1]
+					if targetInfraId == "this" {
+						targetInfraId = infraId
 					}
-					if targetVmId == "this" {
-						targetVmId = vmId
+					if targetNodeId == "this" {
+						targetNodeId = nodeId
 					}
-					// if targetVm or targetMci is not specified, return error
-					if targetMciId == "" || targetVmId == "" {
-						return "", fmt.Errorf("built-in function %s error: target MCI or VM %s is invalid", funcName, val)
+					// if targetNode or targetInfra is not specified, return error
+					if targetInfraId == "" || targetNodeId == "" {
+						return "", fmt.Errorf("built-in function %s error: target Infra or VM %s is invalid", funcName, val)
 					}
 
 				} else if strings.EqualFold(val, "this") {
-					targetMciId = mciId
-					targetVmId = vmId
+					targetInfraId = infraId
+					targetNodeId = nodeId
 				}
 			}
 			prefix := ""
@@ -2789,10 +2789,10 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			}
 			if strings.EqualFold(funcName, "GetPublicIP") {
 				// Logic for GetPublicIP function
-				replacement, err = replaceWithPublicIP(nsId, targetMciId, targetVmId, prefix, postfix)
+				replacement, err = replaceWithPublicIP(nsId, targetInfraId, targetNodeId, prefix, postfix)
 			} else {
 				// Logic for GetPrivateIP function
-				replacement, err = replaceWithPrivateIP(nsId, targetMciId, targetVmId, prefix, postfix)
+				replacement, err = replaceWithPrivateIP(nsId, targetInfraId, targetNodeId, prefix, postfix)
 			}
 			if err != nil {
 				return "", fmt.Errorf("built-in function GetPublicIP error: %s", err.Error())
@@ -2801,12 +2801,12 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			// Logic for GetPublicIPs/GetPrivateIPs function
 			// Supports optional "label" parameter for filtering VMs by label selector
 			// Example: $$Func(GetPublicIPs(separator=' ', label='accelerator=gpu'))
-			targetMciId := mciId
+			targetInfraId := infraId
 			if val, ok := params["target"]; ok {
 				if strings.EqualFold(val, "this") {
-					targetMciId = mciId
+					targetInfraId = infraId
 				} else {
-					targetMciId = val
+					targetInfraId = val
 				}
 			}
 			separator := ","
@@ -2826,9 +2826,9 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 				labelSelector = lbl
 			}
 			if strings.EqualFold(funcName, "GetPublicIPs") {
-				replacement, err = replaceWithPublicIPs(nsId, targetMciId, separator, prefix, postfix, labelSelector)
+				replacement, err = replaceWithPublicIPs(nsId, targetInfraId, separator, prefix, postfix, labelSelector)
 			} else {
-				replacement, err = replaceWithPrivateIPs(nsId, targetMciId, separator, prefix, postfix, labelSelector)
+				replacement, err = replaceWithPrivateIPs(nsId, targetInfraId, separator, prefix, postfix, labelSelector)
 			}
 			if err != nil {
 				return "", fmt.Errorf("built-in function %s error: %s", funcName, err.Error())
@@ -2840,7 +2840,7 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 				return "", fmt.Errorf("built-in function AssignTask error: no task list provided")
 			}
 			tasks := splitParams(taskListParam)
-			replacement = tasks[vmIndex%len(tasks)]
+			replacement = tasks[nodeIndex%len(tasks)]
 		} else if strings.EqualFold(funcName, "GetNsId") {
 			// Logic for getNsId function
 			prefix := ""
@@ -2852,8 +2852,8 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 				postfix = post
 			}
 			replacement = replaceWithId(nsId, prefix, postfix)
-		} else if strings.EqualFold(funcName, "GetMciId") {
-			// Logic for getMciId function
+		} else if strings.EqualFold(funcName, "GetInfraId") {
+			// Logic for getInfraId function
 			prefix := ""
 			if pre, ok := params["prefix"]; ok {
 				prefix = pre
@@ -2862,9 +2862,9 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
-			replacement = replaceWithId(mciId, prefix, postfix)
-		} else if strings.EqualFold(funcName, "GetVmId") {
-			// Logic for getVmId function
+			replacement = replaceWithId(infraId, prefix, postfix)
+		} else if strings.EqualFold(funcName, "GetNodeId") {
+			// Logic for getNodeId function
 			prefix := ""
 			if pre, ok := params["prefix"]; ok {
 				prefix = pre
@@ -2873,7 +2873,7 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
-			replacement = replaceWithId(vmId, prefix, postfix)
+			replacement = replaceWithId(nodeId, prefix, postfix)
 		} else if strings.EqualFold(funcName, "GetLocationDisplay") ||
 			strings.EqualFold(funcName, "GetLocationLatitude") ||
 			strings.EqualFold(funcName, "GetLocationLongitude") {
@@ -2882,29 +2882,29 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			// Example: $$Func(GetLocationDisplay(target=this.this))
 			// Example: $$Func(GetLocationLatitude())
 			// Example: $$Func(GetLocationLongitude(prefix='--longitude '))
-			targetMciId := mciId
-			targetVmId := vmId
+			targetInfraId := infraId
+			targetNodeId := nodeId
 			if val, ok := params["target"]; ok {
 				val = strings.TrimSpace(val)
 				if val != "" {
 					parts := strings.Split(val, ".")
 					if len(parts) == 2 {
-						targetMciId = parts[0]
-						targetVmId = parts[1]
-						if targetMciId == "this" {
-							targetMciId = mciId
+						targetInfraId = parts[0]
+						targetNodeId = parts[1]
+						if targetInfraId == "this" {
+							targetInfraId = infraId
 						}
-						if targetVmId == "this" {
-							targetVmId = vmId
+						if targetNodeId == "this" {
+							targetNodeId = nodeId
 						}
-						if targetMciId == "" || targetVmId == "" {
-							return "", fmt.Errorf("built-in function %s error: target MCI or VM %s is invalid", funcName, val)
+						if targetInfraId == "" || targetNodeId == "" {
+							return "", fmt.Errorf("built-in function %s error: target Infra or VM %s is invalid", funcName, val)
 						}
 					} else if strings.EqualFold(val, "this") {
-						targetMciId = mciId
-						targetVmId = vmId
+						targetInfraId = infraId
+						targetNodeId = nodeId
 					} else {
-						return "", fmt.Errorf("built-in function %s error: target %q has invalid format; expected \"this\" or \"mciId.vmId\"", funcName, val)
+						return "", fmt.Errorf("built-in function %s error: target %q has invalid format; expected \"this\" or \"infraId.nodeId\"", funcName, val)
 					}
 				}
 			}
@@ -2916,7 +2916,7 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
-			loc, locErr := replaceWithLocation(nsId, targetMciId, targetVmId)
+			loc, locErr := replaceWithLocation(nsId, targetInfraId, targetNodeId)
 			if locErr != nil {
 				return "", fmt.Errorf("built-in function %s error: %s", funcName, locErr.Error())
 			}
@@ -2945,124 +2945,124 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 
 // Built-in functions for remote command
 // replaceWithPublicIP function to get and replace string with the public IP of the target
-func replaceWithPublicIP(nsId, mciId, vmId, prefix, postfix string) (string, error) {
-	vmStatus, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+func replaceWithPublicIP(nsId, infraId, nodeId, prefix, postfix string) (string, error) {
+	nodeStatus, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId)
 	if err != nil {
 		return "", err
 	}
-	ip := vmStatus.PublicIp
+	ip := nodeStatus.PublicIp
 	return prefix + ip + postfix, err
 }
 
 // replaceWithPrivateIP function to get and replace string with the private IP of the target
-func replaceWithPrivateIP(nsId, mciId, vmId, prefix, postfix string) (string, error) {
-	vmStatus, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+func replaceWithPrivateIP(nsId, infraId, nodeId, prefix, postfix string) (string, error) {
+	nodeStatus, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId)
 	if err != nil {
 		return "", err
 	}
-	ip := vmStatus.PrivateIp
+	ip := nodeStatus.PrivateIp
 	return prefix + ip + postfix, err
 }
 
-// replaceWithPublicIPs returns the public IP list of VMs in the target MCI.
+// replaceWithPublicIPs returns the public IP list of VMs in the target Infra.
 // If labelSelector is non-empty, only VMs matching the label selector are included.
 // Example labelSelector: "accelerator=gpu" or "role=worker,env=prod"
-func replaceWithPublicIPs(nsId, mciId, separator, prefix, postfix, labelSelector string) (string, error) {
-	mciStatus, err := GetMciStatus(nsId, mciId)
+func replaceWithPublicIPs(nsId, infraId, separator, prefix, postfix, labelSelector string) (string, error) {
+	infraStatus, err := GetInfraStatus(nsId, infraId)
 	if err != nil {
 		return "", err
 	}
 
 	// If labelSelector is specified, filter VMs by label
 	if labelSelector != "" {
-		filteredVmIds, err := getVmIdsByLabel(nsId, mciId, labelSelector)
+		filteredNodeIds, err := getNodeIdsByLabel(nsId, infraId, labelSelector)
 		if err != nil {
 			return "", fmt.Errorf("label filtering failed: %w", err)
 		}
-		if len(filteredVmIds) == 0 {
-			log.Warn().Str("labelSelector", labelSelector).Msg("GetPublicIPs: no VMs matched the label selector")
+		if len(filteredNodeIds) == 0 {
+			log.Warn().Str("labelSelector", labelSelector).Msg("GetPublicIPs: no Nodes matched the label selector")
 			return "", nil
 		}
-		allowedIds := make(map[string]bool, len(filteredVmIds))
-		for _, id := range filteredVmIds {
+		allowedIds := make(map[string]bool, len(filteredNodeIds))
+		for _, id := range filteredNodeIds {
 			allowedIds[id] = true
 		}
 		var ips []string
-		for _, vmStatus := range mciStatus.Vm {
-			if allowedIds[vmStatus.Id] {
-				ips = append(ips, prefix+vmStatus.PublicIp+postfix)
+		for _, nodeStatus := range infraStatus.Node {
+			if allowedIds[nodeStatus.Id] {
+				ips = append(ips, prefix+nodeStatus.PublicIp+postfix)
 			}
 		}
 		return strings.Join(ips, separator), nil
 	}
 
-	ips := make([]string, len(mciStatus.Vm))
-	for i, vmStatus := range mciStatus.Vm {
-		ips[i] = prefix + vmStatus.PublicIp + postfix
+	ips := make([]string, len(infraStatus.Node))
+	for i, nodeStatus := range infraStatus.Node {
+		ips[i] = prefix + nodeStatus.PublicIp + postfix
 	}
 	return strings.Join(ips, separator), nil
 }
 
-// replaceWithPrivateIPs returns the private IP list of VMs in the target MCI.
+// replaceWithPrivateIPs returns the private IP list of VMs in the target Infra.
 // If labelSelector is non-empty, only VMs matching the label selector are included.
-func replaceWithPrivateIPs(nsId, mciId, separator, prefix, postfix, labelSelector string) (string, error) {
-	mciStatus, err := GetMciStatus(nsId, mciId)
+func replaceWithPrivateIPs(nsId, infraId, separator, prefix, postfix, labelSelector string) (string, error) {
+	infraStatus, err := GetInfraStatus(nsId, infraId)
 	if err != nil {
 		return "", err
 	}
 
 	// If labelSelector is specified, filter VMs by label
 	if labelSelector != "" {
-		filteredVmIds, err := getVmIdsByLabel(nsId, mciId, labelSelector)
+		filteredNodeIds, err := getNodeIdsByLabel(nsId, infraId, labelSelector)
 		if err != nil {
 			return "", fmt.Errorf("label filtering failed: %w", err)
 		}
-		if len(filteredVmIds) == 0 {
-			log.Warn().Str("labelSelector", labelSelector).Msg("GetPrivateIPs: no VMs matched the label selector")
+		if len(filteredNodeIds) == 0 {
+			log.Warn().Str("labelSelector", labelSelector).Msg("GetPrivateIPs: no Nodes matched the label selector")
 			return "", nil
 		}
-		allowedIds := make(map[string]bool, len(filteredVmIds))
-		for _, id := range filteredVmIds {
+		allowedIds := make(map[string]bool, len(filteredNodeIds))
+		for _, id := range filteredNodeIds {
 			allowedIds[id] = true
 		}
 		var ips []string
-		for _, vmStatus := range mciStatus.Vm {
-			if allowedIds[vmStatus.Id] {
-				ips = append(ips, prefix+vmStatus.PrivateIp+postfix)
+		for _, nodeStatus := range infraStatus.Node {
+			if allowedIds[nodeStatus.Id] {
+				ips = append(ips, prefix+nodeStatus.PrivateIp+postfix)
 			}
 		}
 		return strings.Join(ips, separator), nil
 	}
 
-	ips := make([]string, len(mciStatus.Vm))
-	for i, vmStatus := range mciStatus.Vm {
-		ips[i] = prefix + vmStatus.PrivateIp + postfix
+	ips := make([]string, len(infraStatus.Node))
+	for i, nodeStatus := range infraStatus.Node {
+		ips[i] = prefix + nodeStatus.PrivateIp + postfix
 	}
 	return strings.Join(ips, separator), nil
 }
 
-// getVmIdsByLabel returns VM IDs in an MCI that match the given label selector.
-// It automatically prepends system label conditions (sys.namespace, sys.mciId) for scoping.
-func getVmIdsByLabel(nsId, mciId, labelSelector string) ([]string, error) {
-	// Add system label conditions to scope within the namespace and MCI
-	combinedSelector := fmt.Sprintf("%s=%s,%s=%s,%s", model.LabelNamespace, nsId, model.LabelMciId, mciId, labelSelector)
+// getNodeIdsByLabel returns VM IDs in an Infra that match the given label selector.
+// It automatically prepends system label conditions (sys.namespace, sys.infraId) for scoping.
+func getNodeIdsByLabel(nsId, infraId, labelSelector string) ([]string, error) {
+	// Add system label conditions to scope within the namespace and Infra
+	combinedSelector := fmt.Sprintf("%s=%s,%s=%s,%s", model.LabelNamespace, nsId, model.LabelInfraId, infraId, labelSelector)
 
 	log.Debug().Str("combinedLabelSelector", combinedSelector).Msg("GetIPs: filtering VMs by label")
 
-	matchedResources, err := label.GetResourcesByLabelSelector(model.StrVM, combinedSelector)
+	matchedResources, err := label.GetResourcesByLabelSelector(model.StrNode, combinedSelector)
 	if err != nil {
 		return nil, err
 	}
 
-	vmIds := make([]string, 0, len(matchedResources))
+	nodeIds := make([]string, 0, len(matchedResources))
 	for _, resource := range matchedResources {
-		if vmInfo, ok := resource.(*model.VmInfo); ok {
-			vmIds = append(vmIds, vmInfo.Id)
+		if nodeInfo, ok := resource.(*model.NodeInfo); ok {
+			nodeIds = append(nodeIds, nodeInfo.Id)
 		}
 	}
 
-	log.Debug().Int("matchedCount", len(vmIds)).Str("labelSelector", labelSelector).Msg("GetIPs: VMs matched by label")
-	return vmIds, nil
+	log.Debug().Int("matchedCount", len(nodeIds)).Str("labelSelector", labelSelector).Msg("GetIPs: VMs matched by label")
+	return nodeIds, nil
 }
 
 // replaceWithId function to replace string with the prefix and postfix
@@ -3071,57 +3071,57 @@ func replaceWithId(id, prefix, postfix string) string {
 }
 
 // replaceWithLocation returns the Location of the target VM
-func replaceWithLocation(nsId, mciId, vmId string) (model.Location, error) {
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+func replaceWithLocation(nsId, infraId, nodeId string) (model.Location, error) {
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		return model.Location{}, err
 	}
-	return vmInfo.Location, nil
+	return nodeInfo.Location, nil
 }
 
 // Command Status Management Functions
 
-// updateVmCommandStatusSafe safely updates only CommandStatus field of VM with proper locking
-func updateVmCommandStatusSafe(nsId, mciId, vmId string, updateFunc func(*[]model.CommandStatusInfo) error) error {
-	// Use the same mutex as UpdateVmInfo for consistency
-	key := common.GenMciKey(nsId, mciId, vmId)
+// updateNodeCommandStatusSafe safely updates only CommandStatus field of VM with proper locking
+func updateNodeCommandStatusSafe(nsId, infraId, nodeId string, updateFunc func(*[]model.CommandStatusInfo) error) error {
+	// Use the same mutex as UpdateNodeInfo for consistency
+	key := common.GenInfraKey(nsId, infraId, nodeId)
 
 	// Retry mechanism for concurrent access
 	maxRetries := 3
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		// Get current VM info
+		// Get current Node info
 		keyValue, exists, err := kvstore.GetKv(key)
 		if !exists || err != nil {
-			return fmt.Errorf("failed to get VM info: %v", err)
+			return fmt.Errorf("failed to get Node info: %v", err)
 		}
 
-		vmInfo := model.VmInfo{}
-		err = json.Unmarshal([]byte(keyValue.Value), &vmInfo)
+		nodeInfo := model.NodeInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &nodeInfo)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal VM info: %v", err)
 		}
 
 		// Apply the update function to CommandStatus
-		originalCommandStatus := make([]model.CommandStatusInfo, len(vmInfo.CommandStatus))
-		copy(originalCommandStatus, vmInfo.CommandStatus)
+		originalCommandStatus := make([]model.CommandStatusInfo, len(nodeInfo.CommandStatus))
+		copy(originalCommandStatus, nodeInfo.CommandStatus)
 
-		err = updateFunc(&vmInfo.CommandStatus)
+		err = updateFunc(&nodeInfo.CommandStatus)
 		if err != nil {
 			return err
 		}
 
 		// Only update if CommandStatus actually changed
-		if reflect.DeepEqual(originalCommandStatus, vmInfo.CommandStatus) {
+		if reflect.DeepEqual(originalCommandStatus, nodeInfo.CommandStatus) {
 			return nil // No change needed
 		}
 
 		// Atomic update
-		vmJson, err := json.Marshal(vmInfo)
+		nodeJson, err := json.Marshal(nodeInfo)
 		if err != nil {
 			return fmt.Errorf("failed to marshal VM info: %v", err)
 		}
 
-		err = kvstore.Put(key, string(vmJson))
+		err = kvstore.Put(key, string(nodeJson))
 		if err != nil {
 			if attempt < maxRetries-1 {
 				// Retry on failure (might be concurrent update)
@@ -3248,18 +3248,18 @@ func applyPagination(commandStatus []model.CommandStatusInfo, offset, limit int)
 }
 
 // AddCommandStatusInfo adds a new command status record to VM's command history
-func AddCommandStatusInfo(nsId, mciId, vmId, xRequestId, commandRequested, commandExecuted string) (int, error) {
+func AddCommandStatusInfo(nsId, infraId, nodeId, xRequestId, commandRequested, commandExecuted string) (int, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
@@ -3267,7 +3267,7 @@ func AddCommandStatusInfo(nsId, mciId, vmId, xRequestId, commandRequested, comma
 
 	var nextIndex int
 
-	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+	err = updateNodeCommandStatusSafe(nsId, infraId, nodeId, func(commandStatus *[]model.CommandStatusInfo) error {
 		// Generate next index using helper function
 		nextIndex = getNextCommandIndex(*commandStatus)
 
@@ -3295,7 +3295,7 @@ func AddCommandStatusInfo(nsId, mciId, vmId, xRequestId, commandRequested, comma
 	if xRequestId != "" {
 		PublishCommandEvent(xRequestId, model.CommandStreamEvent{
 			Type:         model.EventCommandStatus,
-			VmId:         vmId,
+			NodeId:         nodeId,
 			CommandIndex: nextIndex,
 			Timestamp:    time.Now().Format(time.RFC3339Nano),
 			Status: &model.CommandStatusInfo{
@@ -3311,8 +3311,8 @@ func AddCommandStatusInfo(nsId, mciId, vmId, xRequestId, commandRequested, comma
 
 	log.Info().
 		Str("nsId", nsId).
-		Str("mciId", mciId).
-		Str("vmId", vmId).
+		Str("infraId", infraId).
+		Str("nodeId", nodeId).
 		Int("index", nextIndex).
 		Str("xRequestId", xRequestId).
 		Msg("Command status added")
@@ -3321,18 +3321,18 @@ func AddCommandStatusInfo(nsId, mciId, vmId, xRequestId, commandRequested, comma
 }
 
 // UpdateCommandStatusInfo updates an existing command status record
-func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.CommandExecutionStatus, resultSummary, errorMessage, stdout, stderr string) error {
+func UpdateCommandStatusInfo(nsId, infraId, nodeId string, index int, status model.CommandExecutionStatus, resultSummary, errorMessage, stdout, stderr string) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -3342,11 +3342,11 @@ func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.C
 	var updatedXRequestId string
 	var updatedStatusInfo *model.CommandStatusInfo
 
-	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+	err = updateNodeCommandStatusSafe(nsId, infraId, nodeId, func(commandStatus *[]model.CommandStatusInfo) error {
 		// Find the command status by index using helper function
 		cmdStatus, cmdIndex := findCommandByIndex(*commandStatus, index)
 		if cmdStatus == nil {
-			return fmt.Errorf("command with index %d not found for VM (ID: %s)", index, vmId)
+			return fmt.Errorf("command with index %d not found for VM (ID: %s)", index, nodeId)
 		}
 
 		// Capture xRequestId for SSE publishing
@@ -3399,7 +3399,7 @@ func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.C
 	if updatedXRequestId != "" && updatedStatusInfo != nil {
 		PublishCommandEvent(updatedXRequestId, model.CommandStreamEvent{
 			Type:         model.EventCommandStatus,
-			VmId:         vmId,
+			NodeId:         nodeId,
 			CommandIndex: index,
 			Timestamp:    time.Now().Format(time.RFC3339Nano),
 			Status:       updatedStatusInfo,
@@ -3408,8 +3408,8 @@ func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.C
 
 	log.Info().
 		Str("nsId", nsId).
-		Str("mciId", mciId).
-		Str("vmId", vmId).
+		Str("infraId", infraId).
+		Str("nodeId", nodeId).
 		Int("index", index).
 		Str("status", string(status)).
 		Msg("Command status updated")
@@ -3418,34 +3418,34 @@ func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.C
 }
 
 // GetCommandStatusInfo retrieves a specific command status record
-func GetCommandStatusInfo(nsId, mciId, vmId string, index int) (*model.CommandStatusInfo, error) {
+func GetCommandStatusInfo(nsId, infraId, nodeId string, index int) (*model.CommandStatusInfo, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	// Use existing GetVmObject function instead of direct kvstore access
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	// Use existing GetNodeObject function instead of direct kvstore access
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	// Find the command status by index using helper function
-	cmdStatus, _ := findCommandByIndex(vmInfo.CommandStatus, index)
+	cmdStatus, _ := findCommandByIndex(nodeInfo.CommandStatus, index)
 	if cmdStatus == nil {
-		return nil, fmt.Errorf("command with index %d not found for VM (ID: %s)", index, vmId)
+		return nil, fmt.Errorf("command with index %d not found for VM (ID: %s)", index, nodeId)
 	}
 
 	// For "Handling" status, calculate real-time elapsed time
@@ -3462,32 +3462,32 @@ func GetCommandStatusInfo(nsId, mciId, vmId string, index int) (*model.CommandSt
 }
 
 // ListCommandStatusInfo retrieves command status records with filtering
-func ListCommandStatusInfo(nsId, mciId, vmId string, filter *model.CommandStatusFilter) (*model.CommandStatusListResponse, error) {
+func ListCommandStatusInfo(nsId, infraId, nodeId string, filter *model.CommandStatusFilter) (*model.CommandStatusListResponse, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	// Use existing GetVmObject function instead of direct kvstore access
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	// Use existing GetNodeObject function instead of direct kvstore access
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	// Apply filters using helper function
-	filteredCommands := filterCommands(vmInfo.CommandStatus, filter)
+	filteredCommands := filterCommands(nodeInfo.CommandStatus, filter)
 	total := len(filteredCommands)
 
 	// Apply pagination using helper function
@@ -3524,28 +3524,28 @@ func ListCommandStatusInfo(nsId, mciId, vmId string, filter *model.CommandStatus
 }
 
 // DeleteCommandStatusInfo deletes a specific command status record
-func DeleteCommandStatusInfo(nsId, mciId, vmId string, index int) error {
+func DeleteCommandStatusInfo(nsId, infraId, nodeId string, index int) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+	err = updateNodeCommandStatusSafe(nsId, infraId, nodeId, func(commandStatus *[]model.CommandStatusInfo) error {
 		// Find and remove the command status by index
 		_, cmdIndex := findCommandByIndex(*commandStatus, index)
 		if cmdIndex == -1 {
-			return fmt.Errorf("command with index %d not found for VM (ID: %s)", index, vmId)
+			return fmt.Errorf("command with index %d not found for VM (ID: %s)", index, nodeId)
 		}
 
 		// Remove the command from slice
@@ -3560,8 +3560,8 @@ func DeleteCommandStatusInfo(nsId, mciId, vmId string, index int) error {
 
 	log.Info().
 		Str("nsId", nsId).
-		Str("mciId", mciId).
-		Str("vmId", vmId).
+		Str("infraId", infraId).
+		Str("nodeId", nodeId).
 		Int("index", index).
 		Msg("Command status deleted")
 
@@ -3569,18 +3569,18 @@ func DeleteCommandStatusInfo(nsId, mciId, vmId string, index int) error {
 }
 
 // DeleteCommandStatusInfoByCriteria deletes multiple command status records by criteria
-func DeleteCommandStatusInfoByCriteria(nsId, mciId, vmId string, filter *model.CommandStatusFilter) (int, error) {
+func DeleteCommandStatusInfoByCriteria(nsId, infraId, nodeId string, filter *model.CommandStatusFilter) (int, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
@@ -3588,7 +3588,7 @@ func DeleteCommandStatusInfoByCriteria(nsId, mciId, vmId string, filter *model.C
 
 	var deleteCount int
 
-	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+	err = updateNodeCommandStatusSafe(nsId, infraId, nodeId, func(commandStatus *[]model.CommandStatusInfo) error {
 		// Find matching commands to delete using helper function
 		commandsToDelete := filterCommands(*commandStatus, filter)
 		deleteCount = len(commandsToDelete)
@@ -3623,8 +3623,8 @@ func DeleteCommandStatusInfoByCriteria(nsId, mciId, vmId string, filter *model.C
 
 	log.Info().
 		Str("nsId", nsId).
-		Str("mciId", mciId).
-		Str("vmId", vmId).
+		Str("infraId", infraId).
+		Str("nodeId", nodeId).
 		Int("deleteCount", deleteCount).
 		Msg("Command statuses deleted by criteria")
 
@@ -3632,18 +3632,18 @@ func DeleteCommandStatusInfoByCriteria(nsId, mciId, vmId string, filter *model.C
 }
 
 // ClearAllCommandStatusInfo deletes all command status records for a VM
-func ClearAllCommandStatusInfo(nsId, mciId, vmId string) (int, error) {
+func ClearAllCommandStatusInfo(nsId, infraId, nodeId string) (int, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
@@ -3651,7 +3651,7 @@ func ClearAllCommandStatusInfo(nsId, mciId, vmId string) (int, error) {
 
 	var clearCount int
 
-	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+	err = updateNodeCommandStatusSafe(nsId, infraId, nodeId, func(commandStatus *[]model.CommandStatusInfo) error {
 		// Count and clear all command statuses
 		clearCount = len(*commandStatus)
 		*commandStatus = []model.CommandStatusInfo{}
@@ -3665,8 +3665,8 @@ func ClearAllCommandStatusInfo(nsId, mciId, vmId string) (int, error) {
 
 	log.Info().
 		Str("nsId", nsId).
-		Str("mciId", mciId).
-		Str("vmId", vmId).
+		Str("infraId", infraId).
+		Str("nodeId", nodeId).
 		Int("clearCount", clearCount).
 		Msg("All command statuses cleared")
 
@@ -3675,25 +3675,25 @@ func ClearAllCommandStatusInfo(nsId, mciId, vmId string) (int, error) {
 
 // GetHandlingCommandCount returns the count of currently handling commands for a VM
 // This function is optimized for frequent polling and avoids unnecessary processing
-func GetHandlingCommandCount(nsId, mciId, vmId string) (int, error) {
+func GetHandlingCommandCount(nsId, infraId, nodeId string) (int, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
-	err = common.CheckString(vmId)
+	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	// Use existing GetVmObject function - optimized for performance
-	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	// Use existing GetNodeObject function - optimized for performance
+	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		// Don't log errors for frequent polling calls to reduce noise
 		return 0, err
@@ -3701,7 +3701,7 @@ func GetHandlingCommandCount(nsId, mciId, vmId string) (int, error) {
 
 	// Count handling commands efficiently
 	handlingCount := 0
-	for _, cmdStatus := range vmInfo.CommandStatus {
+	for _, cmdStatus := range nodeInfo.CommandStatus {
 		if cmdStatus.Status == model.CommandStatusHandling {
 			handlingCount++
 		}
@@ -3710,44 +3710,44 @@ func GetHandlingCommandCount(nsId, mciId, vmId string) (int, error) {
 	return handlingCount, nil
 }
 
-// GetMciHandlingCommandCount returns the count of currently handling commands across all VMs in an MCI
-// This function is optimized for MCI-level monitoring
-func GetMciHandlingCommandCount(nsId, mciId string) (map[string]int, int, error) {
+// GetInfraHandlingCommandCount returns the count of currently handling commands across all VMs in an Infra
+// This function is optimized for Infra-level monitoring
+func GetInfraHandlingCommandCount(nsId, infraId string) (map[string]int, int, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, 0, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, 0, err
 	}
 
 	// Get VM list
-	vmList, err := ListVmId(nsId, mciId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	vmHandlingCounts := make(map[string]int)
+	nodeHandlingCounts := make(map[string]int)
 	totalHandlingCount := 0
 
 	// Process each VM's handling commands
-	for _, vmId := range vmList {
-		handlingCount, err := GetHandlingCommandCount(nsId, mciId, vmId)
+	for _, nodeId := range nodeList {
+		handlingCount, err := GetHandlingCommandCount(nsId, infraId, nodeId)
 		if err != nil {
 			// Continue processing other VMs even if one fails
-			log.Debug().Err(err).Msgf("Failed to get handling count for VM %s", vmId)
-			vmHandlingCounts[vmId] = 0
+			log.Debug().Err(err).Msgf("Failed to get handling count for VM %s", nodeId)
+			nodeHandlingCounts[nodeId] = 0
 			continue
 		}
 
-		vmHandlingCounts[vmId] = handlingCount
+		nodeHandlingCounts[nodeId] = handlingCount
 		totalHandlingCount += handlingCount
 	}
 
-	return vmHandlingCounts, totalHandlingCount, nil
+	return nodeHandlingCounts, totalHandlingCount, nil
 }
 
 // CleanupInterruptedCommands marks all "Handling" or "Queued" commands as "Interrupted"
@@ -3766,26 +3766,26 @@ func CleanupInterruptedCommands() error {
 	totalInterrupted := 0
 
 	for _, nsId := range nsList {
-		// Get all MCIs in namespace
-		mciList, err := ListMciId(nsId)
+		// Get all Infras in namespace
+		infraList, err := ListInfraId(nsId)
 		if err != nil {
-			log.Debug().Err(err).Str("nsId", nsId).Msg("Failed to list MCIs")
+			log.Debug().Err(err).Str("nsId", nsId).Msg("Failed to list Infras")
 			continue
 		}
 
-		for _, mciId := range mciList {
-			// Get all VMs in MCI
-			vmList, err := ListVmId(nsId, mciId)
+		for _, infraId := range infraList {
+			// Get all VMs in Infra
+			nodeList, err := ListNodeId(nsId, infraId)
 			if err != nil {
-				log.Debug().Err(err).Str("mciId", mciId).Msg("Failed to list VMs")
+				log.Debug().Err(err).Str("infraId", infraId).Msg("Failed to list VMs")
 				continue
 			}
 
-			for _, vmId := range vmList {
-				count, err := cleanupVmInterruptedCommands(nsId, mciId, vmId)
+			for _, nodeId := range nodeList {
+				count, err := cleanupNodeInterruptedCommands(nsId, infraId, nodeId)
 				if err != nil {
 					log.Debug().Err(err).
-						Str("vmId", vmId).
+						Str("nodeId", nodeId).
 						Msg("Failed to cleanup interrupted commands for VM")
 					continue
 				}
@@ -3805,11 +3805,11 @@ func CleanupInterruptedCommands() error {
 	return nil
 }
 
-// cleanupVmInterruptedCommands marks Handling/Queued commands as Interrupted for a specific VM
-func cleanupVmInterruptedCommands(nsId, mciId, vmId string) (int, error) {
+// cleanupNodeInterruptedCommands marks Handling/Queued commands as Interrupted for a specific Node
+func cleanupNodeInterruptedCommands(nsId, infraId, nodeId string) (int, error) {
 	interruptedCount := 0
 
-	err := updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+	err := updateNodeCommandStatusSafe(nsId, infraId, nodeId, func(commandStatus *[]model.CommandStatusInfo) error {
 		now := time.Now()
 		for i := range *commandStatus {
 			cmd := &(*commandStatus)[i]
@@ -3830,7 +3830,7 @@ func cleanupVmInterruptedCommands(nsId, mciId, vmId string) (int, error) {
 
 				interruptedCount++
 				log.Debug().
-					Str("vmId", vmId).
+					Str("nodeId", nodeId).
 					Int("index", cmd.Index).
 					Str("originalStatus", string(originalStatus)).
 					Msg("Marked command as interrupted")
@@ -3842,17 +3842,17 @@ func cleanupVmInterruptedCommands(nsId, mciId, vmId string) (int, error) {
 	return interruptedCount, err
 }
 
-// GetMciActiveCommands returns command execution tasks for an MCI
+// GetInfraActiveCommands returns command execution tasks for an Infra
 // Each VM's command is returned as a separate task for individual tracking and cancellation
-func GetMciActiveCommands(nsId, mciId string, statusFilter []model.CommandExecutionStatus) (*model.ExecutionTaskListResponse, error) {
+func GetInfraActiveCommands(nsId, infraId string, statusFilter []model.CommandExecutionStatus) (*model.ExecutionTaskListResponse, error) {
 	if nsId != "" {
 		err := common.CheckString(nsId)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if mciId != "" {
-		err := common.CheckString(mciId)
+	if infraId != "" {
+		err := common.CheckString(infraId)
 		if err != nil {
 			return nil, err
 		}
@@ -3877,27 +3877,27 @@ func GetMciActiveCommands(nsId, mciId string, statusFilter []model.CommandExecut
 	// statusFilter can be nil/empty to return all statuses
 
 	for _, ns := range nsList {
-		// Get MCIs to scan
-		var mciList []string
-		if mciId != "" {
-			mciList = []string{mciId}
+		// Get Infras to scan
+		var infraList []string
+		if infraId != "" {
+			infraList = []string{infraId}
 		} else {
 			var err error
-			mciList, err = ListMciId(ns)
+			infraList, err = ListInfraId(ns)
 			if err != nil {
 				continue
 			}
 		}
 
-		for _, mci := range mciList {
-			vmList, err := ListVmId(ns, mci)
+		for _, infra := range infraList {
+			nodeList, err := ListNodeId(ns, infra)
 			if err != nil {
 				continue
 			}
 
-			for _, vmId := range vmList {
+			for _, nodeId := range nodeList {
 				// Get command status for this VM
-				commandList, err := ListCommandStatusInfo(ns, mci, vmId, &model.CommandStatusFilter{
+				commandList, err := ListCommandStatusInfo(ns, infra, nodeId, &model.CommandStatusFilter{
 					Status: statusFilter,
 				})
 				if err != nil {
@@ -3907,11 +3907,11 @@ func GetMciActiveCommands(nsId, mciId string, statusFilter []model.CommandExecut
 				// Create individual task for each VM's command
 				for _, cmd := range commandList.Commands {
 					task := model.ExecutionTask{
-						TaskId:         fmt.Sprintf("%s:%s:%d", cmd.XRequestId, vmId, cmd.Index), // Unique per VM
+						TaskId:         fmt.Sprintf("%s:%s:%d", cmd.XRequestId, nodeId, cmd.Index), // Unique per VM
 						XRequestId:     cmd.XRequestId,
 						NsId:           ns,
-						MciId:          mci,
-						VmId:           vmId,
+						InfraId:        infra,
+						NodeId:           nodeId,
 						CommandIndex:   cmd.Index,
 						Command:        []string{cmd.CommandRequested},
 						Status:         cmd.Status,
@@ -3919,8 +3919,8 @@ func GetMciActiveCommands(nsId, mciId string, statusFilter []model.CommandExecut
 						CompletedAt:    cmd.CompletedTime,
 						ElapsedSeconds: cmd.ElapsedTime, // Already in seconds
 						Message:        cmd.ResultSummary,
-						TargetVmCount:  1,
-						CompletedVmCount: func() int {
+						TargetNodeCount:  1,
+						CompletedNodeCount: func() int {
 							if isTerminalStatus(cmd.Status) {
 								return 1
 							}
@@ -3948,27 +3948,27 @@ func isTerminalStatus(status model.CommandExecutionStatus) bool {
 	}
 }
 
-// CancelMciCommand cancels a running command by updating its status to Cancelled
+// CancelInfraCommand cancels a running command by updating its status to Cancelled
 // It also attempts to cancel the in-memory task if still running
-// If vmId is provided, cancels only that specific VM's command
-// If vmId is empty, cancels all VMs with the given xRequestId
-func CancelMciCommand(nsId, mciId, vmId, xRequestId string, index int, reason string) (*model.CancelTaskResponse, error) {
+// If nodeId is provided, cancels only that specific VM's command
+// If nodeId is empty, cancels all VMs with the given xRequestId
+func CancelInfraCommand(nsId, infraId, nodeId, xRequestId string, index int, reason string) (*model.CancelTaskResponse, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		return nil, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		return nil, err
 	}
 
 	response := &model.CancelTaskResponse{
-		TaskId:      fmt.Sprintf("%s:%s:%d", xRequestId, vmId, index),
+		TaskId:      fmt.Sprintf("%s:%s:%d", xRequestId, nodeId, index),
 		CancelledAt: time.Now().Format(time.RFC3339),
 	}
 
 	// Update the command status in VM info
-	err = UpdateCommandStatusInfo(nsId, mciId, vmId, index,
+	err = UpdateCommandStatusInfo(nsId, infraId, nodeId, index,
 		model.CommandStatusCancelled,
 		"Cancelled by user request",
 		fmt.Sprintf("Cancellation reason: %s", reason),
@@ -3980,8 +3980,8 @@ func CancelMciCommand(nsId, mciId, vmId, xRequestId string, index int, reason st
 	}
 
 	// Cancel the in-memory context for this specific VM if exists
-	if xRequestId != "" && vmId != "" {
-		cancelByKey(xRequestId, vmId)
+	if xRequestId != "" && nodeId != "" {
+		cancelByKey(xRequestId, nodeId)
 	}
 
 	response.Success = true

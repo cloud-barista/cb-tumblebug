@@ -256,18 +256,18 @@ func ExampleRaceConditionTest(ctx context.Context) {
 
 func ExampleFilterKvListBy() {
 	kvs := []kvstore.KeyValue{
-		{Key: "/ns/default/mci/mci02", Value: "value1"},
-		{Key: "/ns/default/mci/mci02/", Value: "value1"},
-		{Key: "/ns/default/mci/mci03", Value: "value2"},
-		{Key: "/ns/default/mci/mci03/", Value: "value2"},
-		{Key: "/ns/ns04/mci/mci02", Value: "value3"},
-		{Key: "/ns/ns04/mci/mci02/", Value: "value3"},
+		{Key: "/ns/default/infra/infra02", Value: "value1"},
+		{Key: "/ns/default/infra/infra02/", Value: "value1"},
+		{Key: "/ns/default/infra/infra03", Value: "value2"},
+		{Key: "/ns/default/infra/infra03/", Value: "value2"},
+		{Key: "/ns/ns04/infra/infra02", Value: "value3"},
+		{Key: "/ns/ns04/infra/infra02/", Value: "value3"},
 		{Key: "/ns/default", Value: "value4"},
 		{Key: "/ns/default/", Value: "value4"},
-		{Key: "/ns/ns04/mci/mci05/vpc/vpc01", Value: "value5"},
-		{Key: "/ns/ns04/mci/mci05/vpc/vpc01/", Value: "value5"},
-		{Key: "/ns/default/mci/mci07", Value: "value6"},
-		{Key: "/ns/default/mci/mci07/", Value: "value6"},
+		{Key: "/ns/ns04/infra/infra05/vpc/vpc01", Value: "value5"},
+		{Key: "/ns/ns04/infra/infra05/vpc/vpc01/", Value: "value5"},
+		{Key: "/ns/default/infra/infra07", Value: "value6"},
+		{Key: "/ns/default/infra/infra07/", Value: "value6"},
 	}
 
 	// Print all key-value pairs
@@ -276,18 +276,18 @@ func ExampleFilterKvListBy() {
 		fmt.Println(kv.Key, kv.Value)
 	}
 
-	// Case 1-1: Filter by ns=default and mci=id2
-	prefixkey11 := "/ns/default/mci"
+	// Case 1-1: Filter by ns=default and infra=id2
+	prefixkey11 := "/ns/default/infra"
 	filteredKVs11 := kvutil.FilterKvListBy(kvs, prefixkey11, 1)
-	fmt.Println("\nFiltered by '/ns/default/mci', Output 'ns/default/mci/{mciId}': ")
+	fmt.Println("\nFiltered by '/ns/default/infra', Output 'ns/default/infra/{infraId}': ")
 	for _, kv := range filteredKVs11 {
 		fmt.Println(kv.Key, kv.Value)
 	}
 
-	// Case 1-2: Filter by ns=default and mci=id2
-	prefixkey12 := "/ns/default/mci/"
+	// Case 1-2: Filter by ns=default and infra=id2
+	prefixkey12 := "/ns/default/infra/"
 	filteredKVs12 := kvutil.FilterKvListBy(kvs, prefixkey12, 1)
-	fmt.Println("\nFiltered by '/ns/default/mci/', Output 'ns/default/mci/{mciId}': ")
+	fmt.Println("\nFiltered by '/ns/default/infra/', Output 'ns/default/infra/{infraId}': ")
 	for _, kv := range filteredKVs12 {
 		fmt.Println(kv.Key, kv.Value)
 	}
@@ -308,18 +308,18 @@ func ExampleFilterKvListBy() {
 		fmt.Println(kv.Key, kv.Value)
 	}
 
-	// Case 3-1: Filter by ns=ns04, mci=mci05, and vpc=vpc01
-	prefixkey31 := "/ns/ns04/mci/mci05/vpc"
+	// Case 3-1: Filter by ns=ns04, infra=infra05, and vpc=vpc01
+	prefixkey31 := "/ns/ns04/infra/infra05/vpc"
 	filteredKVs31 := kvutil.FilterKvListBy(kvs, prefixkey31, 1)
-	fmt.Println("\nFiltered by '/ns/ns04/mci/mci05/vpc', Output '/ns/ns04/mci/mci05/vpc/{vpcId}'")
+	fmt.Println("\nFiltered by '/ns/ns04/infra/infra05/vpc', Output '/ns/ns04/infra/infra05/vpc/{vpcId}'")
 	for _, kv := range filteredKVs31 {
 		fmt.Println(kv.Key, kv.Value)
 	}
 
-	// Case 3-2: Filter by ns=ns04, mci=mci05, and vpc=vpc01
-	prefixkey32 := "/ns/ns04/mci/mci05/vpc/"
+	// Case 3-2: Filter by ns=ns04, infra=infra05, and vpc=vpc01
+	prefixkey32 := "/ns/ns04/infra/infra05/vpc/"
 	filteredKVs32 := kvutil.FilterKvListBy(kvs, prefixkey32, 1)
-	fmt.Println("\nFiltered by '/ns/ns04/mci/mci05/vpc', Output '/ns/ns04/mci/mci05/vpc/{vpcId}'")
+	fmt.Println("\nFiltered by '/ns/ns04/infra/infra05/vpc', Output '/ns/ns04/infra/infra05/vpc/{vpcId}'")
 	for _, kv := range filteredKVs32 {
 		fmt.Println(kv.Key, kv.Value)
 	}
@@ -329,12 +329,12 @@ func ExampleFilterKvListBy() {
 // with various key values and different levels of depth.
 func ExampleFilterKvMapBy() {
 	kvs := kvstore.KeyValueMap{
-		"/ns/default/mci/mci02":        "value1",
-		"/ns/default/mci/mci03":        "value2",
-		"/ns/ns04/mci/mci02":           "value3",
-		"/ns/default":                  "value4",
-		"/ns/ns04/mci/mci05/vpc/vpc01": "value5",
-		"/ns/default/mci/mci07":        "value6",
+		"/ns/default/infra/infra02":        "value1",
+		"/ns/default/infra/infra03":        "value2",
+		"/ns/ns04/infra/infra02":           "value3",
+		"/ns/default":                      "value4",
+		"/ns/ns04/infra/infra05/vpc/vpc01": "value5",
+		"/ns/default/infra/infra07":        "value6",
 	}
 
 	// Print all key-value pairs
@@ -343,16 +343,16 @@ func ExampleFilterKvMapBy() {
 		fmt.Println(key, value)
 	}
 
-	// Case 1: Filter by ns=default and mci=id2
-	prefixkey1 := "/ns/default/mci"
+	// Case 1: Filter by ns=default and infra=id2
+	prefixkey1 := "/ns/default/infra"
 	filteredKVs1 := kvutil.FilterKvMapBy(kvs, prefixkey1, 1)
-	fmt.Println("\nFiltered by '/ns/default/mci', Output 'ns/default/mci/{mciId}': ")
+	fmt.Println("\nFiltered by '/ns/default/infra', Output 'ns/default/infra/{infraId}': ")
 	for key, value := range filteredKVs1 {
 		fmt.Println(key, value)
 	}
-	// Output: /ns/default/mci/mci02 value1
-	// Output: /ns/default/mci/mci03 value2
-	// Output: /ns/default/mci/mci07 value6
+	// Output: /ns/default/infra/infra02 value1
+	// Output: /ns/default/infra/infra03 value2
+	// Output: /ns/default/infra/infra07 value6
 
 	// Case 2: Filter by ns=default
 	prefixkey2 := "/ns"
@@ -363,21 +363,21 @@ func ExampleFilterKvMapBy() {
 	}
 	// Output: /ns/default value4
 
-	// Case 3: Filter by ns=ns04, mci=mci05, and vpc=vpc01
-	prefixkey3 := "/ns/ns04/mci/mci05/vpc"
+	// Case 3: Filter by ns=ns04, infra=infra05, and vpc=vpc01
+	prefixkey3 := "/ns/ns04/infra/infra05/vpc"
 	filteredKVs3 := kvutil.FilterKvMapBy(kvs, prefixkey3, 1)
-	fmt.Println("\nFiltered by '/ns/ns04/mci/mci05/vpc', Output '/ns/ns04/mci/mci05/vpc/{vpcId}'")
+	fmt.Println("\nFiltered by '/ns/ns04/infra/infra05/vpc', Output '/ns/ns04/infra/infra05/vpc/{vpcId}'")
 	for key, value := range filteredKVs3 {
 		fmt.Println(key, value)
 	}
-	// Output: /ns/ns04/mci/mci05/vpc/vpc01 value5
+	// Output: /ns/ns04/infra/infra05/vpc/vpc01 value5
 }
 
 func ExampleExtractIDsFromKey() {
 
-	key := "/ns/default/mci/mci02/vpc/vpc03"
+	key := "/ns/default/infra/infra02/vpc/vpc03"
 
-	ids, err := kvutil.ExtractIDsFromKey(key, "ns", "mci", "vpc")
+	ids, err := kvutil.ExtractIDsFromKey(key, "ns", "infra", "vpc")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -385,9 +385,9 @@ func ExampleExtractIDsFromKey() {
 	fmt.Println("Key: ", key)
 	fmt.Println(ids)
 
-	key2 := "/ns/default/mci/mci02/SOMETHINGADDED/vpc/vpc03"
+	key2 := "/ns/default/infra/infra02/SOMETHINGADDED/vpc/vpc03"
 
-	ids, err = kvutil.ExtractIDsFromKey(key2, "ns", "mci", "vpc")
+	ids, err = kvutil.ExtractIDsFromKey(key2, "ns", "infra", "vpc")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -401,17 +401,17 @@ func ExampleExtractIDsFromKey() {
 func ExampleContainsIDs() {
 
 	ids := map[string]string{
-		"ns":  "default",
-		"mci": "mci02",
+		"ns":    "default",
+		"infra": "infra02",
 	}
 
-	key := "/ns/default/mci/mci02/vpc/vpc03"
+	key := "/ns/default/infra/infra02/vpc/vpc03"
 	contains := kvutil.ContainsIDs(key, ids)
 	fmt.Println("key: ", key)
 	fmt.Println("ids: ", ids)
 	fmt.Println("result: ", contains)
 
-	key2 := "/ns/default/mci/mci02/SOMETHINGADDED/vpc/vpc03"
+	key2 := "/ns/default/infra/infra02/SOMETHINGADDED/vpc/vpc03"
 	contains = kvutil.ContainsIDs(key2, ids)
 	fmt.Println("key: ", key2)
 	fmt.Println("ids: ", ids)
@@ -423,13 +423,13 @@ func ExampleContainsIDs() {
 // func ExampleBuildKey() {
 // 	ids := map[string]string{
 // 		"ns":   "default",
-// 		"mci": "mci02",
+// 		"infra": "infra02",
 // 		"vpc":  "vpc03",
 // 	}
 
 // 	key := kvstore.BuildKeyBy(ids)
 // 	fmt.Println(key)
-// 	// Output: /ns/default/mci/mci02/vpc/vpc03
+// 	// Output: /ns/default/infra/infra02/vpc/vpc03
 // }
 
 func watchSingleKey(ctx context.Context, wg *sync.WaitGroup) {

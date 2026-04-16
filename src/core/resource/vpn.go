@@ -105,7 +105,7 @@ func IsValidCspPairForVpn(csp1, csp2 string) (bool, error) {
 }
 
 // GetSiteToSiteVPN returns a site-to-site VPN
-func GetAllSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (model.VpnInfoList, error) {
+func GetAllSiteToSiteVPN(ctx context.Context, nsId string, infraId string) (model.VpnInfoList, error) {
 
 	var emptyRet model.VpnInfoList
 	var vpnInfoList model.VpnInfoList
@@ -120,7 +120,7 @@ func GetAllSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (model.
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -152,7 +152,7 @@ func GetAllSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (model.
 }
 
 // GetAllIDsOfSiteToSiteVPN returns a list of site-to-site VPN IDs
-func GetAllIDsOfSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (model.VpnIdList, error) {
+func GetAllIDsOfSiteToSiteVPN(ctx context.Context, nsId string, infraId string) (model.VpnIdList, error) {
 
 	var emptyRet model.VpnIdList
 	var vpnIdList model.VpnIdList
@@ -168,7 +168,7 @@ func GetAllIDsOfSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (m
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -200,7 +200,7 @@ func GetAllIDsOfSiteToSiteVPN(ctx context.Context, nsId string, mciId string) (m
 }
 
 // CreateSiteToSiteVPN creates a site-to-site VPN via Terrarium
-func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq *model.RestPostVpnRequest, retry string) (model.VpnInfo, error) {
+func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnReq *model.RestPostVpnRequest, retry string) (model.VpnInfo, error) {
 
 	// VPN objects
 	var emptyRet model.VpnInfo
@@ -217,7 +217,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnReq 
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -787,7 +787,7 @@ func processResourceArray(array []interface{}) []model.ResourceDetail {
 }
 
 // GetSiteToSiteVPN returns a site-to-site VPN via Terrarium
-func GetSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId string, detail string, refresh bool) (model.VpnInfo, error) {
+func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId string, detail string, refresh bool) (model.VpnInfo, error) {
 
 	var emptyRet model.VpnInfo
 	var vpnInfo model.VpnInfo
@@ -801,7 +801,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId stri
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -972,7 +972,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId stri
 }
 
 // DeleteSiteToSiteVPN deletes a site-to-site VPN via Terrarium
-func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId string) (model.SimpleMsg, error) {
+func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId string) (model.SimpleMsg, error) {
 
 	// VPN objects
 	var emptyRet model.SimpleMsg
@@ -988,7 +988,7 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId s
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1180,7 +1180,7 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, mciId string, vpnId s
 }
 
 // GetRequestStatusOfSiteToSiteVpn returns the status of a site-to-site VPN request
-func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, mciId string, vpnId string, reqId string) (model.Response, error) {
+func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId string, vpnId string, reqId string) (model.Response, error) {
 
 	var emptyRet model.Response
 	var vpnInfo model.VpnInfo
@@ -1195,7 +1195,7 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, mciId str
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

@@ -403,7 +403,7 @@ func RestDelAllImage(c echo.Context) error {
 // @ID SearchImage
 // @Summary Search image
 // @Description Search image
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
@@ -446,7 +446,7 @@ func RestSearchImage(c echo.Context) error {
 // @ID SearchImageOptions
 // @Get available image search request options
 // @Description Get all available options for image search fields
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)

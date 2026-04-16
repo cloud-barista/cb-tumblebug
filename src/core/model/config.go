@@ -271,9 +271,9 @@ type Nlbsw struct {
 	CommandNlbDeploy        string `yaml:"commandNlbDeploy"`
 	CommandNlbAddTargetNode string `yaml:"commandNlbAddTargetNode"`
 	CommandNlbApplyConfig   string `yaml:"commandNlbApplyConfig"`
-	NlbMciSpecId            string `yaml:"nlbMciSpecId"`
-	NlbMciImageId           string `yaml:"nlbMciImageId"`
-	NlbMciSubGroupSize      int    `yaml:"nlbMciSubGroupSize"`
+	NlbInfraSpecId          string `yaml:"nlbInfraSpecId"`
+	NlbInfraImageId         string `yaml:"nlbInfraImageId"`
+	NlbInfraNodeGroupSize   int    `yaml:"nlbInfraNodeGroupSize"`
 }
 
 // K8sClusterSetting is structure for K8sCluster setting

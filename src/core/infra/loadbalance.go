@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -39,15 +39,15 @@ func NLBReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(model.NLBReq)
 
-	err := common.CheckString(u.TargetGroup.SubGroupId)
+	err := common.CheckString(u.TargetGroup.NodeGroupId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.TargetGroup.SubGroupId, "name", "Name", err.Error(), "")
+		sl.ReportError(u.TargetGroup.NodeGroupId, "name", "Name", err.Error(), "")
 	}
 }
 
-// CreateMcSwNlb func create a special purpose MCI for NLB and depoly and setting SW NLB
-func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) (model.McNlbInfo, error) {
+// CreateMcSwNlb func create a special purpose Infra for NLB and depoly and setting SW NLB
+func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string) (model.McNlbInfo, error) {
 	log.Info().Msg("CreateMcSwNlb")
 
 	emptyObj := model.McNlbInfo{}
@@ -58,45 +58,45 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 		return emptyObj, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
-	nlbMciId := mciId + nlbPostfix
+	nlbInfraId := infraId + nlbPostfix
 
-	// create a special MCI for (SW)NLB
+	// create a special Infra for (SW)NLB
 	labels := map[string]string{
-		model.LabelDescription: "MCI for Global-NLB",
+		model.LabelDescription: "Infra for Global-NLB",
 	}
-	mciDynamicReq := model.MciDynamicReq{Name: nlbMciId, InstallMonAgent: "no", Label: labels}
+	infraDynamicReq := model.InfraDynamicReq{Name: nlbInfraId, InstallMonAgent: "no", Label: labels}
 
-	// get vm requst from cloud_conf.yaml
-	subGroupName := "nlb"
+	// get node requst from cloud_conf.yaml
+	nodeGroupName := model.StrNLB
 	// default specId
-	specId := common.RuntimeConf.Nlbsw.NlbMciSpecId
-	imageId := common.RuntimeConf.Nlbsw.NlbMciImageId
-	subGroupSize := common.RuntimeConf.Nlbsw.NlbMciSubGroupSize
-	if subGroupSize <= 0 {
-		log.Warn().Msgf("NlbMciSubGroupSize not set or invalid, using default 1")
-		subGroupSize = 1
+	specId := common.RuntimeConf.Nlbsw.NlbInfraSpecId
+	imageId := common.RuntimeConf.Nlbsw.NlbInfraImageId
+	nodeGroupSize := common.RuntimeConf.Nlbsw.NlbInfraNodeGroupSize
+	if nodeGroupSize <= 0 {
+		log.Warn().Msgf("NlbInfraNodeGroupSize not set or invalid, using default 1")
+		nodeGroupSize = 1
 	}
 
 	// Option can be applied
-	// get recommended location and spec for the NLB host based on existing MCI
+	// get recommended location and spec for the NLB host based on existing Infra
 	recommendSpecReq := model.RecommendSpecReq{}
 	recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "latency"})
 	recommendSpecReq.Priority.Policy[0].Parameter = append(recommendSpecReq.Priority.Policy[0].Parameter, model.ParameterKeyVal{Key: "latencyMinimal"})
 
-	mci, _, err := GetMciObject(nsId, mciId)
+	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
-	for _, vm := range mci.Vm {
-		regionOfVm := vm.ConnectionConfig.RegionZoneInfoName
-		recommendSpecReq.Priority.Policy[0].Parameter[0].Val = append(recommendSpecReq.Priority.Policy[0].Parameter[0].Val, regionOfVm)
+	for _, node := range infra.Node {
+		regionOfNode := node.ConnectionConfig.RegionZoneInfoName
+		recommendSpecReq.Priority.Policy[0].Parameter[0].Val = append(recommendSpecReq.Priority.Policy[0].Parameter[0].Val, regionOfNode)
 	}
 
 	specList, err := RecommendSpec(common.NewDefaultContext(), model.SystemCommonNs, recommendSpecReq)
@@ -109,10 +109,10 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 		specId = recommendedSpec
 	}
 
-	subGroupDynamicReq := model.CreateSubGroupDynamicReq{Name: subGroupName, SpecId: specId, ImageId: imageId, SubGroupSize: subGroupSize}
-	mciDynamicReq.SubGroups = append(mciDynamicReq.SubGroups, subGroupDynamicReq)
+	nodeGroupDynamicReq := model.CreateNodeGroupDynamicReq{Name: nodeGroupName, SpecId: specId, ImageId: imageId, NodeGroupSize: nodeGroupSize}
+	infraDynamicReq.NodeGroups = append(infraDynamicReq.NodeGroups, nodeGroupDynamicReq)
 
-	mciInfo, err := CreateMciDynamic(common.NewDefaultContext(), nsId, &mciDynamicReq, "")
+	infraInfo, err := CreateInfraDynamic(common.NewDefaultContext(), nsId, &infraDynamicReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -126,40 +126,40 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 	var cmds []string
 	cmd := common.RuntimeConf.Nlbsw.CommandNlbPrepare
 	cmds = append(cmds, cmd)
-	cmd = common.RuntimeConf.Nlbsw.CommandNlbDeploy + " " + mciId + " " + common.ToLower(req.Listener.Protocol) + " " + req.Listener.Port
+	cmd = common.RuntimeConf.Nlbsw.CommandNlbDeploy + " " + infraId + " " + common.ToLower(req.Listener.Protocol) + " " + req.Listener.Port
 	cmds = append(cmds, cmd)
 
 	// nodeId=${1:-vm}
 	// nodeIp=${2:-127.0.0.1}
 	// targetPort=${3:-80}
-	accessList, err := GetMciAccessInfo(nsId, mciId, "")
+	accessList, err := GetInfraAccessInfo(nsId, infraId, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
-	for _, v := range accessList.MciSubGroupAccessInfo {
-		for _, k := range v.MciVmAccessInfo {
-			cmd = common.RuntimeConf.Nlbsw.CommandNlbAddTargetNode + " " + k.VmId + " " + k.PublicIP + " " + req.TargetGroup.Port
+	for _, v := range accessList.InfraNodeGroupAccessInfo {
+		for _, k := range v.NodeAccessInfo {
+			cmd = common.RuntimeConf.Nlbsw.CommandNlbAddTargetNode + " " + k.NodeId + " " + k.PublicIP + " " + req.TargetGroup.Port
 			cmds = append(cmds, cmd)
 		}
 	}
 
 	cmd = common.RuntimeConf.Nlbsw.CommandNlbApplyConfig
 	cmds = append(cmds, cmd)
-	output, err := RemoteCommandToMci(nsId, nlbMciId, "", "", "", &model.MciCmdReq{Command: cmds}, "")
+	output, err := RemoteCommandToInfra(nsId, nlbInfraId, "", "", "", &model.InfraCmdReq{Command: cmds}, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
-	result := model.MciSshCmdResult{Results: output}
-	mcNlbInfo := model.McNlbInfo{MciAccessInfo: accessList, McNlbHostInfo: mciInfo, DeploymentLog: result}
+	result := model.InfraSshCmdResult{Results: output}
+	mcNlbInfo := model.McNlbInfo{InfraAccessInfo: accessList, McNlbHostInfo: infraInfo, DeploymentLog: result}
 
 	return mcNlbInfo, err
 
 }
 
 // CreateNLB accepts nlb creation request, creates and returns an TB nlb object
-func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model.NLBInfo, error) {
+func CreateNLB(nsId string, infraId string, u *model.NLBReq, option string) (model.NLBInfo, error) {
 	log.Info().Msg("CreateNLB")
 
 	emptyObj := model.NLBInfo{}
@@ -170,13 +170,13 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 		return emptyObj, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
-	err = common.CheckString(u.TargetGroup.SubGroupId)
+	err = common.CheckString(u.TargetGroup.NodeGroupId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -192,48 +192,48 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 		return emptyObj, err
 	}
 
-	check, err := CheckNLB(nsId, mciId, u.TargetGroup.SubGroupId)
+	check, err := CheckNLB(nsId, infraId, u.TargetGroup.NodeGroupId)
 
 	if check {
-		err := fmt.Errorf("The nlb " + u.TargetGroup.SubGroupId + " already exists.")
+		err := fmt.Errorf("The nlb " + u.TargetGroup.NodeGroupId + " already exists.")
 		return emptyObj, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the nlb " + u.TargetGroup.SubGroupId + ".")
+		err := fmt.Errorf("Failed to check the existence of the nlb " + u.TargetGroup.NodeGroupId + ".")
 		return emptyObj, err
 	}
 
-	vmIDs, err := ListVmBySubGroup(nsId, mciId, u.TargetGroup.SubGroupId)
+	nodeIDs, err := ListNodeByNodeGroup(nsId, infraId, u.TargetGroup.NodeGroupId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get VMs in the SubGroup " + u.TargetGroup.SubGroupId + ".")
+		err := fmt.Errorf("Failed to get Nodes in the NodeGroup " + u.TargetGroup.NodeGroupId + ".")
 		return emptyObj, err
 	}
-	if len(vmIDs) == 0 {
-		err := fmt.Errorf("There is no VMs in the SubGroup " + u.TargetGroup.SubGroupId + ".")
+	if len(nodeIDs) == 0 {
+		err := fmt.Errorf("There are no Nodes in the NodeGroup " + u.TargetGroup.NodeGroupId + ".")
 		return emptyObj, err
 	}
 
-	vm, err := GetVmObject(nsId, mciId, vmIDs[0])
+	node, err := GetNodeObject(nsId, infraId, nodeIDs[0])
 	if err != nil {
-		err := fmt.Errorf("Failed to get VM " + vmIDs[0] + ".")
+		err := fmt.Errorf("Failed to get Node " + nodeIDs[0] + ".")
 		return emptyObj, err
 	}
 
 	vNetInfo := model.VNetInfo{}
-	tempInterface, err := resource.GetResource(nsId, model.StrVNet, vm.VNetId)
+	tempInterface, err := resource.GetResource(nsId, model.StrVNet, node.VNetId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the VNetInfo " + vm.VNetId + ".")
+		err := fmt.Errorf("Failed to get the VNetInfo " + node.VNetId + ".")
 		return emptyObj, err
 	}
 	err = common.CopySrcToDest(&tempInterface, &vNetInfo)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() " + vm.VNetId + ".")
+		err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() " + node.VNetId + ".")
 		return emptyObj, err
 	}
 
 	requestBody := model.SpiderNLBReqInfoWrapper{
-		ConnectionName: vm.ConnectionName,
+		ConnectionName: node.ConnectionName,
 		ReqInfo: model.SpiderNLBReqInfo{
 			Name:     common.GenUid(),
 			VPCName:  vNetInfo.CspResourceName,
@@ -247,16 +247,16 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 				Timeout:   strconv.Itoa(u.HealthChecker.Timeout),
 				Threshold: strconv.Itoa(u.HealthChecker.Threshold),
 			},
-			VMGroup: model.SpiderNLBSubGroupReq{
+			VMGroup: model.SpiderNLBNodeGroupReq{
 				Protocol: u.TargetGroup.Protocol,
 				Port:     u.TargetGroup.Port,
 			},
 		},
 	}
 
-	connConfig, err := common.GetConnConfig(vm.ConnectionName)
+	connConfig, err := common.GetConnConfig(node.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the connConfig " + vm.ConnectionName + ".")
+		err := fmt.Errorf("Failed to get the connConfig " + node.ConnectionName + ".")
 		return emptyObj, err
 	}
 
@@ -304,14 +304,14 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 		requestBody.ReqInfo.HealthChecker.Threshold = strconv.Itoa(valuesFromYaml.Threshold)
 	}
 
-	for _, v := range vmIDs {
-		vm, err := GetVmObject(nsId, mciId, v)
+	for _, v := range nodeIDs {
+		node, err := GetNodeObject(nsId, infraId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
-		requestBody.ReqInfo.VMGroup.VMs = append(requestBody.ReqInfo.VMGroup.VMs, vm.CspResourceName)
+		requestBody.ReqInfo.VMGroup.VMs = append(requestBody.ReqInfo.VMGroup.VMs, node.CspResourceName)
 	}
 
 	var callResult model.SpiderNLBInfo
@@ -322,7 +322,7 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 	var url string
 	var method string
 	if option == "register" && u.CspResourceId == "" {
-		url = fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, u.TargetGroup.SubGroupId)
+		url = fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, u.TargetGroup.NodeGroupId)
 		method = "GET"
 	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regnlb", model.SpiderRestUrl)
@@ -352,9 +352,9 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 	location := connConfig.RegionDetail.Location
 
 	content := model.NLBInfo{
-		Id:             u.TargetGroup.SubGroupId,
-		Name:           u.TargetGroup.SubGroupId,
-		ConnectionName: vm.ConnectionName,
+		Id:             u.TargetGroup.NodeGroupId,
+		Name:           u.TargetGroup.NodeGroupId,
+		ConnectionName: node.ConnectionName,
 		Type:           tempSpiderNLBInfo.Type,
 		Scope:          tempSpiderNLBInfo.Scope,
 		Listener: model.NLBListenerInfo{
@@ -381,8 +381,8 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 		TargetGroup: model.NLBTargetGroupInfo{
 			Protocol:     tempSpiderNLBInfo.VMGroup.Protocol,
 			Port:         tempSpiderNLBInfo.VMGroup.Port,
-			SubGroupId:   u.TargetGroup.SubGroupId,
-			VMs:          vmIDs,
+			NodeGroupId:  u.TargetGroup.NodeGroupId,
+			Nodes:        nodeIDs,
 			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
 		},
 		Location: location,
@@ -396,7 +396,7 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 
 	// kvstore
 	// Key := common.GenResourceKey(nsId, model.StrNLB, content.Id)
-	Key := GenNLBKey(nsId, mciId, content.Id)
+	Key := GenNLBKey(nsId, infraId, content.Id)
 	Val, _ := json.Marshal(content)
 
 	err = kvstore.Put(Key, string(Val))
@@ -422,7 +422,7 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 }
 
 // GetNLB returns the requested TB NLB object
-func GetNLB(nsId string, mciId string, resourceId string) (model.NLBInfo, error) {
+func GetNLB(nsId string, infraId string, resourceId string) (model.NLBInfo, error) {
 
 	emptyObj := model.NLBInfo{}
 
@@ -432,7 +432,7 @@ func GetNLB(nsId string, mciId string, resourceId string) (model.NLBInfo, error)
 		return emptyObj, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -443,7 +443,7 @@ func GetNLB(nsId string, mciId string, resourceId string) (model.NLBInfo, error)
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
-	check, err := CheckNLB(nsId, mciId, resourceId)
+	check, err := CheckNLB(nsId, infraId, resourceId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -458,7 +458,7 @@ func GetNLB(nsId string, mciId string, resourceId string) (model.NLBInfo, error)
 	log.Debug().Msg("[Get NLB] " + resourceId)
 
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
-	key := GenNLBKey(nsId, mciId, resourceId)
+	key := GenNLBKey(nsId, infraId, resourceId)
 
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
@@ -481,14 +481,14 @@ func GetNLB(nsId string, mciId string, resourceId string) (model.NLBInfo, error)
 	return res, err
 }
 
-// GetMcNlbAccess returns the requested TB G-NLB access info (currenly MCI)
-func GetMcNlbAccess(nsId string, mciId string) (*model.MciAccessInfo, error) {
-	nlbMciId := mciId + nlbPostfix
-	return GetMciAccessInfo(nsId, nlbMciId, "")
+// GetMcNlbAccess returns the requested TB G-NLB access info (currenly Infra)
+func GetMcNlbAccess(nsId string, infraId string) (*model.InfraAccessInfo, error) {
+	nlbInfraId := infraId + nlbPostfix
+	return GetInfraAccessInfo(nsId, nlbInfraId, "")
 }
 
 // CheckNLB returns the existence of the TB NLB object in bool form.
-func CheckNLB(nsId string, mciId string, resourceId string) (bool, error) {
+func CheckNLB(nsId string, infraId string, resourceId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
@@ -505,7 +505,7 @@ func CheckNLB(nsId string, mciId string, resourceId string) (bool, error) {
 		return false, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
@@ -518,7 +518,7 @@ func CheckNLB(nsId string, mciId string, resourceId string) (bool, error) {
 	}
 
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
-	key := GenNLBKey(nsId, mciId, resourceId)
+	key := GenNLBKey(nsId, infraId, resourceId)
 
 	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
@@ -533,14 +533,14 @@ func CheckNLB(nsId string, mciId string, resourceId string) (bool, error) {
 }
 
 // GenNLBKey is func to generate a key from NLB id
-func GenNLBKey(nsId string, mciId string, resourceId string) string {
+func GenNLBKey(nsId string, infraId string, resourceId string) string {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "/invalidKey"
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "/invalidKey"
@@ -552,15 +552,15 @@ func GenNLBKey(nsId string, mciId string, resourceId string) string {
 		return "/invalidKey"
 	}
 
-	return fmt.Sprintf("/ns/%s/mci/%s/nlb/%s", nsId, mciId, resourceId)
+	return fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/%s/"+model.StrNLB+"/%s", nsId, infraId, resourceId)
 }
 
 // ListNLBId returns the list of TB NLB object IDs of given nsId
-func ListNLBId(nsId string, mciId string) ([]string, error) {
+func ListNLBId(nsId string, infraId string) ([]string, error) {
 
 	log.Debug().Msg("[ListNLBId] ns: " + nsId)
 	// key := "/ns/" + nsId + "/"
-	key := fmt.Sprintf("/ns/%s/mci/%s/", nsId, mciId)
+	key := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/%s/", nsId, infraId)
 	fmt.Println(key)
 
 	keyValue, err := kvstore.GetKvList(key)
@@ -580,7 +580,7 @@ func ListNLBId(nsId string, mciId string) ([]string, error) {
 
 	var resourceList []string
 	for _, v := range keyValue {
-		trimmedString := strings.TrimPrefix(v.Key, (key + "nlb/"))
+		trimmedString := strings.TrimPrefix(v.Key, (key + model.StrNLB + "/"))
 		// prevent malformed key (if key for resource id includes '/', the key does not represent resource ID)
 		if !strings.Contains(trimmedString, "/") {
 			resourceList = append(resourceList, trimmedString)
@@ -592,7 +592,7 @@ func ListNLBId(nsId string, mciId string) ([]string, error) {
 }
 
 // ListNLB returns the list of TB NLB objects of given nsId
-func ListNLB(nsId string, mciId string, filterKey string, filterVal string) (interface{}, error) {
+func ListNLB(nsId string, infraId string, filterKey string, filterVal string) (interface{}, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -600,14 +600,14 @@ func ListNLB(nsId string, mciId string, filterKey string, filterVal string) (int
 		return nil, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	log.Debug().Msg("[Get] NLB list")
-	key := fmt.Sprintf("/ns/%s/mci/%s/nlb", nsId, mciId)
+	key := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/%s/"+model.StrNLB, nsId, infraId)
 	fmt.Println(key)
 
 	keyValue, err := kvstore.GetKvList(key)
@@ -650,7 +650,7 @@ func ListNLB(nsId string, mciId string, filterKey string, filterVal string) (int
 }
 
 // DelNLB deletes the TB NLB object
-func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) error {
+func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -658,7 +658,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 		return err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -669,7 +669,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	check, err := CheckNLB(nsId, mciId, resourceId)
+	check, err := CheckNLB(nsId, infraId, resourceId)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -682,14 +682,14 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 		return err
 	}
 
-	key := GenNLBKey(nsId, mciId, resourceId)
+	key := GenNLBKey(nsId, infraId, resourceId)
 	fmt.Println("key: " + key)
 
 	keyValue, _, _ := kvstore.GetKv(key)
 	// In CheckResource() above, calling 'kvstore.GetKv()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
-	// Deleting NLB should be possible, even if backend VMs still exist.
+	// Deleting NLB should be possible, even if backend Nodes still exist.
 	// So here 'associated object' codes are commented.
 	/*
 		associatedList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
@@ -764,12 +764,12 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 }
 
 // DelAllNLB deletes all TB NLB object of given nsId
-func DelAllNLB(nsId string, mciId string, subString string, forceFlag string) (model.IdList, error) {
+func DelAllNLB(nsId string, infraId string, subString string, forceFlag string) (model.IdList, error) {
 
 	deletedResources := model.IdList{}
 	deleteStatus := ""
 
-	resourceIdList, err := ListNLBId(nsId, mciId)
+	resourceIdList, err := ListNLBId(nsId, infraId)
 	if err != nil {
 		return deletedResources, err
 	}
@@ -789,7 +789,7 @@ func DelAllNLB(nsId string, mciId string, subString string, forceFlag string) (m
 			deleteStatus = "[Done] "
 			errString := ""
 
-			err := DelNLB(nsId, mciId, v, forceFlag)
+			err := DelNLB(nsId, infraId, v, forceFlag)
 			if err != nil {
 				deleteStatus = "[Failed] "
 				errString = " (" + err.Error() + ")"
@@ -802,7 +802,7 @@ func DelAllNLB(nsId string, mciId string, subString string, forceFlag string) (m
 }
 
 // GetNLBHealth queries the health status of NLB to CB-Spider, and returns it to user
-func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo, error) {
+func GetNLBHealth(nsId string, infraId string, nlbId string) (model.NLBHealthInfo, error) {
 	log.Info().Msg("GetNLBHealth")
 
 	err := common.CheckString(nsId)
@@ -811,7 +811,7 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo,
 		return model.NLBHealthInfo{}, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.NLBHealthInfo{}, err
@@ -823,7 +823,7 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo,
 		return model.NLBHealthInfo{}, err
 	}
 
-	check, err := CheckNLB(nsId, mciId, nlbId)
+	check, err := CheckNLB(nsId, infraId, nlbId)
 
 	if !check {
 		err := fmt.Errorf("The nlb " + nlbId + " does not exist.")
@@ -835,7 +835,7 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo,
 		return model.NLBHealthInfo{}, err
 	}
 
-	nlb, err := GetNLB(nsId, mciId, nlbId)
+	nlb, err := GetNLB(nsId, infraId, nlbId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the NLB " + nlbId + ".")
 		return model.NLBHealthInfo{}, err
@@ -874,32 +874,32 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo,
 
 	if tempSpiderNLBHealthInfo.Healthinfo.HealthyVMs != nil {
 		for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.HealthyVMs {
-			vm, err := FindTbVmByCspId(nsId, mciId, v.NameId)
+			node, err := FindTbNodeByCspId(nsId, infraId, v.NameId)
 			if err != nil {
 				return model.NLBHealthInfo{}, err
 			}
 
-			result.HealthyVMs = append(result.HealthyVMs, vm.Id)
+			result.HealthyNodes = append(result.HealthyNodes, node.Id)
 		}
 	}
 
 	if tempSpiderNLBHealthInfo.Healthinfo.UnHealthyVMs != nil {
 		for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.UnHealthyVMs {
-			vm, err := FindTbVmByCspId(nsId, mciId, v.NameId)
+			node, err := FindTbNodeByCspId(nsId, infraId, v.NameId)
 			if err != nil {
 				return model.NLBHealthInfo{}, err
 			}
 
-			result.UnHealthyVMs = append(result.UnHealthyVMs, vm.Id)
+			result.UnHealthyNodes = append(result.UnHealthyNodes, node.Id)
 		}
 	}
 
-	result.AllVMs = append(result.AllVMs, result.HealthyVMs...)
-	result.AllVMs = append(result.AllVMs, result.UnHealthyVMs...)
+	result.AllNodes = append(result.AllNodes, result.HealthyNodes...)
+	result.AllNodes = append(result.AllNodes, result.UnHealthyNodes...)
 	/*
 		// kvstore
 		// Key := common.GenResourceKey(nsId, model.StrNLB, content.Id)
-		Key := GenNLBKey(nsId, mciId, content.Id)
+		Key := GenNLBKey(nsId, infraId, content.Id)
 		Val, _ := json.Marshal(content)
 
 		err = kvstore.Put(Key, string(Val))
@@ -929,9 +929,9 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo,
 	return result, nil
 }
 
-// AddNLBVMs accepts VM addition request, adds VM to NLB, and returns an updated TB NLB object
-func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemoveVMReq) (model.NLBInfo, error) {
-	log.Info().Msg("AddNLBVMs")
+// AddNLBNodes accepts Node addition request, adds Node to NLB, and returns an updated TB NLB object
+func AddNLBNodes(nsId string, infraId string, resourceId string, u *model.NLBAddRemoveNodeReq) (model.NLBInfo, error) {
+	log.Info().Msg("AddNLBNodes")
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -940,7 +940,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 		return temp, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		temp := model.NLBInfo{}
 		log.Error().Err(err).Msg("")
@@ -959,7 +959,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 		return temp, err
 	}
 
-	check, err := CheckNLB(nsId, mciId, resourceId)
+	check, err := CheckNLB(nsId, infraId, resourceId)
 
 	if !check {
 		temp := model.NLBInfo{}
@@ -987,7 +987,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 		}
 	*/
 
-	nlb, err := GetNLB(nsId, mciId, resourceId)
+	nlb, err := GetNLB(nsId, infraId, resourceId)
 	if err != nil {
 		temp := model.NLBInfo{}
 		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
@@ -997,14 +997,14 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 	requestBody := model.SpiderNLBAddRemoveVMReqInfoWrapper{}
 	requestBody.ConnectionName = nlb.ConnectionName
 
-	for _, v := range u.TargetGroup.VMs {
-		vm, err := GetVmObject(nsId, mciId, v)
+	for _, v := range u.TargetGroup.Nodes {
+		node, err := GetNodeObject(nsId, infraId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return model.NLBInfo{}, err
 		}
 
-		requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspResourceName)
+		requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, node.CspResourceName)
 	}
 
 	var callResult model.SpiderNLBInfo
@@ -1061,19 +1061,19 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
 		AssociatedObjectList: []string{},
 		TargetGroup: model.NLBTargetGroupInfo{
-			Protocol:   tempSpiderNLBInfo.VMGroup.Protocol,
-			Port:       tempSpiderNLBInfo.VMGroup.Port,
-			SubGroupId: nlb.TargetGroup.SubGroupId,
-			// VMs:          vmIDs,
+			Protocol:    tempSpiderNLBInfo.VMGroup.Protocol,
+			Port:        tempSpiderNLBInfo.VMGroup.Port,
+			NodeGroupId: nlb.TargetGroup.NodeGroupId,
+			// Nodes:        nodeIDs,
 			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
 		},
 	}
-	content.TargetGroup.VMs = append(content.TargetGroup.VMs, nlb.TargetGroup.VMs...)
-	content.TargetGroup.VMs = append(content.TargetGroup.VMs, u.TargetGroup.VMs...)
+	content.TargetGroup.Nodes = append(content.TargetGroup.Nodes, nlb.TargetGroup.Nodes...)
+	content.TargetGroup.Nodes = append(content.TargetGroup.Nodes, u.TargetGroup.Nodes...)
 
 	// kvstore
 	// Key := common.GenResourceKey(nsId, model.StrNLB, content.Id)
-	Key := GenNLBKey(nsId, mciId, content.Id)
+	Key := GenNLBKey(nsId, infraId, content.Id)
 	Val, _ := json.Marshal(content)
 
 	err = kvstore.Put(Key, string(Val))
@@ -1098,9 +1098,9 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 	return result, nil
 }
 
-// RemoveNLBVMs accepts VM removal request, removes VMs from NLB, and returns an error if occurs.
-func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemoveVMReq) error {
-	log.Info().Msg("RemoveNLBVMs")
+// RemoveNLBNodes accepts VM removal request, removes VMs from NLB, and returns an error if occurs.
+func RemoveNLBNodes(nsId string, infraId string, resourceId string, u *model.NLBAddRemoveNodeReq) error {
+	log.Info().Msg("RemoveNLBNodes")
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1109,7 +1109,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 		return err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1127,7 +1127,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 		return err
 	}
 
-	check, err := CheckNLB(nsId, mciId, resourceId)
+	check, err := CheckNLB(nsId, infraId, resourceId)
 
 	if !check {
 		// temp := model.NLBInfo{}
@@ -1155,7 +1155,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 		}
 	*/
 
-	nlb, err := GetNLB(nsId, mciId, resourceId)
+	nlb, err := GetNLB(nsId, infraId, resourceId)
 	if err != nil {
 		// temp := model.NLBInfo{}
 		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
@@ -1165,41 +1165,41 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 	requestBody := model.SpiderNLBAddRemoveVMReqInfoWrapper{}
 	requestBody.ConnectionName = nlb.ConnectionName
 
-	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs) // for debug
+	// fmt.Printf("u.TargetGroup.Nodes: %s \n", u.TargetGroup.Nodes) // for debug
 
-	for _, v := range u.TargetGroup.VMs {
-		vm, err := GetVmObject(nsId, mciId, v)
+	for _, v := range u.TargetGroup.Nodes {
+		node, err := GetNodeObject(nsId, infraId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
 		}
 		// log.Debug().Msg("vm:")                             // for debug
-		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
+		// payload, _ := json.MarshalIndent(node, "", "  ") // for debug
 		// fmt.Print(string(payload))                     // for debug
-		if vm.CspResourceName == "" {
+		if node.CspResourceName == "" {
 			fmt.Printf("Failed to get %s; skipping;", v)
 		} else {
-			requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspResourceName)
+			requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, node.CspResourceName)
 		}
 	}
 
-	// fmt.Printf("requestBody.ReqInfo.SubGroup.VMs: %s \n", requestBody.ReqInfo.VMs) // for debug
+	// fmt.Printf("requestBody.ReqInfo.NodeGroup.VMs: %s \n", requestBody.ReqInfo.VMs) // for debug
 	/*
 		for _, v := range u.VMIDList {
-			mciId_vmId := strings.Split(v, "/")
-			if len(mciId_vmId) != 2 {
+			infraId_nodeId := strings.Split(v, "/")
+			if len(infraId_nodeId) != 2 {
 				err := fmt.Errorf("Cannot retrieve VM info: " + v)
 				log.Error().Err(err).Msg("")
 				return model.NLBInfo{}, err
 			}
 
-			vm, err := infra.GetVmObject(nsId, mciId_vmId[0], mciId_vmId[1])
+			node, err := infra.GetNodeObject(nsId, infraId_nodeId[0], infraId_nodeId[1])
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return model.NLBInfo{}, err
 			}
 
-			requestBody.ReqInfo.SubGroup = append(requestBody.ReqInfo.SubGroup, vm.CspResourceId)
+			requestBody.ReqInfo.NodeGroup = append(requestBody.ReqInfo.NodeGroup, node.CspResourceId)
 		}
 	*/
 
@@ -1226,11 +1226,11 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 		return err
 	}
 
-	oldVMList := nlb.TargetGroup.VMs
-	for _, vmToDelete := range u.TargetGroup.VMs {
-		oldVMList = remove(oldVMList, vmToDelete)
+	oldNodeList := nlb.TargetGroup.Nodes
+	for _, nodeToDelete := range u.TargetGroup.Nodes {
+		oldNodeList = remove(oldNodeList, nodeToDelete)
 	}
-	newVMList := oldVMList
+	newNodeList := oldNodeList
 
 	/*
 		content := model.NLBInfo{}
@@ -1248,22 +1248,22 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 		content.KeyValueList = tempSpiderNLBInfo.KeyValueList
 		content.AssociatedObjectList = []string{}
 
-		content.TargetGroup.Port = tempSpiderNLBInfo.SubGroup.Port
-		content.TargetGroup.Protocol = tempSpiderNLBInfo.SubGroup.Protocol
-		content.TargetGroup.MCI = u.TargetGroup.MCI // What if oldNlb.TargetGroup.MCI != newNlb.TargetGroup.MCI
+		content.TargetGroup.Port = tempSpiderNLBInfo.NodeGroup.Port
+		content.TargetGroup.Protocol = tempSpiderNLBInfo.NodeGroup.Protocol
+		content.TargetGroup.Infra = u.TargetGroup.Infra // What if oldNlb.TargetGroup.Infra != newNlb.TargetGroup.Infra
 		content.TargetGroup.CspID = u.TargetGroup.CspID
 		content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
 
-		// content.TargetGroup.VMs = u.TargetGroup.VMs
-		content.TargetGroup.VMs = append(content.TargetGroup.VMs, nlb.TargetGroup.VMs...)
-		content.TargetGroup.VMs = append(content.TargetGroup.VMs, u.TargetGroup.VMs...)
+		// content.TargetGroup.Nodes = u.TargetGroup.Nodes
+		content.TargetGroup.Nodes = append(content.TargetGroup.Nodes, nlb.TargetGroup.Nodes...)
+		content.TargetGroup.Nodes = append(content.TargetGroup.Nodes, u.TargetGroup.Nodes...)
 	*/
 
-	nlb.TargetGroup.VMs = newVMList
+	nlb.TargetGroup.Nodes = newNodeList
 
 	// kvstore
 	// Key := common.GenResourceKey(nsId, model.StrNLB, content.Id)
-	Key := GenNLBKey(nsId, mciId, nlb.Id)
+	Key := GenNLBKey(nsId, infraId, nlb.Id)
 	Val, _ := json.Marshal(nlb)
 
 	err = kvstore.Put(Key, string(Val))

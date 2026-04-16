@@ -149,7 +149,7 @@ def api_request(method, endpoint, json_data=None, params=None, files=None, heade
     default_timeout = (60, 600)  # 10 minutes default
     
     # Extended timeout for remote command execution (up to 20 minutes)
-    if "/cmd/mci/" in endpoint or timeout_override:
+    if "/cmd/infra/" in endpoint or timeout_override:
         extended_timeout = timeout_override or (60, 1200)  # 20 minutes for command execution
         request_config = {
             "auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD),
@@ -217,7 +217,7 @@ def api_request(method, endpoint, json_data=None, params=None, files=None, heade
         logger.error(f"Request timeout after {timeout_duration} minutes: {str(e)}")
         
         # Special message for remote command timeouts
-        if "/cmd/mci/" in endpoint:
+        if "/cmd/infra/" in endpoint:
             return {
                 "error": f"Remote command execution timeout after {timeout_duration} minutes",
                 "error_type": "command_execution_timeout",
@@ -379,7 +379,7 @@ def select_best_image_for_spec(
     Select best image for a specific VM specification.
     This function considers CSP, region, architecture, and other spec-specific requirements.
     
-    **CRITICAL for Multi-VM MCI Creation:**
+    **CRITICAL for Multi-VM Infra Creation:**
     Each VM spec requires its own image selection because:
     - Different CSPs use different image formats (AMI vs Image ID vs etc.)
     - Same OS in different regions may have different image IDs
@@ -911,7 +911,7 @@ def select_best_image_with_context(
 @mcp.tool()
 def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
     """
-    Check available namespaces and help user select or create one for MCI operations.
+    Check available namespaces and help user select or create one for Infra operations.
     This function provides intelligent namespace management by:
     1. Using "default" namespace as default choice if no preference specified
     2. Creating "default" namespace if it doesn't exist
@@ -959,7 +959,7 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
             "exists": True,
             "status": "ready_to_use"
         }
-        result["recommendation"] = f"Namespace '{preferred_ns_id}' exists and is ready to use for MCI creation."
+        result["recommendation"] = f"Namespace '{preferred_ns_id}' exists and is ready to use for Infra creation."
         
         if preferred_ns_id == "default":
             result["default_namespace_status"] = "exists_and_ready"
@@ -975,14 +975,14 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
             try:
                 create_result = _internal_create_namespace_with_validation(
                     name="default",
-                    description="Default namespace for MCI operations"
+                    description="Default namespace for Infra operations"
                 )
                 
                 if "error" not in create_result:
                     result["preferred_namespace"]["exists"] = True
                     result["preferred_namespace"]["status"] = "created_automatically"
                     result["default_namespace_status"] = "created_automatically"
-                    result["recommendation"] = "Default namespace 'default' was created automatically and is ready to use for MCI creation."
+                    result["recommendation"] = "Default namespace 'default' was created automatically and is ready to use for Infra creation."
                 else:
                     result["default_namespace_status"] = "creation_failed"
                     result["recommendation"] = f"Failed to create default namespace: {create_result.get('error', 'Unknown error')}. Please create it manually or use a different namespace."
@@ -1030,7 +1030,7 @@ def _internal_validate_namespace(ns_id: str) -> Dict:
             "valid": True,
             "namespace_id": ns_id,
             "namespace_info": ns_info,
-            "status": "ready_for_mci_creation"
+            "status": "ready_for_infra_creation"
         }
     except Exception as e:
         return {
@@ -1065,7 +1065,7 @@ def _internal_create_namespace_with_validation(name: str, description: Optional[
             "namespace_id": name,
             "message": f"Namespace '{name}' already exists",
             "existing_info": validation["namespace_info"],
-            "suggestion": "You can use this existing namespace for MCI creation"
+            "suggestion": "You can use this existing namespace for Infra creation"
         }
     
     # Create the namespace
@@ -1096,8 +1096,8 @@ def _internal_create_namespace_with_validation(name: str, description: Optional[
             "namespace_id": name,
             "namespace_info": result,
             "validation": validation,
-            "status": "ready_for_mci_creation",
-            "message": f"Namespace '{name}' created successfully and ready for MCI creation"
+            "status": "ready_for_infra_creation",
+            "message": f"Namespace '{name}' created successfully and ready for Infra creation"
         }
     except Exception as e:
         return {
@@ -1232,16 +1232,16 @@ def release_resources(ns_id: str, force_release: bool = False) -> Dict:
     This includes VNet, SecurityGroup, and SSHKey resources.
     This operation is irreversible and should be used with caution.
     
-    ⚠️  IMPORTANT: Only use this when no MCIs exist in the namespace or you're sure the resources are not needed.
+    ⚠️  IMPORTANT: Only use this when no Infras exist in the namespace or you're sure the resources are not needed.
     
     **When to use:**
-    - After deleting the last MCI in a namespace
+    - After deleting the last Infra in a namespace
     - When completely cleaning up a namespace
-    - When you're certain no future MCIs will reuse these resources
+    - When you're certain no future Infras will reuse these resources
     
     **When NOT to use:**
-    - Other MCIs exist in the same namespace
-    - You plan to create new MCIs that could reuse network configurations
+    - Other Infras exist in the same namespace
+    - You plan to create new Infras that could reuse network configurations
     - You're unsure about resource dependencies
     
     Args:
@@ -1258,25 +1258,25 @@ def release_resources(ns_id: str, force_release: bool = False) -> Dict:
             "requirement": "Set force_release=True to proceed with shared resources deletion",
             "warning": "⚠️  This will permanently delete ALL shared resources (VNet, SecurityGroup, SSHKey) in the namespace",
             "safety_checklist": [
-                "✓ Confirm no MCIs exist in this namespace",
+                "✓ Confirm no Infras exist in this namespace",
                 "✓ Confirm no other infrastructure depends on these resources", 
-                "✓ Confirm you won't need these network configurations for future MCIs",
+                "✓ Confirm you won't need these network configurations for future Infras",
                 "✓ Have backups of any important configurations"
             ],
-            "check_command": f"get_mci_list('{ns_id}') # Verify no MCIs exist before proceeding"
+            "check_command": f"get_infra_list('{ns_id}') # Verify no Infras exist before proceeding"
         }
     
     # Pre-deletion checks
     try:
-        # Check for existing MCIs
-        mci_list_result = api_request("GET", f"/ns/{ns_id}/mci")
-        if isinstance(mci_list_result, dict) and "mci" in mci_list_result and len(mci_list_result["mci"]) > 0:
-            active_mcis = [mci.get("id", "unknown") for mci in mci_list_result["mci"]]
+        # Check for existing Infras
+        infra_list_result = api_request("GET", f"/ns/{ns_id}/infra")
+        if isinstance(infra_list_result, dict) and "infra" in infra_list_result and len(infra_list_result["infra"]) > 0:
+            active_infras = [infra.get("id", "unknown") for infra in infra_list_result["infra"]]
             return {
-                "error": "Cannot release resources while MCIs exist",
-                "active_mcis": active_mcis,
-                "recommendation": "Delete all MCIs first using delete_mci()",
-                "safety_note": "Shared resources are being used by active MCIs"
+                "error": "Cannot release resources while Infras exist",
+                "active_infras": active_infras,
+                "recommendation": "Delete all Infras first using delete_infra()",
+                "safety_note": "Shared resources are being used by active Infras"
             }
         
         # Get current resources for reporting
@@ -1325,7 +1325,7 @@ def release_resources(ns_id: str, force_release: bool = False) -> Dict:
             "namespace": ns_id,
             "resources_deleted": resources_to_delete,
             "status": "All shared resources have been permanently deleted",
-            "note": "This namespace is now clean and ready for new MCI deployments with fresh resources"
+            "note": "This namespace is now clean and ready for new Infra deployments with fresh resources"
         }
     
     return result
@@ -1335,7 +1335,7 @@ def release_resources(ns_id: str, force_release: bool = False) -> Dict:
 def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> Dict:
     """
     Check if a specific resource exists in the namespace.
-    This is useful for validating resources before using them in MCI creation.
+    This is useful for validating resources before using them in Infra creation.
     
     Args:
         ns_id: Namespace ID
@@ -1350,146 +1350,146 @@ def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> D
 
 # # Tool: Register CSP resources
 # @mcp.tool()
-# def register_csp_resources(ns_id: str, mci_flag: str = "n") -> Dict:
+# def register_csp_resources(ns_id: str, infra_flag: str = "n") -> Dict:
 #     """
 #     Register CSP resources
     
 #     Args:
 #         ns_id: Namespace ID
-#         mci_flag: MCI flag (y/n)
+#         infra_flag: Infra flag (y/n)
     
 #     Returns:
 #         Registration result
 #     """
 #     data = {
-#         "mciName": "csp",
+#         "infraName": "csp",
 #         "nsId": ns_id
 #     }
-#     return api_request("POST", f"/registerCspResourcesAll?mciFlag={mci_flag}", json_data=data)
+#     return api_request("POST", f"/registerCspResourcesAll?infraFlag={infra_flag}", json_data=data)
 
 #####################################
-# MCI Management (Multi-Cloud Infrastructure)
+# Infra Management (Multi-Cloud Infrastructure)
 #####################################
 
-# Tool: Get MCI list
+# Tool: Get Infra list
 @mcp.tool()
-def get_mci_list(ns_id: str) -> Dict:
+def get_infra_list(ns_id: str) -> Dict:
     """
-    Get list of MCIs (Multi-Cloud Infrastructures) for a specific namespace.
+    Get list of Infras (Multi-Cloud Infrastructures) for a specific namespace.
     
     Args:
         ns_id: Namespace ID
     
     Returns:
-        List of MCIs
+        List of Infras
     """
-    return api_request("GET", f"/ns/{ns_id}/mci?option=status")
+    return api_request("GET", f"/ns/{ns_id}/infra?option=status")
 
-# Tool: Get MCI list with options
+# Tool: Get Infra list with options
 @mcp.tool()
-def get_mci_list_with_options(ns_id: str, option: str = "status") -> Dict:
+def get_infra_list_with_options(ns_id: str, option: str = "status") -> Dict:
     """
-    Get list of MCIs (Multi-Cloud Infrastructures) for a specific namespace with options.
+    Get list of Infras (Multi-Cloud Infrastructures) for a specific namespace with options.
     With options, you can specify whether to filter by ID or status.
-    Status infrormation is about VMs status in MCI.
+    Status infrormation is about VMs status in Infra.
     
     Args:
         ns_id: Namespace ID
         option: Query option (id or status)
     
     Returns:
-        List of MCIs
+        List of Infras
     """
     if option not in ["id", "status"]:
         option = "status"
-    return api_request("GET", f"/ns/{ns_id}/mci?option={option}")
+    return api_request("GET", f"/ns/{ns_id}/infra?option={option}")
 
-# Tool: Get MCI details
+# Tool: Get Infra details
 @mcp.tool()
-def get_mci(ns_id: str, mci_id: str) -> Dict:
+def get_infra(ns_id: str, infra_id: str) -> Dict:
     """
-    Get details of a specific MCI
+    Get details of a specific Infra
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
     
     Returns:
-        MCI information
+        Infra information
     """
-    return api_request("GET", f"/ns/{ns_id}/mci/{mci_id}")
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}")
 
-# Tool: Get MCI access information
+# Tool: Get Infra access information
 @mcp.tool()
-def get_mci_access_info(ns_id: str, mci_id: str, show_ssh_key: bool = False) -> Dict:
+def get_infra_access_info(ns_id: str, infra_id: str, show_ssh_key: bool = False) -> Dict:
     """
-    Get access information for an MCI.
+    Get access information for an Infra.
     This includes SSH key information if requested.
     Needs to check user's opinion whether to show SSH key or not.
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
         show_ssh_key: Whether to show SSH key
     
     Returns:
-        MCI access information
+        Infra access information
     """
     option = "showSshKey" if show_ssh_key else "accessinfo"
-    return api_request("GET", f"/ns/{ns_id}/mci/{mci_id}?option=accessinfo&accessInfoOption={option}")
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}?option=accessinfo&accessInfoOption={option}")
 
-# Tool: Get subgroups list
+# Tool: Get nodegroups list
 @mcp.tool()
-def get_subgroups(ns_id: str, mci_id: str) -> Dict:
+def get_nodegroups(ns_id: str, infra_id: str) -> Dict:
     """
-    Get list of subgroups for a specific MCI
+    Get list of nodegroups for a specific Infra
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
     
     Returns:
-        List of subgroups
+        List of nodegroups
     """
-    return api_request("GET", f"/ns/{ns_id}/mci/{mci_id}/subgroup")
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/nodegroup")
 
 # Tool: Get VM list
 @mcp.tool()
-def get_vms(ns_id: str, mci_id: str, subgroup_id: str) -> Dict:
+def get_vms(ns_id: str, infra_id: str, nodegroup_id: str) -> Dict:
     """
-    Get list of VMs for a specific subgroup
+    Get list of VMs for a specific nodegroup
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
-        subgroup_id: Subgroup ID
+        infra_id: Infra ID
+        nodegroup_id: NodeGroup ID
     
     Returns:
         List of VMs
     """
-    return api_request("GET", f"/ns/{ns_id}/mci/{mci_id}/subgroup/{subgroup_id}")
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/nodegroup/{nodegroup_id}")
 
-# Tool: Get MCI associated resources
+# Tool: Get Infra associated resources
 @mcp.tool()
-def get_mci_associated_resources(ns_id: str, mci_id: str) -> Dict:
+def get_infra_associated_resources(ns_id: str, infra_id: str) -> Dict:
     """
-    Get associated resource IDs for a given MCI.
-    This function returns all resources (VNet, SecurityGroup, SSHKey, etc.) that are used by the MCI.
+    Get associated resource IDs for a given Infra.
+    This function returns all resources (VNet, SecurityGroup, SSHKey, etc.) that are used by the Infra.
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
     
     Returns:
         Associated resource information including:
-        - vNetIds: List of VNet IDs used by the MCI
+        - vNetIds: List of VNet IDs used by the Infra
         - securityGroupIds: List of Security Group IDs
         - sshKeyIds: List of SSH Key IDs
         - imageIds: List of Image IDs
         - specIds: List of Spec IDs
         - And other resource associations
     """
-    return api_request("GET", f"/ns/{ns_id}/mci/{mci_id}/associatedResources")
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/associatedResources")
 
 # Tool: Get image search options
 @mcp.tool()
@@ -1547,7 +1547,7 @@ def search_images(
     1. First call get_image_search_options() to see available search parameters
     2. Use this function to search for images matching your requirements
     3. From the results, identify the 'cspImageName' of your desired image
-    4. Use the 'cspImageName' as 'imageId' parameter in create_mci_dynamic()
+    4. Use the 'cspImageName' as 'imageId' parameter in create_infra_dynamic()
     
     Example workflows:
     A) **RECOMMENDED - With MatchedSpecId (simple OS type):**
@@ -1597,7 +1597,7 @@ def search_images(
           - next_steps: Recommended actions (especially recommend_vm_spec() for different specs)
           - common_solutions: General troubleshooting approaches
         - Each image (when found) includes:
-          - cspImageName: CSP-specific image identifier (CRITICAL for MCI creation)
+          - cspImageName: CSP-specific image identifier (CRITICAL for Infra creation)
           - description: Image description
           - guestOS: Guest operating system
           - architecture: OS architecture
@@ -1609,7 +1609,7 @@ def search_images(
     - **CSP-specific filtering**: NCP specs automatically filter by CorrespondingImageIds
     - **Detail search**: Use detail_search_keys for advanced keyword-based searching
     - **Basic images**: Use include_basic_image_only=True for clean OS installations only
-    - The 'cspImageName' from search results becomes the 'imageId' parameter when creating MCIs
+    - The 'cspImageName' from search results becomes the 'imageId' parameter when creating Infras
     - For optimal image selection, use select_best_image() helper function
     - **CRITICAL**: Each VM spec requires its own image search for proper compatibility
     - **LLM GUIDANCE**: Empty results include structured guidance to prevent "Canceled" responses
@@ -1859,7 +1859,7 @@ def recommend_vm_spec(
     """
     ⚠️  IMPORTANT PREREQUISITE: Call get_recommend_spec_options() FIRST!
     
-    🚨 CRITICAL: This is the ONLY valid source for VM specification IDs in MCI creation.
+    🚨 CRITICAL: This is the ONLY valid source for VM specification IDs in Infra creation.
     NEVER create or guess spec IDs manually - they MUST come from this function's response.
     
     **MANDATORY WORKFLOW:**
@@ -1877,7 +1877,7 @@ def recommend_vm_spec(
     - ❌ Wrong operator formats or parameter structures
     - ❌ Invalid priority policy configurations
     
-    Recommend VM specifications for MCI creation with location-based priority support.
+    Recommend VM specifications for Infra creation with location-based priority support.
     
     **🔥 MANDATORY FOR LOCATION-BASED REQUESTS:**
     When users mention ANY geographic location (country, city, region), you MUST:
@@ -1895,7 +1895,7 @@ def recommend_vm_spec(
     **WORKFLOW INTEGRATION:**
     1. Use this function to find specs with location priority → get specification IDs
     2. Use search_images() to find suitable images for the specs' CSPs/regions
-    3. Use both values in create_mci_dynamic():
+    3. Use both values in create_infra_dynamic():
        - specId: specification ID from this function (NEVER modify)
        - imageId: cspImageName from search_images()
     
@@ -1916,7 +1916,7 @@ def recommend_vm_spec(
     # Use ONLY the returned spec IDs:
     for spec in specs["recommended_specs"]:
         spec_id = spec["id"]  # e.g., "aws+us-west-1+t3.medium"
-        # Use this exact spec_id in create_mci_dynamic() - NEVER modify
+        # Use this exact spec_id in create_infra_dynamic() - NEVER modify
     ```
     
     Args:
@@ -1939,7 +1939,7 @@ def recommend_vm_spec(
     Returns:
         🚨 CRITICAL: Use the returned spec IDs exactly as provided
         Recommended VM specifications including:
-        - id: Specification ID (use as 'specId' in create_mci_dynamic() WITHOUT modification)
+        - id: Specification ID (use as 'specId' in create_infra_dynamic() WITHOUT modification)
         - vCPU: Number of virtual CPUs
         - memoryGiB: Memory in GB
         - costPerHour: Estimated hourly cost (if -1, pricing information is unavailable)
@@ -1953,8 +1953,8 @@ def recommend_vm_spec(
     ❌ NEVER create spec IDs like "tencent+na-siliconvalley+bf1.large8" manually
     ❌ NEVER guess spec formats based on patterns
     
-    **CRITICAL for MCI Creation:**
-    The 'id' field from results becomes the 'specId' parameter in create_mci_dynamic().
+    **CRITICAL for Infra Creation:**
+    The 'id' field from results becomes the 'specId' parameter in create_infra_dynamic().
     Format is typically: {provider}+{region}+{spec_name} but MUST be from API response.
     """
     # Handle type conversion for limit (API expects string but MCP client may send int)
@@ -2067,12 +2067,12 @@ def _format_errors_for_user(vm_reviews: List[Dict]) -> str:
     
     return "\n".join(error_lines) if error_lines else "No errors found"
 
-# Helper function: Internal MCI dynamic validation (used by both review and create functions)
-def _internal_review_mci_dynamic(
+# Helper function: Internal Infra dynamic validation (used by both review and create functions)
+def _internal_review_infra_dynamic(
     ns_id: str,
     name: str,
     vm_configurations: List[Dict],
-    description: str = "MCI created dynamically via MCP",
+    description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
@@ -2081,12 +2081,12 @@ def _internal_review_mci_dynamic(
     vnet_template_id: str = "",
     sg_template_id: str = ""
 ) -> Dict:
-    """Internal helper function to review MCI dynamic configuration"""
-    # Build request data according to model.MciDynamicReq spec
+    """Internal helper function to review Infra dynamic configuration"""
+    # Build request data according to model.InfraDynamicReq spec
     data = {
         "name": name,
         "description": description,
-        "subGroups": vm_configurations,
+        "nodeGroups": vm_configurations,
         "policyOnPartialFailure": policy_on_partial_failure
     }
     
@@ -2105,7 +2105,7 @@ def _internal_review_mci_dynamic(
         data["sgTemplateId"] = sg_template_id
     
     # Make API request to review endpoint
-    url = f"/ns/{ns_id}/mciDynamicReview"
+    url = f"/ns/{ns_id}/infraDynamicReview"
     result = api_request("POST", url, json_data=data)
     
     # 🔍 ENHANCED: Add historical risk analysis for each VM configuration
@@ -2220,14 +2220,14 @@ def _internal_review_mci_dynamic(
         # Provide specific guidance based on validation results
         creation_viable = result.get("creationViable", False)
         if creation_viable:
-            result["_guidance"] = "✅ Validation passed! You can proceed with create_mci_dynamic() using the same parameters."
-            result["_next_step"] = f"create_mci_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
+            result["_guidance"] = "✅ Validation passed! You can proceed with create_infra_dynamic() using the same parameters."
+            result["_next_step"] = f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
             
             # Add warnings for hold mode or other special cases
             if hold:
                 result["_guidance"] += "\n⚠️ Note: VMs requiring manual deployment will need completion after hold mode."
         else:
-            result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with MCI creation."
+            result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with Infra creation."
             
             # Provide specific guidance for failed VMs
             if failed_vms:
@@ -2247,11 +2247,11 @@ def _internal_review_mci_dynamic(
                 # Add specific provider guidance from review results
                 for issue in provisioning_issues:
                     if "hold" in issue["issue"].lower():
-                        result["_guidance"] += f"\n  • For {issue['provider']}: Set hold=True in create_mci_dynamic()"
+                        result["_guidance"] += f"\n  • For {issue['provider']}: Set hold=True in create_infra_dynamic()"
                     elif "not available" in issue["issue"].lower():
                         result["_guidance"] += f"\n  • For {issue['provider']}: Replace with alternative provider (AWS, Azure, GCP, etc.)"
             
-            result["_next_step"] = "Fix the reported issues and run review_mci_dynamic_request() again."
+            result["_next_step"] = "Fix the reported issues and run review_infra_dynamic_request() again."
         
         # Add summary of vmReviews for LLM reference
         if vm_reviews:
@@ -2271,7 +2271,7 @@ def _internal_review_mci_dynamic(
                 "total_vms_to_deploy": vm_count,
                 "estimated_hourly_cost": estimated_cost,
                 "estimated_monthly_cost": f"~${float(estimated_cost.replace('$', '').replace('/hour', '')) * 24 * 30:.2f}/month" if "$" in estimated_cost and "/hour" in estimated_cost else "Estimate unavailable",
-                "note": "VM count includes all VMs in SubGroups (subGroupSize considered)"
+                "note": "VM count includes all VMs in NodeGroups (nodeGroupSize considered)"
             }
         
         # 🎯 ENHANCED: Add LLM-friendly user interaction guidance
@@ -2284,7 +2284,7 @@ def _internal_review_mci_dynamic(
                 "message": "✅ Configuration validated successfully! All VMs can be created.",
                 "next_action": "ASK_USER_CONFIRMATION",
                 "user_prompt": f"""
-🎯 **MCI Creation Plan Validated Successfully!**
+🎯 **Infra Creation Plan Validated Successfully!**
 
 📊 **Deployment Summary:**
 • Total VMs: {result.get('totalVmCount', 'N/A')}
@@ -2298,15 +2298,15 @@ def _internal_review_mci_dynamic(
 🔧 **Specifications:**
 {_format_vm_summary_for_user(vm_reviews)}
 
-**Would you like to proceed with creating this MCI infrastructure?**
-- ✅ **Yes** - I'll create the MCI with these specifications
+**Would you like to proceed with creating this Infra infrastructure?**
+- ✅ **Yes** - I'll create the Infra with these specifications
 - ❌ **No** - I want to modify the configuration first
 - 📋 **Details** - Show me more detailed validation results
 
 *Reply with your choice to continue.*
 """,
                 "confirmation_required": True,
-                "proceed_command": "create_mci_dynamic(..., force_create=True)"
+                "proceed_command": "create_infra_dynamic(..., force_create=True)"
             }
         elif creation_viable and overall_status == "Warning":
             result["_llm_guidance"] = {
@@ -2314,7 +2314,7 @@ def _internal_review_mci_dynamic(
                 "message": "⚠️ Configuration has warnings but can proceed.",
                 "next_action": "SHOW_WARNINGS_AND_ASK_CONFIRMATION",
                 "user_prompt": f"""
-⚠️ **MCI Creation Plan - Warnings Detected**
+⚠️ **Infra Creation Plan - Warnings Detected**
 
 📊 **Deployment Summary:**
 • Total VMs: {result.get('totalVmCount', 'N/A')}
@@ -2328,7 +2328,7 @@ def _internal_review_mci_dynamic(
 • Hourly: {result.get('estimatedCost', 'N/A')}
 • Monthly (estimated): {result.get('_deployment_summary', {}).get('estimated_monthly_cost', 'N/A')}
 
-**Despite the warnings, would you like to proceed with creating this MCI?**
+**Despite the warnings, would you like to proceed with creating this Infra?**
 - ✅ **Yes** - Proceed anyway (warnings are acceptable)
 - ❌ **No** - I want to fix the warnings first
 - 📋 **Details** - Show me detailed warning information
@@ -2336,7 +2336,7 @@ def _internal_review_mci_dynamic(
 *Please review the warnings and let me know your decision.*
 """,
                 "confirmation_required": True,
-                "proceed_command": "create_mci_dynamic(..., force_create=True)"
+                "proceed_command": "create_infra_dynamic(..., force_create=True)"
             }
         else:
             result["_llm_guidance"] = {
@@ -2344,7 +2344,7 @@ def _internal_review_mci_dynamic(
                 "message": "❌ Configuration has errors that must be fixed before creation.",
                 "next_action": "SHOW_ERRORS_AND_GUIDE_FIXES",
                 "user_prompt": f"""
-❌ **MCI Creation Plan - Errors Must Be Fixed**
+❌ **Infra Creation Plan - Errors Must Be Fixed**
 
 📊 **Review Results:**
 • Total VMs: {result.get('totalVmCount', 'N/A')}
@@ -2372,22 +2372,22 @@ def _internal_review_mci_dynamic(
         
         # Add workflow recommendations
         result["_workflow_tips"] = [
-            "Always run review_mci_dynamic_request() before create_mci_dynamic()",
+            "Always run review_infra_dynamic_request() before create_infra_dynamic()",
             "Address all critical issues (errors) before deployment",
             "Consider optimization suggestions for better performance",
-            "Use hold=True in create_mci_dynamic() for manual review if needed",
-            "SubGroup sizes are automatically calculated for accurate VM counts and costs"
+            "Use hold=True in create_infra_dynamic() for manual review if needed",
+            "NodeGroup sizes are automatically calculated for accurate VM counts and costs"
         ]
     
     return result
 
-# Tool: Review MCI Dynamic Request (Pre-validation)
+# Tool: Review Infra Dynamic Request (Pre-validation)
 @mcp.tool()
-def review_mci_dynamic_request(
+def review_infra_dynamic_request(
     ns_id: str,
     name: str,
     vm_configurations: List[Dict],
-    description: str = "MCI created dynamically via MCP",
+    description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
@@ -2397,15 +2397,15 @@ def review_mci_dynamic_request(
     sg_template_id: str = ""
 ) -> Dict:
     """
-    🔍 MANDATORY FIRST STEP: Review and validate MCI Dynamic Request before creation.
+    🔍 MANDATORY FIRST STEP: Review and validate Infra Dynamic Request before creation.
     
-    **🚨 CRITICAL: ALWAYS CALL THIS BEFORE create_mci_dynamic():**
-    This tool performs comprehensive validation and MUST be used as the first step in MCI creation:
+    **🚨 CRITICAL: ALWAYS CALL THIS BEFORE create_infra_dynamic():**
+    This tool performs comprehensive validation and MUST be used as the first step in Infra creation:
     
     **✅ REQUIRED WORKFLOW:**
     ```python
     # STEP 1: 🔍 MANDATORY - Review configuration first
-    review_result = review_mci_dynamic_request(
+    review_result = review_infra_dynamic_request(
         ns_id="my-project",
         name="web-app-cluster", 
         vm_configurations=vm_configs  # From recommend_vm_spec()
@@ -2413,8 +2413,8 @@ def review_mci_dynamic_request(
     
     # STEP 2: 📋 Check validation results
     if review_result.get("overallStatus") == "Ready":
-        # ✅ Safe to proceed with MCI creation
-        mci = create_mci_dynamic(
+        # ✅ Safe to proceed with Infra creation
+        infra = create_infra_dynamic(
             ns_id="my-project",
             name="web-app-cluster",
             vm_configurations=vm_configs,
@@ -2433,41 +2433,41 @@ def review_mci_dynamic_request(
     - ✅ Network configuration validation
     - ✅ Security and access requirements
     - ✅ Cross-CSP compatibility analysis
-    - ✅ Accurate cost estimation (SubGroup-aware)
-    - ✅ Total VM count calculation (includes SubGroup multipliers)
+    - ✅ Accurate cost estimation (NodeGroup-aware)
+    - ✅ Total VM count calculation (includes NodeGroup multipliers)
     - ✅ Risk assessment and optimization recommendations
     
     **COST & VM COUNT CALCULATION:**
-    - Total VM count considers SubGroup sizes (e.g., subGroupSize: 3 = 3 VMs)
-    - Cost estimation multiplied by actual VM count per SubGroup
-    - Example: SubGroup with 3 VMs @ $0.10/hour = $0.30/hour total
+    - Total VM count considers NodeGroup sizes (e.g., nodeGroupSize: 3 = 3 VMs)
+    - Cost estimation multiplied by actual VM count per NodeGroup
+    - Example: NodeGroup with 3 VMs @ $0.10/hour = $0.30/hour total
     
     Args:
-        ns_id: Namespace ID for MCI deployment
-        name: MCI name (must be unique within namespace)
+        ns_id: Namespace ID for Infra deployment
+        name: Infra name (must be unique within namespace)
         vm_configurations: List of VM configuration dictionaries. Each VM config should include:
             - specId: VM specification ID from recommend_vm_spec() (REQUIRED)
             - imageId: CSP-specific image identifier (optional - auto-mapped if omitted)
-            - name: VM or subGroup name (optional)
+            - name: VM or nodeGroup name (optional)
             - description: VM description (optional)
-            - subGroupSize: Number of VMs in subgroup (int, default 1) - affects total VM count and cost
+            - nodeGroupSize: Number of VMs in nodegroup (int, default 1) - affects total VM count and cost
             - connectionName: Specific connection name (optional)
             - rootDiskSize: Root disk size in GB (int, 0 for CSP default) (optional)
             - rootDiskType: Root disk type (optional)
             - vmUserPassword: VM user password (optional)
             - zone: Availability zone (optional, e.g., "ap-northeast-2a")
-            - vNetTemplateId: VNet template ID for subgroup (optional)
-            - sgTemplateId: Security group template ID for subgroup (optional)
+            - vNetTemplateId: VNet template ID for nodegroup (optional)
+            - sgTemplateId: Security group template ID for nodegroup (optional)
             - label: Key-value pairs for VM labeling (optional)
-        description: MCI description
+        description: Infra description
         system_label: System label for special purposes
-        label: Key-value pairs for MCI labeling
+        label: Key-value pairs for Infra labeling
         post_command: Post-deployment command configuration with format:
             {"command": ["command1", "command2"], "userName": "username"}
         hold: Whether to hold provisioning for review
         policy_on_partial_failure: Policy when some VMs fail ("continue", "rollback", "refine"), default "continue"
-        vnet_template_id: VNet template ID for MCI-level default (optional)
-        sg_template_id: Security group template ID for MCI-level default (optional)
+        vnet_template_id: VNet template ID for Infra-level default (optional)
+        sg_template_id: Security group template ID for Infra-level default (optional)
     
     Returns:
         **🎯 COMPREHENSIVE VALIDATION RESULTS:**
@@ -2475,9 +2475,9 @@ def review_mci_dynamic_request(
         **📊 MAIN STATUS FIELDS:**
         - overallStatus: "Ready" | "Warning" | "Error" - Overall validation status
         - overallMessage: Summary of validation results  
-        - creationViable: Boolean - Whether MCI can be created
+        - creationViable: Boolean - Whether Infra can be created
         - estimatedCost: String - Cost estimate (e.g., "$0.0837/hour")
-        - totalVmCount: Number - Total VMs to be created (includes SubGroup sizes)
+        - totalVmCount: Number - Total VMs to be created (includes NodeGroup sizes)
         - vmReviews: Array - Detailed validation for each VM configuration
         
         **🎯 LLM GUIDANCE FIELDS:**
@@ -2541,11 +2541,11 @@ def review_mci_dynamic_request(
         ```
         
         **🔄 NEXT STEPS:**
-        1. **If Ready**: Display user_prompt from _llm_guidance, get confirmation, then call create_mci_dynamic(force_create=True)
+        1. **If Ready**: Display user_prompt from _llm_guidance, get confirmation, then call create_infra_dynamic(force_create=True)
         2. **If Warnings**: Show warnings in user_prompt, get user decision, then proceed if approved
         3. **If Errors**: Display errors, offer to help fix issues, do NOT proceed to creation
     """
-    return _internal_review_mci_dynamic(
+    return _internal_review_infra_dynamic(
         ns_id=ns_id,
         name=name,
         vm_configurations=vm_configurations,
@@ -2559,9 +2559,9 @@ def review_mci_dynamic_request(
         sg_template_id=sg_template_id
     )
 
-# # Tool: Create MCI (Traditional method)
+# # Tool: Create Infra (Traditional method)
 # @mcp.tool()
-# def create_mci(
+# def create_infra(
 #     ns_id: str,
 #     name: str,
 #     description: str = "Created via MCP",
@@ -2571,18 +2571,18 @@ def review_mci_dynamic_request(
 # ) -> Dict:
 #     """
 #     Create Multi-Cloud Infrastructure using traditional method with detailed VM configurations.
-#     For easier MCI creation, consider using create_mci_dynamic() instead.
+#     For easier Infra creation, consider using create_infra_dynamic() instead.
     
 #     Args:
 #         ns_id: Namespace ID
-#         name: MCI name
-#         description: MCI description
+#         name: Infra name
+#         description: Infra description
 #         vm_config: Detailed VM configuration list with specific resource IDs
 #         post_command: Post-deployment command configuration
 #         hold: Whether to hold provisioning
     
 #     Returns:
-#         Created MCI information
+#         Created Infra information
 #     """
 #     if vm_config is None:
 #         vm_config = []
@@ -2590,25 +2590,25 @@ def review_mci_dynamic_request(
 #     data = {
 #         "name": name,
 #         "description": description,
-#         "subGroups": vm_config
+#         "nodeGroups": vm_config
 #     }
     
 #     if post_command:
 #         data["postCommand"] = post_command
     
-#     url = f"/ns/{ns_id}/mci"
+#     url = f"/ns/{ns_id}/infra"
 #     if hold:
 #         url += "?option=hold"
     
 #     return api_request("POST", url, json_data=data)
 
-# Tool: Create MCI dynamically (Recommended method)
+# Tool: Create Infra dynamically (Recommended method)
 @mcp.tool()
-def create_mci_dynamic(
+def create_infra_dynamic(
     ns_id: str,
     name: str,
     vm_configurations: List[Dict],
-    description: str = "MCI created dynamically via MCP",
+    description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
@@ -2662,13 +2662,13 @@ def create_mci_dynamic(
             "specId": spec_id,                    # 🚨 REQUIRED
             "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
             "name": f"vm-{spec['providerName']}-{i+1}",
-            "subGroupSize": 1
+            "nodeGroupSize": 1
         })
     
     # STEP 3: 🔍 MANDATORY REVIEW STEP - Always review first!
-    review_result = review_mci_dynamic_request(
+    review_result = review_infra_dynamic_request(
         ns_id="default",
-        name="my-mci",
+        name="my-infra",
         vm_configurations=vm_configurations
     )
     
@@ -2677,10 +2677,10 @@ def create_mci_dynamic(
         # Fix configuration issues based on review feedback
         # Re-run review until status is "Ready"
     
-    # STEP 5: 🚀 Create MCI only after successful review
-    mci = create_mci_dynamic(
+    # STEP 5: 🚀 Create Infra only after successful review
+    infra = create_infra_dynamic(
         ns_id="default",
-        name="my-mci",
+        name="my-infra",
         vm_configurations=vm_configurations,
         force_create=True  # Required to bypass review enforcement
     )
@@ -2691,7 +2691,7 @@ def create_mci_dynamic(
     ❌ FORBIDDEN: Guessing spec formats based on CSP patterns
     ❌ FORBIDDEN: Modifying spec IDs from recommend_vm_spec() results
     ✅ REQUIRED: Use exact spec["id"] from recommend_vm_spec() response
-    ✅ REQUIRED: Call recommend_vm_spec() before every MCI creation
+    ✅ REQUIRED: Call recommend_vm_spec() before every Infra creation
     ✅ REQUIRED: Use location priority when user mentions geographic preferences
     
     **IMPORTANT: Each VM spec requires its own image selection because:**
@@ -2699,7 +2699,7 @@ def create_mci_dynamic(
     - Same OS in different regions may have different image IDs  
     - Cross-CSP image references will cause deployment failures
     
-    **Example workflow for location-based MCI (Silicon Valley):**
+    **Example workflow for location-based Infra (Silicon Valley):**
     ```
     # 1. User says: "Deploy servers in Silicon Valley"
     # 2. LLM determines coordinates: 37.4419, -122.1430
@@ -2721,10 +2721,10 @@ def create_mci_dynamic(
             "description": f"VM in {spec['regionName']} near Silicon Valley"
         })
     
-    # 5. Create MCI with location-optimized specs
-    result = create_mci_dynamic(
+    # 5. Create Infra with location-optimized specs
+    result = create_infra_dynamic(
         ns_id="my-project",
-        name="silicon-valley-mci",
+        name="silicon-valley-infra",
         vm_configurations=vm_configs
     )
     ```
@@ -2753,23 +2753,23 @@ def create_mci_dynamic(
             "specId": spec_id,                      # CSP-specific spec
             "name": f"vm-{spec['providerName']}-{i+1}",
             "description": f"VM on {spec['providerName']} in {spec['regionName']}",
-            "subGroupSize": 1
+            "nodeGroupSize": 1
         })
     
-    # 6. Create MCI with properly mapped images
-    mci = create_mci_dynamic(
+    # 6. Create Infra with properly mapped images
+    infra = create_infra_dynamic(
         ns_id="default",
-        name="multi-csp-mci",
+        name="multi-csp-infra",
         vm_configurations=vm_configs
     )
     ```
     
     Args:
         ns_id: Namespace ID
-        name: MCI name (required)
+        name: Infra name (required)
         vm_configurations: List of VM configuration dictionaries (required). Each VM config should include:
             
-            **CRITICAL REQUIREMENTS FOR MCI DYNAMIC:**
+            **CRITICAL REQUIREMENTS FOR Infra DYNAMIC:**
             - specId: EXACT spec ID from recommend_vm_spec() API response (REQUIRED)
                 * Must use full spec ID like "aws+ap-northeast-2+t2.small"
                 * Do NOT modify or truncate the spec ID
@@ -2788,72 +2788,72 @@ def create_mci_dynamic(
                   5. Set specId="aws+ap-northeast-2+t2.small", imageId="ami-0c02fb55956c7d316"
             
             **Other Configuration Options:**
-            - name: VM name or subGroup name (optional)
+            - name: VM name or nodeGroup name (optional)
             - description: VM description (optional)
-            - subGroupSize: Number of VMs in subgroup (int, default 1) (optional)
+            - nodeGroupSize: Number of VMs in nodegroup (int, default 1) (optional)
             - connectionName: Specific connection name to use (optional)
             - rootDiskSize: Root disk size in GB (int, 0 for CSP default) (optional)
             - rootDiskType: Root disk type, default "default" (optional)
             - vmUserPassword: VM user password (optional)
             - zone: Availability zone (optional, e.g., "ap-northeast-2a")
-            - vNetTemplateId: VNet template ID for subgroup-level override (optional)
-            - sgTemplateId: Security group template ID for subgroup-level override (optional)
+            - vNetTemplateId: VNet template ID for nodegroup-level override (optional)
+            - sgTemplateId: Security group template ID for nodegroup-level override (optional)
             - label: Key-value pairs for VM labeling (optional)
             - os_requirements: Dict with os_type, use_case for auto image selection (optional)
         
-        description: MCI description (optional)
+        description: Infra description (optional)
         
-    **MANDATORY VALIDATION WORKFLOW FOR MCI DYNAMIC:**
+    **MANDATORY VALIDATION WORKFLOW FOR Infra DYNAMIC:**
     1. Always use recommend_vm_spec() first to get valid spec IDs
     2. Extract CSP provider and region from each spec ID (format: "provider+region+instance_type")
     3. Use search_images() with matching provider/region to get compatible images
     4. Use EXACT spec ID in specId and EXACT cspImageName in imageId
     5. Validate that spec and image are from same CSP provider and region
         system_label: System label for special purposes (optional)
-        label: Key-value pairs for MCI labeling (optional)
+        label: Key-value pairs for Infra labeling (optional)
         post_command: Post-deployment command configuration with format:
             {"command": ["command1", "command2"], "userName": "username"} (optional)
         hold: Whether to hold provisioning for review (optional)
         skip_confirmation: Skip user confirmation step (for automated workflows, default: False)
-        force_create: Bypass confirmation and create MCI immediately (default: False)
+        force_create: Bypass confirmation and create Infra immediately (default: False)
         policy_on_partial_failure: Policy when some VMs fail ("continue", "rollback", "refine"), default "continue"
-        vnet_template_id: VNet template ID for MCI-level default (optional)
-        sg_template_id: Security group template ID for MCI-level default (optional)
+        vnet_template_id: VNet template ID for Infra-level default (optional)
+        sg_template_id: Security group template ID for Infra-level default (optional)
     
     Returns:
         **REVIEW ENFORCEMENT (default behavior):**
         When force_create=False (default):
-        - Returns error requiring review_mci_dynamic_request() to be called first
+        - Returns error requiring review_infra_dynamic_request() to be called first
         - Provides guidance on proper workflow steps
         - Includes next step instructions
         
-        **MCI CREATION (after review):**
+        **Infra CREATION (after review):**
         When force_create=True (after successful review):
-        - Created MCI information including:
-          • id: MCI ID for future operations
+        - Created Infra information including:
+          • id: Infra ID for future operations
           • vm: List of created VMs with their details  
-          • status: Current MCI status
+          • status: Current Infra status
           • deployment summary
         
         **WORKFLOW ENFORCEMENT:**
         This function enforces the two-step process:
-        1. review_mci_dynamic_request() - Validates configuration and estimates costs
-        2. create_mci_dynamic(force_create=True) - Actually creates the infrastructure
+        1. review_infra_dynamic_request() - Validates configuration and estimates costs
+        2. create_infra_dynamic(force_create=True) - Actually creates the infrastructure
         
     **USER CONFIRMATION WORKFLOW:**
     ```python
     # Step 1: Review configuration and cost estimates
-    summary = create_mci_dynamic(
+    summary = create_infra_dynamic(
         ns_id="my-project",
-        name="my-mci",
+        name="my-infra",
         vm_configurations=[...]
     )
     # User reviews detailed summary with cost estimates
     
-    # Step 2: After confirmation, create MCI
-    result = create_mci_dynamic(
+    # Step 2: After confirmation, create Infra
+    result = create_infra_dynamic(
         ns_id="my-project",
-        name="my-mci", 
+        name="my-infra", 
         vm_configurations=[...],
         force_create=True  # Proceed with creation
     )
@@ -2866,21 +2866,21 @@ def create_mci_dynamic(
     - specId format: {provider}+{region}+{spec_name} (e.g., "aws+ap-northeast-2+t2.small")
     - imageId format: CSP-specific image identifier (e.g., "ami-0c02fb55956c7d316" for AWS)
     - Use matched_spec_id in search_images() for automatic compatibility filtering
-    - Use subGroupSize > 1 to create multiple VMs with same configuration
+    - Use nodeGroupSize > 1 to create multiple VMs with same configuration
     - For multi-CSP deployments, each VM needs its own provider-specific image
     """
     
-    # CRITICAL: Enforce explicit review step before MCI creation
+    # CRITICAL: Enforce explicit review step before Infra creation
     if not force_create and not skip_confirmation:
         return {
-            "error": "❌ MCI creation requires prior validation - MANDATORY WORKFLOW",
-            "message": "🚨 STOP: You MUST run review_mci_dynamic_request() first before creating MCI!",
+            "error": "❌ Infra creation requires prior validation - MANDATORY WORKFLOW",
+            "message": "🚨 STOP: You MUST run review_infra_dynamic_request() first before creating Infra!",
             "workflow_violation": "REVIEW_STEP_SKIPPED",
             "required_workflow": [
-                "1. 🔍 MANDATORY: Call review_mci_dynamic_request() with the same parameters",
+                "1. 🔍 MANDATORY: Call review_infra_dynamic_request() with the same parameters",
                 "2. 📋 EXAMINE: Review validation results, cost estimates, and any warnings/errors", 
                 "3. 🔧 FIX: Address any validation issues if needed",
-                "4. ✅ CREATE: Call create_mci_dynamic() with force_create=True to proceed"
+                "4. ✅ CREATE: Call create_infra_dynamic() with force_create=True to proceed"
             ],
             "why_review_required": [
                 "🛡️ Prevents expensive deployment failures",
@@ -2891,13 +2891,13 @@ def create_mci_dynamic(
             ],
             "llm_instructions": {
                 "immediate_action": "CALL_REVIEW_FUNCTION",
-                "message_to_user": "I need to validate this MCI configuration first to ensure it will work and show you the cost estimates. Let me run the review step.",
-                "next_function_call": f"review_mci_dynamic_request(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)",
+                "message_to_user": "I need to validate this Infra configuration first to ensure it will work and show you the cost estimates. Let me run the review step.",
+                "next_function_call": f"review_infra_dynamic_request(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)",
                 "after_review": "After review completes, I'll show you the results and ask for confirmation before creating the infrastructure."
             },
             "example_code": f'''
 # STEP 1: Review first (MANDATORY)
-review_result = review_mci_dynamic_request(
+review_result = review_infra_dynamic_request(
     ns_id="{ns_id}",
     name="{name}",
     vm_configurations=vm_configurations
@@ -2905,7 +2905,7 @@ review_result = review_mci_dynamic_request(
 
 # STEP 2: Check results and create if valid
 if review_result.get("overallStatus") == "Ready":
-    mci = create_mci_dynamic(
+    infra = create_infra_dynamic(
         ns_id="{ns_id}",
         name="{name}",
         vm_configurations=vm_configurations,
@@ -2918,7 +2918,7 @@ if review_result.get("overallStatus") == "Ready":
     # STEP 1: User confirmation workflow (unless explicitly skipped or forced)
     if not skip_confirmation and not force_create:
         # Generate comprehensive creation summary with cost analysis
-        creation_summary = generate_mci_creation_summary(
+        creation_summary = generate_infra_creation_summary(
             ns_id=ns_id,
             name=name,
             vm_configurations=vm_configurations,
@@ -2941,10 +2941,10 @@ if review_result.get("overallStatus") == "Ready":
         # Add clear next action instructions
         creation_summary["_NEXT_ACTION"] = {
             "action_required": "USER_CONFIRMATION",
-            "message": "📋 Please review the MCI creation plan above, including cost estimates and deployment strategy.",
+            "message": "📋 Please review the Infra creation plan above, including cost estimates and deployment strategy.",
             "to_proceed": {
                 "description": "After reviewing, call this function again with force_create=True to proceed with deployment",
-                "function_call": f"create_mci_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>, force_create=True)",
+                "function_call": f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>, force_create=True)",
                 "alternative": "Or use skip_confirmation=True if you want to skip future confirmations"
             },
             "to_modify": {
@@ -2957,7 +2957,7 @@ if review_result.get("overallStatus") == "Ready":
             }
         }
         
-        # Return summary without creating MCI
+        # Return summary without creating Infra
         return creation_summary
     
     # STEP 1: Validate namespace first
@@ -3093,10 +3093,10 @@ if review_result.get("overallStatus") == "Ready":
         
         processed_vm_configs.append(vm_config)
     
-    # Build request data according to model.MciDynamicReq spec
+    # Build request data according to model.InfraDynamicReq spec
     data = {
         "name": name,
-        "subGroups": processed_vm_configs,  # Use processed configs with auto-mapped images
+        "nodeGroups": processed_vm_configs,  # Use processed configs with auto-mapped images
         "policyOnPartialFailure": policy_on_partial_failure
     }
     
@@ -3115,7 +3115,7 @@ if review_result.get("overallStatus") == "Ready":
     if sg_template_id:
         data["sgTemplateId"] = sg_template_id
     
-    url = f"/ns/{ns_id}/mciDynamic"
+    url = f"/ns/{ns_id}/infraDynamic"
     if hold:
         url += "?option=hold"
     
@@ -3124,7 +3124,7 @@ if review_result.get("overallStatus") == "Ready":
     # Store interaction in memory for future reference
     context_data = {
         "namespace_id": ns_id,
-        "mci_name": name,
+        "infra_name": name,
         "vm_count": len(vm_configurations),
         "hold": hold
     }
@@ -3136,40 +3136,40 @@ if review_result.get("overallStatus") == "Ready":
             "validation": "passed"
         }
         
-        # Store successful MCI creation with auto-mapping details
+        # Store successful Infra creation with auto-mapping details
         auto_mapped_count = sum(1 for vm in processed_vm_configs if vm.get("_auto_mapped_image", False))
-        context_data["mci_id"] = result.get("id", name)
+        context_data["infra_id"] = result.get("id", name)
         context_data["auto_mapped_images"] = auto_mapped_count
         context_data["total_vms"] = len(processed_vm_configs)
         context_data["spec_to_image_mapping"] = "applied"
         
         _store_interaction_memory(
-            user_request=f"Create MCI '{name}' with {len(processed_vm_configs)} VM configurations using spec-aware image selection",
-            llm_response=f"Successfully created MCI '{name}' (ID: {result.get('id', name)}) with proper spec-to-image mapping in namespace '{ns_id}'. Auto-mapped {auto_mapped_count}/{len(processed_vm_configs)} images.",
-            operation_type="mci_creation",
+            user_request=f"Create Infra '{name}' with {len(processed_vm_configs)} VM configurations using spec-aware image selection",
+            llm_response=f"Successfully created Infra '{name}' (ID: {result.get('id', name)}) with proper spec-to-image mapping in namespace '{ns_id}'. Auto-mapped {auto_mapped_count}/{len(processed_vm_configs)} images.",
+            operation_type="infra_creation",
             context_data=context_data,
             status="completed"
         )
     else:
-        # Store failed MCI creation
+        # Store failed Infra creation
         _store_interaction_memory(
-            user_request=f"Create MCI '{name}' with {len(processed_vm_configs)} VM configurations",
-            llm_response=f"Failed to create MCI '{name}': {result.get('error', 'Unknown error')}",
-            operation_type="mci_creation",
+            user_request=f"Create Infra '{name}' with {len(processed_vm_configs)} VM configurations",
+            llm_response=f"Failed to create Infra '{name}': {result.get('error', 'Unknown error')}",
+            operation_type="infra_creation",
             context_data=context_data,
             status="failed"
         )
     
     return result
 
-# Note: create_mci_with_proper_spec_mapping has been removed.
-# Use create_mci_dynamic with proper spec-to-image mapping workflow instead.
+# Note: create_infra_with_proper_spec_mapping has been removed.
+# Use create_infra_dynamic with proper spec-to-image mapping workflow instead.
 
-# Note: create_mci_with_spec_first has been removed.
-# Use create_mci_dynamic with spec-first workflow as described in prompts.
+# Note: create_infra_with_spec_first has been removed.
+# Use create_infra_dynamic with spec-first workflow as described in prompts.
 
-# Note: create_mci_with_namespace_management has been removed.
-# Use create_mci_dynamic with namespace management workflow as described in prompts.
+# Note: create_infra_with_namespace_management has been removed.
+# Use create_infra_dynamic with namespace management workflow as described in prompts.
 
 # Tool: Review Spec-Image Pair
 @mcp.tool()
@@ -3181,17 +3181,17 @@ def review_spec_image_pair(
     Lightweight validation of a specId + imageId pair without creating any infrastructure.
     
     Use this to quickly check if a spec and image combination is valid and available
-    before building full MCI configurations. Much faster than review_mci_dynamic_request().
+    before building full Infra configurations. Much faster than review_infra_dynamic_request().
     
     **Workflow:**
     ```python
-    # Quick check before building full MCI config
+    # Quick check before building full Infra config
     result = review_spec_image_pair(
         spec_id="aws+ap-northeast-2+t3.nano",
         image_id="ami-01f71f215b23ba262"
     )
     if result.get("isAvailable"):
-        # Proceed to build full MCI configuration
+        # Proceed to build full Infra configuration
         ...
     ```
     
@@ -3213,11 +3213,11 @@ def review_spec_image_pair(
     }
     return api_request("POST", "/specImagePairReview", json_data=data)
 
-# Tool: Add SubGroup to existing MCI dynamically
+# Tool: Add NodeGroup to existing Infra dynamically
 @mcp.tool()
-def add_subgroup_dynamic(
+def add_nodegroup_dynamic(
     ns_id: str,
-    mci_id: str,
+    infra_id: str,
     spec_id: str,
     image_id: str,
     name: str = "",
@@ -3233,17 +3233,17 @@ def add_subgroup_dynamic(
     label: Optional[Dict[str, str]] = None
 ) -> Dict:
     """
-    Add a new SubGroup of VMs to an existing MCI dynamically.
+    Add a new NodeGroup of VMs to an existing Infra dynamically.
     
-    Use this to scale out an existing MCI by adding more VMs with a new spec/image.
-    The SubGroup will be added to the existing MCI without affecting other VMs.
+    Use this to scale out an existing Infra by adding more VMs with a new spec/image.
+    The NodeGroup will be added to the existing Infra without affecting other VMs.
     
     **Example:**
     ```python
-    # Add 3 worker VMs to existing MCI
-    result = add_subgroup_dynamic(
+    # Add 3 worker VMs to existing Infra
+    result = add_nodegroup_dynamic(
         ns_id="default",
-        mci_id="my-mci",
+        infra_id="my-infra",
         spec_id="aws+ap-northeast-2+t3.medium",
         image_id="ami-0c02fb55956c7d316",
         name="worker-group",
@@ -3254,12 +3254,12 @@ def add_subgroup_dynamic(
     
     Args:
         ns_id: Namespace ID (REQUIRED)
-        mci_id: MCI ID to add the subgroup to (REQUIRED)
+        infra_id: Infra ID to add the nodegroup to (REQUIRED)
         spec_id: VM specification ID from recommend_vm_spec() (REQUIRED)
         image_id: CSP-specific image ID from search_images() (REQUIRED)
-        name: SubGroup name (optional)
-        sub_group_size: Number of VMs in the subgroup (int, default 1)
-        description: SubGroup description (optional)
+        name: NodeGroup name (optional)
+        sub_group_size: Number of VMs in the nodegroup (int, default 1)
+        description: NodeGroup description (optional)
         root_disk_type: Root disk type (optional)
         root_disk_size: Root disk size in GB (int, 0 for CSP default)
         vm_user_password: VM user password (optional)
@@ -3270,12 +3270,12 @@ def add_subgroup_dynamic(
         label: Key-value pairs for labeling (optional)
     
     Returns:
-        Updated MCI information including the newly added SubGroup
+        Updated Infra information including the newly added NodeGroup
     """
     data = {
         "specId": spec_id,
         "imageId": image_id,
-        "subGroupSize": sub_group_size
+        "nodeGroupSize": sub_group_size
     }
     if name:
         data["name"] = name
@@ -3298,13 +3298,13 @@ def add_subgroup_dynamic(
     if label:
         data["label"] = label
     
-    return api_request("POST", f"/ns/{ns_id}/mci/{mci_id}/subGroupDynamic", json_data=data)
+    return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic", json_data=data)
 
-# Tool: Review SubGroup Dynamic Request
+# Tool: Review NodeGroup Dynamic Request
 @mcp.tool()
-def review_subgroup_dynamic(
+def review_nodegroup_dynamic(
     ns_id: str,
-    mci_id: str,
+    infra_id: str,
     spec_id: str,
     image_id: str,
     name: str = "",
@@ -3316,19 +3316,19 @@ def review_subgroup_dynamic(
     zone: str = ""
 ) -> Dict:
     """
-    Review/validate a SubGroup configuration before adding it to an existing MCI.
+    Review/validate a NodeGroup configuration before adding it to an existing Infra.
     
-    Similar to review_mci_dynamic_request but for a single SubGroup being added
-    to an already-running MCI. Use this before add_subgroup_dynamic().
+    Similar to review_infra_dynamic_request but for a single NodeGroup being added
+    to an already-running Infra. Use this before add_nodegroup_dynamic().
     
     Args:
         ns_id: Namespace ID (REQUIRED)
-        mci_id: MCI ID (REQUIRED)
+        infra_id: Infra ID (REQUIRED)
         spec_id: VM specification ID (REQUIRED)
         image_id: CSP-specific image ID (REQUIRED)
-        name: SubGroup name (optional)
+        name: NodeGroup name (optional)
         sub_group_size: Number of VMs (int, default 1)
-        description: SubGroup description (optional)
+        description: NodeGroup description (optional)
         root_disk_type: Root disk type (optional)
         root_disk_size: Root disk size in GB (int, 0 for CSP default)
         connection_name: Specific connection name (optional)
@@ -3336,12 +3336,12 @@ def review_subgroup_dynamic(
     
     Returns:
         Validation result including spec/image availability, cost estimation,
-        and compatibility with the existing MCI
+        and compatibility with the existing Infra
     """
     data = {
         "specId": spec_id,
         "imageId": image_id,
-        "subGroupSize": sub_group_size
+        "nodeGroupSize": sub_group_size
     }
     if name:
         data["name"] = name
@@ -3356,62 +3356,62 @@ def review_subgroup_dynamic(
     if zone:
         data["zone"] = zone
     
-    return api_request("POST", f"/ns/{ns_id}/mci/{mci_id}/subGroupDynamicReview", json_data=data)
+    return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamicReview", json_data=data)
 
-# Tool: Delete MCI
+# Tool: Delete Infra
 @mcp.tool()
-def delete_mci(ns_id: str, mci_id: str) -> Dict:
+def delete_infra(ns_id: str, infra_id: str) -> Dict:
     """
-    Delete an MCI.
-    This operation will terminate all VMs in the MCI and delete the MCI.
+    Delete an Infra.
+    This operation will terminate all VMs in the Infra and delete the Infra.
     This operation is irreversible and should be used with caution.
     This operation requires confirmation from the user.
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
     
     Returns:
         Deletion result with guidance about optional shared resources cleanup
     """
-    # Get MCI associated resources before deletion for guidance
+    # Get Infra associated resources before deletion for guidance
     try:
-        associated_resources = get_mci_associated_resources(ns_id, mci_id)
+        associated_resources = get_infra_associated_resources(ns_id, infra_id)
     except:
         associated_resources = None
     
-    # Delete the MCI
-    result = api_request("DELETE", f"/ns/{ns_id}/mci/{mci_id}?option=terminate")
+    # Delete the Infra
+    result = api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}?option=terminate")
     
     # Add shared resources cleanup guidance to the result
     if isinstance(result, dict) and "error" not in result:
         # Store deletion in memory
         _store_interaction_memory(
-            user_request=f"Delete MCI '{mci_id}' in namespace '{ns_id}'",
-            llm_response=f"Successfully deleted MCI '{mci_id}'",
-            operation_type="mci_management",
-            context_data={"namespace_id": ns_id, "mci_id": mci_id, "operation": "delete"},
+            user_request=f"Delete Infra '{infra_id}' in namespace '{ns_id}'",
+            llm_response=f"Successfully deleted Infra '{infra_id}'",
+            operation_type="infra_management",
+            context_data={"namespace_id": ns_id, "infra_id": infra_id, "operation": "delete"},
             status="completed"
         )
         
         # Add shared resources cleanup guidance
         result["next_steps_guidance"] = {
-            "mci_deletion": "✅ MCI deletion completed successfully",
+            "infra_deletion": "✅ Infra deletion completed successfully",
             "optional_cleanup": {
                 "title": "🔧 Optional: Clean up shared resources",
-                "description": "Your MCI used shared resources (VNet, SecurityGroup, SSHKey) that remain in the namespace. These can be reused by future MCIs or cleaned up if no longer needed.",
+                "description": "Your Infra used shared resources (VNet, SecurityGroup, SSHKey) that remain in the namespace. These can be reused by future Infras or cleaned up if no longer needed.",
                 "when_to_cleanup": [
-                    "This was the last MCI in the namespace",
-                    "You won't create new MCIs that could reuse these network configurations",
+                    "This was the last Infra in the namespace",
+                    "You won't create new Infras that could reuse these network configurations",
                     "You want to completely clean up the namespace"
                 ],
                 "when_to_keep": [
-                    "Other MCIs exist in the same namespace",
-                    "You plan to create new MCIs soon",
+                    "Other Infras exist in the same namespace",
+                    "You plan to create new Infras soon",
                     "You want to keep network configurations for future use"
                 ],
                 "cleanup_command": f"release_resources('{ns_id}', force_release=True)",
-                "check_command": f"get_mci_list('{ns_id}') # Check if other MCIs exist",
+                "check_command": f"get_infra_list('{ns_id}') # Check if other Infras exist",
                 "warning": "⚠️  Shared resources cleanup is IRREVERSIBLE and affects the entire namespace"
             }
         }
@@ -3419,24 +3419,24 @@ def delete_mci(ns_id: str, mci_id: str) -> Dict:
         # Add associated resources information if available
         if associated_resources and isinstance(associated_resources, dict) and "error" not in associated_resources:
             result["next_steps_guidance"]["associated_resources"] = {
-                "description": "The deleted MCI was using these shared resources:",
+                "description": "The deleted Infra was using these shared resources:",
                 "vNets": associated_resources.get("vNetIds", []),
                 "securityGroups": associated_resources.get("securityGroupIds", []),
                 "sshKeys": associated_resources.get("sshKeyIds", []),
-                "note": "These resources remain available for future MCIs unless explicitly released"
+                "note": "These resources remain available for future Infras unless explicitly released"
             }
     
     return result
 
-# Tool: Control MCI
+# Tool: Control Infra
 @mcp.tool()
-def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
+def control_infra(ns_id: str, infra_id: str, action: str) -> Dict:
     """
-    Control an MCI. Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, etc.)
+    Control an Infra. Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, etc.)
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
         action: Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, etc.)
     
     Returns:
@@ -3446,7 +3446,7 @@ def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
     if action not in valid_actions:
         return {"error": f"Unsupported action: {action}. Supported actions: {', '.join(valid_actions)}"}
     
-    return api_request("GET", f"/ns/{ns_id}/control/mci/{mci_id}?action={action}")
+    return api_request("GET", f"/ns/{ns_id}/control/infra/{infra_id}?action={action}")
 
 #####################################
 # NLB Management (Network Load Balancer)
@@ -3454,13 +3454,13 @@ def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
 
 # # Tool: Create Multi-Cloud NLB
 # @mcp.tool()
-# def create_mc_nlb(ns_id: str, mci_id: str, port: int = 80, type: str = "PUBLIC", scope: str = "REGION") -> Dict:
+# def create_mc_nlb(ns_id: str, infra_id: str, port: int = 80, type: str = "PUBLIC", scope: str = "REGION") -> Dict:
 #     """
 #     Create Multi-Cloud NLB
     
 #     Args:
 #         ns_id: Namespace ID
-#         mci_id: MCI ID
+#         infra_id: Infra ID
 #         port: Port number
 #         type: NLB type (PUBLIC/PRIVATE)
 #         scope: NLB scope (REGION)
@@ -3486,14 +3486,14 @@ def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
 #         }
 #     }
     
-#     return api_request("POST", f"/ns/{ns_id}/mci/{mci_id}/mcSwNlb", json_data=data)
+#     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/mcSwNlb", json_data=data)
 
 # # Tool: Create Regional NLB
 # @mcp.tool()
 # def create_region_nlb(
 #     ns_id: str, 
-#     mci_id: str, 
-#     subgroup_id: str, 
+#     infra_id: str, 
+#     nodegroup_id: str, 
 #     port: int = 80, 
 #     type: str = "PUBLIC", 
 #     scope: str = "REGION"
@@ -3503,8 +3503,8 @@ def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
     
 #     Args:
 #         ns_id: Namespace ID
-#         mci_id: MCI ID
-#         subgroup_id: Subgroup ID
+#         infra_id: Infra ID
+#         nodegroup_id: NodeGroup ID
 #         port: Port number
 #         type: NLB type (PUBLIC/PRIVATE)
 #         scope: NLB scope (REGION)
@@ -3522,7 +3522,7 @@ def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
 #         "targetGroup": {
 #             "Protocol": "TCP",
 #             "Port": str(port),
-#             "subGroupId": subgroup_id
+#             "nodeGroupId": nodegroup_id
 #         },
 #         "HealthChecker": {
 #             "Interval": "default",
@@ -3531,23 +3531,23 @@ def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
 #         }
 #     }
     
-#     return api_request("POST", f"/ns/{ns_id}/mci/{mci_id}/nlb", json_data=data)
+#     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nlb", json_data=data)
 
 # # Tool: Delete NLB
 # @mcp.tool()
-# def delete_nlb(ns_id: str, mci_id: str, subgroup_id: str) -> Dict:
+# def delete_nlb(ns_id: str, infra_id: str, nodegroup_id: str) -> Dict:
 #     """
 #     Delete NLB
     
 #     Args:
 #         ns_id: Namespace ID
-#         mci_id: MCI ID
-#         subgroup_id: Subgroup ID
+#         infra_id: Infra ID
+#         nodegroup_id: NodeGroup ID
     
 #     Returns:
 #         Deletion result
 #     """
-#     return api_request("DELETE", f"/ns/{ns_id}/mci/{mci_id}/nlb/{subgroup_id}")
+#     return api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}/nlb/{nodegroup_id}")
 
 #####################################
 # Memory & Interaction History Management
@@ -3567,8 +3567,8 @@ def _store_interaction_memory(
     Args:
         user_request: The user's original request
         llm_response: The LLM's response or action taken
-        operation_type: Type of operation (e.g., "mci_creation", "namespace_management", "command_execution")
-        context_data: Additional context like namespace_id, mci_id, etc.
+        operation_type: Type of operation (e.g., "infra_creation", "namespace_management", "command_execution")
+        context_data: Additional context like namespace_id, infra_id, etc.
         status: Status of the operation ("completed", "failed", "in_progress")
     
     Returns:
@@ -3720,7 +3720,7 @@ def _create_session_summary() -> Dict:
         # Analyze interaction patterns
         operation_types = {}
         namespaces_used = set()
-        mcis_created = []
+        infras_created = []
         errors_encountered = []
         
         for interaction in history["interactions"]:
@@ -3735,10 +3735,10 @@ def _create_session_summary() -> Dict:
             if namespace_obs:
                 namespaces_used.add(namespace_obs)
             
-            # Extract MCI information
-            mci_obs = next((obs for obs in observations if "mci" in obs.lower()), None)
-            if mci_obs:
-                mcis_created.append(mci_obs)
+            # Extract Infra information
+            infra_obs = next((obs for obs in observations if "infra" in obs.lower()), None)
+            if infra_obs:
+                infras_created.append(infra_obs)
             
             # Check for errors
             status_obs = next((obs for obs in observations if obs.startswith("Status:")), None)
@@ -3747,8 +3747,8 @@ def _create_session_summary() -> Dict:
         
         # Generate recommendations
         recommendations = []
-        if "mci_creation" in operation_types:
-            recommendations.append("Monitor created MCIs for optimal resource usage")
+        if "infra_creation" in operation_types:
+            recommendations.append("Monitor created Infras for optimal resource usage")
         if errors_encountered:
             recommendations.append("Review error logs and retry failed operations")
         if len(namespaces_used) > 3:
@@ -3758,7 +3758,7 @@ def _create_session_summary() -> Dict:
             "summary": f"Found {len(history['interactions'])} recent interactions",
             "operation_summary": operation_types,
             "namespaces_used": list(namespaces_used),
-            "mcis_info": mcis_created,
+            "infras_info": infras_created,
             "errors_count": len(errors_encountered),
             "key_insights": [
                 f"Most common operation: {max(operation_types.keys(), key=operation_types.get) if operation_types else 'none'}",
@@ -3962,13 +3962,13 @@ def _summarize_command_output(output: str, max_lines: int = 5, max_chars: int = 
         "lines_count": total_lines
     }
 
-# Tool: Execute remote command to VMs in MCI
+# Tool: Execute remote command to VMs in Infra
 @mcp.tool()
-def execute_command_mci(
+def execute_command_infra(
     ns_id: str, 
-    mci_id: str, 
+    infra_id: str, 
     commands: List[str], 
-    subgroup_id: Optional[str] = None, 
+    nodegroup_id: Optional[str] = None, 
     vm_id: Optional[str] = None,
     label_selector: Optional[str] = None,
     summarize_output: bool = True,
@@ -3976,13 +3976,13 @@ def execute_command_mci(
     max_output_chars: Union[int, str] = 1000
 ) -> Dict:
     """
-    Execute remote commands based on SSH on VMs of an MCI.
-    This allows executing commands on all VMs in the MCI or specific VMs based on subgroup or label selector.
+    Execute remote commands based on SSH on VMs of an Infra.
+    This allows executing commands on all VMs in the Infra or specific VMs based on nodegroup or label selector.
     
     🚨 **CRITICAL PERFORMANCE WARNING:**
     Remote command execution can take significant time depending on:
     - Command complexity and execution time
-    - Number of VMs in MCI (commands run on all VMs sequentially)
+    - Number of VMs in Infra (commands run on all VMs sequentially)
     - Network latency to target VMs
     - Application installation and configuration time
     
@@ -4010,9 +4010,9 @@ def execute_command_mci(
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
         commands: List of commands to execute
-        subgroup_id: Subgroup ID (optional)
+        nodegroup_id: NodeGroup ID (optional)
         vm_id: VM ID (optional)
         label_selector: Label selector (optional)
         summarize_output: Whether to summarize long outputs to reduce token usage (default: True)
@@ -4022,7 +4022,7 @@ def execute_command_mci(
     Returns:
         Command execution result with summarized outputs (if enabled):
         - results: List of VM execution results
-        - Each result includes: mciId, vmId, vmIp, command, stdout, stderr, err
+        - Each result includes: infraId, vmId, vmIp, command, stdout, stderr, err
         - When summarized: stdout/stderr include summary info and truncation indicators
         - output_summary: Metadata about output summarization
     """
@@ -4069,11 +4069,11 @@ def execute_command_mci(
         "command": valid_commands  # Use validated commands
     }
     
-    url = f"/ns/{ns_id}/cmd/mci/{mci_id}"
+    url = f"/ns/{ns_id}/cmd/infra/{infra_id}"
     params = {}
     
-    if subgroup_id:
-        params["subGroupId"] = subgroup_id
+    if nodegroup_id:
+        params["nodeGroupId"] = nodegroup_id
     if vm_id:
         params["vmId"] = vm_id
     if label_selector:
@@ -4191,14 +4191,14 @@ def execute_command_mci(
     # Store command execution in memory
     context_data = {
         "namespace_id": ns_id,
-        "mci_id": mci_id,
+        "infra_id": infra_id,
         "commands": commands,
         "vm_count": len(result.get("results", [])),
         "summarize_output": summarize_output
     }
     
-    if subgroup_id:
-        context_data["subgroup_id"] = subgroup_id
+    if nodegroup_id:
+        context_data["nodegroup_id"] = nodegroup_id
     if vm_id:
         context_data["vm_id"] = vm_id
     if label_selector:
@@ -4215,7 +4215,7 @@ def execute_command_mci(
     status = "completed" if success_count == total_count else "partial_failure" if success_count > 0 else "failed"
     
     _store_interaction_memory(
-        user_request=f"Execute commands {commands} on MCI '{mci_id}' in namespace '{ns_id}'",
+        user_request=f"Execute commands {commands} on Infra '{infra_id}' in namespace '{ns_id}'",
         llm_response=f"Command execution {status}: {success_count}/{total_count} VMs successful",
         operation_type="command_execution",
         context_data=context_data,
@@ -4342,17 +4342,17 @@ PREDEFINED_SCRIPTS = {
 @mcp.tool()
 def execute_remote_commands_enhanced(
     ns_id: str,
-    mci_id: str,
+    infra_id: str,
     script_name: Optional[str] = None,
     custom_commands: Optional[List[str]] = None,
     template_variables: Optional[Dict[str, str]] = None,
-    subgroup_id: Optional[str] = None,
+    nodegroup_id: Optional[str] = None,
     vm_id: Optional[str] = None,
     label_selector: Optional[str] = None,
     summarize_output: bool = True
 ) -> Dict:
     """
-    Execute enhanced remote commands on MCI VMs with predefined scripts and template variable support.
+    Execute enhanced remote commands on Infra VMs with predefined scripts and template variable support.
     Based on MapUI patterns for comprehensive application deployment and management.
     
     🚨 **CRITICAL PERFORMANCE WARNING:**
@@ -4372,11 +4372,11 @@ def execute_remote_commands_enhanced(
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
         script_name: Name of predefined script to execute (optional)
         custom_commands: List of custom commands to execute (optional)
         template_variables: Variables to substitute in commands (e.g., {"public_ip": "1.2.3.4"})
-        subgroup_id: Target specific subgroup (optional)
+        nodegroup_id: Target specific nodegroup (optional)
         vm_id: Target specific VM (optional)
         label_selector: Target VMs by label selector (optional)
         summarize_output: Whether to summarize long output (default: True)
@@ -4437,13 +4437,13 @@ def execute_remote_commands_enhanced(
                 "suggestion": "Provide meaningful commands with actual content"
             }
         
-        # Get MCI access info for template variables
+        # Get Infra access info for template variables
         if template_variables is None:
             template_variables = {}
         
         # Auto-populate common template variables
         try:
-            access_info = get_mci_access_info(ns_id, mci_id, show_ssh_key=False)
+            access_info = get_infra_access_info(ns_id, infra_id, show_ssh_key=False)
             if "accessInfo" in access_info:
                 public_ips = []
                 private_ips = []
@@ -4463,8 +4463,8 @@ def execute_remote_commands_enhanced(
                     template_variables["public_ips_comma"] = ",".join(public_ips)
                 if "private_ips_space" not in template_variables:
                     template_variables["private_ips_space"] = " ".join(private_ips)
-                if "mci_id" not in template_variables:
-                    template_variables["mci_id"] = mci_id
+                if "infra_id" not in template_variables:
+                    template_variables["infra_id"] = infra_id
                 if "ns_id" not in template_variables:
                     template_variables["ns_id"] = ns_id
         except Exception as e:
@@ -4484,11 +4484,11 @@ def execute_remote_commands_enhanced(
             final_commands = valid_commands  # Use valid_commands instead of commands
         
         # Execute commands using existing function
-        result = execute_command_mci(
+        result = execute_command_infra(
             ns_id=ns_id,
-            mci_id=mci_id,
+            infra_id=infra_id,
             commands=final_commands,  # Use final_commands
-            subgroup_id=subgroup_id,
+            nodegroup_id=nodegroup_id,
             vm_id=vm_id,
             label_selector=label_selector,
             summarize_output=summarize_output
@@ -4521,7 +4521,7 @@ def analyze_provisioning_risk(
     """
     Analyze the likelihood of provisioning failure based on historical data for a specific VM specification and image combination.
     
-    **CRITICAL for MCI Creation Planning:**
+    **CRITICAL for Infra Creation Planning:**
     This tool provides intelligent risk assessment to help prevent deployment failures by analyzing:
     - Historical failure rates for the VM specification
     - Image-specific compatibility with the spec
@@ -4548,7 +4548,7 @@ def analyze_provisioning_risk(
       - 🎯 Proceed with standard best practices
     
     **LLM Integration Guidance:**
-    - Use this tool BEFORE creating MCI with specific specs
+    - Use this tool BEFORE creating Infra with specific specs
     - If high risk detected, guide user to select alternative specs
     - Provide risk-based recommendations for deployment strategy
     - Suggest fallback options for high-risk configurations
@@ -4624,7 +4624,7 @@ def get_detailed_provisioning_risk(
     - Predictive risk modeling based on similar combinations
     
     **Use Cases for LLM:**
-    - **Pre-deployment Validation**: Comprehensive check before MCI creation
+    - **Pre-deployment Validation**: Comprehensive check before Infra creation
     - **Alternative Planning**: Detailed analysis to guide spec/image selection
     - **Troubleshooting**: Understanding why certain combinations fail
     - **Cost Optimization**: Avoiding high-risk combinations that waste resources
@@ -4741,20 +4741,20 @@ def get_provisioning_history(
         }
 
 
-# Tool: Get risk-based MCI reconfiguration guidance
+# Tool: Get risk-based Infra reconfiguration guidance
 @mcp.tool()
-def get_mci_risk_mitigation_guidance(
+def get_infra_risk_mitigation_guidance(
     vm_configurations: List[Dict],
     risk_analysis_results: Optional[Dict] = None
 ) -> Dict:
     """
-    Provide intelligent guidance for reconfiguring MCI based on historical risk analysis.
+    Provide intelligent guidance for reconfiguring Infra based on historical risk analysis.
     
     **When to Use This Tool:**
-    - After review_mci_dynamic_request() shows high-risk VMs
+    - After review_infra_dynamic_request() shows high-risk VMs
     - When historical analysis indicates potential deployment failures
-    - To optimize MCI configuration for better reliability
-    - Before finalizing MCI creation with problematic specs
+    - To optimize Infra configuration for better reliability
+    - Before finalizing Infra creation with problematic specs
     
     **Risk Mitigation Strategies:**
     This tool provides specific guidance for:
@@ -4772,7 +4772,7 @@ def get_mci_risk_mitigation_guidance(
     
     Args:
         vm_configurations: Original VM configurations that may have risks
-        risk_analysis_results: Optional risk analysis from review_mci_dynamic_request()
+        risk_analysis_results: Optional risk analysis from review_infra_dynamic_request()
     
     Returns:
         Mitigation guidance including:
@@ -4886,7 +4886,7 @@ def get_mci_risk_mitigation_guidance(
             guidance["deployment_strategies"]["recommended"] = "staged_deployment"
             guidance["deployment_strategies"]["explanation"] = "Deploy low-risk VMs first, then address high-risk VMs"
             guidance["deployment_strategies"]["steps"] = [
-                "1. Create MCI with only low and medium risk VMs first",
+                "1. Create Infra with only low and medium risk VMs first",
                 "2. Test and validate the initial deployment", 
                 "3. Research alternatives for high-risk VMs",
                 "4. Add high-risk VMs using recommended alternatives"
@@ -4908,7 +4908,7 @@ def get_mci_risk_mitigation_guidance(
             guidance["reconfiguration_steps"] = [
                 "1. Use recommend_vm_spec() to find alternative specifications for high-risk VMs",
                 "2. Filter specs by same provider/region but different instance types",
-                "3. Run review_mci_dynamic_request() again with new configurations",
+                "3. Run review_infra_dynamic_request() again with new configurations",
                 "4. Compare risk levels between original and alternative configurations",
                 "5. Proceed with configuration that has acceptable risk levels"
             ]
@@ -4972,7 +4972,7 @@ def list_predefined_scripts() -> Dict:
         "usage_note": "Use execute_remote_commands_enhanced() with script_name parameter to execute these scripts",
         "template_variables_supported": [
             "{{public_ip}}", "{{public_ips_space}}", "{{public_ips_comma}}", 
-            "{{private_ips_space}}", "{{mci_id}}", "{{ns_id}}"
+            "{{private_ips_space}}", "{{infra_id}}", "{{ns_id}}"
         ]
     }
 
@@ -4992,8 +4992,8 @@ def store_interaction_memory(
     Args:
         user_request: The user's original request
         llm_response: The LLM's response or action taken
-        operation_type: Type of operation (e.g., "mci_creation", "namespace_management", "command_execution")
-        context_data: Additional context like namespace_id, mci_id, etc.
+        operation_type: Type of operation (e.g., "infra_creation", "namespace_management", "command_execution")
+        context_data: Additional context like namespace_id, infra_id, etc.
         status: Status of the operation ("completed", "failed", "in_progress")
     
     Returns:
@@ -5195,35 +5195,35 @@ def clear_interaction_memory(
             "error": str(e)
         }
 
-# Tool: Transfer file to VMs in MCI
+# Tool: Transfer file to VMs in Infra
 @mcp.tool()
-def transfer_file_mci(
+def transfer_file_infra(
     ns_id: str, 
-    mci_id: str, 
+    infra_id: str, 
     file_path: str, 
     target_path: str,
-    subgroup_id: Optional[str] = None, 
+    nodegroup_id: Optional[str] = None, 
     vm_id: Optional[str] = None
 ) -> Dict:
     """
-    Transfer file to an MCI
+    Transfer file to an Infra
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID
+        infra_id: Infra ID
         file_path: Local file path to transfer
         target_path: Target path
-        subgroup_id: Subgroup ID (optional)
+        nodegroup_id: NodeGroup ID (optional)
         vm_id: VM ID (optional)
     
     Returns:
         File transfer result
     """
-    url = f"/ns/{ns_id}/transferFile/mci/{mci_id}"
+    url = f"/ns/{ns_id}/transferFile/infra/{infra_id}"
     params = {}
     
-    if subgroup_id:
-        params["subGroupId"] = subgroup_id
+    if nodegroup_id:
+        params["nodeGroupId"] = nodegroup_id
     if vm_id:
         params["vmId"] = vm_id
     
@@ -5282,19 +5282,19 @@ def namespace_management_prompt() -> str:
     How can I help you?
     """
 
-# Prompt: MCI management prompt
+# Prompt: Infra management prompt
 @mcp.prompt()
-def mci_management_prompt() -> str:
-    """Prompt for MCI management with comprehensive create_mci_dynamic usage patterns"""
+def infra_management_prompt() -> str:
+    """Prompt for Infra management with comprehensive create_infra_dynamic usage patterns"""
     return """
-    You are a Multi-Cloud Infrastructure (MCI) management expert for Cloud-Barista CB-Tumblebug.
+    You are a Multi-Cloud Infrastructure (Infra) management expert for Cloud-Barista CB-Tumblebug.
     
-    🚨 **CRITICAL: ONLY USE create_mci_dynamic FOR ALL MCI CREATION**
+    🚨 **CRITICAL: ONLY USE create_infra_dynamic FOR ALL Infra CREATION**
     
-    All MCI creation MUST use `create_mci_dynamic` with proper workflow patterns. 
-    Other MCI creation tools have been deprecated.
+    All Infra creation MUST use `create_infra_dynamic` with proper workflow patterns. 
+    Other Infra creation tools have been deprecated.
     
-    **🔥 MANDATORY WORKFLOW FOR create_mci_dynamic:**
+    **🔥 MANDATORY WORKFLOW FOR create_infra_dynamic:**
     
     **PATTERN 1: SPEC-FIRST WORKFLOW (RECOMMENDED)**
     ```python
@@ -5335,20 +5335,20 @@ def mci_management_prompt() -> str:
             "imageId": best_image["cspImageName"],      # Intelligently selected image
             "name": f"vm-{provider}-{len(vm_configs)+1}",
             "description": f"VM on {provider} in {region}",
-            "subGroupSize": 1
+            "nodeGroupSize": 1
         })
     
-    # Step 6: Create MCI with properly mapped configurations
-    mci = create_mci_dynamic(
+    # Step 6: Create Infra with properly mapped configurations
+    infra = create_infra_dynamic(
         ns_id="my-project",
-        name="multi-csp-mci",
+        name="multi-csp-infra",
         vm_configurations=vm_configs
     )
     ```
     
     **PATTERN 2: AUTO-MAPPING WORKFLOW (SIMPLER)**
     ```python
-    # Let create_mci_dynamic auto-map images for specs
+    # Let create_infra_dynamic auto-map images for specs
     specs = recommend_vm_spec(
         filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
     )
@@ -5362,9 +5362,9 @@ def mci_management_prompt() -> str:
             # imageId omitted - will be auto-mapped to compatible image
         })
     
-    mci = create_mci_dynamic(
+    infra = create_infra_dynamic(
         ns_id="my-project",
-        name="auto-mapped-mci",
+        name="auto-mapped-infra",
         vm_configurations=vm_configs  # Auto-mapping ensures compatibility
     )
     ```
@@ -5384,10 +5384,10 @@ def mci_management_prompt() -> str:
         longitude=longitude
     )
     
-    # Step 3: Create MCI with location-optimized specs
-    mci = create_mci_dynamic(
+    # Step 3: Create Infra with location-optimized specs
+    infra = create_infra_dynamic(
         ns_id="production",
-        name="silicon-valley-mci",
+        name="silicon-valley-infra",
         vm_configurations=[
             {"specId": spec["id"], "name": f"vm-{spec['regionName']}-{i+1}"}
             for i, spec in enumerate(specs["recommended_specs"][:3])
@@ -5397,7 +5397,7 @@ def mci_management_prompt() -> str:
     
     **🔍 PATTERN 4: RISK-AWARE WORKFLOW (NEW - ENHANCED)**
     ```python
-    # CRITICAL: Always analyze historical risk before MCI creation
+    # CRITICAL: Always analyze historical risk before Infra creation
     
     # Step 1: Prepare initial VM configurations
     vm_configs = [
@@ -5406,7 +5406,7 @@ def mci_management_prompt() -> str:
     ]
     
     # Step 2: Review configurations with risk analysis
-    review_result = review_mci_dynamic_request(
+    review_result = review_infra_dynamic_request(
         ns_id="production",
         name="web-application",
         vm_configurations=vm_configs
@@ -5414,7 +5414,7 @@ def mci_management_prompt() -> str:
     
     # Step 3: Check for high-risk VMs and get mitigation guidance
     if review_result.get("overall_risk_assessment", {}).get("high_risk_vms"):
-        guidance = get_mci_risk_mitigation_guidance(vm_configs)
+        guidance = get_infra_risk_mitigation_guidance(vm_configs)
         
         # Step 4: Reconfigure based on risk analysis
         for alt_config in guidance["alternative_configurations"]:
@@ -5436,15 +5436,15 @@ def mci_management_prompt() -> str:
                 vm_configs[vm_index]["specId"] = safer_specs["recommended_specs"][0]["id"]
         
         # Step 5: Re-review with updated configurations
-        final_review = review_mci_dynamic_request(
+        final_review = review_infra_dynamic_request(
             ns_id="production",
             name="web-application",
             vm_configurations=vm_configs
         )
     
-    # Step 6: Create MCI only after acceptable risk level
+    # Step 6: Create Infra only after acceptable risk level
     if final_review.get("creationViable", False):
-        mci = create_mci_dynamic(
+        infra = create_infra_dynamic(
             ns_id="production",
             name="web-application",
             vm_configurations=vm_configs
@@ -5456,7 +5456,7 @@ def mci_management_prompt() -> str:
     # For high-risk scenarios, deploy in stages
     
     # Step 1: Separate VMs by risk level
-    guidance = get_mci_risk_mitigation_guidance(original_vm_configs)
+    guidance = get_infra_risk_mitigation_guidance(original_vm_configs)
     low_risk_configs = []
     high_risk_configs = []
     
@@ -5468,7 +5468,7 @@ def mci_management_prompt() -> str:
     
     # Step 2: Deploy low-risk VMs first
     if low_risk_configs:
-        stable_mci = create_mci_dynamic(
+        stable_infra = create_infra_dynamic(
             ns_id="production",
             name="stable-infrastructure",
             vm_configurations=low_risk_configs
@@ -5487,10 +5487,10 @@ def mci_management_prompt() -> str:
             )
             # Apply recommendations from detailed analysis
         
-        # Add to MCI after risk mitigation
-        enhanced_vm = create_mci_vm_dynamic(
+        # Add to Infra after risk mitigation
+        enhanced_vm = create_infra_vm_dynamic(
             ns_id="production",
-            mci_id="stable-infrastructure",
+            infra_id="stable-infrastructure",
             req=modified_high_risk_config
         )
     ```
@@ -5504,9 +5504,9 @@ def mci_management_prompt() -> str:
             "description": f"VM near Silicon Valley in {spec['regionName']}"
         })
     
-    mci = create_mci_dynamic(
+    infra = create_infra_dynamic(
         ns_id="location-project",
-        name="silicon-valley-mci",
+        name="silicon-valley-infra",
         vm_configurations=vm_configs
     )
     ```
@@ -5520,10 +5520,10 @@ def mci_management_prompt() -> str:
     if not ns_check["namespace_exists"]:
         create_namespace_with_validation("my-project", "Project namespace")
     
-    # Then create MCI
-    mci = create_mci_dynamic(
+    # Then create Infra
+    infra = create_infra_dynamic(
         ns_id="my-project",
-        name="managed-mci",
+        name="managed-infra",
         vm_configurations=vm_configs
     )
     ```
@@ -5531,17 +5531,17 @@ def mci_management_prompt() -> str:
     **PATTERN 5: CONFIRMATION WORKFLOW**
     ```python
     # Preview configuration first
-    preview = create_mci_dynamic(
+    preview = create_infra_dynamic(
         ns_id="my-project",
-        name="preview-mci",
+        name="preview-infra",
         vm_configurations=vm_configs,
         skip_confirmation=False  # Returns preview only
     )
     
     # User reviews preview, then confirms
-    mci = create_mci_dynamic(
+    infra = create_infra_dynamic(
         ns_id="my-project",
-        name="confirmed-mci",
+        name="confirmed-infra",
         vm_configurations=vm_configs,
         force_create=True  # Actually creates after confirmation
     )
@@ -5550,7 +5550,7 @@ def mci_management_prompt() -> str:
     **PATTERN 6: COMPREHENSIVE REVIEW WORKFLOW (MANDATORY)**
     ```python
     # Step 1: Pre-creation validation
-    validation = review_mci_dynamic_request(
+    validation = review_infra_dynamic_request(
         ns_id="my-project",
         name="web-application",
         vm_configurations=vm_configs
@@ -5665,8 +5665,8 @@ def mci_management_prompt() -> str:
         print("\\n✅ ALL VALIDATIONS PASSED - Safe to proceed")
     
     # Step 5: Only proceed with creation after thorough review
-    print("\\n🚀 Proceeding with MCI creation...")
-    mci = create_mci_dynamic(
+    print("\\n🚀 Proceeding with Infra creation...")
+    infra = create_infra_dynamic(
         ns_id="my-project",
         name="web-application",
         vm_configurations=vm_configs
@@ -5674,16 +5674,16 @@ def mci_management_prompt() -> str:
     
     # Step 6: Post-creation status monitoring
     print("\\n📊 Monitoring deployment progress...")
-    status = check_mci_status_and_handle_failures(
+    status = check_infra_status_and_handle_failures(
         ns_id="my-project",
-        mci_id=mci["id"],
+        infra_id=infra["id"],
         detailed_analysis=True
     )
     ```
     
     **🔍 MANDATORY REVIEW RESULT ANALYSIS CHECKLIST:**
     
-    Before proceeding with any MCI creation, you MUST analyze and report:
+    Before proceeding with any Infra creation, you MUST analyze and report:
     
     ✅ **Overall Status:**
     - [ ] creationViable (true/false)
@@ -5714,7 +5714,7 @@ def mci_management_prompt() -> str:
     - [ ] Cost implications and resource usage
     - [ ] Risk trade-offs and recommendations
     
-    **❌ NEVER proceed with create_mci_dynamic() until:**
+    **❌ NEVER proceed with create_infra_dynamic() until:**
     - All critical issues are resolved
     - User understands and accepts any risks
     - Cost implications are clearly communicated
@@ -5731,13 +5731,13 @@ def mci_management_prompt() -> str:
     **imageId (RECOMMENDED):**
     - Should be exact cspImageName from search_images() results
     - Must be compatible with specId's CSP/region
-    - If omitted: Auto-mapped by create_mci_dynamic
+    - If omitted: Auto-mapped by create_infra_dynamic
     - Provider-specific formats:
       * AWS: "ami-0123456789abcdef0"
       * Azure: "/subscriptions/.../resourceGroups/.../providers/Microsoft.Compute/images/ubuntu-20.04"
       * GCP: "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307a"
     
-    **🔄 COMPLETE CREATE_MCI_DYNAMIC WORKFLOW:**
+    **🔄 COMPLETE CREATE_Infra_DYNAMIC WORKFLOW:**
     
     **1. PREPARATION PHASE:**
     ```python
@@ -5776,7 +5776,7 @@ def mci_management_prompt() -> str:
             "imageId": images["imageList"][0]["cspImageName"],  # Optional
             "name": f"vm-{provider}-{vm_index}",
             "description": f"VM on {provider} in {region}",
-            "subGroupSize": 1
+            "nodeGroupSize": 1
         }
         vm_configs.append(vm_config)
     ```
@@ -5784,12 +5784,12 @@ def mci_management_prompt() -> str:
     **3. CREATION PHASE:**
     ```python
     # A. Validate configuration (optional but recommended)
-    validation = review_mci_dynamic_request(ns_id, name, vm_configs)
+    validation = review_infra_dynamic_request(ns_id, name, vm_configs)
     
-    # B. Create MCI
-    mci = create_mci_dynamic(
+    # B. Create Infra
+    infra = create_infra_dynamic(
         ns_id=target_namespace,
-        name=mci_name,
+        name=infra_name,
         vm_configurations=vm_configs,
         description="Multi-CSP infrastructure",
         hold=False,  # Set True to hold for review
@@ -5801,9 +5801,9 @@ def mci_management_prompt() -> str:
     **4. POST-CREATION PHASE (MANDATORY):**
     ```python
     # A. Check deployment status
-    status = check_mci_status_and_handle_failures(
+    status = check_infra_status_and_handle_failures(
         ns_id=target_namespace,
-        mci_id=mci["id"],
+        infra_id=infra["id"],
         auto_cleanup_failed=False
     )
     
@@ -5812,8 +5812,8 @@ def mci_management_prompt() -> str:
         print("✅ All VMs deployed successfully!")
     elif status["deployment_health"] == "partial-failed":
         # Offer cleanup of failed VMs
-        recovery = interactive_mci_recovery(
-            ns_id, mci["id"], 
+        recovery = interactive_infra_recovery(
+            ns_id, infra["id"], 
             recovery_action="refine"
         )
     elif status["deployment_health"] == "critical":
@@ -5885,7 +5885,7 @@ def mci_management_prompt() -> str:
     
     **🚨 ABSOLUTE REQUIREMENTS:**
     1. ✅ ALWAYS use recommend_vm_spec() for spec IDs
-    2. ✅ ALWAYS check MCI status after creation
+    2. ✅ ALWAYS check Infra status after creation
     3. ✅ ALWAYS handle failures with user confirmation
     4. ✅ ALWAYS use location priority for geographic requests
     5. ❌ NEVER create spec IDs manually
@@ -5894,7 +5894,7 @@ def mci_management_prompt() -> str:
     
     Current namespace list: {{namespace://list}}
     
-    What MCI would you like to create? I'll guide you through the proper create_mci_dynamic workflow with spec validation and failure handling.
+    What Infra would you like to create? I'll guide you through the proper create_infra_dynamic workflow with spec validation and failure handling.
     """
 
 # Prompt: Resource management prompt
@@ -5957,7 +5957,7 @@ def context_awareness_prompt() -> str:
     **🔥 Enhanced Context Workflow with Hardware Research:**
     ```python
     # 1. Check previous work context
-    history = get_interaction_history(operation_type="mci_creation")
+    history = get_interaction_history(operation_type="infra_creation")
     
     # 2. For NEW application deployments, always research (regardless of history)
     research_result = research_application_requirements(
@@ -5989,7 +5989,7 @@ def context_awareness_prompt() -> str:
        history = get_interaction_history(days_back=7, max_results=10)
        
        # Focus on specific operations
-       mci_history = get_interaction_history(operation_type="mci_creation")
+       infra_history = get_interaction_history(operation_type="infra_creation")
        namespace_history = get_interaction_history(operation_type="namespace_management")
        ```
     
@@ -6008,7 +6008,7 @@ def context_awareness_prompt() -> str:
     
     **AUTOMATIC MEMORY STORAGE:**
     Most operations automatically store interaction data:
-    - MCI creation/management → "mci_creation" type
+    - Infra creation/management → "infra_creation" type
     - Command execution → "command_execution" type  
     - Namespace operations → "namespace_management" type
     - Resource management → context stored with IDs
@@ -6025,9 +6025,9 @@ def context_awareness_prompt() -> str:
     # 1. Check what user has been working on
     recent_work = get_interaction_history(days_back=3)
     
-    # 2. If user was working on MCI creation, check details
-    if any("mci_creation" in item.get("operation_type", "") for item in recent_work.get("interactions", [])):
-        mci_context = search_interaction_memory("mci")
+    # 2. If user was working on Infra creation, check details
+    if any("infra_creation" in item.get("operation_type", "") for item in recent_work.get("interactions", [])):
+        infra_context = search_interaction_memory("infra")
         # Use context to suggest next steps or improvements
     
     # 3. Get session insights for optimization
@@ -6047,27 +6047,27 @@ def context_awareness_prompt() -> str:
 def workflow_demo_prompt() -> str:
     """Prompt for workflow demonstration with failure handling"""
     return """
-    You are a Cloud-Barista CB-Tumblebug expert who helps demonstrate how to create and manage Multi-Cloud Infrastructure (MCI).
+    You are a Cloud-Barista CB-Tumblebug expert who helps demonstrate how to create and manage Multi-Cloud Infrastructure (Infra).
     
     You can guide through the following workflows:
     
     **CORE WORKFLOWS:**
     1. **Create a namespace** - Prepare workspace for infrastructure
     2. **View cloud connection information** - Check available cloud providers
-    3. **Recommend VM specifications and create an MCI** - Deploy infrastructure
-    4. **🔥 Check MCI status and handle deployment failures** - Monitor and recover
+    3. **Recommend VM specifications and create an Infra** - Deploy infrastructure
+    4. **🔥 Check Infra status and handle deployment failures** - Monitor and recover
     5. **Execute remote commands** - Configure and manage infrastructure
     6. **Configure Network Load Balancers** - Set up traffic distribution
     7. **Clean up and delete resources** - Cost management and cleanup
     
     **🚨 ENHANCED FAILURE HANDLING DEMONSTRATIONS:**
     
-    **Workflow 4A: MCI Status Monitoring & Failure Recovery**
+    **Workflow 4A: Infra Status Monitoring & Failure Recovery**
     ```python
-    # After MCI creation, always check status
-    status = check_mci_status_and_handle_failures(
+    # After Infra creation, always check status
+    status = check_infra_status_and_handle_failures(
         ns_id="demo-namespace",
-        mci_id="demo-mci",
+        infra_id="demo-infra",
         auto_cleanup_failed=False  # User decides on cleanup
     )
     
@@ -6087,9 +6087,9 @@ def workflow_demo_prompt() -> str:
         print(f"Running VMs: {status['running_vms_count']}")
         
         # Show user confirmation workflow
-        recovery = interactive_mci_recovery(
+        recovery = interactive_infra_recovery(
             ns_id="demo-namespace",
-            mci_id="demo-mci",
+            infra_id="demo-infra",
             recovery_action="refine",
             confirm_cleanup=False  # First show confirmation message
         )
@@ -6128,13 +6128,13 @@ def workflow_demo_prompt() -> str:
     **Pattern 1: Success Path**
     ```
     User: "Show me how to deploy infrastructure"
-    Demo: Create namespace → Find specs → Deploy MCI → Check status (success) → Execute commands
+    Demo: Create namespace → Find specs → Deploy Infra → Check status (success) → Execute commands
     ```
     
     **Pattern 2: Failure Recovery Path**
     ```
     User: "What happens if deployment fails?"
-    Demo: Create MCI → Simulate partial failure → Show status analysis → Guide through recovery options → Execute refine → Verify success
+    Demo: Create Infra → Simulate partial failure → Show status analysis → Guide through recovery options → Execute refine → Verify success
     ```
     
     **Pattern 3: Decision Making Path**
@@ -6147,7 +6147,7 @@ def workflow_demo_prompt() -> str:
     
     **Recovery Actions:**
     - **refine**: Cleanup failed VMs, keep successful ones
-    - **terminate**: Complete MCI deletion for fresh start
+    - **terminate**: Complete Infra deletion for fresh start
     - **reboot**: Restart VMs for temporary issues
     - **suspend/resume**: Cost management demonstrations
     
@@ -6159,9 +6159,9 @@ def workflow_demo_prompt() -> str:
     - Next steps recommendations
     
     **📊 DEMONSTRATION TOOLS:**
-    - check_mci_status_and_handle_failures(): Status analysis and recommendations
-    - interactive_mci_recovery(): Guided recovery with user confirmation
-    - Standard MCI tools: create, control, delete
+    - check_infra_status_and_handle_failures(): Status analysis and recommendations
+    - interactive_infra_recovery(): Guided recovery with user confirmation
+    - Standard Infra tools: create, control, delete
     - Monitoring tools: status, logs, performance
     
     Current namespace list:
@@ -6178,17 +6178,17 @@ def workflow_demo_prompt() -> str:
     - For advanced users: "Multi-scenario failure handling patterns"
     """
 
-# Prompt: Image search and MCI creation workflow guide
+# Prompt: Image search and Infra creation workflow guide
 @mcp.prompt()
-def image_mci_workflow_prompt() -> str:
-    """Complete workflow guide for image search and MCI creation with smart namespace management"""
+def image_infra_workflow_prompt() -> str:
+    """Complete workflow guide for image search and Infra creation with smart namespace management"""
     return """
-    You are an expert guide for the complete Namespace Management → Image Search → MCI Creation workflow in CB-Tumblebug.
+    You are an expert guide for the complete Namespace Management → Image Search → Infra Creation workflow in CB-Tumblebug.
     
     **SMART WORKFLOW (RECOMMENDED):**
     
-    **Step 0: Smart MCI Creation with Auto-Mapping**
-    Use create_mci_dynamic() with auto-mapping for foolproof spec-to-image compatibility:
+    **Step 0: Smart Infra Creation with Auto-Mapping**
+    Use create_infra_dynamic() with auto-mapping for foolproof spec-to-image compatibility:
     ```python
     # Get VM specifications first
     specs = recommend_vm_spec(
@@ -6206,17 +6206,17 @@ def image_mci_workflow_prompt() -> str:
             # imageId omitted - will be auto-mapped to compatible image
         })
     
-    # Create MCI with automatic spec-to-image mapping
-    result = create_mci_dynamic(
+    # Create Infra with automatic spec-to-image mapping
+    result = create_infra_dynamic(
         ns_id="my-project",
         name="multi-csp-infrastructure", 
         vm_configurations=vm_configs  # Auto-mapping ensures correct images
     )
     ```
     
-    **🔴 CRITICAL: MCI Dynamic Request Body Requirements**
+    **🔴 CRITICAL: Infra Dynamic Request Body Requirements**
     
-    **FOR ALL MCI Creation (review_mci_dynamic_request + create_mci_dynamic):**
+    **FOR ALL Infra Creation (review_infra_dynamic_request + create_infra_dynamic):**
     
     **specId (MANDATORY):**
     - MUST be exact specId from recommend_vm_spec() results
@@ -6256,11 +6256,11 @@ def image_mci_workflow_prompt() -> str:
         "specId": spec["id"],  # Exact specId: "aws+us-east-1+t3.medium"
         "imageId": images["images"][0]["cspImageName"],  # Exact cspImageName: "ami-12345"
         "name": "web-server-vm",
-        "subGroupSize": 1
+        "nodeGroupSize": 1
     }
     
-    # Use in MCI creation
-    create_mci_dynamic(
+    # Use in Infra creation
+    create_infra_dynamic(
         ns_id="my-project",
         name="web-infrastructure",
         vm_configurations=[vm_config]
@@ -6268,7 +6268,7 @@ def image_mci_workflow_prompt() -> str:
     ```
     
     **Step 0 Alternative: Advanced Workflow with Validation**
-    Use create_mci_recommended_workflow() for comprehensive multi-CSP deployments:
+    Use create_infra_recommended_workflow() for comprehensive multi-CSP deployments:
     ```python
     vm_requirements = [
         {
@@ -6287,7 +6287,7 @@ def image_mci_workflow_prompt() -> str:
         }
     ]
     
-    result = create_mci_recommended_workflow(
+    result = create_infra_recommended_workflow(
         ns_id="my-project",
         name="my-infrastructure",
         vm_requirements=vm_requirements
@@ -6322,7 +6322,7 @@ def image_mci_workflow_prompt() -> str:
     **CRITICAL**: Each spec determines its own CSP/region - don't mix images across specs:
     ```python
     vm_configs = []
-    for spec in specs[:2]:  # Use different specs for multi-CSP MCI
+    for spec in specs[:2]:  # Use different specs for multi-CSP Infra
         spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
         provider = spec_id.split('+')[0]  # Extract "aws" 
         region = spec_id.split('+')[1]    # Extract "ap-northeast-2"
@@ -6350,13 +6350,13 @@ def image_mci_workflow_prompt() -> str:
         })
     ```
     
-    **Step 6: Create MCI with Properly Mapped Images**
+    **Step 6: Create Infra with Properly Mapped Images**
     ```python
     # Validate configurations before deployment (optional but recommended)
     validation = validate_vm_spec_image_compatibility(vm_configs)
     
-    # Create MCI with validated configurations
-    mci = create_mci_dynamic(
+    # Create Infra with validated configurations
+    infra = create_infra_dynamic(
         ns_id="my-project",
         name="multi-csp-infrastructure",
         vm_configurations=vm_configs  # Each VM has correct CSP-specific image
@@ -6365,10 +6365,10 @@ def image_mci_workflow_prompt() -> str:
     
     **Step 7: MANDATORY - Post-Deployment Status Check & Failure Handling**
     ```python
-    # Always check MCI status after creation
-    status_check = check_mci_status_and_handle_failures(
+    # Always check Infra status after creation
+    status_check = check_infra_status_and_handle_failures(
         ns_id="my-project",
-        mci_id=mci["id"],
+        infra_id=infra["id"],
         auto_cleanup_failed=False  # Let user decide on cleanup
     )
     
@@ -6388,9 +6388,9 @@ def image_mci_workflow_prompt() -> str:
         # Offer cleanup with user confirmation
         user_decision = input("Cleanup failed VMs and continue with successful ones? (y/n): ")
         if user_decision.lower() == 'y':
-            recovery_result = interactive_mci_recovery(
+            recovery_result = interactive_infra_recovery(
                 ns_id="my-project",
-                mci_id=mci["id"],
+                infra_id=infra["id"],
                 recovery_action="refine",
                 confirm_cleanup=True
             )
@@ -6401,11 +6401,11 @@ def image_mci_workflow_prompt() -> str:
         print("🔧 RECOMMENDATION: Check errors and consider recreating with different specs")
         
         # Offer diagnostic and recreation options
-        user_choice = input("Terminate failed MCI and recreate? (y/n): ")
+        user_choice = input("Terminate failed Infra and recreate? (y/n): ")
         if user_choice.lower() == 'y':
-            interactive_mci_recovery(
+            interactive_infra_recovery(
                 ns_id="my-project",
-                mci_id=mci["id"], 
+                infra_id=infra["id"], 
                 recovery_action="terminate",
                 confirm_cleanup=True
             )
@@ -6416,17 +6416,17 @@ def image_mci_workflow_prompt() -> str:
     - validate_namespace() → namespace verification
     - recommend_vm_spec() → spec ID (determines CSP/region) → specId parameter
     - search_images() → cspImageName (in spec's CSP/region) → imageId parameter
-    - create_mci_dynamic() → MCI creation → check_mci_status_and_handle_failures() → failure recovery
+    - create_infra_dynamic() → Infra creation → check_infra_status_and_handle_failures() → failure recovery
     - **CRITICAL**: Each VM spec requires its own image search in the spec's specific CSP/region
-    - **AUTOMATIC**: create_mci_dynamic() handles spec-to-image mapping automatically
+    - **AUTOMATIC**: create_infra_dynamic() handles spec-to-image mapping automatically
     - **VALIDATION**: validate_vm_spec_image_compatibility() checks configurations
-    - **FAILURE HANDLING**: check_mci_status_and_handle_failures() monitors deployment success
-    - **RECOVERY**: interactive_mci_recovery() guides through failure resolution
+    - **FAILURE HANDLING**: check_infra_status_and_handle_failures() monitors deployment success
+    - **RECOVERY**: interactive_infra_recovery() guides through failure resolution
     
     **NAMESPACE MANAGEMENT BENEFITS:**
-    - Automatic namespace validation before MCI creation
+    - Automatic namespace validation before Infra creation
     - Smart recommendations for namespace selection/creation
-    - Prevention of MCI creation failures due to invalid namespaces
+    - Prevention of Infra creation failures due to invalid namespaces
     - Unified workflow with clear error messages and suggestions
     
     **DEPLOYMENT FAILURE HANDLING BENEFITS:**
@@ -6437,9 +6437,9 @@ def image_mci_workflow_prompt() -> str:
     - Comprehensive status monitoring and progress tracking
     
     **IMPORTANT NOTES:**
-    - Always ensure namespace exists before MCI creation
-    - **MANDATORY**: Check MCI status after creation for failures
-    - **RECOMMENDED**: Use create_mci_dynamic() auto-mapping for foolproof compatibility
+    - Always ensure namespace exists before Infra creation
+    - **MANDATORY**: Check Infra status after creation for failures
+    - **RECOMMENDED**: Use create_infra_dynamic() auto-mapping for foolproof compatibility
     - **CRITICAL**: Each VM spec requires its own CSP-specific image (no cross-CSP sharing)
     - **USER CONFIRMATION**: Always ask before cleanup actions (unless auto_cleanup=True)
     - **RECOVERY PRIORITY**: For Partial-Failed, recommend 'refine' to keep successful VMs
@@ -6447,7 +6447,7 @@ def image_mci_workflow_prompt() -> str:
     - specId format: {provider}+{region}+{spec_name}
     - **VALIDATION**: Use validate_vm_spec_image_compatibility() before deployment
     - **EXAMPLES**: Use get_spec_image_mapping_examples() to see correct/incorrect patterns
-    - **MONITORING**: Use check_mci_status_and_handle_failures() after deployment
+    - **MONITORING**: Use check_infra_status_and_handle_failures() after deployment
     - Test with hold=True first to review configuration
     
     Current namespaces: {{namespace://list}}
@@ -6459,22 +6459,22 @@ logger.info("=" * 60)
 logger.info("🚀 CB-Tumblebug MCP Server initialization complete!")
 logger.info("=" * 60)
 logger.debug("Available memory functions: store_interaction_memory, get_interaction_history, get_session_summary, search_interaction_memory, clear_interaction_memory")
-logger.debug("Automatic memory storage enabled for: MCI creation, command execution, namespace management")
+logger.debug("Automatic memory storage enabled for: Infra creation, command execution, namespace management")
 
 #####################################
-# MCI Status Monitoring & Recovery Tools
+# Infra Status Monitoring & Recovery Tools
 #####################################
 
-# Tool: Check MCI status and handle failures
+# Tool: Check Infra status and handle failures
 @mcp.tool()
-def check_mci_status_and_handle_failures(
+def check_infra_status_and_handle_failures(
     ns_id: str,
-    mci_id: str,
+    infra_id: str,
     auto_cleanup_failed: bool = False,
     detailed_analysis: bool = True
 ) -> Dict:
     """
-    Check MCI status and provide recovery options for failed/partial-failed states.
+    Check Infra status and provide recovery options for failed/partial-failed states.
     
     **HANDLES FOLLOWING SCENARIOS:**
     - Partial-Failed: Some VMs failed, some succeeded → Offer cleanup of failed VMs
@@ -6491,7 +6491,7 @@ def check_mci_status_and_handle_failures(
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID to check
+        infra_id: Infra ID to check
         auto_cleanup_failed: If True, automatically cleanup failed VMs without asking
         detailed_analysis: Include detailed VM-level analysis
     
@@ -6499,27 +6499,27 @@ def check_mci_status_and_handle_failures(
         Status report with recovery recommendations and action options
     """
     try:
-        # Get detailed MCI status
-        mci_info = get_mci(ns_id, mci_id)
-        mci_status = get_mci_list_with_options(ns_id, option="status")
+        # Get detailed Infra status
+        infra_info = get_infra(ns_id, infra_id)
+        infra_status = get_infra_list_with_options(ns_id, option="status")
         
-        # Find specific MCI in status list
-        target_mci_status = None
-        for mci in mci_status.get("mci", []):
-            if mci.get("id") == mci_id:
-                target_mci_status = mci
+        # Find specific Infra in status list
+        target_infra_status = None
+        for infra in infra_status.get("infra", []):
+            if infra.get("id") == infra_id:
+                target_infra_status = infra
                 break
         
-        if not target_mci_status:
+        if not target_infra_status:
             return {
-                "error": "MCI status not found",
-                "mci_id": mci_id,
+                "error": "Infra status not found",
+                "infra_id": infra_id,
                 "namespace": ns_id,
-                "recommendation": "Check if MCI exists or is still being created"
+                "recommendation": "Check if Infra exists or is still being created"
             }
         
-        overall_status = target_mci_status.get("status", "Unknown")
-        vm_status_list = target_mci_status.get("vm", [])
+        overall_status = target_infra_status.get("status", "Unknown")
+        vm_status_list = target_infra_status.get("vm", [])
         
         # Analyze VM status distribution
         status_counts = {}
@@ -6583,7 +6583,7 @@ def check_mci_status_and_handle_failures(
             recovery_actions.append({
                 "action": "refine",
                 "description": "Remove failed VMs while preserving successful ones",
-                "command": f"control_mci('{ns_id}', '{mci_id}', 'refine')",
+                "command": f"control_infra('{ns_id}', '{infra_id}', 'refine')",
                 "risk_level": "low",
                 "impact": f"Will remove {len(failed_vms)} failed VMs, keep {len(running_vms)} running VMs"
             })
@@ -6597,21 +6597,21 @@ def check_mci_status_and_handle_failures(
                 })
         
         elif overall_status.lower() == "failed" or len(running_vms) == 0:
-            recommendations.append("❌ CRITICAL: All VMs in MCI have failed")
-            recommendations.append("🔧 RECOMMENDED ACTIONS: Check error logs, recreate MCI, or terminate and retry")
+            recommendations.append("❌ CRITICAL: All VMs in Infra have failed")
+            recommendations.append("🔧 RECOMMENDED ACTIONS: Check error logs, recreate Infra, or terminate and retry")
             
             recovery_actions.extend([
                 {
                     "action": "terminate",
-                    "description": "Delete entire MCI and start fresh",
-                    "command": f"delete_mci('{ns_id}', '{mci_id}')",
+                    "description": "Delete entire Infra and start fresh",
+                    "command": f"delete_infra('{ns_id}', '{infra_id}')",
                     "risk_level": "high",
-                    "impact": "Complete MCI deletion - all data lost"
+                    "impact": "Complete Infra deletion - all data lost"
                 },
                 {
                     "action": "refine",
                     "description": "Attempt to cleanup and restart failed components",
-                    "command": f"control_mci('{ns_id}', '{mci_id}', 'refine')",
+                    "command": f"control_infra('{ns_id}', '{infra_id}', 'refine')",
                     "risk_level": "medium",
                     "impact": "Remove failed VMs, may need to recreate"
                 }
@@ -6628,7 +6628,7 @@ def check_mci_status_and_handle_failures(
             recovery_actions.append({
                 "action": "monitor",
                 "description": "Continue monitoring deployment progress",
-                "command": f"check_mci_status_and_handle_failures('{ns_id}', '{mci_id}')",
+                "command": f"check_infra_status_and_handle_failures('{ns_id}', '{infra_id}')",
                 "risk_level": "none",
                 "impact": "Status monitoring only"
             })
@@ -6636,18 +6636,18 @@ def check_mci_status_and_handle_failures(
         # Execute automatic cleanup if requested
         auto_cleanup_result = None
         if auto_cleanup_failed and len(failed_vms) > 0:
-            logger.info(f"Auto-cleanup enabled: Refining MCI {mci_id} to remove {len(failed_vms)} failed VMs")
-            auto_cleanup_result = control_mci(ns_id, mci_id, "refine")
-            recommendations.append(f"🔧 AUTO-CLEANUP EXECUTED: Refined MCI to remove {len(failed_vms)} failed VMs")
+            logger.info(f"Auto-cleanup enabled: Refining Infra {infra_id} to remove {len(failed_vms)} failed VMs")
+            auto_cleanup_result = control_infra(ns_id, infra_id, "refine")
+            recommendations.append(f"🔧 AUTO-CLEANUP EXECUTED: Refined Infra to remove {len(failed_vms)} failed VMs")
         
         # Prepare detailed response
         response = {
-            "mci_id": mci_id,
+            "infra_id": infra_id,
             "namespace": ns_id,
             "timestamp": datetime.now().isoformat(),
             "status_analysis": recovery_analysis,
             "detailed_status": {
-                "overall_mci_status": overall_status,
+                "overall_infra_status": overall_status,
                 "failed_vms": failed_vms if detailed_analysis else len(failed_vms),
                 "running_vms": running_vms if detailed_analysis else len(running_vms),
                 "creating_vms": creating_vms if detailed_analysis else len(creating_vms)
@@ -6660,12 +6660,12 @@ def check_mci_status_and_handle_failures(
         
         # Store interaction for future reference
         _store_interaction_memory(
-            user_request=f"Check MCI status and handle failures for '{mci_id}' in namespace '{ns_id}'",
-            llm_response=f"MCI status: {overall_status}, Failed VMs: {len(failed_vms)}, Running VMs: {len(running_vms)}",
-            operation_type="mci_status_monitoring",
+            user_request=f"Check Infra status and handle failures for '{infra_id}' in namespace '{ns_id}'",
+            llm_response=f"Infra status: {overall_status}, Failed VMs: {len(failed_vms)}, Running VMs: {len(running_vms)}",
+            operation_type="infra_status_monitoring",
             context_data={
                 "namespace_id": ns_id,
-                "mci_id": mci_id,
+                "infra_id": infra_id,
                 "overall_status": overall_status,
                 "failed_vms_count": len(failed_vms),
                 "auto_cleanup": auto_cleanup_failed
@@ -6676,34 +6676,34 @@ def check_mci_status_and_handle_failures(
         return response
         
     except Exception as e:
-        logger.error(f"Error checking MCI status: {e}")
+        logger.error(f"Error checking Infra status: {e}")
         return {
-            "error": f"Failed to check MCI status: {str(e)}",
-            "mci_id": mci_id,
+            "error": f"Failed to check Infra status: {str(e)}",
+            "infra_id": infra_id,
             "namespace": ns_id,
-            "recommendation": "Check if MCI exists and namespace is valid"
+            "recommendation": "Check if Infra exists and namespace is valid"
         }
 
-# Tool: Interactive MCI failure recovery
+# Tool: Interactive Infra failure recovery
 @mcp.tool()
-def interactive_mci_recovery(
+def interactive_infra_recovery(
     ns_id: str,
-    mci_id: str,
+    infra_id: str,
     recovery_action: str = "refine",
     confirm_cleanup: bool = False
 ) -> Dict:
     """
-    Interactive MCI recovery tool for handling failed deployments with user confirmation.
+    Interactive Infra recovery tool for handling failed deployments with user confirmation.
     
     **SUPPORTED RECOVERY ACTIONS:**
     - refine: Remove failed VMs while keeping successful ones (recommended for partial failures)
-    - terminate: Delete entire MCI (use when all VMs failed)
+    - terminate: Delete entire Infra (use when all VMs failed)
     - reboot: Restart all VMs (use for temporary issues)
     - resume: Resume suspended VMs
     - suspend: Suspend all VMs (temporary cost saving)
     
     **INTERACTIVE WORKFLOW:**
-    1. Analyze current MCI status
+    1. Analyze current Infra status
     2. Present failure details and impact assessment
     3. Require user confirmation for destructive actions
     4. Execute recovery action with progress monitoring
@@ -6711,7 +6711,7 @@ def interactive_mci_recovery(
     
     Args:
         ns_id: Namespace ID
-        mci_id: MCI ID to recover
+        infra_id: Infra ID to recover
         recovery_action: Action to perform (refine, terminate, reboot, resume, suspend)
         confirm_cleanup: User confirmation for destructive actions
     
@@ -6720,7 +6720,7 @@ def interactive_mci_recovery(
     """
     try:
         # Step 1: Get current status before recovery
-        pre_recovery_status = check_mci_status_and_handle_failures(ns_id, mci_id, auto_cleanup_failed=False)
+        pre_recovery_status = check_infra_status_and_handle_failures(ns_id, infra_id, auto_cleanup_failed=False)
         
         if "error" in pre_recovery_status:
             return pre_recovery_status
@@ -6747,14 +6747,14 @@ def interactive_mci_recovery(
             
         elif recovery_action == "terminate":
             action_validation["confirmation_required"] = True
-            action_validation["warnings"].append(f"DESTRUCTIVE: Will delete entire MCI with {running_vms_count + failed_vms_count} VMs")
+            action_validation["warnings"].append(f"DESTRUCTIVE: Will delete entire Infra with {running_vms_count + failed_vms_count} VMs")
             if running_vms_count > 0:
                 action_validation["warnings"].append(f"WARNING: {running_vms_count} running VMs will be lost")
         
         # Step 3: Check user confirmation for destructive actions
         if action_validation["confirmation_required"] and not confirm_cleanup:
             return {
-                "mci_id": mci_id,
+                "infra_id": infra_id,
                 "namespace": ns_id,
                 "recovery_action": recovery_action,
                 "status": "confirmation_required",
@@ -6770,7 +6770,7 @@ def interactive_mci_recovery(
                 "user_confirmation_message": f"""
 🚨 RECOVERY ACTION CONFIRMATION REQUIRED 🚨
 
-MCI: {mci_id} (Namespace: {ns_id})
+Infra: {infra_id} (Namespace: {ns_id})
 Current Status: {overall_status}
 Action: {recovery_action}
 
@@ -6782,30 +6782,30 @@ WARNINGS:
 {chr(10).join(f"⚠️  {w}" for w in action_validation["warnings"])}
 
 To proceed, call this function again with confirm_cleanup=True
-To cancel, use check_mci_status_and_handle_failures() to explore other options
+To cancel, use check_infra_status_and_handle_failures() to explore other options
                 """.strip(),
                 "next_steps": [
-                    f"interactive_mci_recovery('{ns_id}', '{mci_id}', '{recovery_action}', confirm_cleanup=True)",
-                    f"check_mci_status_and_handle_failures('{ns_id}', '{mci_id}')"
+                    f"interactive_infra_recovery('{ns_id}', '{infra_id}', '{recovery_action}', confirm_cleanup=True)",
+                    f"check_infra_status_and_handle_failures('{ns_id}', '{infra_id}')"
                 ]
             }
         
         # Step 4: Execute recovery action
         if not action_validation["appropriate"]:
             return {
-                "error": "Recovery action not appropriate for current MCI status",
-                "mci_id": mci_id,
+                "error": "Recovery action not appropriate for current Infra status",
+                "infra_id": infra_id,
                 "warnings": action_validation["warnings"],
-                "recommendation": "Use check_mci_status_and_handle_failures() to get appropriate recommendations"
+                "recommendation": "Use check_infra_status_and_handle_failures() to get appropriate recommendations"
             }
         
-        logger.info(f"Executing {recovery_action} on MCI {mci_id} with user confirmation")
+        logger.info(f"Executing {recovery_action} on Infra {infra_id} with user confirmation")
         
         # Execute the recovery action
         if recovery_action == "terminate":
-            recovery_result = delete_mci(ns_id, mci_id)
+            recovery_result = delete_infra(ns_id, infra_id)
         else:
-            recovery_result = control_mci(ns_id, mci_id, recovery_action)
+            recovery_result = control_infra(ns_id, infra_id, recovery_action)
         
         # Step 5: Post-recovery status check
         post_recovery_status = None
@@ -6814,11 +6814,11 @@ To cancel, use check_mci_status_and_handle_failures() to explore other options
             import time
             time.sleep(2)
             
-            post_recovery_status = check_mci_status_and_handle_failures(ns_id, mci_id, auto_cleanup_failed=False)
+            post_recovery_status = check_infra_status_and_handle_failures(ns_id, infra_id, auto_cleanup_failed=False)
         
         # Step 6: Prepare comprehensive response
         response = {
-            "mci_id": mci_id,
+            "infra_id": infra_id,
             "namespace": ns_id,
             "recovery_action": recovery_action,
             "execution_status": "completed",
@@ -6833,9 +6833,9 @@ To cancel, use check_mci_status_and_handle_failures() to explore other options
         # Determine success and next steps
         if recovery_action == "terminate":
             response["next_steps"].extend([
-                "MCI has been deleted successfully",
-                "Create a new MCI with lessons learned from failure analysis",
-                "Consider using create_mci_dynamic() with hold=True for testing"
+                "Infra has been deleted successfully",
+                "Create a new Infra with lessons learned from failure analysis",
+                "Consider using create_infra_dynamic() with hold=True for testing"
             ])
         elif recovery_action == "refine" and post_recovery_status:
             post_failed = post_recovery_status["status_analysis"]["failed_vms_count"]
@@ -6857,12 +6857,12 @@ To cancel, use check_mci_status_and_handle_failures() to explore other options
         
         # Store recovery interaction
         _store_interaction_memory(
-            user_request=f"Execute recovery action '{recovery_action}' on MCI '{mci_id}'",
+            user_request=f"Execute recovery action '{recovery_action}' on Infra '{infra_id}'",
             llm_response=f"Recovery {recovery_action} executed: Success={response['recovery_success']}",
-            operation_type="mci_recovery",
+            operation_type="infra_recovery",
             context_data={
                 "namespace_id": ns_id,
-                "mci_id": mci_id,
+                "infra_id": infra_id,
                 "recovery_action": recovery_action,
                 "pre_failed_vms": failed_vms_count,
                 "pre_running_vms": running_vms_count,
@@ -6874,29 +6874,29 @@ To cancel, use check_mci_status_and_handle_failures() to explore other options
         return response
         
     except Exception as e:
-        logger.error(f"Error during MCI recovery: {e}")
+        logger.error(f"Error during Infra recovery: {e}")
         return {
             "error": f"Recovery failed: {str(e)}",
-            "mci_id": mci_id,
+            "infra_id": infra_id,
             "namespace": ns_id,
             "recovery_action": recovery_action,
-            "recommendation": "Check MCI status and try alternative recovery methods"
+            "recommendation": "Check Infra status and try alternative recovery methods"
         }
 
 #####################################
-# MCI Configuration Preview & Validation Tools
+# Infra Configuration Preview & Validation Tools
 #####################################
 
-# Tool: Preview MCI configuration before creation
+# Tool: Preview Infra configuration before creation
 @mcp.tool()
-def preview_mci_configuration(
+def preview_infra_configuration(
     ns_id: str,
     name: str,
     vm_configurations: List[Dict],
-    description: str = "MCI to be created",
+    description: str = "Infra to be created",
 ) -> Dict:
     """
-    Preview MCI configuration before actual creation.
+    Preview Infra configuration before actual creation.
     This tool provides a comprehensive summary of what will be created, allowing users to review and confirm.
     
     **PREVIEW INCLUDES:**
@@ -6909,16 +6909,16 @@ def preview_mci_configuration(
     - Recommended actions before deployment
     
     Args:
-        ns_id: Namespace ID where MCI will be created
-        name: MCI name
+        ns_id: Namespace ID where Infra will be created
+        name: Infra name
         vm_configurations: List of VM configurations to preview
-        description: MCI description
+        description: Infra description
     
     Returns:
         Comprehensive preview with configuration summary and recommendations
     """
     preview_result = {
-        "mci_overview": {
+        "infra_overview": {
             "name": name,
             "namespace_id": ns_id,
             "description": description,
@@ -6989,9 +6989,9 @@ def preview_mci_configuration(
                     region_count[f"{provider}:{region}"] = region_count.get(f"{provider}:{region}", 0) + 1
                     
                     # Try to extract resource info (if available in cache or estimate)
-                    subgroup_size = int(vm_config.get("subGroupSize", 1))
+                    nodegroup_size = int(vm_config.get("nodeGroupSize", 1))
                     vm_analysis["estimated_resources"] = {
-                        "subgroup_size": subgroup_size,
+                        "nodegroup_size": nodegroup_size,
                         "provider": provider,
                         "region": region
                     }
@@ -7116,7 +7116,7 @@ def preview_mci_configuration(
         recommendations.append({
             "priority": "success",
             "message": "✅ Configuration is ready for deployment",
-            "action": "Proceed with create_mci_dynamic() or review configuration one more time"
+            "action": "Proceed with create_infra_dynamic() or review configuration one more time"
         })
     else:
         recommendations.append({
@@ -7129,7 +7129,7 @@ def preview_mci_configuration(
     
     return preview_result
 
-# Tool: Generate MCI creation summary for user confirmation
+# Tool: Generate Infra creation summary for user confirmation
 @mcp.tool()
 # Helper function: Get VM cost estimate from spec
 def _get_vm_cost_estimate(spec_id: str) -> Dict:
@@ -7266,20 +7266,20 @@ def _estimate_cost_from_spec_name(spec_name: str, provider: str) -> float:
     # Default conservative estimate for unknown patterns
     return 0.05  # $0.05/hour as baseline estimate
 
-def generate_mci_creation_summary(
+def generate_infra_creation_summary(
     ns_id: str,
     name: str,
     vm_configurations: List[Dict],
-    description: str = "MCI to be created",
+    description: str = "Infra to be created",
     install_mon_agent: str = "no",
     hold: bool = False
 ) -> Dict:
     """
-    Generate a comprehensive user-friendly summary of MCI creation plan for confirmation.
+    Generate a comprehensive user-friendly summary of Infra creation plan for confirmation.
     This provides detailed overview including cost estimates, CSP distribution, and deployment strategy.
     
     **ENHANCED SUMMARY INCLUDES:**
-    - Detailed MCI overview with cost breakdown
+    - Detailed Infra overview with cost breakdown
     - VM-by-VM specifications and pricing
     - CSP and region distribution analysis
     - Image mapping strategy validation
@@ -7290,21 +7290,21 @@ def generate_mci_creation_summary(
     
     Args:
         ns_id: Namespace ID
-        name: MCI name
+        name: Infra name
         vm_configurations: VM configurations
-        description: MCI description
+        description: Infra description
         hold: Whether to hold for review
     
     Returns:
         Comprehensive summary with detailed cost analysis and confirmation prompt
     """
     # Get detailed preview first
-    preview = preview_mci_configuration(ns_id, name, vm_configurations, description)
+    preview = preview_infra_configuration(ns_id, name, vm_configurations, description)
     
     # Enhanced summary structure
     summary = {
-        "MCI_CREATION_PLAN": {
-            "mci_name": name,
+        "Infra_CREATION_PLAN": {
+            "infra_name": name,
             "namespace": ns_id,
             "description": description,
             "total_vms": len(vm_configurations),
@@ -7343,7 +7343,7 @@ def generate_mci_creation_summary(
         vm_name = vm_config.get("name", f"vm-{i+1}")
         common_spec = vm_config.get("specId", "")
         common_image = vm_config.get("imageId", "AUTO-MAPPED")
-        subgroup_size = int(vm_config.get("subGroupSize", 1))
+        nodegroup_size = int(vm_config.get("nodeGroupSize", 1))
         
         # Extract provider and region from spec
         provider = "unknown"
@@ -7362,7 +7362,7 @@ def generate_mci_creation_summary(
         vm_hourly_cost = vm_cost_info.get("hourly_cost", 0.0)
         
         # Calculate total cost for this VM configuration
-        total_vm_hourly_cost = vm_hourly_cost * subgroup_size
+        total_vm_hourly_cost = vm_hourly_cost * nodegroup_size
         total_hourly_cost += total_vm_hourly_cost
         
         # Track costs by provider
@@ -7383,7 +7383,7 @@ def generate_mci_creation_summary(
             "spec_name": spec_name,
             "full_spec": common_spec,
             "image": common_image,
-            "instance_count": subgroup_size,
+            "instance_count": nodegroup_size,
             "cost_analysis": {
                 "hourly_cost_per_instance": vm_hourly_cost,
                 "total_hourly_cost": total_vm_hourly_cost,
@@ -7471,10 +7471,10 @@ def generate_mci_creation_summary(
     # Enhanced user confirmation
     if ready_to_proceed and validation_issues == 0:
         confirmation_msg = f"""
-🔥 MCI CREATION SUMMARY - READY TO DEPLOY
+🔥 Infra CREATION SUMMARY - READY TO DEPLOY
 
 📋 DEPLOYMENT OVERVIEW:
-• MCI Name: {name}
+• Infra Name: {name}
 • Namespace: {ns_id}
 • Total VMs: {len(vm_configurations)} configurations
 • Total Instances: {total_instances}
@@ -7497,11 +7497,11 @@ def generate_mci_creation_summary(
 ❗ IMPORTANT NOTES:
 {chr(10).join(f'• {risk}' for risk in risks) if risks else '• No significant risks identified'}
 
-✅ Ready to proceed with MCI creation!
+✅ Ready to proceed with Infra creation!
 """
         
         next_steps = [
-            "✅ Approve: Call create_mci_dynamic() with skip_confirmation=True to proceed",
+            "✅ Approve: Call create_infra_dynamic() with skip_confirmation=True to proceed",
             "📝 Review: Use hold=True to create but hold for manual review",
             "✏️ Modify: Adjust vm_configurations if needed and re-run this summary"
         ]
@@ -7510,7 +7510,7 @@ def generate_mci_creation_summary(
         
     else:
         confirmation_msg = f"""
-⚠️ MCI CONFIGURATION HAS ISSUES
+⚠️ Infra CONFIGURATION HAS ISSUES
 
 ❌ DEPLOYMENT BLOCKED:
 • Found {validation_issues} configuration issue(s)
@@ -7556,7 +7556,7 @@ def generate_mci_creation_summary(
     }
     
     # Resource estimate
-    total_vm_instances = sum(int(vm.get("subGroupSize", 1)) for vm in vm_configurations)
+    total_vm_instances = sum(int(vm.get("nodeGroupSize", 1)) for vm in vm_configurations)
     summary["RESOURCE_ESTIMATE"] = {
         "total_vm_instances": total_vm_instances,
         "unique_configurations": len(vm_configurations),
@@ -7581,24 +7581,24 @@ def generate_mci_creation_summary(
     
     if ready_to_proceed:
         confirmation_msg = f"""
-READY TO CREATE MCI '{name}'
+READY TO CREATE Infra '{name}'
 
 Your multi-cloud infrastructure is configured and ready for deployment:
 - {len(vm_configurations)} VM configuration(s) across {csp_dist.get('total_csps', 0)} cloud provider(s)
 - {total_vm_instances} total VM instance(s) will be created
 - Deployment mode: {'Review first (hold=True)' if hold else 'Immediate deployment'}
 
-Do you want to proceed with MCI creation?
+Do you want to proceed with Infra creation?
 """
         next_steps = [
-            "Confirm: Proceed with create_mci_dynamic()",
+            "Confirm: Proceed with create_infra_dynamic()",
             "Review: Use hold=True to review before deployment",
             "Modify: Adjust VM configurations if needed"
         ]
     else:
         validation_issues = resource_summary.get("validation_issues", 0)
         confirmation_msg = f"""
-MCI CONFIGURATION HAS ISSUES
+Infra CONFIGURATION HAS ISSUES
 
 Cannot proceed with deployment due to {validation_issues} configuration issue(s):
 Please review and fix the issues identified in the validation report.
@@ -7626,7 +7626,7 @@ Please review and fix the issues identified in the validation report.
 def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
     """
     Validate that VM configurations have proper spec-to-image mapping.
-    This tool helps identify potential compatibility issues before MCI creation.
+    This tool helps identify potential compatibility issues before Infra creation.
     
     **VALIDATION CHECKS:**
     - Spec format validation (provider+region+spec_name)
@@ -7755,7 +7755,7 @@ def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
     if validation_result["overall_status"] != "all_valid":
         validation_result["recommendations"] = [
             "Use auto-mapping by omitting imageId in VM configurations",
-            "Use create_mci_dynamic() which automatically handles spec-to-image mapping",
+            "Use create_infra_dynamic() which automatically handles spec-to-image mapping",
             "For manual mapping, ensure image identifiers match the CSP in specId",
             "AWS: use AMI IDs (ami-xxxxxx), Azure: use Microsoft images or subscription paths, GCP: use project paths"
         ]
@@ -7825,7 +7825,7 @@ def get_spec_image_mapping_examples() -> Dict:
         "best_practices": {
             "recommendation_1": {
                 "title": "Use Auto-Mapping",
-                "description": "Omit imageId to let create_mci_dynamic() automatically select correct images",
+                "description": "Omit imageId to let create_infra_dynamic() automatically select correct images",
                 "example": {"specId": "aws+ap-northeast-2+t2.small"}
             },
             "recommendation_2": {
@@ -7841,7 +7841,7 @@ def get_spec_image_mapping_examples() -> Dict:
             "recommendation_3": {
                 "title": "Use Validation Tools", 
                 "description": "Validate configurations before deployment",
-                "tools": ["validate_vm_spec_image_compatibility()", "create_mci_with_proper_spec_mapping()"]
+                "tools": ["validate_vm_spec_image_compatibility()", "create_infra_with_proper_spec_mapping()"]
             }
         },
         "common_mistakes": [
@@ -7853,8 +7853,8 @@ def get_spec_image_mapping_examples() -> Dict:
         ]
     }
 
-# Note: create_mci_with_confirmation has been removed.
-# Use create_mci_dynamic with force_create parameter for confirmation workflow.
+# Note: create_infra_with_confirmation has been removed.
+# Use create_infra_dynamic with force_create parameter for confirmation workflow.
 
 #####################################
 # Application Deployment & UseCase Management System
@@ -8270,7 +8270,7 @@ APPLICATION_CONFIGS = {
         },
         "commands": [
             "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/xonotic/startServer.sh; chmod +x ~/startServer.sh",
-            "sudo ~/startServer.sh Cloud-Barista-$$Func(GetMciId()) 26000 8 8",
+            "sudo ~/startServer.sh Cloud-Barista-$$Func(GetInfraId()) 26000 8 8",
             "echo '$$Func(GetPublicIP(target=this,postfix=:26000))'"
         ],
         "result_pattern": r"Server Address: ([^:]+):(\d+)",
@@ -8728,7 +8728,7 @@ def get_ollama_model_discovery_guide(
 @mcp.tool()
 def deploy_ollama_pull_with_models(
     ns_id: str,
-    mci_name: str,
+    infra_name: str,
     selected_models: List[str],
     vm_configurations: Optional[List[Dict]] = None,
     description: str = "Ollama deployment with custom model selection"
@@ -8754,7 +8754,7 @@ def deploy_ollama_pull_with_models(
     
     Args:
         ns_id: Namespace ID
-        mci_name: Name for the MCI
+        infra_name: Name for the Infra
         selected_models: List of model names from ollama.com (e.g., ['llama3.3:latest', 'deepseek-r1'])
         vm_configurations: Optional VM configs (if not provided, will create optimized config)
         description: Deployment description
@@ -8767,7 +8767,7 @@ def deploy_ollama_pull_with_models(
     # After user discovers models from ollama.com/search
     result = deploy_ollama_pull_with_models(
         ns_id="ai-project",
-        mci_name="ollama-cluster", 
+        infra_name="ollama-cluster", 
         selected_models=["llama3.3:latest", "deepseek-r1:latest", "qwen2.5:14b"],
         description="Custom LLM deployment with user-discovered models"
     )
@@ -8813,22 +8813,22 @@ def deploy_ollama_pull_with_models(
                     "specId": specs["recommended_specs"][i % len(specs["recommended_specs"])]["id"],
                     "name": f"ollama-vm-{i+1}",
                     "description": f"Ollama VM {i+1} for LLM models",
-                    "subGroupSize": 1
+                    "nodeGroupSize": 1
                 })
         
-        # Create the MCI first
-        mci_result = create_mci_dynamic(
+        # Create the Infra first
+        infra_result = create_infra_dynamic(
             ns_id=ns_id,
-            name=mci_name,
+            name=infra_name,
             vm_configurations=vm_configurations,
             description=description
         )
         
-        if mci_result.get("status") != "success":
+        if infra_result.get("status") != "success":
             return {
                 "status": "error",
-                "error": "Failed to create MCI",
-                "details": mci_result
+                "error": "Failed to create Infra",
+                "details": infra_result
             }
         
         # Prepare model pull commands with user-selected models
@@ -8847,15 +8847,15 @@ def deploy_ollama_pull_with_models(
         ]
         
         # Execute the commands
-        execution_result = execute_command_mci(
+        execution_result = execute_command_infra(
             ns_id=ns_id,
-            mci_id=mci_name,
+            infra_id=infra_name,
             commands=ollama_commands
         )
         
         return {
             "status": "success",
-            "mci_created": mci_result,
+            "infra_created": infra_result,
             "selected_models": selected_models,
             "model_count": len(selected_models),
             "vm_count": len(vm_configurations),
@@ -8915,7 +8915,7 @@ def list_application_templates() -> Dict:
     
     **For Predefined Applications - Use Exact Commands:**
     ✅ Use the exact wget/curl commands from APPLICATION_CONFIGS
-    ✅ Follow the specific parameter patterns ({{mci_id}}, {{public_ip}}, etc.)
+    ✅ Follow the specific parameter patterns ({{infra_id}}, {{public_ip}}, etc.)
     ✅ DO NOT modify or recreate these scripts
     
     Returns:
@@ -9293,38 +9293,38 @@ def get_application_deployment_guide(
                 "example": f"recommend_vm_spec(filter_policies={matched_app['vm_spec_filter']}, priority_policy='{matched_app['priority']}')"
             },
             "step_3_validation": {
-                "title": "Validate MCI Configuration",
-                "description": "Review MCI configuration before creation",
-                "tools_to_use": ["review_mci_dynamic_request"],
-                "example": "review_mci_dynamic_request(ns_id='my-app-ns', name='my-app-mci', vm_configurations=vm_configs)"
+                "title": "Validate Infra Configuration",
+                "description": "Review Infra configuration before creation",
+                "tools_to_use": ["review_infra_dynamic_request"],
+                "example": "review_infra_dynamic_request(ns_id='my-app-ns', name='my-app-infra', vm_configurations=vm_configs)"
             },
-            "step_4_mci_creation": {
-                "title": "Create MCI Infrastructure",
+            "step_4_infra_creation": {
+                "title": "Create Infra Infrastructure",
                 "description": "Create the multi-cloud infrastructure",
-                "tools_to_use": ["create_mci_dynamic"],
-                "example": "create_mci_dynamic(ns_id='my-app-ns', name='my-app-mci', vm_configurations=vm_configs)"
+                "tools_to_use": ["create_infra_dynamic"],
+                "example": "create_infra_dynamic(ns_id='my-app-ns', name='my-app-infra', vm_configurations=vm_configs)"
             },
             "step_5_application_deployment": {
                 "title": "Deploy Application",
                 "description": "Install and configure the application using remote commands",
-                "tools_to_use": ["execute_command_mci"],
+                "tools_to_use": ["execute_command_infra"],
                 "commands": matched_app["installation_commands"],
-                "example": "execute_command_mci(ns_id='my-app-ns', mci_id='my-app-mci', commands=installation_commands)"
+                "example": "execute_command_infra(ns_id='my-app-ns', infra_id='my-app-infra', commands=installation_commands)"
             },
             "step_6_verification": {
                 "title": "Verify Deployment",
                 "description": "Verify the application is running correctly",
-                "tools_to_use": ["execute_command_mci", "get_mci_access_info"],
+                "tools_to_use": ["execute_command_infra", "get_infra_access_info"],
                 "commands": matched_app["verification_commands"],
-                "example": "execute_command_mci(ns_id='my-app-ns', mci_id='my-app-mci', commands=verification_commands)"
+                "example": "execute_command_infra(ns_id='my-app-ns', infra_id='my-app-infra', commands=verification_commands)"
             },
             "step_7_access_info": {
                 "title": "Collect Access Information",
                 "description": "Get endpoints and access information",
-                "tools_to_use": ["get_mci_access_info"],
+                "tools_to_use": ["get_infra_access_info"],
                 "expected_access": matched_app["access_pattern"],
                 "expected_ports": matched_app["expected_ports"],
-                "example": "get_mci_access_info(ns_id='my-app-ns', mci_id='my-app-mci')"
+                "example": "get_infra_access_info(ns_id='my-app-ns', infra_id='my-app-infra')"
             }
         },
         "commands": {
@@ -9358,7 +9358,7 @@ def get_application_deployment_guide(
 # Tool: Execute custom commands on deployed applications
 @mcp.tool()
 def execute_application_commands(
-    mci_id: str,
+    infra_id: str,
     commands: List[str],
     namespace_id: str = "default",
     target_selection: Optional[Dict] = None
@@ -9382,17 +9382,17 @@ def execute_application_commands(
     4. 🎯 Use template variables for dynamic command generation
     
     Args:
-        mci_id: MCI ID where application is deployed
+        infra_id: Infra ID where application is deployed
         commands: List of commands to execute (supports template variables)
         namespace_id: Namespace ID (default: "default")
         target_selection: Optional target selection:
-            - type: "mci" | "subgroup" | "vm"
-            - target_id: specific subgroup or VM ID (if applicable)
+            - type: "infra" | "nodegroup" | "vm"
+            - target_id: specific nodegroup or VM ID (if applicable)
     
     Template variables supported in commands:
         - {{public_ip}}: Public IP of target VM
         - {{private_ip}}: Private IP of target VM
-        - {{mci_id}}: MCI ID
+        - {{infra_id}}: Infra ID
         - {{public_ips_space}}: All public IPs separated by space
         - {{public_ips_comma}}: All public IPs separated by comma
     
@@ -9429,26 +9429,26 @@ def execute_application_commands(
                 "suggestion": "Provide meaningful commands with actual content"
             }
         
-        # Get MCI access info for template expansion
-        access_info = get_mci_access_info(namespace_id, mci_id, show_ssh_key=False)
+        # Get Infra access info for template expansion
+        access_info = get_infra_access_info(namespace_id, infra_id, show_ssh_key=False)
         
         if access_info.get("status") != "success":
             return {
                 "status": "error",
-                "error": "Failed to get MCI access information",
+                "error": "Failed to get Infra access information",
                 "details": access_info
             }
         
         # Expand command templates
         expanded_commands = []
         for cmd in valid_commands:  # Use valid_commands instead of commands
-            expanded_cmd = _expand_command_templates(cmd, access_info, mci_id)
+            expanded_cmd = _expand_command_templates(cmd, access_info, infra_id)
             expanded_commands.append(expanded_cmd)
         
         # Execute commands
-        execute_result = execute_command_mci(
+        execute_result = execute_command_infra(
             namespace_id=namespace_id,
-            mci_id=mci_id,
+            infra_id=infra_id,
             commands=expanded_commands,
             **{k: v for k, v in (target_selection or {}).items() if k != "type"}
         )
@@ -9622,7 +9622,7 @@ def _translate_app_requirements_to_vm_specs(requirements: Dict, hardware_researc
 # Helper function: Provision application infrastructure
 def _provision_application_infrastructure(
     deployment_plan: Dict,
-    mci_name: str,
+    infra_name: str,
     namespace_id: str
 ) -> Dict:
     """Provision infrastructure for application deployment."""
@@ -9687,7 +9687,7 @@ def _provision_application_infrastructure(
                 "imageId": selected_image["csp_image_name"],
                 "specId": selected_spec["id"],
                 "description": f"Application VM in {region}",
-                "subGroupSize": str(instances_per_region),
+                "nodeGroupSize": str(instances_per_region),
                 "rootDiskSize": disk_size,  # Set disk size (minimum 50GB)
                 "rootDiskType": "default"
             }
@@ -9700,20 +9700,20 @@ def _provision_application_infrastructure(
                 "error": "No suitable VM configurations found for target regions"
             }
         
-        # Create MCI
-        mci_result = create_mci_dynamic(
+        # Create Infra
+        infra_result = create_infra_dynamic(
             ns_id=namespace_id,
-            name=mci_name,
+            name=infra_name,
             vm_configurations=vm_configurations,
             description=f"Infrastructure for {deployment_plan['application_config']['name']}",
         )
         
         return {
             "status": "success",
-            "mci_id": mci_name,
-            "mci_result": mci_result,
+            "infra_id": infra_name,
+            "infra_result": infra_result,
             "vm_configurations": vm_configurations,
-            "total_vms": sum(int(vm["subGroupSize"]) for vm in vm_configurations)
+            "total_vms": sum(int(vm["nodeGroupSize"]) for vm in vm_configurations)
         }
         
     except Exception as e:
@@ -9725,24 +9725,24 @@ def _provision_application_infrastructure(
 # Helper function: Deploy application to infrastructure
 def _deploy_application_to_infrastructure(
     app_config: Dict,
-    mci_id: str,
+    infra_id: str,
     namespace_id: str,
     deployment_plan: Dict
 ) -> Dict:
     """Deploy application to provisioned infrastructure."""
     
     try:
-        # Wait for MCI to be ready
+        # Wait for Infra to be ready
         import time
         max_wait_time = 300  # 5 minutes
         wait_interval = 10   # Check every 10 seconds
         waited_time = 0
         
         while waited_time < max_wait_time:
-            mci_status = get_mci(namespace_id, mci_id)
-            if mci_status.get("status") == "success":
-                mci_data = mci_status.get("mci", {})
-                if mci_data.get("status") == "running":
+            infra_status = get_infra(namespace_id, infra_id)
+            if infra_status.get("status") == "success":
+                infra_data = infra_status.get("infra", {})
+                if infra_data.get("status") == "running":
                     break
             
             time.sleep(wait_interval)
@@ -9751,24 +9751,24 @@ def _deploy_application_to_infrastructure(
         if waited_time >= max_wait_time:
             return {
                 "status": "error",
-                "error": "MCI did not reach running state within timeout period"
+                "error": "Infra did not reach running state within timeout period"
             }
         
-        # Get MCI access info for command expansion
-        access_info = get_mci_access_info(namespace_id, mci_id, show_ssh_key=False)
+        # Get Infra access info for command expansion
+        access_info = get_infra_access_info(namespace_id, infra_id, show_ssh_key=False)
         
         # Execute deployment commands
         deployment_commands = app_config["commands"]
         expanded_commands = []
         
         for cmd in deployment_commands:
-            expanded_cmd = _expand_command_templates(cmd, access_info, mci_id)
+            expanded_cmd = _expand_command_templates(cmd, access_info, infra_id)
             expanded_commands.append(expanded_cmd)
         
-        # Execute commands on MCI
-        execution_result = execute_command_mci(
+        # Execute commands on Infra
+        execution_result = execute_command_infra(
             namespace_id=namespace_id,
-            mci_id=mci_id,
+            infra_id=infra_id,
             commands=expanded_commands
         )
         
@@ -9787,7 +9787,7 @@ def _deploy_application_to_infrastructure(
         }
 
 # Helper function: Expand command templates
-def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> str:
+def _expand_command_templates(command: str, access_info: Dict, infra_id: str) -> str:
     """
     Expand template variables in commands with MapUI compatibility.
     
@@ -9797,7 +9797,7 @@ def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> s
     Built-in functions include:
     - $$Func(GetPublicIP(target=this))
     - $$Func(GetPublicIPs(separator=' '))
-    - $$Func(GetMciId())
+    - $$Func(GetInfraId())
     - $$Func(AssignTask(task='...'))
     - etc.
     """
@@ -9815,8 +9815,8 @@ def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> s
     public_ips = []
     private_ips = []
     
-    for subgroup in access_data.get("mci_subgroup_access_info", []):
-        for vm in subgroup.get("vm_access_info_array", []):
+    for nodegroup in access_data.get("infra_nodegroup_access_info", []):
+        for vm in nodegroup.get("vm_access_info_array", []):
             if vm.get("public_ip"):
                 public_ips.append(vm["public_ip"])
             if vm.get("private_ip"):
@@ -9836,8 +9836,8 @@ def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> s
         expanded_cmd = expanded_cmd.replace("{{private_ips_space}}", " ".join(private_ips))
         expanded_cmd = expanded_cmd.replace("{{private_ips_comma}}", ",".join(private_ips))
     
-    # MCI ID replacement
-    expanded_cmd = expanded_cmd.replace("{{mci_id}}", mci_id)
+    # Infra ID replacement
+    expanded_cmd = expanded_cmd.replace("{{infra_id}}", infra_id)
     
     # Special placeholder for Ray head IP (for worker nodes)
     # This would need to be set by the deployment context
@@ -9848,7 +9848,7 @@ def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> s
 # Helper function: Collect service endpoints
 def _collect_service_endpoints(
     app_config: Dict,
-    mci_id: str,
+    infra_id: str,
     namespace_id: str,
     deployment_result: Dict
 ) -> List[Dict]:
@@ -9907,11 +9907,11 @@ def _collect_service_endpoints(
         
         # If no specific endpoints found, create default ones based on access info
         if not endpoints:
-            access_info = get_mci_access_info(namespace_id, mci_id, show_ssh_key=False)
+            access_info = get_infra_access_info(namespace_id, infra_id, show_ssh_key=False)
             access_data = access_info.get("access_info", {})
             
-            for subgroup in access_data.get("mci_subgroup_access_info", []):
-                for vm in subgroup.get("vm_access_info_array", []):
+            for nodegroup in access_data.get("infra_nodegroup_access_info", []):
+                for vm in nodegroup.get("vm_access_info_array", []):
                     if vm.get("public_ip"):
                         # Create default endpoint based on common ports
                         ports = app_config["requirements"].get("ports", ["80"])
@@ -10213,7 +10213,7 @@ def execute_compute_task(
         workflow_result["status"] = "executing_computation"
         computation_result = _execute_computation_on_infrastructure(
             target_namespace,
-            infrastructure_result["mci_id"],
+            infrastructure_result["infra_id"],
             task_description,
             task_analysis
         )
@@ -10396,33 +10396,33 @@ def _provision_compute_infrastructure(namespace: str, task_analysis: Dict, workf
             
             for image_attempt, image in enumerate(image_list):
                 try:
-                    # Create MCI configuration
+                    # Create Infra configuration
                     vm_configurations = [{
                         "specId": spec_id,
                         "imageId": image.get("cspImageName"),
                         "name": f"compute-vm-{workflow_id}",
                         "description": f"Compute VM for task execution - {workflow_id}",
-                        "subGroupSize": 1
+                        "nodeGroupSize": 1
                     }]
                     
-                    # Attempt MCI creation
-                    mci_result = create_mci_dynamic(
+                    # Attempt Infra creation
+                    infra_result = create_infra_dynamic(
                         ns_id=namespace,
-                        name=f"compute-mci-{workflow_id}-attempt{attempt+1}",
+                        name=f"compute-infra-{workflow_id}-attempt{attempt+1}",
                         vm_configurations=vm_configurations,
                         description=f"Compute infrastructure for task: {workflow_id} (Attempt {attempt+1})",
                         skip_confirmation=True  # Skip confirmation for automated workflow
                     )
                     
-                    # Check if MCI creation was successful
-                    if "error" not in mci_result and mci_result.get("id"):
+                    # Check if Infra creation was successful
+                    if "error" not in infra_result and infra_result.get("id"):
                         retry_log[-1]["status"] = "success"
                         retry_log[-1]["image_used"] = image.get("cspImageName")
                         retry_log[-1]["image_attempt"] = image_attempt + 1
                         
                         return {
                             "status": "success",
-                            "mci_id": mci_result.get("id"),
+                            "infra_id": infra_result.get("id"),
                             "vm_spec": current_spec,
                             "vm_image": image.get("cspImageName"),
                             "provider": provider,
@@ -10432,15 +10432,15 @@ def _provision_compute_infrastructure(namespace: str, task_analysis: Dict, workf
                             "retry_log": retry_log
                         }
                     else:
-                        error_msg = mci_result.get("error", "Unknown MCI creation error")
+                        error_msg = infra_result.get("error", "Unknown Infra creation error")
                         if image_attempt == len(image_list) - 1:  # Last image attempt
                             retry_log[-1]["status"] = "failed"
-                            retry_log[-1]["error"] = f"MCI creation failed with all images: {error_msg}"
+                            retry_log[-1]["error"] = f"Infra creation failed with all images: {error_msg}"
                         
                 except Exception as e:
                     if image_attempt == len(image_list) - 1:  # Last image attempt
                         retry_log[-1]["status"] = "failed"
-                        retry_log[-1]["error"] = f"Exception during MCI creation: {str(e)}"
+                        retry_log[-1]["error"] = f"Exception during Infra creation: {str(e)}"
                     continue
                     
         except Exception as e:
@@ -10460,7 +10460,7 @@ def _provision_compute_infrastructure(namespace: str, task_analysis: Dict, workf
 # Helper function: Execute computation on infrastructure
 def _execute_computation_on_infrastructure(
     namespace: str,
-    mci_id: str,
+    infra_id: str,
     task_description: str,
     task_analysis: Dict
 ) -> Dict:
@@ -10468,14 +10468,14 @@ def _execute_computation_on_infrastructure(
     Execute computational task on provisioned infrastructure.
     """
     try:
-        # Wait for MCI to be ready
+        # Wait for Infra to be ready
         max_wait_attempts = 30
         for attempt in range(max_wait_attempts):
-            mci_status = get_mci(namespace, mci_id)
-            if mci_status.get("status") == "Running":
+            infra_status = get_infra(namespace, infra_id)
+            if infra_status.get("status") == "Running":
                 break
             elif attempt == max_wait_attempts - 1:
-                return {"status": "failed", "error": "MCI failed to reach Running state"}
+                return {"status": "failed", "error": "Infra failed to reach Running state"}
             # Wait 10 seconds before next check
             import time
             time.sleep(10)
@@ -10485,9 +10485,9 @@ def _execute_computation_on_infrastructure(
         install_commands = _generate_software_installation_commands(software_packages)
         
         if install_commands:
-            install_result = execute_command_mci(
+            install_result = execute_command_infra(
                 ns_id=namespace,
-                mci_id=mci_id,
+                infra_id=infra_id,
                 commands=install_commands,
                 summarize_output=True
             )
@@ -10496,9 +10496,9 @@ def _execute_computation_on_infrastructure(
         computation_script = _generate_computation_script(task_description, task_analysis)
         
         # Execute the computation
-        execution_result = execute_command_mci(
+        execution_result = execute_command_infra(
             ns_id=namespace,
-            mci_id=mci_id,
+            infra_id=infra_id,
             commands=[computation_script],
             summarize_output=True
         )
@@ -10687,22 +10687,22 @@ def _cleanup_compute_resources(namespace: str, delete_namespace: bool = False) -
     cleanup_result = {
         "namespace": namespace,
         "namespace_type": "temporary" if delete_namespace else "persistent",
-        "mci_deleted": False,
+        "infra_deleted": False,
         "resources_released": False,
         "namespace_deleted": False,
         "status": "starting"
     }
     
     try:
-        # Get list of MCIs in namespace
-        mci_list = get_mci_list(namespace)
-        if "mci" in mci_list:
-            for mci in mci_list["mci"]:
-                mci_id = mci.get("id")
-                if mci_id and "compute" in mci_id.lower():  # Only delete compute-related MCIs
+        # Get list of Infras in namespace
+        infra_list = get_infra_list(namespace)
+        if "infra" in infra_list:
+            for infra in infra_list["infra"]:
+                infra_id = infra.get("id")
+                if infra_id and "compute" in infra_id.lower():  # Only delete compute-related Infras
                     try:
-                        delete_result = delete_mci(namespace, mci_id)
-                        cleanup_result["mci_deleted"] = True
+                        delete_result = delete_infra(namespace, infra_id)
+                        cleanup_result["infra_deleted"] = True
                     except:
                         pass
         
@@ -10828,13 +10828,13 @@ def create_or_update_labels(
     labels: Dict[str, str]
 ) -> Dict:
     """
-    Create or update labels on a resource (MCI, VM, namespace, etc.).
+    Create or update labels on a resource (Infra, VM, namespace, etc.).
     
     Labels are key-value string pairs used to organize and select resources.
     If a label key already exists, its value will be updated.
     
     Args:
-        label_type: Resource type (e.g., "mci", "vm", "ns", "spec", "image")
+        label_type: Resource type (e.g., "infra", "vm", "ns", "spec", "image")
         uid: Resource UID (unique identifier of the resource)
         labels: Dictionary of label key-value pairs to set
             Example: {"env": "production", "team": "backend", "app": "web-server"}
@@ -10855,7 +10855,7 @@ def get_labels(
     Get all labels for a specific resource.
     
     Args:
-        label_type: Resource type (e.g., "mci", "vm", "ns", "spec", "image")
+        label_type: Resource type (e.g., "infra", "vm", "ns", "spec", "image")
         uid: Resource UID (unique identifier of the resource)
     
     Returns:
@@ -10874,7 +10874,7 @@ def remove_label(
     Remove a specific label from a resource by its key.
     
     Args:
-        label_type: Resource type (e.g., "mci", "vm", "ns")
+        label_type: Resource type (e.g., "infra", "vm", "ns")
         uid: Resource UID
         key: Label key to remove
     
@@ -10895,7 +10895,7 @@ def get_resources_by_label(
     Use this to discover resources by their labels across a resource type.
     
     Args:
-        label_type: Resource type to search (e.g., "mci", "vm", "ns")
+        label_type: Resource type to search (e.g., "infra", "vm", "ns")
         labels: Comma-separated label selector (e.g., "env=production,team=backend")
     
     Returns:
@@ -10916,7 +10916,7 @@ def merge_csp_resource_labels(
     (e.g., via AWS Console, Azure Portal) back into CB-Tumblebug's label store.
     
     Args:
-        label_type: Resource type (e.g., "mci", "vm")
+        label_type: Resource type (e.g., "infra", "vm")
         uid: Resource UID
     
     Returns:
@@ -10969,21 +10969,21 @@ def get_credential_holder(holder_id: str) -> Dict:
 # Based on MapUI patterns for comprehensive cloud infrastructure management
 
 @mcp.prompt()
-def mci_creation_workflow():
+def infra_creation_workflow():
     """
-    Complete MCI Creation Workflow Guide with LLM Interaction Patterns
+    Complete Infra Creation Workflow Guide with LLM Interaction Patterns
     
-    This comprehensive prompt enforces the correct workflow for creating Multi-Cloud Infrastructure (MCI)
+    This comprehensive prompt enforces the correct workflow for creating Multi-Cloud Infrastructure (Infra)
     and provides detailed LLM behavior guidelines for proper user interaction.
-    ALL MCI creation MUST follow this workflow to prevent deployment failures.
+    ALL Infra creation MUST follow this workflow to prevent deployment failures.
     VM configurations MUST include both specId and imageId - no exceptions.
     """
-    return """# 🚨 COMPLETE MCI Creation Workflow & LLM Interaction Guide
+    return """# 🚨 COMPLETE Infra Creation Workflow & LLM Interaction Guide
 
 ## ⚠️ CRITICAL: ALWAYS Follow This Exact Workflow
 
 This comprehensive guide covers both the technical workflow and LLM behavior patterns
-for creating Multi-Cloud Infrastructure (MCI) with proper user interaction.
+for creating Multi-Cloud Infrastructure (Infra) with proper user interaction.
 
 ### 🔄 STEP-BY-STEP PROCESS (NO SHORTCUTS ALLOWED):
 
@@ -11054,11 +11054,11 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         "specId": spec_id,                    # MUST use exact ID from API
         "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
         "name": f"vm-{spec['providerName']}-{i+1}",
-        "subGroupSize": 1
+        "nodeGroupSize": 1
     })
 
 # 1.3: 🔍 MANDATORY REVIEW - Always do this first!
-review_result = review_mci_dynamic_request(
+review_result = review_infra_dynamic_request(
     ns_id="default",
     name="my-infrastructure",
     vm_configurations=vm_configurations
@@ -11085,19 +11085,19 @@ print(f"💰 Estimated cost: {review_result.get('estimatedCost')}")
 print(f"🖥️ Total VMs: {review_result.get('totalVmCount')}")
 ```
 
-#### STEP 3: 🚀 MCI CREATION (Only After Successful Review)
+#### STEP 3: 🚀 Infra CREATION (Only After Successful Review)
 ```python
-# 3.1: Create MCI only if review passed
+# 3.1: Create Infra only if review passed
 if creation_viable:
-    mci_result = create_mci_dynamic(
+    infra_result = create_infra_dynamic(
         ns_id="default",
         name="my-infrastructure",
         vm_configurations=vm_configurations,  # Already includes specId + imageId
         force_create=True  # 🚨 REQUIRED after review
     )
-    print(f"✅ MCI created: {mci_result.get('id')}")
+    print(f"✅ Infra created: {infra_result.get('id')}")
 else:
-    print("❌ Cannot create MCI - fix validation issues first")
+    print("❌ Cannot create Infra - fix validation issues first")
 ```
 
 ## 🚫 FORBIDDEN PATTERNS:
@@ -11105,7 +11105,7 @@ else:
 ### ❌ NEVER Do This:
 ```python
 # DON'T: Skip review step
-create_mci_dynamic(ns_id="default", name="test", vm_configurations=[...])
+create_infra_dynamic(ns_id="default", name="test", vm_configurations=[...])
 # This will return an error requiring review first
 
 # DON'T: Create spec IDs manually
@@ -11133,8 +11133,8 @@ vm_config = {
 # DO: Use specific OS versions like "ubuntu 22.04" for better image matching
 
 # DON'T: Ignore review results
-review = review_mci_dynamic_request(...)
-create_mci_dynamic(..., force_create=True)  # Without checking review
+review = review_infra_dynamic_request(...)
+create_infra_dynamic(..., force_create=True)  # Without checking review
 ```
 
 ### ✅ ALWAYS Do This:
@@ -11153,9 +11153,9 @@ for spec in specs["recommended_specs"]:
         "name": f"vm-{spec['providerName']}-1"
     })
 
-review = review_mci_dynamic_request(ns_id="default", name="test", vm_configurations=vm_configs)
+review = review_infra_dynamic_request(ns_id="default", name="test", vm_configurations=vm_configs)
 if review["overallStatus"] == "Ready":
-    create_mci_dynamic(ns_id="default", name="test", vm_configurations=vm_configs, force_create=True)
+    create_infra_dynamic(ns_id="default", name="test", vm_configurations=vm_configs, force_create=True)
 
 # DO: Always include imageId in VM configurations
 vm_config = {
@@ -11169,9 +11169,9 @@ vm_config = {
 
 ### Key Fields to Check:
 - `overallStatus`: "Ready" | "Warning" | "Error"
-- `creationViable`: Boolean - can create MCI?
+- `creationViable`: Boolean - can create Infra?
 - `estimatedCost`: Cost per hour (e.g., "$0.0837/hour")
-- `totalVmCount`: Total VMs including SubGroup sizes
+- `totalVmCount`: Total VMs including NodeGroup sizes
 - `vmReviews`: Per-VM validation details
 
 ### Decision Matrix:
@@ -11181,13 +11181,13 @@ vm_config = {
 
 ## 🎯 LLM IMPLEMENTATION GUIDELINES:
 
-1. **NEVER skip the review step** - Always call review_mci_dynamic_request() first
+1. **NEVER skip the review step** - Always call review_infra_dynamic_request() first
 2. **NEVER omit imageId** - VM configurations MUST include both specId and imageId
 3. **ALWAYS use matched_spec_id** in search_images() for compatibility
 4. **SPECIFY OS version when needed** - Use os_type with versions like "ubuntu 22.04", "centos 7", "windows server 2019"
 5. **ALWAYS check overallStatus** before proceeding to creation
-6. **ALWAYS use force_create=True** in create_mci_dynamic() after review
-7. **EXPLAIN the complete process** to users when they request MCI creation
+6. **ALWAYS use force_create=True** in create_infra_dynamic() after review
+7. **EXPLAIN the complete process** to users when they request Infra creation
 8. **SHOW cost estimates** from review results before creation
 9. **FIX validation issues** if overallStatus is "Error" before creating
 
@@ -11195,19 +11195,19 @@ vm_config = {
 
 ### ✅ REQUIRED USER INTERACTION PATTERN:
 ```
-User: "Create an MCI with 2 VMs"
+User: "Create an Infra with 2 VMs"
 
 LLM Response:
-"I'll help you create an MCI with 2 VMs. Let me first validate the configuration and show you the cost estimates before proceeding.
+"I'll help you create an Infra with 2 VMs. Let me first validate the configuration and show you the cost estimates before proceeding.
 
-[Calls review_mci_dynamic_request()]
+[Calls review_infra_dynamic_request()]
 
 ✅ Configuration validated! Here's your deployment plan:
 💰 Cost: $0.16/hour (~$115.20/month)
 🖥️ VMs: 2 virtual machines (AWS us-east-1, GCP us-central1)
 
 Would you like me to proceed with creating this infrastructure?
-- Reply 'Yes' to create the MCI
+- Reply 'Yes' to create the Infra
 - Reply 'No' to cancel
 - Reply 'Details' for more information"
 
@@ -11215,25 +11215,25 @@ Would you like me to proceed with creating this infrastructure?
 
 User: "Yes"
 
-LLM: [Calls create_mci_dynamic(force_create=True)]
-"✅ MCI 'user-mci-12345' created successfully!"
+LLM: [Calls create_infra_dynamic(force_create=True)]
+"✅ Infra 'user-infra-12345' created successfully!"
 ```
 
 ### ❌ FORBIDDEN USER INTERACTION PATTERNS:
 ```
-User: "Create an MCI"
+User: "Create an Infra"
 
 ❌ WRONG LLM Response:
-"Creating MCI now..."
-[Calls create_mci_dynamic() directly]  // Will fail with error!
+"Creating Infra now..."
+[Calls create_infra_dynamic() directly]  // Will fail with error!
 
 ❌ WRONG LLM Response:
-"MCI created successfully!"
+"Infra created successfully!"
 [No review, no cost disclosure, no user confirmation]
 ```
 
 ### 📊 MANDATORY USER INFORMATION DISCLOSURE:
-**Before ANY MCI creation, LLM MUST show user:**
+**Before ANY Infra creation, LLM MUST show user:**
 1. 💰 **Cost estimates** (hourly and monthly)
 2. 🖥️ **VM specifications** (count, providers, regions)  
 3. ⚠️ **Any warnings** or potential issues
@@ -11248,27 +11248,27 @@ vm_configuration = {
     "specId": "aws+ap-northeast-2+t2.small",      # From recommend_vm_spec() - REQUIRED
     "imageId": "ami-0c02fb55956c7d316",           # From search_images() - REQUIRED
     "name": "my-vm-1",                            # VM name - REQUIRED
-    "subGroupSize": 1                           # Number of VMs - REQUIRED
+    "nodeGroupSize": 1                           # Number of VMs - REQUIRED
 }
 ```
 
 This workflow prevents expensive deployment failures and ensures reliable infrastructure creation.
 
-## 🤖 DETAILED LLM BEHAVIOR GUIDE FOR MCI CREATION
+## 🤖 DETAILED LLM BEHAVIOR GUIDE FOR Infra CREATION
 
-### 🎯 MANDATORY LLM BEHAVIOR WHEN USER REQUESTS MCI CREATION:
+### 🎯 MANDATORY LLM BEHAVIOR WHEN USER REQUESTS Infra CREATION:
 
 #### STEP 1: 🚨 ALWAYS START WITH REVIEW (NEVER SKIP)
 ```python
 # ✅ CORRECT: Always call review first
-review_result = review_mci_dynamic_request(
+review_result = review_infra_dynamic_request(
     ns_id="default",
-    name="user-requested-mci",
+    name="user-requested-infra",
     vm_configurations=vm_configurations
 )
 
-# ❌ WRONG: Never call create_mci_dynamic directly
-# create_mci_dynamic(...)  # This will return an error!
+# ❌ WRONG: Never call create_infra_dynamic directly
+# create_infra_dynamic(...)  # This will return an error!
 ```
 
 #### STEP 2: 📊 ANALYZE REVIEW RESULTS AND INFORM USER
@@ -11285,10 +11285,10 @@ user_response = get_user_input()
 
 if user_response.lower() in ["yes", "y", "proceed", "create"]:
     # User approved - proceed with creation
-    mci = create_mci_dynamic(..., force_create=True)
-    print(f"✅ MCI '{mci['id']}' created successfully!")
+    infra = create_infra_dynamic(..., force_create=True)
+    print(f"✅ Infra '{infra['id']}' created successfully!")
 elif user_response.lower() in ["no", "n", "cancel"]:
-    print("❌ MCI creation cancelled by user.")
+    print("❌ Infra creation cancelled by user.")
 else:
     # Show detailed information
     print("📋 Detailed validation results:", review_result["vmReviews"])
@@ -11302,8 +11302,8 @@ print(warnings_message)  # Displays warnings and asks for decision
 
 user_response = get_user_input()
 if user_response.lower() in ["yes", "proceed"]:
-    mci = create_mci_dynamic(..., force_create=True)
-    print("⚠️ MCI created with warnings noted.")
+    infra = create_infra_dynamic(..., force_create=True)
+    print("⚠️ Infra created with warnings noted.")
 else:
     print("Configuration needs adjustment. Let me help fix the warnings.")
     # Guide user through fixing warnings
@@ -11315,7 +11315,7 @@ else:
 error_message = review_result["_llm_guidance"]["user_prompt"]
 print(error_message)  # Explains errors and offers help options
 
-# DO NOT proceed to create_mci_dynamic
+# DO NOT proceed to create_infra_dynamic
 # Instead, help user fix the issues:
 
 print("Let me help you fix these issues:")
@@ -11329,7 +11329,7 @@ print("2. Checking image availability in other regions...")
 
 #### ✅ When Review Shows "Ready":
 ```
-"Great! I've validated your MCI configuration and everything looks good:
+"Great! I've validated your Infra configuration and everything looks good:
 
 💰 Cost: $X.XX/hour (approximately $Y.YY/month)  
 🖥️ VMs: N virtual machines across M providers
@@ -11338,7 +11338,7 @@ print("2. Checking image availability in other regions...")
 The infrastructure will be created with these specifications:
 [Display VM summary from review]
 
-Would you like me to proceed with creating this MCI infrastructure?
+Would you like me to proceed with creating this Infra infrastructure?
 - Reply 'Yes' to create the infrastructure
 - Reply 'No' to cancel  
 - Reply 'Details' for more information"
@@ -11346,7 +11346,7 @@ Would you like me to proceed with creating this MCI infrastructure?
 
 #### ⚠️ When Review Shows Warnings:
 ```
-"I've reviewed your MCI configuration. It can be created but there are some warnings:
+"I've reviewed your Infra configuration. It can be created but there are some warnings:
 
 ⚠️ Warnings Found:
 [Display warnings from review]
@@ -11363,7 +11363,7 @@ Would you like to proceed anyway, or should I help you address the warnings firs
 
 #### ❌ When Review Shows Errors:
 ```
-"I've reviewed your MCI configuration and found issues that must be fixed:
+"I've reviewed your Infra configuration and found issues that must be fixed:
 
 ❌ Errors Found:
 [Display errors from review]
@@ -11381,7 +11381,7 @@ Which option would you prefer? (Reply with the number or description)"
 
 ### 🚨 CRITICAL LLM RULES:
 
-1. **NEVER** call `create_mci_dynamic()` without calling `review_mci_dynamic_request()` first
+1. **NEVER** call `create_infra_dynamic()` without calling `review_infra_dynamic_request()` first
 2. **ALWAYS** show the user the cost estimates and configuration details before creating
 3. **ALWAYS** wait for explicit user confirmation before proceeding to creation
 4. **NEVER** assume user consent - always ask for confirmation
@@ -11391,21 +11391,21 @@ Which option would you prefer? (Reply with the number or description)"
 
 ### 📊 LLM RESPONSE TEMPLATES:
 
-**User Request:** "Create an MCI with 2 VMs in AWS"
+**User Request:** "Create an Infra with 2 VMs in AWS"
 
 **LLM Response Pattern:**
 ```
-"I'll help you create an MCI with 2 VMs in AWS. Let me first validate the configuration and check costs.
+"I'll help you create an Infra with 2 VMs in AWS. Let me first validate the configuration and check costs.
 
-[Calls review_mci_dynamic_request()]
+[Calls review_infra_dynamic_request()]
 
 [Based on review results, uses appropriate response template above]
 ```
 
 **NEVER:**
 ```
-"I'll create an MCI for you."
-[Calls create_mci_dynamic() directly]  // ❌ WRONG!
+"I'll create an Infra for you."
+[Calls create_infra_dynamic() directly]  // ❌ WRONG!
 ```
 
 This ensures users are always informed about costs and configuration before infrastructure is created.
@@ -11444,20 +11444,20 @@ list_application_templates()  # Get available predefined applications
 #### ✅ USE EXISTING USECASE COMMANDS - DO NOT REINVENT
 ```python
 # EXAMPLE: Xonotic Game Server
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/xonotic/startServer.sh; chmod +x ~/startServer.sh",
-    "sudo ~/startServer.sh {{mci_id}} 26000 8 8",
+    "sudo ~/startServer.sh {{infra_id}} 26000 8 8",
     "echo 'Server Address: {{public_ip}}:26000'"
 ])
 
 # EXAMPLE: Nginx Web Server  
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/nginx/startServer.sh | bash -s -- --ip {{public_ip}}",
     "echo 'Web Server: http://{{public_ip}}'"
 ])
 
 # EXAMPLE: Ollama LLM Server (Basic Setup)
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
     "echo 'LLM Server: http://{{public_ip}}:3000'"
 ])
@@ -11479,27 +11479,27 @@ print("✅ Note down exact model names for deployment")
 # Step 3: Deploy with user-selected models
 result = deploy_ollama_pull_with_models(
     ns_id="namespace",
-    mci_name="ollama-cluster",
+    infra_name="ollama-cluster",
     selected_models=["llama3.3:latest", "deepseek-r1:latest", "qwen2.5:14b"],  # User-selected
     description="Custom LLM deployment with latest models"
 )
 
 # EXAMPLE: Jitsi Meet Conference
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/jitsi/startServer.sh",
     "chmod +x ~/startServer.sh",
     "sudo ~/startServer.sh {{public_ips_space}} DNS EMAIL"
 ])
 
 # EXAMPLE: ELK Stack
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/elastic-stack/startELK.sh",
     "chmod +x ~/startELK.sh",
     "sudo ~/startELK.sh"
 ])
 
 # EXAMPLE: Ray ML Cluster
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-head-setup.sh",
     "chmod +x ~/ray-head-setup.sh",
     "~/ray-head-setup.sh -i {{public_ip}}"
@@ -11532,7 +11532,7 @@ installation_commands = guide["commands"]["installation"]  # IGNORE - Generate y
 
 ```python
 # Example 1: MongoDB deployment (LLM-generated)
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "sudo apt-get update -y",
     "wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -",
     "echo 'deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list",
@@ -11545,7 +11545,7 @@ execute_command_mci(ns_id, mci_id, [
 ])
 
 # Example 2: Jenkins CI/CD (LLM-generated)
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "sudo apt-get update -y",
     "sudo apt-get install -y openjdk-11-jdk",
     "wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -",
@@ -11559,7 +11559,7 @@ execute_command_mci(ns_id, mci_id, [
 ])
 
 # Example 3: Redis Cache (LLM-generated)
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "sudo apt-get update -y",
     "sudo apt-get install -y redis-server",
     "sudo sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis/redis.conf",
@@ -11570,7 +11570,7 @@ execute_command_mci(ns_id, mci_id, [
 ])
 
 # Example 4: Apache Kafka (LLM-generated)
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     "sudo apt-get update -y",
     "sudo apt-get install -y openjdk-11-jdk",
     "wget https://downloads.apache.org/kafka/2.8.2/kafka_2.13-2.8.2.tgz",
@@ -11625,36 +11625,36 @@ vm_configurations = [{
     "specId": spec["id"],
     "name": f"vm-{app_name}-1",
     "description": f"VM for {app_name}",
-    "subGroupSize": 1
+    "nodeGroupSize": 1
 }]
 ```
 
 #### Step 5: ✅ Validate Configuration (MANDATORY)
 ```python
-review = review_mci_dynamic_request(ns_id, name, vm_configurations)
+review = review_infra_dynamic_request(ns_id, name, vm_configurations)
 ```
 
 #### Step 6: 🚀 Create Infrastructure
 ```python
-mci = create_mci_dynamic(ns_id, name, vm_configurations, force_create=True)
+infra = create_infra_dynamic(ns_id, name, vm_configurations, force_create=True)
 ```
 
 #### Step 7: 📦 Install Application
 ```python
 # Strategy A: Use predefined APPLICATION_CONFIGS commands
 # Strategy B: Use LLM-generated intelligent commands
-execute_command_mci(ns_id, mci_id, deployment_commands)
+execute_command_infra(ns_id, infra_id, deployment_commands)
 ```
 
 #### Step 8: 🔍 Verify Deployment
 ```python
 # Generate appropriate verification commands
-execute_command_mci(ns_id, mci_id, verification_commands)
+execute_command_infra(ns_id, infra_id, verification_commands)
 ```
 
 #### Step 9: 📋 Collect Access Information
 ```python
-access_info = get_mci_access_info(ns_id, mci_id)
+access_info = get_infra_access_info(ns_id, infra_id)
 ```
 
 ### 🎯 LLM BEHAVIOR REQUIREMENTS
@@ -11674,7 +11674,7 @@ User: "Deploy xonotic game server"
 LLM Decision: 
 1. Check templates → xonotic found in APPLICATION_CONFIGS
 2. Use Strategy A → Execute exact usecase commands
-3. Commands: wget startServer.sh; sudo ~/startServer.sh {{mci_id}} 26000 8 8
+3. Commands: wget startServer.sh; sudo ~/startServer.sh {{infra_id}} 26000 8 8
 
 User: "Deploy MongoDB database"  
 LLM Decision:
@@ -11731,14 +11731,14 @@ Remote command execution via CB-Tumblebug API can take **significantly longer** 
 print("⏰ Starting deployment - this may take 5-10 minutes...")
 print("📦 Installing application packages and dependencies...")
 
-result = execute_command_mci(ns_id, mci_id, installation_commands)
+result = execute_command_infra(ns_id, infra_id, installation_commands)
 
 print("✅ Deployment completed! Checking service status...")
 ```
 
 ```python
 # ❌ BAD: No warning about timing
-result = execute_command_mci(ns_id, mci_id, installation_commands)
+result = execute_command_infra(ns_id, infra_id, installation_commands)
 # User may think system is frozen
 ```
 
@@ -11747,7 +11747,7 @@ result = execute_command_mci(ns_id, mci_id, installation_commands)
 **✅ Successful deployment must:**
 1. Follow correct strategy (A or B) based on application type
 2. Complete all 9 workflow steps
-3. Pass MCI configuration validation
+3. Pass Infra configuration validation
 4. Execute appropriate installation commands
 5. Verify deployment success
 6. Provide clear access information
@@ -11823,14 +11823,14 @@ Error: "rollback completed successfully after errors in resource preparation"
    # Reduce VM count or specs
    vm_configurations = [{
        "specId": "smaller_spec_id",  # Use smaller instance
-       "subGroupSize": 1               # Start with single VM
+       "nodeGroupSize": 1               # Start with single VM
    }]
    ```
 
 3. **Validate Before Retry:**
    ```python
    # Always validate before retrying
-   review = review_mci_dynamic_request(ns_id, name, vm_configurations)
+   review = review_infra_dynamic_request(ns_id, name, vm_configurations)
    ```
 
 #### 2. **Timeout Errors (10+ minute operations)**
@@ -11839,20 +11839,20 @@ Error: "Request timeout - operation took longer than 10 minutes"
 ```
 
 **🔍 Diagnosis:**
-- Very long MCI creation times exceed client connection timeout
+- Very long Infra creation times exceed client connection timeout
 - Complex multi-region deployments or large cluster operations
 - Resource contention or CSP-side delays
 
 **✅ LLM Recovery Actions:**
-1. **Check MCI Status:**
+1. **Check Infra Status:**
    ```python
-   # Check if MCI was partially created despite timeout
-   mci_list = get_mci_list_with_options(ns_id, option="status")
+   # Check if Infra was partially created despite timeout
+   infra_list = get_infra_list_with_options(ns_id, option="status")
    
-   # Look for the MCI name in results
-   for mci in mci_list.get("mci", []):
-       if mci["name"] == "your-mci-name":
-           print(f"MCI Status: {mci['status']}")
+   # Look for the Infra name in results
+   for infra in infra_list.get("infra", []):
+       if infra["name"] == "your-infra-name":
+           print(f"Infra Status: {infra['status']}")
    ```
 
 2. **Retry with Simpler Configuration:**
@@ -11860,7 +11860,7 @@ Error: "Request timeout - operation took longer than 10 minutes"
    # Start with single region/provider
    vm_configurations = [{
        "specId": single_region_spec,
-       "subGroupSize": 1
+       "nodeGroupSize": 1
    }]
    ```
 
@@ -11868,10 +11868,10 @@ Error: "Request timeout - operation took longer than 10 minutes"
    ```python
    # Deploy incrementally
    # Phase 1: Core infrastructure
-   create_mci_dynamic(ns_id, "core-mci", [core_vm])
+   create_infra_dynamic(ns_id, "core-infra", [core_vm])
    
    # Phase 2: Additional resources
-   create_mci_dynamic(ns_id, "additional-mci", [additional_vms])
+   create_infra_dynamic(ns_id, "additional-infra", [additional_vms])
    ```
 
 #### 3. **Connection Errors**
@@ -11897,13 +11897,13 @@ Error: "Connection error - unable to reach CB-Tumblebug server"
 
 #### 4. **Validation Failures**
 ```
-Error: "MCI configuration validation failed"
+Error: "Infra configuration validation failed"
 ```
 
 **✅ LLM Recovery Actions:**
 1. **Analyze Validation Results:**
    ```python
-   review = review_mci_dynamic_request(ns_id, name, vm_configurations)
+   review = review_infra_dynamic_request(ns_id, name, vm_configurations)
    
    # Check each VM's validation status
    for vm in review.get("vm_validations", []):
@@ -11978,17 +11978,17 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         "specId": spec["id"],  # Use exact spec ID from API
         "name": f"app-vm-{i+1}",
         "description": f"VM for {application_name} in {spec['regionName']}",
-        "subGroupSize": 1
+        "nodeGroupSize": 1
         # imageId: Auto-mapped based on spec
     })
 ```
 
-### Step 5: Validate MCI Configuration (MANDATORY)
+### Step 5: Validate Infra Configuration (MANDATORY)
 ```python
-# Always validate before creating MCI
-review_result = review_mci_dynamic_request(
+# Always validate before creating Infra
+review_result = review_infra_dynamic_request(
     ns_id="my-app",
-    name="my-app-mci",
+    name="my-app-infra",
     vm_configurations=vm_configurations
 )
 
@@ -12000,12 +12000,12 @@ else:
     # Handle validation errors
 ```
 
-### Step 6: Create MCI Infrastructure
+### Step 6: Create Infra Infrastructure
 ```python
 # Create the infrastructure
-mci_result = create_mci_dynamic(
+infra_result = create_infra_dynamic(
     ns_id="my-app",
-    name="my-app-mci",
+    name="my-app-infra",
     vm_configurations=vm_configurations,
     description="Infrastructure for my application",
     force_create=True  # Skip confirmation since we validated
@@ -12018,9 +12018,9 @@ mci_result = create_mci_dynamic(
 installation_commands = guide["commands"]["installation"]
 
 # Execute installation commands
-deployment_result = execute_command_mci(
+deployment_result = execute_command_infra(
     ns_id="my-app",
-    mci_id="my-app-mci",  # From mci_result
+    infra_id="my-app-infra",  # From infra_result
     commands=installation_commands
 )
 ```
@@ -12031,9 +12031,9 @@ deployment_result = execute_command_mci(
 verification_commands = guide["commands"]["verification"]
 
 # Verify installation
-verification_result = execute_command_mci(
+verification_result = execute_command_infra(
     ns_id="my-app",
-    mci_id="my-app-mci",
+    infra_id="my-app-infra",
     commands=verification_commands
 )
 ```
@@ -12041,7 +12041,7 @@ verification_result = execute_command_mci(
 ### Step 9: Collect Access Information
 ```python
 # Get access information and endpoints
-access_info = get_mci_access_info("my-app", "my-app-mci", show_ssh_key=False)
+access_info = get_infra_access_info("my-app", "my-app-infra", show_ssh_key=False)
 
 # Display access URLs using the pattern from deployment guide
 access_pattern = guide["expected_results"]["access_pattern"]
@@ -12107,7 +12107,7 @@ LLM Response:
 1. First, let me get the nginx deployment guide...
 2. I'll create/validate the namespace...
 3. Get optimal VM specifications for nginx...
-4. Validate the MCI configuration...
+4. Validate the Infra configuration...
 5. Create the infrastructure...
 6. Install nginx using remote commands...
 7. Verify the deployment...
@@ -12136,13 +12136,13 @@ vm_configs = [{
 }]
 
 # 5. Validate
-review = review_mci_dynamic_request("web-servers", "nginx-mci", vm_configs)
+review = review_infra_dynamic_request("web-servers", "nginx-infra", vm_configs)
 
-# 6. Create MCI (if validation passed)
-mci = create_mci_dynamic("web-servers", "nginx-mci", vm_configs, force_create=True)
+# 6. Create Infra (if validation passed)
+infra = create_infra_dynamic("web-servers", "nginx-infra", vm_configs, force_create=True)
 
 # 7. Install nginx
-execute_command_mci("web-servers", "nginx-mci", [
+execute_command_infra("web-servers", "nginx-infra", [
     "sudo apt-get update -y",
     "sudo apt-get install -y nginx",
     "sudo systemctl start nginx",
@@ -12151,20 +12151,20 @@ execute_command_mci("web-servers", "nginx-mci", [
 ])
 
 # 8. Verify
-execute_command_mci("web-servers", "nginx-mci", [
+execute_command_infra("web-servers", "nginx-infra", [
     "curl -I http://{{public_ip}}",
     "sudo systemctl is-active nginx"
 ])
 
 # 9. Get access info
-access_info = get_mci_access_info("web-servers", "nginx-mci")
+access_info = get_infra_access_info("web-servers", "nginx-infra")
 ```
 
 ## 🎯 SUCCESS METRICS
 
 ### A successful application deployment should:
 1. ✅ Complete all 9 steps without errors
-2. ✅ Pass MCI configuration validation
+2. ✅ Pass Infra configuration validation
 3. ✅ Successfully execute installation commands
 4. ✅ Pass verification commands
 5. ✅ Provide clear access information to user
@@ -12217,7 +12217,7 @@ selected_models = ["llama3.3:latest", "deepseek-r1:latest", "qwen2.5:14b"]  # Us
 # Deploy using the enhanced tool
 result = deploy_ollama_pull_with_models(
     ns_id="ai-workspace",
-    mci_name="ollama-cluster",
+    infra_name="ollama-cluster",
     selected_models=selected_models,
     description="Custom LLM deployment with latest models from ollama.com"
 )
@@ -12227,7 +12227,7 @@ result = deploy_ollama_pull_with_models(
 ```python
 # If user prefers not to browse ollama.com, use APPLICATION_CONFIGS fallback
 # This will show guidance to visit ollama.com but use predefined workflow
-execute_command_mci(ns_id, mci_id, [
+execute_command_infra(ns_id, infra_id, [
     APPLICATION_CONFIGS["ollama_pull"]["commands"]  # Shows ollama.com guidance
 ])
 ```
@@ -12281,7 +12281,7 @@ def tumblebug_infrastructure_management():
     Complete Guide for Multi-Cloud Infrastructure Management
     
     This prompt explains CB-Tumblebug's infrastructure management capabilities
-    including namespace management, MCI operations, and resource optimization.
+    including namespace management, Infra operations, and resource optimization.
     """
     return """# CB-Tumblebug Infrastructure Management Guide
 
@@ -12296,19 +12296,19 @@ get_namespaces() - List all namespaces
 delete_namespace("test") - Clean up test environment
 ```
 
-### 2. MCI (Multi-Cloud Infrastructure) Lifecycle
+### 2. Infra (Multi-Cloud Infrastructure) Lifecycle
 ```
 # Creation Methods
-create_mci_dynamic() - Full control with VM configurations
-create_mci_dynamic() - Flexible MCI creation with custom VM configurations
+create_infra_dynamic() - Full control with VM configurations
+create_infra_dynamic() - Flexible Infra creation with custom VM configurations
 recommend_vm_spec() - Find optimal VM specifications
 search_images() - Find suitable OS images
 
 # Management  
-get_mci_list("production") - List infrastructure
-get_mci("production", "web-servers") - Get detailed info
-control_mci("production", "web-servers", "suspend") - Control operations
-delete_mci("production", "web-servers") - Clean up
+get_infra_list("production") - List infrastructure
+get_infra("production", "web-servers") - Get detailed info
+control_infra("production", "web-servers", "suspend") - Control operations
+delete_infra("production", "web-servers") - Clean up
 ```
 
 ### 3. Resource Discovery
@@ -12348,15 +12348,15 @@ search_images(
 
 ### 6. Access and Connectivity
 ```
-get_mci_access_info("production", "web-servers") - SSH and IP info
-execute_command_mci() - Run commands remotely
-transfer_file_mci() - File transfer operations
+get_infra_access_info("production", "web-servers") - SSH and IP info
+execute_command_infra() - Run commands remotely
+transfer_file_infra() - File transfer operations
 ```
 
 ### 7. Resource Cleanup
 ```
 # Gradual cleanup
-delete_mci("test", "temp-servers") - Remove specific MCI
+delete_infra("test", "temp-servers") - Remove specific Infra
 release_resources("test") - Remove shared resources (VNet, etc.)
 delete_namespace("test") - Complete cleanup
 
@@ -12369,13 +12369,13 @@ delete_namespace("test") - Complete cleanup
 # Deploy across multiple regions
 regions = ["aws+ap-northeast-2", "azure+koreacentral", "gcp+asia-northeast3"]
 for region in regions:
-    create_mci_dynamic(
+    create_infra_dynamic(
         ns_id="global-app",
         name=f"app-{region.split('+')[0]}",
         vm_configurations=[{
             "imageId": selected_image,
             "specId": f"{region}+standard-instance",
-            "subGroupSize": 3
+            "nodeGroupSize": 3
         }]
     )
 ```
@@ -12384,15 +12384,15 @@ for region in regions:
 ```
 # Development
 create_namespace("dev")
-create_mci_dynamic("dev", "test-app", [{"imageId": image, "specId": "t2.micro", "name": "test-vm"}])
+create_infra_dynamic("dev", "test-app", [{"imageId": image, "specId": "t2.micro", "name": "test-vm"}])
 
 # Staging  
 create_namespace("staging")
-create_mci_dynamic("staging", "staging-app", [{"imageId": image, "specId": "t2.small", "name": "staging-vm"}])
+create_infra_dynamic("staging", "staging-app", [{"imageId": image, "specId": "t2.small", "name": "staging-vm"}])
 
 # Production
 create_namespace("production") 
-create_mci_dynamic("production", "prod-app", complex_config)
+create_infra_dynamic("production", "prod-app", complex_config)
 ```
 
 ### 3. Cost Optimization
@@ -12406,15 +12406,15 @@ specs = recommend_vm_spec(
 # Use spot instances or burstable types
 vm_config = {
     "specId": "aws+ap-northeast-2+t3.micro",
-    "subGroupSize": 5
+    "nodeGroupSize": 5
 }
 ```
 
 ## Monitoring and Troubleshooting
-1. Use get_mci_list_with_options() for status monitoring
-2. Check get_mci() for detailed VM information  
-3. Review execute_command_mci() outputs for issues
-4. Use get_mci_access_info() for connectivity verification
+1. Use get_infra_list_with_options() for status monitoring
+2. Check get_infra() for detailed VM information  
+3. Review execute_command_infra() outputs for issues
+4. Use get_infra_access_info() for connectivity verification
 
 ## Security Best Practices
 1. Use separate namespaces for different environments
@@ -12465,8 +12465,8 @@ Solution:
 User: "Deploy Nginx web servers in AWS Seoul and Azure Korea Central"
 
 Solution:
-1. create_mci_dynamic("web-app", "nginx-aws", [{"imageId": aws_image, "specId": "t3.medium", "name": "nginx-aws-vm"}])
-2. create_mci_dynamic("web-app", "nginx-azure", [{"imageId": azure_image, "specId": "Standard_B2s", "name": "nginx-azure-vm"}]) 
+1. create_infra_dynamic("web-app", "nginx-aws", [{"imageId": aws_image, "specId": "t3.medium", "name": "nginx-aws-vm"}])
+2. create_infra_dynamic("web-app", "nginx-azure", [{"imageId": azure_image, "specId": "Standard_B2s", "name": "nginx-azure-vm"}]) 
 3. execute_remote_commands_enhanced(script_name="nginx_install")
 4. Configure DNS load balancing
 ```
@@ -12506,7 +12506,7 @@ User: "Set up development infrastructure with Docker and monitoring"
 
 Workflow:
 1. create_namespace("dev-team")
-2. create_mci_dynamic("dev-team", "dev-servers", [{"imageId": ubuntu_image, "specId": "t3.large", "name": f"dev-vm-{i}", "subGroupSize": 1} for i in range(1, 6)])
+2. create_infra_dynamic("dev-team", "dev-servers", [{"imageId": ubuntu_image, "specId": "t3.large", "name": f"dev-vm-{i}", "nodeGroupSize": 1} for i in range(1, 6)])
 3. execute_remote_commands_enhanced(script_name="docker_install")
 4. execute_remote_commands_enhanced(script_name="monitoring_setup") 
 5. execute_remote_commands_enhanced(script_name="security_hardening")
@@ -12595,38 +12595,38 @@ Solution:
 ### 2. Application Deployment
 ```
 1. deploy_application() - Automated deployment
-2. get_mci_access_info() - Collect endpoints
+2. get_infra_access_info() - Collect endpoints
 3. execute_application_commands() - Post-deployment configuration
 4. execute_remote_commands_enhanced() - Ongoing management
 ```
 
 ### 3. Monitoring and Management
 ```
-1. get_mci_list() - Monitor infrastructure
-2. execute_command_mci() - Health checks
-3. control_mci() - Scaling operations
+1. get_infra_list() - Monitor infrastructure
+2. execute_command_infra() - Health checks
+3. control_infra() - Scaling operations
 ```
 
 ### 4. Cleanup and Optimization
 ```
-1. delete_mci() - Remove unused infrastructure
+1. delete_infra() - Remove unused infrastructure
 2. release_resources() - Clean shared resources
 3. delete_namespace() - Complete environment cleanup
 ```
 
 ## Best Practices Summary
-1. **Start Small**: Use create_mci_dynamic() for testing
+1. **Start Small**: Use create_infra_dynamic() for testing
 2. **Scale Gradually**: Use deploy_application() for production
 3. **Monitor Resources**: Regular health checks and cost monitoring  
 4. **Security First**: Apply security hardening from day one
 5. **Document Endpoints**: Keep track of service URLs and IPs
 6. **Plan Cleanup**: Regular resource cleanup to control costs
 
-## 🔍 MCI Validation and Quality Assurance Workflow
+## 🔍 Infra Validation and Quality Assurance Workflow
 
 ### MANDATORY Pre-Validation Process
 
-**✅ ALWAYS Follow This Workflow for MCI Creation:**
+**✅ ALWAYS Follow This Workflow for Infra Creation:**
 
 ```python
 # STEP 1: Search for appropriate VM specifications
@@ -12642,12 +12642,12 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         "specId": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
         "name": f"vm-{spec['providerName']}-{i+1}",
         "description": f"VM in {spec['regionName']}",
-        "subGroupSize": 1
+        "nodeGroupSize": 1
         # imageId: Optional - auto-mapped if omitted
     })
 
 # STEP 3: MANDATORY - Review configuration before creation
-review_result = review_mci_dynamic_request(
+review_result = review_infra_dynamic_request(
     ns_id="my-project",
     name="web-app-cluster", 
     vm_configurations=vm_configurations,
@@ -12660,8 +12660,8 @@ if review_result.get("summary", {}).get("validationPassed", False):
     print(f"Estimated cost: {review_result.get('estimated_cost', 'N/A')}")
     print(f"Deployment time: {review_result.get('deployment_time_estimate', 'N/A')}")
     
-    # STEP 5: Proceed with MCI creation
-    mci_result = create_mci_dynamic(
+    # STEP 5: Proceed with Infra creation
+    infra_result = create_infra_dynamic(
         ns_id="my-project",
         name="web-app-cluster",
         vm_configurations=vm_configurations,
@@ -12676,12 +12676,12 @@ else:
             print(f"VM {vm_validation['vm_index']}: {vm_validation['issues']}")
 ```
 
-### Automatic Pre-Validation in create_mci_dynamic()
+### Automatic Pre-Validation in create_infra_dynamic()
 
-**The create_mci_dynamic() function now includes automatic pre-validation:**
+**The create_infra_dynamic() function now includes automatic pre-validation:**
 
-1. **Automatic Review**: Every call to create_mci_dynamic() automatically runs review_mci_dynamic_request()
-2. **Validation Gate**: MCI creation is blocked if critical validation issues are found
+1. **Automatic Review**: Every call to create_infra_dynamic() automatically runs review_infra_dynamic_request()
+2. **Validation Gate**: Infra creation is blocked if critical validation issues are found
 3. **Enhanced Feedback**: Detailed validation results guide you to fix configuration problems
 4. **Smart Recovery**: Clear guidance on how to address validation failures
 
@@ -12714,28 +12714,28 @@ else:
 - Checks security group configurations
 - Ensures network security policies
 
-### Example: Validated MCI Creation Workflow
+### Example: Validated Infra Creation Workflow
 
-**Recommended Pattern for Error-Resilient MCI Creation:**
+**Recommended Pattern for Error-Resilient Infra Creation:**
 
 1. **Get VM Specifications**: Use recommend_vm_spec() to get valid spec IDs
 2. **Build Configurations**: Create VM configs using exact spec IDs from API
-3. **Validate Configuration**: Use review_mci_dynamic_request() to check setup
+3. **Validate Configuration**: Use review_infra_dynamic_request() to check setup
 4. **Handle Validation Results**: Address any issues before proceeding
-5. **Create Infrastructure**: Use create_mci_dynamic() with force_create=True
+5. **Create Infrastructure**: Use create_infra_dynamic() with force_create=True
 
 **Example Usage Pattern:**
 - Call recommend_vm_spec() with your requirements
 - Use returned spec["id"] values in vm_configurations
-- Run review_mci_dynamic_request() to validate
+- Run review_infra_dynamic_request() to validate
 - Check validation_passed status before proceeding
-- Use create_mci_dynamic() with validated configurations
+- Use create_infra_dynamic() with validated configurations
 
 ### LLM Integration Guidelines
 
-**When working with MCI creation, LLMs should:**
+**When working with Infra creation, LLMs should:**
 
-1. **Always Use Validation**: Never skip the review_mci_dynamic_request() step
+1. **Always Use Validation**: Never skip the review_infra_dynamic_request() step
 2. **Interpret Results**: Analyze validation results and explain issues to users
 3. **Provide Guidance**: Offer specific steps to fix validation failures
 4. **Optimize Configurations**: Suggest improvements based on validation feedback
@@ -12777,12 +12777,12 @@ else:
 
 **Response to Validation Results:**
 
-- ✅ **validation_passed: true** → Safe to proceed with create_mci_dynamic()
+- ✅ **validation_passed: true** → Safe to proceed with create_infra_dynamic()
 - ❌ **validation_passed: false** → Must fix issues before creation
 - ⚠️ **warnings > 0** → Consider optimization suggestions
 - ℹ️ **info messages** → Informational, no action required
 
-This comprehensive validation system ensures reliable, cost-effective, and properly configured MCI deployments.
+This comprehensive validation system ensures reliable, cost-effective, and properly configured Infra deployments.
 
 ## 🕒 CRITICAL REMINDER: Remote Command Execution Timing
 
@@ -12806,7 +12806,7 @@ This comprehensive validation system ensures reliable, cost-effective, and prope
 
 ### 🎯 **LLM Best Practices for Command Execution:**
 
-1. **⚠️ Always warn users first** before any execute_command_mci() call
+1. **⚠️ Always warn users first** before any execute_command_infra() call
 2. **📦 Batch related commands** to minimize API calls
 3. **🔍 Add verification steps** to check progress
 4. **📊 Use summarize_output=True** for large outputs
@@ -13083,32 +13083,32 @@ This workflow ensures reliable VM specification recommendations and prevents API
 @mcp.prompt()
 def infrastructure_scaling_and_management_guide():
     """
-    Guide for scaling MCI infrastructure, managing labels, and using credential holders.
-    Covers SubGroup management, label-based resource organization, and multi-tenant credentials.
+    Guide for scaling Infra infrastructure, managing labels, and using credential holders.
+    Covers NodeGroup management, label-based resource organization, and multi-tenant credentials.
     """
     return """# Infrastructure Scaling, Labels & Credential Management
 
-## 🔄 Scaling an Existing MCI with SubGroups
+## 🔄 Scaling an Existing Infra with NodeGroups
 
-### Adding VMs to an Existing MCI
-Use `add_subgroup_dynamic()` to add a new SubGroup to a running MCI:
+### Adding VMs to an Existing Infra
+Use `add_nodegroup_dynamic()` to add a new NodeGroup to a running Infra:
 
 ```python
-# Step 1: Review the SubGroup configuration first
-review = review_subgroup_dynamic(
+# Step 1: Review the NodeGroup configuration first
+review = review_nodegroup_dynamic(
     ns_id="default",
-    mci_id="my-mci",
+    infra_id="my-infra",
     spec_id="aws+ap-northeast-2+t3.medium",
     image_id="ami-0c02fb55956c7d316",
     sub_group_size=3,
     name="worker-nodes"
 )
 
-# Step 2: If review passes, add the SubGroup
+# Step 2: If review passes, add the NodeGroup
 if review.get("isAvailable") or review.get("canCreate"):
-    result = add_subgroup_dynamic(
+    result = add_nodegroup_dynamic(
         ns_id="default",
-        mci_id="my-mci",
+        infra_id="my-infra",
         spec_id="aws+ap-northeast-2+t3.medium",
         image_id="ami-0c02fb55956c7d316",
         sub_group_size=3,
@@ -13118,7 +13118,7 @@ if review.get("isAvailable") or review.get("canCreate"):
 ```
 
 ### Quick Spec-Image Validation
-Use `review_spec_image_pair()` for fast validation without full MCI review:
+Use `review_spec_image_pair()` for fast validation without full Infra review:
 
 ```python
 # Lightweight check if a spec+image pair works
@@ -13130,23 +13130,23 @@ if check.get("isAvailable"):
     print("Spec and image are compatible and available")
 ```
 
-### SubGroup Configuration Options
-Each SubGroup supports:
+### NodeGroup Configuration Options
+Each NodeGroup supports:
 - `specId` / `imageId`: Required spec and image (from recommend_vm_spec / search_images)
-- `subGroupSize`: Number of VMs (int, e.g., 3)
+- `nodeGroupSize`: Number of VMs (int, e.g., 3)
 - `zone`: Specific availability zone (e.g., "ap-northeast-2a")
 - `connectionName`: Specific CSP connection
 - `rootDiskSize`: Disk size in GB (int, 0 for default)
 - `vNetTemplateId` / `sgTemplateId`: Network/security templates
-- `label`: Key-value labels for the SubGroup
+- `label`: Key-value labels for the NodeGroup
 
-### MCI-Level Configuration
-When creating an MCI:
+### Infra-Level Configuration
+When creating an Infra:
 - `policyOnPartialFailure`: "continue" (default), "rollback", or "refine"
   - continue: Keep successfully created VMs even if some fail
   - rollback: Delete all VMs if any fail
   - refine: Retry failed VMs with alternative specs
-- `vNetTemplateId` / `sgTemplateId`: MCI-level defaults (SubGroup values override)
+- `vNetTemplateId` / `sgTemplateId`: Infra-level defaults (NodeGroup values override)
 
 ## 🏷️ Label Management
 
@@ -13154,10 +13154,10 @@ Labels are key-value string pairs for organizing and filtering resources.
 
 ### Setting Labels
 ```python
-# Add labels to an MCI
+# Add labels to an Infra
 create_or_update_labels(
-    label_type="mci",
-    uid="my-mci-uid",
+    label_type="infra",
+    uid="my-infra-uid",
     labels={"env": "production", "team": "backend", "app": "web-server"}
 )
 
@@ -13171,9 +13171,9 @@ create_or_update_labels(
 
 ### Finding Resources by Labels
 ```python
-# Find all production MCIs
+# Find all production Infras
 production_resources = get_resources_by_label(
-    label_type="mci",
+    label_type="infra",
     labels="env=production"
 )
 
@@ -13214,7 +13214,7 @@ os.environ["TUMBLEBUG_CREDENTIAL_HOLDER"] = "dev-team"
 1. List available credential holders: `list_credential_holders()`
 2. Choose the appropriate holder for your deployment
 3. Set `TUMBLEBUG_CREDENTIAL_HOLDER` env var
-4. Proceed with MCI creation workflow as normal
+4. Proceed with Infra creation workflow as normal
 """
 
 if __name__ == "__main__":

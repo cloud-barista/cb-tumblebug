@@ -78,13 +78,13 @@ type ScheduledJob struct {
 	Enabled          bool `json:"enabled"`
 
 	// Job-specific parameters
-	ConnectionName string `json:"connectionName,omitempty"` // (Deprecated) For registerCspResources
-	Provider       string `json:"provider,omitempty"`       // For registerCspResources
-	Region         string `json:"region,omitempty"`         // For registerCspResources
-	Zone           string `json:"zone,omitempty"`           // For registerCspResources
-	MciNamePrefix  string `json:"mciNamePrefix,omitempty"`  // For registerCspResources
-	Option         string `json:"option,omitempty"`         // For registerCspResources
-	MciFlag        string `json:"mciFlag,omitempty"`        // For registerCspResources
+	ConnectionName  string `json:"connectionName,omitempty"`  // (Deprecated) For registerCspResources
+	Provider        string `json:"provider,omitempty"`        // For registerCspResources
+	Region          string `json:"region,omitempty"`          // For registerCspResources
+	Zone            string `json:"zone,omitempty"`            // For registerCspResources
+	InfraNamePrefix string `json:"infraNamePrefix,omitempty"` // For registerCspResources
+	Option          string `json:"option,omitempty"`          // For registerCspResources
+	InfraFlag       string `json:"infraFlag,omitempty"`       // For registerCspResources
 
 	// Job status
 	Status              JobStatus `json:"status"`
@@ -151,9 +151,9 @@ func (sm *SchedulerManager) saveJobToStore(job *ScheduledJob) error {
 		ExecutionTimeout:    job.ExecutionTimeout,
 		Enabled:             job.Enabled,
 		ConnectionName:      job.ConnectionName,
-		MciNamePrefix:       job.MciNamePrefix,
+		InfraNamePrefix:     job.InfraNamePrefix,
 		Option:              job.Option,
-		MciFlag:             job.MciFlag,
+		InfraFlag:           job.InfraFlag,
 		Status:              job.Status,
 		LastExecutedAt:      job.LastExecutedAt,
 		NextExecutionAt:     job.NextExecutionAt,
@@ -285,9 +285,9 @@ func (sm *SchedulerManager) findDuplicateJob(req model.ScheduleJobRequest) (*Sch
 			job.Provider == req.Provider &&
 			job.Region == req.Region &&
 			job.Zone == req.Zone &&
-			job.MciNamePrefix == req.MciNamePrefix &&
+			job.InfraNamePrefix == req.InfraNamePrefix &&
 			job.Option == req.Option &&
-			job.MciFlag == req.MciFlag {
+			job.InfraFlag == req.InfraFlag {
 			return job, true
 		}
 	}
@@ -301,10 +301,10 @@ func (sm *SchedulerManager) CreateScheduledJob(req model.ScheduleJobRequest) (*S
 
 	// Check for duplicate job configuration
 	if existingJob, isDuplicate := sm.findDuplicateJob(req); isDuplicate {
-		return nil, fmt.Errorf("duplicate job already exists: %s (jobType=%s, nsId=%s, connectionName=%s, provider=%s, region=%s, zone=%s, mciNamePrefix=%s, option=%s, mciFlag=%s)",
+		return nil, fmt.Errorf("duplicate job already exists: %s (jobType=%s, nsId=%s, connectionName=%s, provider=%s, region=%s, zone=%s, infraNamePrefix=%s, option=%s, infraFlag=%s)",
 			existingJob.JobId, existingJob.JobType, existingJob.NsId,
 			existingJob.ConnectionName, existingJob.Provider, existingJob.Region, existingJob.Zone,
-			existingJob.MciNamePrefix, existingJob.Option, existingJob.MciFlag)
+			existingJob.InfraNamePrefix, existingJob.Option, existingJob.InfraFlag)
 	}
 
 	minimumInterval := 10
@@ -343,9 +343,9 @@ func (sm *SchedulerManager) CreateScheduledJob(req model.ScheduleJobRequest) (*S
 		Provider:        req.Provider,
 		Region:          req.Region,
 		Zone:            req.Zone,
-		MciNamePrefix:   req.MciNamePrefix,
+		InfraNamePrefix: req.InfraNamePrefix,
 		Option:          req.Option,
-		MciFlag:         req.MciFlag,
+		InfraFlag:       req.InfraFlag,
 		Status:          JobStatusScheduled,
 		NextExecutionAt: now.Add(time.Duration(req.IntervalSeconds) * time.Second),
 		ctx:             ctx,
@@ -701,9 +701,9 @@ func (job *ScheduledJob) execute() {
 				result, err = RegisterCspNativeResourcesAll(
 					context.Background(),
 					job.NsId,
-					job.MciNamePrefix,
+					job.InfraNamePrefix,
 					job.Option,
-					job.MciFlag,
+					job.InfraFlag,
 				)
 				break
 			}
@@ -714,9 +714,9 @@ func (job *ScheduledJob) execute() {
 					context.Background(),
 					job.NsId,
 					connectionNames[0],
-					job.MciNamePrefix,
+					job.InfraNamePrefix,
 					job.Option,
-					job.MciFlag,
+					job.InfraFlag,
 				)
 			} else {
 				// Process multiple connections
@@ -728,9 +728,9 @@ func (job *ScheduledJob) execute() {
 						context.Background(),
 						job.NsId,
 						connName,
-						job.MciNamePrefix,
+						job.InfraNamePrefix,
 						job.Option,
-						job.MciFlag,
+						job.InfraFlag,
 					)
 					if connErr != nil {
 						connResult.SystemMessage = fmt.Sprintf("Error: %v", connErr)
@@ -746,9 +746,9 @@ func (job *ScheduledJob) execute() {
 			result, err = RegisterCspNativeResourcesAll(
 				context.Background(),
 				job.NsId,
-				job.MciNamePrefix,
+				job.InfraNamePrefix,
 				job.Option,
-				job.MciFlag,
+				job.InfraFlag,
 			)
 
 		default:
@@ -869,8 +869,8 @@ func (job *ScheduledJob) GetStatus() model.ScheduleJobStatus {
 		Provider:            job.Provider,
 		Region:              job.Region,
 		Zone:                job.Zone,
-		MciNamePrefix:       job.MciNamePrefix,
+		InfraNamePrefix:     job.InfraNamePrefix,
 		Option:              job.Option,
-		MciFlag:             job.MciFlag,
+		InfraFlag:           job.InfraFlag,
 	}
 }

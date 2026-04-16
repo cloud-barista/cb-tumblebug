@@ -1,12 +1,12 @@
 {
-  "resourceType": "mci",
-  "name": "global-mci-template",
-  "description": "Global MCI template with VMs across multiple AWS regions worldwide",
-  "mciDynamicReq": {
-    "subGroups": [
+  "resourceType": "infra",
+  "name": "global-infra-template",
+  "description": "Global Infra template with VMs across multiple AWS regions worldwide",
+  "infraDynamicReq": {
+    "nodeGroups": [
       {
         "name": "g1",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-northeast-2+c5a.xlarge",
         "imageId": "ami-08a4fd517a4872931",
@@ -17,7 +17,7 @@
       },
       {
         "name": "g10",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+us-west-1+t3a.xlarge",
         "imageId": "ami-072028e29f8a73b88",
@@ -28,7 +28,7 @@
       },
       {
         "name": "g11",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ca-west-1+t3.xlarge",
         "imageId": "ami-085de7df2c3c01773",
@@ -39,7 +39,7 @@
       },
       {
         "name": "g12",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+sa-east-1+c6a.xlarge",
         "imageId": "ami-0533a139e02b00be4",
@@ -50,7 +50,7 @@
       },
       {
         "name": "g2",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-east-1+c5a.xlarge",
         "imageId": "ami-0ed4fd6805d8ecb23",
@@ -61,7 +61,7 @@
       },
       {
         "name": "g3",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-southeast-4+t3.xlarge",
         "imageId": "ami-01ee1aa829a2ed7d2",
@@ -72,7 +72,7 @@
       },
       {
         "name": "g4",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-southeast-3+c7i-flex.xlarge",
         "imageId": "ami-0dfe3f8d6e153be6f",
@@ -83,7 +83,7 @@
       },
       {
         "name": "g5",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ap-south-1+c6a.xlarge",
         "imageId": "ami-0ff91eb5c6fe7cc86",
@@ -94,7 +94,7 @@
       },
       {
         "name": "g8",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+eu-north-1+c5a.xlarge",
         "imageId": "ami-0c33fcb753a7176f6",
@@ -105,7 +105,7 @@
       },
       {
         "name": "g9",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "description": "mapui",
         "specId": "aws+ca-central-1+t3a.xlarge",
         "imageId": "ami-0631168b8ae6e1731",

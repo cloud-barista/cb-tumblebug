@@ -3,18 +3,18 @@
 SECONDS=0
 
 echo "####################################################################"
-echo "## Command (SSH) to MCI to change-mci-hostname"
+echo "## Command (SSH) to Infrara to change-infra-hostname"
 echo "####################################################################"
 
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-    # MCIPREFIX=avengers
-    MCIID=${POSTFIX}
+    # InfraraPREFIX=avengers
+    InfraraID=${POSTFIX}
 fi
 
-MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID})
-VMARRAY=$(jq -r '.vm' <<<"$MCIINFO")
+InfraraINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/InfranfraID})
+VMARRAY=$(jq -r '.vm' <<<"$InfraraINFO")
 
 for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
     _jq() {
@@ -36,7 +36,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
     # USERCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${VMID}; echo -n [Hostname: ; hostname -f; echo -n ]"
     USERCMD="sudo hostnamectl set-hostname ${VMID}; echo -n [Hostname: ; hostname -f; echo -n ]"
 	VAR1=$(
-		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
+		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/infra/$InfraraID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${USERCMD}]"
 	} 

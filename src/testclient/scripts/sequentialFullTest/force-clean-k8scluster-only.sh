@@ -23,7 +23,7 @@ function clean_sequence_k8scluster_allcsp() {
 
 	../13.k8scluster/force-delete-k8scluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate -z $K8SCLUSTERID_ADD
 	#dozing 1
-	#../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCIPREFIX
+	#../8.infra/status-infra.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $InfraPREFIX
 	echo ""
 	echo "[Logging to notify latest command history]"
 	echo "[K8SCLUSTER:${K8SCLUSTERID}(${SECONDS}s+More)] ${_self} (K8SCLUSTER) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus

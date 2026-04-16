@@ -584,59 +584,59 @@ Authorization: Basic <base64(username:password)>
 ```
 
 **🚀 Quick Infrastructure Creation**
-Following the [Quick MCI Creation Guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1570):
+Following the [Quick Infra Creation Guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1570):
 
 ```bash
-# 1. Create VM specification
+# 1. Create compute spec
 curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/spec" \
   -H "Authorization: Basic <credentials>" \
   -d '{"name": "web-spec", "connectionName": "aws-ap-northeast-2"}'
 
-# 2. Create VM image
+# 2. Create OS image
 curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/image" \
   -H "Authorization: Basic <credentials>" \
   -d '{"name": "ubuntu-image", "connectionName": "aws-ap-northeast-2"}'
 
 # 3. Create Multi-Cloud Infrastructure
-curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
+curl -X POST "http://localhost:1323/tumblebug/ns/default/infra" \
   -H "Authorization: Basic <credentials>" \
-  -d @mci-config.json
+  -d @infra-config.json
 ```
 
 **🛠️ Core API Categories**
 
-- **Infrastructure Resources**: VM specs, images, networks, security groups
-- **Multi-Cloud Infrastructure (MCI)**: Provision and manage distributed infrastructure
+- **Infrastructure Resources**: Compute specs, images, networks, security groups
+- **Multi-Cloud Infrastructure (Infra)**: Provision and manage distributed infrastructure
 - **Monitoring & Control**: Performance metrics, scaling, lifecycle management
 - **Credentials & Connections**: Secure cloud provider configuration
   - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
-  - Create, view, control, execute remote commands, shut down, and delete MCI using the MCI(multi-cloud infrastructure service) management APIs
-    - [Create MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/post_ns__nsId__mci)
-    - [MCI remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Remote%20command/post_ns__nsId__cmd_mci__mciId_)
-    - [View and control MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/get_ns__nsId__mci__mciId_)
-    - [Terminate and Delete MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/delete_ns__nsId__mci__mciId_)
+  - Create, view, control, execute remote commands, shut down, and delete Infra using the Infra(multi-cloud infrastructure service) management APIs
+    - [Create Infra](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20Infra%20Provisioning%20management/post_ns__nsId__infra)
+    - [Infra remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20Infra%20Remote%20command/post_ns__nsId__cmd_infra__infraId_)
+    - [View and control Infra](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20Infra%20Provisioning%20management/get_ns__nsId__infra__infraId_)
+    - [Terminate and Delete Infra](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20Infra%20Provisioning%20management/delete_ns__nsId__infra__infraId_)
   - CB-TB optimal and dynamic provisioning
-    - [CB-TB optimal and dynamic provisioning](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mci-provisioning-guide)
+    - [CB-TB optimal and dynamic provisioning](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-infra-provisioning-guide)
 
 ---
 
 ### Multi-Cloud Infrastructure Use Cases
 
-#### Deploying an MCI Xonotic (3D FPS) Game Server
+#### Deploying an Infra Xonotic (3D FPS) Game Server
 
-- [Deploy Xonotic game servers on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/Deploy-Xonotic-game-sever-in-a-Cloud-via-CB-Tumblebug)
+- [Deploy Xonotic game servers on Infra](https://github.com/cloud-barista/cb-tumblebug/wiki/Deploy-Xonotic-game-sever-in-a-Cloud-via-CB-Tumblebug)
 
-#### Distributed Deployment of MCI Weave Scope Cluster Monitoring
+#### Distributed Deployment of Infra Weave Scope Cluster Monitoring
 
-- [Install Weave Scope cluster on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/MCI-WeaveScope-deployment)
+- [Install Weave Scope cluster on Infra](https://github.com/cloud-barista/cb-tumblebug/wiki/Infra-WeaveScope-deployment)
 
-#### Deploying MCI Jitsi Video Conferencing
+#### Deploying Infra Jitsi Video Conferencing
 
-- [Install Jitsi video conferencing on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/MCI-Jitsi-deployment)
+- [Install Jitsi video conferencing on Infra](https://github.com/cloud-barista/cb-tumblebug/wiki/Infra-Jitsi-deployment)
 
-#### Automatic Configuration of MCI Ansible Execution Environment
+#### Automatic Configuration of Infra Ansible Execution Environment
 
-- [Automatically configure Ansible execution environment on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/MCI-Ansible-deployment)
+- [Automatically configure Ansible execution environment on Infra](https://github.com/cloud-barista/cb-tumblebug/wiki/Infra-Ansible-deployment)
 
 ---
 

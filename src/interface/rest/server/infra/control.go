@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package infra
 
 import (
@@ -23,27 +23,27 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// RestGetControlMci godoc
-// @ID GetControlMci
-// @Summary Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
-// @Description Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetControlInfra godoc
+// @ID GetControlInfra
+// @Summary Control the lifecycle of Infra (refine, suspend, resume, reboot, terminate)
+// @Description Control the lifecycle of Infra (refine, suspend, resume, reboot, terminate)
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param action query string true "Action to Infra" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/control/mci/{mciId} [get]
-func RestGetControlMci(c echo.Context) error {
+// @Router /ns/{nsId}/control/infra/{infraId} [get]
+func RestGetControlInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	action := c.QueryParam("action")
 	force := c.QueryParam("force")
@@ -55,7 +55,7 @@ func RestGetControlMci(c echo.Context) error {
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" || action == "continue" || action == "withdraw" {
 
-		resultString, err := infra.HandleMciAction(nsId, mciId, action, forceOption)
+		resultString, err := infra.HandleInfraAction(nsId, infraId, action, forceOption)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, returnObj)
 		}
@@ -68,29 +68,29 @@ func RestGetControlMci(c echo.Context) error {
 	}
 }
 
-// RestGetControlMciVm godoc
-// @ID GetControlMciVm
-// @Summary Control the lifecycle of VM (suspend, resume, reboot, terminate)
-// @Description Control the lifecycle of VM (suspend, resume, reboot, terminate)
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetControlInfraNode godoc
+// @ID GetControlInfraNode
+// @Summary Control the lifecycle of node (suspend, resume, reboot, terminate)
+// @Description Control the lifecycle of node (suspend, resume, reboot, terminate)
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param nodeId path string true "Node ID" default(g1-1)
+// @Param action query string true "Action to Infra" Enums(suspend, resume, reboot, terminate)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/control/mci/{mciId}/vm/{vmId} [get]
-func RestGetControlMciVm(c echo.Context) error {
+// @Router /ns/{nsId}/control/infra/{infraId}/node/{nodeId} [get]
+func RestGetControlInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
-	vmId := c.Param("vmId")
+	infraId := c.Param("infraId")
+	nodeId := c.Param("nodeId")
 
 	action := c.QueryParam("action")
 	force := c.QueryParam("force")
@@ -103,7 +103,7 @@ func RestGetControlMciVm(c echo.Context) error {
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
-		resultString, err := infra.HandleMciVmAction(nsId, mciId, vmId, action, forceOption)
+		resultString, err := infra.HandleInfraNodeAction(nsId, infraId, nodeId, action, forceOption)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, returnObj)
 		}
@@ -116,78 +116,78 @@ func RestGetControlMciVm(c echo.Context) error {
 	}
 }
 
-// RestPostMciVmSnapshot godoc
-// @ID PostMciVmSnapshot
-// @Summary Snapshot VM and create a Custom Image Object using the Snapshot
-// @Description Snapshot VM and create a Custom Image Object using the Snapshot
+// RestPostInfraNodeSnapshot godoc
+// @ID PostInfraNodeSnapshot
+// @Summary Snapshot node and create a Custom Image Object using the Snapshot
+// @Description Snapshot node and create a Custom Image Object using the Snapshot
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param snapshotReq body model.SnapshotReq true "Request body to create VM snapshot"
+// @Param snapshotReq body model.SnapshotReq true "Request body to create node snapshot"
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot [post]
-func RestPostMciVmSnapshot(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId}/snapshot [post]
+func RestPostInfraNodeSnapshot(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
-	vmId := c.Param("vmId")
+	infraId := c.Param("infraId")
+	nodeId := c.Param("nodeId")
 
 	req := &model.SnapshotReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	result, err := infra.CreateVmSnapshot(nsId, mciId, vmId, *req)
+	result, err := infra.CreateNodeSnapshot(nsId, infraId, nodeId, *req)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
 	}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestPostMciSnapshot godoc
-// @ID PostMciSnapshot
-// @Summary Create snapshots for all subgroups in MCI (one VM per subgroup in parallel)
-// @Description Create snapshots for the first running VM in each subgroup of an MCI in parallel
+// RestPostInfraSnapshot godoc
+// @ID PostInfraSnapshot
+// @Summary Create snapshots for all nodegroups in Infra (one node per nodegroup in parallel)
+// @Description Create snapshots for the first running node in each nodegroup of an Infra in parallel
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param snapshotReq body model.SnapshotReq true "Request body to create MCI snapshots"
+// @Param snapshotReq body model.SnapshotReq true "Request body to create Infra snapshots"
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Success 200 {object} model.MciSnapshotResult
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Success 200 {object} model.InfraSnapshotResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/snapshot [post]
-func RestPostMciSnapshot(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/snapshot [post]
+func RestPostInfraSnapshot(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	req := &model.SnapshotReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	result, err := infra.CreateMciSnapshot(nsId, mciId, *req)
+	result, err := infra.CreateInfraSnapshot(nsId, infraId, *req)
 	if err != nil {
-		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create MCI snapshots"})
+		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create Infra snapshots"})
 	}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostBuildAgnosticImage godoc
 // @ID PostBuildAgnosticImage
-// @Summary Build agnostic custom images by creating MCI, executing commands, and taking snapshots
-// @Description Creates an MCI infrastructure, executes post-deployment commands, creates snapshots from each subgroup, and optionally cleans up the MCI. This is a complete workflow for building CSP-agnostic custom images.
+// @Summary Build agnostic custom images by creating Infra, executing commands, and taking snapshots
+// @Description Creates an Infra infrastructure, executes post-deployment commands, creates snapshots from each nodegroup, and optionally cleans up the Infra. This is a complete workflow for building CSP-agnostic custom images.
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json

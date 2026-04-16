@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package resource
 
 import (
@@ -26,21 +26,21 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// // RestGetSitesInMci godoc
-// // @ID GetSitesInMci
-// // @Summary Get sites in MCI
-// // @Description Get sites in MCI
+// // RestGetSitesInInfra godoc
+// // @ID GetSitesInInfra
+// // @Summary Get sites in Infra
+// // @Description Get sites in Infra
 // // @Tags [Infra Resource] SQL Database Management (under development)
 // // @Accept  json
 // // @Produce  json
 // // @Param nsId path string true "Namespace ID" default(default)
-// // @Param mciId path string true "MCI ID" default(mci01)
+// // @Param infraId path string true "Infra ID" default(infra01)
 // // @Success 200 {object} model.SitesInfo "OK"
 // // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// // @Router /ns/{nsId}/mci/{mciId}/site [get]
-// func RestGetSitesInMci(c echo.Context) error {
+// // @Router /ns/{nsId}/infra/{infraId}/site [get]
+// func RestGetSitesInInfra(c echo.Context) error {
 
 // 	nsId := c.Param("nsId")
 // 	err := common.CheckString(nsId)
@@ -50,15 +50,15 @@ import (
 // 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 // 	}
 
-// 	mciId := c.Param("mciId")
-// 	err = common.CheckString(mciId)
+// 	infraId := c.Param("infraId")
+// 	err = common.CheckString(infraId)
 // 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+// 		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 // 		log.Warn().Err(err).Msgf(errMsg.Error())
 // 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 // 	}
 
-// 	SitesInfo, err := ExtractSitesInfoFromMciInfo(nsId, mciId)
+// 	SitesInfo, err := ExtractSitesInfoFromInfraInfo(nsId, infraId)
 // 	if err != nil {
 // 		log.Err(err).Msg("")
 // 		res := model.SimpleMsg{
@@ -70,9 +70,9 @@ import (
 // 	return c.JSON(http.StatusOK, SitesInfo)
 // }
 
-// func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
-// 	// Get MCI info
-// 	mciInfo, err := infra.GetMciInfo(nsId, mciId)
+// func ExtractSitesInfoFromInfraInfo(nsId, infraId string) (*model.SitesInfo, error) {
+// 	// Get Infra info
+// 	infraInfo, err := infra.GetInfraInfo(nsId, infraId)
 // 	if err != nil {
 // 		log.Err(err).Msg("")
 // 		return nil, err
@@ -82,17 +82,17 @@ import (
 // 	checkedVpcs := make(map[string]bool)
 
 // 	// Newly create the SitesInfo structure
-// 	sitesInfo := model.NewSiteInfo(nsId, mciId)
+// 	sitesInfo := model.NewSiteInfo(nsId, infraId)
 
 // 	sitesInAws := []model.SiteDetail{}
 // 	sitesInAzure := []model.SiteDetail{}
 // 	sitesInGcp := []model.SiteDetail{}
 
-// 	for _, vm := range mciInfo.Vm {
+// 	for _, vm := range infraInfo.Vm {
 
 // 		vNetId := vm.VNetId
 // 		if vNetId == "" {
-// 			log.Warn().Msgf("VNet ID is empty for VM ID: %s", vm.Id)
+// 			log.Warn().Msgf("VNet ID is empty for Node ID: %s", vm.Id)
 // 			continue
 // 		}
 
@@ -103,7 +103,7 @@ import (
 
 // 		providerName := vm.ConnectionConfig.ProviderName
 // 		if providerName == "" {
-// 			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
+// 			log.Warn().Msgf("Provider name is empty for Node ID: %s", vm.Id)
 // 			continue
 // 		}
 
@@ -150,7 +150,7 @@ import (
 // 			parts := strings.Split(vm.CspVNetId, "/")
 // 			log.Debug().Msgf("parts: %+v", parts)
 // 			if len(parts) < 9 {
-// 				log.Warn().Msgf("Invalid VNet ID format for Azure VM ID: %s", vm.Id)
+// 				log.Warn().Msgf("Invalid VNet ID format for Azure Node ID: %s", vm.Id)
 // 				continue
 // 			}
 // 			parsedResourceGroupName := parts[4]
@@ -243,10 +243,10 @@ func RestGetAllSqlDB(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	// mciId := c.Param("mciId")
-	// err = common.CheckString(mciId)
+	// infraId := c.Param("infraId")
+	// err = common.CheckString(infraId)
 	// if err != nil {
-	// 	errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+	// 	errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 	// 	log.Warn().Err(err).Msgf(errMsg.Error())
 	// 	return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	// }
@@ -260,14 +260,14 @@ func RestGetAllSqlDB(c echo.Context) error {
 
 	// switch option {
 	// case "InfoList":
-	// 	vpnInfoList, err := resource.GetAllSiteToSiteVPN(nsId, mciId)
+	// 	vpnInfoList, err := resource.GetAllSiteToSiteVPN(nsId, infraId)
 	// 	if err != nil {
 	// 		log.Err(err).Msg("")
 	// 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 	// 	}
 	// 	return c.JSON(http.StatusOK, vpnInfoList)
 	// case "IdList":
-	// 	vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(nsId, mciId)
+	// 	vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(nsId, infraId)
 	// 	if err != nil {
 	// 		log.Err(err).Msg("")
 	// 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -483,7 +483,7 @@ func RestDeleteSqlDB(c echo.Context) error {
 // // @Accept  json
 // // @Produce  json-stream
 // // @Param nsId path string true "Namespace ID" default(default)
-//// // @Param mciId path string true "MCI ID" default(mci01)
+//// // @Param infraId path string true "Infra ID" default(infra01)
 // // @Param vpnId path string true "SQL DB ID" default(sqldb01)
 // // @Param vpnReq body model.RestPostVpnRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
 // // @Success 200 {object} model.SimpleMsg "OK"
@@ -501,10 +501,10 @@ func RestDeleteSqlDB(c echo.Context) error {
 // 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 // 	}
 
-// 	mciId := c.Param("mciId")
-// 	err = common.CheckString(mciId)
+// 	infraId := c.Param("infraId")
+// 	err = common.CheckString(infraId)
 // 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+// 		errMsg := fmt.Errorf("invalid infraId (%s)", infraId)
 // 		log.Warn().Err(err).Msgf(errMsg.Error())
 // 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 // 	}
@@ -540,7 +540,7 @@ func RestDeleteSqlDB(c echo.Context) error {
 // 	// client.SetBasicAuth(apiUser, apiPass)
 
 // 	// epTerrarium := "http://localhost:8055/terrarium"
-// 	// trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
+// 	// trId := fmt.Sprintf("%s-%s-%s", nsId, infraId, vpnId)
 
 // 	// // check readyz
 // 	// method := "GET"

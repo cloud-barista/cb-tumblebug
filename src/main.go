@@ -634,11 +634,11 @@ func addIndexes() error {
 // @tag.name [Admin] Provisioning History and Analytics
 // @tag.description Provisioning event history and risk analytics
 
-// @tag.name [MC-Infra] MCI Provisioning and Management
+// @tag.name [MC-Infra] Infra Provisioning and Management
 // @tag.description Multi-Cloud Infrastructure provisioning, lifecycle management, and operations
 
-// @tag.name [MC-Infra] MCI Remote Command
-// @tag.description Execute commands or transfer files remotely on VMs in MCI via SSH
+// @tag.name [MC-Infra] Infra Remote Command
+// @tag.description Execute commands or transfer files remotely on VMs in Infra via SSH
 
 // @tag.name [Kubernetes] Cluster Management
 // @tag.description Kubernetes cluster provisioning and management
@@ -691,21 +691,21 @@ func addIndexes() error {
 // @tag.name [Admin] API Request Management
 // @tag.description API request tracking and management
 
-// @tag.name [MC-Infra] MCI Performance Benchmarking (WIP)
-// @tag.description Performance benchmark operations for MCI (Work In Progress)
+// @tag.name [MC-Infra] Infra Performance Benchmarking (WIP)
+// @tag.description Performance benchmark operations for Infra (Work In Progress)
 
-// @tag.name [MC-Infra] MCI Orchestration Management (WIP)
-// @tag.description MCI orchestration policy and automation (Work In Progress)
+// @tag.name [MC-Infra] Infra Orchestration Management (WIP)
+// @tag.description Infra orchestration policy and automation (Work In Progress)
 
-// @tag.name [MC-Infra] MCI Resource Monitor (for developer)
-// @tag.description MCI resource monitoring operations for developers
+// @tag.name [MC-Infra] Infra Resource Monitor (for developer)
+// @tag.description Infra resource monitoring operations for developers
 
 // @tag.name [Test] Stream Response
 // @tag.description Test endpoints for streaming responses
 
 func main() {
 
-	//Ticker for MCI Orchestration Policy
+	//Ticker for Infra Orchestration Policy
 	log.Info().Msg("main: initiating multi-cloud orchestration")
 	autoControlDuration, _ := strconv.Atoi(model.AutocontrolDurationMs) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))

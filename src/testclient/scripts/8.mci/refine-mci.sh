@@ -1,18 +1,18 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## 8. VM: Refine MCI (remove failed VMs)"
+echo "## 8. VM: Refine Infra (remove failed VMs)"
 echo "####################################################################"
 
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 else
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-echo "${MCIID}"
+echo "${InfraID}"
 
 ControlCmd=refine
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq '.'
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/infra/${InfraID}?action=${ControlCmd} | jq '.'

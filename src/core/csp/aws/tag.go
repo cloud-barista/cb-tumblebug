@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/rs/zerolog/log"
 )
@@ -32,11 +33,11 @@ import (
 //   - store a CB-Spider NameId as cspResourceId (e.g., sshKey stores the key name, not key-xxx)
 //   - are not EC2 resources (e.g., nlb, k8s)
 var ec2TaggableTypes = map[string]bool{
-	"vm":            true, // EC2 instance ID (i-xxx)
-	"vNet":          true, // VPC ID (vpc-xxx)
-	"subnet":        true, // Subnet ID (subnet-xxx)
-	"securityGroup": true, // Security Group ID (sg-xxx)
-	"dataDisk":      true, // EBS Volume ID (vol-xxx)
+	model.StrNode:          true, // EC2 instance ID (i-xxx)
+	model.StrVNet:          true, // VPC ID (vpc-xxx)
+	model.StrSubnet:        true, // Subnet ID (subnet-xxx)
+	model.StrSecurityGroup: true, // Security Group ID (sg-xxx)
+	model.StrDataDisk:      true, // EBS Volume ID (vol-xxx)
 }
 
 func init() {

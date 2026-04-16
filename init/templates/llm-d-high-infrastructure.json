@@ -1,16 +1,16 @@
 {
-  "resourceType": "mci",
+  "resourceType": "infra",
   "name": "llm-d-high",
   "description": "llm-d-high",
-  "mciDynamicReq": {
-    "subGroups": [
+  "infraDynamicReq": {
+    "nodeGroups": [
       {
         "name": "control",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "label": {
           "role": "control"
         },
-        "description": "Dynamically added via CB-MapUI Scale Out MCI",
+        "description": "Dynamically added via CB-MapUI Scale Out Infra",
         "specId": "azure+australiaeast+standard_b8als_v2",
         "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202602250",
         "rootDiskType": "PremiumSSD",
@@ -19,7 +19,7 @@
       },
       {
         "name": "node-gpu",
-        "subGroupSize": 1,
+        "nodeGroupSize": 1,
         "label": {
           "accelerator": "gpu",
           "role": "node"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## update-dns-for-mci-ip (parameters: -x HostedZoneID -y RecordName)"
+echo "## update-dns-for-infra-ip (parameters: -x HostedZoneID -y RecordName)"
 echo "####################################################################"
 
 SECONDS=0
@@ -22,7 +22,7 @@ then
 fi
 
 if [ "${INDEX}" == "0" ]; then
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 fi
 
 if [ -z "$HostedZoneID" ]; then
@@ -33,8 +33,8 @@ if [ -z "$HostedZoneID" ]; then
 	exit
 fi
 
-MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
-VMARRAY=$(jq -r '.status.vm' <<<"$MCIINFO")
+InfraINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}?option=status)
+VMARRAY=$(jq -r '.status.vm' <<<"$InfraINFO")
 
 echo "VMARRAY: $VMARRAY"
 

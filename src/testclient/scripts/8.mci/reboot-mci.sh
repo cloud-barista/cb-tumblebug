@@ -1,24 +1,24 @@
 #!/bin/bash
 
-#function reboot_mci() {
+#function reboot_infra() {
 
 echo "####################################################################"
-echo "## 8. VM: Reboot MCI"
+echo "## 8. VM: Reboot Infra"
 echo "####################################################################"
 
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 else
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-echo "${MCIID}"
+echo "${InfraID}"
 
 ControlCmd=reboot
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq '.'
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/infra/${InfraID}?action=${ControlCmd} | jq '.'
 
 #}
 
-#reboot_mci
+#reboot_infra

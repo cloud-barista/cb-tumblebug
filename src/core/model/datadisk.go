@@ -75,7 +75,7 @@ type SpiderDiskInfo struct {
 	IId IID // {NameId, SystemId}
 
 	Status  DiskStatus // DiskCreating | DiskAvailable | DiskAttached | DiskDeleting | DiskError
-	OwnerVM IID        // When the Status is DiskAttached
+	OwnerNode IID        // When the Status is DiskAttached
 
 	CreatedTime  time.Time
 	KeyValueList []KeyValue
@@ -94,8 +94,8 @@ type DataDiskReq struct {
 	CspResourceId string `json:"cspResourceId"`
 }
 
-// DataDiskVmReq is a struct to handle 'Provisioning dataDisk to VM' request toward CB-Tumblebug.
-type DataDiskVmReq struct {
+// DataDiskNodeReq is a struct to handle 'Provisioning dataDisk to Node' request toward CB-Tumblebug.
+type DataDiskNodeReq struct {
 	Name        string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
 	DiskType    string `json:"diskType" example:"default"`
 	DiskSize    int    `json:"diskSize" validate:"required" example:"77"` // Disk size in GB
@@ -122,9 +122,9 @@ type DataDiskInfo struct {
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 
 	DiskType             string     `json:"diskType" example:"standard"`
-	DiskSize             int        `json:"diskSize" example:"77"` // Disk size in GB
+	DiskSize             int        `json:"diskSize" example:"77"`      // Disk size in GB
 	Status               DiskStatus `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
-	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"`
+	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/infra/infra01/node/aws-ap-southeast-1-1"`
 	CreatedTime          time.Time  `json:"createdTime,omitempty" example:"2022-10-12T05:09:51.05Z"`
 	KeyValueList         []KeyValue `json:"keyValueList,omitempty"`
 	Description          string     `json:"description,omitempty" example:"Available"`

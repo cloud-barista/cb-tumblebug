@@ -47,11 +47,11 @@ const (
 	LabelUid                string = "sys.uid"
 	LabelCspResourceId      string = "sys.cspResourceId"
 	LabelCspResourceName    string = "sys.cspResourceName"
-	LabelMciId              string = "sys.mciId"
-	LabelMciName            string = "sys.mciName"
-	LabelMciUid             string = "sys.mciUid"
-	LabelMciDescription     string = "sys.mciDescription"
-	LabelSubGroupId         string = "sys.subGroupId"
+	LabelInfraId            string = "sys.infraId"
+	LabelInfraName          string = "sys.infraName"
+	LabelInfraUid           string = "sys.infraUid"
+	LabelInfraDescription   string = "sys.infraDescription"
+	LabelNodeGroupId        string = "sys.nodeGroupId"
 	LabelCreatedTime        string = "sys.createdTime"
 	LabelConnectionName     string = "sys.connectionName"
 	LabelDescription        string = "sys.description"
@@ -78,20 +78,20 @@ func GetLabelConstantsMap() map[string]string {
 	return map[string]string{
 		LabelManager:            "cb-tumblebug",
 		LabelNamespace:          "default",
-		LabelLabelType:          StrMCI,
-		LabelId:                 "mci-1234",
-		LabelName:               "mci-1234",
+		LabelLabelType:          StrInfra,
+		LabelId:                 "infra-1234",
+		LabelName:               "infra-1234",
 		LabelUid:                "wef12awefadf1221edcf",
-		LabelCspResourceId:      "csp-vm-1234",
-		LabelCspResourceName:    "csp-vm-1234",
-		LabelMciId:              "mci-1234",
-		LabelSubGroupId:         "sg-1234",
+		LabelCspResourceId:      "csp-node-1234",
+		LabelCspResourceName:    "csp-node-1234",
+		LabelInfraId:            "infra-1234",
+		LabelNodeGroupId:        "sg-1234",
 		LabelCreatedTime:        "2021-01-01T00:00:00Z",
 		LabelConnectionName:     "connection-1234",
 		LabelDescription:        "Description",
 		LabelRegistered:         "true",
 		LabelPurpose:            "testing",
-		LabelDeploymentType:     "vm",
+		LabelDeploymentType:     "node",
 		LabelDiskType:           "HDD",
 		LabelDiskSize:           "10",
 		LabelVersion:            "1.0",
@@ -114,9 +114,9 @@ func GetLabelTypes() []string {
 		StrSubnet,
 		StrDataDisk,
 		StrNLB,
-		StrVM,
-		StrMCI,
-		StrSubGroup,
+		StrNode,
+		StrInfra,
+		StrNodeGroup,
 		StrK8s,
 		StrKubernetes,
 		StrContainer,

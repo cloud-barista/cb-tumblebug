@@ -36,8 +36,8 @@ import (
 	"github.com/openbao/openbao/api/v2"
 )
 
-// vmIPLocation holds a VM's public IP and geographic location.
-type vmIPLocation struct {
+// nodeIPLocation holds a VM's public IP and geographic location.
+type nodeIPLocation struct {
 	PublicIP   string
 	Latitude   float64
 	Longitude  float64
@@ -65,7 +65,7 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 
 	// 1. Validate mutual exclusivity of IP sources
 	count := 0
-	if req.SetBy.Mci != nil {
+	if req.SetBy.Infra != nil {
 		count++
 	}
 	if req.SetBy.Label != nil {
@@ -76,50 +76,50 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 	}
 
 	if count == 0 {
-		return model.SimpleMsg{}, fmt.Errorf("at least one IP source (Mci, Label, or Ips) must be provided in 'setBy'")
+		return model.SimpleMsg{}, fmt.Errorf("at least one IP source (Infra, Label, or Ips) must be provided in 'setBy'")
 	}
 	if count > 1 {
-		return model.SimpleMsg{}, fmt.Errorf("only one IP source (Mci, Label, or Ips) can be provided at a time in 'setBy'")
+		return model.SimpleMsg{}, fmt.Errorf("only one IP source (Infra, Label, or Ips) can be provided at a time in 'setBy'")
 	}
 
-	// Geoproximity requires MCI or Label (need location data)
+	// Geoproximity requires Infra or Label (need location data)
 	if req.RoutingPolicy == "geoproximity" && len(req.SetBy.Ips) > 0 {
-		return model.SimpleMsg{}, fmt.Errorf("geoproximity routing requires MCI or Label source (location data needed); manual IPs are not supported")
+		return model.SimpleMsg{}, fmt.Errorf("geoproximity routing requires Infra or Label source (location data needed); manual IPs are not supported")
 	}
 
 	// 2. Resolve IPs (and locations for geoproximity)
 	var ips []string
-	var vmLocs []vmIPLocation
+	var nodeLocs []nodeIPLocation
 
-	if req.SetBy.Mci != nil {
+	if req.SetBy.Infra != nil {
 		if req.RoutingPolicy == "geoproximity" {
-			locs, err := getVmIPLocsByMci(req.SetBy.Mci.NsId, req.SetBy.Mci.MciId)
+			locs, err := getNodeIPLocsByInfra(req.SetBy.Infra.NsId, req.SetBy.Infra.InfraId)
 			if err != nil {
 				return model.SimpleMsg{}, err
 			}
-			vmLocs = append(vmLocs, locs...)
+			nodeLocs = append(nodeLocs, locs...)
 			for _, loc := range locs {
 				ips = append(ips, loc.PublicIP)
 			}
 		} else {
-			mciIps, err := getVmIpsByMci(req.SetBy.Mci.NsId, req.SetBy.Mci.MciId)
+			infraIps, err := getNodeIpsByInfra(req.SetBy.Infra.NsId, req.SetBy.Infra.InfraId)
 			if err != nil {
 				return model.SimpleMsg{}, err
 			}
-			ips = append(ips, mciIps...)
+			ips = append(ips, infraIps...)
 		}
 	} else if req.SetBy.Label != nil {
 		if req.RoutingPolicy == "geoproximity" {
-			locs, err := getVmIPLocsByLabel(req.SetBy.Label.NsId, req.SetBy.Label.LabelSelector)
+			locs, err := getNodeIPLocsByLabel(req.SetBy.Label.NsId, req.SetBy.Label.LabelSelector)
 			if err != nil {
 				return model.SimpleMsg{}, err
 			}
-			vmLocs = append(vmLocs, locs...)
+			nodeLocs = append(nodeLocs, locs...)
 			for _, loc := range locs {
 				ips = append(ips, loc.PublicIP)
 			}
 		} else {
-			labelIps, err := getVmIpsByLabel(req.SetBy.Label.NsId, req.SetBy.Label.LabelSelector)
+			labelIps, err := getNodeIpsByLabel(req.SetBy.Label.NsId, req.SetBy.Label.LabelSelector)
 			if err != nil {
 				return model.SimpleMsg{}, err
 			}
@@ -130,8 +130,8 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 	}
 
 	if req.RoutingPolicy == "geoproximity" {
-		log.Debug().Int("count", len(vmLocs)).Msg("[DNS] VM IP+Location entries resolved for geoproximity")
-		if len(vmLocs) == 0 {
+		log.Debug().Int("count", len(nodeLocs)).Msg("[DNS] VM IP+Location entries resolved for geoproximity")
+		if len(nodeLocs) == 0 {
 			return model.SimpleMsg{}, fmt.Errorf("no VMs with public IP found for geoproximity routing")
 		}
 	} else {
@@ -158,14 +158,14 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 
 	// 4. Upsert based on routing policy
 	if req.RoutingPolicy == "geoproximity" {
-		log.Debug().Str("recordName", req.RecordName).Int("vmCount", len(vmLocs)).Msg("[DNS] Upserting geoproximity records")
-		err = upsertGeoproximityRecords(ctx, r53, zoneID, req.RecordName, req.RecordType, req.TTL, vmLocs)
+		log.Debug().Str("recordName", req.RecordName).Int("nodeCount", len(nodeLocs)).Msg("[DNS] Upserting geoproximity records")
+		err = upsertGeoproximityRecords(ctx, r53, zoneID, req.RecordName, req.RecordType, req.TTL, nodeLocs)
 		if err != nil {
 			log.Error().Err(err).Msg("[DNS] Failed to upsert geoproximity records")
 			return model.SimpleMsg{}, fmt.Errorf("failed to update geoproximity records: %w", err)
 		}
-		log.Info().Str("recordName", req.RecordName).Int("vmCount", len(vmLocs)).Msg("[DNS] Successfully updated geoproximity Route53 records")
-		return model.SimpleMsg{Message: fmt.Sprintf("Successfully updated %d geoproximity records for %s", len(vmLocs), req.RecordName)}, nil
+		log.Info().Str("recordName", req.RecordName).Int("nodeCount", len(nodeLocs)).Msg("[DNS] Successfully updated geoproximity Route53 records")
+		return model.SimpleMsg{Message: fmt.Sprintf("Successfully updated %d geoproximity records for %s", len(nodeLocs), req.RecordName)}, nil
 	}
 
 	// Simple routing
@@ -530,8 +530,8 @@ func uniqueStringSlice(slice []string) []string {
 	return list
 }
 
-func getVmIpsByMci(nsId, mciId string) ([]string, error) {
-	key := "/ns/" + nsId + "/mci/" + mciId + "/vm/"
+func getNodeIpsByInfra(nsId, infraId string) ([]string, error) {
+	key := "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrNode + "/"
 	kvList, err := kvstore.GetKvList(key)
 	if err != nil {
 		return nil, err
@@ -539,83 +539,83 @@ func getVmIpsByMci(nsId, mciId string) ([]string, error) {
 
 	var ips []string
 	for _, kv := range kvList {
-		var vm model.VmInfo
-		err = json.Unmarshal([]byte(kv.Value), &vm)
-		if err == nil && vm.PublicIP != "" {
-			ips = append(ips, vm.PublicIP)
+		var node model.NodeInfo
+		err = json.Unmarshal([]byte(kv.Value), &node)
+		if err == nil && node.PublicIP != "" {
+			ips = append(ips, node.PublicIP)
 		}
 	}
 	return ips, nil
 }
 
-func getVmIPLocsByMci(nsId, mciId string) ([]vmIPLocation, error) {
-	key := "/ns/" + nsId + "/mci/" + mciId + "/vm/"
+func getNodeIPLocsByInfra(nsId, infraId string) ([]nodeIPLocation, error) {
+	key := "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrNode + "/"
 	kvList, err := kvstore.GetKvList(key)
 	if err != nil {
 		return nil, err
 	}
 
-	var locs []vmIPLocation
+	var locs []nodeIPLocation
 	for _, kv := range kvList {
-		var vm model.VmInfo
-		err = json.Unmarshal([]byte(kv.Value), &vm)
-		if err == nil && vm.PublicIP != "" {
-			locs = append(locs, vmIPLocation{
-				PublicIP:   vm.PublicIP,
-				Latitude:   vm.Location.Latitude,
-				Longitude:  vm.Location.Longitude,
-				Identifier: vm.Id,
+		var node model.NodeInfo
+		err = json.Unmarshal([]byte(kv.Value), &node)
+		if err == nil && node.PublicIP != "" {
+			locs = append(locs, nodeIPLocation{
+				PublicIP:   node.PublicIP,
+				Latitude:   node.Location.Latitude,
+				Longitude:  node.Location.Longitude,
+				Identifier: node.Id,
 			})
-			log.Debug().Str("vmId", vm.Id).Str("ip", vm.PublicIP).Float64("lat", vm.Location.Latitude).Float64("lng", vm.Location.Longitude).Msg("[DNS] VM location resolved")
+			log.Debug().Str("nodeId", node.Id).Str("ip", node.PublicIP).Float64("lat", node.Location.Latitude).Float64("lng", node.Location.Longitude).Msg("[DNS] VM location resolved")
 		}
 	}
 	return locs, nil
 }
 
-func getVmIpsByLabel(nsId, labelSelector string) ([]string, error) {
+func getNodeIpsByLabel(nsId, labelSelector string) ([]string, error) {
 	log.Debug().Str("nsId", nsId).Str("labelSelector", labelSelector).Msg("[DNS] Getting VM IPs by label")
 
 	if nsId != "" {
 		labelSelector = model.LabelNamespace + "=" + nsId + "," + labelSelector
 	}
 
-	resources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)
+	resources, err := label.GetResourcesByLabelSelector(model.StrNode, labelSelector)
 	if err != nil {
 		return nil, err
 	}
 
 	var ips []string
 	for _, res := range resources {
-		if vm, ok := res.(*model.VmInfo); ok {
-			if vm.PublicIP != "" {
-				ips = append(ips, vm.PublicIP)
+		if node, ok := res.(*model.NodeInfo); ok {
+			if node.PublicIP != "" {
+				ips = append(ips, node.PublicIP)
 			}
 		}
 	}
 	return ips, nil
 }
 
-func getVmIPLocsByLabel(nsId, labelSelector string) ([]vmIPLocation, error) {
+func getNodeIPLocsByLabel(nsId, labelSelector string) ([]nodeIPLocation, error) {
 	log.Debug().Str("nsId", nsId).Str("labelSelector", labelSelector).Msg("[DNS] Getting VM IP+Locations by label")
 
 	if nsId != "" {
 		labelSelector = model.LabelNamespace + "=" + nsId + "," + labelSelector
 	}
 
-	resources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)
+	resources, err := label.GetResourcesByLabelSelector(model.StrNode, labelSelector)
 	if err != nil {
 		return nil, err
 	}
 
-	var locs []vmIPLocation
+	var locs []nodeIPLocation
 	for _, res := range resources {
-		if vm, ok := res.(*model.VmInfo); ok {
-			if vm.PublicIP != "" {
-				locs = append(locs, vmIPLocation{
-					PublicIP:   vm.PublicIP,
-					Latitude:   vm.Location.Latitude,
-					Longitude:  vm.Location.Longitude,
-					Identifier: vm.Id,
+		if node, ok := res.(*model.NodeInfo); ok {
+			if node.PublicIP != "" {
+				locs = append(locs, nodeIPLocation{
+					PublicIP:   node.PublicIP,
+					Latitude:   node.Location.Latitude,
+					Longitude:  node.Location.Longitude,
+					Identifier: node.Id,
 				})
 			}
 		}
@@ -746,7 +746,7 @@ func findHostedZone(ctx context.Context, r53 *route53.Client, domain string) (st
 	return "", "", fmt.Errorf("no hosted zone found for domain %q", domain)
 }
 
-func upsertGeoproximityRecords(ctx context.Context, r53 *route53.Client, zoneID, name, rtype string, ttl int64, vmLocs []vmIPLocation) error {
+func upsertGeoproximityRecords(ctx context.Context, r53 *route53.Client, zoneID, name, rtype string, ttl int64, nodeLocs []nodeIPLocation) error {
 	if ttl == 0 {
 		ttl = 300
 	}
@@ -759,14 +759,14 @@ func upsertGeoproximityRecords(ctx context.Context, r53 *route53.Client, zoneID,
 	}
 	groupOrder := []coordKey{}
 	groups := map[coordKey]*coordGroup{}
-	for _, vm := range vmLocs {
-		lat := strconv.FormatFloat(vm.Latitude, 'f', 2, 64)
-		lng := strconv.FormatFloat(vm.Longitude, 'f', 2, 64)
+	for _, node := range nodeLocs {
+		lat := strconv.FormatFloat(node.Latitude, 'f', 2, 64)
+		lng := strconv.FormatFloat(node.Longitude, 'f', 2, 64)
 		key := coordKey{lat, lng}
 		if g, ok := groups[key]; ok {
-			g.ips = append(g.ips, vm.PublicIP)
+			g.ips = append(g.ips, node.PublicIP)
 		} else {
-			groups[key] = &coordGroup{lat: lat, lng: lng, ips: []string{vm.PublicIP}}
+			groups[key] = &coordGroup{lat: lat, lng: lng, ips: []string{node.PublicIP}}
 			groupOrder = append(groupOrder, key)
 		}
 	}

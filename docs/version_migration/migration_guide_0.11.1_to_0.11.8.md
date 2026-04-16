@@ -707,7 +707,7 @@ const newRecommendation = await api.post('/recommendSpec', {
 
 ### ❌ 제거된 스키마
 - `model.DeploymentPlan` - 더 이상 사용되지 않음
-- `model.TbSubGroupDynamicReq` - 통합됨
+- `model.TbNodeGroupDynamicReq` - 통합됨
 - `model.TbVmReq` - 통합됨
 
 ## 🔧 호환성 매트릭스
@@ -743,9 +743,9 @@ const newRecommendation = await api.post('/recommendSpec', {
 - "commonImage": "..."            → + "imageId": "..."
 
 # 응답 스키마 통합 및 정리
-- model.TbSubGroupDynamicReq           ← 기존 개별 스키마
+- model.TbNodeGroupDynamicReq           ← 기존 개별 스키마
 - model.TbVmReq                  ← 기존 개별 스키마
-+ model.CreateSubGroupDynamicReq ← 통합된 스키마
++ model.CreateNodeGroupDynamicReq ← 통합된 스키마
 ```
 
 ## 🎯 권장 마이그레이션 순서

@@ -5,7 +5,7 @@
 `make init` is the primary initialization command for CB-Tumblebug. It orchestrates a two-phase process that:
 
 1. **Phase 1 — OpenBao Credential Registration**: Decrypts `credentials.yaml.enc` and stores CSP credentials into OpenBao (Vault-compatible secrets manager), making them available to MC-Terrarium's OpenTofu/Terraform templates.
-2. **Phase 2 — Tumblebug Initialization**: Registers the same credentials into CB-Tumblebug (with end-to-end hybrid encryption), then loads cloud asset data (VM specs, OS images, pricing) and infrastructure templates into the system.
+2. **Phase 2 — Tumblebug Initialization**: Registers the same credentials into CB-Tumblebug (with end-to-end hybrid encryption), then loads cloud asset data (Compute specs, OS images, pricing) and infrastructure templates into the system.
 
 After `make init` completes, CB-Tumblebug is fully operational for multi-cloud infrastructure provisioning.
 
@@ -126,7 +126,7 @@ sequenceDiagram
     box Local Host
         participant Script as multi-init.sh<br/>init.sh / init.py
         participant EncFile as credentials.yaml.enc<br/>(~/.cloud-barista/)
-        participant Templates as init/templates/<br/>(MCI / vNet / SG)
+        participant Templates as init/templates/<br/>(Infra / vNet / SG)
     end
 
     box Docker Compose Environment
@@ -204,7 +204,7 @@ sequenceDiagram
             TB-->>Script: patch complete
         else Option B – Fetch from CSPs, skip Azure (~20 min)
             Script->>TB: GET /tumblebug/loadAssets
-            TB->>Spider: Fetch VM specs per region (parallel)
+            TB->>Spider: Fetch compute specs per region (parallel)
             TB->>Spider: Fetch OS images per region (parallel)
             Spider->>CSPs: Cloud API calls
             CSPs-->>Spider: Spec & image data
@@ -239,7 +239,7 @@ sequenceDiagram
         loop For each JSON file in init/templates/
             Script->>TB: POST /tumblebug/ns  (ensure namespace)
             TB-->>Script: namespace ready
-            Script->>TB: POST /tumblebug/ns/{nsId}/template/{type}<br/>(type: mci | vNet | securityGroup)
+            Script->>TB: POST /tumblebug/ns/{nsId}/template/{type}<br/>(type: infra | vNet | securityGroup)
             TB-->>Script: template stored
         end
     end
@@ -260,8 +260,8 @@ sequenceDiagram
 | **OpenBao** (`:8200`) | Stores CSP credentials in KV v2; later consumed by MC-Terrarium's OpenTofu templates |
 | **CB-Tumblebug** (`:1323`) | Receives encrypted credentials, manages connections, triggers asset loading, stores templates |
 | **CB-Spider** (`:1024`) | Registers connection configs per region, probes CSP APIs to verify connectivity |
-| **PostgreSQL** (`:5432`) | Stores loaded VM specs, OS images, and pricing data |
-| **CSPs** | Source of truth for connection verification, VM specs, OS images, and pricing |
+| **PostgreSQL** (`:5432`) | Stores loaded Compute specs, OS images, and pricing data |
+| **CSPs** | Source of truth for connection verification, Compute specs, OS images, and pricing |
 
 ---
 
@@ -338,7 +338,7 @@ flowchart TD
         subgraph TplLoad["Template Loading"]
             TplLoop["For each JSON in init/templates/"]
             EnsureNS["POST /tumblebug/ns\n(ensure namespace exists)"]
-            PostTpl["POST /tumblebug/ns/{nsId}/template/{type}\ntype: mci | vNet | securityGroup"]
+            PostTpl["POST /tumblebug/ns/{nsId}/template/{type}\ntype: infra | vNet | securityGroup"]
             TplLoop --> EnsureNS --> PostTpl --> TplLoop
         end
 

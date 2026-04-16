@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package infra
 
 import (
@@ -36,29 +36,29 @@ type JSONResult struct {
 // TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention Need to be revised.
 
-// RestGetMci godoc
-// @ID GetMci
-// @Summary Get MCI object (option: status, accessInfo, vmId)
-// @Description Get MCI object (option: status, accessInfo, vmId)
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetInfra godoc
+// @ID GetInfra
+// @Summary Get Infra object (option: status, accessInfo, nodeId)
+// @Description Get Infra object (option: status, accessInfo, nodeId)
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param option query string false "Option" Enums(default, id, status, accessinfo)
 // @Param filterKey query string false "(For option=id) Field key for filtering (ex: connectionName)"
 // @Param filterVal query string false "(For option=id) Field value for filtering (ex: aws-ap-northeast-2)"
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
-// @success 200 {object} JSONResult{[DEFAULT]=model.MciInfo,[ID]=model.IdList,[STATUS]=model.MciStatusInfo,[AccessInfo]=model.MciAccessInfo} "Different return structures by the given action param"
+// @success 200 {object} JSONResult{[DEFAULT]=model.InfraInfo,[ID]=model.IdList,[STATUS]=model.InfraStatusInfo,[AccessInfo]=model.InfraAccessInfo} "Different return structures by the given action param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId} [get]
-func RestGetMci(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId} [get]
+func RestGetInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	option := c.QueryParam("option")
 	filterKey := c.QueryParam("filterKey")
@@ -68,17 +68,17 @@ func RestGetMci(c echo.Context) error {
 	if option == "id" {
 		content := model.IdList{}
 		var err error
-		content.IdList, err = infra.ListVmByFilter(nsId, mciId, filterKey, filterVal)
+		content.IdList, err = infra.ListNodeByFilter(nsId, infraId, filterKey, filterVal)
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else if option == "status" {
 
-		result, err := infra.GetMciStatus(nsId, mciId)
+		result, err := infra.GetInfraStatus(nsId, infraId)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 
 		var content struct {
-			Result *model.MciStatusInfo `json:"status"`
+			Result *model.InfraStatusInfo `json:"status"`
 		}
 		content.Result = result
 
@@ -86,187 +86,187 @@ func RestGetMci(c echo.Context) error {
 
 	} else if option == "accessinfo" {
 
-		result, err := infra.GetMciAccessInfo(nsId, mciId, accessInfoOption)
+		result, err := infra.GetInfraAccessInfo(nsId, infraId, accessInfoOption)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	} else {
 
-		result, err := infra.GetMciInfo(nsId, mciId)
+		result, err := infra.GetInfraInfo(nsId, infraId)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	}
 }
 
-// RestGetMciReqFromMci godoc
-// @ID GetMciReqFromMci
-// @Summary Extract MCI creation request configuration from an existing MCI
-// @Description Reconstruct an MCI dynamic creation request body from an existing MCI's information.
+// RestGetInfraReqFromInfra godoc
+// @ID GetInfraReqFromInfra
+// @Summary Extract Infra creation request configuration from an existing Infra
+// @Description Reconstruct an Infra dynamic creation request body from an existing Infra's information.
 // @Description Returns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)
-// @Description are auto-created, making it easy to clone or recreate a similar MCI configuration.
+// @Description are auto-created, making it easy to clone or recreate a similar Infra configuration.
 // @Description
 // @Description **Template Option:**
 // @Description When the `template` query parameter is provided, the extracted configuration is
-// @Description saved as a reusable MCI Dynamic Template with the given name.
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Description saved as a reusable Infra Dynamic Template with the given name.
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param template query string false "If provided, save the extracted config as a template with this name"
-// @Success 200 {object} JSONResult{[DEFAULT]=model.MciDynamicReq,[TEMPLATE]=model.MciDynamicTemplateInfo} "Without template param: extracted MCI config / With template param: created template info"
+// @Success 200 {object} JSONResult{[DEFAULT]=model.InfraDynamicReq,[TEMPLATE]=model.InfraDynamicTemplateInfo} "Without template param: extracted Infra config / With template param: created template info"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/configCopy [get]
-func RestGetMciReqFromMci(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/configCopy [get]
+func RestGetInfraReqFromInfra(c echo.Context) error {
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	templateName := c.QueryParam("template")
 
 	if templateName != "" {
 		// Extract and create template
-		result, err := infra.ExtractAndCreateTemplate(nsId, mciId, templateName)
+		result, err := infra.ExtractAndCreateTemplate(nsId, infraId, templateName)
 		return clientManager.EndRequestWithLog(c, err, result)
 	}
 
-	result, err := infra.ExtractMciDynamicReqFromMciInfo(nsId, mciId)
+	result, err := infra.ExtractInfraDynamicReqFromInfraInfo(nsId, infraId)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestGetAllMciResponse is a response structure for RestGetAllMci
-type RestGetAllMciResponse struct {
-	Mci []model.MciInfo `json:"mci"`
+// RestGetAllInfraResponse is a response structure for RestGetAllInfra
+type RestGetAllInfraResponse struct {
+	Infra []model.InfraInfo `json:"infra"`
 }
 
-// RestGetAllMciStatusResponse is a response structure for RestGetAllMciStatus
-type RestGetAllMciStatusResponse struct {
-	Mci []model.MciStatusInfo `json:"mci"`
+// RestGetAllInfraStatusResponse is a response structure for RestGetAllInfraStatus
+type RestGetAllInfraStatusResponse struct {
+	Infra []model.InfraStatusInfo `json:"infra"`
 }
 
-// RestGetAllMci godoc
-// @ID GetAllMci
-// @Summary List all MCIs or MCIs' ID
-// @Description List all MCIs or MCIs' ID
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetAllInfra godoc
+// @ID GetAllInfra
+// @Summary List all Infras or Infras' ID
+// @Description List all Infras or Infras' ID
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id, simple, status)
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMciResponse,[SIMPLE]=RestGetAllMciResponse,[ID]=model.IdList,[STATUS]=RestGetAllMciStatusResponse} "Different return structures by the given option param"
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllInfraResponse,[SIMPLE]=RestGetAllInfraResponse,[ID]=model.IdList,[STATUS]=RestGetAllInfraStatusResponse} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci [get]
-func RestGetAllMci(c echo.Context) error {
+// @Router /ns/{nsId}/infra [get]
+func RestGetAllInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
 	if option == "id" {
-		// return MCI IDs
+		// return Infra IDs
 		content := model.IdList{}
 		var err error
-		content.IdList, err = infra.ListMciId(nsId)
+		content.IdList, err = infra.ListInfraId(nsId)
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else if option == "status" {
-		// return MCI Status objects (diffent with MCI objects)
-		result, err := infra.ListMciStatus(nsId)
+		// return Infra Status objects (diffent with Infra objects)
+		result, err := infra.ListInfraStatus(nsId)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
-		content := RestGetAllMciStatusResponse{}
-		content.Mci = result
+		content := RestGetAllInfraStatusResponse{}
+		content.Infra = result
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else if option == "simple" {
-		// MCI in simple (without VM information)
-		result, err := infra.ListMciInfo(nsId, option)
+		// Infra in simple (without Node information)
+		result, err := infra.ListInfraInfo(nsId, option)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
-		content := RestGetAllMciResponse{}
-		content.Mci = result
+		content := RestGetAllInfraResponse{}
+		content.Infra = result
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else {
-		// MCI in detail (with status information)
-		result, err := infra.ListMciInfo(nsId, "status")
+		// Infra in detail (with status information)
+		result, err := infra.ListInfraInfo(nsId, "status")
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
-		content := RestGetAllMciResponse{}
-		content.Mci = result
+		content := RestGetAllInfraResponse{}
+		content.Infra = result
 		return clientManager.EndRequestWithLog(c, err, content)
 	}
 }
 
 /*
-	function RestPutMci not yet implemented
+	function RestPutInfra not yet implemented
 
-// RestPutMci godoc
-// @ID PutMci
-// @Summary Update MCI
-// @Description Update MCI
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestPutInfra godoc
+// @ID PutInfra
+// @Summary Update Infra
+// @Description Update Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
-// @Param mciInfo body MciInfo true "Details for an MCI object"
-// @Success 200 {object} MciInfo
+// @Param infraInfo body InfraInfo true "Details for an Infra object"
+// @Success 200 {object} InfraInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId} [put]
-func RestPutMci(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId} [put]
+func RestPutInfra(c echo.Context) error {
 	return nil
 }
 */
 
-// RestDelMci godoc
-// @ID DelMci
-// @Summary Delete MCI
-// @Description Delete MCI
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestDelInfra godoc
+// @ID DelInfra
+// @Summary Delete Infra
+// @Description Delete Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param option query string false "Option for delete MCI (support force delete)" Enums(terminate,force)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param option query string false "Option for delete Infra (support force delete)" Enums(terminate,force)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId} [delete]
-func RestDelMci(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId} [delete]
+func RestDelInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	option := c.QueryParam("option")
 
-	content, err := infra.DelMci(nsId, mciId, option)
+	content, err := infra.DelInfra(nsId, infraId, option)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestDelAllMci godoc
-// @ID DelAllMci
-// @Summary Delete all MCIs
-// @Description Delete all MCIs
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestDelAllInfra godoc
+// @ID DelAllInfra
+// @Summary Delete all Infras
+// @Description Delete all Infras
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param option query string false "Option for delete all MCIs (support force object delete, terminate before delete)" Enums(force, terminate)
+// @Param option query string false "Option for delete all Infras (support force object delete, terminate before delete)" Enums(force, terminate)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci [delete]
-func RestDelAllMci(c echo.Context) error {
+// @Router /ns/{nsId}/infra [delete]
+func RestDelAllInfra(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
-	message, err := infra.DelAllMci(nsId, option)
+	message, err := infra.DelAllInfra(nsId, option)
 	result := model.SimpleMsg{Message: message}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
@@ -274,244 +274,244 @@ func RestDelAllMci(c echo.Context) error {
 // TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention needs to be revised.
 
-// RestGetMciVm godoc
-// @ID GetMciVm
-// @Summary Get VM in specified MCI
-// @Description Get VM in specified MCI
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetInfraNode godoc
+// @ID GetInfraNode
+// @Summary Get node in specified Infra
+// @Description Get node in specified Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Param option query string false "Option for MCI" Enums(default, status, idsInDetail, accessinfo)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param nodeId path string true "Node ID" default(g1-1)
+// @Param option query string false "Option for Infra" Enums(default, status, idsInDetail, accessinfo)
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
-// @success 200 {object} JSONResult{[DEFAULT]=model.VmInfo,[STATUS]=model.VmStatusInfo,[IDNAME]=model.IdNameInDetailInfo} "Different return structures by the given option param"
+// @success 200 {object} JSONResult{[DEFAULT]=model.NodeInfo,[STATUS]=model.NodeStatusInfo,[IDNAME]=model.IdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [get]
-func RestGetMciVm(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId} [get]
+func RestGetInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
-	vmId := c.Param("vmId")
+	infraId := c.Param("infraId")
+	nodeId := c.Param("nodeId")
 
 	option := c.QueryParam("option")
 	accessInfoOption := c.QueryParam("accessInfoOption")
 
 	switch option {
 	case "status":
-		result, err := infra.GetMciVmStatus(nsId, mciId, vmId, false)
+		result, err := infra.GetInfraNodeStatus(nsId, infraId, nodeId, false)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	case "idsInDetail":
-		result, err := infra.GetVmIdNameInDetail(nsId, mciId, vmId)
+		result, err := infra.GetNodeIdNameInDetail(nsId, infraId, nodeId)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	case "accessinfo":
-		result, err := infra.GetMciVmAccessInfo(nsId, mciId, vmId, accessInfoOption)
+		result, err := infra.GetInfraNodeAccessInfo(nsId, infraId, nodeId, accessInfoOption)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	default:
-		result, err := infra.GetVmObject(nsId, mciId, vmId)
+		result, err := infra.GetNodeObject(nsId, infraId, nodeId)
 		return clientManager.EndRequestWithLog(c, err, result)
 	}
 }
 
-/* RestPutMciVm function not yet implemented
+/* RestPutInfraNode function not yet implemented
 // RestPutSshKey godoc
 // @ID PutSshKey
-// @Summary Update MCI
-// @Description Update MCI
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Summary Update Infra
+// @Description Update Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Param vmInfo body model.VmInfo true "Details for an VM object"
-// @Success 200 {object} model.VmInfo
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param nodeId path string true "Node ID" default(g1-1)
+// @Param nodeInfo body model.NodeInfo true "Details for a node object"
+// @Success 200 {object} model.NodeInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [put]
-func RestPutMciVm(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId} [put]
+func RestPutInfraNode(c echo.Context) error {
 	return nil
 }
 */
 
-// RestDelMciVm godoc
-// @ID DelMciVm
-// @Summary Delete VM in specified MCI
-// @Description Delete VM in specified MCI
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestDelInfraNode godoc
+// @ID DelInfraNode
+// @Summary Delete node in specified Infra
+// @Description Delete node in specified Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Param option query string false "Option for delete VM (support force delete)" Enums(force)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param nodeId path string true "Node ID" default(g1-1)
+// @Param option query string false "Option for delete node (support force delete)" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [delete]
-func RestDelMciVm(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/node/{nodeId} [delete]
+func RestDelInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
-	vmId := c.Param("vmId")
+	infraId := c.Param("infraId")
+	nodeId := c.Param("nodeId")
 	option := c.QueryParam("option")
 
-	err := infra.DelMciVm(nsId, mciId, vmId, option)
+	err := infra.DelInfraNode(nsId, infraId, nodeId, option)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("Failed to delete the VM info")
+		err := fmt.Errorf("Failed to delete the Node info")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result := map[string]string{"message": "Deleted the VM info"}
+	result := map[string]string{"message": "Deleted the Node info"}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestDeregisterMciVm godoc
-// @ID DeregisterMciVm
-// @Summary Deregister VM in specified MCI
-// @Description Deregister VM from Spider and TB without deleting the actual CSP resource
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestDeregisterInfraNode godoc
+// @ID DeregisterInfraNode
+// @Summary Deregister node in specified Infra
+// @Description Deregister node from Spider and TB without deleting the actual CSP resource
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmId path string true "VM ID" default(g1-1)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param nodeId path string true "Node ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/deregisterResource/mci/{mciId}/vm/{vmId} [delete]
-func RestDeregisterMciVm(c echo.Context) error {
+// @Router /ns/{nsId}/deregisterResource/infra/{infraId}/node/{nodeId} [delete]
+func RestDeregisterInfraNode(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
-	vmId := c.Param("vmId")
+	infraId := c.Param("infraId")
+	nodeId := c.Param("nodeId")
 
-	err := infra.DeregisterMciVm(nsId, mciId, vmId)
+	err := infra.DeregisterInfraNode(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result := map[string]string{"message": "Deregistered the VM info (CSP resource remains intact)"}
+	result := map[string]string{"message": "Deregistered the Node info (CSP resource remains intact)"}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestGetMciGroupVms godoc
-// @ID GetMciGroupVms
-// @Summary List VMs with a SubGroup label in a specified MCI
-// @Description List VMs with a SubGroup label in a specified MCI
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetInfraGroupNodes godoc
+// @ID GetInfraGroupNodes
+// @Summary List nodes with a NodeGroup label in a specified Infra
+// @Description List nodes with a NodeGroup label in a specified Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param subgroupId path string true "subGroup ID" default(g1)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param nodegroupId path string true "nodeGroup ID" default(g1)
 // @Param option query string false "Option" Enums(id)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [get]
-func RestGetMciGroupVms(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId} [get]
+func RestGetInfraGroupNodes(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
-	subgroupId := c.Param("subgroupId")
+	infraId := c.Param("infraId")
+	nodegroupId := c.Param("nodegroupId")
 	//option := c.QueryParam("option")
 
 	content := model.IdList{}
 	var err error
-	content.IdList, err = infra.ListVmBySubGroup(nsId, mciId, subgroupId)
+	content.IdList, err = infra.ListNodeByNodeGroup(nsId, infraId, nodegroupId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestGetMciGroupIds godoc
-// @ID GetMciGroupIds
-// @Summary List SubGroup IDs in a specified MCI
-// @Description List SubGroup IDs in a specified MCI
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetInfraGroupIds godoc
+// @ID GetInfraGroupIds
+// @Summary List NodeGroup IDs in a specified Infra
+// @Description List NodeGroup IDs in a specified Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/subgroup [get]
-func RestGetMciGroupIds(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/nodegroup [get]
+func RestGetInfraGroupIds(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 	//option := c.QueryParam("option")
 
 	content := model.IdList{}
 	var err error
-	content.IdList, err = infra.ListSubGroupId(nsId, mciId)
+	content.IdList, err = infra.ListNodeGroupId(nsId, infraId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestGetMciAssociatedResources godoc
-// @ID GetMciAssociatedResources
-// @Summary Get associated resource ID list for a given MCI
-// @Description Get associated resource ID list for a given MCI (VNet, Subnet, SecurityGroup, SSHKey, etc.)
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestGetInfraAssociatedResources godoc
+// @ID GetInfraAssociatedResources
+// @Summary Get associated resource ID list for a given Infra
+// @Description Get associated resource ID list for a given Infra (VNet, Subnet, SecurityGroup, SSHKey, etc.)
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Success 200 {object} model.MciAssociatedResourceList
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Success 200 {object} model.InfraAssociatedResourceList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/associatedResources [get]
-func RestGetMciAssociatedResources(c echo.Context) error {
+// @Router /ns/{nsId}/infra/{infraId}/associatedResources [get]
+func RestGetInfraAssociatedResources(c echo.Context) error {
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
-	result, err := infra.GetMciAssociatedResources(nsId, mciId)
+	result, err := infra.GetInfraAssociatedResources(nsId, infraId)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestPutMciAssociatedSecurityGroups godoc
-// @ID PutMciAssociatedSecurityGroups
-// @Summary Update all Security Groups associated with a given MCI
-// @Description Update all Security Groups associated with a given MCI. The firewall rules of all Security Groups will be synchronized to match the requested set.
-// @Tags [MC-Infra] MCI Provisioning and Management
+// RestPutInfraAssociatedSecurityGroups godoc
+// @ID PutInfraAssociatedSecurityGroups
+// @Summary Update all Security Groups associated with a given Infra
+// @Description Update all Security Groups associated with a given Infra. The firewall rules of all Security Groups will be synchronized to match the requested set.
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
+// @Param infraId path string true "Infra ID" default(infra01)
 // @Param securityGroupInfo body model.SecurityGroupUpdateReq true "Details for SecurityGroup update (only firewallRules field is used for update)"
 // @Success 200 {array} model.SecurityGroupInfo "Updated Security Group info list with synchronized firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/mci/{mciId}/associatedSecurityGroups [put]
-// @Summary Update all Security Groups associated with a given MCI (Synchronize Firewall Rules)
-// @Description Update all Security Groups associated with a given MCI. The firewall rules of all associated Security Groups will be synchronized to match the requested set.
+// @Router /ns/{nsId}/infra/{infraId}/associatedSecurityGroups [put]
+// @Summary Update all Security Groups associated with a given Infra (Synchronize Firewall Rules)
+// @Description Update all Security Groups associated with a given Infra. The firewall rules of all associated Security Groups will be synchronized to match the requested set.
 // @Description
 // @Description This API will add missing rules and delete extra rules so that each Security Group's rules become identical to the requested set.
 // @Description Only firewall rules are updated; other metadata (name, description, etc.) is not changed.
 // @Description
 // @Description Usage:
-// @Description Use this API to update (synchronize) the firewall rules of all Security Groups associated with the specified MCI. The rules in the request body will become the only rules in each Security Group after the operation.
+// @Description Use this API to update (synchronize) the firewall rules of all Security Groups associated with the specified Infra. The rules in the request body will become the only rules in each Security Group after the operation.
 // @Description - All existing rules not present in the request will be deleted.
 // @Description - All rules in the request that do not exist will be added.
 // @Description - If a rule exists but differs in CIDR or port range, it will be replaced.
@@ -526,17 +526,17 @@ func RestGetMciAssociatedResources(c echo.Context) error {
 // @Description - All existing rules not in the request (including default ICMP, etc.) will be deleted.
 // @Description - Metadata (name, description, etc.) is not changed.
 // @Success 200 {object} model.RestWrapperSecurityGroupUpdateResponse "Updated Security Group info list with synchronized firewall rules"
-func RestPutMciAssociatedSecurityGroups(c echo.Context) error {
+func RestPutInfraAssociatedSecurityGroups(c echo.Context) error {
 	nsId := c.Param("nsId")
-	mciId := c.Param("mciId")
+	infraId := c.Param("infraId")
 
 	req := &model.SecurityGroupUpdateReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	assocList := model.MciAssociatedResourceList{}
-	assocList, err := infra.GetMciAssociatedResources(nsId, mciId)
+	assocList := model.InfraAssociatedResourceList{}
+	assocList, err := infra.GetInfraAssociatedResources(nsId, infraId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

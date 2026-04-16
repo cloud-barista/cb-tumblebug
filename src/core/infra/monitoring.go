@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
+// Package infra is to manage multi-cloud infra
 package infra
 
 import (
@@ -42,16 +42,16 @@ func DFMonAgentInstallReqStructLevelValidation(sl validator.StructLevel) {
 		sl.ReportError(u.NsId, "nsId", "NsId", err.Error(), "")
 	}
 
-	err = common.CheckString(u.MciId)
+	err = common.CheckString(u.InfraId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.MciId, "mciId", "MciId", err.Error(), "")
+		sl.ReportError(u.InfraId, "infraId", "InfraId", err.Error(), "")
 	}
 
-	err = common.CheckString(u.VmId)
+	err = common.CheckString(u.NodeId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.VmId, "vmId", "VmId", err.Error(), "")
+		sl.ReportError(u.NodeId, "nodeId", "NodeId", err.Error(), "")
 	}
 }
 
@@ -89,46 +89,46 @@ func CheckDragonflyEndpoint() error {
 }
 
 // CallMonitoringAsync is func to call CB-Dragonfly monitoring framework
-func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServiceType string, vmID string, givenUserName string, method string, cmd string, returnResult *[]model.SshCmdResult) {
+func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, infraID string, infraServiceType string, nodeID string, givenUserName string, method string, cmd string, returnResult *[]model.SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
-	vmIP, _, sshPort, err := GetVmIp(nsID, mciID, vmID)
+	nodeIP, _, sshPort, err := GetNodeIp(nsID, infraID, nodeID)
 	errStr := ""
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
-	userName, privateKey, err := VerifySshUserName(nsID, mciID, vmID, vmIP, sshPort, givenUserName)
+	userName, privateKey, err := VerifySshUserName(nsID, infraID, nodeID, nodeIP, sshPort, givenUserName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
-	log.Debug().Msg("[CallMonitoringAsync] " + mciID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
+	log.Debug().Msg("[CallMonitoringAsync] " + infraID + "/" + nodeID + "(" + nodeIP + ")" + "with userName:" + userName)
 
 	// set vm MonAgentStatus = "installing" (to avoid duplicated requests)
-	vmInfoTmp, _ := GetVmObject(nsID, mciID, vmID)
-	vmInfoTmp.MonAgentStatus = "installing"
-	UpdateVmInfo(nsID, mciID, vmInfoTmp)
+	nodeInfoTmp, _ := GetNodeObject(nsID, infraID, nodeID)
+	nodeInfoTmp.MonAgentStatus = "installing"
+	UpdateNodeInfo(nsID, infraID, nodeInfoTmp)
 
-	if mciServiceType == "" {
-		mciServiceType = model.StrMCI
+	if infraServiceType == "" {
+		infraServiceType = model.StrInfra
 	}
 
 	url := model.DragonflyRestUrl + cmd
 	log.Debug().Msg("\n[Calling DRAGONFLY] START")
-	log.Debug().Msg("VM:" + nsID + "/" + mciID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.ConnectionConfig.ProviderName + ", service_type:" + mciServiceType)
+	log.Debug().Msg("Node:" + nsID + "/" + infraID + "/" + nodeID + ", URL:" + url + ", userName:" + userName + ", cspType:" + nodeInfoTmp.ConnectionConfig.ProviderName + ", service_type:" + infraServiceType)
 
 	requestBody := model.DfAgentInstallReq{
 		NsId:        nsID,
-		MciId:       mciID,
-		VmId:        vmID,
-		PublicIp:    vmIP,
+		InfraId:     infraID,
+		NodeId:      nodeID,
+		PublicIp:    nodeIP,
 		Port:        strconv.Itoa(sshPort),
 		UserName:    userName,
 		SshKey:      privateKey,
-		CspType:     vmInfoTmp.ConnectionConfig.ProviderName,
-		ServiceType: mciServiceType,
+		CspType:     nodeInfoTmp.ConnectionConfig.ProviderName,
+		ServiceType: infraServiceType,
 	}
 	if requestBody.SshKey == "" {
 		common.PrintJsonPretty(requestBody)
@@ -189,12 +189,12 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServi
 
 	//wg.Done() //goroutin sync done
 
-	//vmInfoTmp, _ := GetVmObject(nsID, mciID, vmID)
+	//nodeInfoTmp, _ := GetNodeObject(nsID, infraID, nodeID)
 
 	sshResultTmp := model.SshCmdResult{}
-	sshResultTmp.MciId = mciID
-	sshResultTmp.VmId = vmID
-	sshResultTmp.VmIp = vmIP
+	sshResultTmp.InfraId = infraID
+	sshResultTmp.NodeId = nodeID
+	sshResultTmp.NodeIp = nodeIP
 
 	sshResultTmp.Stdout = make(map[int]string)
 	sshResultTmp.Stderr = make(map[int]string)
@@ -204,20 +204,20 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServi
 		sshResultTmp.Stderr[0] = errStr
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
-		vmInfoTmp.MonAgentStatus = "failed"
+		nodeInfoTmp.MonAgentStatus = "failed"
 	} else {
 		fmt.Println("Result: " + result)
 		sshResultTmp.Stdout[0] = result
 		sshResultTmp.Err = nil
 		*returnResult = append(*returnResult, sshResultTmp)
-		vmInfoTmp.MonAgentStatus = "installed"
+		nodeInfoTmp.MonAgentStatus = "installed"
 	}
 
-	UpdateVmInfo(nsID, mciID, vmInfoTmp)
+	UpdateNodeInfo(nsID, infraID, nodeInfoTmp)
 
 }
 
-func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, req *model.MciCmdReq) (model.AgentInstallContentWrapper, error) {
+func InstallMonitorAgentToInfra(nsId string, infraId string, infraServiceType string, req *model.InfraCmdReq) (model.AgentInstallContentWrapper, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -226,17 +226,17 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 		return temp, err
 	}
 
-	err = common.CheckString(mciId)
+	err = common.CheckString(infraId)
 	if err != nil {
 		temp := model.AgentInstallContentWrapper{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckMci(nsId, mciId)
+	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
 		temp := model.AgentInstallContentWrapper{}
-		err := fmt.Errorf("The mci " + mciId + " does not exist.")
+		err := fmt.Errorf("The infra " + infraId + " does not exist.")
 		return temp, err
 	}
 
@@ -245,17 +245,17 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 	//install script
 	cmd := "/agent"
 
-	vmList, err := ListVmId(nsId, mciId)
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
-	if len(vmList) == 0 {
-		err := fmt.Errorf("MCI %s has no VMs to install monitoring agent (status: Empty)", mciId)
+	if len(nodeList) == 0 {
+		err := fmt.Errorf("Infra %s has no Nodes to install monitoring agent (status: Empty)", infraId)
 		return content, err
 	}
 
-	log.Debug().Msg("[Install agent for each VM]")
+	log.Debug().Msg("[Install agent for each Node]")
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
@@ -264,17 +264,17 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 
 	method := "POST"
 
-	for _, v := range vmList {
-		vmObjTmp, _ := GetVmObject(nsId, mciId, v)
-		fmt.Println("MonAgentStatus : " + vmObjTmp.MonAgentStatus)
+	for _, v := range nodeList {
+		nodeObjTmp, _ := GetNodeObject(nsId, infraId, v)
+		fmt.Println("MonAgentStatus : " + nodeObjTmp.MonAgentStatus)
 
 		// Request agent installation (skip if in installing or installed status)
-		if vmObjTmp.MonAgentStatus != "installed" && vmObjTmp.MonAgentStatus != "installing" {
+		if nodeObjTmp.MonAgentStatus != "installed" && nodeObjTmp.MonAgentStatus != "installing" {
 
-			// Avoid RunRemoteCommand to not ready VM
+			// Avoid RunRemoteCommand to not ready Node
 			if err == nil {
 				wg.Add(1)
-				go CallMonitoringAsync(&wg, nsId, mciId, mciServiceType, v, req.UserName, method, cmd, &resultArray)
+				go CallMonitoringAsync(&wg, nsId, infraId, infraServiceType, v, req.UserName, method, cmd, &resultArray)
 			} else {
 				log.Error().Err(err).Msg("")
 			}
@@ -286,9 +286,9 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 	for _, v := range resultArray {
 
 		resultTmp := model.AgentInstallContent{}
-		resultTmp.MciId = mciId
-		resultTmp.VmId = v.VmId
-		resultTmp.VmIp = v.VmIp
+		resultTmp.InfraId = infraId
+		resultTmp.NodeId = v.NodeId
+		resultTmp.NodeIp = v.NodeIp
 		resultTmp.Result = v.Stdout[0]
 		content.ResultArray = append(content.ResultArray, resultTmp)
 	}
@@ -300,36 +300,36 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 }
 
 // SetMonitoringAgentStatusInstalled is func to Set Monitoring Agent Status Installed
-func SetMonitoringAgentStatusInstalled(nsId string, mciId string, vmId string) error {
+func SetMonitoringAgentStatusInstalled(nsId string, infraId string, nodeId string) error {
 	targetStatus := "installed"
-	return UpdateMonitoringAgentStatusManually(nsId, mciId, vmId, targetStatus)
+	return UpdateMonitoringAgentStatusManually(nsId, infraId, nodeId, targetStatus)
 }
 
 // UpdateMonitoringAgentStatusManually is func to Update Monitoring Agent Installation Status Manually
-func UpdateMonitoringAgentStatusManually(nsId string, mciId string, vmId string, targetStatus string) error {
+func UpdateMonitoringAgentStatusManually(nsId string, infraId string, nodeId string, targetStatus string) error {
 
-	vmInfoTmp, err := GetVmObject(nsId, mciId, vmId)
+	nodeInfoTmp, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
 	// set vm MonAgentStatus
-	vmInfoTmp.MonAgentStatus = targetStatus
-	UpdateVmInfo(nsId, mciId, vmInfoTmp)
+	nodeInfoTmp.MonAgentStatus = targetStatus
+	UpdateNodeInfo(nsId, infraId, nodeInfoTmp)
 
 	//TODO: add validation for monitoring
 
 	return nil
 }
 
-// GetMonitoringData retrieves monitoring data from CB-Dragonfly for all VMs in an MCI
-// Returns a consolidated response with metrics for each VM
-func GetMonitoringData(nsId string, mciId string, metric string) (model.MonResultSimpleResponse, error) {
+// GetMonitoringData retrieves monitoring data from CB-Dragonfly for all Nodes in an Infra
+// Returns a consolidated response with metrics for each Node
+func GetMonitoringData(nsId string, infraId string, metric string) (model.MonResultSimpleResponse, error) {
 	// Initialize response object
 	content := model.MonResultSimpleResponse{
-		NsId:  nsId,
-		MciId: mciId,
+		NsId:    nsId,
+		InfraId: infraId,
 	}
 
 	// Validate namespace ID
@@ -339,79 +339,79 @@ func GetMonitoringData(nsId string, mciId string, metric string) (model.MonResul
 		return content, fmt.Errorf("invalid namespace ID: %w", err)
 	}
 
-	// Validate MCI ID
-	err = common.CheckString(mciId)
+	// Validate Infra ID
+	err = common.CheckString(infraId)
 	if err != nil {
-		log.Error().Err(err).Msg("Invalid MCI ID format")
-		return content, fmt.Errorf("invalid MCI ID: %w", err)
+		log.Error().Err(err).Msg("Invalid Infra ID format")
+		return content, fmt.Errorf("invalid Infra ID: %w", err)
 	}
 
-	// Check if MCI exists
-	check, err := CheckMci(nsId, mciId)
+	// Check if Infra exists
+	check, err := CheckInfra(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msgf("Error checking MCI existence: %s/%s", nsId, mciId)
-		return content, fmt.Errorf("error checking MCI existence: %w", err)
+		log.Error().Err(err).Msgf("Error checking Infra existence: %s/%s", nsId, infraId)
+		return content, fmt.Errorf("error checking Infra existence: %w", err)
 	}
 	if !check {
-		log.Error().Msgf("MCI does not exist: %s/%s", nsId, mciId)
-		return content, fmt.Errorf("MCI %s does not exist in namespace %s", mciId, nsId)
+		log.Error().Msgf("Infra does not exist: %s/%s", nsId, infraId)
+		return content, fmt.Errorf("Infra %s does not exist in namespace %s", infraId, nsId)
 	}
 
-	// Get the list of VMs in the MCI
-	vmList, err := ListVmId(nsId, mciId)
+	// Get the list of Nodes in the Infra
+	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to list VMs for MCI: %s/%s", nsId, mciId)
-		return content, fmt.Errorf("failed to list VMs: %w", err)
+		log.Error().Err(err).Msgf("Failed to list Nodes for Infra: %s/%s", nsId, infraId)
+		return content, fmt.Errorf("failed to list Nodes: %w", err)
 	}
 
-	// If no VMs found, return empty result
-	if len(vmList) == 0 {
-		log.Warn().Msgf("No VMs found in MCI: %s/%s", nsId, mciId)
+	// If no Nodes found, return empty result
+	if len(nodeList) == 0 {
+		log.Warn().Msgf("No Nodes found in Infra: %s/%s", nsId, infraId)
 		return content, nil
 	}
 
-	log.Info().Msgf("Retrieving %s metrics for %d VMs in MCI %s/%s", metric, len(vmList), nsId, mciId)
+	log.Info().Msgf("Retrieving %s metrics for %d Nodes in Infra %s/%s", metric, len(nodeList), nsId, infraId)
 
 	// Setup for concurrent monitoring requests
 	var wg sync.WaitGroup
 	var resultArray []model.MonResultSimple
 	method := "GET"
 
-	// Process each VM concurrently
-	for _, vmId := range vmList {
+	// Process each Node concurrently
+	for _, nodeId := range nodeList {
 		wg.Add(1)
 
-		// Get VM IP address
-		vmIp, _, _, err := GetVmIp(nsId, mciId, vmId)
+		// Get Node IP address
+		nodeIp, _, _, err := GetNodeIp(nsId, infraId, nodeId)
 		if err != nil {
-			log.Error().Err(err).Msgf("Failed to get IP for VM: %s/%s/%s", nsId, mciId, vmId)
+			log.Error().Err(err).Msgf("Failed to get IP for Node: %s/%s/%s", nsId, infraId, nodeId)
 
-			// Create a result for this VM with error information
+			// Create a result for this Node with error information
 			errResult := model.MonResultSimple{
-				VmId:   vmId,
+				NodeId:   nodeId,
 				Metric: metric,
 				Value:  "Error",
-				Err:    fmt.Sprintf("Failed to get VM IP: %v", err),
+				Err:    fmt.Sprintf("Failed to get Node IP: %v", err),
 			}
 			resultArray = append(resultArray, errResult)
 
-			wg.Done() // Decrement counter for this VM
-			continue  // Continue to next VM
+			wg.Done() // Decrement counter for this Node
+			continue  // Continue to next Node
 		}
 
-		// Construct the API path for this VM's monitoring data
-		cmd := fmt.Sprintf("/ns/%s/mci/%s/vm/%s/agent_ip/%s/metric/%s/ondemand-monitoring-info",
-			nsId, mciId, vmId, vmIp, metric)
+		// Construct the API path for this Node's monitoring data
+		cmd := fmt.Sprintf("/ns/%s/infra/%s/vm/%s/agent_ip/%s/metric/%s/ondemand-monitoring-info",
+			nsId, infraId, nodeId, nodeIp, metric)
 
 		// Make asynchronous call to CB-Dragonfly
-		go CallGetMonitoringAsync(&wg, nsId, mciId, vmId, vmIp, method, metric, cmd, &resultArray)
+		go CallGetMonitoringAsync(&wg, nsId, infraId, nodeId, nodeIp, method, metric, cmd, &resultArray)
 	}
 
 	// Wait for all monitoring requests to complete
 	wg.Wait()
 
 	// Add results to response object
-	content.MciMonitoring = resultArray
+	content.InfraMonitoring = resultArray
 
 	// Log summary of results
 	successCount := 0
@@ -427,7 +427,7 @@ func GetMonitoringData(nsId string, mciId string, metric string) (model.MonResul
 	log.Info().Msgf("Monitoring data collection complete: %d successful, %d failed",
 		successCount, errorCount)
 	if errorCount > 0 {
-		return content, fmt.Errorf("%d VMs failed to retrieve monitoring data", errorCount)
+		return content, fmt.Errorf("%d Nodes failed to retrieve monitoring data", errorCount)
 	}
 
 	return content, nil
@@ -435,14 +435,14 @@ func GetMonitoringData(nsId string, mciId string, metric string) (model.MonResul
 
 // CallGetMonitoringAsync makes asynchronous HTTP call to CB-Dragonfly for monitoring data
 // and appends the result to the provided result array
-func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID string, vmIP string, method string, metric string, cmd string, returnResult *[]model.MonResultSimple) {
+func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, infraID string, nodeID string, nodeIP string, method string, metric string, cmd string, returnResult *[]model.MonResultSimple) {
 	defer wg.Done() // Ensure WaitGroup counter is decremented when function exits
 
-	log.Info().Msg("[Call CB-DF] " + mciID + "/" + vmID + "(" + vmIP + ")")
+	log.Info().Msg("[Call CB-DF] " + infraID + "/" + nodeID + "(" + nodeIP + ")")
 
 	// Initialize result object
 	resultTmp := model.MonResultSimple{
-		VmId:   vmID,
+		NodeId:   nodeID,
 		Metric: metric,
 	}
 
@@ -470,7 +470,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID 
 
 	// Execute HTTP request
 
-	log.Debug().Msg("Call CB-DF Result (" + mciID + "," + vmID + ") ")
+	log.Debug().Msg("Call CB-DF Result (" + infraID + "," + nodeID + ") ")
 	res, err := client.Do(req)
 	if err != nil {
 		// Handle request execution error

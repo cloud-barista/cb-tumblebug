@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
+// Package infra is to handle REST API for infra
 package model
 
 // Owner represents the owner information in S3 bucket list response
@@ -66,8 +66,8 @@ type ObjectStorageInfo struct {
 	CspResourceId string `json:"cspResourceId,omitempty" example:""`
 
 	// Variables for management of Object Storage resource in CB-Tumblebug
-	ConnectionName   string     `json:"connectionName"`
-	ConnectionConfig ConnConfig `json:"connectionConfig"`
+	ConnectionName   string      `json:"connectionName"`
+	ConnectionConfig ConnConfig  `json:"connectionConfig"`
 	Description      string      `json:"description" example:"this object storage is managed by CB-Tumblebug"`
 	Status           string      `json:"status"`
 	SystemMessage    string      `json:"systemMessage,omitempty"`

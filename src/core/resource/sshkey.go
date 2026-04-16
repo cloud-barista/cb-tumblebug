@@ -268,7 +268,7 @@ func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option s
 // CreateSshKey (Spider abstracts SSH key API even for GCP), then modifies the
 // returned object to mark it as a placeholder. The user can later update this
 // SSH key via ComplementSshKey API to set username and privateKey.
-func CreatePlaceholderSshKey(ctx context.Context, nsId string, connectionName string, vmName string, vmUid string) (model.SshKeyInfo, error) {
+func CreatePlaceholderSshKey(ctx context.Context, nsId string, connectionName string, nodeName string, nodeUid string) (model.SshKeyInfo, error) {
 	emptyObj := model.SshKeyInfo{}
 	resourceType := model.StrSSHKey
 
@@ -277,7 +277,7 @@ func CreatePlaceholderSshKey(ctx context.Context, nsId string, connectionName st
 		return emptyObj, err
 	}
 
-	placeholderName := common.ChangeIdString(fmt.Sprintf("%s-ssh-placeholder-%s", connectionName, vmUid))
+	placeholderName := common.ChangeIdString(fmt.Sprintf("%s-ssh-placeholder-%s", connectionName, nodeUid))
 
 	// Check if the placeholder SSH key already exists
 	check, err := CheckResource(nsId, resourceType, placeholderName)
@@ -302,7 +302,7 @@ func CreatePlaceholderSshKey(ctx context.Context, nsId string, connectionName st
 	req := model.SshKeyReq{
 		Name:           placeholderName,
 		ConnectionName: connectionName,
-		Description:    fmt.Sprintf("Auto-generated placeholder for GCP VM '%s'. Update via ComplementSshKey API.", vmName),
+		Description:    fmt.Sprintf("Auto-generated placeholder for GCP VM '%s'. Update via ComplementSshKey API.", nodeName),
 	}
 	content, err := CreateSshKey(ctx, nsId, &req, "")
 	if err != nil {
@@ -343,7 +343,7 @@ func CreatePlaceholderSshKey(ctx context.Context, nsId string, connectionName st
 		log.Warn().Err(err).Msgf("Failed to add placeholder labels for SSH key '%s'", placeholderName)
 	}
 
-	log.Info().Msgf("Created placeholder SSH key '%s' for GCP VM '%s'", placeholderName, vmName)
+	log.Info().Msgf("Created placeholder SSH key '%s' for GCP VM '%s'", placeholderName, nodeName)
 	return content, nil
 }
 

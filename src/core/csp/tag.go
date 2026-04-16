@@ -24,7 +24,7 @@ import (
 // BatchTagHandler defines the function signature for CSP-specific batch tag upsert.
 // Returns error if the operation fails. The handler should set all given tags on
 // the CSP resource identified by cspResourceId in a single API call.
-// resourceType is the CB-Tumblebug label type (e.g., "vm", "vNet", "sshKey").
+// resourceType is the CB-Tumblebug label type (e.g., "node", "vNet", "sshKey").
 // region is the CSP region (e.g., "us-east-1"), zone is the availability zone (e.g., "us-east-1a").
 type BatchTagHandler func(ctx context.Context, region, zone, cspResourceId, resourceType string, tags map[string]string) error
 
@@ -39,7 +39,7 @@ func RegisterBatchTagHandler(platform string, handler BatchTagHandler) {
 }
 
 // TryBatchUpsertTags attempts to upsert multiple tags on a CSP resource in a single API call.
-// resourceType is the CB-Tumblebug label type (e.g., "vm", "vNet", "sshKey").
+// resourceType is the CB-Tumblebug label type (e.g., "node", "vNet", "sshKey").
 // region is the CSP region, zone is the availability zone (used by GCP; can be empty for others).
 // Returns (true, nil) if successfully handled by a direct CSP batch API.
 // Returns (false, nil) if no batch handler exists for this CSP (caller should fall back to Spider).

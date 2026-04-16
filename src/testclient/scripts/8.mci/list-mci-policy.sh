@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function list_mci() {
+#function list_infra() {
 
 
     TestSetFile=${4:-../testSet.env}
@@ -12,11 +12,11 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 8. VM: List MCI"
+    echo "## 8. VM: List Infra"
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/policy/mci | jq '.'
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/policy/infra | jq '.'
 #}
 
-#list_mci
+#list_infra

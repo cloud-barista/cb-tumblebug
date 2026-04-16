@@ -204,12 +204,12 @@ The credential holder is communicated via the **`X-Credential-Holder`** HTTP hea
 
 ```bash
 # Use default holder (admin) — header can be omitted
-curl -X POST http://localhost:1323/tumblebug/ns/default/mciDynamic \
+curl -X POST http://localhost:1323/tumblebug/ns/default/infraDynamic \
   -H "Content-Type: application/json" \
   -d '{ ... }'
 
 # Use a specific holder
-curl -X POST http://localhost:1323/tumblebug/ns/default/mciDynamic \
+curl -X POST http://localhost:1323/tumblebug/ns/default/infraDynamic \
   -H "Content-Type: application/json" \
   -H "X-Credential-Holder: role01" \
   -d '{ ... }'
@@ -225,20 +225,20 @@ sequenceDiagram
     participant Core as Core Function
     participant Spider as CB-Spider
 
-    Client->>MW: POST /ns/default/mciDynamic<br/>X-Credential-Holder: role01
+    Client->>MW: POST /ns/default/infraDynamic<br/>X-Credential-Holder: role01
     
     MW->>MW: Extract header<br/>holder = "role01"<br/>(default: "admin" if absent)
     MW->>MW: Inject into context.Context<br/>WithCredentialHolder(ctx, "role01")
     MW->>Handler: Pass enriched context
     
-    Handler->>Core: CreateMciDynamic(ctx, nsId, req)
+    Handler->>Core: CreateInfraDynamic(ctx, nsId, req)
     
     Core->>Core: holder = CredentialHolderFromContext(ctx)<br/>→ "role01"
     Core->>Core: connectionName = ResolveConnectionName(<br/>"aws-ap-northeast-2", "role01")<br/>→ "role01-aws-ap-northeast-2"
     
-    Core->>Spider: Create VM via<br/>"role01-aws-ap-northeast-2"
-    Spider-->>Core: VM created
-    Core-->>Handler: MCI result
+    Core->>Spider: Create Node via<br/>"role01-aws-ap-northeast-2"
+    Spider-->>Core: Node created
+    Core-->>Handler: Infra result
     Handler-->>Client: Response
 ```
 
@@ -296,7 +296,7 @@ The credential holder affects multiple API behaviors:
 
 | Capability | Effect |
 |-----------|--------|
-| **MCI Provisioning** | VMs are created using the holder's CSP accounts |
+| **Infra Provisioning** | Nodes are created using the holder's CSP accounts |
 | **Resource Creation** | VNet, SecurityGroup, SSHKey use holder-specific connections |
 | **Spec Recommendation** | Results are automatically filtered to the holder's available CSPs |
 | **Connection Listing** | `GET /connConfig` can be filtered by `filterCredentialHolder` query param |
@@ -535,7 +535,7 @@ Namespace: staging     +  Holder: staging-ops  → Staging AWS account
 Namespace: development +  Holder: dev-team     → Development sandbox accounts
 ```
 
-> **Namespace vs Credential Holder:** Namespaces isolate **resources** (VMs, networks, etc.). Credential holders isolate **cloud accounts** (API keys, CSP access). They are orthogonal concepts and can be combined freely.
+> **Namespace vs Credential Holder:** Namespaces isolate **resources** (Nodes, networks, etc.). Credential holders isolate **cloud accounts** (API keys, CSP access). They are orthogonal concepts and can be combined freely.
 
 ## Data Model Summary
 
@@ -602,4 +602,4 @@ A: Yes. Different holders can register the same CSP API keys. They will have sep
 A: For non-default holders, `POST /recommendSpec` automatically filters results to only include specs from the holder's registered CSPs. For example, if `role01` only has AWS credentials, only AWS specs are returned.
 
 **Q: Is credential holder the same as namespace?**
-A: No. **Namespace** isolates resources (VMs, VNets, etc.). **Credential holder** isolates cloud accounts (API keys, connection configs). They are independent and can be combined: any namespace can use any credential holder.
+A: No. **Namespace** isolates resources (Nodes, VNets, etc.). **Credential holder** isolates cloud accounts (API keys, connection configs). They are independent and can be combined: any namespace can use any credential holder.

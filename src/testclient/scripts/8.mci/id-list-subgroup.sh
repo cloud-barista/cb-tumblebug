@@ -7,14 +7,14 @@ echo "####################################################################"
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	MCIID=${POSTFIX}
+	InfraID=${POSTFIX}
 else
-	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	InfraID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-echo "${MCIID}"
+echo "${InfraID}"
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/subgroup | jq '.'
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/infra/${InfraID}/nodegroup | jq '.'
 
 
-#get_mci
+#get_infra
