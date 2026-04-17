@@ -180,9 +180,12 @@ type InfraInfo struct {
 	// Latest system message such as error message
 	SystemMessage []string `json:"systemMessage"` // systeam-given string message
 
-	PlacementAlgo string   `json:"placementAlgo,omitempty"`
-	Description   string   `json:"description"`
-	Node            []NodeInfo `json:"node"`
+	PlacementAlgo string     `json:"placementAlgo,omitempty"`
+	Description   string     `json:"description"`
+	Node          []NodeInfo `json:"node"`
+
+	// Cluster is the list of implicit clusters synthesized at query-time from Nodes.
+	Cluster []InfraClusterInfo `json:"cluster,omitempty"`
 
 	// List of IDs for new nodes. Return IDs if the nodes are newly added. This field should be used for return body only.
 	NewNodeList []string `json:"newNodeList"`
@@ -257,8 +260,8 @@ type CreateNodeGroupReq struct {
 	SubnetId         string   `json:"subnetId" validate:"required"`
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
 	SshKeyId         string   `json:"sshKeyId" validate:"required"`
-	NodeUserName       string   `json:"nodeUserName,omitempty"`
-	NodeUserPassword   string   `json:"nodeUserPassword,omitempty"`
+	NodeUserName     string   `json:"nodeUserName,omitempty"`
+	NodeUserPassword string   `json:"nodeUserPassword,omitempty"`
 	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize     int      `json:"rootDiskSize,omitempty" example:"50"`                  // Root disk size in GB. 0 = use CSP default.
 	DataDiskIds      []string `json:"dataDiskIds"`
@@ -413,7 +416,7 @@ type ReviewInfraDynamicReqInfo struct {
 	EstimatedCost  string `json:"estimatedCost,omitempty" example:"$0.50/hour"`
 
 	// Infra-level information
-	InfraName    string `json:"infraName"`
+	InfraName      string `json:"infraName"`
 	TotalNodeCount int    `json:"totalNodeCount"`
 
 	// Failure policy analysis
@@ -434,7 +437,7 @@ type ReviewInfraDynamicReqInfo struct {
 // ReviewNodeGroupDynamicReqInfo is struct for review result of individual Node in Infra dynamic request
 type ReviewNodeGroupDynamicReqInfo struct {
 	// Node request information
-	NodeName        string `json:"nodeName"`
+	NodeName      string `json:"nodeName"`
 	NodeGroupSize int    `json:"nodeGroupSize"`
 
 	// Validation status
@@ -615,6 +618,54 @@ type NodeGroupInfo struct {
 	NodeGroupSize int      `json:"nodeGroupSize"`
 }
 
+// InfraClusterInfo is a lightweight, on-demand cluster view synthesized from Infra NodeGroups and Nodes.
+// A cluster is implicitly formed by NodeGroups that share the same network boundary (currently VNet-centric grouping).
+type InfraClusterInfo struct {
+	// Id is a deterministic cluster identifier generated from grouping attributes.
+	Id string `json:"id"`
+
+	// Name is a human-readable cluster name. Currently same as Id.
+	Name string `json:"name"`
+
+	// InfraId is the parent Infra ID.
+	InfraId string `json:"infraId"`
+
+	// VNetId is the shared VNet boundary used for implicit clustering.
+	VNetId string `json:"vNetId,omitempty"`
+
+	// ConnectionNames are unique connection names included in this cluster.
+	ConnectionNames []string `json:"connectionNames"`
+
+	// ProviderNames are unique CSP providers included in this cluster.
+	ProviderNames []string `json:"providerNames"`
+
+	// RegionNames are unique regions included in this cluster.
+	RegionNames []string `json:"regionNames"`
+
+	// NodeGroupIds are NodeGroups that belong to this implicit cluster.
+	NodeGroupIds []string `json:"nodeGroupIds"`
+
+	// NodeIds are Nodes that belong to this implicit cluster.
+	NodeIds []string `json:"nodeIds"`
+
+	// NodeGroupCount is the number of NodeGroups in this cluster.
+	NodeGroupCount int `json:"nodeGroupCount"`
+
+	// NodeCount is the number of Nodes in this cluster.
+	NodeCount int `json:"nodeCount"`
+
+	// RepresentativeNodeGroupId is a representative NodeGroup ID for quick inspection.
+	RepresentativeNodeGroupId string `json:"representativeNodeGroupId,omitempty"`
+
+	// RepresentativeNodeId is a representative Node ID for quick inspection.
+	RepresentativeNodeId string `json:"representativeNodeId,omitempty"`
+}
+
+// InfraClusterList is a response wrapper for listing implicit clusters in an Infra.
+type InfraClusterList struct {
+	Cluster []InfraClusterInfo `json:"cluster"`
+}
+
 // InfraAssociatedResourceList is struct for associated resource IDs of an Infra
 type InfraAssociatedResourceList struct {
 	ConnectionNames []string `json:"connectionNames"`
@@ -622,8 +673,8 @@ type InfraAssociatedResourceList struct {
 
 	NodeGroupIds []string `json:"nodeGroupIds"`
 	NodeIds      []string `json:"nodeIds"`
-	CspNodeNames   []string `json:"cspNodeNames"`
-	CspNodeIds     []string `json:"cspNodeIds"`
+	CspNodeNames []string `json:"cspNodeNames"`
+	CspNodeIds   []string `json:"cspNodeIds"`
 	ImageIds     []string `json:"imageIds"`
 	SpecIds      []string `json:"specIds"`
 
@@ -704,8 +755,8 @@ type NodeInfo struct {
 	DataDiskIds      []string     `json:"dataDiskIds"`
 	SshKeyId         string       `json:"sshKeyId"`
 	CspSshKeyId      string       `json:"cspSshKeyId"`
-	NodeUserName       string       `json:"nodeUserName,omitempty"`
-	NodeUserPassword   string       `json:"nodeUserPassword,omitempty"`
+	NodeUserName     string       `json:"nodeUserName,omitempty"`
+	NodeUserPassword string       `json:"nodeUserPassword,omitempty"`
 
 	// SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification
 	SshHostKeyInfo *SshHostKeyInfo `json:"sshHostKeyInfo,omitempty"`
@@ -725,21 +776,21 @@ type InfraAccessInfo struct {
 
 // InfraNodeGroupAccessInfo is struct for InfraNodeGroupAccessInfo
 type InfraNodeGroupAccessInfo struct {
-	NodeGroupId       string
-	NlbListener       *NLBListenerInfo `json:"nlbListener,omitempty"`
-	BastionNodeId       string
+	NodeGroupId    string
+	NlbListener    *NLBListenerInfo `json:"nlbListener,omitempty"`
+	BastionNodeId  string
 	NodeAccessInfo []InfraNodeAccessInfo
 }
 
 // InfraNodeAccessInfo is struct for InfraNodeAccessInfo
 type InfraNodeAccessInfo struct {
-	NodeId             string     `json:"nodeId"`
+	NodeId           string     `json:"nodeId"`
 	PublicIP         string     `json:"publicIP"`
 	PrivateIP        string     `json:"privateIP"`
 	SSHPort          int        `json:"sshPort"`
 	PrivateKey       string     `json:"privateKey,omitempty"`
-	NodeUserName       string     `json:"nodeUserName,omitempty"`
-	NodeUserPassword   string     `json:"nodeUserPassword,omitempty"`
+	NodeUserName     string     `json:"nodeUserName,omitempty"`
+	NodeUserPassword string     `json:"nodeUserPassword,omitempty"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 }
 
@@ -805,10 +856,10 @@ type StatusCountInfo struct {
 
 // InfraRecommendReq is struct for InfraRecommendReq
 type InfraRecommendReq struct {
-	NodeReq          []NodeRecommendReq `json:"nodeReq"`
-	PlacementAlgo  string           `json:"placementAlgo"`
-	PlacementParam []KeyValue       `json:"placementParam"`
-	MaxResultNum   string           `json:"maxResultNum"`
+	NodeReq        []NodeRecommendReq `json:"nodeReq"`
+	PlacementAlgo  string             `json:"placementAlgo"`
+	PlacementParam []KeyValue         `json:"placementParam"`
+	MaxResultNum   string             `json:"maxResultNum"`
 }
 
 // NodeRecommendReq is struct for NodeRecommendReq
@@ -828,15 +879,15 @@ type NodeRecommendReq struct {
 // NodePriority is struct for NodePriority
 type NodePriority struct {
 	Priority string   `json:"priority"`
-	NodeSpec   SpecInfo `json:"nodeSpec"`
+	NodeSpec SpecInfo `json:"nodeSpec"`
 }
 
 // NodeRecommendInfo is struct for NodeRecommendInfo
 type NodeRecommendInfo struct {
 	NodeReq          NodeRecommendReq `json:"nodeReq"`
-	NodePriorityList     []NodePriority   `json:"nodePriority"`
-	PlacementAlgo  string         `json:"placementAlgo"`
-	PlacementParam []KeyValue     `json:"placementParam"`
+	NodePriorityList []NodePriority   `json:"nodePriority"`
+	PlacementAlgo    string           `json:"placementAlgo"`
+	PlacementParam   []KeyValue       `json:"placementParam"`
 }
 
 // InfraStatusInfo is struct to define simple information of Infra with updated status of all Nodes
@@ -852,7 +903,7 @@ type InfraStatusInfo struct {
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
 
-	MasterNodeId    string `json:"masterNodeId" example:"node-asiaeast1-cb-01"`
+	MasterNodeId  string `json:"masterNodeId" example:"node-asiaeast1-cb-01"`
 	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
 	MasterSSHPort int    `json:"masterSSHPort"`
 
@@ -1333,8 +1384,8 @@ type CommandDoneSummary struct {
 // SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
 	InfraId string         `json:"infraId"`
-	NodeId    string         `json:"nodeId"`
-	NodeIp    string         `json:"nodeIp"`
+	NodeId  string         `json:"nodeId"`
+	NodeIp  string         `json:"nodeIp"`
 	Command map[int]string `json:"command"`
 	Stdout  map[int]string `json:"stdout"`
 	Stderr  map[int]string `json:"stderr"`
@@ -1349,8 +1400,8 @@ type InfraSshCmdResult struct {
 // SshCmdResultForAPI is struct for SshCmd Result with string error for API response
 type SshCmdResultForAPI struct { // For REST API response
 	InfraId string         `json:"infraId"`
-	NodeId    string         `json:"nodeId"`
-	NodeIp    string         `json:"nodeIp"`
+	NodeId  string         `json:"nodeId"`
+	NodeIp  string         `json:"nodeIp"`
 	Command map[int]string `json:"command"`
 	Stdout  map[int]string `json:"stdout"`
 	Stderr  map[int]string `json:"stderr"`
@@ -1486,8 +1537,8 @@ type AgentInstallContentWrapper struct {
 // AgentInstallContent ...
 type AgentInstallContent struct {
 	InfraId string `json:"infraId"`
-	NodeId    string `json:"nodeId"`
-	NodeIp    string `json:"nodeIp"`
+	NodeId  string `json:"nodeId"`
+	NodeIp  string `json:"nodeIp"`
 	Result  string `json:"result"`
 }
 

@@ -4232,6 +4232,119 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/cluster:
+    get:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: List implicit clusters in a specified Infra
+      description: List implicit clusters synthesized at query-time from NodeGroups/Nodes
+        in a specified Infra
+      operationId: GetInfraClusters
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraClusterList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infra/{infraId}/cluster/{clusterId}:
+    get:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Get implicit cluster in a specified Infra
+      description: Get a single implicit cluster synthesized at query-time from NodeGroups/Nodes
+        in a specified Infra
+      operationId: GetInfraCluster
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: clusterId
+        in: path
+        description: Cluster ID
+        required: true
+        schema:
+          type: string
+          default: vnet01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraClusterInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/infra/{infraId}/configCopy:
     get:
       tags:
@@ -20532,6 +20645,69 @@ components:
           type: array
           items:
             type: string
+    model.InfraClusterInfo:
+      type: object
+      properties:
+        connectionNames:
+          type: array
+          description: ConnectionNames are unique connection names included in this
+            cluster.
+          items:
+            type: string
+        id:
+          type: string
+          description: Id is a deterministic cluster identifier generated from grouping
+            attributes.
+        infraId:
+          type: string
+          description: InfraId is the parent Infra ID.
+        name:
+          type: string
+          description: Name is a human-readable cluster name. Currently same as Id.
+        nodeCount:
+          type: integer
+          description: NodeCount is the number of Nodes in this cluster.
+        nodeGroupCount:
+          type: integer
+          description: NodeGroupCount is the number of NodeGroups in this cluster.
+        nodeGroupIds:
+          type: array
+          description: NodeGroupIds are NodeGroups that belong to this implicit cluster.
+          items:
+            type: string
+        nodeIds:
+          type: array
+          description: NodeIds are Nodes that belong to this implicit cluster.
+          items:
+            type: string
+        providerNames:
+          type: array
+          description: ProviderNames are unique CSP providers included in this cluster.
+          items:
+            type: string
+        regionNames:
+          type: array
+          description: RegionNames are unique regions included in this cluster.
+          items:
+            type: string
+        representativeNodeGroupId:
+          type: string
+          description: RepresentativeNodeGroupId is a representative NodeGroup ID
+            for quick inspection.
+        representativeNodeId:
+          type: string
+          description: RepresentativeNodeId is a representative Node ID for quick
+            inspection.
+        vNetId:
+          type: string
+          description: VNetId is the shared VNet boundary used for implicit clustering.
+    model.InfraClusterList:
+      type: object
+      properties:
+        cluster:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.InfraClusterInfo'
     model.InfraCmdReq:
       required:
       - command
@@ -20787,6 +20963,12 @@ components:
     model.InfraInfo:
       type: object
       properties:
+        cluster:
+          type: array
+          description: Cluster is the list of implicit clusters synthesized at query-time
+            from Nodes.
+          items:
+            $ref: '#/components/schemas/model.InfraClusterInfo'
         configureCloudAdaptiveNetwork:
           type: string
           description: "ConfigureCloudAdaptiveNetwork is an option to configure Cloud\
