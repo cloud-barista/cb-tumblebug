@@ -458,6 +458,8 @@ func RunServer() {
 	g.GET("/:nsId/infra/:infraId/node/:nodeId", rest_infra.RestGetInfraNode)
 	g.GET("/:nsId/infra/:infraId/nodegroup", rest_infra.RestGetInfraGroupIds)
 	g.GET("/:nsId/infra/:infraId/nodegroup/:nodegroupId", rest_infra.RestGetInfraGroupNodes)
+	g.GET("/:nsId/infra/:infraId/cluster", rest_infra.RestGetInfraClusters)
+	g.GET("/:nsId/infra/:infraId/cluster/:clusterId", rest_infra.RestGetInfraCluster)
 	g.POST("/:nsId/infra/:infraId/nodegroup/:nodegroupId", rest_infra.RestPostInfraNodeGroupScaleOut)
 
 	//g.GET("/:nsId/infra/:infraId/node", rest_infra.RestGetAllInfraNode)
