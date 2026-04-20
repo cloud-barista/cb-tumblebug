@@ -1080,7 +1080,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 			wg.Add(1)
 			go func(connConfig model.ConnConfig) {
 				defer wg.Done()
-				RandomSleep(0, 30*1000)
+				RandomSleep(0, 10*1000)
 				verified, err := CheckConnConfigAvailable(connConfig.ConfigName)
 				if err != nil {
 					log.Error().Err(err).Msgf("Cannot check model.ConnConfig %s is available", connConfig.ConfigName)

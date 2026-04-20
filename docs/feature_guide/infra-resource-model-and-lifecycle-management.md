@@ -1,6 +1,6 @@
-# Infra and Node Lifecycle Management
+# Infra Resource Model and Lifecycle Management
 
-This document provides a comprehensive guide to the lifecycle management of **Infra** (Multi-Cloud Infrastructure) and **Node** (compute unit) resources in CB-Tumblebug. It covers the conceptual model, terminology, state transitions, control actions, status management, and internal mechanisms.
+This document provides a comprehensive guide to the **Infra** resource model in CB-Tumblebug, including the conceptual structure and terminology of **Infra**, **NodeGroup**, and **Node**, as well as their lifecycle management. It covers the resource hierarchy, naming rationale, state transitions, control actions, status management, and internal mechanisms.
 
 ## 🔑 Key Concepts and Terminology
 
@@ -13,26 +13,28 @@ These were renamed to **Infra**, **NodeGroup**, and **Node** for the following r
 |----------|----------|-------------------|
 | MCI (MCIS) | **Infra** | "MCI" was an acronym that required explanation every time. "Infra" is self-descriptive and universally understood. |
 | SubGroup | **NodeGroup** | "SubGroup" was vague. "NodeGroup" clearly describes a group of homogeneous Nodes. It also aligns with Kubernetes `NodeGroup` semantics, preparing for future Kubernetes integration. |
-| VM | **Node** | "VM" is implementation-specific (virtual machine). "Node" is a general-purpose compute unit — it could represent a VM today, or a container, bare-metal server, or Kubernetes pod in the future. The API uses "Node" for user-facing interactions, while the internal implementation still deals with VMs through CSP drivers. |
+| VM | **Node** | "VM" is implementation-specific (virtual machine). "Node" is a more general server instance abstraction that can represent a VM today and can be extended to bare-metal servers or other compute forms over time. The API uses "Node" for user-facing interactions, while the internal implementation still deals with VMs through CSP drivers. |
 
 > **Note on internal implementation:** Within the codebase, `vm` is still used in some internal identifiers (e.g., KV store keys, CSP driver interfaces) to maintain backward compatibility with the storage layer and CB-Spider driver interfaces.
 
 ### Resource Hierarchy
 
-CB-Tumblebug organizes multi-cloud compute resources in a clear hierarchy:
+CB-Tumblebug organizes multi-cloud compute resources in a clear hierarchy. For server workloads, an implicit Cluster view may also be derived inside an Infra when multiple NodeGroups share the same network boundary.
 
 ```
 Namespace
 └── Infra
-    ├── NodeGroup-A (AWS ap-northeast-2)
-    │   ├── Node-A-1 (VM)
-    │   ├── Node-A-2 (VM)
-    │   └── Node-A-3 (VM)
-    ├── NodeGroup-B (Azure koreacentral)
-    │   ├── Node-B-1 (VM)
-    │   └── Node-B-2 (VM)
-    └── NodeGroup-C (GCP asia-northeast3)
-        └── Node-C-1 (VM)
+    ├── Cluster-1 (implicit, VNet-1)
+    │   ├── NodeGroup-A (AWS ap-northeast-2)
+    │   │   ├── Node-A-1 (VM instance)
+    │   │   ├── Node-A-2 (VM instance)
+    │   │   └── Node-A-3 (VM instance)
+    │   └── NodeGroup-B (Azure koreacentral)
+    │       ├── Node-B-1 (bare-metal instance)
+    │       └── Node-B-2 (bare-metal instance)
+    └── Cluster-2 (implicit, VNet-2)
+        └── NodeGroup-C (GCP asia-northeast3)
+            └── Node-C-1 (VM instance)
 ```
 
 ### What is Infra?
@@ -53,35 +55,54 @@ The name "NodeGroup" is intentionally aligned with the Kubernetes NodeGroup conc
 
 ### What is a Node?
 
-A **Node** is an individual compute unit within an Infra. In the current implementation, each Node corresponds to a virtual machine (VM) provisioned on a CSP. The "Node" abstraction allows the system to evolve beyond VMs in the future.
+A **Node** is an individual compute unit within an Infra. Conceptually, a Node means a **server instance** that a cloud or infrastructure provider can allocate and manage for you.
+
+Examples of a Node include:
+
+- a virtual machine instance
+- a bare-metal server instance
+- other server-style compute resources that may be supported in the future
+
+In the current CB-Tumblebug implementation, most Nodes are provisioned as virtual machines through CSP drivers. However, the user-facing `Node` abstraction is intentionally broader than `VM` so the model can expand without renaming the core resource again.
 
 - **API Path:** `/ns/{nsId}/infra/{infraId}/node/{nodeId}`
 - **Go Type:** `NodeInfo`
 
-### Cluster (Future)
+### Cluster (Implicit Server Workload View)
 
-**Cluster** is a planned abstraction within an Infra that is implicitly formed by NodeGroups sharing the same network boundary (e.g., VNet). A Cluster is not explicitly defined or created by the user — instead, it emerges indirectly from the networking and resource topology of NodeGroups.
+For **server workloads** managed through `Infra` and `NodeGroup` resources, CB-Tumblebug now provides an implicit **Cluster** view inside an Infra. This is separate from the existing Kubernetes cluster resource (`/k8sCluster`) and is intended for VM-based or general server workloads rather than Kubernetes workloads.
 
-- A Cluster exists within an Infra, not above it
-- Clusters are **not separately created** — they are implicitly composed from NodeGroups that share a common VNet/network boundary
-- Every NodeGroup belongs to some implicit Cluster (there are no standalone NodeGroups outside a cluster context)
-- The Infra creation workflow remains the same; cluster semantics are layered on top
-- Complements the existing Kubernetes cluster management (`/k8sCluster`) by offering a parallel abstraction for VM-based workloads
+**Cluster** is not explicitly created by the user. Instead, it is synthesized at query time from the Infra topology, primarily by grouping NodeGroups and Nodes that share the same network boundary (for example, the same `VNet`).
+
+- A Cluster exists **within** an Infra, not above it
+- Clusters are **not separately created or persisted**
+- Clusters are synthesized dynamically when Infra or Cluster information is queried
+- For the current implementation, the primary grouping key is shared `VNet`
+- This complements the existing Kubernetes cluster model by providing a parallel abstraction for non-Kubernetes server workloads
 
 ```
-Infra (future)                         K8s Cluster (existing)
+Infra (server workload)                K8s Cluster (container workload)
 ├── Cluster-1 (implicit, VNet-1)       ├── K8s NodeGroup-A
-│   ├── NodeGroup-A (AWS, master)      │   ├── Worker Node 1
+│   ├── NodeGroup-A (AWS, app)         │   ├── Worker Node 1
 │   │   └── Node-A-1                   │   └── Worker Node 2
-│   └── NodeGroup-B (AWS, worker)      └── K8s NodeGroup-B
+│   └── NodeGroup-B (AWS, batch)       └── K8s NodeGroup-B
 │       ├── Node-B-1                       └── Worker Node 3
 │       └── Node-B-2
 └── Cluster-2 (implicit, VNet-2)
-    └── NodeGroup-C (Azure, worker)
+    └── NodeGroup-C (Azure, db)
         └── Node-C-1
 ```
 
-In this model, NodeGroups that share a VNet (or equivalent network boundary) implicitly form a Cluster. Each NodeGroup always belongs to an implicit Cluster — the cluster boundary is determined by the underlying network topology, not by explicit user declaration.
+In this model, NodeGroups that share a VNet (or equivalent network boundary) implicitly form a Cluster. The cluster boundary is determined by the underlying network topology, not by explicit user declaration.
+
+#### Cluster Query APIs
+
+The implicit Cluster view can be queried through the following APIs:
+
+- `GET /ns/{nsId}/infra/{infraId}/cluster`
+- `GET /ns/{nsId}/infra/{infraId}/cluster/{clusterId}`
+
+In addition, Infra detail responses may include the synthesized cluster view as part of `InfraInfo`.
 
 > The naming alignment (Node, NodeGroup) between VM-based Infra and Kubernetes resources is intentional, providing a consistent mental model regardless of the underlying compute type.
 
