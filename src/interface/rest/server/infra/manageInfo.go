@@ -16,6 +16,8 @@ package infra
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 
 	resource "github.com/cloud-barista/cb-tumblebug/src/core/resource"
 
@@ -31,6 +33,15 @@ type JSONResult struct {
 	//Code    int          `json:"code" `
 	//Message string       `json:"message"`
 	//Data    interface{}  `json:"data"`
+}
+
+func isInfraClusterNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errMsg := strings.ToLower(err.Error())
+	return strings.Contains(errMsg, "does not exist") || strings.Contains(errMsg, "not found")
 }
 
 // TODO: swag does not support multiple response types (success 200) in an API.
@@ -463,6 +474,69 @@ func RestGetInfraGroupIds(c echo.Context) error {
 	var err error
 	content.IdList, err = infra.ListNodeGroupId(nsId, infraId)
 	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestGetInfraClusters godoc
+// @ID GetInfraClusters
+// @Summary List implicit clusters in a specified Infra
+// @Description List implicit clusters synthesized at query-time from NodeGroups/Nodes in a specified Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Success 200 {object} model.InfraClusterList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/infra/{infraId}/cluster [get]
+func RestGetInfraClusters(c echo.Context) error {
+	nsId := c.Param("nsId")
+	infraId := c.Param("infraId")
+
+	result, err := infra.ListInfraClusterInfo(nsId, infraId)
+	if err != nil {
+		if isInfraClusterNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: err.Error()})
+		}
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content := model.InfraClusterList{Cluster: result}
+	return clientManager.EndRequestWithLog(c, nil, content)
+}
+
+// RestGetInfraCluster godoc
+// @ID GetInfraCluster
+// @Summary Get implicit cluster in a specified Infra
+// @Description Get a single implicit cluster synthesized at query-time from NodeGroups/Nodes in a specified Infra
+// @Tags [MC-Infra] Infra Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param infraId path string true "Infra ID" default(infra01)
+// @Param clusterId path string true "Cluster ID" default(vnet01)
+// @Success 200 {object} model.InfraClusterInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/infra/{infraId}/cluster/{clusterId} [get]
+func RestGetInfraCluster(c echo.Context) error {
+	nsId := c.Param("nsId")
+	infraId := c.Param("infraId")
+	clusterId := c.Param("clusterId")
+
+	result, err := infra.GetInfraClusterInfo(nsId, infraId, clusterId)
+	if err != nil {
+		if isInfraClusterNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: err.Error()})
+		}
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestGetInfraAssociatedResources godoc

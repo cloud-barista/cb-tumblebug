@@ -5241,6 +5241,146 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/infra/{infraId}/cluster": {
+            "get": {
+                "description": "List implicit clusters synthesized at query-time from NodeGroups/Nodes in a specified Infra",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "List implicit clusters in a specified Infra",
+                "operationId": "GetInfraClusters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraClusterList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/cluster/{clusterId}": {
+            "get": {
+                "description": "Get a single implicit cluster synthesized at query-time from NodeGroups/Nodes in a specified Infra",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Get implicit cluster in a specified Infra",
+                "operationId": "GetInfraCluster",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vnet01",
+                        "description": "Cluster ID",
+                        "name": "clusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraClusterInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/infra/{infraId}/configCopy": {
             "get": {
                 "description": "Reconstruct an Infra dynamic creation request body from an existing Infra's information.\nReturns a dynamic request format where networking resources (vNet, subnet, SG, sshKey)\nare auto-created, making it easy to clone or recreate a similar Infra configuration.\n\n**Template Option:**\nWhen the ` + "`" + `template` + "`" + ` query parameter is provided, the extracted configuration is\nsaved as a reusable Infra Dynamic Template with the given name.",
@@ -24508,6 +24648,89 @@ const docTemplate = `{
                 }
             }
         },
+        "model.InfraClusterInfo": {
+            "type": "object",
+            "properties": {
+                "connectionNames": {
+                    "description": "ConnectionNames are unique connection names included in this cluster.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "description": "Id is a deterministic cluster identifier generated from grouping attributes.",
+                    "type": "string"
+                },
+                "infraId": {
+                    "description": "InfraId is the parent Infra ID.",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is a human-readable cluster name. Currently same as Id.",
+                    "type": "string"
+                },
+                "nodeCount": {
+                    "description": "NodeCount is the number of Nodes in this cluster.",
+                    "type": "integer"
+                },
+                "nodeGroupCount": {
+                    "description": "NodeGroupCount is the number of NodeGroups in this cluster.",
+                    "type": "integer"
+                },
+                "nodeGroupIds": {
+                    "description": "NodeGroupIds are NodeGroups that belong to this implicit cluster.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nodeIds": {
+                    "description": "NodeIds are Nodes that belong to this implicit cluster.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "providerNames": {
+                    "description": "ProviderNames are unique CSP providers included in this cluster.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "regionNames": {
+                    "description": "RegionNames are unique regions included in this cluster.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "representativeNodeGroupId": {
+                    "description": "RepresentativeNodeGroupId is a representative NodeGroup ID for quick inspection.",
+                    "type": "string"
+                },
+                "representativeNodeId": {
+                    "description": "RepresentativeNodeId is a representative Node ID for quick inspection.",
+                    "type": "string"
+                },
+                "vNetId": {
+                    "description": "VNetId is the shared VNet boundary used for implicit clustering.",
+                    "type": "string"
+                }
+            }
+        },
+        "model.InfraClusterList": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.InfraClusterInfo"
+                    }
+                }
+            }
+        },
         "model.InfraCmdReq": {
             "type": "object",
             "required": [
@@ -24788,6 +25011,13 @@ const docTemplate = `{
         "model.InfraInfo": {
             "type": "object",
             "properties": {
+                "cluster": {
+                    "description": "Cluster is the list of implicit clusters synthesized at query-time from Nodes.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.InfraClusterInfo"
+                    }
+                },
                 "configureCloudAdaptiveNetwork": {
                     "description": "ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)",
                     "type": "string",
