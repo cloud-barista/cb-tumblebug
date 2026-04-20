@@ -611,7 +611,7 @@ def print_assets_summary(ns_id="system"):
         print(
             tabulate(
                 rows,
-                headers=["Provider", "Specs", "Specs(priced)", "Specs(cost=-1)", "Images"],
+                headers=["Provider", "Specs", "Specs(priced)", "Specs(price-NA)", "Images"],
                 tablefmt="simple",
             )
         )
@@ -621,7 +621,7 @@ def print_assets_summary(ns_id="system"):
             + "Totals: "
             + f"specs={payload.get('totalSpecCount', 0)}, "
             + f"priced={payload.get('pricedSpecCount', 0)}, "
-            + f"cost=-1={payload.get('unpricedSpecCount', 0)}, "
+            + f"price-NA={payload.get('unpricedSpecCount', 0)}, "
             + f"images={payload.get('totalImageCount', 0)}"
         )
     except requests.RequestException as e:

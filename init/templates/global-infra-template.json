@@ -1,125 +1,142 @@
 {
   "resourceType": "infra",
-  "name": "global-infra-template",
-  "description": "Global Infra template with VMs across multiple AWS regions worldwide",
+  "name": "global-infra-test",
+  "description": "Global Infra test with VMs across multiple CSP regions worldwide",
   "infraDynamicReq": {
     "nodeGroups": [
       {
-        "name": "g1",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+ap-northeast-2+c5a.xlarge",
-        "imageId": "ami-08a4fd517a4872931",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-ap-northeast-2",
-        "zone": "ap-northeast-2a"
+        "name": "g1-alibaba-ap-northeast-2",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+ap-northeast-2+ecs.e-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260316.vhd",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       },
       {
-        "name": "g10",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+us-west-1+t3a.xlarge",
-        "imageId": "ami-072028e29f8a73b88",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-us-west-1",
-        "zone": "us-west-1a"
+        "name": "g2-alibaba-us-east-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+us-east-1+ecs.e-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260316.vhd",
+        "rootDiskType": "default",
+        "rootDiskSize": 60
       },
       {
-        "name": "g11",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+ca-west-1+t3.xlarge",
-        "imageId": "ami-085de7df2c3c01773",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-ca-west-1",
-        "zone": "ca-west-1a"
+        "name": "g3-aws-ap-northeast-3",
+        "nodeGroupSize": 2,
+        "specId": "aws+ap-northeast-3+t3.small",
+        "imageId": "ami-070dbbf034ee28f87",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       },
       {
-        "name": "g12",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+sa-east-1+c6a.xlarge",
-        "imageId": "ami-0533a139e02b00be4",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-sa-east-1",
-        "zone": "sa-east-1a"
+        "name": "g4-aws-ca-central-1",
+        "nodeGroupSize": 2,
+        "specId": "aws+ca-central-1+t3a.small",
+        "imageId": "ami-00148f65a52241886",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       },
       {
-        "name": "g2",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+ap-east-1+c5a.xlarge",
-        "imageId": "ami-0ed4fd6805d8ecb23",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-ap-east-1",
-        "zone": "ap-east-1a"
+        "name": "g5-azure-koreasouth",
+        "nodeGroupSize": 2,
+        "specId": "azure+koreasouth+standard_b2ts_v2",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202603310",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       },
       {
-        "name": "g3",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+ap-southeast-4+t3.xlarge",
-        "imageId": "ami-01ee1aa829a2ed7d2",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-ap-southeast-4",
-        "zone": "ap-southeast-4a"
+        "name": "g6-azure-australiaeast",
+        "nodeGroupSize": 2,
+        "specId": "azure+australiaeast+standard_b1ms",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202603290",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       },
       {
-        "name": "g4",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+ap-southeast-3+c7i-flex.xlarge",
-        "imageId": "ami-0dfe3f8d6e153be6f",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-ap-southeast-3",
-        "zone": "ap-southeast-3a"
+        "name": "g7-gcp-asia-northeast1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-northeast1+e2-standard-2",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260414",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       },
       {
-        "name": "g5",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+ap-south-1+c6a.xlarge",
-        "imageId": "ami-0ff91eb5c6fe7cc86",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-ap-south-1",
-        "zone": "ap-south-1a"
+        "name": "g8-gcp-europe-west3",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west3+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260414",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       },
       {
-        "name": "g8",
-        "nodeGroupSize": 1,
-        "description": "mapui",
-        "specId": "aws+eu-north-1+c5a.xlarge",
-        "imageId": "ami-0c33fcb753a7176f6",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-eu-north-1",
-        "zone": "eu-north-1a"
+        "name": "g9-ibm-jp-osa",
+        "nodeGroupSize": 2,
+        "specId": "ibm+jp-osa+nxf-2x1",
+        "imageId": "r034-85c752d5-917c-419e-8556-f7aec8c5ac07"
       },
       {
-        "name": "g9",
-        "nodeGroupSize": 1,
+        "name": "g10-ibm-us-south",
+        "nodeGroupSize": 2,
+        "specId": "ibm+us-south+bxf-2x8",
+        "imageId": "r006-d15adf1f-27d3-4cf6-8f4e-5fa535bc4616"
+      },
+      {
+        "name": "g11-kt-kr1",
+        "nodeGroupSize": 4,
+        "specId": "kt+kr1+2x2.itl",
+        "imageId": "b4034d6b-b96e-400d-b583-5d060156da98",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g12-ncp-kr",
+        "nodeGroupSize": 2,
+        "specId": "ncp+kr+s2-g3a",
+        "imageId": "23214590",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g13-ncp-sgn",
+        "nodeGroupSize": 2,
+        "specId": "ncp+sgn+c2-g3",
+        "imageId": "23037369",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g14-nhn-jp1",
+        "nodeGroupSize": 2,
         "description": "mapui",
-        "specId": "aws+ca-central-1+t3a.xlarge",
-        "imageId": "ami-0631168b8ae6e1731",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-ca-central-1",
-        "zone": "ca-central-1a"
+        "specId": "nhn+jp1+c2.c2m2",
+        "imageId": "614f1e49-ef03-45f0-b476-76b07bdd91f0",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g15-nhn-kr2",
+        "nodeGroupSize": 2,
+        "specId": "nhn+kr2+c2.c2m2",
+        "imageId": "8fab9909-617f-4bf4-8cd7-38bfc27a0129",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g16-tencent-na-siliconvalley",
+        "nodeGroupSize": 2,
+        "specId": "tencent+na-siliconvalley+s5.medium2",
+        "imageId": "img-7rotv4ux",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g17-tencent-ap-seoul",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-seoul+sa2.medium2",
+        "imageId": "img-7rotv4ux",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
       }
-    ],
-    "postCommand": {
-      "userName": "",
-      "command": null
-    },
-    "systemLabel": "",
-    "description": "Made via cb-mapui"
+    ]
   }
 }

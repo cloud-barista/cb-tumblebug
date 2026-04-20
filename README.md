@@ -608,6 +608,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/infra" \
 - **Infrastructure Resources**: Compute specs, images, networks, security groups
 - **Multi-Cloud Infrastructure (Infra)**: Provision and manage distributed infrastructure
 - **Monitoring & Control**: Performance metrics, scaling, lifecycle management
+  - [Infra Resource Model & Lifecycle Management](docs/feature_guide/infra-resource-model-and-lifecycle-management.md)
 - **Credentials & Connections**: Secure cloud provider configuration
   - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
   - Create, view, control, execute remote commands, shut down, and delete Infra using the Infra(multi-cloud infrastructure service) management APIs
