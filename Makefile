@@ -55,9 +55,9 @@ prepare-volumes: ## Create bind-mount directories with correct ownership
 	fi
 	@# Fix root-owned runtime artifacts in assets/spider/ (created by cb-spider container).
 	@# These block Docker build context transfer if not readable by the current user.
-	@if find assets/spider/ -mindepth 1 -not -readable -print -quit 2>/dev/null | grep -q .; then \
+	@if find assets/spider/ -mindepth 1 -uid 0 -a -not -readable -print -quit 2>/dev/null | grep -q .; then \
 		echo "Fixing permissions on cb-spider runtime artifacts in assets/spider/..."; \
-		sudo find assets/spider/ -mindepth 1 -not -user $$(id -u) -exec chown -R $$(id -u):$$(id -g) {} +; \
+		sudo find assets/spider/ -mindepth 1 -uid 0 -exec chown $$(id -u):$$(id -g) {} +; \
 	fi
 	@echo "Prepared!"
 # Note: OpenBao data dir ownership is fixed by entrypoint chown in docker-compose.yaml.
