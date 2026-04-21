@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -30,6 +31,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	resty "github.com/go-resty/resty/v2"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
@@ -97,7 +99,7 @@ func VNetReqStructLevelValidation(sl validator.StructLevel) {
 
 func ValidateVNetReq(vNetReq *model.VNetReq) error {
 	log.Debug().Msg("ValidateVNetReq")
-	log.Debug().Msgf("vNetReq: %+v", vNetReq)
+	log.Trace().Msgf("vNetReq: %+v", vNetReq)
 
 	// * 1. Validates that each struct fields follows the rules in its 'validate' tags.
 	err := validate.Struct(vNetReq)
@@ -191,7 +193,7 @@ func ValidateVNetReq(vNetReq *model.VNetReq) error {
 		subnets = append(subnets, subnet)
 	}
 	network.Subnets = subnets
-	log.Debug().Msgf("network: %+v", network)
+	log.Trace().Msgf("network: %+v", network)
 
 	// Validate the network object
 	err = netutil.ValidateNetwork(network)
@@ -527,7 +529,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 		})
 	}
 
-	log.Debug().Msgf("vNetInfo(initial): %+v", vNetInfo)
+	log.Trace().Msgf("vNetInfo(initial): %+v", vNetInfo)
 
 	// Set a vNetKey for the vNet object
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetInfo.Id)
@@ -583,7 +585,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 		})
 	}
 
-	log.Debug().Msgf("spReqt: %+v", spReqt)
+	log.Trace().Msgf("spReqt: %+v", spReqt)
 
 	client := clientManager.NewHttpClient()
 	method := "POST"
@@ -592,7 +594,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	// API to create a vNet
 	url := fmt.Sprintf("%s/vpc", model.SpiderRestUrl)
 
-	log.Debug().Msgf("[Request to Spider] Creating VPC (url: %s, request body: %+v)", url, spReqt)
+	log.Debug().Msgf("[Request to Spider] Creating VPC: %s", url)
 
 	// Cleanup object when something goes wrong
 	defer func() {
@@ -628,7 +630,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 		}
 	}()
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -639,10 +641,14 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 		clientManager.MediumDuration,
 	)
 
-	log.Debug().Msgf("[Response from Spider] Creating VPC (response body: %+v)", spResp)
+	log.Trace().Msgf("[Response from Spider] Creating VPC: %+v", spResp)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		if restyResp != nil {
+			log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
+		} else {
+			log.Error().Err(err).Msg("")
+		}
 		return emptyRet, err
 	}
 
@@ -693,7 +699,8 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
 	vNetInfo.SystemMessage = ""
 
-	log.Debug().Msgf("vNetInfo(filled): %+v", vNetInfo)
+	log.Debug().Msgf("VNet created in CSP: id=%s, cspId=%s, cidr=%s", vNetInfo.Id, vNetInfo.CspResourceId, vNetInfo.CidrBlock)
+	log.Trace().Msgf("vNetInfo(filled): %+v", vNetInfo)
 
 	// Store vNet object into the key-value store
 	value, err := json.Marshal(vNetInfo)
@@ -784,11 +791,12 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 		return emptyRet, err
 	}
 
+	log.Info().Msgf("VNet created: id=%s, cidr=%s, subnets=%d", vNetInfo.Id, vNetInfo.CidrBlock, len(vNetInfo.SubnetInfoList))
 	return vNetInfo, nil
 }
 
 func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
-	log.Info().Msg("GetVNet")
+	log.Debug().Msg("GetVNet")
 
 	// vNet object
 	var emptyRet model.VNetInfo
@@ -834,62 +842,14 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 		return emptyRet, err
 	}
 
-	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
-
-	/*
-	 *	Get vNet info
-	 */
-
-	// [Via Spider] Get a vNet and subnets
-	client := clientManager.NewHttpClient()
-	method := "GET"
-	spReqt := clientManager.NoBody
-	var spResp spiderVPCInfo
-
-	// API to create a vNet
-	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
-	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
-	url += queryParams
-
-	log.Debug().Msgf("[Request to Spider] Getting VPC (url: %s, request body: %+v)", url, spReqt)
-
-	_, err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(spReqt),
-		&spReqt,
-		&spResp,
-		clientManager.MediumDuration,
-	)
-
-	log.Debug().Msgf("[Response from Spider] Getting VPC (response body: %+v)", spResp)
-
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
+	// Derive status from conditions stored in KV store
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	for i := range vNetInfo.SubnetInfoList {
+		vNetInfo.SubnetInfoList[i].Status = model.DeriveSubnetStatus(vNetInfo.SubnetInfoList[i].Conditions)
 	}
 
-	// Set the vNet object with the response from the Spider
-	vNetInfo.CspResourceId = spResp.IId.SystemId
-	vNetInfo.CspResourceName = spResp.IId.NameId
-	// Intentionally use the user-provided vNet CIDR block managed by Tumblebug for multi-cloud network management purpose
-	// vNetInfo.CidrBlock = spResp.IPv4_CIDR
-	vNetInfo.KeyValueList = spResp.KeyValueList
-
-	// TODO: Check if it's required or not to save the vNet object
-	// val, err := json.Marshal(vNetInfo)
-	// if err != nil {
-	// 	log.Error().Err(err).Msg("")
-	// 	return emptyRet, err
-	// }
-
-	// err = kvstore.Put(vNetKey, string(val))
-	// if err != nil {
-	// 	log.Error().Err(err).Msg("")
-	// 	return emptyRet, err
-	// }
+	log.Debug().Msgf("VNet retrieved: id=%s, status=%s", vNetInfo.Id, vNetInfo.Status)
+	log.Trace().Msgf("vNetInfo: %+v", vNetInfo)
 
 	return vNetInfo, nil
 }
@@ -936,7 +896,8 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	log.Debug().Msgf("subnetsKv: %+v", subnetsKv)
+	log.Debug().Msgf("Deleting VNet: %s (action: %s, subnets: %d)", vNetId, action, len(subnetsKv))
+	log.Trace().Msgf("subnetsKv: %+v", subnetsKv)
 
 	// normal case: action == ""
 	if action == ActionNone && len(subnetsKv) > 0 {
@@ -1027,6 +988,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 
 	trials := 2
 	seconds := uint64(3)
+	var restyResp *resty.Response
 	ok := false
 	// Sleep and retry if the vNet deletion fails
 	for i := range trials {
@@ -1036,14 +998,14 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		// Sleep for a while before retrying
 		time.Sleep(time.Duration(seconds) * time.Second)
 
-		log.Debug().Msgf("[Request to Spider] Deleting VPC (url: %s, request body: %+v)", url, spReqt)
+		log.Debug().Msgf("[Request to Spider] Deleting VPC: %s", url)
 
 		var spResp spiderBooleanInfoResp
 
 		client := clientManager.NewHttpClient()
 		method := "DELETE"
 
-		_, err = clientManager.ExecuteHttpRequest(
+		restyResp, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -1054,9 +1016,15 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 			clientManager.MediumDuration,
 		)
 
-		log.Debug().Msgf("[Response from Spider] Deleting VPC (response body: %+v)", spResp)
+		log.Trace().Msgf("[Response from Spider] Deleting VPC: %+v", spResp)
 
 		if err != nil {
+			if restyResp != nil && restyResp.StatusCode() == http.StatusNotFound {
+				log.Info().Msgf("VPC (%s) not found on CSP, treating as already deleted", vNetId)
+				ok = true
+				err = nil
+				break
+			}
 			log.Error().Err(err).Msg("")
 			continue
 		}
@@ -1193,9 +1161,9 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
 	url += queryParams
 
-	log.Debug().Msgf("[Request to Spider] Reconciling VPC (url: %s, request body: %+v)", url, spReqt)
+	log.Debug().Msgf("[Request to Spider] Reconciling VPC: %s", url)
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1206,12 +1174,15 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		clientManager.MediumDuration,
 	)
 
-	log.Debug().Msgf("[Response from Spider] Reconciling VPC (response body: %+v)", spResp)
+	log.Trace().Msgf("[Response from Spider] Reconciling VPC: %+v", spResp)
 
-	// if err != nil {
-	// 	log.Error().Err(err).Msg("")
-	// 	return emptyRet, err
-	// }
+	// Only proceed with cleanup when the VPC is confirmed not found (404).
+	// For server errors (5xx) or transport errors, return the error without cleanup
+	// to prevent accidental data loss during Spider/CSP outages.
+	if err != nil && (restyResp == nil || restyResp.StatusCode() != http.StatusNotFound) {
+		log.Error().Err(err).Msg("failed to get VPC from Spider, skipping reconciliation")
+		return emptyRet, err
+	}
 
 	if err == nil {
 		err = fmt.Errorf("may not be reconciled, vNet info (id: %s) exists", vNetId)
@@ -1232,7 +1203,7 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 				log.Warn().Err(err2).Msg("")
 				// return emptyRet, err
 			}
-			log.Debug().Msgf("subnetInfo: %+v", subnetInfo)
+			log.Trace().Msgf("subnetInfo: %+v", subnetInfo)
 
 			_, err2 := ReconcileSubnet(nsId, vNetId, subnetInfo.Id)
 			if err2 != nil {
@@ -1414,7 +1385,7 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 		spReqt = spiderVPCRegisterRequest{}
 	}
 
-	log.Debug().Msgf("[Request to Spider] Registering VPC (url: %s, request body: %+v)", url, spReqt)
+	log.Debug().Msgf("[Request to Spider] Registering VPC: %s", url)
 
 	// Clean up the vNet object when something goes wrong
 	defer func() {
@@ -1450,7 +1421,7 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 		}
 	}()
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1461,10 +1432,14 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 		clientManager.MediumDuration,
 	)
 
-	log.Debug().Msgf("[Response from Spider] Registering VPC (response body: %+v)", spResp)
+	log.Trace().Msgf("[Response from Spider] Registering VPC: %+v", spResp)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		if restyResp != nil {
+			log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
+		} else {
+			log.Error().Err(err).Msg("")
+		}
 		return emptyRet, err
 	}
 
@@ -1542,7 +1517,8 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 
 	}
 
-	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
+	log.Debug().Msgf("VNet registered: id=%s, cspId=%s, cidr=%s", vNetInfo.Id, vNetInfo.CspResourceId, vNetInfo.CidrBlock)
+	log.Trace().Msgf("vNetInfo: %+v", vNetInfo)
 
 	// [Conditions] VNet registration succeeded → mark as ready, synced, and update children status
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
@@ -1656,7 +1632,8 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	log.Debug().Msgf("subnetsKv: %+v", subnetsKv)
+	log.Debug().Msgf("Deregistering VNet: %s (withSubnets: %s, subnets: %d)", vNetId, withSubnets, len(subnetsKv))
+	log.Trace().Msgf("subnetsKv: %+v", subnetsKv)
 
 	if withSubnets == "false" && len(subnetsKv) > 0 {
 		err := fmt.Errorf("cannot deregister vNet (%s): has %d subnet(s); set withSubnets=true", vNetId, len(subnetsKv))
@@ -1726,14 +1703,14 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	// API to delete a vNet
 	url := fmt.Sprintf("%s/regvpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
 
-	log.Debug().Msgf("[Request to Spider] Deregistering VPC (url: %s, request body: %+v)", url, spReqt)
+	log.Debug().Msgf("[Request to Spider] Deregistering VPC: %s", url)
 
 	var spResp spiderBooleanInfoResp
 
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1744,45 +1721,56 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		clientManager.MediumDuration,
 	)
 
-	log.Debug().Msgf("[Response from Spider] Deregistering VPC (response body: %+v)", spResp)
+	log.Trace().Msgf("[Response from Spider] Deregistering VPC: %+v", spResp)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
-		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
-		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
-		vNetInfo.SystemMessage = err.Error()
-		failVal, marshalErr := json.Marshal(vNetInfo)
-		if marshalErr == nil {
-			_ = kvstore.Put(vNetKey, string(failVal))
+		if restyResp != nil && restyResp.StatusCode() == http.StatusNotFound {
+			// Spider returned 404: resource already gone from Spider
+			// Proceed with local cleanup (same as success path)
+			log.Info().Msgf("VNet (%s) not found on Spider (404), proceeding with local cleanup", vNetInfo.Id)
+		} else {
+			if restyResp != nil {
+				log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
+			} else {
+				log.Error().Err(err).Msg("")
+			}
+			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
+			model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
+			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+			vNetInfo.SystemMessage = err.Error()
+			failVal, marshalErr := json.Marshal(vNetInfo)
+			if marshalErr == nil {
+				_ = kvstore.Put(vNetKey, string(failVal))
+			}
+			return emptyRet, err
 		}
-		return emptyRet, err
-	}
-	ok, err := strconv.ParseBool(spResp.Result)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
-		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
-		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
-		vNetInfo.SystemMessage = err.Error()
-		failVal, marshalErr := json.Marshal(vNetInfo)
-		if marshalErr == nil {
-			_ = kvstore.Put(vNetKey, string(failVal))
+	} else {
+		ok, err := strconv.ParseBool(spResp.Result)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
+			model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
+			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+			vNetInfo.SystemMessage = err.Error()
+			failVal, marshalErr := json.Marshal(vNetInfo)
+			if marshalErr == nil {
+				_ = kvstore.Put(vNetKey, string(failVal))
+			}
+			return emptyRet, err
 		}
-		return emptyRet, err
-	}
-	if !ok {
-		err := fmt.Errorf("failed to deregister the vNet (%s)", vNetId)
-		log.Error().Err(err).Msg("")
-		// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
-		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
-		vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
-		vNetInfo.SystemMessage = err.Error()
-		failVal, marshalErr := json.Marshal(vNetInfo)
-		if marshalErr == nil {
-			_ = kvstore.Put(vNetKey, string(failVal))
+		if !ok {
+			err := fmt.Errorf("failed to deregister the vNet (%s)", vNetId)
+			log.Error().Err(err).Msg("")
+			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
+			model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
+			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+			vNetInfo.SystemMessage = err.Error()
+			failVal, marshalErr := json.Marshal(vNetInfo)
+			if marshalErr == nil {
+				_ = kvstore.Put(vNetKey, string(failVal))
+			}
+			return emptyRet, err
 		}
-		return emptyRet, err
 	}
 
 	// Delete the saved the vNet info
