@@ -11,7 +11,7 @@ These were renamed to **Infra**, **NodeGroup**, and **Node** for the following r
 
 | Old Term | New Term | Reason for Change |
 |----------|----------|-------------------|
-| MCI (MCIS) | **Infra** | "MCI" was an acronym that required explanation every time. "Infra" is self-descriptive and universally understood. |
+| MCI | **Infra** | "MCI" was an acronym that required explanation every time. "Infra" is self-descriptive and universally understood. |
 | SubGroup | **NodeGroup** | "SubGroup" was vague. "NodeGroup" clearly describes a group of homogeneous Nodes. It also aligns with Kubernetes `NodeGroup` semantics, preparing for future Kubernetes integration. |
 | VM | **Node** | "VM" is implementation-specific (virtual machine). "Node" is a more general server instance abstraction that can represent a VM today and can be extended to bare-metal servers or other compute forms over time. The API uses "Node" for user-facing interactions, while the internal implementation still deals with VMs through CSP drivers. |
 
@@ -23,18 +23,24 @@ CB-Tumblebug organizes multi-cloud compute resources in a clear hierarchy. For s
 
 ```
 Namespace
-└── Infra
-    ├── Cluster-1 (implicit, VNet-1)
+└── Infra (server infra, multi-CSP)
+    ├── Cluster-1 (implicit, vNet-1)
     │   ├── NodeGroup-A (AWS ap-northeast-2)
-    │   │   ├── Node-A-1 (VM instance)
-    │   │   ├── Node-A-2 (VM instance)
-    │   │   └── Node-A-3 (VM instance)
-    │   └── NodeGroup-B (Azure koreacentral)
-    │       ├── Node-B-1 (bare-metal instance)
-    │       └── Node-B-2 (bare-metal instance)
-    └── Cluster-2 (implicit, VNet-2)
+    │   │   ├── Node-A1 (VM instance)
+    │   │   ├── Node-A2 (VM instance)
+    │   │   └── Node-A3 (VM instance)
+    │   └── NodeGroup-B (AWS ap-northeast-2)
+    │       ├── Node-B1 (bare-metal instance)
+    │       └── Node-B2 (bare-metal instance)
+    └── Cluster-2 (implicit, vNet-2)
         └── NodeGroup-C (GCP asia-northeast3)
-            └── Node-C-1 (VM instance)
+            └── Node-C1 (VM instance)
+Namespace
+└── Infra (server infra, single-CSP)
+    └── Cluster-1 (implicit, vNet-1)
+        └── NodeGroup-A (AWS, migrated-app)
+            ├── Node-A1
+            └── Node-A2            
 ```
 
 ### What is Infra?
@@ -72,39 +78,82 @@ In the current CB-Tumblebug implementation, most Nodes are provisioned as virtua
 
 For **server workloads** managed through `Infra` and `NodeGroup` resources, CB-Tumblebug now provides an implicit **Cluster** view inside an Infra. This is separate from the existing Kubernetes cluster resource (`/k8sCluster`) and is intended for VM-based or general server workloads rather than Kubernetes workloads.
 
-**Cluster** is not explicitly created by the user. Instead, it is synthesized at query time from the Infra topology, primarily by grouping NodeGroups and Nodes that share the same network boundary (for example, the same `VNet`).
+**Cluster** is not explicitly created by the user. Instead, it is synthesized at query time from the Infra topology, primarily by grouping NodeGroups and Nodes that share the same network boundary (for example, the same `vNet`).
 
 - A Cluster exists **within** an Infra, not above it
 - Clusters are **not separately created or persisted**
 - Clusters are synthesized dynamically when Infra or Cluster information is queried
-- For the current implementation, the primary grouping key is shared `VNet`
+- For the current implementation, the primary grouping key is shared `vNet`
 - This complements the existing Kubernetes cluster model by providing a parallel abstraction for non-Kubernetes server workloads
 
 ```
-Infra (server workload)                K8s Cluster (container workload)
-├── Cluster-1 (implicit, VNet-1)       ├── K8s NodeGroup-A
-│   ├── NodeGroup-A (AWS, app)         │   ├── Worker Node 1
-│   │   └── Node-A-1                   │   └── Worker Node 2
-│   └── NodeGroup-B (AWS, batch)       └── K8s NodeGroup-B
-│       ├── Node-B-1                       └── Worker Node 3
-│       └── Node-B-2
-└── Cluster-2 (implicit, VNet-2)
-    └── NodeGroup-C (Azure, db)
-        └── Node-C-1
+Namespace
+└── Infra (server infra)
+    ├── Cluster-1 (implicit, vNet-1)
+    │   ├── NodeGroup-A (AWS, app)
+    │   │   ├── Node-A1
+    │   │   └── Node-A2
+    │   └── NodeGroup-B (AWS, batch)
+    │       ├── Node-B1
+    │       └── Node-B2
+    └── Cluster-2 (implicit, vNet-2)
+        └── NodeGroup-C (Azure, db)
+            └── Node-C1
 ```
 
-In this model, NodeGroups that share a VNet (or equivalent network boundary) implicitly form a Cluster. The cluster boundary is determined by the underlying network topology, not by explicit user declaration.
+In this model, NodeGroups that share a vNet (or equivalent network boundary) implicitly form a Cluster. The cluster boundary is determined by the underlying network topology, not by explicit user declaration.
+
+#### Unified Resource Hierarchy: Infra vs Multi-K8s Cluster
+
+CB-Tumblebug provides two parallel top-level abstractions for different workload types, aligned for conceptual consistency:
+
+```
+Namespace
+└── Infra (server infra, multi-CSP)
+    ├── Cluster-1 (implicit, vNet-1)
+    │   ├── NodeGroup-A (AWS, app)
+    │   │   ├── Node-A1
+    │   │   └── Node-A2
+    │   └── NodeGroup-B (AWS, batch)
+    │       ├── Node-B1
+    │       └── Node-B2
+    └── Cluster-2 (implicit, vNet-2)
+        └── NodeGroup-C (Azure, db)
+            └── Node-C1
+
+Namespace
+└── Multi-K8s Cluster (container infra)
+    ├── K8s Cluster-1 (AWS EKS)
+    │   ├── K8s NodeGroup-A
+    │   │   ├── Worker Node A1
+    │   │   └── Worker Node A2
+    │   └── K8s NodeGroup-B
+    │       └── Worker Node B1
+    └── K8s Cluster-2 (Azure AKS)
+        └── K8s NodeGroup-C
+            └── Worker Node C1
+```
+
+**Key alignment points:**
+- Both **Infra** and **Multi-K8s Cluster** are top-level resource groups within a Namespace
+- Both contain **Cluster** as an organizing layer (implicit for Infra, explicit for Multi-K8s Cluster)
+- Both use **NodeGroup** for homogeneous resource grouping
+- **Node** represents a compute unit (VM for Infra, worker node for K8s clusters)
+
+> **Note on terminology:** The term "Multi-K8s Cluster" may be renamed to **"Infra"** in future versions to provide a more consistent naming scheme. This change would clarify that both server workloads and container workloads are managed under the same unified "Infra" concept.
 
 #### Cluster Query APIs
 
-The implicit Cluster view can be queried through the following APIs:
+The implicit Cluster view in an Infra can be queried through the following APIs:
 
 - `GET /ns/{nsId}/infra/{infraId}/cluster`
 - `GET /ns/{nsId}/infra/{infraId}/cluster/{clusterId}`
 
 In addition, Infra detail responses may include the synthesized cluster view as part of `InfraInfo`.
 
-> The naming alignment (Node, NodeGroup) between VM-based Infra and Kubernetes resources is intentional, providing a consistent mental model regardless of the underlying compute type.
+> The naming alignment (Node, NodeGroup, Cluster) between VM-based Infra and Kubernetes resources is intentional, providing a consistent mental model regardless of the underlying compute type.
+
+> **Note on Infra flexibility:** Infra can represent infrastructure within a single CSP (e.g., cloud migration from on-premise to AWS) or span multiple CSPs simultaneously (e.g., geographic distribution across AWS, Azure, and GCP). In single-CSP scenarios, the unified "Infra" terminology eliminates the ambiguity of the legacy "MCI" term.
 
 ## 📊 Status Constants
 
@@ -112,9 +161,10 @@ In addition, Infra detail responses may include the synthesized cluster view as 
 
 The following statuses represent the current state of an Infra:
 
+
 | Status | Description | Stable? |
 |--------|-------------|---------|
-| `Preparing` | Infra resources are being prepared (VNet, SecurityGroup, SSH Key) | No (Transitional) |
+| `Preparing` | Infra resources are being prepared (vNet, SecurityGroup, SSH Key) | No (Transitional) |
 | `Prepared` | Infra resources are prepared, ready for Node provisioning | No (Transitional) |
 | `Creating` | Nodes are being provisioned | No (Transitional) |
 | `Running` | All Nodes are running | Yes |
@@ -257,8 +307,8 @@ The `Preparing` → `Prepared` phase involves creating shared resources before N
 flowchart TD
     START[Infra Create Request] --> PREPARE[Status: Preparing]
     
-    PREPARE --> VNET[Create VNet/Subnet]
-    VNET --> SG[Create Security Groups]
+    PREPARE --> vNet[Create vNet/Subnet]
+    vNet --> SG[Create Security Groups]
     SG --> SSHKEY[Create SSH Keys]
     SSHKEY --> VALIDATE[Validate Specs & Images]
     
