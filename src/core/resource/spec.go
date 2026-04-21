@@ -33,6 +33,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	alibabaPricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba"
 	awsPricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/aws"
 	azurePricing "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
@@ -2068,6 +2069,23 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 	return temp, nil
 }
 
+// pickAnyConnectionForProvider returns the name of any verified connection
+// configured for the given provider. Returns an error when no such connection
+// exists. Used to avoid hardcoding a specific connection name when calling
+// region-agnostic CSP APIs that only need a credential carrier.
+func pickAnyConnectionForProvider(provider string) (string, error) {
+	list, err := common.GetConnConfigList("", true, false)
+	if err != nil {
+		return "", err
+	}
+	for _, c := range list.Connectionconfig {
+		if strings.EqualFold(c.ProviderName, provider) {
+			return c.ConfigName, nil
+		}
+	}
+	return "", fmt.Errorf("no verified connection configured for provider %q", provider)
+}
+
 // GetAvailableRegionZonesForSpec queries the availability of a specific spec across all regions/zones
 // Returns detailed availability information including regions, zones, and query performance metrics
 func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.SpecAvailabilityInfo, error) {
@@ -2086,9 +2104,18 @@ func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.
 		return result, fmt.Errorf(result.ErrorMessage)
 	}
 
-	// Get connection config for Alibaba Cloud (using ap-northeast-1 as default)
-	// TODO: Make this configurable or use a more generic approach
-	connectionName := "alibaba-ap-northeast-1"
+	// Get any verified connection config for this provider. The legacy
+	// hardcoded "alibaba-ap-northeast-1" was fragile because that specific
+	// connection might not be configured in every deployment. The Alibaba
+	// AnyCall (GetInstanceTypeAvailableAllZones) returns all-region results
+	// regardless of which regional connection is used to call it, so any
+	// connection of the same provider works as a credential carrier.
+	connectionName, err := pickAnyConnectionForProvider(provider)
+	if err != nil {
+		result.ErrorMessage = fmt.Sprintf("No usable connection found for provider %s: %v", provider, err)
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, err
+	}
 	connConfig, err := common.GetConnConfig(connectionName)
 	if err != nil {
 		result.ErrorMessage = fmt.Sprintf("Failed to get connection config for %s: %v", connectionName, err)
@@ -3641,35 +3668,48 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 	return result, nil
 }
 
-// filterAlibabaZonesBySpecAvailability filters zones based on Alibaba Cloud API response
-// Returns zones where the spec is actually available
+// filterAlibabaZonesBySpecAvailability filters zones based on Alibaba Cloud API response.
+// Returns zones where the spec is actually available.
+//
+// This uses the region-scoped, cached availability dispatcher
+// (csp.CheckAvailability → DescribeAvailableResource for ONE region) instead of
+// the legacy AnyCall GetInstanceTypeAvailableAllZones which queries availability
+// across ALL regions for the instance type. The dispatcher path is:
+//   - Faster: single-region API call vs. global sweep
+//   - Cached: 5-min TTL + singleflight, so a prior ReviewSpecImagePair call
+//     for the same (region, instanceType) is reused at zero cost
+//   - Consistent: same data source as the popup's pair-review section
 func filterAlibabaZonesBySpecAvailability(cspSpecName string, regionName string, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
-	// Get the full availability info using existing function
-	availabilityInfo, err := GetAvailableRegionZonesForSpec(csp.Alibaba, cspSpecName)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to query Alibaba spec availability: %w", err)
+	availability := cspcheck.CheckAvailability(context.Background(), model.AvailabilityQuery{
+		Provider:     csp.Alibaba,
+		Region:       regionName,
+		InstanceType: cspSpecName,
+	})
+
+	// The dispatcher is non-fatal: on checker error or missing checker it
+	// returns Available=true with a Reason. In those cases we cannot trust
+	// per-zone results, so fall back to "all verified zones available" to
+	// avoid hiding zones the user might actually be able to use.
+	if availability.Source == "none" || strings.HasSuffix(availability.Source, ":error") {
+		log.Warn().
+			Str("source", availability.Source).
+			Str("reason", availability.Reason).
+			Str("instanceType", cspSpecName).
+			Str("region", regionName).
+			Msg("alibaba availability dispatcher returned no per-zone data; treating all verified zones as available")
+		return verifiedZones, nil, nil
 	}
 
-	if !availabilityInfo.Success {
-		return nil, nil, fmt.Errorf("Alibaba spec availability query failed: %s", availabilityInfo.ErrorMessage)
-	}
-
-	// Find zones for the specific region
-	var cspAvailableZones []string
-	for _, regionInfo := range availabilityInfo.AvailableRegions {
-		if strings.EqualFold(regionInfo.RegionName, regionName) {
-			cspAvailableZones = regionInfo.Zones
-			break
+	// Build the set of zones the CSP currently reports as available
+	// (WithStock + at least one supported disk).
+	cspZoneSet := make(map[string]bool)
+	for _, z := range availability.Zones {
+		if z.Available {
+			cspZoneSet[z.ZoneId] = true
 		}
 	}
 
-	// Create a set of CSP-available zones for efficient lookup
-	cspZoneSet := make(map[string]bool)
-	for _, z := range cspAvailableZones {
-		cspZoneSet[z] = true
-	}
-
-	// Filter verified zones based on CSP availability
+	// Filter verified zones based on CSP availability.
 	for _, zone := range verifiedZones {
 		if cspZoneSet[zone] {
 			availableZones = append(availableZones, zone)

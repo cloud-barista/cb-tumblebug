@@ -494,10 +494,23 @@ type ReviewResourceSummary struct {
 	UnavailableImages int `json:"unavailableImages"`
 }
 
-// SpecImagePairReviewReq is struct for spec-image pair review request
+// SpecImagePairReviewReq is struct for spec-image pair review request.
+//
+// RootDiskType and Zone are OPTIONAL and used to make the availability
+// pre-check more precise:
+//   - RootDiskType: when empty or "default", the checker queries availability
+//     across all disk categories supported in the region (CSP/Spider will
+//     pick its own default at provision time). When a specific category is
+//     given (e.g., "cloud_essd"), the result reflects stock for that exact
+//     disk type, allowing the UI to flag combinations that will fail.
+//   - Zone: when set, the checker scopes the availability query to that
+//     single zone (so SuggestedSystemDisk and Available reflect that zone
+//     only). When empty, the result spans all zones in the region.
 type SpecImagePairReviewReq struct {
-	SpecId  string `json:"specId" validate:"required" example:"aws+ap-northeast-2+t3.nano"`
-	ImageId string `json:"imageId" validate:"required" example:"ami-01f71f215b23ba262"`
+	SpecId       string `json:"specId" validate:"required" example:"aws+ap-northeast-2+t3.nano"`
+	ImageId      string `json:"imageId" validate:"required" example:"ami-01f71f215b23ba262"`
+	RootDiskType string `json:"rootDiskType,omitempty" example:"default"` // "", "default", or CSP-native disk category (e.g., "cloud_essd")
+	Zone         string `json:"zone,omitempty" example:""`                // optional CSP-native zone id; empty = all zones in region
 }
 
 // SpecImagePairReviewResult is struct for spec-image pair review result
@@ -526,6 +539,28 @@ type SpecImagePairReviewResult struct {
 
 	// Cost estimation
 	EstimatedCost string `json:"estimatedCost,omitempty" example:"$0.0052/hour"`
+
+	// Pre-flight availability (zone × disk-category) from CSP-specific checker.
+	// Populated when a checker is registered for the provider; nil otherwise.
+	Availability *AvailabilityResult `json:"availability,omitempty"`
+
+	// SuggestedZone is a zone picked from Availability.Zones that has stock and
+	// supports the requested (or any) system-disk category. Empty when no
+	// suggestion is possible (e.g., provider has no checker, or every zone is
+	// out of stock). Callers can use this to pre-fill ZoneId for VM creation
+	// to improve 1-shot success rate.
+	SuggestedZone string `json:"suggestedZone,omitempty"`
+
+	// SuggestedSystemDisk is a system-disk category that is currently
+	// available in SuggestedZone. Empty when no suggestion is possible.
+	SuggestedSystemDisk string `json:"suggestedSystemDisk,omitempty"`
+
+	// RequestedRootDiskType echoes the input RootDiskType (after normalization:
+	// empty/"default" -> ""). Useful for UI to confirm what was checked.
+	RequestedRootDiskType string `json:"requestedRootDiskType,omitempty"`
+
+	// RequestedZone echoes the input Zone. Empty means region-wide check.
+	RequestedZone string `json:"requestedZone,omitempty"`
 
 	// Additional info
 	Info     []string `json:"info,omitempty"`

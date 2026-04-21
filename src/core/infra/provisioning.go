@@ -28,7 +28,9 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
-	azure "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
+	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba" // register Alibaba availability checker
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"   // register Azure availability checker
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -42,6 +44,33 @@ import (
 func getNodeCreateRateLimitsForCSP(cspName string) (int, int) {
 	config := csp.GetRateLimitConfig(cspName)
 	return config.MaxConcurrentRegions, config.MaxNodesPerRegion
+}
+
+// pickSuggestedSystemDisk returns the first currently-available system-disk
+// category from an AvailabilityResult, or "" when no suggestion is available
+// (no checker, no available zone, or no supported disk listed).
+//
+// NOTE: This is intended for REVIEW/DISPLAY purposes only (e.g. mapui hint).
+// Do NOT auto-apply the returned value to a VM creation request: the suggestion
+// is picked from the first available zone of the region, which may differ from
+// the actual VM zone (vnet/subnet are bound to a representative zone during
+// infra dynamic provisioning), so silently switching the disk type can still
+// cause "No AvailableSystemDisk" failures and breaks the user's mental model.
+func pickSuggestedSystemDisk(r model.AvailabilityResult) string {
+	if !r.Available {
+		return ""
+	}
+	for _, z := range r.Zones {
+		if !z.Available {
+			continue
+		}
+		for _, d := range z.SupportedDisks {
+			if d != "" {
+				return d
+			}
+		}
+	}
+	return ""
 }
 
 // InfraReqStructLevelValidation is func to validate fields in InfraReqStruct
@@ -1880,39 +1909,34 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		nodeReview.ProviderName = specInfo.ProviderName
 		nodeReview.RegionName = specInfo.RegionName
 
-		// Check if spec is available in CSP
+		// Check if spec is available in CSP using the provider-agnostic
+		// availability checker (Alibaba: DescribeAvailableResource, Azure:
+		// Resource SKU + quota, ...). Falls back to CB-Spider LookupSpec for
+		// providers that have no registered checker.
 		specAvailable := false
 		var specCheckErr error
 		cspSpecName := specInfo.CspSpecName
 
-		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
-			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
-			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check for Infra review")
-			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
-			if azErr == nil {
-				specAvailable = specResult.Available
-				if !specAvailable {
-					specCheckErr = fmt.Errorf("%s", specResult.Reason)
-				}
-			} else {
-				// Fall back to CB-Spider LookupSpec on Azure check errors
-				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
-				cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
-				if lookupErr == nil {
-					specAvailable = true
-					cspSpecName = cspSpec.Name
-				} else {
-					specCheckErr = lookupErr
-				}
-			}
-		} else {
-			// Other providers: use CB-Spider LookupSpec
+		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+			Provider:     csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:       specInfo.RegionName,
+			InstanceType: specInfo.CspSpecName,
+		})
+
+		if availability.Source == "none" {
+			// No checker registered for this provider: fall back to CB-Spider LookupSpec.
 			cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 			if lookupErr == nil {
 				specAvailable = true
 				cspSpecName = cspSpec.Name
 			} else {
 				specCheckErr = lookupErr
+			}
+		} else {
+			// Checker available: trust its result.
+			specAvailable = availability.Available
+			if !specAvailable {
+				specCheckErr = fmt.Errorf("%s", availability.Reason)
 			}
 		}
 
@@ -2093,18 +2117,34 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 	return nodeReview, specInfoPtr, viable, hasNodeWarning, nodeCost
 }
 
-// ReviewSpecImagePair reviews spec and image pair compatibility for provisioning
-func ReviewSpecImagePair(ctx context.Context, specId, imageId string) (*model.SpecImagePairReviewResult, error) {
-	log.Debug().Msgf("Reviewing spec-image pair: spec=%s, image=%s", specId, imageId)
+// ReviewSpecImagePair reviews spec and image pair compatibility for provisioning.
+//
+// rootDiskType and zone are OPTIONAL refinements for the availability check:
+//   - rootDiskType: empty or "default" means "no specific disk category"; the
+//     checker reports stock across all categories supported in the region.
+//     A specific value (e.g., "cloud_essd") narrows the check to that exact
+//     disk so the UI can flag a combination that will fail at provisioning.
+//   - zone: empty means "all zones in the region"; a specific zone scopes
+//     the result to that single zone (so SuggestedSystemDisk reflects it).
+func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zone string) (*model.SpecImagePairReviewResult, error) {
+	log.Debug().Msgf("Reviewing spec-image pair: spec=%s, image=%s, rootDiskType=%q, zone=%q",
+		specId, imageId, rootDiskType, zone)
+
+	// Normalize "default"/empty to "" for the availability query so checkers
+	// don't send "default" as a literal disk category to the CSP API.
+	normalizedDisk := model.NormalizeDiskTypeForQuery(rootDiskType)
+	normalizedZone := strings.TrimSpace(zone)
 
 	result := &model.SpecImagePairReviewResult{
-		SpecId:   specId,
-		ImageId:  imageId,
-		IsValid:  true,
-		Status:   "OK",
-		Info:     make([]string, 0),
-		Warnings: make([]string, 0),
-		Errors:   make([]string, 0),
+		SpecId:                specId,
+		ImageId:               imageId,
+		IsValid:               true,
+		Status:                "OK",
+		Info:                  make([]string, 0),
+		Warnings:              make([]string, 0),
+		Errors:                make([]string, 0),
+		RequestedRootDiskType: normalizedDisk,
+		RequestedZone:         normalizedZone,
 	}
 
 	// Validate SpecId
@@ -2126,33 +2166,93 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId string) (*model.Sp
 		result.ProviderName = specInfo.ProviderName
 		result.RegionName = specInfo.RegionName
 
-		// Check if spec is available in CSP
+		// Check if spec is available in CSP using the provider-agnostic
+		// availability checker (Alibaba: DescribeAvailableResource, Azure:
+		// Resource SKU + quota, ...). Falls back to CB-Spider LookupSpec for
+		// providers that have no registered checker.
 		specAvailable := false
 		var specCheckErr error
 
-		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
-			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
-			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check")
-			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
-			if azErr == nil {
-				specAvailable = specResult.Available
-				if !specAvailable {
-					// Azure positively reported the spec as unavailable; treat as authoritative.
-					specCheckErr = fmt.Errorf("%s", specResult.Reason)
-				}
-			} else {
-				// Fall back to CB-Spider LookupSpec on Azure check errors to preserve existing behavior.
-				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
-				_, specCheckErr = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
-				if specCheckErr == nil {
-					specAvailable = true
-				}
-			}
-		} else {
-			// Other providers: use CB-Spider LookupSpec
+		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+			Provider:           csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:             specInfo.RegionName,
+			InstanceType:       specInfo.CspSpecName,
+			SystemDiskCategory: normalizedDisk,
+			PreferredZone:      normalizedZone,
+		})
+
+		switch availability.Source {
+		case "none":
+			// No checker registered for this provider: fall back to CB-Spider LookupSpec.
 			_, specCheckErr = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
 			if specCheckErr == nil {
 				specAvailable = true
+			}
+		default:
+			// Checker available (Alibaba, Azure, ...): trust its result.
+			result.Availability = &availability
+			specAvailable = availability.Available
+			if !specAvailable {
+				specCheckErr = fmt.Errorf("%s", availability.Reason)
+			}
+			// Pick suggested zone + disk from the matrix when present.
+			// When the user specified a zone, prefer that zone's disks first.
+			pickFrom := func(targetZone string) bool {
+				for _, z := range availability.Zones {
+					if !z.Available {
+						continue
+					}
+					if targetZone != "" && !strings.EqualFold(z.ZoneId, targetZone) {
+						continue
+					}
+					result.SuggestedZone = z.ZoneId
+					if len(z.SupportedDisks) > 0 {
+						// Prefer the requested disk type if it is in the list,
+						// otherwise the first available one.
+						chosen := z.SupportedDisks[0]
+						if normalizedDisk != "" {
+							for _, d := range z.SupportedDisks {
+								if strings.EqualFold(d, normalizedDisk) {
+									chosen = d
+									break
+								}
+							}
+						}
+						result.SuggestedSystemDisk = chosen
+					}
+					return true
+				}
+				return false
+			}
+			if !pickFrom(normalizedZone) {
+				// Fall back to any available zone when the requested zone has no stock.
+				pickFrom("")
+			}
+
+			// If the user specified a disk type, warn when the suggested zone
+			// doesn't actually support it (or when no zone supports it).
+			if normalizedDisk != "" {
+				diskSupportedSomewhere := false
+				for _, z := range availability.Zones {
+					if !z.Available {
+						continue
+					}
+					for _, d := range z.SupportedDisks {
+						if strings.EqualFold(d, normalizedDisk) {
+							diskSupportedSomewhere = true
+							break
+						}
+					}
+					if diskSupportedSomewhere {
+						break
+					}
+				}
+				if !diskSupportedSomewhere {
+					result.Warnings = append(result.Warnings, fmt.Sprintf(
+						"requested rootDiskType '%s' is not currently available in region '%s' for spec '%s'; "+
+							"VM creation may fail. Consider 'default' or '%s'.",
+						normalizedDisk, specInfo.RegionName, specInfo.CspSpecName, result.SuggestedSystemDisk))
+				}
 			}
 		}
 
@@ -2749,28 +2849,22 @@ func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *mod
 		var specAvailable bool
 		var specCheckErr error
 
-		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
-			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
-			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check")
-			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
-			if azErr == nil {
-				specAvailable = specResult.Available
-				if !specAvailable {
-					specCheckErr = fmt.Errorf("%s", specResult.Reason)
-				}
-			} else {
-				// Fall back to CB-Spider LookupSpec on Azure check errors
-				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
-				_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
-				if specCheckErr == nil {
-					specAvailable = true
-				}
-			}
-		} else {
-			// Other providers: use CB-Spider LookupSpec
+		// Use the provider-agnostic availability checker; fall back to
+		// CB-Spider LookupSpec when no checker is registered for the provider.
+		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+			Provider:     csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:       specInfo.RegionName,
+			InstanceType: specInfo.CspSpecName,
+		})
+		if availability.Source == "none" {
 			_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 			if specCheckErr == nil {
 				specAvailable = true
+			}
+		} else {
+			specAvailable = availability.Available
+			if !specAvailable {
+				specCheckErr = fmt.Errorf("%s", availability.Reason)
 			}
 		}
 
@@ -3456,6 +3550,14 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	} else {
 		requestBody.ReqInfo.RootDiskSize = ""
 	}
+
+	// NOTE: We intentionally do NOT auto-apply a stock-aware system-disk
+	// suggestion here. The infra dynamic flow binds vnet/subnet to a single
+	// representative zone of the region, but availability suggestions are
+	// computed across all zones; silently switching RootDiskType based on a
+	// different zone can still cause "No AvailableSystemDisk" failures and
+	// surprises the user. Suggestions are exposed via the review APIs
+	// (SpecImagePairReviewResult.SuggestedSystemDisk) for UI display only.
 
 	if option == "register" {
 		requestBody.ReqInfo.CSPid = nodeInfoData.CspResourceId

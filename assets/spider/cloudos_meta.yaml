@@ -72,6 +72,10 @@ IBM:
   region: Region / Zone
   credential: ApiKey
   credentialcsp: ApiKey
+  rootdisktype: general-purpose / sdp
+  rootdisksize: general-purpose|100|250|GB / sdp|100|250|GB
+  disktype: general-purpose / 5iops-tier / 10iops-tier / sdp
+  disksize: general-purpose|10|16000|GB / 5iops-tier|10|9600|GB / 10iops-tier|10|4800|GB / sdp|1|32000|GB
   # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
   idmaxlength: 63 / 63 / 63 / 63 / 63 / 63 / 63 / 63 / 32 / 63
   defaultregiontoquery: us-south / us-south-1
@@ -92,7 +96,7 @@ NCP:
   disktype: SSD / HDD
   disksize: SSD|100|16380|GB / HDD|100|16380|GB
   # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
-  idmaxlength: 30 / 30 / 30 / 30 / 30 / 30 / 30 / 30 / 20
+  idmaxlength: 30 / 30 / 30 / 30 / 30 / 30 / 30 / 30 / 20 / 20
 
 NHN:
   region: Region / Zone
@@ -125,7 +129,7 @@ KT:
   disktype: HDD / SSD
   disksize: HDD|10|2000|GB / SSD|10|2000|GB
   # idmaxlength: VPC / Subnet / SecurityGroup / KeyPair / VM / Disk / NLB / MyImage / Cluster / FileSystem
-  idmaxlength: 30 / 48 / 30 / 100 / 63 / 50 / 30 / 50 / 0
+  idmaxlength: 30 / 48 / 30 / 100 / 63 / 50 / 30 / 50 / 0 / 20
 
 #--- Emulation
 
@@ -143,4 +147,3 @@ CLOUDTWIN:
   region: Region
   credential: IdentityEndpoint / DomainName / MockName
   credentialcsp: IdentityEndpoint / DomainName / MockName
-
