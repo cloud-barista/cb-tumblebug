@@ -149,7 +149,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.12.14
+    image: cloudbaristaorg/cb-spider:0.12.15
     container_name: cb-spider
     # build:
     #   context: ../cb-spider

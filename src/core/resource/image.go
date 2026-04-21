@@ -36,6 +36,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	alibabacsp "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba"
 	azurecsp "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -255,14 +256,14 @@ func EnsureImageAvailable(nsId, connectionName, imageId string) (model.ImageInfo
 	imageInfo, err := GetImage(nsId, imageId)
 	if err == nil {
 		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, nsId)
-		return imageInfo, false, nil
+		return resolveLatestCspImage(connectionName, imageInfo), false, nil
 	}
 
 	// 2. Check if the image exists in DB (SystemCommonNs)
 	imageInfo, err = GetImage(model.SystemCommonNs, imageId)
 	if err == nil {
 		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, model.SystemCommonNs)
-		return imageInfo, false, nil
+		return resolveLatestCspImage(connectionName, imageInfo), false, nil
 	}
 
 	log.Debug().Msgf("Image '%s' not found in DB, checking CSP...", imageId)
@@ -329,6 +330,141 @@ func EnsureImageAvailable(nsId, connectionName, imageId string) (model.ImageInfo
 
 	// 5. Image not found anywhere
 	return model.ImageInfo{}, false, fmt.Errorf("image '%s' not found in DB or CSP (checked both regular and custom images)", imageId)
+}
+
+// ResolveLatestImageForVMCreation performs CSP-specific "latest image"
+// resolution for the given stored ImageInfo, right before the image is handed
+// off to cb-spider for VM creation.
+//
+// Currently implemented for Alibaba Cloud only: Alibaba deprecates individual
+// image IDs (date-stamped builds) rapidly while the enclosing ImageFamily
+// (e.g. "acs:ubuntu_22_04_x64") remains stable. This function extracts the
+// family stored in imageInfo.Details, asks the Alibaba ECS API for the
+// latest available image in that family, and returns an ImageInfo copy whose
+// CspImageName is replaced with the resolved latest ID. All other fields are
+// preserved. The DB record is NOT modified.
+//
+// For other providers the input is returned unchanged.
+//
+// Any resolution failure (missing family, missing region, API error, empty
+// result) is non-fatal: the original imageInfo is returned so the caller can
+// proceed with the stored ID. Observability is provided via logs.
+//
+// Safe to call more than once per VM creation; resolution is short-circuited
+// when the resolved ID equals the stored ID.
+func ResolveLatestImageForVMCreation(connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
+	return resolveLatestCspImage(connectionName, imageInfo)
+}
+
+// ResolveLatestCspImageNameForVMCreation is a convenience wrapper that takes a
+// stored CSP image name, looks up the full ImageInfo, applies the provider-
+// specific "latest image" resolution via ResolveLatestImageForVMCreation, and
+// returns the (possibly updated) CSP image name to use in the VM-creation
+// request to cb-spider.
+//
+// If the lookup fails, the original cspImageName is returned unchanged and no
+// error is raised (the caller should already have validated the image via
+// EnsureImageAvailable). Resolution failure is also non-fatal.
+//
+// Used by K8s cluster/node-group creation paths where only the CSP image
+// name string (not the full ImageInfo) is threaded into the Spider request.
+func ResolveLatestCspImageNameForVMCreation(nsId, connectionName, tumblebugImageId, cspImageName string) string {
+	if cspImageName == "" || tumblebugImageId == "" {
+		return cspImageName
+	}
+	imageInfo, err := GetImage(nsId, tumblebugImageId)
+	if err != nil {
+		// Fall back to SystemCommonNs; callers typically try both namespaces.
+		imageInfo, err = GetImage(model.SystemCommonNs, tumblebugImageId)
+		if err != nil {
+			log.Debug().Err(err).Msgf("image '%s' not found in ns '%s' or SystemCommonNs; skipping latest resolution",
+				tumblebugImageId, nsId)
+			return cspImageName
+		}
+	}
+	resolved := ResolveLatestImageForVMCreation(connectionName, imageInfo)
+	if resolved.CspImageName == "" {
+		return cspImageName
+	}
+	return resolved.CspImageName
+}
+
+// resolveLatestCspImage returns a copy of imageInfo with CspImageName
+// replaced by the CSP's current "latest" equivalent, when the provider
+// supports such resolution. Currently implemented for:
+//   - Alibaba: uses ImageFamily (stored in imageInfo.Details) to call
+//     DescribeImageFromFamily, avoiding VM-creation failures caused by
+//     Alibaba rapidly deprecating individual date-stamped image IDs.
+//
+// For providers without a resolver, imageInfo is returned unchanged.
+// The DB record is NEVER modified; only the returned copy carries the
+// resolved id. Any failure (missing metadata, region lookup, API error,
+// empty result) is non-fatal: the original imageInfo is returned and a
+// warning is logged.
+func resolveLatestCspImage(connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
+	if !strings.EqualFold(imageInfo.ProviderName, csp.Alibaba) {
+		return imageInfo
+	}
+
+	family := extractAlibabaImageFamily(imageInfo.Details)
+	if family == "" {
+		log.Debug().Msgf("alibaba image '%s' has no ImageFamily in details; skipping latest resolution",
+			imageInfo.CspImageName)
+		return imageInfo
+	}
+
+	region := ""
+	if connectionName != "" {
+		if conn, err := common.GetConnConfig(connectionName); err == nil {
+			region = strings.TrimSpace(conn.RegionDetail.RegionName)
+		} else {
+			log.Warn().Err(err).Msgf("alibaba image resolution: failed to get conn config for '%s'", connectionName)
+		}
+	}
+	if region == "" {
+		log.Warn().Msgf("alibaba image resolution: region unavailable for connection '%s'; skipping (image=%s family=%s)",
+			connectionName, imageInfo.CspImageName, family)
+		return imageInfo
+	}
+
+	resolvedId, creationTime, err := alibabacsp.ResolveLatestIdByFamily(context.Background(), region, family)
+	if err != nil {
+		log.Warn().Err(err).Msgf("alibaba image resolution failed (region=%s family=%s original=%s); falling back to original",
+			region, family, imageInfo.CspImageName)
+		return imageInfo
+	}
+	resolvedId = strings.TrimSpace(resolvedId)
+	if resolvedId == "" {
+		log.Warn().Msgf("alibaba image family '%s' returned no image in region '%s'; falling back to original id '%s'",
+			family, region, imageInfo.CspImageName)
+		return imageInfo
+	}
+	if resolvedId == imageInfo.CspImageName {
+		log.Debug().Msgf("alibaba image '%s' is already latest in family '%s' (region=%s)",
+			imageInfo.CspImageName, family, region)
+		return imageInfo
+	}
+
+	log.Info().Msgf("alibaba image resolved to latest via family: %s -> %s (family=%s region=%s creation=%s)",
+		imageInfo.CspImageName, resolvedId, family, region, creationTime)
+
+	// Return a copy with the resolved id; leave the DB record untouched.
+	resolved := imageInfo
+	resolved.CspImageName = resolvedId
+	return resolved
+}
+
+// extractAlibabaImageFamily returns the Alibaba ECS ImageFamily value stored
+// in the image detail key-value list. Returns "" if not present or empty.
+// The lookup is case-insensitive on the key and trims surrounding whitespace
+// on the value (some older records carry a leading space).
+func extractAlibabaImageFamily(details []model.KeyValue) string {
+	for _, kv := range details {
+		if strings.EqualFold(strings.TrimSpace(kv.Key), "ImageFamily") {
+			return strings.TrimSpace(kv.Value)
+		}
+	}
+	return ""
 }
 
 // lookupRegularImageOnly looks up only regular images from CSP (Spider /vmimage API).
