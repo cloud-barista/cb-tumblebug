@@ -830,7 +830,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		nodeObjectErrors []model.NodeCreationError
 		nodeCreateErrors []model.NodeCreationError
 		totalNodeCount   int
-		errorMu        sync.Mutex
+		errorMu          sync.Mutex
 	)
 
 	// Count total VMs to be created (minimum 1 per nodeGroup)
@@ -847,7 +847,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		errorMu.Lock()
 		defer errorMu.Unlock()
 		*errors = append(*errors, model.NodeCreationError{
-			NodeName:    nodeName,
+			NodeName:  nodeName,
 			Error:     errorMsg,
 			Phase:     phase,
 			Timestamp: time.Now().Format(time.RFC3339),
@@ -877,9 +877,9 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	// Pre-calculate VM configurations to avoid duplication
 	type nodeConfig struct {
-		nodeInfo        model.NodeInfo
+		nodeInfo      model.NodeInfo
 		nodeGroupSize int
-		nodeIndex       int
+		nodeIndex     int
 	}
 
 	var nodeConfigs []nodeConfig
@@ -977,8 +977,8 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				DataDiskIds:      nodeGroupReq.DataDiskIds,
 				SshKeyId:         nodeGroupReq.SshKeyId,
 				Description:      nodeGroupReq.Description,
-				NodeUserName:       nodeGroupReq.NodeUserName,
-				NodeUserPassword:   nodeGroupReq.NodeUserPassword,
+				NodeUserName:     nodeGroupReq.NodeUserName,
+				NodeUserPassword: nodeGroupReq.NodeUserPassword,
 				RootDiskType:     nodeGroupReq.RootDiskType,
 				RootDiskSize:     nodeGroupReq.RootDiskSize,
 				Label:            nodeGroupReq.Label,
@@ -994,9 +994,9 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			nodeInfo.Id = nodeInfo.Name
 
 			nodeConfigs = append(nodeConfigs, nodeConfig{
-				nodeInfo:        nodeInfo,
+				nodeInfo:      nodeInfo,
 				nodeGroupSize: nodeGroupSize,
-				nodeIndex:       i,
+				nodeIndex:     i,
 			})
 		}
 	}
@@ -1285,12 +1285,12 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		}
 
 		infraResult.CreationErrors = &model.InfraCreationErrors{
-			NodeObjectCreationErrors:  nodeObjectErrors,
-			NodeCreationErrors:        nodeCreateErrors,
-			TotalNodeCount:            totalNodeCount,
-			SuccessfulNodeCount:       successfulNodeCount,
-			FailedNodeCount:           failedNodeCount,
-			FailureHandlingStrategy: failureStrategy,
+			NodeObjectCreationErrors: nodeObjectErrors,
+			NodeCreationErrors:       nodeCreateErrors,
+			TotalNodeCount:           totalNodeCount,
+			SuccessfulNodeCount:      successfulNodeCount,
+			FailedNodeCount:          failedNodeCount,
+			FailureHandlingStrategy:  failureStrategy,
 		}
 
 		log.Info().Msgf("Infra '%s' creation completed with %d successful VMs out of %d total (strategy: %s, refined: %t)",
@@ -1833,7 +1833,7 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 
 	credentialHolder := common.CredentialHolderFromContext(ctx)
 	nodeReview := model.ReviewNodeGroupDynamicReqInfo{
-		NodeName:        nodeGroupDynamicReq.Name,
+		NodeName:      nodeGroupDynamicReq.Name,
 		NodeGroupSize: nodeGroupDynamicReq.NodeGroupSize,
 		CanCreate:     true,
 		Status:        "Ready",
@@ -2314,7 +2314,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 	log.Debug().Msgf("Starting Infra dynamic request review for: %s", req.Name)
 
 	reviewResult := &model.ReviewInfraDynamicReqInfo{
-		InfraName:    req.Name,
+		InfraName:      req.Name,
 		TotalNodeCount: len(req.NodeGroups),
 		NodeReviews:    make([]model.ReviewNodeGroupDynamicReqInfo, 0),
 		ResourceSummary: model.ReviewResourceSummary{
@@ -2366,12 +2366,12 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 	// Channel to collect VM review results
 	nodeReviewChan := make(chan struct {
-		index    int
+		index      int
 		nodeReview model.ReviewNodeGroupDynamicReqInfo
-		specInfo *model.SpecInfo
-		viable   bool
-		warning  bool
-		cost     float64
+		specInfo   *model.SpecInfo
+		viable     bool
+		warning    bool
+		cost       float64
 	}, len(req.NodeGroups))
 
 	// WaitGroup to wait for all goroutines to complete
@@ -2392,19 +2392,19 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 			// Send result to channel
 			nodeReviewChan <- struct {
-				index    int
+				index      int
 				nodeReview model.ReviewNodeGroupDynamicReqInfo
-				specInfo *model.SpecInfo
-				viable   bool
-				warning  bool
-				cost     float64
+				specInfo   *model.SpecInfo
+				viable     bool
+				warning    bool
+				cost       float64
 			}{
-				index:    index,
+				index:      index,
 				nodeReview: nodeReview,
-				specInfo: specInfoPtr,
-				viable:   viable,
-				warning:  hasNodeWarning,
-				cost:     nodeCost,
+				specInfo:   specInfoPtr,
+				viable:     viable,
+				warning:    hasNodeWarning,
+				cost:       nodeCost,
 			}
 
 			log.Debug().Msgf("[%d] VM '%s' review completed: %s", index, nodeGroupDynamicReq.Name, nodeReview.Status)
@@ -3232,7 +3232,7 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 
 // NodeCreateInfo represents Node creation information with grouping details
 type NodeCreateInfo struct {
-	NodeInfo       *model.NodeInfo
+	NodeInfo     *model.NodeInfo
 	ProviderName string
 	RegionName   string
 }
@@ -3262,7 +3262,7 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 		// Add VM to the appropriate group
 		nodeGroups[providerName][regionName] = append(nodeGroups[providerName][regionName], nodeInfo)
 		nodeGroupInfos[nodeInfo.Id] = NodeCreateInfo{
-			NodeInfo:       nodeInfo,
+			NodeInfo:     nodeInfo,
 			ProviderName: providerName,
 			RegionName:   regionName,
 		}
@@ -4725,7 +4725,7 @@ func RecordProvisioningEventsFromInfra(nsId string, infraInfo *model.InfraInfo) 
 			IsSuccess:    isSuccess,
 			ErrorMessage: errorMessage,
 			Timestamp:    time.Now(),
-			NodeName:       node.Id,
+			NodeName:     node.Id,
 			InfraId:      infraInfo.Id,
 		}
 

@@ -513,7 +513,7 @@ func ExecuteHttpRequest[B any, T any](
 
 		if method == "GET" {
 			requestDone(requestKey)
-			// Record circuit breaker failure for GET requests
+			// Record circuit breaker failure for GET requests (i.e., all HTTP errors (4xx and 5xx))
 			recordCircuitBreakerFailure(requestKey)
 		}
 		cleanedBody := cleanErrorMessage(string(resp.Body()))

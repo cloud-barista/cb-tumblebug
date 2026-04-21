@@ -339,7 +339,7 @@ func RestPostRegisterVNet(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param withSubnets query string false "Delete subnets as well" Enums(true,false)
-// @Success 201 {object} model.VNetInfo
+// @Success 200 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -382,5 +382,5 @@ func RestDeleteDeregisterVNet(c echo.Context) error {
 	}
 
 	// [Output] Return the deregistered result
-	return c.JSON(http.StatusCreated, resp)
+	return c.JSON(http.StatusOK, resp)
 }
