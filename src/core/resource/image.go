@@ -62,7 +62,7 @@ func ImageReqStructLevelValidation(sl validator.StructLevel) {
 // ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object
 func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage model.SpiderImageInfo) (model.ImageInfo, error) {
 
-	regionAgnosticProviders := []string{csp.Azure, csp.GCP, csp.Tencent}
+	regionAgnosticProviders := []string{csp.Azure, csp.GCP}
 
 	// Note: regionAgnosticProviders is checked against resolved platform below via slices.Contains.
 
@@ -243,8 +243,10 @@ func GetImageInfoFromLookupImage(nsId string, u model.ImageReq, allowCustomImage
 
 // EnsureImageAvailable checks if an image is available in DB or CSP, and auto-registers if needed.
 // It first checks the DB (including CustomImage), then looks up in CSP and registers if found.
+// ctx carries the x-credential-holder so any provider-specific "latest image"
+// resolution (e.g. Alibaba ImageFamily) uses the requesting tenant's credentials.
 // Returns: ImageInfo, isAutoRegistered, error
-func EnsureImageAvailable(nsId, connectionName, imageId string) (model.ImageInfo, bool, error) {
+func EnsureImageAvailable(ctx context.Context, nsId, connectionName, imageId string) (model.ImageInfo, bool, error) {
 	if connectionName == "" {
 		return model.ImageInfo{}, false, fmt.Errorf("connectionName is required for EnsureImageAvailable")
 	}
@@ -256,14 +258,20 @@ func EnsureImageAvailable(nsId, connectionName, imageId string) (model.ImageInfo
 	imageInfo, err := GetImage(nsId, imageId)
 	if err == nil {
 		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, nsId)
-		return resolveLatestCspImage(connectionName, imageInfo), false, nil
+		if mismatchErr := validateImageRegionForConnection(connectionName, imageInfo); mismatchErr != nil {
+			return model.ImageInfo{}, false, mismatchErr
+		}
+		return resolveLatestCspImage(ctx, connectionName, imageInfo), false, nil
 	}
 
 	// 2. Check if the image exists in DB (SystemCommonNs)
 	imageInfo, err = GetImage(model.SystemCommonNs, imageId)
 	if err == nil {
 		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, model.SystemCommonNs)
-		return resolveLatestCspImage(connectionName, imageInfo), false, nil
+		if mismatchErr := validateImageRegionForConnection(connectionName, imageInfo); mismatchErr != nil {
+			return model.ImageInfo{}, false, mismatchErr
+		}
+		return resolveLatestCspImage(ctx, connectionName, imageInfo), false, nil
 	}
 
 	log.Debug().Msgf("Image '%s' not found in DB, checking CSP...", imageId)
@@ -332,6 +340,37 @@ func EnsureImageAvailable(nsId, connectionName, imageId string) (model.ImageInfo
 	return model.ImageInfo{}, false, fmt.Errorf("image '%s' not found in DB or CSP (checked both regular and custom images)", imageId)
 }
 
+// validateImageRegionForConnection rejects stored images whose RegionList does
+// not include the target connection's region. Some providers (e.g. Tencent CVM)
+// issue region-scoped image IDs that fail with InvalidImageId.NotFound when
+// reused across regions; this fails fast at the review/EnsureImage stage.
+// Permissive: empty RegionList, "common" entry, or connection lookup failure
+// all skip the check.
+func validateImageRegionForConnection(connectionName string, imageInfo model.ImageInfo) error {
+	if connectionName == "" || len(imageInfo.RegionList) == 0 {
+		return nil
+	}
+	connConfig, err := common.GetConnConfig(connectionName)
+	if err != nil {
+		return nil
+	}
+	targetRegion := connConfig.RegionDetail.RegionName
+	if targetRegion == "" {
+		return nil
+	}
+	for _, r := range imageInfo.RegionList {
+		if strings.EqualFold(r, model.StrCommon) || strings.EqualFold(r, targetRegion) {
+			return nil
+		}
+	}
+	return fmt.Errorf(
+		"image '%s' (CSP id: %s) is registered for region(s) %v but connection '%s' targets region '%s'; "+
+			"pick an image registered for region '%s'",
+		imageInfo.Id, imageInfo.CspImageName, imageInfo.RegionList,
+		connectionName, targetRegion, targetRegion,
+	)
+}
+
 // ResolveLatestImageForVMCreation performs CSP-specific "latest image"
 // resolution for the given stored ImageInfo, right before the image is handed
 // off to cb-spider for VM creation.
@@ -352,8 +391,8 @@ func EnsureImageAvailable(nsId, connectionName, imageId string) (model.ImageInfo
 //
 // Safe to call more than once per VM creation; resolution is short-circuited
 // when the resolved ID equals the stored ID.
-func ResolveLatestImageForVMCreation(connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
-	return resolveLatestCspImage(connectionName, imageInfo)
+func ResolveLatestImageForVMCreation(ctx context.Context, connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
+	return resolveLatestCspImage(ctx, connectionName, imageInfo)
 }
 
 // ResolveLatestCspImageNameForVMCreation is a convenience wrapper that takes a
@@ -368,7 +407,7 @@ func ResolveLatestImageForVMCreation(connectionName string, imageInfo model.Imag
 //
 // Used by K8s cluster/node-group creation paths where only the CSP image
 // name string (not the full ImageInfo) is threaded into the Spider request.
-func ResolveLatestCspImageNameForVMCreation(nsId, connectionName, tumblebugImageId, cspImageName string) string {
+func ResolveLatestCspImageNameForVMCreation(ctx context.Context, nsId, connectionName, tumblebugImageId, cspImageName string) string {
 	if cspImageName == "" || tumblebugImageId == "" {
 		return cspImageName
 	}
@@ -382,7 +421,7 @@ func ResolveLatestCspImageNameForVMCreation(nsId, connectionName, tumblebugImage
 			return cspImageName
 		}
 	}
-	resolved := ResolveLatestImageForVMCreation(connectionName, imageInfo)
+	resolved := ResolveLatestImageForVMCreation(ctx, connectionName, imageInfo)
 	if resolved.CspImageName == "" {
 		return cspImageName
 	}
@@ -401,7 +440,7 @@ func ResolveLatestCspImageNameForVMCreation(nsId, connectionName, tumblebugImage
 // resolved id. Any failure (missing metadata, region lookup, API error,
 // empty result) is non-fatal: the original imageInfo is returned and a
 // warning is logged.
-func resolveLatestCspImage(connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
+func resolveLatestCspImage(ctx context.Context, connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
 	if !strings.EqualFold(imageInfo.ProviderName, csp.Alibaba) {
 		return imageInfo
 	}
@@ -427,7 +466,7 @@ func resolveLatestCspImage(connectionName string, imageInfo model.ImageInfo) mod
 		return imageInfo
 	}
 
-	resolvedId, creationTime, err := alibabacsp.ResolveLatestIdByFamily(context.Background(), region, family)
+	resolvedId, creationTime, err := alibabacsp.ResolveLatestIdByFamily(ctx, region, family)
 	if err != nil {
 		log.Warn().Err(err).Msgf("alibaba image resolution failed (region=%s family=%s original=%s); falling back to original",
 			region, family, imageInfo.CspImageName)

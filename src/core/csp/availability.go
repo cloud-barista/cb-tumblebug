@@ -157,5 +157,8 @@ func CheckAvailability(ctx context.Context, q model.AvailabilityQuery) model.Ava
 }
 
 func availabilityCacheKey(provider string, q model.AvailabilityQuery) string {
-	return provider + "|" + q.Region + "|" + q.InstanceType + "|" + q.SystemDiskCategory
+	// PreferredZone must be part of the key: callers passing different zone
+	// hints would otherwise reuse a cached result computed for another zone
+	// and observe stale availability for the requested zone.
+	return provider + "|" + q.Region + "|" + q.InstanceType + "|" + q.SystemDiskCategory + "|" + q.PreferredZone
 }

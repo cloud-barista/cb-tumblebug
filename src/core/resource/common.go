@@ -1991,13 +1991,13 @@ func LoadAssets(includeAzure bool) (*model.IdList, error) {
 	if includeAzure {
 		log.Info().Msg("Azure images will be fetched (this may take 40+ minutes)")
 		// When including Azure, add it to RegionAgnosticProviders
-		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent, csp.Azure}
+		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Azure}
 		reqBodyImageFetchOption.ExcludedProviders = []string{} // Don't exclude any providers
 	} else {
 		log.Info().Msg("Azure images will be excluded (default behavior for faster initialization)")
-		// Default behavior: exclude Azure, use GCP and Tencent as region-agnostic
+		// Default behavior: exclude Azure, use GCP as region-agnostic
 		reqBodyImageFetchOption.ExcludedProviders = []string{csp.Azure}
-		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent}
+		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP}
 	}
 	resultFetchImagesForAllConnConfigs, err := FetchImagesForAllConnConfigs(model.SystemCommonNs, reqBodyImageFetchOption)
 	if err != nil {

@@ -2070,26 +2070,39 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 }
 
 // pickAnyConnectionForProvider returns the name of any verified connection
-// configured for the given provider. Returns an error when no such connection
-// exists. Used to avoid hardcoding a specific connection name when calling
-// region-agnostic CSP APIs that only need a credential carrier.
-func pickAnyConnectionForProvider(provider string) (string, error) {
-	list, err := common.GetConnConfigList("", true, false)
+// configured for the given provider, scoped to the credential holder carried
+// by ctx. Returns an error when no such connection exists. Used to avoid
+// hardcoding a specific connection name when calling region-agnostic CSP APIs
+// that only need a credential carrier.
+//
+// The provider string may be a derived CSP name (e.g. "openstack-new01"); it
+// is normalized via csp.ResolveCloudPlatform before comparison so that
+// derived connections still match the canonical provider.
+func pickAnyConnectionForProvider(ctx context.Context, provider string) (string, error) {
+	credentialHolder := common.CredentialHolderFromContext(ctx)
+	list, err := common.GetConnConfigList(credentialHolder, true, false)
 	if err != nil {
 		return "", err
 	}
+	normalized := csp.ResolveCloudPlatform(provider)
 	for _, c := range list.Connectionconfig {
-		if strings.EqualFold(c.ProviderName, provider) {
+		if csp.ResolveCloudPlatform(c.ProviderName) == normalized {
 			return c.ConfigName, nil
 		}
 	}
-	return "", fmt.Errorf("no verified connection configured for provider %q", provider)
+	return "", fmt.Errorf("no verified connection configured for provider %q (credentialHolder=%q)", provider, credentialHolder)
 }
 
 // GetAvailableRegionZonesForSpec queries the availability of a specific spec across all regions/zones
-// Returns detailed availability information including regions, zones, and query performance metrics
-func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.SpecAvailabilityInfo, error) {
+// Returns detailed availability information including regions, zones, and query performance metrics.
+// ctx carries the x-credential-holder so the underlying connection lookup is
+// scoped to the requesting tenant rather than the system default holder.
+func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpecName string) (model.SpecAvailabilityInfo, error) {
 	startTime := time.Now()
+
+	// Normalize derived CSP names (e.g. "openstack-new01" -> "openstack") so
+	// downstream provider comparisons and connection lookups behave consistently.
+	provider = csp.ResolveCloudPlatform(provider)
 
 	result := model.SpecAvailabilityInfo{
 		Provider:    provider,
@@ -2110,7 +2123,7 @@ func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.
 	// AnyCall (GetInstanceTypeAvailableAllZones) returns all-region results
 	// regardless of which regional connection is used to call it, so any
 	// connection of the same provider works as a credential carrier.
-	connectionName, err := pickAnyConnectionForProvider(provider)
+	connectionName, err := pickAnyConnectionForProvider(ctx, provider)
 	if err != nil {
 		result.ErrorMessage = fmt.Sprintf("No usable connection found for provider %s: %v", provider, err)
 		result.QueryDurationMs = time.Since(startTime).Milliseconds()
@@ -2243,8 +2256,10 @@ func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.
 }
 
 // GetAvailableRegionZonesForSpecList queries availability for multiple specs in parallel
-// Returns batch results with performance metrics for all specs
-func GetAvailableRegionZonesForSpecList(provider string, cspSpecNames []string) (model.SpecAvailabilityBatchResult, error) {
+// Returns batch results with performance metrics for all specs.
+// ctx carries the x-credential-holder so per-spec connection lookups are
+// scoped to the requesting tenant.
+func GetAvailableRegionZonesForSpecList(ctx context.Context, provider string, cspSpecNames []string) (model.SpecAvailabilityBatchResult, error) {
 	startTime := time.Now()
 
 	result := model.SpecAvailabilityBatchResult{
@@ -2281,7 +2296,7 @@ func GetAvailableRegionZonesForSpecList(provider string, cspSpecNames []string) 
 			common.RandomSleep(0, 20*1000)
 
 			// Query single spec
-			specResult, err := GetAvailableRegionZonesForSpec(provider, spec)
+			specResult, err := GetAvailableRegionZonesForSpec(ctx, provider, spec)
 			if err != nil {
 				// Even if there's an error, we want to include the result
 				log.Debug().Err(err).Str("spec", spec).Msg("Failed to query spec availability")
@@ -2355,7 +2370,7 @@ func GetAvailableRegionZonesForSpecList(provider string, cspSpecNames []string) 
 
 // UpdateExistingSpecListByAvailableRegionZones cleans up unavailable specs from the database
 // Queries all specs for a specific provider across all regions, checks their availability, and removes specs that are not available in their respective regions
-func UpdateExistingSpecListByAvailableRegionZones(nsId string, provider string) (model.SpecCleanupResult, error) {
+func UpdateExistingSpecListByAvailableRegionZones(ctx context.Context, nsId string, provider string) (model.SpecCleanupResult, error) {
 	startTime := time.Now()
 
 	result := model.SpecCleanupResult{
@@ -2410,7 +2425,7 @@ func UpdateExistingSpecListByAvailableRegionZones(nsId string, provider string) 
 
 	// Step 2: Query availability for all unique spec names
 	availabilityStartTime := time.Now()
-	availabilityResult, err := GetAvailableRegionZonesForSpecList(provider, uniqueSpecNames)
+	availabilityResult, err := GetAvailableRegionZonesForSpecList(ctx, provider, uniqueSpecNames)
 	if err != nil {
 		log.Error().Err(err).
 			Str("provider", provider).
@@ -3631,7 +3646,7 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 
 	// Step 6: For Alibaba Cloud, apply additional CSP API filtering
 	if strings.EqualFold(specInfo.ProviderName, csp.Alibaba) {
-		availableZones, unavailableZones, err := filterAlibabaZonesBySpecAvailability(specInfo.CspSpecName, specInfo.RegionName, verifiedZones)
+		availableZones, unavailableZones, err := filterAlibabaZonesBySpecAvailability(ctx, specInfo.CspSpecName, specInfo.RegionName, verifiedZones)
 		if err != nil {
 			// Log warning but don't fail - return all verified zones
 			log.Warn().Err(err).
@@ -3679,8 +3694,8 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 //   - Cached: 5-min TTL + singleflight, so a prior ReviewSpecImagePair call
 //     for the same (region, instanceType) is reused at zero cost
 //   - Consistent: same data source as the popup's pair-review section
-func filterAlibabaZonesBySpecAvailability(cspSpecName string, regionName string, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
-	availability := cspcheck.CheckAvailability(context.Background(), model.AvailabilityQuery{
+func filterAlibabaZonesBySpecAvailability(ctx context.Context, cspSpecName string, regionName string, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
+	availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
 		Provider:     csp.Alibaba,
 		Region:       regionName,
 		InstanceType: cspSpecName,

@@ -31,6 +31,7 @@ import (
 	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba" // register Alibaba availability checker
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"   // register Azure availability checker
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/tencent" // register Tencent availability checker
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -1982,7 +1983,7 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 	// Validate ImageId (with auto-registration if found in CSP but not in DB)
 	if specInfoPtr != nil {
 		resolvedConnName := common.ResolveConnectionName(specInfoPtr.ConnectionName, credentialHolder)
-		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, resolvedConnName, nodeGroupDynamicReq.ImageId)
+		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, resolvedConnName, nodeGroupDynamicReq.ImageId)
 		if err != nil {
 			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf("Image '%s' not available: %v", nodeGroupDynamicReq.ImageId, err))
 			nodeReview.ImageValidation = model.ReviewResourceValidation{
@@ -2162,7 +2163,13 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 		result.Message = fmt.Sprintf("Spec '%s' is not available", specId)
 	} else {
 		result.SpecDetails = &specInfo
-		result.ConnectionName = specInfo.ConnectionName
+		// The spec record stores the default-tenant connection name. Resolve it
+		// against the credential holder carried by ctx so that all subsequent
+		// Spider calls (LookupSpec, EnsureImageAvailable) and the returned
+		// ConnectionName use the requesting tenant's credentials.
+		credentialHolder := common.CredentialHolderFromContext(ctx)
+		resolvedConnectionName := common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
+		result.ConnectionName = resolvedConnectionName
 		result.ProviderName = specInfo.ProviderName
 		result.RegionName = specInfo.RegionName
 
@@ -2184,7 +2191,7 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 		switch availability.Source {
 		case "none":
 			// No checker registered for this provider: fall back to CB-Spider LookupSpec.
-			_, specCheckErr = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+			_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 			if specCheckErr == nil {
 				specAvailable = true
 			}
@@ -2291,7 +2298,7 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 
 	// Validate ImageId (with auto-registration if found in CSP but not in DB)
 	if result.ConnectionName != "" {
-		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, result.ConnectionName, imageId)
+		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, result.ConnectionName, imageId)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("Image '%s' not available: %v", imageId, err))
 			result.ImageValidation = model.ReviewResourceValidation{
@@ -2884,7 +2891,7 @@ func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *mod
 
 	// Check image availability in parallel (with auto-registration if found in CSP but not in DB)
 	go func() {
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, resolvedConnectionName, req.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, resolvedConnectionName, req.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msgf("Image validation failed for %s", req.ImageId)
 			errorChan <- fmt.Errorf("image '%s' is not available in connection '%s': %w",
@@ -3048,7 +3055,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 	nodeGroupReq.ImageId = k.ImageId
 
 	// Check if the image is available (DB or CSP) and auto-register if needed
-	imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, connection.ConfigName, nodeGroupReq.ImageId)
+	imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, connection.ConfigName, nodeGroupReq.ImageId)
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to find image '%s' for VM '%s' in CSP '%s' (connection: %s): %w. Please verify the image exists and is accessible in the target region",
 			nodeGroupReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
@@ -3573,7 +3580,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		// before handing the CSP image name to cb-spider. This avoids VM creation
 		// failures caused by CSP-side deprecation of individual image IDs while
 		// the stored ImageFamily remains stable.
-		imageInfo = resource.ResolveLatestImageForVMCreation(nodeInfoData.ConnectionName, imageInfo)
+		imageInfo = resource.ResolveLatestImageForVMCreation(ctx, nodeInfoData.ConnectionName, imageInfo)
 		if imageInfo.ResourceType == model.StrCustomImage {
 			// If the requested image is a custom image (generated by VM snapshot), RootDiskType should be empty.
 			// TB ignore inputs for RootDiskType, RootDiskSize
@@ -3764,7 +3771,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			targetImageName = callResult.ImageIId.NameId
 		} else {
 			// Try to use EnsureImageAvailable for consistent image handling
-			imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, requestBody.ConnectionName, targetImageName)
+			imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, requestBody.ConnectionName, targetImageName)
 
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to ensure image availability: %s", targetImageName)
@@ -4124,7 +4131,7 @@ func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string
 }
 
 // checkCommonResAvailableForK8sClusterDynamicReq is func to check common resources availability for K8sClusterDynamicReq
-func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynamicReq) error {
+func checkCommonResAvailableForK8sClusterDynamicReq(ctx context.Context, dReq *model.K8sClusterDynamicReq) error {
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -4164,7 +4171,7 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynami
 		// do nothing
 	} else {
 		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, connName, dReq.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, connName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return err
@@ -4178,14 +4185,14 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynami
 }
 
 // checkCommonResAvailableForK8sNodeGroupDynamicReq is func to check common resources availability for K8sNodeGroupDynamicReq
-func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *model.K8sNodeGroupDynamicReq) error {
+func checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx context.Context, connName string, dReq *model.K8sNodeGroupDynamicReq) error {
 	k8sClusterDReq := &model.K8sClusterDynamicReq{
 		SpecId:         dReq.SpecId,
 		ImageId:        dReq.ImageId,
 		ConnectionName: connName,
 	}
 
-	err := checkCommonResAvailableForK8sClusterDynamicReq(k8sClusterDReq)
+	err := checkCommonResAvailableForK8sClusterDynamicReq(ctx, k8sClusterDReq)
 	if err != nil {
 		return err
 	}
@@ -4255,7 +4262,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		// do nothing
 	} else {
 		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, k8sReq.ConnectionName, dReq.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, k8sReq.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sReq, err
@@ -4412,7 +4419,7 @@ func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.K8sCl
 		return emptyK8sCluster, err
 	}
 
-	err = checkCommonResAvailableForK8sClusterDynamicReq(dReq)
+	err = checkCommonResAvailableForK8sClusterDynamicReq(ctx, dReq)
 	if err != nil {
 		log.Err(err).Msgf("Failed to find common resource for K8sCluster provision")
 		return emptyK8sCluster, err
@@ -4484,7 +4491,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 		log.Debug().Msg("ImageId is empty or default. Spider will auto-map AMI Type based on VMSpec.")
 	} else {
 		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, k8sClusterInfo.ConnectionName, dReq.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, k8sClusterInfo.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sNgReq, err
@@ -4578,7 +4585,7 @@ func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId st
 		}
 	}
 
-	err = checkCommonResAvailableForK8sNodeGroupDynamicReq(tbK8sCInfo.ConnectionName, dReq)
+	err = checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx, tbK8sCInfo.ConnectionName, dReq)
 	if err != nil {
 		log.Err(err).Msgf("Failed to find common resource for K8sNodeGroup provision")
 		return emptyK8sCluster, err
@@ -4594,7 +4601,7 @@ func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId st
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared all resources for provisioning K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
-	return resource.AddK8sNodeGroup(nsId, k8sClusterId, k8sNgReq)
+	return resource.AddK8sNodeGroup(ctx, nsId, k8sClusterId, k8sNgReq)
 }
 
 // Provisioning History Management Functions
