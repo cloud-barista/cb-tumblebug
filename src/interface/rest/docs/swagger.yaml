@@ -910,7 +910,7 @@ paths:
         **Provider Selection Options:**
         - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
         - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
-        - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+        - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp"]). Only one region will be fetched per provider.
 
         **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchImages
@@ -964,7 +964,7 @@ paths:
         **Provider Selection Options:**
         - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
         - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
-        - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+        - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp"]). Only one region will be fetched per provider.
 
         **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchImagesAsync
@@ -1096,7 +1096,7 @@ paths:
         **Provider Selection Options:**
         - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
         - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
-        - `regionAgnosticProviders`: Providers where specs are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+        - `regionAgnosticProviders`: Providers where specs are shared across regions (e.g., ["gcp"]). Only one region will be fetched per provider.
 
         **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchSpecs
@@ -20390,7 +20390,6 @@ components:
           description: "providers that are not region-specific (ex: [\"gcp\"])"
           example:
           - gcp
-          - tencent
           items:
             type: string
         targetProviders:
@@ -24466,7 +24465,6 @@ components:
           description: "providers that are not region-specific (ex: [\"gcp\"])"
           example:
           - gcp
-          - tencent
           items:
             type: string
         targetProviders:

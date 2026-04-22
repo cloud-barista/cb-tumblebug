@@ -2008,6 +2008,19 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 				Status:        status,
 				CspResourceId: imageInfo.CspImageName,
 			}
+			// Surface recoverable image-region mismatch (e.g. Alibaba family auto-resolution).
+			// Use the pre-resolution record from DB so the warning reports both the
+			// original (region-mismatched) CSP id and the resolved replacement.
+			origImageInfo, origErr := resource.GetImage(model.SystemCommonNs, nodeGroupDynamicReq.ImageId)
+			if origErr == nil {
+				if warn, _ := resource.CheckImageRegionCompatibility(resolvedConnName, origImageInfo); warn != "" {
+					if imageInfo.CspImageName != "" && imageInfo.CspImageName != origImageInfo.CspImageName {
+						warn = fmt.Sprintf("%s (resolved CSP image id: %s)", warn, imageInfo.CspImageName)
+					}
+					nodeReview.Warnings = append(nodeReview.Warnings, warn)
+					hasNodeWarning = true
+				}
+			}
 		}
 	}
 
