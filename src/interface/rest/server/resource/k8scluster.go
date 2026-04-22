@@ -247,7 +247,7 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 
 	log.Debug().Msg("[POST K8sNodeGroup]")
 
-	content, err := resource.AddK8sNodeGroup(nsId, k8sClusterId, u)
+	content, err := resource.AddK8sNodeGroup(c.Request().Context(), nsId, k8sClusterId, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")

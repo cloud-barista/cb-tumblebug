@@ -21951,6 +21951,45 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AvailabilityResult": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean"
+                },
+                "cached": {
+                    "description": "true if served from cache",
+                    "type": "boolean"
+                },
+                "instanceType": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "queriedAt": {
+                    "description": "time of original (uncached) query",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "explanation when Available is false (or when no checker)",
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "source": {
+                    "description": "checker identifier for tracing (e.g., \"alibaba:DescribeAvailableResource\")",
+                    "type": "string"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ZoneAvailability"
+                    }
+                }
+            }
+        },
         "model.AvailableZonesError": {
             "description": "Error response when available zones query fails",
             "type": "object",
@@ -29766,15 +29805,33 @@ const docTemplate = `{
                     "type": "string",
                     "example": "ami-01f71f215b23ba262"
                 },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", or CSP-native disk category (e.g., \"cloud_essd\")",
+                    "type": "string",
+                    "example": "default"
+                },
                 "specId": {
                     "type": "string",
                     "example": "aws+ap-northeast-2+t3.nano"
+                },
+                "zone": {
+                    "description": "optional CSP-native zone id; empty = all zones in region",
+                    "type": "string",
+                    "example": ""
                 }
             }
         },
         "model.SpecImagePairReviewResult": {
             "type": "object",
             "properties": {
+                "availability": {
+                    "description": "Pre-flight availability (zone × disk-category) from CSP-specific checker.\nPopulated when a checker is registered for the provider; nil otherwise.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.AvailabilityResult"
+                        }
+                    ]
+                },
                 "connectionName": {
                     "description": "Connection info",
                     "type": "string"
@@ -29825,6 +29882,14 @@ const docTemplate = `{
                 "regionName": {
                     "type": "string"
                 },
+                "requestedRootDiskType": {
+                    "description": "RequestedRootDiskType echoes the input RootDiskType (after normalization:\nempty/\"default\" -\u003e \"\"). Useful for UI to confirm what was checked.",
+                    "type": "string"
+                },
+                "requestedZone": {
+                    "description": "RequestedZone echoes the input Zone. Empty means region-wide check.",
+                    "type": "string"
+                },
                 "specDetails": {
                     "$ref": "#/definitions/model.SpecInfo"
                 },
@@ -29843,6 +29908,14 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "OK/Warning/Error"
+                },
+                "suggestedSystemDisk": {
+                    "description": "SuggestedSystemDisk is a system-disk category that is currently\navailable in SuggestedZone. Empty when no suggestion is possible.",
+                    "type": "string"
+                },
+                "suggestedZone": {
+                    "description": "SuggestedZone is a zone picked from Availability.Zones that has stock and\nsupports the requested (or any) system-disk category. Empty when no\nsuggestion is possible (e.g., provider has no checker, or every zone is\nout of stock). Callers can use this to pre-fill ZoneId for VM creation\nto improve 1-shot success rate.",
+                    "type": "string"
                 },
                 "warnings": {
                     "type": "array",
@@ -31607,6 +31680,32 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.ResourceDetail"
                     }
+                }
+            }
+        },
+        "model.ZoneAvailability": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean"
+                },
+                "reason": {
+                    "description": "why not available, when applicable",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "CSP-native status (e.g., \"WithStock\", \"ClosedWithStock\")",
+                    "type": "string"
+                },
+                "supportedDisks": {
+                    "description": "disk categories currently available in this zone",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "zoneId": {
+                    "type": "string"
                 }
             }
         },

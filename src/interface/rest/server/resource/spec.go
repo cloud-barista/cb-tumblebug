@@ -183,7 +183,7 @@ func RestLookupSpecList(c echo.Context) error {
 // @Description **Provider Selection Options:**
 // @Description - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
 // @Description - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
-// @Description - `regionAgnosticProviders`: Providers where specs are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+// @Description - `regionAgnosticProviders`: Providers where specs are shared across regions (e.g., ["gcp"]). Only one region will be fetched per provider.
 // @Description
 // @Description **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
 // @Tags [Infra Resource] Spec Management
@@ -347,7 +347,7 @@ func RestGetAvailableRegionZonesForSpec(c echo.Context) error {
 
 	log.Debug().Msgf("[Get Spec Availability] Provider: %s, CspSpecName: %s", u.Provider, u.CspSpecName)
 
-	content, err := resource.GetAvailableRegionZonesForSpec(u.Provider, u.CspSpecName)
+	content, err := resource.GetAvailableRegionZonesForSpec(c.Request().Context(), u.Provider, u.CspSpecName)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -442,7 +442,7 @@ func RestGetAvailableRegionZonesForSpecList(c echo.Context) error {
 
 	log.Debug().Msgf("[Get Batch Spec Availability] Provider: %s, Specs: %d", u.Provider, len(u.CspSpecNames))
 
-	content, err := resource.GetAvailableRegionZonesForSpecList(u.Provider, u.CspSpecNames)
+	content, err := resource.GetAvailableRegionZonesForSpecList(c.Request().Context(), u.Provider, u.CspSpecNames)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -476,6 +476,6 @@ func RestUpdateExistingSpecListByAvailableRegionZones(c echo.Context) error {
 
 	log.Debug().Msgf("[Cleanup Specs] Namespace: %s, Provider: %s", nsId, u.Provider)
 
-	content, err := resource.UpdateExistingSpecListByAvailableRegionZones(nsId, u.Provider)
+	content, err := resource.UpdateExistingSpecListByAvailableRegionZones(c.Request().Context(), nsId, u.Provider)
 	return clientManager.EndRequestWithLog(c, err, content)
 }

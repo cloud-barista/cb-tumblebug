@@ -174,7 +174,7 @@ type ImageFetchOption struct {
 	ExcludedProviders []string `json:"excludedProviders,omitempty" example:"azure" description:"Providers to be excluded from the image fetching operation."`
 
 	// providers that are not region-specific (ex: ["gcp"])
-	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp,tencent" description:"Providers that are not region-specific."`
+	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp" description:"Providers that are not region-specific."`
 }
 
 // SearchImageRequest is struct for Search Image Request

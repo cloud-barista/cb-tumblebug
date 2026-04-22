@@ -188,7 +188,7 @@ func RestLookupImageList(c echo.Context) error {
 // @Description **Provider Selection Options:**
 // @Description - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
 // @Description - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
-// @Description - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+// @Description - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp"]). Only one region will be fetched per provider.
 // @Description
 // @Description **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
 // @Tags [Infra Resource] Image Management
@@ -225,7 +225,7 @@ func RestFetchImages(c echo.Context) error {
 // @Description **Provider Selection Options:**
 // @Description - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
 // @Description - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
-// @Description - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+// @Description - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp"]). Only one region will be fetched per provider.
 // @Description
 // @Description **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
 // @Tags [Infra Resource] Image Management

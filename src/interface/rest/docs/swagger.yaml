@@ -18633,6 +18633,34 @@ components:
           - <=
           - '>'
           - '>='
+    model.AvailabilityResult:
+      type: object
+      properties:
+        available:
+          type: boolean
+        cached:
+          type: boolean
+          description: true if served from cache
+        instanceType:
+          type: string
+        provider:
+          type: string
+        queriedAt:
+          type: string
+          description: time of original (uncached) query
+        reason:
+          type: string
+          description: explanation when Available is false (or when no checker)
+        region:
+          type: string
+        source:
+          type: string
+          description: "checker identifier for tracing (e.g., \"alibaba:DescribeAvailableResource\"\
+            )"
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ZoneAvailability'
     model.AvailableZonesError:
       type: object
       properties:
@@ -24460,12 +24488,28 @@ components:
         imageId:
           type: string
           example: ami-01f71f215b23ba262
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", or CSP-native disk category (e.g., \"cloud_essd\"\
+            )"
+          example: default
         specId:
           type: string
           example: aws+ap-northeast-2+t3.nano
+        zone:
+          type: string
+          description: optional CSP-native zone id; empty = all zones in region
+          example: ""
     model.SpecImagePairReviewResult:
       type: object
       properties:
+        availability:
+          type: object
+          description: |-
+            Pre-flight availability (zone × disk-category) from CSP-specific checker.
+            Populated when a checker is registered for the provider; nil otherwise.
+          allOf:
+          - $ref: '#/components/schemas/model.AvailabilityResult'
         connectionName:
           type: string
           description: Connection info
@@ -24501,6 +24545,15 @@ components:
           type: string
         regionName:
           type: string
+        requestedRootDiskType:
+          type: string
+          description: |-
+            RequestedRootDiskType echoes the input RootDiskType (after normalization:
+            empty/"default" -> ""). Useful for UI to confirm what was checked.
+        requestedZone:
+          type: string
+          description: RequestedZone echoes the input Zone. Empty means region-wide
+            check.
         specDetails:
           $ref: '#/components/schemas/model.SpecInfo'
         specId:
@@ -24514,6 +24567,19 @@ components:
         status:
           type: string
           example: OK/Warning/Error
+        suggestedSystemDisk:
+          type: string
+          description: |-
+            SuggestedSystemDisk is a system-disk category that is currently
+            available in SuggestedZone. Empty when no suggestion is possible.
+        suggestedZone:
+          type: string
+          description: |-
+            SuggestedZone is a zone picked from Availability.Zones that has stock and
+            supports the requested (or any) system-disk category. Empty when no
+            suggestion is possible (e.g., provider has no checker, or every zone is
+            out of stock). Callers can use this to pre-fill ZoneId for VM creation
+            to improve 1-shot success rate.
         warnings:
           type: array
           items:
@@ -25807,6 +25873,25 @@ components:
             with the VPN from a CSP.
           items:
             $ref: '#/components/schemas/model.ResourceDetail'
+    model.ZoneAvailability:
+      type: object
+      properties:
+        available:
+          type: boolean
+        reason:
+          type: string
+          description: "why not available, when applicable"
+        status:
+          type: string
+          description: "CSP-native status (e.g., \"WithStock\", \"ClosedWithStock\"\
+            )"
+        supportedDisks:
+          type: array
+          description: disk categories currently available in this zone
+          items:
+            type: string
+        zoneId:
+          type: string
     model.inspectOverview:
       type: object
       properties:

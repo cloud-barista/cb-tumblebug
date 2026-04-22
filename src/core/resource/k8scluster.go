@@ -441,6 +441,10 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 				if createErr = validateK8sImageForProvider(nsId, connConfig.ProviderName, v.ImageId); createErr != nil {
 					return emptyObj, createErr
 				}
+				// Resolve provider-specific "latest image" (currently Alibaba-only)
+				// right before passing the CSP image name to cb-spider, so that
+				// VM creation does not break on deprecated/removed image IDs.
+				spImgName = ResolveLatestCspImageNameForVMCreation(ctx, nsId, req.ConnectionName, v.ImageId, spImgName)
 			}
 		}
 
@@ -607,7 +611,7 @@ func CheckK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName string
 */
 
 // AddK8sNodeGroup adds a K8sNodeGroup
-func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq) (*model.K8sClusterInfo, error) {
+func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *model.K8sNodeGroupReq) (*model.K8sClusterInfo, error) {
 	log.Info().Msg("AddK8sNodeGroup")
 
 	emptyObj := &model.K8sClusterInfo{}
@@ -735,6 +739,10 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 			if err = validateK8sImageForProvider(nsId, connConfig.ProviderName, u.ImageId); err != nil {
 				return emptyObj, err
 			}
+			// Resolve provider-specific "latest image" (currently Alibaba-only)
+			// right before passing the CSP image name to cb-spider, so that
+			// VM creation does not break on deprecated/removed image IDs.
+			spImgName = ResolveLatestCspImageNameForVMCreation(ctx, nsId, tbK8sCInfo.ConnectionName, u.ImageId, spImgName)
 		}
 	}
 

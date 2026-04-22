@@ -263,7 +263,7 @@ type SpecFetchOption struct {
 	ExcludedProviders []string `json:"excludedProviders,omitempty" example:"azure" description:"Providers to be excluded from the spec fetching operation."`
 
 	// providers that are not region-specific (ex: ["gcp"])
-	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp,tencent" description:"Providers that are not region-specific."`
+	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp" description:"Providers that are not region-specific."`
 }
 
 // RecommendSpecRequestOptions is struct for RecommendSpec Request Options

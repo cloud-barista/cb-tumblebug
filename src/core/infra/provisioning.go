@@ -28,7 +28,10 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
-	azure "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
+	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba" // register Alibaba availability checker
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"   // register Azure availability checker
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/tencent" // register Tencent availability checker
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -42,6 +45,33 @@ import (
 func getNodeCreateRateLimitsForCSP(cspName string) (int, int) {
 	config := csp.GetRateLimitConfig(cspName)
 	return config.MaxConcurrentRegions, config.MaxNodesPerRegion
+}
+
+// pickSuggestedSystemDisk returns the first currently-available system-disk
+// category from an AvailabilityResult, or "" when no suggestion is available
+// (no checker, no available zone, or no supported disk listed).
+//
+// NOTE: This is intended for REVIEW/DISPLAY purposes only (e.g. mapui hint).
+// Do NOT auto-apply the returned value to a VM creation request: the suggestion
+// is picked from the first available zone of the region, which may differ from
+// the actual VM zone (vnet/subnet are bound to a representative zone during
+// infra dynamic provisioning), so silently switching the disk type can still
+// cause "No AvailableSystemDisk" failures and breaks the user's mental model.
+func pickSuggestedSystemDisk(r model.AvailabilityResult) string {
+	if !r.Available {
+		return ""
+	}
+	for _, z := range r.Zones {
+		if !z.Available {
+			continue
+		}
+		for _, d := range z.SupportedDisks {
+			if d != "" {
+				return d
+			}
+		}
+	}
+	return ""
 }
 
 // InfraReqStructLevelValidation is func to validate fields in InfraReqStruct
@@ -1880,39 +1910,34 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		nodeReview.ProviderName = specInfo.ProviderName
 		nodeReview.RegionName = specInfo.RegionName
 
-		// Check if spec is available in CSP
+		// Check if spec is available in CSP using the provider-agnostic
+		// availability checker (Alibaba: DescribeAvailableResource, Azure:
+		// Resource SKU + quota, ...). Falls back to CB-Spider LookupSpec for
+		// providers that have no registered checker.
 		specAvailable := false
 		var specCheckErr error
 		cspSpecName := specInfo.CspSpecName
 
-		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
-			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
-			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check for Infra review")
-			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
-			if azErr == nil {
-				specAvailable = specResult.Available
-				if !specAvailable {
-					specCheckErr = fmt.Errorf("%s", specResult.Reason)
-				}
-			} else {
-				// Fall back to CB-Spider LookupSpec on Azure check errors
-				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
-				cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
-				if lookupErr == nil {
-					specAvailable = true
-					cspSpecName = cspSpec.Name
-				} else {
-					specCheckErr = lookupErr
-				}
-			}
-		} else {
-			// Other providers: use CB-Spider LookupSpec
+		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+			Provider:     csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:       specInfo.RegionName,
+			InstanceType: specInfo.CspSpecName,
+		})
+
+		if availability.Source == "none" {
+			// No checker registered for this provider: fall back to CB-Spider LookupSpec.
 			cspSpec, lookupErr := resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 			if lookupErr == nil {
 				specAvailable = true
 				cspSpecName = cspSpec.Name
 			} else {
 				specCheckErr = lookupErr
+			}
+		} else {
+			// Checker available: trust its result.
+			specAvailable = availability.Available
+			if !specAvailable {
+				specCheckErr = fmt.Errorf("%s", availability.Reason)
 			}
 		}
 
@@ -1958,7 +1983,7 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 	// Validate ImageId (with auto-registration if found in CSP but not in DB)
 	if specInfoPtr != nil {
 		resolvedConnName := common.ResolveConnectionName(specInfoPtr.ConnectionName, credentialHolder)
-		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, resolvedConnName, nodeGroupDynamicReq.ImageId)
+		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, resolvedConnName, nodeGroupDynamicReq.ImageId)
 		if err != nil {
 			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf("Image '%s' not available: %v", nodeGroupDynamicReq.ImageId, err))
 			nodeReview.ImageValidation = model.ReviewResourceValidation{
@@ -2093,18 +2118,34 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 	return nodeReview, specInfoPtr, viable, hasNodeWarning, nodeCost
 }
 
-// ReviewSpecImagePair reviews spec and image pair compatibility for provisioning
-func ReviewSpecImagePair(ctx context.Context, specId, imageId string) (*model.SpecImagePairReviewResult, error) {
-	log.Debug().Msgf("Reviewing spec-image pair: spec=%s, image=%s", specId, imageId)
+// ReviewSpecImagePair reviews spec and image pair compatibility for provisioning.
+//
+// rootDiskType and zone are OPTIONAL refinements for the availability check:
+//   - rootDiskType: empty or "default" means "no specific disk category"; the
+//     checker reports stock across all categories supported in the region.
+//     A specific value (e.g., "cloud_essd") narrows the check to that exact
+//     disk so the UI can flag a combination that will fail at provisioning.
+//   - zone: empty means "all zones in the region"; a specific zone scopes
+//     the result to that single zone (so SuggestedSystemDisk reflects it).
+func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zone string) (*model.SpecImagePairReviewResult, error) {
+	log.Debug().Msgf("Reviewing spec-image pair: spec=%s, image=%s, rootDiskType=%q, zone=%q",
+		specId, imageId, rootDiskType, zone)
+
+	// Normalize "default"/empty to "" for the availability query so checkers
+	// don't send "default" as a literal disk category to the CSP API.
+	normalizedDisk := model.NormalizeDiskTypeForQuery(rootDiskType)
+	normalizedZone := strings.TrimSpace(zone)
 
 	result := &model.SpecImagePairReviewResult{
-		SpecId:   specId,
-		ImageId:  imageId,
-		IsValid:  true,
-		Status:   "OK",
-		Info:     make([]string, 0),
-		Warnings: make([]string, 0),
-		Errors:   make([]string, 0),
+		SpecId:                specId,
+		ImageId:               imageId,
+		IsValid:               true,
+		Status:                "OK",
+		Info:                  make([]string, 0),
+		Warnings:              make([]string, 0),
+		Errors:                make([]string, 0),
+		RequestedRootDiskType: normalizedDisk,
+		RequestedZone:         normalizedZone,
 	}
 
 	// Validate SpecId
@@ -2122,37 +2163,103 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId string) (*model.Sp
 		result.Message = fmt.Sprintf("Spec '%s' is not available", specId)
 	} else {
 		result.SpecDetails = &specInfo
-		result.ConnectionName = specInfo.ConnectionName
+		// The spec record stores the default-tenant connection name. Resolve it
+		// against the credential holder carried by ctx so that all subsequent
+		// Spider calls (LookupSpec, EnsureImageAvailable) and the returned
+		// ConnectionName use the requesting tenant's credentials.
+		credentialHolder := common.CredentialHolderFromContext(ctx)
+		resolvedConnectionName := common.ResolveConnectionName(specInfo.ConnectionName, credentialHolder)
+		result.ConnectionName = resolvedConnectionName
 		result.ProviderName = specInfo.ProviderName
 		result.RegionName = specInfo.RegionName
 
-		// Check if spec is available in CSP
+		// Check if spec is available in CSP using the provider-agnostic
+		// availability checker (Alibaba: DescribeAvailableResource, Azure:
+		// Resource SKU + quota, ...). Falls back to CB-Spider LookupSpec for
+		// providers that have no registered checker.
 		specAvailable := false
 		var specCheckErr error
 
-		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
-			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
-			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check")
-			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
-			if azErr == nil {
-				specAvailable = specResult.Available
-				if !specAvailable {
-					// Azure positively reported the spec as unavailable; treat as authoritative.
-					specCheckErr = fmt.Errorf("%s", specResult.Reason)
-				}
-			} else {
-				// Fall back to CB-Spider LookupSpec on Azure check errors to preserve existing behavior.
-				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
-				_, specCheckErr = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
-				if specCheckErr == nil {
-					specAvailable = true
-				}
-			}
-		} else {
-			// Other providers: use CB-Spider LookupSpec
-			_, specCheckErr = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+			Provider:           csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:             specInfo.RegionName,
+			InstanceType:       specInfo.CspSpecName,
+			SystemDiskCategory: normalizedDisk,
+			PreferredZone:      normalizedZone,
+		})
+
+		switch availability.Source {
+		case "none":
+			// No checker registered for this provider: fall back to CB-Spider LookupSpec.
+			_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 			if specCheckErr == nil {
 				specAvailable = true
+			}
+		default:
+			// Checker available (Alibaba, Azure, ...): trust its result.
+			result.Availability = &availability
+			specAvailable = availability.Available
+			if !specAvailable {
+				specCheckErr = fmt.Errorf("%s", availability.Reason)
+			}
+			// Pick suggested zone + disk from the matrix when present.
+			// When the user specified a zone, prefer that zone's disks first.
+			pickFrom := func(targetZone string) bool {
+				for _, z := range availability.Zones {
+					if !z.Available {
+						continue
+					}
+					if targetZone != "" && !strings.EqualFold(z.ZoneId, targetZone) {
+						continue
+					}
+					result.SuggestedZone = z.ZoneId
+					if len(z.SupportedDisks) > 0 {
+						// Prefer the requested disk type if it is in the list,
+						// otherwise the first available one.
+						chosen := z.SupportedDisks[0]
+						if normalizedDisk != "" {
+							for _, d := range z.SupportedDisks {
+								if strings.EqualFold(d, normalizedDisk) {
+									chosen = d
+									break
+								}
+							}
+						}
+						result.SuggestedSystemDisk = chosen
+					}
+					return true
+				}
+				return false
+			}
+			if !pickFrom(normalizedZone) {
+				// Fall back to any available zone when the requested zone has no stock.
+				pickFrom("")
+			}
+
+			// If the user specified a disk type, warn when the suggested zone
+			// doesn't actually support it (or when no zone supports it).
+			if normalizedDisk != "" {
+				diskSupportedSomewhere := false
+				for _, z := range availability.Zones {
+					if !z.Available {
+						continue
+					}
+					for _, d := range z.SupportedDisks {
+						if strings.EqualFold(d, normalizedDisk) {
+							diskSupportedSomewhere = true
+							break
+						}
+					}
+					if diskSupportedSomewhere {
+						break
+					}
+				}
+				if !diskSupportedSomewhere {
+					result.Warnings = append(result.Warnings, fmt.Sprintf(
+						"requested rootDiskType '%s' is not currently available in region '%s' for spec '%s'; "+
+							"VM creation may fail. Consider 'default' or '%s'.",
+						normalizedDisk, specInfo.RegionName, specInfo.CspSpecName, result.SuggestedSystemDisk))
+				}
 			}
 		}
 
@@ -2191,7 +2298,7 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId string) (*model.Sp
 
 	// Validate ImageId (with auto-registration if found in CSP but not in DB)
 	if result.ConnectionName != "" {
-		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, result.ConnectionName, imageId)
+		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, result.ConnectionName, imageId)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("Image '%s' not available: %v", imageId, err))
 			result.ImageValidation = model.ReviewResourceValidation{
@@ -2749,28 +2856,22 @@ func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *mod
 		var specAvailable bool
 		var specCheckErr error
 
-		if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Azure {
-			// Azure: use direct Azure Resource SKU API first (fast, bypasses CB-Spider)
-			log.Debug().Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Using direct Azure spec check")
-			specResult, azErr := azure.CheckSpecAvailability(ctx, specInfo.RegionName, specInfo.CspSpecName)
-			if azErr == nil {
-				specAvailable = specResult.Available
-				if !specAvailable {
-					specCheckErr = fmt.Errorf("%s", specResult.Reason)
-				}
-			} else {
-				// Fall back to CB-Spider LookupSpec on Azure check errors
-				log.Warn().Err(azErr).Str("provider", "azure").Str("region", specInfo.RegionName).Str("spec", specInfo.CspSpecName).Msg("Direct Azure spec check failed; falling back to CB-Spider LookupSpec")
-				_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
-				if specCheckErr == nil {
-					specAvailable = true
-				}
-			}
-		} else {
-			// Other providers: use CB-Spider LookupSpec
+		// Use the provider-agnostic availability checker; fall back to
+		// CB-Spider LookupSpec when no checker is registered for the provider.
+		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+			Provider:     csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:       specInfo.RegionName,
+			InstanceType: specInfo.CspSpecName,
+		})
+		if availability.Source == "none" {
 			_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
 			if specCheckErr == nil {
 				specAvailable = true
+			}
+		} else {
+			specAvailable = availability.Available
+			if !specAvailable {
+				specCheckErr = fmt.Errorf("%s", availability.Reason)
 			}
 		}
 
@@ -2790,7 +2891,7 @@ func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *mod
 
 	// Check image availability in parallel (with auto-registration if found in CSP but not in DB)
 	go func() {
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, resolvedConnectionName, req.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, resolvedConnectionName, req.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msgf("Image validation failed for %s", req.ImageId)
 			errorChan <- fmt.Errorf("image '%s' is not available in connection '%s': %w",
@@ -2954,7 +3055,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 	nodeGroupReq.ImageId = k.ImageId
 
 	// Check if the image is available (DB or CSP) and auto-register if needed
-	imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, connection.ConfigName, nodeGroupReq.ImageId)
+	imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, connection.ConfigName, nodeGroupReq.ImageId)
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to find image '%s' for VM '%s' in CSP '%s' (connection: %s): %w. Please verify the image exists and is accessible in the target region",
 			nodeGroupReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
@@ -3457,6 +3558,14 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		requestBody.ReqInfo.RootDiskSize = ""
 	}
 
+	// NOTE: We intentionally do NOT auto-apply a stock-aware system-disk
+	// suggestion here. The infra dynamic flow binds vnet/subnet to a single
+	// representative zone of the region, but availability suggestions are
+	// computed across all zones; silently switching RootDiskType based on a
+	// different zone can still cause "No AvailableSystemDisk" failures and
+	// surprises the user. Suggestions are exposed via the review APIs
+	// (SpecImagePairReviewResult.SuggestedSystemDisk) for UI display only.
+
 	if option == "register" {
 		requestBody.ReqInfo.CSPid = nodeInfoData.CspResourceId
 
@@ -3467,6 +3576,11 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			log.Debug().Msgf("GetImage returned an error: %s", err.Error())
 			return err
 		}
+		// Resolve provider-specific "latest image" (currently Alibaba-only) right
+		// before handing the CSP image name to cb-spider. This avoids VM creation
+		// failures caused by CSP-side deprecation of individual image IDs while
+		// the stored ImageFamily remains stable.
+		imageInfo = resource.ResolveLatestImageForVMCreation(ctx, nodeInfoData.ConnectionName, imageInfo)
 		if imageInfo.ResourceType == model.StrCustomImage {
 			// If the requested image is a custom image (generated by VM snapshot), RootDiskType should be empty.
 			// TB ignore inputs for RootDiskType, RootDiskSize
@@ -3657,7 +3771,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			targetImageName = callResult.ImageIId.NameId
 		} else {
 			// Try to use EnsureImageAvailable for consistent image handling
-			imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, requestBody.ConnectionName, targetImageName)
+			imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, requestBody.ConnectionName, targetImageName)
 
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to ensure image availability: %s", targetImageName)
@@ -4017,7 +4131,7 @@ func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string
 }
 
 // checkCommonResAvailableForK8sClusterDynamicReq is func to check common resources availability for K8sClusterDynamicReq
-func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynamicReq) error {
+func checkCommonResAvailableForK8sClusterDynamicReq(ctx context.Context, dReq *model.K8sClusterDynamicReq) error {
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -4057,7 +4171,7 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynami
 		// do nothing
 	} else {
 		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, connName, dReq.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, connName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return err
@@ -4071,14 +4185,14 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynami
 }
 
 // checkCommonResAvailableForK8sNodeGroupDynamicReq is func to check common resources availability for K8sNodeGroupDynamicReq
-func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *model.K8sNodeGroupDynamicReq) error {
+func checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx context.Context, connName string, dReq *model.K8sNodeGroupDynamicReq) error {
 	k8sClusterDReq := &model.K8sClusterDynamicReq{
 		SpecId:         dReq.SpecId,
 		ImageId:        dReq.ImageId,
 		ConnectionName: connName,
 	}
 
-	err := checkCommonResAvailableForK8sClusterDynamicReq(k8sClusterDReq)
+	err := checkCommonResAvailableForK8sClusterDynamicReq(ctx, k8sClusterDReq)
 	if err != nil {
 		return err
 	}
@@ -4148,7 +4262,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		// do nothing
 	} else {
 		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, k8sReq.ConnectionName, dReq.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, k8sReq.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sReq, err
@@ -4305,7 +4419,7 @@ func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.K8sCl
 		return emptyK8sCluster, err
 	}
 
-	err = checkCommonResAvailableForK8sClusterDynamicReq(dReq)
+	err = checkCommonResAvailableForK8sClusterDynamicReq(ctx, dReq)
 	if err != nil {
 		log.Err(err).Msgf("Failed to find common resource for K8sCluster provision")
 		return emptyK8sCluster, err
@@ -4377,7 +4491,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 		log.Debug().Msg("ImageId is empty or default. Spider will auto-map AMI Type based on VMSpec.")
 	} else {
 		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, k8sClusterInfo.ConnectionName, dReq.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, k8sClusterInfo.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sNgReq, err
@@ -4471,7 +4585,7 @@ func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId st
 		}
 	}
 
-	err = checkCommonResAvailableForK8sNodeGroupDynamicReq(tbK8sCInfo.ConnectionName, dReq)
+	err = checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx, tbK8sCInfo.ConnectionName, dReq)
 	if err != nil {
 		log.Err(err).Msgf("Failed to find common resource for K8sNodeGroup provision")
 		return emptyK8sCluster, err
@@ -4487,7 +4601,7 @@ func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId st
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared all resources for provisioning K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
-	return resource.AddK8sNodeGroup(nsId, k8sClusterId, k8sNgReq)
+	return resource.AddK8sNodeGroup(ctx, nsId, k8sClusterId, k8sNgReq)
 }
 
 // Provisioning History Management Functions
