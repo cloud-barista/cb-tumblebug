@@ -258,8 +258,12 @@ func EnsureImageAvailable(ctx context.Context, nsId, connectionName, imageId str
 	imageInfo, err := GetImage(nsId, imageId)
 	if err == nil {
 		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, nsId)
-		if mismatchErr := validateImageRegionForConnection(connectionName, imageInfo); mismatchErr != nil {
+		warn, mismatchErr := CheckImageRegionCompatibility(connectionName, imageInfo)
+		if mismatchErr != nil {
 			return model.ImageInfo{}, false, mismatchErr
+		}
+		if warn != "" {
+			log.Warn().Msg(warn)
 		}
 		return resolveLatestCspImage(ctx, connectionName, imageInfo), false, nil
 	}
@@ -268,8 +272,12 @@ func EnsureImageAvailable(ctx context.Context, nsId, connectionName, imageId str
 	imageInfo, err = GetImage(model.SystemCommonNs, imageId)
 	if err == nil {
 		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, model.SystemCommonNs)
-		if mismatchErr := validateImageRegionForConnection(connectionName, imageInfo); mismatchErr != nil {
+		warn, mismatchErr := CheckImageRegionCompatibility(connectionName, imageInfo)
+		if mismatchErr != nil {
 			return model.ImageInfo{}, false, mismatchErr
+		}
+		if warn != "" {
+			log.Warn().Msg(warn)
 		}
 		return resolveLatestCspImage(ctx, connectionName, imageInfo), false, nil
 	}
@@ -340,30 +348,55 @@ func EnsureImageAvailable(ctx context.Context, nsId, connectionName, imageId str
 	return model.ImageInfo{}, false, fmt.Errorf("image '%s' not found in DB or CSP (checked both regular and custom images)", imageId)
 }
 
-// validateImageRegionForConnection rejects stored images whose RegionList does
-// not include the target connection's region. Some providers (e.g. Tencent CVM)
-// issue region-scoped image IDs that fail with InvalidImageId.NotFound when
-// reused across regions; this fails fast at the review/EnsureImage stage.
-// Permissive: empty RegionList, "common" entry, or connection lookup failure
-// all skip the check.
-func validateImageRegionForConnection(connectionName string, imageInfo model.ImageInfo) error {
+// CheckImageRegionCompatibility evaluates whether the stored image can be
+// used in the target connection's region.
+//
+// Returns:
+//   - ("", nil)        : compatible, or check skipped (empty inputs / lookup failure)
+//   - (warning, nil)   : region mismatch but the provider has a family-based
+//     resolver (e.g. Alibaba ImageFamily) that will pick the correct image at
+//     VM-creation time. Caller may surface the warning.
+//   - ("", err)        : region mismatch and no recovery path; treat as hard error.
+func CheckImageRegionCompatibility(connectionName string, imageInfo model.ImageInfo) (string, error) {
 	if connectionName == "" || len(imageInfo.RegionList) == 0 {
-		return nil
+		return "", nil
 	}
 	connConfig, err := common.GetConnConfig(connectionName)
 	if err != nil {
-		return nil
+		return "", nil
 	}
 	targetRegion := connConfig.RegionDetail.RegionName
 	if targetRegion == "" {
-		return nil
+		return "", nil
 	}
 	for _, r := range imageInfo.RegionList {
 		if strings.EqualFold(r, model.StrCommon) || strings.EqualFold(r, targetRegion) {
-			return nil
+			return "", nil
 		}
 	}
-	return fmt.Errorf(
+
+	// Region mismatch detected. Decide recoverability by provider.
+	if strings.EqualFold(imageInfo.ProviderName, csp.Alibaba) &&
+		extractAlibabaImageFamily(imageInfo.Details) != "" {
+		return fmt.Sprintf(
+			"image '%s' (CSP id: %s) is registered for region(s) %v but connection '%s' targets region '%s'; "+
+				"will auto-resolve to the latest image in the same Alibaba ImageFamily for region '%s' at VM creation",
+			imageInfo.Id, imageInfo.CspImageName, imageInfo.RegionList,
+			connectionName, targetRegion, targetRegion,
+		), nil
+	}
+	if strings.EqualFold(imageInfo.ProviderName, csp.Azure) {
+		if _, _, _, _, ok := parseAzureUrn(imageInfo.CspImageName); ok {
+			return fmt.Sprintf(
+				"image '%s' (CSP id: %s) is registered for region(s) %v but connection '%s' targets region '%s'; "+
+					"will auto-resolve to the latest image version in the same Azure SKU for region '%s' at VM creation",
+				imageInfo.Id, imageInfo.CspImageName, imageInfo.RegionList,
+				connectionName, targetRegion, targetRegion,
+			), nil
+		}
+	}
+
+	return "", fmt.Errorf(
 		"image '%s' (CSP id: %s) is registered for region(s) %v but connection '%s' targets region '%s'; "+
 			"pick an image registered for region '%s'",
 		imageInfo.Id, imageInfo.CspImageName, imageInfo.RegionList,
@@ -434,6 +467,10 @@ func ResolveLatestCspImageNameForVMCreation(ctx context.Context, nsId, connectio
 //   - Alibaba: uses ImageFamily (stored in imageInfo.Details) to call
 //     DescribeImageFromFamily, avoiding VM-creation failures caused by
 //     Alibaba rapidly deprecating individual date-stamped image IDs.
+//   - Azure: uses (publisher, offer, sku) parsed from the URN to call
+//     VirtualMachineImages.List with "name desc", picking the latest
+//     version. Avoids failures caused by Azure deprecating older URN
+//     versions while the SKU remains supported.
 //
 // For providers without a resolver, imageInfo is returned unchanged.
 // The DB record is NEVER modified; only the returned copy carries the
@@ -441,10 +478,18 @@ func ResolveLatestCspImageNameForVMCreation(ctx context.Context, nsId, connectio
 // empty result) is non-fatal: the original imageInfo is returned and a
 // warning is logged.
 func resolveLatestCspImage(ctx context.Context, connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
-	if !strings.EqualFold(imageInfo.ProviderName, csp.Alibaba) {
+	switch {
+	case strings.EqualFold(imageInfo.ProviderName, csp.Alibaba):
+		return resolveLatestAlibabaImage(ctx, connectionName, imageInfo)
+	case strings.EqualFold(imageInfo.ProviderName, csp.Azure):
+		return resolveLatestAzureImage(ctx, connectionName, imageInfo)
+	default:
 		return imageInfo
 	}
+}
 
+// resolveLatestAlibabaImage performs Alibaba ImageFamily-based latest resolution.
+func resolveLatestAlibabaImage(ctx context.Context, connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
 	family := extractAlibabaImageFamily(imageInfo.Details)
 	if family == "" {
 		log.Debug().Msgf("alibaba image '%s' has no ImageFamily in details; skipping latest resolution",
@@ -466,13 +511,16 @@ func resolveLatestCspImage(ctx context.Context, connectionName string, imageInfo
 		return imageInfo
 	}
 
-	resolvedId, creationTime, err := alibabacsp.ResolveLatestIdByFamily(ctx, region, family)
+	cacheKey := "alibaba|" + region + "|" + family
+	resolvedId, err := getCachedLatestImageId(cacheKey, func() (string, error) {
+		id, _, e := alibabacsp.ResolveLatestIdByFamily(ctx, region, family)
+		return strings.TrimSpace(id), e
+	})
 	if err != nil {
 		log.Warn().Err(err).Msgf("alibaba image resolution failed (region=%s family=%s original=%s); falling back to original",
 			region, family, imageInfo.CspImageName)
 		return imageInfo
 	}
-	resolvedId = strings.TrimSpace(resolvedId)
 	if resolvedId == "" {
 		log.Warn().Msgf("alibaba image family '%s' returned no image in region '%s'; falling back to original id '%s'",
 			family, region, imageInfo.CspImageName)
@@ -484,13 +532,122 @@ func resolveLatestCspImage(ctx context.Context, connectionName string, imageInfo
 		return imageInfo
 	}
 
-	log.Info().Msgf("alibaba image resolved to latest via family: %s -> %s (family=%s region=%s creation=%s)",
-		imageInfo.CspImageName, resolvedId, family, region, creationTime)
+	log.Info().Msgf("alibaba image resolved to latest via family: %s -> %s (family=%s region=%s)",
+		imageInfo.CspImageName, resolvedId, family, region)
 
 	// Return a copy with the resolved id; leave the DB record untouched.
 	resolved := imageInfo
 	resolved.CspImageName = resolvedId
 	return resolved
+}
+
+// resolveLatestAzureImage performs Azure URN-based latest resolution.
+// The CspImageName is expected to be a URN "publisher:offer:sku:version";
+// this function picks the latest "version" for the (publisher, offer, sku)
+// in the target region. Non-URN identifiers (e.g. ARM resource IDs for
+// Shared Image Gallery / Custom Image) are returned unchanged.
+func resolveLatestAzureImage(ctx context.Context, connectionName string, imageInfo model.ImageInfo) model.ImageInfo {
+	publisher, offer, sku, _, ok := parseAzureUrn(imageInfo.CspImageName)
+	if !ok {
+		log.Debug().Msgf("azure image '%s' is not a URN; skipping latest resolution", imageInfo.CspImageName)
+		return imageInfo
+	}
+
+	region := ""
+	if connectionName != "" {
+		if conn, err := common.GetConnConfig(connectionName); err == nil {
+			region = strings.TrimSpace(conn.RegionDetail.RegionName)
+		} else {
+			log.Warn().Err(err).Msgf("azure image resolution: failed to get conn config for '%s'", connectionName)
+		}
+	}
+	if region == "" {
+		log.Warn().Msgf("azure image resolution: region unavailable for connection '%s'; skipping (image=%s)",
+			connectionName, imageInfo.CspImageName)
+		return imageInfo
+	}
+
+	cacheKey := "azure|" + region + "|" + publisher + "|" + offer + "|" + sku
+	resolvedUrn, err := getCachedLatestImageId(cacheKey, func() (string, error) {
+		urn, _, e := azurecsp.ResolveLatestUrn(ctx, region, publisher, offer, sku)
+		return strings.TrimSpace(urn), e
+	})
+	if err != nil {
+		log.Warn().Err(err).Msgf("azure image resolution failed (region=%s sku=%s:%s:%s original=%s); falling back to original",
+			region, publisher, offer, sku, imageInfo.CspImageName)
+		return imageInfo
+	}
+	if resolvedUrn == "" || resolvedUrn == imageInfo.CspImageName {
+		log.Debug().Msgf("azure image '%s' is already latest in sku %s:%s:%s (region=%s)",
+			imageInfo.CspImageName, publisher, offer, sku, region)
+		return imageInfo
+	}
+
+	log.Info().Msgf("azure image resolved to latest via sku: %s -> %s (region=%s)",
+		imageInfo.CspImageName, resolvedUrn, region)
+
+	resolved := imageInfo
+	resolved.CspImageName = resolvedUrn
+	return resolved
+}
+
+// latestImageIdCache caches the resolved "latest" CSP image identifier per
+// provider+region+key for a short TTL. Since the same image is typically
+// resolved twice per VM creation (once at review, once at provisioning) and
+// MCIs may launch multiple VMs sharing the same SKU/family, this avoids
+// duplicate SDK calls within a creation cycle without holding stale results
+// long enough to miss new image releases.
+var (
+	latestImageIdCache    sync.Map // key string -> latestImageIdCacheEntry
+	latestImageIdCacheTTL = 5 * time.Minute
+)
+
+type latestImageIdCacheEntry struct {
+	value     string
+	expiresAt time.Time
+}
+
+// getCachedLatestImageId returns the cached value for key, or invokes fetch
+// and caches the result on success. Errors are NOT cached. An empty value
+// (legitimate "no result") is cached so repeated lookups do not hammer the
+// SDK.
+func getCachedLatestImageId(key string, fetch func() (string, error)) (string, error) {
+	if v, ok := latestImageIdCache.Load(key); ok {
+		entry := v.(latestImageIdCacheEntry)
+		if time.Now().Before(entry.expiresAt) {
+			return entry.value, nil
+		}
+		latestImageIdCache.Delete(key)
+	}
+	value, err := fetch()
+	if err != nil {
+		return "", err
+	}
+	latestImageIdCache.Store(key, latestImageIdCacheEntry{
+		value:     value,
+		expiresAt: time.Now().Add(latestImageIdCacheTTL),
+	})
+	return value, nil
+}
+
+// parseAzureUrn splits an Azure image URN "publisher:offer:sku:version" into
+// its four parts. Returns ok=false if the input is not a 4-part URN with all
+// parts non-empty (e.g. ARM resource IDs starting with "/subscriptions/...").
+func parseAzureUrn(s string) (publisher, offer, sku, version string, ok bool) {
+	s = strings.TrimSpace(s)
+	if s == "" || strings.HasPrefix(s, "/") {
+		return "", "", "", "", false
+	}
+	parts := strings.Split(s, ":")
+	if len(parts) != 4 {
+		return "", "", "", "", false
+	}
+	for _, p := range parts {
+		if strings.TrimSpace(p) == "" {
+			return "", "", "", "", false
+		}
+	}
+	return parts[0], parts[1], parts[2], parts[3], true
 }
 
 // extractAlibabaImageFamily returns the Alibaba ECS ImageFamily value stored

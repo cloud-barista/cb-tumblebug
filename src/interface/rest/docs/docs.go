@@ -1117,7 +1117,7 @@ const docTemplate = `{
         },
         "/fetchImages": {
             "post": {
-                "description": "Fetch images waiting for completion.\n\n**Provider Selection Options:**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- ` + "`" + `regionAgnosticProviders` + "`" + `: Providers where images are shared across regions (e.g., [\"gcp\", \"tencent\"]). Only one region will be fetched per provider.\n\n**Note:** ` + "`" + `regionAgnosticProviders` + "`" + ` should only contain providers that are also in ` + "`" + `targetProviders` + "`" + ` (or not excluded).",
+                "description": "Fetch images waiting for completion.\n\n**Provider Selection Options:**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- ` + "`" + `regionAgnosticProviders` + "`" + `: Providers where images are shared across regions (e.g., [\"gcp\"]). Only one region will be fetched per provider.\n\n**Note:** ` + "`" + `regionAgnosticProviders` + "`" + ` should only contain providers that are also in ` + "`" + `targetProviders` + "`" + ` (or not excluded).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1176,7 +1176,7 @@ const docTemplate = `{
         },
         "/fetchImagesAsync": {
             "post": {
-                "description": "Fetch images in the background without waiting for completion.\n\n**Provider Selection Options:**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- ` + "`" + `regionAgnosticProviders` + "`" + `: Providers where images are shared across regions (e.g., [\"gcp\", \"tencent\"]). Only one region will be fetched per provider.\n\n**Note:** ` + "`" + `regionAgnosticProviders` + "`" + ` should only contain providers that are also in ` + "`" + `targetProviders` + "`" + ` (or not excluded).",
+                "description": "Fetch images in the background without waiting for completion.\n\n**Provider Selection Options:**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- ` + "`" + `regionAgnosticProviders` + "`" + `: Providers where images are shared across regions (e.g., [\"gcp\"]). Only one region will be fetched per provider.\n\n**Note:** ` + "`" + `regionAgnosticProviders` + "`" + ` should only contain providers that are also in ` + "`" + `targetProviders` + "`" + ` (or not excluded).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1335,7 +1335,7 @@ const docTemplate = `{
         },
         "/fetchSpecs": {
             "post": {
-                "description": "Fetch specs from CSPs and register them in the system.\n\n**Provider Selection Options:**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- ` + "`" + `regionAgnosticProviders` + "`" + `: Providers where specs are shared across regions (e.g., [\"gcp\", \"tencent\"]). Only one region will be fetched per provider.\n\n**Note:** ` + "`" + `regionAgnosticProviders` + "`" + ` should only contain providers that are also in ` + "`" + `targetProviders` + "`" + ` (or not excluded).",
+                "description": "Fetch specs from CSPs and register them in the system.\n\n**Provider Selection Options:**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- ` + "`" + `regionAgnosticProviders` + "`" + `: Providers where specs are shared across regions (e.g., [\"gcp\"]). Only one region will be fetched per provider.\n\n**Note:** ` + "`" + `regionAgnosticProviders` + "`" + ` should only contain providers that are also in ` + "`" + `targetProviders` + "`" + ` (or not excluded).",
                 "consumes": [
                     "application/json"
                 ],
@@ -24300,8 +24300,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "gcp",
-                        "tencent"
+                        "gcp"
                     ]
                 },
                 "targetProviders": {
@@ -29777,8 +29776,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "gcp",
-                        "tencent"
+                        "gcp"
                     ]
                 },
                 "targetProviders": {
