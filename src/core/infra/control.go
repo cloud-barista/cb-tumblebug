@@ -104,16 +104,41 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		return "Terminated the Infra", nil
 
 	} else if action == "continue" {
+		// continue has two modes:
+		//   1. hold-resume: an in-memory holding goroutine is waiting (normal flow
+		//      after creating an Infra with option=hold). Signal it to proceed.
+		//   2. crash-recovery-forward: no holding goroutine exists (e.g. server
+		//      restart left transient Creating Nodes behind). Reconcile each
+		//      Node against the CSP via Spider so stale Creating Nodes either
+		//      commit to their real state (Running/Suspended/...) or become
+		//      Failed when the CSP has no record of them. The Infra-level
+		//      targetAction is then settled accordingly. No new Spider create
+		//      calls are issued; that remains an explicit user action.
 		key := common.GenInfraKey(nsId, infraId, "")
-		holdingInfraMap.Store(key, action)
-
-		return "Continue the holding Infra", nil
+		if _, holding := holdingInfraMap.Load(key); holding {
+			holdingInfraMap.Store(key, action)
+			log.Info().Str("mode", "hold-resume").Msgf("Continue: signalled holding Infra %s/%s", nsId, infraId)
+			return "Continue the holding Infra", nil
+		}
+		log.Info().Str("mode", "crash-recovery-forward").Msgf("Continue: reconciling stuck Infra %s/%s", nsId, infraId)
+		return reconcileInfraForward(nsId, infraId)
 
 	} else if action == "withdraw" {
+		// withdraw has two modes (mirrors continue):
+		//   1. hold-resume: signal the holding goroutine to abort and clean up.
+		//   2. crash-recovery-backward: no holding goroutine exists. For each
+		//      stuck Node, attempt termination on the CSP if a cspResourceName
+		//      is known, otherwise mark Failed (presumed not created). Settle
+		//      the Infra-level targetAction to Terminate. Final DelInfra is
+		//      NOT issued automatically; the operator runs DELETE explicitly.
 		key := common.GenInfraKey(nsId, infraId, "")
-		holdingInfraMap.Store(key, action)
-
-		return "Withdraw the holding Infra", nil
+		if _, holding := holdingInfraMap.Load(key); holding {
+			holdingInfraMap.Store(key, action)
+			log.Info().Str("mode", "hold-resume").Msgf("Withdraw: signalled holding Infra %s/%s", nsId, infraId)
+			return "Withdraw the holding Infra", nil
+		}
+		log.Info().Str("mode", "crash-recovery-backward").Msgf("Withdraw: reconciling stuck Infra %s/%s", nsId, infraId)
+		return reconcileInfraBackward(nsId, infraId)
 
 	} else if action == "refine" { // refine delete Nodes in model.StatusFailed or model.StatusUndefined
 
@@ -820,4 +845,214 @@ func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalPa
 		}
 	}
 	return nil
+}
+
+// transientNodeStatus reports whether status represents an in-flight provisioning
+// operation that should be reconciled against the CSP. These are the states a
+// crashed/restarted server typically leaves behind.
+func transientNodeStatus(status string) bool {
+	return strings.EqualFold(status, model.StatusCreating) ||
+		strings.EqualFold(status, model.StatusTerminating) ||
+		strings.EqualFold(status, model.StatusSuspending) ||
+		strings.EqualFold(status, model.StatusResuming) ||
+		strings.EqualFold(status, model.StatusRebooting) ||
+		strings.EqualFold(status, model.StatusUndefined) ||
+		status == ""
+}
+
+// settleInfraTargetAction clears Infra-level TargetAction/TargetStatus once
+// every Node has reached a final (non-transient) status. Called at the tail of
+// reconcileInfraForward / reconcileInfraBackward so that subsequent control
+// actions (refine, terminate, delete) are no longer blocked by lingering
+// Create/Terminate intent.
+func settleInfraTargetAction(nsId, infraId string) {
+	infraTmp, _, err := GetInfraObject(nsId, infraId)
+	if err != nil {
+		log.Warn().Err(err).Msgf("settleInfraTargetAction: cannot load Infra %s/%s", nsId, infraId)
+		return
+	}
+	allSettled := true
+	for _, n := range infraTmp.Node {
+		if transientNodeStatus(n.Status) {
+			allSettled = false
+			break
+		}
+	}
+	if allSettled {
+		infraTmp.TargetAction = model.ActionComplete
+		infraTmp.TargetStatus = model.StatusComplete
+		UpdateInfraInfo(nsId, infraTmp)
+		log.Info().Msgf("settleInfraTargetAction: Infra %s/%s targetAction cleared (all Nodes settled)", infraId, nsId)
+	}
+}
+
+// reconcileInfraForward implements the crash-recovery-forward semantics of the
+// `continue` action. For each Node currently in a transient state it:
+//
+//  1. Calls FetchNodeStatus, which queries Spider when a cspResourceName is
+//     known and persists the corrected status to KV automatically.
+//  2. For Nodes still transient AND lacking a cspResourceName (the typical
+//     "server died before Spider returned" pattern), forces status=Failed.
+//     No new Spider Create call is issued — recreation is left as an explicit
+//     follow-up (e.g. addNodeGroup) so this action stays side-effect minimal.
+//
+// After all Nodes are processed, the Infra-level TargetAction is settled when
+// possible. The caller can then run `refine` to remove Failed Nodes.
+func reconcileInfraForward(nsId, infraId string) (string, error) {
+	infraStatus, err := GetInfraStatus(nsId, infraId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return "", err
+	}
+	if infraStatus == nil {
+		return "", fmt.Errorf("Infra %s/%s not found", nsId, infraId)
+	}
+
+	var (
+		reconciledRunning int
+		markedFailed      int
+		untouched         int
+	)
+
+	for _, n := range infraStatus.Node {
+		if !transientNodeStatus(n.Status) {
+			untouched++
+			continue
+		}
+
+		// Step 1: ask Spider what the truth is. FetchNodeStatus persists
+		// status/targetAction back to KV when cspResourceName is set.
+		fetched, ferr := FetchNodeStatus(nsId, infraId, n.Id)
+		if ferr != nil {
+			log.Warn().Err(ferr).Msgf("reconcileInfraForward: FetchNodeStatus failed for %s; will fall back to KV", n.Id)
+		} else if !transientNodeStatus(fetched.Status) {
+			if strings.EqualFold(fetched.Status, model.StatusRunning) {
+				reconciledRunning++
+			}
+			log.Info().Msgf("reconcileInfraForward: Node %s reconciled to %s via Spider", n.Id, fetched.Status)
+			continue
+		}
+
+		// Step 2: still transient. Re-read Node from KV to inspect cspName.
+		nodeObj, gerr := GetNodeObject(nsId, infraId, n.Id)
+		if gerr != nil {
+			log.Warn().Err(gerr).Msgf("reconcileInfraForward: cannot read Node %s; skipping", n.Id)
+			continue
+		}
+		if strings.TrimSpace(nodeObj.CspResourceName) == "" {
+			// Presumed never created on the CSP. Force Failed so refine
+			// can clean it up; clear targetAction so further control
+			// actions on the Infra are no longer blocked.
+			nodeObj.Status = model.StatusFailed
+			nodeObj.TargetAction = model.ActionComplete
+			nodeObj.TargetStatus = model.StatusComplete
+			nodeObj.SystemMessage = "presumed not created (no cspResourceName); marked Failed by reconcileInfraForward"
+			UpdateNodeInfo(nsId, infraId, nodeObj)
+			markedFailed++
+			log.Info().Msgf("reconcileInfraForward: Node %s marked Failed (no cspResourceName)", n.Id)
+			continue
+		}
+
+		// cspResourceName exists but Spider could not give a final answer.
+		// Leave it as-is so an operator can retry; do not silently mark Failed.
+		log.Warn().Msgf("reconcileInfraForward: Node %s remains %s after Spider query (cspResourceName=%s); requires retry",
+			n.Id, n.Status, nodeObj.CspResourceName)
+	}
+
+	settleInfraTargetAction(nsId, infraId)
+
+	msg := fmt.Sprintf("Reconciled Infra %s: running=%d, marked-failed=%d, untouched=%d. Run refine to remove Failed Nodes.",
+		infraId, reconciledRunning, markedFailed, untouched)
+	log.Info().Msg(msg)
+	return msg, nil
+}
+
+// reconcileInfraBackward implements the crash-recovery-backward semantics of
+// the `withdraw` action. The intent is to abandon the entire Infra, so every
+// Node (regardless of current status) is driven toward Terminated:
+//
+//  1. Nodes already in a final teardown state (Terminated / Terminating) are
+//     left alone — terminate is idempotent.
+//  2. Nodes with no cspResourceName are presumed never to have been created
+//     on the CSP and are marked Failed locally so refine/delete can clean
+//     them up. No Spider call is issued.
+//  3. Every other Node — including healthy Running ones — is sent through
+//     HandleInfraNodeAction(action=terminate, force=true). The force flag
+//     bypasses both the per-Node transient guard and the Infra-level
+//     TargetAction guard, so stuck Creating Nodes with cspResourceName get
+//     terminated alongside Running siblings.
+//
+// The Infra-level TargetAction is set to Terminate up-front so concurrent
+// status pollers observe the new intent. The final DelInfra is deliberately
+// NOT issued — the operator runs DELETE explicitly when teardown completes.
+func reconcileInfraBackward(nsId, infraId string) (string, error) {
+	infraStatus, err := GetInfraStatus(nsId, infraId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return "", err
+	}
+	if infraStatus == nil {
+		return "", fmt.Errorf("Infra %s/%s not found", nsId, infraId)
+	}
+
+	// Record Terminate intent at Infra level before issuing per-Node
+	// terminate requests. This way any concurrent FetchNodeStatus call
+	// already sees TargetAction=Terminate when it interprets transient CSP
+	// statuses.
+	if infraTmp, _, ierr := GetInfraObject(nsId, infraId); ierr == nil {
+		infraTmp.TargetAction = model.ActionTerminate
+		infraTmp.TargetStatus = model.StatusTerminated
+		UpdateInfraInfo(nsId, infraTmp)
+	}
+
+	var (
+		terminationRequested int
+		markedFailed         int
+		skippedTerminated    int
+	)
+
+	for _, n := range infraStatus.Node {
+		// Already past the point of no return — terminate is idempotent.
+		if strings.EqualFold(n.Status, model.StatusTerminated) ||
+			strings.EqualFold(n.Status, model.StatusTerminating) {
+			skippedTerminated++
+			continue
+		}
+
+		nodeObj, gerr := GetNodeObject(nsId, infraId, n.Id)
+		if gerr != nil {
+			log.Warn().Err(gerr).Msgf("reconcileInfraBackward: cannot read Node %s; skipping", n.Id)
+			continue
+		}
+
+		// No CSP resource was ever recorded — presumed never created.
+		// Mark Failed locally; refine/delete will clean it up.
+		if strings.TrimSpace(nodeObj.CspResourceName) == "" {
+			nodeObj.Status = model.StatusFailed
+			nodeObj.TargetAction = model.ActionComplete
+			nodeObj.TargetStatus = model.StatusComplete
+			nodeObj.SystemMessage = "presumed not created (no cspResourceName); marked Failed by reconcileInfraBackward"
+			UpdateNodeInfo(nsId, infraId, nodeObj)
+			markedFailed++
+			log.Info().Msgf("reconcileInfraBackward: Node %s marked Failed (no cspResourceName)", n.Id)
+			continue
+		}
+
+		// Has a CSP resource. Issue terminate with force=true regardless of
+		// current status (Running / Failed / Creating-with-cspName / ...).
+		// HandleInfraNodeAction kicks off ControlNodeAsync; per-Node status
+		// will converge to Terminating then Terminated as Spider responds.
+		if _, terr := HandleInfraNodeAction(nsId, infraId, n.Id, model.ActionTerminate, true); terr != nil {
+			log.Warn().Err(terr).Msgf("reconcileInfraBackward: terminate request failed for Node %s", n.Id)
+			continue
+		}
+		terminationRequested++
+		log.Info().Msgf("reconcileInfraBackward: terminate requested for Node %s (status=%s, cspResourceName=%s)",
+			n.Id, n.Status, nodeObj.CspResourceName)
+	}
+
+	msg := fmt.Sprintf("Withdrew Infra %s: terminate-requested=%d, marked-failed=%d, already-terminated=%d. Run DELETE after termination completes.",
+		infraId, terminationRequested, markedFailed, skippedTerminated)
+	log.Info().Msg(msg)
+	return msg, nil
 }
