@@ -642,12 +642,14 @@ func parseAzureUrn(s string) (publisher, offer, sku, version string, ok bool) {
 	if len(parts) != 4 {
 		return "", "", "", "", false
 	}
-	for _, p := range parts {
-		if strings.TrimSpace(p) == "" {
+	trimmed := make([]string, len(parts))
+	for i, p := range parts {
+		trimmed[i] = strings.TrimSpace(p)
+		if trimmed[i] == "" {
 			return "", "", "", "", false
 		}
 	}
-	return parts[0], parts[1], parts[2], parts[3], true
+	return trimmed[0], trimmed[1], trimmed[2], trimmed[3], true
 }
 
 // extractAlibabaImageFamily returns the Alibaba ECS ImageFamily value stored
