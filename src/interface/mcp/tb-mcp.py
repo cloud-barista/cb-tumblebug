@@ -1453,19 +1453,19 @@ def get_nodegroups(ns_id: str, infra_id: str) -> Dict:
     """
     return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/nodegroup")
 
-# Tool: Get VM list
+# Tool: Get nodes in a nodegroup
 @mcp.tool()
-def get_vms(ns_id: str, infra_id: str, nodegroup_id: str) -> Dict:
+def get_nodes_in_nodegroup(ns_id: str, infra_id: str, nodegroup_id: str) -> Dict:
     """
-    Get list of VMs for a specific nodegroup
-    
+    Get list of nodes for a specific nodegroup in an Infra.
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
         nodegroup_id: NodeGroup ID
-    
+
     Returns:
-        List of VMs
+        List of nodes in the nodegroup
     """
     return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/nodegroup/{nodegroup_id}")
 
@@ -3965,34 +3965,34 @@ def _summarize_command_output(output: str, max_lines: int = 5, max_chars: int = 
 # Tool: Execute remote command to VMs in Infra
 @mcp.tool()
 def execute_command_infra(
-    ns_id: str, 
-    infra_id: str, 
-    commands: List[str], 
-    nodegroup_id: Optional[str] = None, 
-    vm_id: Optional[str] = None,
+    ns_id: str,
+    infra_id: str,
+    commands: List[str],
+    nodegroup_id: Optional[str] = None,
+    node_id: Optional[str] = None,
     label_selector: Optional[str] = None,
     summarize_output: bool = True,
     max_output_lines: Union[int, str] = 5,
     max_output_chars: Union[int, str] = 1000
 ) -> Dict:
     """
-    Execute remote commands based on SSH on VMs of an Infra.
-    This allows executing commands on all VMs in the Infra or specific VMs based on nodegroup or label selector.
-    
+    Execute remote commands via SSH on nodes of an Infra.
+    Executes on all nodes, or a specific nodegroup/node/label-selector subset.
+
     🚨 **CRITICAL PERFORMANCE WARNING:**
     Remote command execution can take significant time depending on:
     - Command complexity and execution time
-    - Number of VMs in Infra (commands run on all VMs sequentially)
-    - Network latency to target VMs
+    - Number of nodes in Infra (commands run on all nodes sequentially)
+    - Network latency to target nodes
     - Application installation and configuration time
-    
+
     **Expected Response Times:**
     - Simple commands (ls, ps, etc.): 10-30 seconds
     - Package installation (apt install): 1-5 minutes
     - Application deployment scripts: 5-15 minutes
     - Complex setups (databases, clusters): 10-20 minutes
     - Large software downloads: Up to 20+ minutes
-    
+
     **LLM Usage Guidelines:**
     1. ⏰ Inform users about potential delays before execution
     2. 📋 Break complex deployments into smaller command batches
@@ -4012,17 +4012,17 @@ def execute_command_infra(
         ns_id: Namespace ID
         infra_id: Infra ID
         commands: List of commands to execute
-        nodegroup_id: NodeGroup ID (optional)
-        vm_id: VM ID (optional)
-        label_selector: Label selector (optional)
+        nodegroup_id: NodeGroup ID to limit execution to nodes in a nodegroup (optional)
+        node_id: Node ID to limit execution to a single node (optional)
+        label_selector: Label selector to limit execution by labels (optional)
         summarize_output: Whether to summarize long outputs to reduce token usage (default: True)
         max_output_lines: Maximum lines to show from start/end of output (default: 5)
         max_output_chars: Maximum characters per output field (default: 1000)
-    
+
     Returns:
         Command execution result with summarized outputs (if enabled):
-        - results: List of VM execution results
-        - Each result includes: infraId, vmId, vmIp, command, stdout, stderr, err
+        - results: List of node execution results
+        - Each result includes: infraId, nodeId, nodeIp, command, stdout, stderr, err
         - When summarized: stdout/stderr include summary info and truncation indicators
         - output_summary: Metadata about output summarization
     """
@@ -4074,17 +4074,17 @@ def execute_command_infra(
     
     if nodegroup_id:
         params["nodeGroupId"] = nodegroup_id
-    if vm_id:
-        params["vmId"] = vm_id
+    if node_id:
+        params["nodeId"] = node_id
     if label_selector:
         params["labelSelector"] = label_selector
-    
+
     if params:
         query_string = "&".join([f"{k}={v}" for k, v in params.items()])
         url += f"?{query_string}"
-    
+
     result = api_request("POST", url, json_data=data)
-    
+
     # Apply output summarization if enabled
     if summarize_output and "results" in result:
         total_original_size = 0
@@ -4199,8 +4199,8 @@ def execute_command_infra(
     
     if nodegroup_id:
         context_data["nodegroup_id"] = nodegroup_id
-    if vm_id:
-        context_data["vm_id"] = vm_id
+    if node_id:
+        context_data["node_id"] = node_id
     if label_selector:
         context_data["label_selector"] = label_selector
     
@@ -4347,29 +4347,29 @@ def execute_remote_commands_enhanced(
     custom_commands: Optional[List[str]] = None,
     template_variables: Optional[Dict[str, str]] = None,
     nodegroup_id: Optional[str] = None,
-    vm_id: Optional[str] = None,
+    node_id: Optional[str] = None,
     label_selector: Optional[str] = None,
     summarize_output: bool = True
 ) -> Dict:
     """
-    Execute enhanced remote commands on Infra VMs with predefined scripts and template variable support.
+    Execute enhanced remote commands on Infra nodes with predefined scripts and template variable support.
     Based on MapUI patterns for comprehensive application deployment and management.
-    
+
     🚨 **CRITICAL PERFORMANCE WARNING:**
     Enhanced remote command execution can take significant time:
     - Predefined scripts may include complex installations
     - Security hardening can take 5-10 minutes
     - Monitoring setup with multiple tools: 10-15 minutes
     - System updates and package installations: 5-20 minutes
-    
+
     **LLM MUST inform users about expected delays before execution.**
-    
+
     **LLM Usage Guidelines:**
     1. 🚨 NEVER send empty commands - Always validate command content before execution
     2. ⏰ Inform users about potential delays before execution
     3. 📋 Break complex deployments into smaller command batches
     4. 🎯 Group related commands to minimize API calls
-    
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
@@ -4377,10 +4377,10 @@ def execute_remote_commands_enhanced(
         custom_commands: List of custom commands to execute (optional)
         template_variables: Variables to substitute in commands (e.g., {"public_ip": "1.2.3.4"})
         nodegroup_id: Target specific nodegroup (optional)
-        vm_id: Target specific VM (optional)
-        label_selector: Target VMs by label selector (optional)
+        node_id: Target specific node by node ID (optional)
+        label_selector: Target nodes by label selector (optional)
         summarize_output: Whether to summarize long output (default: True)
-    
+
     Returns:
         Enhanced command execution results with template variable substitution
     """
@@ -4487,9 +4487,9 @@ def execute_remote_commands_enhanced(
         result = execute_command_infra(
             ns_id=ns_id,
             infra_id=infra_id,
-            commands=final_commands,  # Use final_commands
+            commands=final_commands,
             nodegroup_id=nodegroup_id,
-            vm_id=vm_id,
+            node_id=node_id,
             label_selector=label_selector,
             summarize_output=summarize_output
         )
@@ -4644,7 +4644,7 @@ def get_detailed_provisioning_risk(
         - alternative_options: Suggested safer alternatives
     """
     try:
-        url = f"/tumblebug/provisioning/risk/detailed"
+        url = "/provisioning/risk/detailed"
         params = {"specId": spec_id}
         if image_name:
             params["imageName"] = image_name
@@ -5198,39 +5198,39 @@ def clear_interaction_memory(
 # Tool: Transfer file to VMs in Infra
 @mcp.tool()
 def transfer_file_infra(
-    ns_id: str, 
-    infra_id: str, 
-    file_path: str, 
+    ns_id: str,
+    infra_id: str,
+    file_path: str,
     target_path: str,
-    nodegroup_id: Optional[str] = None, 
-    vm_id: Optional[str] = None
+    nodegroup_id: Optional[str] = None,
+    node_id: Optional[str] = None
 ) -> Dict:
     """
-    Transfer file to an Infra
-    
+    Transfer a file to nodes of an Infra via SCP.
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
         file_path: Local file path to transfer
-        target_path: Target path
-        nodegroup_id: NodeGroup ID (optional)
-        vm_id: VM ID (optional)
-    
+        target_path: Destination path on the remote node
+        nodegroup_id: NodeGroup ID to limit transfer to nodes in a nodegroup (optional)
+        node_id: Node ID to transfer to a single node (optional)
+
     Returns:
         File transfer result
     """
     url = f"/ns/{ns_id}/transferFile/infra/{infra_id}"
     params = {}
-    
+
     if nodegroup_id:
         params["nodeGroupId"] = nodegroup_id
-    if vm_id:
-        params["vmId"] = vm_id
-    
+    if node_id:
+        params["nodeId"] = node_id
+
     if params:
         query_string = "&".join([f"{k}={v}" for k, v in params.items()])
         url += f"?{query_string}"
-    
+
     # Open file
     try:
         with open(file_path, 'rb') as file:
@@ -5247,14 +5247,217 @@ def transfer_file_infra(
 def get_request_by_id(request_id: str) -> Dict:
     """
     Get request by request ID
-    
+
     Args:
         request_id: Request ID
-    
+
     Returns:
         Request information
     """
     return api_request("GET", f"/request/{request_id}")
+
+
+# Tool: List node command status
+@mcp.tool()
+def list_node_command_status(
+    ns_id: str,
+    infra_id: str,
+    node_id: str,
+    status: Optional[List[str]] = None,
+    request_id: Optional[str] = None,
+    page: Optional[int] = None,
+    size: Optional[int] = None
+) -> Dict:
+    """
+    List remote command execution status records for a specific node.
+
+    Supports filtering by status, requestId, and pagination.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        node_id: Node ID (e.g., g1-1)
+        status: Filter by status values (e.g., ["Completed", "Failed"])
+        request_id: Filter by request ID
+        page: Page number for pagination
+        size: Page size for pagination
+
+    Returns:
+        List of command status records for the node
+    """
+    params = {}
+    if status:
+        params["status"] = status
+    if request_id:
+        params["requestId"] = request_id
+    if page is not None:
+        params["page"] = page
+    if size is not None:
+        params["size"] = size
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatus", params=params)
+
+
+# Tool: Get specific node command status by index
+@mcp.tool()
+def get_node_command_status(
+    ns_id: str,
+    infra_id: str,
+    node_id: str,
+    index: int
+) -> Dict:
+    """
+    Get a specific remote command execution status record by index for a node.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        node_id: Node ID (e.g., g1-1)
+        index: Command status record index
+
+    Returns:
+        Command status record details
+    """
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatus/{index}")
+
+
+# Tool: Clear all node command status
+@mcp.tool()
+def clear_all_node_command_status(
+    ns_id: str,
+    infra_id: str,
+    node_id: str
+) -> Dict:
+    """
+    Clear (delete) all remote command execution status records for a specific node.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        node_id: Node ID (e.g., g1-1)
+
+    Returns:
+        Result of the clear operation
+    """
+    return api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatusAll")
+
+
+# Tool: Get node handling command count
+@mcp.tool()
+def get_node_handling_command_count(
+    ns_id: str,
+    infra_id: str,
+    node_id: str
+) -> Dict:
+    """
+    Get the number of currently active (in-progress) remote commands for a specific node.
+
+    Useful for checking if a node is busy before issuing new commands.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+        node_id: Node ID (e.g., g1-1)
+
+    Returns:
+        Handling command count for the node
+    """
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/handlingCount")
+
+
+# Tool: Get infra handling command count
+@mcp.tool()
+def get_infra_handling_command_count(
+    ns_id: str,
+    infra_id: str
+) -> Dict:
+    """
+    Get the total number of currently active (in-progress) remote commands across all nodes in an Infra.
+
+    Useful for checking overall Infra command load before issuing new batch commands.
+
+    Args:
+        ns_id: Namespace ID
+        infra_id: Infra ID
+
+    Returns:
+        Total handling command count for the Infra
+    """
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/handlingCount")
+
+
+# Tool: Check available region zones for a spec
+@mcp.tool()
+def check_available_region_zones_for_spec(
+    connection_name: str,
+    spec_name: str
+) -> Dict:
+    """
+    Check available region zones for a specific VM specification.
+
+    Use this to verify which regions/zones can actually provision a given spec
+    before attempting infra creation.
+
+    Args:
+        connection_name: Cloud connection configuration name
+        spec_name: CSP spec name to check
+
+    Returns:
+        Available region zones for the spec
+    """
+    data = {
+        "connectionName": connection_name,
+        "cspSpecName": spec_name
+    }
+    return api_request("POST", "/availableRegionZonesForSpec", json_data=data)
+
+
+# Tool: Check available region zones for a list of specs
+@mcp.tool()
+def check_available_region_zones_for_spec_list(
+    spec_list: List[Dict]
+) -> Dict:
+    """
+    Check available region zones for multiple VM specifications at once.
+
+    Each item in spec_list should have:
+    - connectionName: Cloud connection name
+    - cspSpecName: CSP spec name
+
+    Args:
+        spec_list: List of dicts with connectionName and cspSpecName
+
+    Returns:
+        Available region zones for each spec in the list
+    """
+    data = {"specList": spec_list}
+    return api_request("POST", "/availableRegionZonesForSpecList", json_data=data)
+
+
+# Tool: Update existing spec list by available region zones
+@mcp.tool()
+def update_existing_spec_list_by_available_region_zones(
+    ns_id: str,
+    connection_name: Optional[str] = None
+) -> Dict:
+    """
+    Update the availability status of existing specs in the namespace by checking
+    actual available region zones from the CSP.
+
+    This refreshes which specs can be provisioned in which zones, helping avoid
+    failures caused by outdated availability data.
+
+    Args:
+        ns_id: Namespace ID
+        connection_name: (Optional) Limit update to a specific connection
+
+    Returns:
+        Update result with refreshed availability information
+    """
+    data = {}
+    if connection_name:
+        data["connectionName"] = connection_name
+    return api_request("POST", f"/ns/{ns_id}/updateExistingSpecListByAvailableRegionZones", json_data=data if data else None)
+
 
 #####################################
 # Prompts
@@ -6519,7 +6722,7 @@ def check_infra_status_and_handle_failures(
             }
         
         overall_status = target_infra_status.get("status", "Unknown")
-        vm_status_list = target_infra_status.get("vm", [])
+        vm_status_list = target_infra_status.get("node", [])
         
         # Analyze VM status distribution
         status_counts = {}
@@ -6538,7 +6741,7 @@ def check_infra_status_and_handle_failures(
                     "status": vm_status,
                     "public_ip": vm.get("publicIp", "N/A"),
                     "private_ip": vm.get("privateIp", "N/A"),
-                    "csp_vm_id": vm.get("cspVmId", "N/A")
+                    "csp_resource_id": vm.get("cspResourceId", "N/A")
                 })
             elif vm_status.lower() in ["running", "running-on"]:
                 running_vms.append({
