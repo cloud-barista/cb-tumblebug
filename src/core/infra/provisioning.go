@@ -2100,6 +2100,24 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 			}
 		}
 
+		// Check Alibaba China Local Region authorization.
+		// Local Regions (cn-*-lr) require explicit account activation in the Alibaba Cloud Console.
+		// No read-only API (DescribeAvailableResource, DescribeAccountAttributes) can detect this
+		// restriction upfront — RunInstances returns RegionUnauthorized at creation time even when
+		// stock is available and quota is positive.
+		if csp.ResolveCloudPlatform(providerName) == csp.Alibaba &&
+			strings.HasPrefix(specInfoPtr.RegionName, "cn-") &&
+			strings.HasSuffix(specInfoPtr.RegionName, "-lr") {
+			nodeReview.Warnings = append(nodeReview.Warnings, fmt.Sprintf(
+				"Alibaba China Local Region %q requires explicit account activation in the Alibaba Cloud Console "+
+					"(ECS > Local Regions > Activate) before instances can be created. "+
+					"Without activation, RunInstances returns RegionUnauthorized even if stock is available. "+
+					"Verify that your account has Local Region VM creation enabled.",
+				specInfoPtr.RegionName))
+			hasNodeWarning = true
+			log.Debug().Msgf("Alibaba China Local Region warning for VM: %s (region: %s)", nodeGroupDynamicReq.Name, specInfoPtr.RegionName)
+		}
+
 		// // Check NHN Cloud limitations
 		// if providerName == csp.NHN {
 		// 	if deployOption != "hold" {
@@ -2305,6 +2323,20 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 			// Add cost estimation if available
 			if specInfo.CostPerHour > 0 {
 				result.EstimatedCost = fmt.Sprintf("$%.4f/hour", specInfo.CostPerHour)
+			}
+
+			// Warn for Alibaba China Local Regions that require explicit account activation.
+			if csp.ResolveCloudPlatform(specInfo.ProviderName) == csp.Alibaba &&
+				strings.HasPrefix(specInfo.RegionName, "cn-") &&
+				strings.HasSuffix(specInfo.RegionName, "-lr") {
+				result.Warnings = append(result.Warnings, fmt.Sprintf(
+					"Alibaba China Local Region %q requires explicit account activation in the Alibaba Cloud Console "+
+						"(ECS > Local Regions > Activate) before instances can be created. "+
+						"Without activation, RunInstances returns RegionUnauthorized even if stock is available. "+
+						"Verify that your account has Local Region VM creation enabled.",
+					specInfo.RegionName))
+				result.Status = "Warning"
+				log.Debug().Msgf("Alibaba China Local Region warning for spec-image pair: %s (region: %s)", specId, specInfo.RegionName)
 			}
 		}
 	}
