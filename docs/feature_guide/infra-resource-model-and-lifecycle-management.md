@@ -197,7 +197,9 @@ The following statuses represent the current state of a Node:
 
 ### Action Constants
 
-Actions that can be performed on Infra/Node:
+Actions that can be performed on Infra/Node. They fall into three groups by purpose.
+
+**Lifecycle (normal operation):**
 
 | Action | Description | Target Status |
 |--------|-------------|---------------|
@@ -206,7 +208,23 @@ Actions that can be performed on Infra/Node:
 | `Resume` | Start suspended Node(s) | Running |
 | `Reboot` | Restart Node(s) | Running |
 | `Terminate` | Permanently delete Node(s) | Terminated |
-| `Refine` | Clean up failed/undefined Nodes | - |
+| `Refine` | Remove Nodes whose status is `Failed` or `Undefined` from Infra metadata. **No CSP-side termination** is issued for those Nodes. | - |
+
+**Hold gate (only valid right after `POST /infra` with `option=hold`):**
+
+| Action | Description |
+|--------|-------------|
+| `Continue` | Signal the in-memory holding goroutine to **proceed** with provisioning. |
+| `Withdraw` | Signal the in-memory holding goroutine to **cancel** provisioning. |
+
+> Hold-gate actions only work while the holding goroutine is alive in memory. After a server restart they will fail — use the crash-recovery actions below instead.
+
+**Crash recovery (Infra stuck after server restart or partial failure):**
+
+| Action | Description |
+|--------|-------------|
+| `Reconcile` | **Forward** recovery. For each transient Node, query Spider for the real CSP status and absorb CSP-side orphan VMs (created before the crash but not recorded in TB). Nodes that cannot be matched on the CSP are marked `Failed` so a subsequent `refine` can remove them. **No new Spider create calls are issued.** |
+| `Abort` | **Backward** recovery. Force-terminate every non-final Node in parallel (with orphan rescue), then sweep any `Failed` remnants via `refine`. The final `DELETE` call is left to the operator. |
 
 ## 🔄 State Transition Diagram
 
@@ -332,14 +350,19 @@ flowchart TD
 
 The system validates state transitions before executing actions. Below is the transition matrix:
 
-| Current Status | Suspend | Resume | Reboot | Terminate |
-|----------------|---------|--------|--------|-----------|
-| Running | ✅ | ❌ | ✅ | ✅ |
-| Suspended | ❌ | ✅ | ❌ | ✅ |
-| Creating | ❌ | ❌ | ❌ | ❌ |
-| Terminating | ❌ | ❌ | ❌ | ❌ |
-| Terminated | ❌ | ❌ | ❌ | ❌ |
-| Failed | ❌ | ❌ | ❌ | ✅ (Force) |
+| Current Status | Suspend | Resume | Reboot | Terminate | Reconcile | Abort |
+|----------------|---------|--------|--------|-----------|-----------|-------|
+| Preparing      | ❌     | ❌    | ❌    | ❌        | ✅        | ✅    |
+| Prepared       | ❌     | ❌    | ❌    | ❌        | ✅        | ✅    |
+| Creating       | ❌     | ❌    | ❌    | ❌        | ✅        | ✅    |
+| Running        | ✅     | ❌    | ✅    | ✅        | ✅ (no-op) | ✅    |
+| Suspended      | ❌     | ✅    | ❌    | ✅        | ✅ (no-op) | ✅    |
+| Terminating    | ❌     | ❌    | ❌    | ❌        | ✅        | ✅    |
+| Terminated     | ❌     | ❌    | ❌    | ❌        | ❌        | ❌ (no-op) |
+| Failed         | ❌     | ❌    | ❌    | ✅ (Force) | ✅        | ✅    |
+| `Partial-*`    | ❌     | ❌    | ❌    | ✅ (Force) | ✅        | ✅    |
+
+> `Reconcile` and `Abort` are crash-recovery actions and are intentionally permitted from non-final states (including transitional states like `Preparing` / `Creating` / `Terminating`) so an operator can always recover a stuck Infra without resorting to `force` flags.
 
 ### Infra-Level Actions
 
@@ -487,7 +510,7 @@ Control operations (Suspend, Resume, Reboot, Terminate) use the same hierarchica
 
 ### Refine Action
 
-The `refine` action removes Nodes in `Failed` or `Undefined` status from an Infra:
+The `refine` action removes Nodes in `Failed` or `Undefined` status from an Infra's metadata. It does **not** issue any CSP-side termination call — it only cleans up TB metadata for Nodes that were never (or are no longer) backed by a usable CSP resource.
 
 ```mermaid
 flowchart TD
@@ -511,6 +534,54 @@ flowchart TD
     style KEEP fill:#4caf50
 ```
 
+### Crash Recovery: `reconcile` and `abort`
+
+When the cb-tumblebug server is restarted (or crashes) while an Infra is being provisioned, terminated, or otherwise transitioning, the in-memory orchestration state is lost. The Infra is then "stuck" in a transient status (`Preparing`, `Prepared`, `Creating`, `Terminating`, ...) with no goroutine making progress.
+
+The `reconcile` and `abort` actions exist to recover from this situation **without** restarting the whole cluster or manually editing KV. They both use Spider as the source of truth:
+
+- **`reconcile`** drives the Infra **forward** toward Running:
+  - For each transient Node with a known `cspResourceName`, fetch the real status from Spider and persist it.
+  - For Nodes missing `cspResourceName` (server died before Spider returned the VM IID), query Spider `/allvm` once per connection and try to match by `IID.NameId == Node.Uid`. Matched orphans are absorbed via Spider `/regvm` so the Node becomes manageable.
+  - Nodes that still cannot be matched are marked `Failed` so a subsequent `refine` can clean them up.
+  - For Infras stuck in `Preparing` / `Prepared` with **0 Nodes** (server died during shared-resource preparation), the Infra is marked `Failed` with a `systemMessage` explaining the situation — there is no safe way to auto-resume from that point because the original create request is not stored verbatim.
+
+- **`abort`** drives the Infra **backward** toward Terminated:
+  - All non-final Nodes are force-terminated in parallel using the same hierarchical CSP→region→Node rate-limited fan-out as the regular `terminate` action.
+  - Nodes missing `cspResourceName` go through the same orphan-rescue path; if the VM exists on the CSP it is absorbed and then terminated, otherwise the Node is marked `Failed`.
+  - Any `Failed` remnants are swept via an internal `refine` call.
+  - The final `DELETE /infra/{infraId}` call is **not** issued automatically; the operator runs it explicitly when teardown completes.
+
+```mermaid
+flowchart LR
+    STUCK[Stuck Infra<br/>Preparing / Creating / Terminating]
+    STUCK -->|reconcile| FORWARD[Spider sync + orphan rescue<br/>→ Running / Failed]
+    STUCK -->|abort| BACKWARD[Force terminate + orphan rescue<br/>→ Terminated]
+    FORWARD --> REFINE1[refine to drop Failed]
+    BACKWARD --> DELETE[DELETE /infra/{infraId}]
+    REFINE1 --> NORMAL[Resume normal operation]
+```
+
+**Choosing between `reconcile` and `abort`:**
+
+| Situation | Recommended action |
+|---|---|
+| Most Nodes already Running, a few stuck `Creating` after a restart | `reconcile`, then `refine` if anything is left `Failed` |
+| Provisioning crashed early, very few Nodes created, you don't want them | `abort`, then `DELETE` |
+| Infra stuck `Terminating` after a restart | `abort` (idempotent; safe to re-run) |
+| Infra stuck `Preparing` / `Prepared` with 0 Nodes | `abort` (cleans up shared resources via subsequent `DELETE`), then re-create |
+| You want to inspect first | `reconcile` (read-only-ish: only force-terminates nothing, only marks Failed) |
+
+**Hold gate vs crash recovery (do not confuse):**
+
+| Goal | Use |
+|---|---|
+| Resume a provisioning that you held with `option=hold` | `continue` |
+| Cancel a provisioning that you held with `option=hold` | `withdraw` |
+| Recover an Infra that is stuck after a server restart | `reconcile` or `abort` |
+
+If `continue` / `withdraw` is called when no holding goroutine exists (e.g. after a restart), the API returns an explanatory error pointing to `reconcile` / `abort`.
+
 ### Force Flag
 
 Most actions support a `force` flag that bypasses state validation:
@@ -530,20 +601,25 @@ HandleInfraAction(nsId, infraId, "terminate", true)
 ### Infra Control Endpoint
 
 ```
-POST /tumblebug/ns/{nsId}/infra/{infraId}?action={action}
+GET /tumblebug/ns/{nsId}/control/infra/{infraId}?action={action}[&force={true|false}]
 ```
 
 **Parameters:**
-- `action`: One of `suspend`, `resume`, `reboot`, `terminate`, `refine`, `continue`, `withdraw`
+- `action` (required): one of
+  - Lifecycle: `suspend`, `resume`, `reboot`, `terminate`, `refine`
+  - Hold gate: `continue`, `withdraw`
+  - Crash recovery: `reconcile`, `abort`
+- `force` (optional, default `false`): bypass state-transition validation. Use with care.
 
 ### Node Control Endpoint
 
 ```
-POST /tumblebug/ns/{nsId}/infra/{infraId}/node/{nodeId}?action={action}
+GET /tumblebug/ns/{nsId}/control/infra/{infraId}/node/{nodeId}?action={action}[&force={true|false}]
 ```
 
 **Parameters:**
-- `action`: One of `suspend`, `resume`, `reboot`, `terminate`
+- `action` (required): one of `suspend`, `resume`, `reboot`, `terminate`
+- `force` (optional, default `false`)
 
 ### Get Infra Status
 
@@ -587,11 +663,31 @@ if infraStatus.TargetAction != model.ActionComplete {
 
 ### 2. Use Refine for Cleanup
 
-After failed provisioning, use `refine` to clean up failed Nodes:
+After failed provisioning, use `refine` to remove Nodes left in `Failed` / `Undefined` from Infra metadata. `refine` does **not** terminate anything on the CSP — it is a metadata-only cleanup. If you suspect orphan VMs still exist on the CSP, run `reconcile` first (it absorbs orphans) and then `refine`.
 
 ```bash
-curl -X POST "http://localhost:1323/tumblebug/ns/default/infra/my-infra?action=refine"
+curl "http://localhost:1323/tumblebug/ns/default/control/infra/my-infra?action=refine"
 ```
+
+### 2-1. Recovering a Stuck Infra After a Server Restart
+
+If cb-tumblebug was restarted while an Infra was being created or terminated, the Infra may be stuck in a transient status (`Creating`, `Terminating`, ...). Pick one of:
+
+```bash
+# Try to drive forward to Running (sync with Spider, absorb orphan VMs)
+curl "http://localhost:1323/tumblebug/ns/default/control/infra/my-infra?action=reconcile"
+# Then drop any Nodes that ended up Failed
+curl "http://localhost:1323/tumblebug/ns/default/control/infra/my-infra?action=refine"
+```
+
+```bash
+# Or give up and tear everything down
+curl "http://localhost:1323/tumblebug/ns/default/control/infra/my-infra?action=abort"
+# When all Nodes are Terminated, remove Infra metadata + shared resources
+curl -X DELETE "http://localhost:1323/tumblebug/ns/default/infra/my-infra?option=terminate"
+```
+
+Do **not** call `continue` / `withdraw` for this purpose — those only signal an in-memory hold goroutine and will return an error after a restart.
 
 ### 3. Wait for Transitional States
 

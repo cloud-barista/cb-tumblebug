@@ -1204,10 +1204,11 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	statusNodeCount := len(infraStatus.Node)
 	nodeInfoCount := len(nodeInfos)
 
-	// Check if Infra is still being created/registered to use more stable Node count calculation
-	isCreating := strings.Contains(infraTmp.Status, model.StatusCreating) ||
-		strings.Contains(infraTmp.Status, model.StatusRegistering) ||
-		strings.Contains(infraTmp.TargetAction, model.ActionCreate) ||
+	// Check if Infra is still being created/registered to use more stable Node count calculation.
+	// Note: infraTmp.Status (KV-stored) can become stale (e.g., "Creating" persisted before a
+	// server crash) and is not authoritative here; rely on TargetAction/TargetStatus, which are
+	// kept current by control actions (Create/Continue/Withdraw/Refine/etc.).
+	isCreating := strings.Contains(infraTmp.TargetAction, model.ActionCreate) ||
 		strings.Contains(infraTmp.TargetStatus, model.StatusRunning)
 
 	// Check if Infra is in a stable state (all Nodes have same stable status)
@@ -1233,9 +1234,6 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		if len(infraTmp.Node) > numNode {
 			numNode = len(infraTmp.Node)
 		}
-
-		// log.Debug().Msgf("Infra %s is creating: using stable Node count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
-		// 	infraId, numNode, actualNodeCount, statusNodeCount, infraStatus.StatusCount.CountTotal, len(infraTmp.Vm))
 	} else if isStableState {
 		// For stable Infra states (all Nodes in same state), use the most reliable source to avoid count fluctuation
 		// This applies to Terminated, Suspended, Failed, Running, etc.
@@ -1251,13 +1249,9 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		if tmpMax > numNode {
 			numNode = tmpMax
 		}
-
-		// log.Debug().Msgf("Infra %s is in stable state (%s): using stable Node count (%d) - actual: %d, status: %d, nodeInfos: %d, stored: %d, dominant: %d",
-		// 	infraId, stableStatusName, numNode, actualNodeCount, statusNodeCount, nodeInfoCount, len(infraTmp.Vm), tmpMax)
 	} else {
 		// Infra creation completed, use actual Node count from status
 		numNode = statusNodeCount
-		// log.Debug().Msgf("Infra %s creation completed: using status Node count (%d)", infraId, numNode)
 	}
 
 	//numUnNormalStatus := statusFlag[0] + statusFlag[9]
