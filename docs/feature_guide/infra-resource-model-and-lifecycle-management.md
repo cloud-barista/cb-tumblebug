@@ -558,7 +558,7 @@ flowchart LR
     STUCK -->|reconcile| FORWARD[Spider sync + orphan rescue<br/>→ Running / Failed]
     STUCK -->|abort| BACKWARD[Force terminate + orphan rescue<br/>→ Terminated]
     FORWARD --> REFINE1[refine to drop Failed]
-    BACKWARD --> DELETE[DELETE /infra/{infraId}]
+    BACKWARD --> DELETE["DELETE /infra/{infraId}"]
     REFINE1 --> NORMAL[Resume normal operation]
 ```
 
