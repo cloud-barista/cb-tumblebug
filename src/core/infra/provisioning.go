@@ -2480,9 +2480,30 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 	providerMap := make(map[string]bool)
 	regionMap := make(map[string]bool)
 
-	// Use semaphore for parallel processing with concurrency limit
-	const maxConcurrency = 10
-	semaphore := make(chan struct{}, maxConcurrency)
+	// Hierarchical concurrency for review:
+	//   - Cross-CSP: parallel up to a global safety cap (prevents unbounded
+	//     fanout when many NodeGroups are submitted at once).
+	//   - Within a single CSP: capped per-CSP to avoid hitting CSP API rate
+	//     limits on the read-only calls performed by reviewSingleNodeGroupDynamicReq
+	//     (CheckAvailability, EnsureImageAvailable, LookupSpec, ...).
+	// Defaults are conservative for read-heavy review traffic.
+	const (
+		maxReviewConcurrencyGlobal = 30
+		maxReviewConcurrencyPerCSP = 3
+	)
+	globalSemaphore := make(chan struct{}, maxReviewConcurrencyGlobal)
+	var cspSemMu sync.Mutex
+	cspSemaphores := make(map[string]chan struct{})
+	getCSPSemaphore := func(cspKey string) chan struct{} {
+		cspSemMu.Lock()
+		defer cspSemMu.Unlock()
+		if s, ok := cspSemaphores[cspKey]; ok {
+			return s
+		}
+		s := make(chan struct{}, maxReviewConcurrencyPerCSP)
+		cspSemaphores[cspKey] = s
+		return s
+	}
 
 	// Channel to collect VM review results
 	nodeReviewChan := make(chan struct {
@@ -2503,9 +2524,21 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 		go func(index int, nodeGroupDynamicReq model.CreateNodeGroupDynamicReq) {
 			defer wg.Done()
 
-			// Acquire semaphore
-			semaphore <- struct{}{}
-			defer func() { <-semaphore }()
+			// Global cap (safety net across all CSPs).
+			globalSemaphore <- struct{}{}
+			defer func() { <-globalSemaphore }()
+
+			// Determine the target CSP via a quick local spec lookup so we can
+			// apply per-CSP rate limiting before the heavier CSP API calls
+			// inside reviewSingleNodeGroupDynamicReq. GetSpec hits the local
+			// cache/DB and is cheap relative to the gated work.
+			cspKey := "_unknown"
+			if specInfo, err := resource.GetSpec(model.SystemCommonNs, nodeGroupDynamicReq.SpecId); err == nil {
+				cspKey = string(csp.ResolveCloudPlatform(specInfo.ProviderName))
+			}
+			cspSem := getCSPSemaphore(cspKey)
+			cspSem <- struct{}{}
+			defer func() { <-cspSem }()
 
 			// Use the common VM review function
 			nodeReview, specInfoPtr, viable, hasNodeWarning, nodeCost := reviewSingleNodeGroupDynamicReq(ctx, nodeGroupDynamicReq, deployOption)
