@@ -131,7 +131,7 @@ func SetupViperPaths(v *viper.Viper) {
 
 // GenUid is func to return a uid string
 func GenUid() string {
-	return uid.New().String()
+	return model.StrUidPrefix + uid.New().String()
 }
 
 // GenRandomPassword is func to return a RandomPassword
