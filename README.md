@@ -163,7 +163,7 @@ make init
 ### Required Software
 
 - **Docker & Docker Compose** (latest stable)
-- **Go 1.26.1+** (for building from source)
+- **Go 1.26.2+** (for building from source)
 - **Git** (for cloning repository)
 
 ### Dependencies & Security
@@ -655,8 +655,8 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/infra" \
     - Check https://golang.org/dl/ and setup Go
       - Download
         ```bash
-        wget https://go.dev/dl/go1.26.1.linux-amd64.tar.gz;
-        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.26.1.linux-amd64.tar.gz
+        wget https://go.dev/dl/go1.26.2.linux-amd64.tar.gz;
+        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.26.2.linux-amd64.tar.gz
         ```
       - Setup environment
 
