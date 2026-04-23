@@ -2912,9 +2912,30 @@ paths:
     get:
       tags:
       - "[MC-Infra] Infra Provisioning and Management"
-      summary: "Control the lifecycle of Infra (refine, suspend, resume, reboot, terminate)"
-      description: "Control the lifecycle of Infra (refine, suspend, resume, reboot,\
-        \ terminate)"
+      summary: Control the lifecycle of Infra
+      description: |-
+        Control the lifecycle of an Infra. Actions fall into three groups:
+
+        **Lifecycle (normal operation):**
+        - `suspend` / `resume` / `reboot`: power-cycle every Node.
+        - `terminate`: terminate every Node (Infra metadata is kept; call DELETE to remove).
+        - `refine`: delete Nodes whose status is `Failed` or `Undefined` from Infra metadata
+        (no CSP-side termination is issued for those Nodes).
+
+        **Hold gate (only valid right after `POST /infra` with option=hold):**
+        - `continue`: signal the holding goroutine to proceed with provisioning.
+        - `withdraw`: signal the holding goroutine to cancel provisioning.
+        - These actions only work while a holding goroutine is alive in memory.
+        After a server restart they will fail; use `reconcile`/`abort` instead.
+
+        **Crash recovery (Infra stuck after server restart or partial failure):**
+        - `reconcile`: forward-recover. For each transient Node, query Spider for the real
+        CSP status and absorb CSP-side orphan VMs (created before the crash but not
+        recorded in TB). Nodes that cannot be matched on the CSP are marked `Failed`
+        so a subsequent `refine` can remove them. No new Spider create calls are issued.
+        - `abort`: backward-recover. Force-terminate every non-final Node in parallel
+        (with orphan rescue) and sweep any `Failed` remnants via `refine`. The final
+        DELETE call is left to the operator.
       operationId: GetControlInfra
       parameters:
       - name: nsId
@@ -2933,7 +2954,7 @@ paths:
           default: infra01
       - name: action
         in: query
-        description: Action to Infra
+        description: Action to apply to the Infra
         required: true
         schema:
           type: string
@@ -2945,6 +2966,8 @@ paths:
           - refine
           - continue
           - withdraw
+          - reconcile
+          - abort
       - name: force
         in: query
         description: Force control to skip checking controllable status

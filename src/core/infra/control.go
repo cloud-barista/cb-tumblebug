@@ -104,40 +104,52 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		return "Terminated the Infra", nil
 
 	} else if action == "continue" {
-		// continue has two modes:
-		//   1. hold-resume: an in-memory holding goroutine is waiting (normal flow
-		//      after creating an Infra with option=hold). Signal it to proceed.
-		//   2. crash-recovery-forward: no holding goroutine exists (e.g. server
-		//      restart left transient Creating Nodes behind). Reconcile each
-		//      Node against the CSP via Spider so stale Creating Nodes either
-		//      commit to their real state (Running/Suspended/...) or become
-		//      Failed when the CSP has no record of them. The Infra-level
-		//      targetAction is then settled accordingly. No new Spider create
-		//      calls are issued; that remains an explicit user action.
+		// continue resumes a Provisioning that was held with option=hold.
+		// It only signals an in-memory holding goroutine; if no goroutine is
+		// waiting (e.g. server restart), the caller should use `reconcile`
+		// instead. This action is purely an "intent gate" for hold mode.
 		key := common.GenInfraKey(nsId, infraId, "")
 		if _, holding := holdingInfraMap.Load(key); holding {
 			holdingInfraMap.Store(key, action)
-			log.Info().Str("mode", "hold-resume").Msgf("Continue: signalled holding Infra %s/%s", nsId, infraId)
+			log.Info().Msgf("Continue: signalled holding Infra %s/%s", nsId, infraId)
 			return "Continue the holding Infra", nil
 		}
-		log.Info().Str("mode", "crash-recovery-forward").Msgf("Continue: reconciling stuck Infra %s/%s", nsId, infraId)
-		return reconcileInfraForward(nsId, infraId)
+		err := fmt.Errorf("no holding goroutine for Infra %s; if the Infra is stuck after a server restart, use action=reconcile (forward) or action=abort (backward)", infraId)
+		log.Warn().Msg(err.Error())
+		return "", err
 
 	} else if action == "withdraw" {
-		// withdraw has two modes (mirrors continue):
-		//   1. hold-resume: signal the holding goroutine to abort and clean up.
-		//   2. crash-recovery-backward: no holding goroutine exists. For each
-		//      stuck Node, attempt termination on the CSP if a cspResourceName
-		//      is known, otherwise mark Failed (presumed not created). Settle
-		//      the Infra-level targetAction to Terminate. Final DelInfra is
-		//      NOT issued automatically; the operator runs DELETE explicitly.
+		// withdraw cancels a Provisioning that was held with option=hold.
+		// Like continue, it only signals an in-memory holding goroutine.
+		// For crash-recovery teardown, use `abort` instead.
 		key := common.GenInfraKey(nsId, infraId, "")
 		if _, holding := holdingInfraMap.Load(key); holding {
 			holdingInfraMap.Store(key, action)
-			log.Info().Str("mode", "hold-resume").Msgf("Withdraw: signalled holding Infra %s/%s", nsId, infraId)
+			log.Info().Msgf("Withdraw: signalled holding Infra %s/%s", nsId, infraId)
 			return "Withdraw the holding Infra", nil
 		}
-		log.Info().Str("mode", "crash-recovery-backward").Msgf("Withdraw: reconciling stuck Infra %s/%s", nsId, infraId)
+		err := fmt.Errorf("no holding goroutine for Infra %s; to tear down a stuck Infra after a server restart, use action=abort", infraId)
+		log.Warn().Msg(err.Error())
+		return "", err
+
+	} else if action == "reconcile" {
+		// reconcile drives the Infra forward toward its desired Running state
+		// by querying Spider for each transient Node and absorbing CSP-side
+		// orphan VMs (created before the server crashed but never recorded
+		// in TB). Nodes that cannot be reconciled are marked Failed so a
+		// subsequent `refine` can remove them. Used to recover Infras stuck
+		// after a server restart. No new Spider create calls are issued.
+		log.Info().Msgf("Reconcile: forward-reconciling Infra %s/%s", nsId, infraId)
+		return reconcileInfraForward(nsId, infraId)
+
+	} else if action == "abort" {
+		// abort drives the Infra backward toward Terminated by force-
+		// terminating every non-final Node in parallel (with orphan rescue
+		// for Nodes missing cspResourceName) and sweeping any Failed remnants
+		// via `refine`. Used to give up on a stuck Infra after a server
+		// restart or a partial provisioning failure. The final DELETE call
+		// is left to the operator.
+		log.Info().Msgf("Abort: backward-reconciling Infra %s/%s", nsId, infraId)
 		return reconcileInfraBackward(nsId, infraId)
 
 	} else if action == "refine" { // refine delete Nodes in model.StatusFailed or model.StatusUndefined
@@ -197,6 +209,13 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 			}
 
 			infraTmp.Node = remainingNodes
+			// Reset stale aggregates so that the next GetInfraStatus call
+			// recomputes the proportion ("R:x/y") from scratch instead of
+			// being clamped by the previous CountTotal (monotonic-up logic
+			// in GetInfraStatus would otherwise keep the larger pre-refine
+			// total even though Nodes were removed).
+			infraTmp.StatusCount = model.StatusCountInfo{}
+			infraTmp.Status = ""
 			UpdateInfraInfo(nsId, infraTmp)
 
 			log.Info().Msgf("Refine completed: deleted %d Nodes, %d Nodes remaining", deletedCount, len(remainingNodeIds))
@@ -882,19 +901,23 @@ func settleInfraTargetAction(nsId, infraId string) {
 		infraTmp.TargetAction = model.ActionComplete
 		infraTmp.TargetStatus = model.StatusComplete
 		UpdateInfraInfo(nsId, infraTmp)
-		log.Info().Msgf("settleInfraTargetAction: Infra %s/%s targetAction cleared (all Nodes settled)", infraId, nsId)
+		log.Info().Msgf("settleInfraTargetAction: Infra %s/%s targetAction cleared (all Nodes settled)", nsId, infraId)
 	}
 }
 
-// reconcileInfraForward implements the crash-recovery-forward semantics of the
-// `continue` action. For each Node currently in a transient state it:
+// reconcileInfraForward implements the `reconcile` action (forward crash
+// recovery). For each Node currently in a transient state it:
 //
 //  1. Calls FetchNodeStatus, which queries Spider when a cspResourceName is
 //     known and persists the corrected status to KV automatically.
 //  2. For Nodes still transient AND lacking a cspResourceName (the typical
-//     "server died before Spider returned" pattern), forces status=Failed.
-//     No new Spider Create call is issued — recreation is left as an explicit
-//     follow-up (e.g. addNodeGroup) so this action stays side-effect minimal.
+//     "server died before Spider returned VM IID" pattern), tries to rescue
+//     the orphan by querying Spider /allvm for the Node's connection and
+//     matching IID.NameId == Node.Uid. Matched orphans are absorbed via
+//     Spider /regvm so the Node becomes manageable again, then
+//     FetchNodeStatus runs once more to commit the real CSP status.
+//  3. Nodes still transient and not rescuable (no CSP record matches the
+//     Node.Uid) are marked Failed so refine can clean them up.
 //
 // After all Nodes are processed, the Infra-level TargetAction is settled when
 // possible. The caller can then run `refine` to remove Failed Nodes.
@@ -908,20 +931,61 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 		return "", fmt.Errorf("Infra %s/%s not found", nsId, infraId)
 	}
 
+	// Preflight: handle stuck-in-preparation Infra.
+	// Provisioning sets Status="Preparing" before creating shared resources
+	// (vNet/SG/SSHKey/...) and "Prepared" right before dispatching Nodes. If
+	// the server crashes in either window, the Infra has 0 (or very few)
+	// Nodes and the original CreateInfraDynamic request cannot be replayed
+	// safely from KV (it isn't stored verbatim, and shared resources may be
+	// half-provisioned). Reconcile cannot meaningfully resume here, so we
+	// surface the situation explicitly and let the operator choose
+	// abort → re-run create.
+	if infraTmp, _, ierr := GetInfraObject(nsId, infraId); ierr == nil {
+		stuckInPrep := strings.Contains(infraTmp.Status, model.StatusPreparing) ||
+			strings.Contains(infraTmp.Status, model.StatusPrepared)
+		if stuckInPrep && len(infraStatus.Node) == 0 {
+			origStatus := infraTmp.Status
+			infraTmp.Status = model.StatusFailed
+			infraTmp.StatusCount = model.StatusCountInfo{}
+			infraTmp.TargetAction = model.ActionComplete
+			infraTmp.TargetStatus = model.StatusComplete
+			infraTmp.SystemMessage = append(infraTmp.SystemMessage, fmt.Sprintf(
+				"Infra was stuck in %s with no Nodes (server likely crashed during resource preparation). "+
+					"Reconcile cannot resume provisioning safely. Run abort to clean up, then re-create.",
+				origStatus))
+			UpdateInfraInfo(nsId, infraTmp)
+			msg := fmt.Sprintf("Reconcile Infra %s: was %s with 0 Nodes; marked Failed (cannot auto-resume preparation phase). Run abort, then re-create.",
+				infraId, origStatus)
+			log.Info().Msg(msg)
+			return msg, nil
+		}
+		if stuckInPrep && len(infraStatus.Node) > 0 {
+			// Some Nodes exist (provisioning crashed shortly after Status moved
+			// past Preparing/Prepared). Clear the stale top-level Status so
+			// GetInfraStatus recomputes it fresh from per-Node states; the
+			// regular per-Node reconcile loop below handles the rest.
+			infraTmp.Status = ""
+			infraTmp.StatusCount = model.StatusCountInfo{}
+			UpdateInfraInfo(nsId, infraTmp)
+		}
+	}
+
 	var (
 		reconciledRunning int
+		rescued           int
 		markedFailed      int
 		untouched         int
 	)
 
+	// Pass 1: ask Spider for truth on Nodes that already have cspResourceName.
+	// Collect orphan candidates (transient + no cspResourceName) for Pass 2.
+	var orphanCands []orphanCandidate
 	for _, n := range infraStatus.Node {
 		if !transientNodeStatus(n.Status) {
 			untouched++
 			continue
 		}
 
-		// Step 1: ask Spider what the truth is. FetchNodeStatus persists
-		// status/targetAction back to KV when cspResourceName is set.
 		fetched, ferr := FetchNodeStatus(nsId, infraId, n.Id)
 		if ferr != nil {
 			log.Warn().Err(ferr).Msgf("reconcileInfraForward: FetchNodeStatus failed for %s; will fall back to KV", n.Id)
@@ -933,54 +997,81 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 			continue
 		}
 
-		// Step 2: still transient. Re-read Node from KV to inspect cspName.
 		nodeObj, gerr := GetNodeObject(nsId, infraId, n.Id)
 		if gerr != nil {
 			log.Warn().Err(gerr).Msgf("reconcileInfraForward: cannot read Node %s; skipping", n.Id)
 			continue
 		}
 		if strings.TrimSpace(nodeObj.CspResourceName) == "" {
-			// Presumed never created on the CSP. Force Failed so refine
-			// can clean it up; clear targetAction so further control
-			// actions on the Infra are no longer blocked.
-			nodeObj.Status = model.StatusFailed
-			nodeObj.TargetAction = model.ActionComplete
-			nodeObj.TargetStatus = model.StatusComplete
-			nodeObj.SystemMessage = "presumed not created (no cspResourceName); marked Failed by reconcileInfraForward"
-			UpdateNodeInfo(nsId, infraId, nodeObj)
-			markedFailed++
-			log.Info().Msgf("reconcileInfraForward: Node %s marked Failed (no cspResourceName)", n.Id)
+			orphanCands = append(orphanCands, orphanCandidate{
+				NodeId:         nodeObj.Id,
+				Uid:            nodeObj.Uid,
+				ConnectionName: nodeObj.ConnectionName,
+			})
 			continue
 		}
 
-		// cspResourceName exists but Spider could not give a final answer.
-		// Leave it as-is so an operator can retry; do not silently mark Failed.
+		// cspResourceName exists but Spider gave no final answer. Leave
+		// for operator retry; do not silently mark Failed.
 		log.Warn().Msgf("reconcileInfraForward: Node %s remains %s after Spider query (cspResourceName=%s); requires retry",
 			n.Id, n.Status, nodeObj.CspResourceName)
 	}
 
+	// Pass 2: orphan rescue via Spider /allvm + /regvm (one /allvm per
+	// distinct connection). For each rescued Node, run FetchNodeStatus once
+	// more so its real CSP status is persisted.
+	if len(orphanCands) > 0 {
+		rescuedIds, notFoundIds := rescueOrphanNodes(nsId, infraId, orphanCands)
+		for _, id := range rescuedIds {
+			if fetched, ferr := FetchNodeStatus(nsId, infraId, id); ferr == nil &&
+				strings.EqualFold(fetched.Status, model.StatusRunning) {
+				reconciledRunning++
+			}
+			rescued++
+		}
+		for _, id := range notFoundIds {
+			nodeObj, gerr := GetNodeObject(nsId, infraId, id)
+			if gerr != nil {
+				continue
+			}
+			nodeObj.Status = model.StatusFailed
+			nodeObj.TargetAction = model.ActionComplete
+			nodeObj.TargetStatus = model.StatusComplete
+			nodeObj.SystemMessage = "presumed not created (no cspResourceName, no CSP record matched Uid); marked Failed by reconcileInfraForward"
+			UpdateNodeInfo(nsId, infraId, nodeObj)
+			markedFailed++
+			log.Info().Msgf("reconcileInfraForward: Node %s marked Failed (orphan rescue found no CSP match)", id)
+		}
+	}
+
 	settleInfraTargetAction(nsId, infraId)
 
-	msg := fmt.Sprintf("Reconciled Infra %s: running=%d, marked-failed=%d, untouched=%d. Run refine to remove Failed Nodes.",
-		infraId, reconciledRunning, markedFailed, untouched)
+	msg := fmt.Sprintf("Reconciled Infra %s: running=%d, rescued=%d, marked-failed=%d, untouched=%d. Run refine to remove Failed Nodes.",
+		infraId, reconciledRunning, rescued, markedFailed, untouched)
 	log.Info().Msg(msg)
 	return msg, nil
 }
 
-// reconcileInfraBackward implements the crash-recovery-backward semantics of
-// the `withdraw` action. The intent is to abandon the entire Infra, so every
-// Node (regardless of current status) is driven toward Terminated:
+// reconcileInfraBackward implements the `abort` action (backward crash
+// recovery). The intent is to abandon the entire Infra, so every Node
+// (regardless of current status) is driven toward Terminated. To avoid
+// per-Node sequential latency on large Infras (1000+ VMs), termination is
+// dispatched through ControlNodesInParallel which already implements the
+// hierarchical CSP→region→VM rate-limited fan-out used by the regular
+// terminate action.
 //
-//  1. Nodes already in a final teardown state (Terminated / Terminating) are
-//     left alone — terminate is idempotent.
-//  2. Nodes with no cspResourceName are presumed never to have been created
-//     on the CSP and are marked Failed locally so refine/delete can clean
-//     them up. No Spider call is issued.
-//  3. Every other Node — including healthy Running ones — is sent through
-//     HandleInfraNodeAction(action=terminate, force=true). The force flag
-//     bypasses both the per-Node transient guard and the Infra-level
-//     TargetAction guard, so stuck Creating Nodes with cspResourceName get
-//     terminated alongside Running siblings.
+// Steps:
+//
+//  1. Classify Nodes into:
+//     - skipped:    Terminated / Terminating (terminate is idempotent)
+//     - uncertain:  cspResourceName == "" (might be a CSP-side orphan)
+//     - ready:      cspResourceName != "" (terminatable directly)
+//  2. For uncertain Nodes only, run rescueOrphanNodes (one Spider /allvm per
+//     distinct connection). Matched orphans are absorbed via /regvm and join
+//     the ready set; unmatched ones are marked Failed locally.
+//  3. ControlNodesInParallel terminates every ready Node concurrently with
+//     force=true so per-Node transient guards and the Infra-level
+//     TargetAction guard are bypassed.
 //
 // The Infra-level TargetAction is set to Terminate up-front so concurrent
 // status pollers observe the new intent. The final DelInfra is deliberately
@@ -995,24 +1086,29 @@ func reconcileInfraBackward(nsId, infraId string) (string, error) {
 		return "", fmt.Errorf("Infra %s/%s not found", nsId, infraId)
 	}
 
-	// Record Terminate intent at Infra level before issuing per-Node
-	// terminate requests. This way any concurrent FetchNodeStatus call
-	// already sees TargetAction=Terminate when it interprets transient CSP
-	// statuses.
 	if infraTmp, _, ierr := GetInfraObject(nsId, infraId); ierr == nil {
+		// Abort/backward recovery drives the entire Infra toward Terminated.
+		// Update the intent fields AND clear stale top-level Status /
+		// StatusCount that may have been frozen at "Creating" / pre-crash
+		// totals — otherwise GetInfraStatus's monotonic-up logic keeps
+		// reporting the old CountTotal forever (e.g.
+		// "Partial-Terminated:26 (R:0/28)" when only 26 Nodes actually
+		// exist).
 		infraTmp.TargetAction = model.ActionTerminate
 		infraTmp.TargetStatus = model.StatusTerminated
+		infraTmp.Status = ""
+		infraTmp.StatusCount = model.StatusCountInfo{}
 		UpdateInfraInfo(nsId, infraTmp)
 	}
 
 	var (
-		terminationRequested int
-		markedFailed         int
-		skippedTerminated    int
+		readyIds          []string
+		uncertain         []orphanCandidate
+		skippedTerminated int
+		markedFailed      int
 	)
 
 	for _, n := range infraStatus.Node {
-		// Already past the point of no return — terminate is idempotent.
 		if strings.EqualFold(n.Status, model.StatusTerminated) ||
 			strings.EqualFold(n.Status, model.StatusTerminating) {
 			skippedTerminated++
@@ -1025,34 +1121,218 @@ func reconcileInfraBackward(nsId, infraId string) (string, error) {
 			continue
 		}
 
-		// No CSP resource was ever recorded — presumed never created.
-		// Mark Failed locally; refine/delete will clean it up.
 		if strings.TrimSpace(nodeObj.CspResourceName) == "" {
+			uncertain = append(uncertain, orphanCandidate{
+				NodeId:         nodeObj.Id,
+				Uid:            nodeObj.Uid,
+				ConnectionName: nodeObj.ConnectionName,
+			})
+			continue
+		}
+		readyIds = append(readyIds, nodeObj.Id)
+	}
+
+	// Bounded /allvm calls: one per distinct connection in the uncertain set.
+	// Matched orphans get absorbed into Spider and join the ready set.
+	rescuedCount := 0
+	if len(uncertain) > 0 {
+		rescuedIds, notFoundIds := rescueOrphanNodes(nsId, infraId, uncertain)
+		readyIds = append(readyIds, rescuedIds...)
+		rescuedCount = len(rescuedIds)
+		for _, id := range notFoundIds {
+			nodeObj, gerr := GetNodeObject(nsId, infraId, id)
+			if gerr != nil {
+				continue
+			}
 			nodeObj.Status = model.StatusFailed
 			nodeObj.TargetAction = model.ActionComplete
 			nodeObj.TargetStatus = model.StatusComplete
-			nodeObj.SystemMessage = "presumed not created (no cspResourceName); marked Failed by reconcileInfraBackward"
+			nodeObj.SystemMessage = "presumed not created (no cspResourceName, no CSP record matched Uid); marked Failed by reconcileInfraBackward"
 			UpdateNodeInfo(nsId, infraId, nodeObj)
 			markedFailed++
-			log.Info().Msgf("reconcileInfraBackward: Node %s marked Failed (no cspResourceName)", n.Id)
-			continue
 		}
-
-		// Has a CSP resource. Issue terminate with force=true regardless of
-		// current status (Running / Failed / Creating-with-cspName / ...).
-		// HandleInfraNodeAction kicks off ControlNodeAsync; per-Node status
-		// will converge to Terminating then Terminated as Spider responds.
-		if _, terr := HandleInfraNodeAction(nsId, infraId, n.Id, model.ActionTerminate, true); terr != nil {
-			log.Warn().Err(terr).Msgf("reconcileInfraBackward: terminate request failed for Node %s", n.Id)
-			continue
-		}
-		terminationRequested++
-		log.Info().Msgf("reconcileInfraBackward: terminate requested for Node %s (status=%s, cspResourceName=%s)",
-			n.Id, n.Status, nodeObj.CspResourceName)
 	}
 
-	msg := fmt.Sprintf("Withdrew Infra %s: terminate-requested=%d, marked-failed=%d, already-terminated=%d. Run DELETE after termination completes.",
-		infraId, terminationRequested, markedFailed, skippedTerminated)
+	if len(readyIds) > 0 {
+		// force=true bypasses both per-Node transient guard and the Infra
+		// TargetAction guard inside the parallel control path.
+		if cerr := ControlNodesInParallel(nsId, infraId, readyIds, model.ActionTerminate, true); cerr != nil {
+			log.Warn().Err(cerr).Msgf("reconcileInfraBackward: parallel terminate reported errors")
+		}
+	}
+
+	// Sweep markedFailed Nodes by reusing the existing `refine` action.
+	// Refine deletes any Node whose status is Failed/Undefined via
+	// DelInfraNode(..., "force") and rebuilds the Infra.Node slice. We only
+	// invoke it when there is something to remove so rescue-and-terminate
+	// Nodes (still Terminating) are never touched.
+	cleanedCount := 0
+	if markedFailed > 0 {
+		if _, rerr := HandleInfraAction(nsId, infraId, model.ActionRefine, true); rerr != nil {
+			log.Warn().Err(rerr).Msgf("reconcileInfraBackward: refine cleanup during abort failed")
+		} else {
+			cleanedCount = markedFailed
+		}
+	}
+
+	msg := fmt.Sprintf("Aborted Infra %s: terminate-requested=%d (incl. orphan-rescued=%d), marked-failed=%d, refine-cleaned=%d, already-terminated=%d. Run DELETE after termination completes.",
+		infraId, len(readyIds), rescuedCount, markedFailed, cleanedCount, skippedTerminated)
 	log.Info().Msg(msg)
 	return msg, nil
+}
+
+// orphanCandidate identifies a TB Node whose cspResourceName is missing —
+// possibly because the server crashed before Spider returned the VM IID.
+// rescueOrphanNodes resolves whether the VM actually exists on the CSP.
+type orphanCandidate struct {
+	NodeId         string
+	Uid            string // matched against IID.NameId from Spider /allvm
+	ConnectionName string
+}
+
+// rescueOrphanNodes attempts to absorb CSP-side VMs that exist without a TB
+// cspResourceName mapping. For each distinct ConnectionName it queries Spider
+// /allvm exactly once and matches both MappedList and OnlyCSPList by
+// NameId == Node.Uid (Spider always uses Node.Uid as the CSP-side NameId
+// during create).
+//
+//   - MappedList match: Spider already has the VM registered (the crash
+//     happened after Spider stored it but before TB persisted the response).
+//     Just fill in the TB Node's cspResourceName/cspResourceId in place —
+//     calling /regvm here would fail with "already exists".
+//   - OnlyCSPList match: VM exists on the CSP but Spider does not know about
+//     it. Import via Spider /regvm, then fill in the TB Node fields.
+//
+// Returns rescued and not-found node IDs.
+func rescueOrphanNodes(nsId, infraId string, candidates []orphanCandidate) (rescued, notFound []string) {
+	if len(candidates) == 0 {
+		return nil, nil
+	}
+	byConn := make(map[string][]orphanCandidate)
+	for _, c := range candidates {
+		if c.ConnectionName == "" || c.Uid == "" {
+			notFound = append(notFound, c.NodeId)
+			continue
+		}
+		byConn[c.ConnectionName] = append(byConn[c.ConnectionName], c)
+	}
+
+	for connName, group := range byConn {
+		statusResp, err := resource.GetCspResourceStatus(connName, model.StrNode)
+		if err != nil {
+			log.Warn().Err(err).Str("connection", connName).
+				Msg("rescueOrphanNodes: /allvm failed; treating group as not-found")
+			for _, c := range group {
+				notFound = append(notFound, c.NodeId)
+			}
+			continue
+		}
+		mapped := make(map[string]string, len(statusResp.AllList.MappedList))
+		for _, iid := range statusResp.AllList.MappedList {
+			mapped[iid.NameId] = iid.SystemId
+		}
+		cspOnly := make(map[string]string, len(statusResp.AllList.OnlyCSPList))
+		for _, iid := range statusResp.AllList.OnlyCSPList {
+			cspOnly[iid.NameId] = iid.SystemId
+		}
+		log.Info().Str("connection", connName).
+			Int("candidates", len(group)).
+			Int("mappedVMs", len(mapped)).
+			Int("cspOnlyVMs", len(cspOnly)).
+			Msg("rescueOrphanNodes: scanning Spider for orphan matches")
+
+		for _, c := range group {
+			// 1) Already mapped in Spider — just heal TB metadata.
+			if sysId, ok := mapped[c.Uid]; ok {
+				nodeObj, gerr := GetNodeObject(nsId, infraId, c.NodeId)
+				if gerr != nil {
+					log.Warn().Err(gerr).Str("nodeId", c.NodeId).
+						Msg("rescueOrphanNodes: cannot load Node for mapped rescue")
+					notFound = append(notFound, c.NodeId)
+					continue
+				}
+				nodeObj.CspResourceName = c.Uid
+				nodeObj.CspResourceId = sysId
+				nodeObj.SystemMessage = "Healed from Spider mapping via reconcile (orphan rescue)"
+				UpdateNodeInfo(nsId, infraId, nodeObj)
+				rescued = append(rescued, c.NodeId)
+				continue
+			}
+			// 2) Exists only on CSP — import via /regvm.
+			if sysId, ok := cspOnly[c.Uid]; ok {
+				if err := importNodeFromCsp(nsId, infraId, c.NodeId, connName, c.Uid, sysId); err != nil {
+					log.Warn().Err(err).Str("nodeId", c.NodeId).
+						Msg("rescueOrphanNodes: import via /regvm failed")
+					notFound = append(notFound, c.NodeId)
+					continue
+				}
+				rescued = append(rescued, c.NodeId)
+				log.Info().Str("nodeId", c.NodeId).Str("connection", connName).
+					Str("cspName", c.Uid).Str("cspSystemId", sysId).
+					Msg("rescueOrphanNodes: orphan VM imported into Spider")
+				continue
+			}
+			// 3) No match anywhere — Node never made it to the CSP.
+			notFound = append(notFound, c.NodeId)
+		}
+	}
+	return rescued, notFound
+}
+
+// importNodeFromCsp invokes Spider /regvm to absorb an existing CSP VM into
+// Spider's metadata, then updates the TB Node with cspResourceName /
+// cspResourceId so subsequent control actions (status fetch, terminate, ...)
+// work normally.
+func importNodeFromCsp(nsId, infraId, nodeId, connectionName, name, cspSystemId string) error {
+	type regReqInfo struct {
+		Name  string `json:"Name"`
+		CSPId string `json:"CSPId"`
+	}
+	type regReq struct {
+		ConnectionName string     `json:"ConnectionName"`
+		ReqInfo        regReqInfo `json:"ReqInfo"`
+	}
+	type regRespIID struct {
+		NameId   string `json:"NameId"`
+		SystemId string `json:"SystemId"`
+	}
+	type regResp struct {
+		IId regRespIID `json:"IId"`
+	}
+
+	body := regReq{
+		ConnectionName: connectionName,
+		ReqInfo:        regReqInfo{Name: name, CSPId: cspSystemId},
+	}
+	var resp regResp
+
+	client := clientManager.NewHttpClient()
+	client.SetTimeout(2 * time.Minute)
+	if _, err := clientManager.ExecuteHttpRequest(
+		client, "POST", model.SpiderRestUrl+"/regvm",
+		nil,
+		clientManager.SetUseBody(body),
+		&body, &resp,
+		clientManager.MediumDuration,
+	); err != nil {
+		return fmt.Errorf("Spider /regvm failed: %w", err)
+	}
+
+	nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId)
+	if gerr != nil {
+		return fmt.Errorf("GetNodeObject failed after /regvm: %w", gerr)
+	}
+	if resp.IId.NameId != "" {
+		nodeObj.CspResourceName = resp.IId.NameId
+	} else {
+		nodeObj.CspResourceName = name
+	}
+	if resp.IId.SystemId != "" {
+		nodeObj.CspResourceId = resp.IId.SystemId
+	} else {
+		nodeObj.CspResourceId = cspSystemId
+	}
+	nodeObj.SystemMessage = "Imported from CSP via reconcile (orphan rescue)"
+	UpdateNodeInfo(nsId, infraId, nodeObj)
+	return nil
 }

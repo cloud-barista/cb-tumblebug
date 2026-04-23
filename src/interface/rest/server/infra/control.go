@@ -25,14 +25,35 @@ import (
 
 // RestGetControlInfra godoc
 // @ID GetControlInfra
-// @Summary Control the lifecycle of Infra (refine, suspend, resume, reboot, terminate)
-// @Description Control the lifecycle of Infra (refine, suspend, resume, reboot, terminate)
+// @Summary Control the lifecycle of Infra
+// @Description Control the lifecycle of an Infra. Actions fall into three groups:
+// @Description
+// @Description **Lifecycle (normal operation):**
+// @Description - `suspend` / `resume` / `reboot`: power-cycle every Node.
+// @Description - `terminate`: terminate every Node (Infra metadata is kept; call DELETE to remove).
+// @Description - `refine`: delete Nodes whose status is `Failed` or `Undefined` from Infra metadata
+// @Description   (no CSP-side termination is issued for those Nodes).
+// @Description
+// @Description **Hold gate (only valid right after `POST /infra` with option=hold):**
+// @Description - `continue`: signal the holding goroutine to proceed with provisioning.
+// @Description - `withdraw`: signal the holding goroutine to cancel provisioning.
+// @Description - These actions only work while a holding goroutine is alive in memory.
+// @Description   After a server restart they will fail; use `reconcile`/`abort` instead.
+// @Description
+// @Description **Crash recovery (Infra stuck after server restart or partial failure):**
+// @Description - `reconcile`: forward-recover. For each transient Node, query Spider for the real
+// @Description   CSP status and absorb CSP-side orphan VMs (created before the crash but not
+// @Description   recorded in TB). Nodes that cannot be matched on the CSP are marked `Failed`
+// @Description   so a subsequent `refine` can remove them. No new Spider create calls are issued.
+// @Description - `abort`: backward-recover. Force-terminate every non-final Node in parallel
+// @Description   (with orphan rescue) and sweep any `Failed` remnants via `refine`. The final
+// @Description   DELETE call is left to the operator.
 // @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param action query string true "Action to Infra" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
+// @Param action query string true "Action to apply to the Infra" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw, reconcile, abort)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
@@ -53,17 +74,17 @@ func RestGetControlInfra(c echo.Context) error {
 	}
 	returnObj := model.SimpleMsg{}
 
-	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" || action == "continue" || action == "withdraw" {
-
+	switch action {
+	case "suspend", "resume", "reboot", "terminate", "refine",
+		"continue", "withdraw", "reconcile", "abort":
 		resultString, err := infra.HandleInfraAction(nsId, infraId, action, forceOption)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, returnObj)
 		}
 		returnObj.Message = resultString
 		return clientManager.EndRequestWithLog(c, err, returnObj)
-
-	} else {
-		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine, continue, withdraw")
+	default:
+		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine, continue, withdraw, reconcile, abort")
 		return clientManager.EndRequestWithLog(c, err, returnObj)
 	}
 }

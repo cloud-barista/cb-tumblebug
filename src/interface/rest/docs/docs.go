@@ -3565,7 +3565,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/control/infra/{infraId}": {
             "get": {
-                "description": "Control the lifecycle of Infra (refine, suspend, resume, reboot, terminate)",
+                "description": "Control the lifecycle of an Infra. Actions fall into three groups:\n\n**Lifecycle (normal operation):**\n- ` + "`" + `suspend` + "`" + ` / ` + "`" + `resume` + "`" + ` / ` + "`" + `reboot` + "`" + `: power-cycle every Node.\n- ` + "`" + `terminate` + "`" + `: terminate every Node (Infra metadata is kept; call DELETE to remove).\n- ` + "`" + `refine` + "`" + `: delete Nodes whose status is ` + "`" + `Failed` + "`" + ` or ` + "`" + `Undefined` + "`" + ` from Infra metadata\n(no CSP-side termination is issued for those Nodes).\n\n**Hold gate (only valid right after ` + "`" + `POST /infra` + "`" + ` with option=hold):**\n- ` + "`" + `continue` + "`" + `: signal the holding goroutine to proceed with provisioning.\n- ` + "`" + `withdraw` + "`" + `: signal the holding goroutine to cancel provisioning.\n- These actions only work while a holding goroutine is alive in memory.\nAfter a server restart they will fail; use ` + "`" + `reconcile` + "`" + `/` + "`" + `abort` + "`" + ` instead.\n\n**Crash recovery (Infra stuck after server restart or partial failure):**\n- ` + "`" + `reconcile` + "`" + `: forward-recover. For each transient Node, query Spider for the real\nCSP status and absorb CSP-side orphan VMs (created before the crash but not\nrecorded in TB). Nodes that cannot be matched on the CSP are marked ` + "`" + `Failed` + "`" + `\nso a subsequent ` + "`" + `refine` + "`" + ` can remove them. No new Spider create calls are issued.\n- ` + "`" + `abort` + "`" + `: backward-recover. Force-terminate every non-final Node in parallel\n(with orphan rescue) and sweep any ` + "`" + `Failed` + "`" + ` remnants via ` + "`" + `refine` + "`" + `. The final\nDELETE call is left to the operator.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3575,7 +3575,7 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] Infra Provisioning and Management"
                 ],
-                "summary": "Control the lifecycle of Infra (refine, suspend, resume, reboot, terminate)",
+                "summary": "Control the lifecycle of Infra",
                 "operationId": "GetControlInfra",
                 "parameters": [
                     {
@@ -3602,10 +3602,12 @@ const docTemplate = `{
                             "terminate",
                             "refine",
                             "continue",
-                            "withdraw"
+                            "withdraw",
+                            "reconcile",
+                            "abort"
                         ],
                         "type": "string",
-                        "description": "Action to Infra",
+                        "description": "Action to apply to the Infra",
                         "name": "action",
                         "in": "query",
                         "required": true
