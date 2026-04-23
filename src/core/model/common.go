@@ -201,7 +201,7 @@ var ORM *gorm.DB
 
 const (
 	StrManager               string = "cb-tumblebug"
-	StrUidPrefix             string = "tb-"
+	StrUidPrefix             string = "tb"
 	StrSpiderRestUrl         string = "TB_SPIDER_REST_URL"
 	StrDragonflyRestUrl      string = "TB_DRAGONFLY_REST_URL"
 	StrTerrariumRestUrl      string = "TB_TERRARIUM_REST_URL"
