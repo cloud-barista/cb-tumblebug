@@ -4516,7 +4516,7 @@ def execute_remote_commands_enhanced(
 @mcp.tool()
 def analyze_provisioning_risk(
     spec_id: str,
-    image_name: Optional[str] = None
+    csp_image_name: str
 ) -> Dict:
     """
     Analyze the likelihood of provisioning failure based on historical data for a specific VM specification and image combination.
@@ -4555,8 +4555,8 @@ def analyze_provisioning_risk(
     
     Args:
         spec_id: VM specification ID (e.g., "aws+ap-northeast-2+t2.small")
-        image_name: Optional image name for combined risk analysis
-    
+        csp_image_name: CSP-specific image name/ID (required, e.g., "ami-0c02fb55956c7d316" for AWS)
+
     Returns:
         Risk analysis results including:
         - overall_risk: Risk level (high/medium/low/unknown)
@@ -4568,28 +4568,26 @@ def analyze_provisioning_risk(
     """
     try:
         url = f"/provisioning/risk/{spec_id}"
-        params = {}
-        if image_name:
-            params["imageName"] = image_name
-        
+        params = {"cspImageName": csp_image_name}
+
         result = api_request("GET", url, params=params)
-        
+
         # Store interaction for future reference
         store_interaction_memory(
-            user_request=f"Analyze provisioning risk for spec '{spec_id}'" + (f" with image '{image_name}'" if image_name else ""),
+            user_request=f"Analyze provisioning risk for spec '{spec_id}' with image '{csp_image_name}'",
             llm_response=f"Risk analysis completed - Level: {result.get('riskLevel', 'unknown')}",
             operation_type="risk_analysis",
-            context_data={"spec_id": spec_id, "image_name": image_name, "risk_level": result.get('riskLevel')},
+            context_data={"spec_id": spec_id, "csp_image_name": csp_image_name, "risk_level": result.get('riskLevel')},
             status="completed"
         )
         
         return result
-        
+
     except Exception as e:
         return {
             "error": f"Failed to analyze provisioning risk: {str(e)}",
             "spec_id": spec_id,
-            "suggestion": "Check if spec ID format is correct (provider+region+spec_name)"
+            "suggestion": "Check spec ID format (provider+region+spec_name) and provide a valid cspImageName"
         }
 
 
@@ -4597,7 +4595,7 @@ def analyze_provisioning_risk(
 @mcp.tool()
 def get_detailed_provisioning_risk(
     spec_id: str,
-    image_name: Optional[str] = None
+    csp_image_name: str
 ) -> Dict:
     """
     Get comprehensive provisioning risk analysis with separate spec and image risk assessment.
@@ -4631,12 +4629,12 @@ def get_detailed_provisioning_risk(
     
     Args:
         spec_id: VM specification ID for detailed analysis
-        image_name: Optional image name for combined detailed analysis
-    
+        csp_image_name: CSP-specific image name/ID (required, e.g., "ami-0c02fb55956c7d316" for AWS)
+
     Returns:
         Detailed risk analysis including:
         - spec_risk: Detailed spec-specific risk assessment
-        - image_risk: Image-specific risk analysis (if image provided)
+        - image_risk: Image-specific risk analysis
         - combined_risk: Overall risk when using spec+image together
         - detailed_recommendations: Specific actionable recommendations
         - risk_factors: Breakdown of individual risk contributors
@@ -4645,21 +4643,19 @@ def get_detailed_provisioning_risk(
     """
     try:
         url = "/provisioning/risk/detailed"
-        params = {"specId": spec_id}
-        if image_name:
-            params["imageName"] = image_name
-        
+        params = {"specId": spec_id, "cspImageName": csp_image_name}
+
         result = api_request("GET", url, params=params)
         
         # Store detailed analysis for future reference
         store_interaction_memory(
-            user_request=f"Get detailed provisioning risk analysis for spec '{spec_id}'" + (f" with image '{image_name}'" if image_name else ""),
+            user_request=f"Get detailed provisioning risk analysis for spec '{spec_id}' with image '{csp_image_name}'",
             llm_response=f"Detailed risk analysis completed - Spec Risk: {result.get('specRisk', {}).get('riskLevel', 'unknown')}, Overall: {result.get('overallRisk', {}).get('riskLevel', 'unknown')}",
             operation_type="detailed_risk_analysis",
-            context_data={"spec_id": spec_id, "image_name": image_name, "analysis_type": "detailed"},
+            context_data={"spec_id": spec_id, "csp_image_name": csp_image_name, "analysis_type": "detailed"},
             status="completed"
         )
-        
+
         return result
         
     except Exception as e:
