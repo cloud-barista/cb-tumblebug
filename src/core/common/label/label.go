@@ -47,9 +47,10 @@ var cspSyncSkipConfig = CSPSyncConfig{
 		model.StrVPN: true,
 	},
 	CSPGlobalSkip: map[string]bool{
-		// csp.NCP:       true,
-		csp.NHN: true,
-		csp.NCP: true, // Not supported by CB-Spider
+		csp.NHN: true, // CB-Spider TagHandler not implemented
+		csp.NCP: true, // CB-Spider TagHandler not implemented
+		csp.KT:  true, // CB-Spider TagHandler not implemented (checkCapability returns "does not support TagHandler" for all resource types)
+		csp.IBM: true, // IBM VPC async tag API consistently times out (AddTag: Complete wait timeout exceeded)
 	},
 	CSPSpecificSkipConfig: map[string]map[string]bool{
 		csp.Azure: {
@@ -71,24 +72,6 @@ var cspSyncSkipConfig = CSPSyncConfig{
 			model.StrKubernetes:    true,
 			// GCP Labels have naming restrictions (lowercase, no dots/special chars, 63 char limit).
 			// VM and dataDisk are supported via batch handler with label sanitization.
-		},
-		// csp.NCP: {
-		// 	model.StrVNet:          true,
-		// 	model.StrSubnet:        true,
-		// 	model.StrSecurityGroup: true,
-		// 	model.StrSSHKey:        true,
-		// 	model.StrDataDisk:      true,
-		// 	model.StrCustomImage:   true,
-		// 	model.StrNLB:           true,
-		// 	model.StrKubernetes:    true,
-		// },
-		csp.KT: {
-			model.StrVNet:          true,
-			model.StrSubnet:        true,
-			model.StrSecurityGroup: true,
-			model.StrSSHKey:        true,
-			model.StrNLB:           true,
-			model.StrKubernetes:    true,
 		},
 		csp.OpenStack: {
 			model.StrSSHKey:      true,
