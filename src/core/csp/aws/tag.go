@@ -27,17 +27,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ec2TaggableTypes lists CB-Tumblebug resource types whose cspResourceId (from CB-Spider IId.SystemId)
-// is a valid EC2 resource ID (e.g., i-xxx, vpc-xxx, subnet-xxx, sg-xxx, vol-xxx).
-// Resource types NOT listed here either:
-//   - store a CB-Spider NameId as cspResourceId (e.g., sshKey stores the key name, not key-xxx)
-//   - are not EC2 resources (e.g., nlb, k8s)
+// ec2TaggableTypes lists CB-Tumblebug resource types that support EC2 batch tagging via CreateTags.
+// For most types, cspResourceId (CB-Spider IId.SystemId) is a direct EC2 resource ID (e.g., i-xxx).
+// For sshKey, cspResourceId is the key pair name; resolveKeyPairId() converts it to key-xxx first.
 var ec2TaggableTypes = map[string]bool{
 	model.StrNode:          true, // EC2 instance ID (i-xxx)
 	model.StrVNet:          true, // VPC ID (vpc-xxx)
 	model.StrSubnet:        true, // Subnet ID (subnet-xxx)
 	model.StrSecurityGroup: true, // Security Group ID (sg-xxx)
 	model.StrDataDisk:      true, // EBS Volume ID (vol-xxx)
+	model.StrSSHKey:        true, // key pair name → resolved to key-xxx via DescribeKeyPairs
 }
 
 func init() {
@@ -46,6 +45,7 @@ func init() {
 
 // BatchUpsertTags sets multiple tags on an AWS EC2 resource in a single CreateTags call.
 // Only resource types in ec2TaggableTypes are handled; others fall back to CB-Spider.
+// For sshKey, cspResourceId is the key pair name; it is resolved to key-xxx before tagging.
 func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceType string, tags map[string]string) error {
 	if !ec2TaggableTypes[resourceType] {
 		return fmt.Errorf("resource type %q is not EC2-taggable via batch (cspResourceId=%s)", resourceType, cspResourceId)
@@ -62,6 +62,16 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 	}
 	client := ec2.NewFromConfig(cfg)
 
+	// CB-Spider returns the key pair name as SystemId for sshKey resources.
+	// EC2 CreateTags requires the key-xxx resource ID, so resolve it first.
+	resourceId := cspResourceId
+	if resourceType == model.StrSSHKey {
+		resourceId, err = resolveKeyPairId(ctx, client, cspResourceId)
+		if err != nil {
+			return fmt.Errorf("failed to resolve key pair ID for %q: %w", cspResourceId, err)
+		}
+	}
+
 	// Build EC2 tag list
 	ec2Tags := make([]ec2types.Tag, 0, len(tags))
 	for k, v := range tags {
@@ -72,20 +82,38 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 	}
 
 	_, err = client.CreateTags(ctx, &ec2.CreateTagsInput{
-		Resources: []string{cspResourceId},
+		Resources: []string{resourceId},
 		Tags:      ec2Tags,
 	})
 	if err != nil {
-		return fmt.Errorf("AWS EC2 CreateTags failed for %s: %w", cspResourceId, err)
+		return fmt.Errorf("AWS EC2 CreateTags failed for %s: %w", resourceId, err)
 	}
 
 	log.Debug().
 		Str("region", region).
-		Str("resourceId", cspResourceId).
+		Str("resourceId", resourceId).
 		Int("tagCount", len(tags)).
 		Msg("[AWS] Batch tags upserted via EC2 CreateTags")
 
 	return nil
+}
+
+// resolveKeyPairId resolves an AWS key pair name to its EC2 resource ID (key-xxx) via DescribeKeyPairs.
+// CB-Spider stores the key pair name as both NameId and SystemId, not the key-xxx resource ID.
+func resolveKeyPairId(ctx context.Context, client *ec2.Client, keyName string) (string, error) {
+	out, err := client.DescribeKeyPairs(ctx, &ec2.DescribeKeyPairsInput{
+		KeyNames: []string{keyName},
+	})
+	if err != nil {
+		return "", fmt.Errorf("DescribeKeyPairs failed for key name %q: %w", keyName, err)
+	}
+	if len(out.KeyPairs) == 0 {
+		return "", fmt.Errorf("no key pair found with name %q", keyName)
+	}
+	if out.KeyPairs[0].KeyPairId == nil {
+		return "", fmt.Errorf("key pair %q returned nil KeyPairId", keyName)
+	}
+	return *out.KeyPairs[0].KeyPairId, nil
 }
 
 // getAWSCreds retrieves AWS credentials from OpenBao.
