@@ -1301,6 +1301,19 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	isDone := true
 	pendingNodesCount := 0
 
+	// Re-read the infra object immediately before the recovery check to get the latest TargetAction.
+	// GetInfraStatus is a slow function (fetches CSP status for all nodes); the primary completion
+	// path in provisioning.go may have written TargetAction=Complete to the KV store while CSP
+	// polling was in progress. Without this re-read, a stale in-memory TargetAction=Create would
+	// cause a false recovery-path trigger (TOCTOU race condition).
+	if freshKeyValue, freshExists, freshErr := kvstore.GetKv(key); freshErr == nil && freshExists {
+		var freshInfraTmp model.InfraInfo
+		if jsonErr := json.Unmarshal([]byte(freshKeyValue.Value), &freshInfraTmp); jsonErr == nil {
+			infraTmp.TargetAction = freshInfraTmp.TargetAction
+			infraTmp.TargetStatus = freshInfraTmp.TargetStatus
+		}
+	}
+
 	// Check Infra target action to determine completion criteria
 	infraTargetAction := infraTmp.TargetAction
 

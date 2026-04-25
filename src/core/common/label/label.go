@@ -154,7 +154,7 @@ func CreateOrUpdateLabel(ctx context.Context, labelType, uid string, resourceKey
 		log.Error().Err(err).Msg("failed to get label data from kvstore")
 	}
 	if !exists {
-		log.Warn().Msgf("No label found for '%s'", uid)
+		// log.Warn().Msgf("No label found for '%s'", uid)
 	}
 
 	// log.Debug().Str("labelData", string(labelData)).Msg("Fetched label data")
@@ -246,7 +246,7 @@ func RemoveLabel(ctx context.Context, labelType, uid, key string) error {
 		return err
 	}
 	if !exists {
-		log.Debug().Msgf("No label found for '%s'", uid)
+		// log.Debug().Msgf("No label found for '%s'", uid)
 		return fmt.Errorf("no label found for '%s'", uid)
 	}
 
@@ -558,7 +558,7 @@ func MergeCSPResourceLabel(ctx context.Context, labelType, uid string, resourceK
 		log.Error().Err(err).Msg("failed to get label data from kvstore")
 	}
 	if !exists {
-		log.Warn().Msgf("No label found for '%s'", uid)
+		// log.Warn().Msgf("No label found for '%s'", uid)
 	}
 
 	// log.Debug().Str("labelData", string(labelData)).Msg("Fetched label data")
