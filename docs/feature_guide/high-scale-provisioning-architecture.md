@@ -180,7 +180,38 @@ flowchart TD
 
 ## 🎯 Intelligent Status Management
 
-This state diagram shows the lifecycle of a Node status check. The system **intelligently skips CSP API calls** for Nodes in stable states (Terminated, Failed, Suspended), significantly reducing unnecessary API traffic and improving overall system responsiveness by utilizing cached statuses.
+Status tracking is handled by the **Node Status Agent** (`NodeStatusAgent`), a background daemon that continuously polls CSP Node statuses using a priority-aware scheduler and per-CSP rate limiters — completely decoupled from the API request path.
+
+```mermaid
+flowchart LR
+    subgraph "Background: NodeStatusAgent"
+        TICK[1s tick] --> DISPATCH[Dispatch eligible\nentries from StatusStore]
+        DISPATCH --> RATE[Per-CSP rate limiter]
+        RATE --> SPIDER[Spider /vmstatus]
+        SPIDER --> STORE[StatusStore update]
+    end
+
+    subgraph "API request path (no CSP call)"
+        REQ[GET /infra status] --> STORE
+        STORE --> RESP[Fresh cached response]
+    end
+
+    style TICK fill:#e3f2fd
+    style STORE fill:#fff3e0
+    style RESP fill:#4caf50
+```
+
+**Poll priorities** drive how often each Node is re-checked:
+
+| Priority | Interval | Assigned when |
+|---|---|---|
+| `PollUrgent` | ~5 s | Creating, Terminating, Rebooting, … |
+| `PollHigh` | ~15 s | Running with pending TargetAction |
+| `PollNormal` | ~5 min | Stable Running / Undefined |
+| `PollRecover` | ~10 min | Suspended |
+| `PollSkip` | never | Terminated, Failed (final states) |
+
+The system also **intelligently skips CSP API calls** for Nodes in final states:
 
 ```mermaid
 stateDiagram-v2
@@ -208,6 +239,8 @@ stateDiagram-v2
     
     note right of ParallelProcess : CSP-aware rate<br/>limiting prevents<br/>API throttling
 ```
+
+> For the full NodeStatusAgent design (StatusStore, operation lock, startup scan, orphan rescue integration), see [Infra Resource Model and Lifecycle Management](./infra-resource-model-and-lifecycle-management.md#node-status-agent).
 
 ## 🔄 Advanced Caching & Memory Optimization
 
@@ -490,7 +523,7 @@ We have validated the architecture with large-scale provisioning tests. The foll
 
 ### Performance Improvements
 - **3-Level Rate Limiting**: Prevent API throttling with hierarchical control (CSP → Region → Node).
-- **Smart Status Caching**: Eliminate unnecessary CSP calls for stable Nodes (30-50% call reduction).
+- **Node Status Agent**: Background daemon decouples CSP polling from API requests; priority-aware scheduler (PollUrgent → PollSkip) cuts unnecessary calls by 30–50%.
 - **Parallel Processing**: Optimal performance with unlimited parallelization per CSP and limited parallelization per Region/Node.
 
 ### Reliability Enhancements

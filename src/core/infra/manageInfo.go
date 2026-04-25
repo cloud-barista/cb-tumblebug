@@ -1183,9 +1183,12 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 			statusFlag[8]++
 		case model.StatusRegistering:
 			statusFlag[9]++
+		case model.StatusUndefined:
+			statusFlag[10]++
+			log.Debug().Msgf("Node %s in Infra %s has Undefined status (orphan candidate; run action=reconcile to rescue or action=refine to remove)", v.Id, infraId)
 		default:
 			statusFlag[10]++
-			log.Warn().Msgf("Undefined status (%s) found in Node %s of Infra %s", v.Status, v.Id, infraId)
+			log.Warn().Msgf("Unexpected status (%s) found in Node %s of Infra %s", v.Status, v.Id, infraId)
 		}
 	}
 
@@ -1323,14 +1326,13 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 			// Check completion based on action type
 			switch infraTargetAction {
 			case model.ActionCreate:
-				// For Create action, completion means all Nodes reach final states (Running/Failed/Terminated/Suspended)
-				// Node is considered pending if it's still in transitional states (Creating/Registering/Undefined/empty)
-				// Failed state is considered a final state - provisioning attempt was completed even if unsuccessful
-				if v.Status == model.StatusCreating || v.Status == model.StatusRegistering || v.Status == model.StatusUndefined || v.Status == "" {
+				// Final states: Running, Failed, Terminated, Suspended, Undefined.
+				// Undefined means the creation attempt ended without VM identity (Spider 500);
+				// it is an orphan candidate handled by action=reconcile, not a pending state.
+				if v.Status == model.StatusCreating || v.Status == model.StatusRegistering || v.Status == "" {
 					isDone = false
 					pendingNodesCount++
 				}
-				// All other states (Running, Failed, Terminated, Suspended) are considered final states
 
 			case model.ActionTerminate:
 				// For Terminate action, completion means all Nodes reach Terminated state or non-recoverable states
@@ -1676,8 +1678,8 @@ func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) 
 							nodeSemaphore <- struct{}{}
 							defer func() { <-nodeSemaphore }()
 
-							// Fetch Node status
-							nodeStatusTmp, err := FetchNodeStatus(nsId, infraId, nodeId)
+							// Fetch Node status — uses StatusStore if fresh, falls back to Spider
+							nodeStatusTmp, err := fetchNodeStatusWithCache(nsId, infraId, nodeId)
 							if err != nil {
 								log.Error().Err(err).Msgf("Failed to fetch status for VM %s", nodeId)
 								nodeStatusTmp.Status = model.StatusFailed
@@ -1803,6 +1805,7 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 		// Return complete status info using stored Node info
 		populateNodeStatusInfoFromNodeInfo(&statusInfo, nodeInfo)
 		statusInfo.NativeStatus = nodeInfo.Status
+		writeStatusToStore(nsId, infraId, nodeId, statusInfo, nodeInfo)
 		return statusInfo, nil
 	}
 
@@ -2045,6 +2048,7 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 	}
 	// else: Node is already terminated, skip status update
 
+	writeStatusToStore(nsId, infraId, nodeId, nodeStatusTmp, nodeInfo)
 	return nodeStatusTmp, nil
 }
 
@@ -2685,6 +2689,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
+		globalStatusStore.Delete(nsId, infraId, v)
 
 		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfo.ImageId, model.StrDelete, nodeKey)
 		if err != nil {
@@ -2831,6 +2836,7 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 		log.Error().Err(err).Msg("")
 		return err
 	}
+	globalStatusStore.Delete(nsId, infraId, nodeId)
 
 	// remove empty NodeGroups
 	nodeGroup, err := ListNodeGroupId(nsId, infraId)
@@ -2966,6 +2972,7 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 		log.Error().Err(err).Msg("")
 		return err
 	}
+	globalStatusStore.Delete(nsId, infraId, nodeId)
 
 	// remove empty NodeGroups
 	nodeListInNodeGroup, err := ListNodeByNodeGroup(nsId, infraId, nodeInfo.NodeGroupId)

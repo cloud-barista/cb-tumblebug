@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -2648,6 +2649,9 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 		image := model.ImageInfo{Namespace: model.SystemCommonNs, Id: cspImageName}
 		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", model.SystemCommonNs, cspImageName).First(&image)
 		if result.Error != nil {
+			if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return model.ImageInfo{}, fmt.Errorf("DB error looking up image '%s' by ID in %s: %w", cspImageName, model.SystemCommonNs, result.Error)
+			}
 			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, model.SystemCommonNs)
 		} else {
 			return image, nil
@@ -2658,6 +2662,9 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 
 		result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(csp_image_name) = ?", nsId, cspImageName).First(&image)
 		if result.Error != nil {
+			if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return model.ImageInfo{}, fmt.Errorf("DB error looking up image '%s' by CspImageName in %s: %w", cspImageName, nsId, result.Error)
+			}
 			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, nsId)
 		} else {
 			return image, nil

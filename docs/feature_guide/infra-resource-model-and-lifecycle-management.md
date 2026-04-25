@@ -471,28 +471,128 @@ Each Infra and Node maintains two tracking fields:
 
 When `TargetStatus == CurrentStatus`, the action is considered complete, and both fields are set to `None` (ActionComplete/StatusComplete).
 
-### Smart Status Caching
+### Node Status Agent
 
-To optimize performance, the system skips CSP API calls for Nodes in stable final states:
+The **Node Status Agent** (`NodeStatusAgent`) is a background daemon that continuously maintains up-to-date Node status information in memory, decoupling CSP polling from API request handling.
+
+#### Why a Background Daemon?
+
+Without a daemon, every `GET /infra/{id}` call would fan out to all CSP APIs in real time. For a 200-node multi-cloud Infra, this means 200 concurrent CSP calls per status request — easily triggering rate limits. Under the pull-on-demand model, a live test with 1,061 CSP status calls in 4 minutes was observed before the daemon was introduced.
+
+#### Architecture Overview
+
+```mermaid
+flowchart TD
+    subgraph "NodeStatusAgent (background daemon)"
+        TICK[Tick every 1 second] --> DISPATCH[dispatchEligible\nscans StatusStore]
+        DISPATCH --> ELIGIBLE{NextPollAt\nreached?}
+        ELIGIBLE -->|Yes| QUEUE[workerCh]
+        ELIGIBLE -->|No| SKIP_NODE[skip]
+
+        QUEUE --> WORKER[worker goroutine pool]
+        WORKER --> RATE[Per-CSP rate limiter]
+        RATE --> FETCH[FetchNodeStatus\nvía Spider vmstatus]
+        FETCH --> STORE[StatusStore update\n+ KV write-through]
+    end
+
+    subgraph "API request path (fast)"
+        API[GET /infra status] --> CACHE_READ[Read from StatusStore\nor KV]
+    end
+
+    STORE -->|fresh data| CACHE_READ
+
+    style TICK fill:#e3f2fd
+    style STORE fill:#fff3e0
+    style CACHE_READ fill:#4caf50
+```
+
+#### In-Memory StatusStore
+
+The `StatusStore` is a singleton, thread-safe map keyed by `"nsId/infraId/nodeId"`. Each entry holds the most recent CSP-polled status, native status, public IP, and scheduling metadata (next poll time, priority). Status writes go through to the KV store atomically so data survives daemon restarts.
+
+#### Poll Priorities
+
+Each Node entry in the StatusStore carries a **poll priority** that controls how frequently the daemon re-checks the CSP:
+
+| Priority | Interval | When assigned |
+|---|---|---|
+| `PollUrgent` | ~5 s | Transitional states: Creating, Terminating, Resuming, Rebooting, Suspending |
+| `PollHigh` | ~15 s | Running Nodes with a pending TargetAction |
+| `PollNormal` | ~5 min | Stable Running or Undefined nodes (no pending action) |
+| `PollRecover` | ~10 min | Suspended nodes (stable, but can be resumed) |
+| `PollSkip` | never | Terminated, Failed nodes (final state — no further CSP calls) |
+
+> **Newly created Nodes start at `PollUrgent`** so their transition from Creating → Running is tracked at second-level granularity.
+
+#### Operation Lock
+
+During active lifecycle operations (Create, Terminate, Reboot, etc.), the daemon must not overwrite the status set by the operation itself. An **operation lock** prevents this:
+
+```mermaid
+sequenceDiagram
+    participant OPS as Lifecycle goroutine
+    participant AGENT as NodeStatusAgent
+    participant STORE as StatusStore
+
+    OPS->>STORE: AcquireLock(nodeId, "Creating")
+    Note over STORE: OperationLockedAt = now<br/>TTL = 25 min
+
+    loop every dispatch tick
+        AGENT->>STORE: check lock
+        STORE-->>AGENT: locked → skip poll
+    end
+
+    OPS->>STORE: SetStatus("Running")
+    OPS->>STORE: ReleaseLock(nodeId)
+
+    AGENT->>STORE: check lock
+    STORE-->>AGENT: unlocked → poll normally
+```
+
+If the lock TTL expires while `TargetAction` is still set (e.g. the server crashed mid-operation), the daemon logs a warning, clears the lock, and promotes the Node to `PollUrgent` so the discrepancy is detected quickly. Running `action=reconcile` then corrects the state.
+
+#### Startup Scan
+
+On daemon start, `StartupScan` reads all Node records from the KV store and populates the StatusStore:
+
+- Nodes in **transitional states** (`Creating`, `Terminating`, …) with a **pending `TargetAction`** are promoted to `PollUrgent` and a warning is logged — these likely indicate a server restart mid-operation.
+- Nodes in **stable states** (`Running`, `Suspended`, …) are spread across the first polling interval to avoid a thundering-herd burst on startup.
+- Nodes in **final states** (`Terminated`, `Failed`) are set to `PollSkip` — they require no further CSP calls.
+
+#### Smart Status Skipping
+
+Before making a CSP API call, `FetchNodeStatus` checks several conditions that allow it to skip the round-trip entirely:
 
 ```mermaid
 flowchart LR
-    CHECK{Node Status?}
-    
-    CHECK -->|Terminated| SKIP[Skip CSP Call]
-    CHECK -->|Failed| SKIP
-    CHECK -->|Suspended| SKIP
-    CHECK -->|Running/Creating| FETCH[Fetch from CSP]
-    
-    SKIP --> CACHE[Return Cached Status]
-    FETCH --> UPDATE[Update Cache]
-    UPDATE --> RETURN[Return Fresh Status]
-    
+    CHECK{Skip CSP call?}
+
+    CHECK -->|Terminated\nwith no active action| SKIP[Return cached status]
+    CHECK -->|Failed\nwith no active action| SKIP
+    CHECK -->|Suspended\nwith no active action| SKIP
+    CHECK -->|CspResourceName empty\nand TargetAction ≠ Create| SKIP
+    CHECK -->|Otherwise| FETCH[Call Spider /vmstatus]
+
+    SKIP --> CACHE[Return stored status]
+    FETCH --> UPDATE[Update StatusStore + KV]
+
     style SKIP fill:#4caf50
     style FETCH fill:#2196f3
 ```
 
-This optimization reduces API calls by 30-50% for large Infras with many terminated or suspended Nodes.
+This skipping reduces CSP API calls by **30–50%** for large Infras with many terminated or suspended Nodes.
+
+#### Relationship to Crash Recovery and Orphan Rescue
+
+The NodeStatusAgent tracks status continuously but does **not** attempt to reconcile discrepancies on its own. When a Node ends up `Undefined` (e.g. Spider returned 500 during creation without providing VM identity), the agent simply caches and reports that status. Actual recovery is triggered explicitly:
+
+| Mechanism | Who runs it | Purpose |
+|---|---|---|
+| `action=reconcile` | Operator | Re-queries Spider for all transient/Undefined Nodes; queries `/allvm` to find orphan VMs unrecorded in TB; absorbs matched orphans |
+| `action=refine` | Operator | Removes Failed/Undefined Node metadata from TB (no CSP call) |
+| `action=abort` | Operator | Force-terminates all non-final Nodes, runs orphan rescue, then sweeps with refine |
+
+See [Crash Recovery](#crash-recovery-reconcile-and-abort) for the full flow.
 
 ### Rate Limiting for Control Operations
 

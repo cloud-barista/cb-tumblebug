@@ -719,6 +719,12 @@ func main() {
 	}()
 	defer ticker.Stop()
 
+	// Start NodeStatusAgent: load all nodes into StatusStore and begin periodic polling.
+	agentCtx, agentCancel := context.WithCancel(context.Background())
+	defer agentCancel()
+	go infra.GlobalAgent.StartupScan()
+	go infra.GlobalAgent.Start(agentCtx)
+
 	go func() {
 		viper.WatchConfig()
 		viper.OnConfigChange(func(e fsnotify.Event) {
