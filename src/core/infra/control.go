@@ -381,6 +381,14 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 	err = ControlNodesInParallel(nsId, infraId, nodeList, action, force)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to control Nodes in parallel for action %s", action)
+		// Re-fetch and clear TargetAction so future operations are not permanently blocked.
+		// ControlNodesInParallel only returns error on total failure; individual node
+		// failures are surfaced per-node and do not block infra-level operations.
+		if freshInfra, _, fetchErr := GetInfraObject(nsId, infraId); fetchErr == nil {
+			freshInfra.TargetAction = model.ActionComplete
+			freshInfra.TargetStatus = model.StatusComplete
+			UpdateInfraInfo(nsId, freshInfra)
+		}
 		return err
 	}
 
@@ -708,23 +716,45 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = temp.ConnectionName
 
-	_, err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		clientManager.MediumDuration,
-	)
-
-	// log.Debug().Msgf("[ControlNodeAsync] VM %s: CB-Spider control API response - Status: %s, Error: %v",
-	// 	nodeId, callResult.Status, err)
+	// Retry on transient network errors (connection reset, EOF, broken pipe).
+	// NHN and some other CSPs occasionally reset connections during Floating IP
+	// operations; a single retry is usually enough for the TCP session to recover.
+	const maxControlRetries = 2
+	for attempt := 0; attempt <= maxControlRetries; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(1<<uint(attempt)) * time.Second // 2s, 4s
+			log.Warn().Msgf("[ControlNodeAsync] VM %s: transient error on %s (attempt %d/%d), retrying in %v: %v",
+				nodeId, action, attempt, maxControlRetries+1, backoff, err)
+			time.Sleep(backoff)
+		}
+		_, err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			clientManager.MediumDuration,
+		)
+		if err == nil || !isTransientNetworkError(err) {
+			break
+		}
+	}
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		callResult.Error = err
+		// Sync actual node state from CSP even on failure — the operation may have
+		// partially succeeded (e.g. VM terminated but Floating IP release failed).
+		// Without this, the KV store retains the transitional status set before the
+		// Spider call (e.g. Terminating) while the VM may still be Running.
+		if syncInfo, syncErr := FetchNodeStatus(nsId, infraId, nodeId); syncErr != nil {
+			log.Warn().Err(syncErr).Msgf("[ControlNodeAsync] VM %s: failed to sync status after %s error", nodeId, action)
+		} else {
+			log.Debug().Msgf("[ControlNodeAsync] VM %s: post-error status sync — Status: %s, NativeStatus: %s",
+				nodeId, syncInfo.Status, syncInfo.NativeStatus)
+		}
 		results <- callResult
 		return
 	}
@@ -739,6 +769,38 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	} else {
 		log.Debug().Msgf("[ControlNode] VM %s: After %s - Status: %s, NativeStatus: %s",
 			nodeId, action, nodeStatusInfo.Status, nodeStatusInfo.NativeStatus)
+	}
+
+	// For terminate: some CSPs (e.g. IBM VPC) delete asynchronously — Spider returns
+	// success with status=Terminating immediately, but the VM still holds subnet/VPC
+	// resources until the CSP propagates the deletion. Poll until the VM actually leaves
+	// Terminating state so that subsequent shared-resource cleanup (VPC, SG) does not fail.
+	if action == model.ActionTerminate {
+		initiallyTerminating := err != nil || strings.EqualFold(nodeStatusInfo.Status, model.StatusTerminating)
+		if initiallyTerminating {
+			const pollInterval = 5 * time.Second
+			const pollTimeout = 10 * time.Minute
+			deadline := time.Now().Add(pollTimeout)
+			log.Info().Msgf("[ControlNodeAsync] VM %s: CSP reports Terminating — polling every %v until deletion propagates (timeout %v)",
+				nodeId, pollInterval, pollTimeout)
+			for time.Now().Before(deadline) {
+				time.Sleep(pollInterval)
+				fetchedStatus, fetchErr := FetchNodeStatus(nsId, infraId, nodeId)
+				if fetchErr != nil {
+					if strings.Contains(fetchErr.Error(), "temporarily blocked") {
+						// Circuit breaker is open; wait for it to reset (~30 s) and retry.
+						continue
+					}
+					// VM is no longer accessible from CSP — deletion propagated.
+					log.Debug().Msgf("[ControlNodeAsync] VM %s: CSP no longer reports VM, termination confirmed", nodeId)
+					break
+				}
+				if !strings.EqualFold(fetchedStatus.Status, model.StatusTerminating) {
+					log.Debug().Msgf("[ControlNodeAsync] VM %s: Termination polling done, status=%s", nodeId, fetchedStatus.Status)
+					break
+				}
+			}
+		}
 	}
 
 	if action != model.ActionTerminate {
@@ -764,6 +826,19 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	}
 
 	results <- callResult
+}
+
+// isTransientNetworkError returns true for errors that are safe to retry
+// (connection reset by peer, unexpected EOF, broken pipe).
+func isTransientNetworkError(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "connection reset by peer") ||
+		strings.Contains(s, "EOF") ||
+		strings.Contains(s, "broken pipe") ||
+		strings.Contains(s, "i/o timeout")
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
@@ -978,31 +1053,60 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 	)
 
 	// Pass 1: ask Spider for truth on Nodes that already have cspResourceName.
-	// Collect orphan candidates (transient + no cspResourceName) for Pass 2.
+	// Collect orphan candidates for Pass 2.
+	//
+	// Orphan candidates are Nodes that may have a VM on CSP without a TB
+	// cspResourceName link. Two sources:
+	//   (a) Transient status (Creating/Undefined/…) + no cspResourceName — the
+	//       classic crash-recovery pattern: Spider returned the VM IID but TB
+	//       never persisted it before the process died.
+	//   (b) Failed status + no cspResourceName — Spider POST /vm returned 500
+	//       AFTER the VM was created on CSP (e.g. NHN Floating IP assignment
+	//       failed). These are potential billing orphans that must be rescued or
+	//       confirmed absent before being treated as truly Failed.
 	var orphanCands []orphanCandidate
 	for _, n := range infraStatus.Node {
-		if !transientNodeStatus(n.Status) {
-			untouched++
-			continue
-		}
+		isTransient := transientNodeStatus(n.Status)
+		isFailed := strings.EqualFold(n.Status, model.StatusFailed)
 
-		fetched, ferr := FetchNodeStatus(nsId, infraId, n.Id)
-		if ferr != nil {
-			log.Warn().Err(ferr).Msgf("reconcileInfraForward: FetchNodeStatus failed for %s; will fall back to KV", n.Id)
-		} else if !transientNodeStatus(fetched.Status) {
-			if strings.EqualFold(fetched.Status, model.StatusRunning) {
-				reconciledRunning++
-			}
-			log.Info().Msgf("reconcileInfraForward: Node %s reconciled to %s via Spider", n.Id, fetched.Status)
+		if !isTransient && !isFailed {
+			untouched++
 			continue
 		}
 
 		nodeObj, gerr := GetNodeObject(nsId, infraId, n.Id)
 		if gerr != nil {
 			log.Warn().Err(gerr).Msgf("reconcileInfraForward: cannot read Node %s; skipping", n.Id)
+			untouched++
 			continue
 		}
+
+		// Failed nodes with a known CspResourceName are definitively done;
+		// no orphan search needed.
+		if isFailed && strings.TrimSpace(nodeObj.CspResourceName) != "" {
+			untouched++
+			continue
+		}
+
+		if isTransient {
+			fetched, ferr := FetchNodeStatus(nsId, infraId, n.Id)
+			if ferr != nil {
+				log.Warn().Err(ferr).Msgf("reconcileInfraForward: FetchNodeStatus failed for %s; will fall back to KV", n.Id)
+			} else if !transientNodeStatus(fetched.Status) {
+				if strings.EqualFold(fetched.Status, model.StatusRunning) {
+					reconciledRunning++
+				}
+				log.Info().Msgf("reconcileInfraForward: Node %s reconciled to %s via Spider", n.Id, fetched.Status)
+				continue
+			}
+		}
+
 		if strings.TrimSpace(nodeObj.CspResourceName) == "" {
+			// No cspResourceName: could be an orphan on CSP — defer to orphan rescue.
+			if isFailed {
+				log.Info().Msgf("reconcileInfraForward: Node %s is Failed with no cspResourceName; "+
+					"checking CSP for orphaned VM via /allvm", n.Id)
+			}
 			orphanCands = append(orphanCands, orphanCandidate{
 				NodeId:         nodeObj.Id,
 				Uid:            nodeObj.Uid,

@@ -256,6 +256,12 @@ type CreateNodeGroupReq struct {
 	SpecId         string `json:"specId" validate:"required"`
 	// ImageType        string   `json:"imageType"`
 	ImageId          string   `json:"imageId" validate:"required"`
+	// CspImageName is the CSP-side image identifier pre-resolved by EnsureImageAvailable
+	// at nodegroup level (Alibaba/Azure latest-version resolution included). When non-empty
+	// and the image is not a custom image, CreateNode skips the redundant per-VM GetImage
+	// DB call, significantly reducing concurrent DB load during large infra creation.
+	// Custom images always go through the full GetImage path (this field stays empty for them).
+	CspImageName string `json:"cspImageName,omitempty"`
 	VNetId           string   `json:"vNetId" validate:"required"`
 	SubnetId         string   `json:"subnetId" validate:"required"`
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
