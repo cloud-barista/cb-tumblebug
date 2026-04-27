@@ -117,6 +117,8 @@ var InternalCallSkipPatterns = []SkipRule{
 	{Patterns: []string{"/spider/driver"}},
 	{Patterns: []string{"/spider/connectionconfig"}},
 
+	{Patterns: []string{"/spider/keypair"}},
+
 	// Examples with method filtering:
 	// {Method: "GET", Patterns: []string{"/spider/vm", "option=status"}},  // GET VM status only
 	// {Method: "POST", Patterns: []string{"/spider/vm"}},                   // POST VM creation

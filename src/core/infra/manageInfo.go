@@ -1606,6 +1606,15 @@ const maxConcurrentSpiderCalls = 50
 // Declared at package level so it is shared across concurrent infra status polls.
 var globalSpiderSem = make(chan struct{}, maxConcurrentSpiderCalls)
 
+// terminatingFailStreak counts consecutive Spider poll failures for Terminating nodes.
+// When the streak reaches terminatingFailStreakMax across successive polling cycles,
+// the node is promoted to Terminated — avoiding indefinite stalls when the VM is
+// already gone from the CSP but Spider consistently returns errors.
+// Key format: "nsId/infraId/nodeId"
+var terminatingFailStreak sync.Map
+
+const terminatingFailStreakMax = 3
+
 func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) ([]model.NodeStatusInfo, error) {
 	if len(nodeList) == 0 {
 		return []model.NodeStatusInfo{}, nil
@@ -1923,9 +1932,28 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 				default:
 					callResult.Status = model.StatusUndefined
 				}
+
+				// For Terminating nodes, track consecutive poll failures across cycles.
+				// A single transient Spider error should not flip status; but if Spider
+				// consistently cannot find the VM over multiple polling cycles, the VM
+				// is almost certainly gone from the CSP.
+				if nodeInfo.Status == model.StatusTerminating {
+					streakKey := nsId + "/" + infraId + "/" + nodeId
+					prev, _ := terminatingFailStreak.LoadOrStore(streakKey, 0)
+					streak := prev.(int) + 1
+					if streak >= terminatingFailStreakMax {
+						terminatingFailStreak.Delete(streakKey)
+						log.Info().Msgf("[FetchNodeStatus] Node %s: Spider error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
+						callResult.Status = model.StatusTerminated
+					} else {
+						terminatingFailStreak.Store(streakKey, streak)
+					}
+				}
 				break
 			}
 			if callResult.Status != "" {
+				// Successful Spider response: reset consecutive failure streak for this node.
+				terminatingFailStreak.Delete(nsId + "/" + infraId + "/" + nodeId)
 				break
 			}
 			time.Sleep(5 * time.Second)
@@ -2744,51 +2772,107 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	}
 
 	// delete nodes info
-	for _, v := range nodeList {
-		nodeKey := common.GenInfraKey(nsId, infraId, v)
-		fmt.Println(nodeKey)
-
-		// get node info
-		nodeInfo, err := GetNodeObject(nsId, infraId, v)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return deletedResources, err
-		}
-
-		// Remove from StatusStore before etcd so StatusAgent cannot dispatch this
-		// node between the etcd deletion and the StatusStore cleanup (which would
-		// produce spurious "no Node found" errors).
-		globalStatusStore.Delete(nsId, infraId, v)
-		err = kvstore.Delete(nodeKey)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return deletedResources, err
-		}
-
-		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfo.ImageId, model.StrDelete, nodeKey)
-		if err != nil {
-			resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, nodeInfo.ImageId, model.StrDelete, nodeKey)
-		}
-
-		//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, nodeInfo.SpecId, model.StrDelete, nodeKey)
-		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfo.SshKeyId, model.StrDelete, nodeKey)
-		resource.UpdateAssociatedObjectList(nsId, model.StrVNet, nodeInfo.VNetId, model.StrDelete, nodeKey)
-
-		for _, v2 := range nodeInfo.SecurityGroupIds {
-			resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v2, model.StrDelete, nodeKey)
-		}
-
-		for _, v2 := range nodeInfo.DataDiskIds {
-			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v2, model.StrDelete, nodeKey)
-		}
-		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Node: "+v)
-
-		err = label.DeleteLabelObject(model.StrNode, nodeInfo.Uid)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-
+	type nodeEntry struct {
+		id   string
+		key  string
+		info model.NodeInfo
 	}
+
+	// Step 1: fetch all node infos in parallel
+	entries := make([]nodeEntry, len(nodeList))
+	fetchErrs := make([]error, len(nodeList))
+	var fetchWg sync.WaitGroup
+	for i, v := range nodeList {
+		fetchWg.Add(1)
+		go func(i int, v string) {
+			defer fetchWg.Done()
+			nodeKey := common.GenInfraKey(nsId, infraId, v)
+			nodeInfo, err := GetNodeObject(nsId, infraId, v)
+			entries[i] = nodeEntry{id: v, key: nodeKey, info: nodeInfo}
+			fetchErrs[i] = err
+		}(i, v)
+	}
+	fetchWg.Wait()
+	for _, err := range fetchErrs {
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return deletedResources, err
+		}
+	}
+
+	// Step 2: delete kvstore entries and status store in parallel
+	// Remove from StatusStore before etcd so StatusAgent cannot dispatch a node
+	// between the etcd deletion and the StatusStore cleanup.
+	deleteErrs := make([]error, len(entries))
+	var deleteWg sync.WaitGroup
+	for i, e := range entries {
+		deleteWg.Add(1)
+		go func(i int, e nodeEntry) {
+			defer deleteWg.Done()
+			globalStatusStore.Delete(nsId, infraId, e.id)
+			deleteErrs[i] = kvstore.Delete(e.key)
+		}(i, e)
+	}
+	deleteWg.Wait()
+	for _, err := range deleteErrs {
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return deletedResources, err
+		}
+	}
+
+	// Step 3: batch-remove associated object lists — one read-modify-write per resource
+	// instead of N round-trips for N nodes sharing the same resource.
+	type resourceRef struct {
+		resourceType string
+		resourceId   string
+	}
+	assocMap := make(map[resourceRef][]string)
+	for _, e := range entries {
+		add := func(rType, rId string) {
+			if rId != "" {
+				ref := resourceRef{rType, rId}
+				assocMap[ref] = append(assocMap[ref], e.key)
+			}
+		}
+		// Try both Image and CustomImage; BatchRemoveFromAssociatedObjectList silently
+		// skips keys not present, so the non-matching type is a no-op.
+		add(model.StrImage, e.info.ImageId)
+		add(model.StrCustomImage, e.info.ImageId)
+		add(model.StrSSHKey, e.info.SshKeyId)
+		add(model.StrVNet, e.info.VNetId)
+		for _, sgId := range e.info.SecurityGroupIds {
+			add(model.StrSecurityGroup, sgId)
+		}
+		for _, ddId := range e.info.DataDiskIds {
+			add(model.StrDataDisk, ddId)
+		}
+	}
+	var batchWg sync.WaitGroup
+	for ref, keys := range assocMap {
+		batchWg.Add(1)
+		go func(ref resourceRef, keys []string) {
+			defer batchWg.Done()
+			if err := resource.BatchRemoveFromAssociatedObjectList(nsId, ref.resourceType, ref.resourceId, keys); err != nil {
+				log.Warn().Err(err).Msgf("BatchRemoveFromAssociatedObjectList failed for %s/%s", ref.resourceType, ref.resourceId)
+			}
+		}(ref, keys)
+	}
+	batchWg.Wait()
+
+	// Step 4: delete labels in parallel
+	var labelWg sync.WaitGroup
+	for _, e := range entries {
+		labelWg.Add(1)
+		go func(e nodeEntry) {
+			defer labelWg.Done()
+			if err := label.DeleteLabelObject(model.StrNode, e.info.Uid); err != nil {
+				log.Error().Err(err).Msg("")
+			}
+		}(e)
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Node: "+e.id)
+	}
+	labelWg.Wait()
 
 	// delete nodeGroup info
 	nodeGroupList, err := ListNodeGroupId(nsId, infraId)
