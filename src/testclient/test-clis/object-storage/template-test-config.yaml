@@ -1,0 +1,39 @@
+tumblebug:
+  # CB-Tumblebug API endpoint
+  endpoint: http://localhost:1323
+
+  # Namespace used for all test operations
+  nsId: default
+
+# Multi-CSP test cases for batch testing (create → get → delete lifecycle)
+# Copy this file to test-config.yaml and adjust values for your environment.
+# Set 'execute: true' for the CSPs you want to include in the test run.
+# CSPs with object storage support: aws, gcp, alibaba, tencent, ibm, openstack, ncp, nhn, kt
+testCases:
+  - osId: test-bucket-aws
+    connectionName: aws-ap-northeast-2
+    execute: false
+  - osId: test-bucket-gcp
+    connectionName: gcp-asia-northeast3
+    execute: false
+  - osId: test-bucket-alibaba
+    connectionName: alibaba-ap-northeast-1
+    execute: false
+  - osId: test-bucket-tencent
+    connectionName: tencent-ap-seoul
+    execute: false
+  - osId: test-bucket-ibm
+    connectionName: ibm-us-south
+    execute: false
+  - osId: test-bucket-openstack
+    connectionName: openstack-regionone
+    execute: false
+  - osId: test-bucket-ncp
+    connectionName: ncp-kr
+    execute: false
+  - osId: test-bucket-nhn
+    connectionName: nhn-kr1
+    execute: false
+  - osId: test-bucket-kt
+    connectionName: kt-kr1
+    execute: false

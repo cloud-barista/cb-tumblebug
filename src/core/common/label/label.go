@@ -44,7 +44,8 @@ type CSPSyncConfig struct {
 
 var cspSyncSkipConfig = CSPSyncConfig{
 	GlobalSkipResourceTypes: map[string]bool{
-		model.StrVPN: true,
+		model.StrVPN:           true,
+		model.StrObjectStorage: true, // CB-Spider tag API does not support 'objectStorage' as a resource type (returns 400 Bad Request for all CSPs)
 	},
 	CSPGlobalSkip: map[string]bool{
 		csp.NHN: true, // CB-Spider TagHandler not implemented

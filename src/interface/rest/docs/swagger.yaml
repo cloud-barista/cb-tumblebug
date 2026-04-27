@@ -10642,7 +10642,17 @@ paths:
       tags:
       - "[Infra Resource] Object Storage Management"
       summary: Delete an object storage (bucket)
-      description: Delete an object storage (bucket)
+      description: |-
+        Delete an object storage (bucket).
+
+        **Query option (mutually exclusive — specify at most one):**
+
+        | option | Description |
+        |--------|-------------|
+        | (none) | Standard delete. Fails if the bucket is not empty. |
+        | `empty` | Empty the bucket first, then delete. |
+        | `force` | Force delete bucket with all contents (passed to Spider as `force=true`). Behaviour varies by CSP; use when standard delete is not sufficient. |
+        | `reconcile` | Do not call the CSP delete API. Instead, check whether the CSP bucket actually exists and remove only the Tumblebug metadata if the bucket is absent. Use this to clean up orphaned metadata that cannot be deleted through normal means (e.g., a bucket stuck in `Failed` status after a partial creation or a CSP-side deletion error such as Tencent 405). Returns a reconcile result object instead of 204. |
       operationId: RestDeleteObjectStorage
       parameters:
       - name: nsId
@@ -10659,16 +10669,15 @@ paths:
         schema:
           type: string
           default: os01
-      - name: force
+      - name: option
         in: query
-        description: Force delete bucket including all contents
+        description: Delete option (mutually exclusive)
         schema:
-          type: boolean
-      - name: empty
-        in: query
-        description: Force empty bucket before delete
-        schema:
-          type: boolean
+          type: string
+          enum:
+          - empty
+          - force
+          - reconcile
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -10681,6 +10690,12 @@ paths:
         schema:
           type: string
       responses:
+        "200":
+          description: OK (option=reconcile only)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageReconcileResponse'
         "204":
           description: No Content
           content: {}
@@ -22817,6 +22832,37 @@ components:
         presignedURL:
           type: string
           example: https://example.com/presigned-url
+    model.ObjectStorageReconcileResponse:
+      type: object
+      properties:
+        action:
+          type: string
+          description: |-
+            Action describes what corrective action was taken
+            Possible values: "NoActionNeeded", "MetadataRemoved", "MetadataUpdated"
+          example: MetadataRemoved
+        cspResourceStatus:
+          type: string
+          description: |-
+            CspResourceStatus indicates whether the corresponding CSP resource actually exists
+            Possible values: "Exists", "NotFound", "Skipped"
+            "Skipped" means the CSP check was not performed because the metadata had no CSP resource ID (Uid is empty)
+          example: NotFound
+        message:
+          type: string
+          description: Message provides a human-readable description of the reconcile
+            result
+          example: "Orphaned metadata removed: CSP resource does not exist"
+        metadataStatus:
+          type: string
+          description: |-
+            MetadataStatus indicates whether Tumblebug metadata was found in the key-value store
+            Possible values: "Found", "NotFound"
+          example: Found
+        objectStorageId:
+          type: string
+          description: ObjectStorageId is the Tumblebug resource ID that was reconciled
+          example: test-add-object-tencent
     model.ObjectStorageSetCorsRequest:
       required:
       - corsRule

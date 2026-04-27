@@ -171,3 +171,23 @@ type ObjectStorageSupportResponse struct {
 	ResourceType string                                 `json:"resourceType" example:"objectStorage"`
 	Supports     map[string]ObjectStorageFeatureSupport `json:"supports,omitempty"`
 }
+
+// ObjectStorageReconcileResponse represents the result of a reconcile operation on an object storage resource.
+// Reconcile checks for discrepancies between Tumblebug metadata and the actual CSP resource,
+// then takes corrective action (e.g., removing orphaned metadata when the CSP bucket no longer exists).
+type ObjectStorageReconcileResponse struct {
+	// ObjectStorageId is the Tumblebug resource ID that was reconciled
+	ObjectStorageId string `json:"objectStorageId" example:"test-add-object-tencent"`
+	// MetadataStatus indicates whether Tumblebug metadata was found in the key-value store
+	// Possible values: "Found", "NotFound"
+	MetadataStatus string `json:"metadataStatus" example:"Found"`
+	// CspResourceStatus indicates whether the corresponding CSP resource actually exists
+	// Possible values: "Exists", "NotFound", "Skipped"
+	// "Skipped" means the CSP check was not performed because the metadata had no CSP resource ID (Uid is empty)
+	CspResourceStatus string `json:"cspResourceStatus" example:"NotFound"`
+	// Action describes what corrective action was taken
+	// Possible values: "NoActionNeeded", "MetadataRemoved", "MetadataUpdated"
+	Action string `json:"action" example:"MetadataRemoved"`
+	// Message provides a human-readable description of the reconcile result
+	Message string `json:"message" example:"Orphaned metadata removed: CSP resource does not exist"`
+}

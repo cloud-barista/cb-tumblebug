@@ -12636,7 +12636,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete an object storage (bucket)",
+                "description": "Delete an object storage (bucket).\n\n**Query option (mutually exclusive — specify at most one):**\n\n| option | Description |\n|--------|-------------|\n| (none) | Standard delete. Fails if the bucket is not empty. |\n| ` + "`" + `empty` + "`" + ` | Empty the bucket first, then delete. |\n| ` + "`" + `force` + "`" + ` | Force delete bucket with all contents (passed to Spider as ` + "`" + `force=true` + "`" + `). Behaviour varies by CSP; use when standard delete is not sufficient. |\n| ` + "`" + `reconcile` + "`" + ` | Do not call the CSP delete API. Instead, check whether the CSP bucket actually exists and remove only the Tumblebug metadata if the bucket is absent. Use this to clean up orphaned metadata that cannot be deleted through normal means (e.g., a bucket stuck in ` + "`" + `Failed` + "`" + ` status after a partial creation or a CSP-side deletion error such as Tencent 405). Returns a reconcile result object instead of 204. |",
                 "consumes": [
                     "application/json"
                 ],
@@ -12666,15 +12666,14 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "boolean",
-                        "description": "Force delete bucket including all contents",
-                        "name": "force",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Force empty bucket before delete",
-                        "name": "empty",
+                        "enum": [
+                            "empty",
+                            "force",
+                            "reconcile"
+                        ],
+                        "type": "string",
+                        "description": "Delete option (mutually exclusive)",
+                        "name": "option",
                         "in": "query"
                     },
                     {
@@ -12691,6 +12690,12 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "OK (option=reconcile only)",
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStorageReconcileResponse"
+                        }
+                    },
                     "204": {
                         "description": "No Content"
                     },
@@ -27502,6 +27507,36 @@ const docTemplate = `{
                 "presignedURL": {
                     "type": "string",
                     "example": "https://example.com/presigned-url"
+                }
+            }
+        },
+        "model.ObjectStorageReconcileResponse": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "Action describes what corrective action was taken\nPossible values: \"NoActionNeeded\", \"MetadataRemoved\", \"MetadataUpdated\"",
+                    "type": "string",
+                    "example": "MetadataRemoved"
+                },
+                "cspResourceStatus": {
+                    "description": "CspResourceStatus indicates whether the corresponding CSP resource actually exists\nPossible values: \"Exists\", \"NotFound\", \"Skipped\"\n\"Skipped\" means the CSP check was not performed because the metadata had no CSP resource ID (Uid is empty)",
+                    "type": "string",
+                    "example": "NotFound"
+                },
+                "message": {
+                    "description": "Message provides a human-readable description of the reconcile result",
+                    "type": "string",
+                    "example": "Orphaned metadata removed: CSP resource does not exist"
+                },
+                "metadataStatus": {
+                    "description": "MetadataStatus indicates whether Tumblebug metadata was found in the key-value store\nPossible values: \"Found\", \"NotFound\"",
+                    "type": "string",
+                    "example": "Found"
+                },
+                "objectStorageId": {
+                    "description": "ObjectStorageId is the Tumblebug resource ID that was reconciled",
+                    "type": "string",
+                    "example": "test-add-object-tencent"
                 }
             }
         },
