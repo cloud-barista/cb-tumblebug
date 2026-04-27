@@ -435,6 +435,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 
 	for {
 		uid = common.GenUid()
+		objStrgInfo.Uid = uid // Set uid immediately so failed-state metadata always records the attempted CSP resource name
 		spReq = spiderObjectStorageCreateRequest{}
 		spReq.ConnectionName = req.ConnectionName
 		spReq.BucketName = uid
@@ -491,8 +492,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		log.Debug().Msgf("[Response from Spider] Creating a object storage (No response body): %+v", spResp)
 		break
 	}
-	// Set the final values after successful creation
-	objStrgInfo.Uid = uid
+	// objStrgInfo.Uid is already set at the start of each loop iteration
 
 	// 8. Call Spider API to get the created object storage info
 	// Currently, there is no specific response body from Spider for object storage creation.
@@ -811,46 +811,84 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 	uid := objStrgInfo.Uid
 	connName := objStrgInfo.ConnectionName
 
-	// 5. Call Spider API to delete the object storage
-	client := clientManager.NewHttpClient()
-	method := "DELETE"
-	spReq := clientManager.NoBody
-	spResp := clientManager.NoBody
+	// 5. Call Spider API to delete the object storage, then verify via GET.
+	// If uid is empty, the CSP resource was never successfully created; skip Spider and go straight to metadata cleanup.
+	if uid != "" {
+		client := clientManager.NewHttpClient()
 
-	url := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
-	if force {
-		url = url + "&force=true"
-	} else if empty {
-		url = url + "&empty=true"
-	}
+		deleteURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+		if force {
+			deleteURL = deleteURL + "&force=true"
+		} else if empty {
+			deleteURL = deleteURL + "&empty=true"
+		}
+		getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
 
-	maxRetries := 2
-	t := uint64(3)
-	for i := 0; i <= maxRetries; i++ {
+		const maxDeleteAttempts = 2
+		deleted := false
 
-		log.Debug().Msgf("[Request to Spider] Deleting the object storage (url: %s)", url)
+		for attempt := 1; attempt <= maxDeleteAttempts; attempt++ {
+			// 5-1. DELETE
+			spDelReq := clientManager.NoBody
+			spDelResp := clientManager.NoBody
+			log.Debug().Msgf("[Request to Spider] Deleting the object storage (url: %s, attempt: %d/%d)", deleteURL, attempt, maxDeleteAttempts)
 
-		_, err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			spiderS3JSONHeaders,
-			clientManager.SetUseBody(spReq),
-			&spReq,
-			&spResp,
-			clientManager.ShortDuration,
-		)
+			_, delErr := clientManager.ExecuteHttpRequest(
+				client,
+				"DELETE",
+				deleteURL,
+				spiderS3JSONHeaders,
+				clientManager.SetUseBody(spDelReq),
+				&spDelReq,
+				&spDelResp,
+				clientManager.ShortDuration,
+			)
 
-		if err == nil {
-			break
+			// Spider returns 404 when the bucket does not exist on the CSP side → already gone.
+			if delErr != nil && strings.Contains(delErr.Error(), "404") {
+				log.Warn().Msgf("Spider returned 404 on DELETE for object storage %s (attempt %d/%d) — already deleted", uid, attempt, maxDeleteAttempts)
+				deleted = true
+				break
+			}
+
+			if delErr != nil {
+				log.Warn().Err(delErr).Msgf("DELETE attempt %d/%d failed for object storage %s", attempt, maxDeleteAttempts, uid)
+				// Fall through to GET to check the actual current state
+			}
+
+			// 5-2. GET to verify deletion
+			spGetReq := clientManager.NoBody
+			spGetResp := spiderGetBucketInfoRes{}
+			log.Debug().Msgf("[Request to Spider] Verifying object storage deletion via GET (url: %s)", getURL)
+
+			_, getErr := clientManager.ExecuteHttpRequest(
+				client,
+				"GET",
+				getURL,
+				spiderS3JSONHeaders,
+				clientManager.SetUseBody(spGetReq),
+				&spGetReq,
+				&spGetResp,
+				clientManager.ShortDuration,
+			)
+
+			if getErr != nil {
+				// GET returned error → resource no longer exists → confirmed deleted
+				log.Info().Msgf("[Response from Spider] Object storage %s confirmed deleted (GET returned: %v)", uid, getErr)
+				deleted = true
+				break
+			}
+
+			// GET succeeded → resource still exists on the CSP side
+			if attempt < maxDeleteAttempts {
+				log.Warn().Msgf("Object storage %s still exists after DELETE attempt %d/%d, retrying...", uid, attempt, maxDeleteAttempts)
+				time.Sleep(3 * time.Second)
+			}
 		}
 
-		if i < maxRetries {
-			log.Warn().Err(err).Msgf("Failed to delete object storage, retrying... (%d/%d)", i+1, maxRetries)
-			// Sleep for a while before retrying
-			time.Sleep(time.Duration(t) * time.Second)
-		} else {
-			log.Error().Err(err).Msgf("Failed to delete object storage after %d retries", maxRetries)
+		if !deleted {
+			err = fmt.Errorf("object storage %s still exists on CSP after %d delete attempts", uid, maxDeleteAttempts)
+			log.Error().Err(err).Msg("")
 			// [Conditions] Deletion failed → mark as Failed to prevent stuck state
 			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
 			objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
@@ -861,9 +899,9 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 			}
 			return err
 		}
+	} else {
+		log.Warn().Msgf("Object storage %s has no CSP resource (Uid is empty). Skipping Spider DELETE and removing metadata only.", osId)
 	}
-
-	log.Debug().Msgf("[Response from Spider] Deleting the object storage (No response body): %+v", spResp)
 
 	// 6. Delete the object storage info from the key-value store
 	err = kvstore.Delete(objStrgKey)
@@ -880,6 +918,118 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 	}
 
 	return nil
+}
+
+// ReconcileObjectStorage detects and repairs discrepancies between Tumblebug metadata
+// and the actual state of the CSP resource.
+//
+// Reconcile covers two main scenarios that arise from partial failures:
+//  1. The CSP resource was never created (Uid is empty) but metadata was persisted
+//     in a Failed state → the metadata is orphaned and is removed.
+//  2. The CSP resource creation or deletion failed mid-way (Uid is set) but the bucket
+//     no longer exists on the CSP side → the orphaned metadata is removed.
+//
+// If the CSP resource does exist and the metadata accurately reflects its state,
+// no action is taken and "NoActionNeeded" is returned.
+func ReconcileObjectStorage(nsId, osId string) (model.ObjectStorageReconcileResponse, error) {
+	var emptyRet model.ObjectStorageReconcileResponse
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	result := model.ObjectStorageReconcileResponse{
+		ObjectStorageId: osId,
+	}
+
+	// 2. Fetch metadata from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		// Metadata not found – nothing to reconcile
+		result.MetadataStatus = "NotFound"
+		result.CspResourceStatus = "Skipped"
+		result.Action = "NoActionNeeded"
+		result.Message = fmt.Sprintf("No metadata found for object storage '%s'; nothing to reconcile", osId)
+		log.Warn().Msgf("ReconcileObjectStorage: %s", result.Message)
+		return result, nil
+	}
+
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+	result.MetadataStatus = "Found"
+	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
+
+	// 3. If Uid is empty the CSP resource was never created; metadata is orphaned
+	if objStrgInfo.Uid == "" {
+		result.CspResourceStatus = "Skipped"
+		log.Warn().Msgf("ReconcileObjectStorage: object storage '%s' has no CSP resource (Uid empty); removing orphaned metadata", osId)
+
+		if delErr := kvstore.Delete(objStrgKey); delErr != nil {
+			log.Error().Err(delErr).Msg("ReconcileObjectStorage: failed to delete orphaned metadata")
+			return emptyRet, delErr
+		}
+		// Label cleanup is best-effort; Uid is empty so there is no label entry to clean.
+		result.Action = "MetadataRemoved"
+		result.Message = "Orphaned metadata removed: CSP resource was never created (Uid is empty)"
+		return result, nil
+	}
+
+	// 4. Check whether the CSP resource actually exists via Spider HEAD
+	connName := objStrgInfo.ConnectionName
+	uid := objStrgInfo.Uid
+
+	client := clientManager.NewHttpClient()
+	spReq := clientManager.NoBody
+	spResp := clientManager.NoBody
+	headURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+	log.Debug().Msgf("[ReconcileObjectStorage] HEAD %s", headURL)
+
+	_, headErr := clientManager.ExecuteHttpRequest(
+		client,
+		"HEAD",
+		headURL,
+		spiderS3JSONHeaders,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if headErr == nil {
+		// 5a. CSP resource exists — no corrective action required
+		result.CspResourceStatus = "Exists"
+		result.Action = "NoActionNeeded"
+		result.Message = "CSP resource exists; metadata is consistent"
+		log.Info().Msgf("ReconcileObjectStorage: bucket '%s' exists on CSP — no action needed", uid)
+		return result, nil
+	}
+
+	// 5b. CSP resource does not exist (HEAD returned an error / 404)
+	result.CspResourceStatus = "NotFound"
+	log.Warn().Err(headErr).Msgf("ReconcileObjectStorage: bucket '%s' not found on CSP; removing orphaned metadata", uid)
+
+	// Remove metadata from kvstore
+	if delErr := kvstore.Delete(objStrgKey); delErr != nil {
+		log.Error().Err(delErr).Msg("ReconcileObjectStorage: failed to delete orphaned metadata")
+		return emptyRet, delErr
+	}
+
+	// Remove label — best-effort (non-fatal if label is already absent)
+	if labelErr := label.DeleteLabelObject(model.StrObjectStorage, objStrgInfo.Uid); labelErr != nil {
+		log.Warn().Err(labelErr).Msg("ReconcileObjectStorage: failed to delete label (non-fatal)")
+	}
+
+	result.Action = "MetadataRemoved"
+	result.Message = fmt.Sprintf("Orphaned metadata removed: CSP resource '%s' does not exist", uid)
+	return result, nil
 }
 
 // CheckObjectStorageExistence checks if the object storage exists in both the key-value store and Spider

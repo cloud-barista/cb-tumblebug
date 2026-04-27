@@ -29,7 +29,9 @@ import (
 // isNotFoundError checks if the error indicates a resource was not found
 func isNotFoundError(err error) bool {
 	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "not found") || strings.Contains(msg, "does not exist")
+	return strings.Contains(msg, "not found") ||
+		strings.Contains(msg, "does not exist") ||
+		strings.Contains(msg, "cannot get") // KV-store returns "Cannot get <type> <id>." when metadata is absent
 }
 
 // ========== Resource APIs: Object Storage ==========
@@ -268,18 +270,27 @@ func RestGetObjectStorageLocation(c echo.Context) error {
 // RestDeleteObjectStorage godoc
 // @ID RestDeleteObjectStorage
 // @Summary Delete an object storage (bucket)
-// @Description Delete an object storage (bucket)
+// @Description Delete an object storage (bucket).
+// @Description
+// @Description **Query option (mutually exclusive — specify at most one):**
+// @Description
+// @Description | option | Description |
+// @Description |--------|-------------|
+// @Description | (none) | Standard delete. Fails if the bucket is not empty. |
+// @Description | `empty` | Empty the bucket first, then delete. |
+// @Description | `force` | Force delete bucket with all contents (passed to Spider as `force=true`). Behaviour varies by CSP; use when standard delete is not sufficient. |
+// @Description | `reconcile` | Do not call the CSP delete API. Instead, check whether the CSP bucket actually exists and remove only the Tumblebug metadata if the bucket is absent. Use this to clean up orphaned metadata that cannot be deleted through normal means (e.g., a bucket stuck in `Failed` status after a partial creation or a CSP-side deletion error such as Tencent 405). Returns a reconcile result object instead of 204. |
 // @Tags [Infra Resource] Object Storage Management
 // @Accept json
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param osId path string true "Object Storage ID" default(os01)
-// @Param force query bool false "Force delete bucket including all contents"
-// @Param empty query bool false "Force empty bucket before delete"
+// @Param option query string false "Delete option (mutually exclusive)" Enums(empty, force, reconcile)
 // @Success 204 "No Content"
-// @Failure 400 {object} model.SimpleMsg
+// @Success 200 {object} model.ObjectStorageReconcileResponse "OK (option=reconcile only)"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
-// @Failure 500 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/objectStorage/{osId} [delete]
@@ -300,10 +311,27 @@ func RestDeleteObjectStorage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	force := strings.EqualFold(c.QueryParam("force"), "true")
-	empty := strings.EqualFold(c.QueryParam("empty"), "true")
+	option := strings.ToLower(c.QueryParam("option"))
+	if option != "" && option != "empty" && option != "force" && option != "reconcile" {
+		err := fmt.Errorf("invalid option %q: must be one of empty, force, reconcile", option)
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-	// [Process]
+	// [Process] reconcile branch
+	if option == "reconcile" {
+		result, err := resource.ReconcileObjectStorage(nsId, osId)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to reconcile object storage")
+			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		}
+		return c.JSON(http.StatusOK, result)
+	}
+
+	// [Process] normal delete branch
+	force := option == "force"
+	empty := option == "empty"
+
 	err := resource.DeleteObjectStorage(nsId, osId, force, empty)
 	if err != nil {
 		if isNotFoundError(err) {

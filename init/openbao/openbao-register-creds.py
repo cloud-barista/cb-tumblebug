@@ -72,9 +72,7 @@ def get_project_root():
     """Find the project root directory by looking for .git or go.mod."""
     # Method 1: Try Git
     try:
-        git_root = (
-            subprocess.check_output(["git", "rev-parse", "--show-toplevel"], stderr=subprocess.STDOUT).decode().strip()
-        )
+        git_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], stderr=subprocess.STDOUT).decode().strip()
         if os.path.isdir(git_root):
             return git_root
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -175,6 +173,8 @@ KEY_MAP = {
         "Password": "OS_PASSWORD",
         "DomainName": "OS_DOMAIN_NAME",
         "ProjectID": "OS_PROJECT_ID",
+        "S3AccessKey": "OS_S3_ACCESS_KEY",
+        "S3SecretKey": "OS_S3_SECRET_KEY",
     },
 }
 
@@ -393,10 +393,7 @@ def register_placeholder_secrets(registered_providers):
         try:
             resp = requests.post(url, json={"data": placeholder_data}, headers=headers, timeout=10)
             resp.raise_for_status()
-            print(
-                f"  {Fore.YELLOW}PLCH{Style.RESET_ALL} {provider:12s}  placeholder registered "
-                f"({len(placeholder_data)} keys, all placeholders)"
-            )
+            print(f"  {Fore.YELLOW}PLCH{Style.RESET_ALL} {provider:12s}  placeholder registered " f"({len(placeholder_data)} keys, all placeholders)")
             placeholder_count += 1
         except requests.RequestException as e:
             print(f"  {Fore.RED}FAIL{Style.RESET_ALL} {provider:12s}  placeholder failed: {str(e).split(':')[0]}")
@@ -556,10 +553,7 @@ def main():
     # Usage hint
     print("To verify a credential:")
     print("  source .env")
-    print(
-        f'  curl -s -H "X-Vault-Token: $$VAULT_TOKEN" {VAULT_ADDR}/v1/{KV_MOUNT}/data/{SECRET_PREFIX}/aws '
-        "| jq .data.data"
-    )
+    print(f'  curl -s -H "X-Vault-Token: $$VAULT_TOKEN" {VAULT_ADDR}/v1/{KV_MOUNT}/data/{SECRET_PREFIX}/aws ' "| jq .data.data")
     print(f"  bao kv get {KV_MOUNT}/{SECRET_PREFIX}/aws")
     print()
 

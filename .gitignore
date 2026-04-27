@@ -85,9 +85,13 @@ venv/
 uv.lock
 .env
 
-# VPN test config (local only)
-src/testclient/test-clis/site-to-site-vpn/test-config.yaml
+# test-cli: local configs and results (applies to all CLIs under test-clis/)
+src/testclient/test-clis/**/test-config.yaml
+src/testclient/test-clis/**/test-results/*
+!src/testclient/test-clis/**/test-results/.gitkeep
 
-# VPN test results (local only)
-src/testclient/test-clis/site-to-site-vpn/test-results/*
-!src/testclient/test-clis/site-to-site-vpn/test-results/.gitkeep
+# VPN test (local only)
+# (no additional exceptions)
+
+# Object Storage test (local only)
+# (no additional exceptions)
