@@ -42,6 +42,44 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// isQuotaOrCapacityError reports whether err is a definitive CSP rejection meaning
+// the VM was never created — quota exhausted or no available capacity in the region.
+// These are not transient errors: retrying in the same region will keep failing until
+// the quota is increased or capacity becomes available.
+//
+// Covered patterns (case-insensitive):
+//
+//	Azure:   "quota" (standardXxxFamily Cores quota), "operationnotallowed" (policy/quota),
+//	         "insufficientcapacity", "skunotavailable"
+//	AWS:     "insufficientinstancecapacity", "vcpulimitexceeded", "instancelimitexceeded"
+//	GCP:     "quota_exceeded", "zone_resource_pool_exhausted", "rateLimitExceeded"
+//	Alibaba: "instancequotaexceed", "operationdenied.quotaexceed"
+//	NHN:     "overlimit"
+//	Tencent: "quotaexceedlimit", "resourceinsufficient"
+func isQuotaOrCapacityError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	for _, pattern := range []string{
+		"quota",
+		"overlimit",
+		"insufficientcapacity",
+		"skunotavailable",
+		"resource_pool_exhausted",
+		"resourceinsufficient",
+		"limitexceeded",
+		"operationnotallowed",
+		"ratelimitexceeded",
+		"operationdenied",
+	} {
+		if strings.Contains(msg, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 // getNodeCreateRateLimitsForCSP returns rate limiting configuration for Node creation.
 // Uses centralized CSP config from csp.GetRateLimitConfig() with built-in fallback for unknown CSPs.
 func getNodeCreateRateLimitsForCSP(cspName string) (int, int) {
@@ -3503,7 +3541,15 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 					log.Debug().Msgf("Creating VMs in region: %s/%s with %d VMs (limit: %d VMs/region)",
 						providerName, regionName, len(nodeInfoList), maxNodesForRegion)
 
-					// Step 4: Process VMs within region with rate limiting
+					// Step 4: Process VMs within region with rate limiting.
+					// regionCtx is cancelled on the first quota/capacity error so that
+					// goroutines still waiting for a semaphore slot exit early.
+					regionCtx, cancelRegion := context.WithCancel(ctx)
+					defer cancelRegion()
+
+					var quotaOnce sync.Once
+					var quotaErrMsg string
+
 					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
 					var nodeWg sync.WaitGroup
 					var nodeMutex sync.Mutex
@@ -3514,19 +3560,55 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 						go func(nodeInfo *model.NodeInfo) {
 							defer nodeWg.Done()
 
-							// Acquire VM semaphore
-							nodeSemaphore <- struct{}{}
+							// Acquire VM semaphore — or bail out if region was quota-cancelled.
+							select {
+							case nodeSemaphore <- struct{}{}:
+							case <-regionCtx.Done():
+								msg := quotaErrMsg
+								nodeInfoData := *nodeInfo
+								nodeInfoData.Status = model.StatusFailed
+								nodeInfoData.TargetAction = model.ActionComplete
+								nodeInfoData.TargetStatus = ""
+								nodeInfoData.SystemMessage = fmt.Sprintf("VM creation skipped: region quota/capacity exhausted (%s)", msg)
+								UpdateNodeInfo(nsId, infraId, nodeInfoData)
+								log.Warn().Msgf("[CreateNode] VM %s skipped: region %s/%s quota/capacity exhausted",
+									nodeInfo.Name, providerName, regionName)
+								return
+							}
 							defer func() { <-nodeSemaphore }()
+
+							// Re-check after acquiring slot (another goroutine may have just cancelled).
+							if regionCtx.Err() != nil {
+								msg := quotaErrMsg
+								nodeInfoData := *nodeInfo
+								nodeInfoData.Status = model.StatusFailed
+								nodeInfoData.TargetAction = model.ActionComplete
+								nodeInfoData.TargetStatus = ""
+								nodeInfoData.SystemMessage = fmt.Sprintf("VM creation skipped: region quota/capacity exhausted (%s)", msg)
+								UpdateNodeInfo(nsId, infraId, nodeInfoData)
+								log.Warn().Msgf("[CreateNode] VM %s skipped: region %s/%s quota/capacity exhausted",
+									nodeInfo.Name, providerName, regionName)
+								return
+							}
 
 							// Create VM using the existing CreateNode function
 							var createWg sync.WaitGroup
 							createWg.Add(1)
-							err := CreateNode(ctx, &createWg, nsId, infraId, nodeInfo, option)
+							err := CreateNode(regionCtx, &createWg, nsId, infraId, nodeInfo, option)
 							if err != nil {
 								log.Error().Err(err).Msgf("Failed to create VM %s", nodeInfo.Name)
 								nodeMutex.Lock()
 								regionErrors = append(regionErrors, fmt.Errorf("VM %s: %w", nodeInfo.Name, err))
 								nodeMutex.Unlock()
+
+								if isQuotaOrCapacityError(err) {
+									quotaOnce.Do(func() {
+										quotaErrMsg = err.Error()
+										cancelRegion()
+										log.Warn().Msgf("[CreateNode] Quota/capacity error in %s/%s; cancelling remaining VM creation in this region",
+											providerName, regionName)
+									})
+								}
 							}
 
 						}(nodeInfo)
@@ -3853,6 +3935,21 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 	if err != nil {
 		err = fmt.Errorf("%v", err)
+
+		if isQuotaOrCapacityError(err) {
+			// Quota/capacity rejection: the CSP refused the request before any resource
+			// was provisioned — no VM exists on the CSP side. Mark Failed directly so
+			// the user sees the real cause without a misleading reconcile step.
+			nodeInfoData.Status = model.StatusFailed
+			nodeInfoData.TargetAction = model.ActionComplete
+			nodeInfoData.TargetStatus = ""
+			nodeInfoData.SystemMessage = err.Error()
+			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+			log.Warn().Err(err).Msgf("[CreateNode] VM %s rejected by CSP (quota/capacity limit); marking Failed. "+
+				"Increase the quota or choose a different region/spec.", nodeInfoData.Name)
+			return err
+		}
+
 		// Spider POST /vm returned an error without VM info (CspResourceName not yet set).
 		// We cannot distinguish whether the VM was created before the error occurred
 		// (e.g. NHN: VM created, then Floating IP assignment fails) or never created at

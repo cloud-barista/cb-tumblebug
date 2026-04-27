@@ -15,10 +15,13 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	armcompute "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 
@@ -110,6 +113,11 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 			resp, gerr := vmClient.Get(ctx, parts.resourceGroup, parts.vmName,
 				&armcompute.VirtualMachinesClientGetOptions{Expand: &expand})
 			if gerr != nil {
+				var respErr *azcore.ResponseError
+				if errors.As(gerr, &respErr) && respErr.StatusCode == http.StatusNotFound {
+					ch <- vmResult{armID: id, status: model.StatusTerminated}
+					return
+				}
 				ch <- vmResult{armID: id, err: gerr}
 				return
 			}
@@ -144,12 +152,27 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 	return result, nil
 }
 
-// azurePowerStateToTBStatus extracts the power state from an Azure VM instance view
+// azurePowerStateToTBStatus extracts the VM state from an Azure VM instance view
 // and maps it to a TB status string.
-// Azure reports power state as "PowerState/running", "PowerState/stopped", etc.
+//
+// Azure reports two relevant status categories in InstanceView.Statuses:
+//   - PowerState/xxx  — actual power state of the VM
+//   - ProvisioningState/xxx — ARM-level provisioning state (including "deleting")
+//
+// ProvisioningState/deleting is checked first because a VM being deleted may still
+// report a stale PowerState (e.g. stopped) that would otherwise be misread as Suspended.
 func azurePowerStateToTBStatus(props *armcompute.VirtualMachineProperties) string {
 	if props == nil || props.InstanceView == nil {
 		return model.StatusUndefined
+	}
+	for _, status := range props.InstanceView.Statuses {
+		if status.Code == nil {
+			continue
+		}
+		code := strings.ToLower(*status.Code)
+		if strings.EqualFold(code, "provisioningstate/deleting") {
+			return model.StatusTerminating
+		}
 	}
 	for _, status := range props.InstanceView.Statuses {
 		if status.Code == nil {

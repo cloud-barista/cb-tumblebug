@@ -1413,6 +1413,60 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 	return nil, err
 }
 
+// BatchRemoveFromAssociatedObjectList removes multiple objectKeys from a resource's
+// associatedObjectList in a single read-modify-write, avoiding N round-trips for N nodes.
+// Keys not present in the list are silently skipped. Returns nil if the resource does not exist.
+func BatchRemoveFromAssociatedObjectList(nsId string, resourceType string, resourceId string, objectKeys []string) error {
+	if len(objectKeys) == 0 {
+		return nil
+	}
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+
+	toRemove := make(map[string]struct{}, len(objectKeys))
+	for _, k := range objectKeys {
+		toRemove[k] = struct{}{}
+	}
+
+	var anyJson map[string]interface{}
+	if err := json.Unmarshal([]byte(keyValue.Value), &anyJson); err != nil {
+		return err
+	}
+
+	raw, ok := anyJson["associatedObjectList"]
+	if !ok || raw == nil {
+		return nil
+	}
+	existing, ok := raw.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	filtered := make([]interface{}, 0, len(existing))
+	for _, v := range existing {
+		s, ok := v.(string)
+		if ok {
+			if _, remove := toRemove[s]; !remove {
+				filtered = append(filtered, v)
+			}
+		}
+	}
+	anyJson["associatedObjectList"] = filtered
+
+	updated, err := json.Marshal(anyJson)
+	if err != nil {
+		return err
+	}
+	return kvstore.Put(key, string(updated))
+}
+
 // CustomImageCreationTimeout is the maximum time to wait for a custom image to become available
 // If an image stays in "Creating" state longer than this, it will be marked as "Failed"
 const CustomImageCreationTimeout = 30 * time.Minute
