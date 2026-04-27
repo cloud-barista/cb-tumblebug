@@ -19510,6 +19510,14 @@ components:
         connectionName:
           type: string
           example: testcloud01-seoul
+        cspImageName:
+          type: string
+          description: |-
+            CspImageName is the CSP-side image identifier pre-resolved by EnsureImageAvailable
+            at nodegroup level (Alibaba/Azure latest-version resolution included). When non-empty
+            and the image is not a custom image, CreateNode skips the redundant per-VM GetImage
+            DB call, significantly reducing concurrent DB load during large infra creation.
+            Custom images always go through the full GetImage path (this field stays empty for them).
         cspResourceId:
           type: string
           description: CspResourceId is resource identifier managed by CSP (required

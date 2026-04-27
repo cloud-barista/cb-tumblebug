@@ -2620,12 +2620,28 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.ImageInfo, RD
 }
 
 // GetImage accepts namespace Id and imageKey(CspImageName), and returns the TB image object
+// imageInfoCache caches successful GetImage lookups.
+// ImageInfo is immutable once registered, so process-lifetime caching is safe.
+var imageInfoCache sync.Map // key: "nsId/cspImageName", value: model.ImageInfo
+
+// GetImage retrieves an image by namespace and CSP image name, with process-level caching.
 func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
 		return model.ImageInfo{}, err
 	}
+	cacheKey := strings.ToLower(nsId) + "/" + strings.ToLower(cspImageName)
+	if cached, ok := imageInfoCache.Load(cacheKey); ok {
+		return cached.(model.ImageInfo), nil
+	}
+	img, err := getImageFromDB(nsId, cspImageName)
+	if err == nil {
+		imageInfoCache.Store(cacheKey, img)
+	}
+	return img, err
+}
 
+func getImageFromDB(nsId string, cspImageName string) (model.ImageInfo, error) {
 	log.Debug().Msg("[Get image] " + cspImageName)
 
 	// Normalize the image name to lower case for searching

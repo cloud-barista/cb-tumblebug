@@ -28,6 +28,8 @@ type Store interface {
 	GetKvWith(ctx context.Context, key string) (KeyValue, bool, error)
 	GetKvList(keyPrefix string) ([]KeyValue, error)
 	GetKvListWith(ctx context.Context, keyPrefix string) ([]KeyValue, error)
+	GetKeyList(keyPrefix string) ([]string, error)
+	GetKeyListWith(ctx context.Context, keyPrefix string) ([]string, error)
 	GetSortedKvList(keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]KeyValue, error)
 	GetSortedKvListWith(ctx context.Context, keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]KeyValue, error)
 	GetKvMap(keyPrefix string) (KeyValueMap, error)
@@ -185,6 +187,27 @@ func GetKvListWith(ctx context.Context, keyPrefix string) ([]KeyValue, error) {
 		return nil, err
 	}
 	return store.GetKvListWith(ctx, keyPrefix)
+}
+
+// GetKeyList retrieves only keys (no values) with the given prefix.
+// Use this instead of GetKvList when values are not needed — the response is
+// proportional to key length only, which avoids the gRPC message-size limit for
+// large prefixes that contain many or large values.
+func GetKeyList(keyPrefix string) ([]string, error) {
+	store, err := getStore()
+	if err != nil {
+		return nil, err
+	}
+	return store.GetKeyList(keyPrefix)
+}
+
+// GetKeyListWith retrieves only keys with the given prefix using the provided context.
+func GetKeyListWith(ctx context.Context, keyPrefix string) ([]string, error) {
+	store, err := getStore()
+	if err != nil {
+		return nil, err
+	}
+	return store.GetKeyListWith(ctx, keyPrefix)
 }
 
 // GetSortedKvList retrieves sorted key-value pairs with the given prefix
