@@ -19,11 +19,99 @@ package csp
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/openbao/openbao/api/v2"
 	"github.com/rs/zerolog/log"
 )
+
+// BatchVMStatusFunc queries a CSP directly for the statuses of the given resource IDs.
+// ctx must carry model.CtxKeyCredentialHolder for credential lookup.
+// region is the CSP-specific region identifier (e.g., "ap-northeast-2" for AWS).
+// instanceIds are the CspResourceId values for each VM — format varies per CSP:
+//
+//	AWS / Alibaba: "i-0abc123def456"
+//	Tencent:       "ins-xxxxxxxx"
+//	Azure:         full ARM path "/subscriptions/{sub}/resourceGroups/{rg}/.../virtualMachines/{name}"
+//	GCP:           instance name (zone-scoped; region used for zone-prefix filtering)
+//
+// Returns a map of CspResourceId → TB status string (model.StatusRunning, etc.).
+// Missing keys mean the instance was not found; treat as model.StatusUndefined.
+type BatchVMStatusFunc func(ctx context.Context, region string, instanceIds []string) (map[string]string, error)
+
+var (
+	batchVMStatusMu       sync.RWMutex
+	batchVMStatusHandlers = make(map[string]BatchVMStatusFunc)
+)
+
+// RegisterBatchVMStatusHandler registers a direct-SDK batch VM status function for a CSP.
+// Each CSP package calls this from its init() function.
+func RegisterBatchVMStatusHandler(provider string, fn BatchVMStatusFunc) {
+	batchVMStatusMu.Lock()
+	defer batchVMStatusMu.Unlock()
+	batchVMStatusHandlers[strings.ToLower(provider)] = fn
+}
+
+// GetBatchVMStatusHandler returns the registered BatchVMStatusFunc for the given provider.
+func GetBatchVMStatusHandler(provider string) (BatchVMStatusFunc, bool) {
+	batchVMStatusMu.RLock()
+	defer batchVMStatusMu.RUnlock()
+	fn, ok := batchVMStatusHandlers[strings.ToLower(provider)]
+	return fn, ok
+}
+
+// BatchVMControlFunc sends a lifecycle control action to multiple instances in one SDK call.
+// ctx must carry model.CtxKeyCredentialHolder for credential lookup.
+// region is the CSP-native region identifier (e.g., "ap-northeast-2" for AWS).
+// instanceIds are the CspResourceId values for each VM.
+//
+// Returns a map of CspResourceId → transient TB status string (e.g., model.StatusSuspending).
+// Missing keys mean the instance was not found or accepted; callers treat them as failed.
+type BatchVMControlFunc func(ctx context.Context, region string, instanceIds []string) (map[string]string, error)
+
+// BatchVMControlHandlers groups bulk lifecycle control functions for a CSP.
+// Reboot is excluded — it is rare, order-sensitive, and not cost-effective to batch.
+type BatchVMControlHandlers struct {
+	Suspend   BatchVMControlFunc // e.g. AWS StopInstances
+	Resume    BatchVMControlFunc // e.g. AWS StartInstances
+	Terminate BatchVMControlFunc // e.g. AWS TerminateInstances
+}
+
+var (
+	batchVMControlMu       sync.RWMutex
+	batchVMControlHandlers = make(map[string]BatchVMControlHandlers)
+)
+
+// RegisterBatchVMControlHandlers registers bulk lifecycle control functions for a CSP.
+// Each CSP package calls this from its init() function.
+func RegisterBatchVMControlHandlers(provider string, h BatchVMControlHandlers) {
+	batchVMControlMu.Lock()
+	defer batchVMControlMu.Unlock()
+	batchVMControlHandlers[strings.ToLower(provider)] = h
+}
+
+// GetBatchVMControlHandler returns the bulk control function for the given provider and action.
+// action is case-insensitive: "suspend", "resume", or "terminate".
+func GetBatchVMControlHandler(provider, action string) (BatchVMControlFunc, bool) {
+	batchVMControlMu.RLock()
+	defer batchVMControlMu.RUnlock()
+	h, ok := batchVMControlHandlers[strings.ToLower(provider)]
+	if !ok {
+		return nil, false
+	}
+	switch strings.ToLower(action) {
+	case "suspend":
+		return h.Suspend, h.Suspend != nil
+	case "resume":
+		return h.Resume, h.Resume != nil
+	case "terminate":
+		return h.Terminate, h.Terminate != nil
+	default:
+		return nil, false
+	}
+}
 
 // ReadOpenBaoSecret reads a secret from OpenBao at the given path and returns the data map.
 // It validates that VaultToken is set and the secret exists.

@@ -29,9 +29,11 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
-	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba" // register Alibaba availability checker
-	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"   // register Azure availability checker
-	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/tencent" // register Tencent availability checker
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba" // register Alibaba handlers (availability, vmstatus)
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/aws"     // register AWS handlers (vmstatus)
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"   // register Azure handlers (availability, vmstatus)
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/gcp"     // register GCP handlers (vmstatus)
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/tencent" // register Tencent handlers (availability, vmstatus)
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -970,6 +972,15 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			return nil, fmt.Errorf("cannot retrieve connection config for VM '%s': %w", nodeGroupReq.Name, err)
 		}
 
+		// Pre-resolve CspImageName once per nodeGroup so each per-VM CreateNode call can skip
+		// the redundant GetImage DB query.  Custom images stay empty and go through the full path.
+		if nodeGroupReq.CspImageName == "" && nodeGroupReq.ImageId != "" {
+			if imgInfo, err := resource.GetImage(nsId, nodeGroupReq.ImageId); err == nil &&
+				imgInfo.ResourceType != model.StrCustomImage {
+				nodeGroupReq.CspImageName = imgInfo.CspImageName
+			}
+		}
+
 		// Create nodeGroup if needed
 		if nodeGroupSize > 0 {
 			nodeGroupName := common.ToLower(nodeGroupReq.Name)
@@ -1006,6 +1017,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				Location:         connectionConfig.RegionDetail.Location,
 				SpecId:           nodeGroupReq.SpecId,
 				ImageId:          nodeGroupReq.ImageId,
+				CspImageName:     nodeGroupReq.CspImageName,
 				VNetId:           nodeGroupReq.VNetId,
 				SubnetId:         nodeGroupReq.SubnetId,
 				SecurityGroupIds: nodeGroupReq.SecurityGroupIds,
@@ -3660,8 +3672,33 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	// (SpecImagePairReviewResult.SuggestedSystemDisk) for UI display only.
 
 	if option == "register" {
-		requestBody.ReqInfo.CSPid = nodeInfoData.CspResourceId
+		// Pre-check: reject registration of instances that no longer exist or are already
+		// terminated in the CSP. Uses the direct batch SDK (same path as BatchSweeper) so
+		// no Spider round-trip is needed. CSPs without a registered handler skip the check.
+		if handler, ok := cspcheck.GetBatchVMStatusHandler(nodeInfoData.ConnectionConfig.ProviderName); ok && nodeInfoData.CspResourceId != "" {
+			sdkCtx := context.WithValue(ctx, model.CtxKeyCredentialHolder, nodeInfoData.ConnectionConfig.CredentialHolder)
+			preCheckStatuses, preCheckErr := handler(sdkCtx, nodeInfoData.ConnectionConfig.RegionDetail.RegionName, []string{nodeInfoData.CspResourceId})
+			if preCheckErr != nil {
+				log.Warn().Err(preCheckErr).Msgf("[register] pre-check SDK call failed for %s; proceeding to let Spider decide", nodeInfoData.CspResourceId)
+			} else {
+				instanceStatus, found := preCheckStatuses[nodeInfoData.CspResourceId]
+				if !found || strings.EqualFold(instanceStatus, model.StatusTerminated) {
+					msg := fmt.Sprintf("instance %s is not found or already terminated in CSP; skipping registration", nodeInfoData.CspResourceId)
+					nodeInfoData.Status = model.StatusFailed
+					nodeInfoData.SystemMessage = msg
+					UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+					log.Warn().Msgf("[register] %s", msg)
+					return fmt.Errorf("%s", msg)
+				}
+			}
+		}
 
+		requestBody.ReqInfo.CSPid = nodeInfoData.CspResourceId
+		// SecurityGroupNames is intentionally not set here:
+		// Spider's /regvm auto-discovers security groups from the existing CSP instance.
+		// Passing TB-resolved SG names can interfere with Spider's internal name mapping,
+		// and the SecurityGroupIds field in the request may contain "unknown" placeholders
+		// used by the auto-registration flow (utility.go) before resources are fully resolved.
 	} else {
 		if nodeInfoData.CspImageName != "" {
 			// CspImageName was pre-resolved at nodegroup level (Alibaba/Azure latest-version
@@ -3702,6 +3739,10 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			// If cannot find the resource, use common resource
 			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceName(model.SystemCommonNs, model.StrSpec, nodeInfoData.SpecId)
 			log.Info().Msgf("Use the common VMSpecName: %s", requestBody.ReqInfo.VMSpecName)
+			// Warm the user-namespace cache entry so subsequent VMs with the same spec skip the DB miss.
+			if requestBody.ReqInfo.VMSpecName != "" && err == nil {
+				resource.WarmSpecNameCache(nsId, nodeInfoData.SpecId, requestBody.ReqInfo.VMSpecName)
+			}
 
 			if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 				errAgg += err.Error()
@@ -3787,8 +3828,8 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	}
 
 	common.RandomSleep(0, 5*1000)
-	log.Info().Msg("VM request body to CB-Spider")
-	common.PrintJsonPretty(requestBody)
+	// log.Info().Msg("VM request body to CB-Spider")
+	// common.PrintJsonPretty(requestBody)
 
 	client := clientManager.NewHttpClient()
 	method := "POST"

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/time/rate"
@@ -61,7 +62,7 @@ var GlobalAgent = &NodeStatusAgent{
 	workers:  20,
 }
 
-// Start launches the scan loop and worker pool.
+// Start launches the scan loop, worker pool, and batch sweeper.
 // Blocks until ctx is cancelled (call in a goroutine).
 func (a *NodeStatusAgent) Start(ctx context.Context) {
 	log.Info().Msg("[NodeStatusAgent] Starting")
@@ -69,6 +70,8 @@ func (a *NodeStatusAgent) Start(ctx context.Context) {
 	for i := 0; i < a.workers; i++ {
 		go a.worker(ctx)
 	}
+
+	go a.startBatchSweeper(ctx)
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -82,6 +85,140 @@ func (a *NodeStatusAgent) Start(ctx context.Context) {
 			a.dispatchEligible()
 		}
 	}
+}
+
+// startBatchSweeper runs a batch sweep every PollNormal interval.
+// It groups Running nodes by (provider, credentialHolder, region) and issues one
+// SDK call per group, replacing ~N individual FetchNodeStatus calls with one batch call.
+// CSPs without a registered batch handler continue through the individual worker path.
+func (a *NodeStatusAgent) startBatchSweeper(ctx context.Context) {
+	// Short initial delay so individual workers can boot and the startup scan finishes.
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(30 * time.Second):
+	}
+
+	a.runBatchSweep(ctx)
+
+	ticker := time.NewTicker(pollIntervals[PollNormal])
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			a.runBatchSweep(ctx)
+		}
+	}
+}
+
+// runBatchSweep collects all PollNormal (Running) nodes that have a registered
+// batch SDK handler, groups them by (provider, credentialHolder, region), and
+// fires one SDK call per group. Results update StatusStore in-memory.
+// Nodes whose status changed are promoted to PollHigh so individual workers
+// pick them up and persist the change to etcd via the full FetchNodeStatus path.
+func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
+	type batchKey struct{ provider, credentialHolder, region string }
+	type batchNode struct{ nsId, infraId, nodeId, instanceId string }
+
+	now := time.Now()
+	groups := make(map[batchKey][]batchNode)
+
+	for _, e := range globalStatusStore.Snapshot() {
+		if e.Priority != PollNormal {
+			continue
+		}
+		if e.IsOperationLocked() {
+			continue
+		}
+		if e.CspResourceId == "" {
+			continue
+		}
+		if _, ok := cspdirect.GetBatchVMStatusHandler(e.ProviderName); !ok {
+			continue
+		}
+		if now.Before(e.NextPollAt) {
+			continue
+		}
+		key := batchKey{e.ProviderName, e.CredentialHolder, e.Region}
+		groups[key] = append(groups[key], batchNode{e.NsId, e.InfraId, e.NodeId, e.CspResourceId})
+	}
+
+	if len(groups) == 0 {
+		return
+	}
+
+	// Pre-bump NextPollAt for all batch nodes to prevent individual workers from
+	// dispatching them while the SDK call is in flight.
+	nextPoll := now.Add(pollIntervals[PollNormal])
+	for _, nodes := range groups {
+		for _, n := range nodes {
+			globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
+				e.NextPollAt = nextPoll
+			})
+		}
+	}
+
+	var wg sync.WaitGroup
+	for key, nodes := range groups {
+		wg.Add(1)
+		go func(k batchKey, grp []batchNode) {
+			defer wg.Done()
+
+			handler, _ := cspdirect.GetBatchVMStatusHandler(k.provider)
+			ids := make([]string, len(grp))
+			for i, n := range grp {
+				ids[i] = n.instanceId
+			}
+
+			sdkCtx := context.WithValue(ctx, model.CtxKeyCredentialHolder, k.credentialHolder)
+			statuses, err := handler(sdkCtx, k.region, ids)
+			if err != nil {
+				log.Warn().Err(err).
+					Str("provider", k.provider).
+					Str("region", k.region).
+					Int("count", len(grp)).
+					Msg("[BatchSweeper] SDK call failed; nodes will be retried at next sweep")
+				// Revert NextPollAt so nodes aren't frozen for 5 min on error.
+				for _, n := range grp {
+					globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
+						e.NextPollAt = time.Now()
+					})
+				}
+				return
+			}
+
+			updated := 0
+			for _, n := range grp {
+				newStatus, found := statuses[n.instanceId]
+				if !found {
+					newStatus = model.StatusUndefined
+				}
+				globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
+					if e.Status != newStatus {
+						// Status changed: let the individual worker path write through to etcd.
+						e.Priority = priorityForStatus(newStatus, e.TargetAction)
+						e.NextPollAt = time.Now() // schedule immediate individual poll
+					}
+					e.Status = newStatus
+					e.NativeStatus = newStatus
+					e.LastUpdated = time.Now()
+				})
+				updated++
+			}
+
+			log.Debug().
+				Str("provider", k.provider).
+				Str("region", k.region).
+				Str("credentialHolder", k.credentialHolder).
+				Int("queried", len(ids)).
+				Int("found", len(statuses)).
+				Int("updated", updated).
+				Msg("[BatchSweeper] sweep complete")
+		}(key, nodes)
+	}
+	wg.Wait()
 }
 
 // dispatchEligible scans StatusStore and sends eligible nodes to the worker pool.
@@ -282,6 +419,9 @@ func (a *NodeStatusAgent) StartupScan() {
 		Msg("[NodeStatusAgent] StartupScan: scan complete")
 
 	// Urgent: nodes with a pending TargetAction — schedule immediately and warn.
+	// Also detect infras whose Terminate was interrupted by the last crash and
+	// auto-resume them via reconcileInfraBackward (one goroutine per infra).
+	terminateInfras := make(map[string]map[string]struct{}) // nsId -> infraId
 	for _, ref := range urgent {
 		log.Warn().
 			Str("nsId", ref.nsId).
@@ -289,11 +429,36 @@ func (a *NodeStatusAgent) StartupScan() {
 			Str("nodeId", ref.info.Id).
 			Str("status", ref.info.Status).
 			Str("targetAction", ref.info.TargetAction).
-			Msg("[NodeStatusAgent] StartupScan: node has pending TargetAction; scheduling URGENT poll. Run action=reconcile if stuck.")
+			Msg("[NodeStatusAgent] StartupScan: node has pending TargetAction; scheduling URGENT poll.")
 		entry := buildStatusEntry(ref.nsId, ref.infraId, ref.info)
 		entry.Priority = PollUrgent
 		entry.NextPollAt = time.Now()
 		globalStatusStore.Set(ref.nsId, ref.infraId, ref.info.Id, entry)
+
+		if strings.EqualFold(ref.info.TargetAction, model.ActionTerminate) {
+			if terminateInfras[ref.nsId] == nil {
+				terminateInfras[ref.nsId] = make(map[string]struct{})
+			}
+			terminateInfras[ref.nsId][ref.infraId] = struct{}{}
+		}
+	}
+
+	// Auto-resume interrupted Terminate operations. Each infra is processed in
+	// its own goroutine so a slow AWS TerminateInstances call does not block startup.
+	for nsId, infraMap := range terminateInfras {
+		for infraId := range infraMap {
+			log.Info().Str("nsId", nsId).Str("infraId", infraId).
+				Msg("[NodeStatusAgent] StartupScan: auto-resuming interrupted Terminate via reconcileInfraBackward")
+			go func(ns, infra string) {
+				if msg, err := reconcileInfraBackward(ns, infra); err != nil {
+					log.Warn().Err(err).Str("nsId", ns).Str("infraId", infra).
+						Msg("[NodeStatusAgent] StartupScan: auto-abort failed; run action=abort manually")
+				} else {
+					log.Info().Str("nsId", ns).Str("infraId", infra).Str("result", msg).
+						Msg("[NodeStatusAgent] StartupScan: auto-abort completed")
+				}
+			}(nsId, infraId)
+		}
 	}
 
 	// Normal: spread over the first poll interval to prevent burst.
@@ -321,22 +486,30 @@ func buildStatusEntry(nsId, infraId string, nodeInfo model.NodeInfo) StatusEntry
 	}
 	priority := priorityForStatus(nodeInfo.Status, nodeInfo.TargetAction)
 	return StatusEntry{
-		Status:          nodeInfo.Status,
-		NativeStatus:    nodeInfo.Status,
-		PublicIP:        nodeInfo.PublicIP,
-		TargetStatus:    nodeInfo.TargetStatus,
-		TargetAction:    nodeInfo.TargetAction,
-		SystemMessage:   nodeInfo.SystemMessage,
-		LastUpdated:     time.Time{}, // never freshly fetched
-		Priority:        priority,
-		NextPollAt:      time.Now(), // poll as soon as scheduled
-		NsId:            nsId,
-		InfraId:         infraId,
-		NodeId:          nodeInfo.Id,
-		ConnectionName:  nodeInfo.ConnectionName,
-		CspResourceName: nodeInfo.CspResourceName,
-		ProviderName:    providerName,
-		Region:          nodeInfo.Region.Region,
+		Status:           nodeInfo.Status,
+		NativeStatus:     nodeInfo.Status,
+		PublicIP:         nodeInfo.PublicIP,
+		TargetStatus:     nodeInfo.TargetStatus,
+		TargetAction:     nodeInfo.TargetAction,
+		SystemMessage:    nodeInfo.SystemMessage,
+		LastUpdated:      time.Time{}, // never freshly fetched
+		Priority:         priority,
+		NextPollAt:       time.Now(), // poll as soon as scheduled
+		NsId:             nsId,
+		InfraId:          infraId,
+		NodeId:           nodeInfo.Id,
+		ConnectionName:   nodeInfo.ConnectionName,
+		CspResourceName:  nodeInfo.CspResourceName,
+		CspResourceId:    nodeInfo.CspResourceId,
+		ProviderName:     providerName,
+		Region:           nodeInfo.Region.Region,
+		CredentialHolder: nodeInfo.ConnectionConfig.CredentialHolder,
+		Name:             nodeInfo.Name,
+		PrivateIP:        nodeInfo.PrivateIP,
+		SSHPort:          nodeInfo.SSHPort,
+		CreatedTime:      nodeInfo.CreatedTime,
+		Location:         nodeInfo.Location,
+		MonAgentStatus:   nodeInfo.MonAgentStatus,
 	}
 }
 
@@ -393,8 +566,18 @@ func writeStatusToStore(nsId, infraId, nodeId string, statusInfo model.NodeStatu
 		e.NodeId = nodeId
 		e.ConnectionName = nodeInfo.ConnectionName
 		e.CspResourceName = nodeInfo.CspResourceName
+		e.CspResourceId = nodeInfo.CspResourceId
 		e.ProviderName = providerName
 		e.Region = nodeInfo.Region.Region
+		e.CredentialHolder = nodeInfo.ConnectionConfig.CredentialHolder
+
+		// Metadata for cache-hit serving in fetchNodeStatusWithCache
+		e.Name = nodeInfo.Name
+		e.PrivateIP = nodeInfo.PrivateIP
+		e.SSHPort = nodeInfo.SSHPort
+		e.CreatedTime = nodeInfo.CreatedTime
+		e.Location = nodeInfo.Location
+		e.MonAgentStatus = statusInfo.MonAgentStatus
 
 		// Recalculate polling schedule (lock enforcement is in dispatchEligible, not here)
 		newPriority := priorityForStatus(statusInfo.Status, statusInfo.TargetAction)
@@ -407,24 +590,29 @@ func writeStatusToStore(nsId, infraId, nodeId string, statusInfo model.NodeStatu
 }
 
 // fetchNodeStatusWithCache checks StatusStore before calling FetchNodeStatus.
-// If the stored entry is fresh (within its max-staleness window), it returns the
-// cached status combined with current NodeInfo metadata — no Spider call is made.
+// If the stored entry is fresh (within its max-staleness window), it assembles the
+// response entirely from cached data — no KV round-trip or Spider call is made.
 // Otherwise it falls back to FetchNodeStatus which writes through to StatusStore.
 func fetchNodeStatusWithCache(nsId, infraId, nodeId string) (model.NodeStatusInfo, error) {
 	if entry, ok := globalStatusStore.Get(nsId, infraId, nodeId); ok && entry.IsFresh() {
-		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
-		if err == nil {
-			var cached model.NodeStatusInfo
-			populateNodeStatusInfoFromNodeInfo(&cached, nodeInfo)
-			// Override with fresh CSP-polled values from StatusStore
-			cached.Status = entry.Status
-			cached.NativeStatus = entry.NativeStatus
-			cached.PublicIp = entry.PublicIP
-			cached.TargetStatus = entry.TargetStatus
-			cached.TargetAction = entry.TargetAction
-			cached.SystemMessage = entry.SystemMessage
-			return cached, nil
-		}
+		var cached model.NodeStatusInfo
+		// Static metadata from StatusEntry (populated by writeStatusToStore/buildStatusEntry)
+		cached.Id = entry.NodeId
+		cached.Name = entry.Name
+		cached.CspResourceName = entry.CspResourceName
+		cached.SSHPort = entry.SSHPort
+		cached.PrivateIp = entry.PrivateIP
+		cached.Location = entry.Location
+		cached.MonAgentStatus = entry.MonAgentStatus
+		cached.CreatedTime = entry.CreatedTime
+		// Dynamic fields from the last CSP poll
+		cached.Status = entry.Status
+		cached.NativeStatus = entry.NativeStatus
+		cached.PublicIp = entry.PublicIP
+		cached.TargetStatus = entry.TargetStatus
+		cached.TargetAction = entry.TargetAction
+		cached.SystemMessage = entry.SystemMessage
+		return cached, nil
 	}
 	return FetchNodeStatus(nsId, infraId, nodeId)
 }

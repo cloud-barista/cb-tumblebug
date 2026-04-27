@@ -91,8 +91,19 @@ type StatusEntry struct {
 	NodeId          string
 	ConnectionName  string
 	CspResourceName string
+	CspResourceId   string // CSP-native instance ID (e.g., "i-014fa6ede6ada0b2c"), used by batch SDK sweeper
 	ProviderName    string
 	Region          string
+	CredentialHolder string // credential owner, used as context key for SDK calls
+
+	// Node metadata — static fields from NodeInfo stored here so that
+	// fetchNodeStatusWithCache can serve cache hits without a KV round-trip.
+	Name           string
+	PrivateIP      string
+	SSHPort        int
+	CreatedTime    string
+	Location       model.Location
+	MonAgentStatus string
 }
 
 // IsOperationLocked reports whether a live operation lock holds this node.

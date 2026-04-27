@@ -2709,14 +2709,30 @@ func expandInfraType(infraType string) string {
 	return strings.Join(expInfraTypeList, "|")
 }
 
+// specNameCache caches successful (nsId, specId) → CspSpecName lookups.
+// CspSpecName is immutable once stored, so process-lifetime caching is safe.
+var specNameCache sync.Map // key: "nsId/specId", value: string
+
+// WarmSpecNameCache pre-populates the cache for a given namespace/specId with a known CspSpecName.
+// Used by provisioning callers that resolve via a fallback namespace to avoid repeated miss queries.
+func WarmSpecNameCache(nsId, specId, cspSpecName string) {
+	key := strings.ToLower(nsId) + "/" + strings.ToLower(specId)
+	specNameCache.Store(key, cspSpecName)
+}
+
 // GetCspResourceName is func to retrieve CSP native resource ID
 func GetCspResourceName(nsId string, resourceType string, resourceId string) (string, error) {
 
 	if strings.EqualFold(resourceType, model.StrSpec) {
+		cacheKey := strings.ToLower(nsId) + "/" + strings.ToLower(resourceId)
+		if cached, ok := specNameCache.Load(cacheKey); ok {
+			return cached.(string), nil
+		}
 		specInfo, err := GetSpec(nsId, resourceId)
 		if err != nil {
 			return "", err
 		}
+		specNameCache.Store(cacheKey, specInfo.CspSpecName)
 		return specInfo.CspSpecName, nil
 	}
 	if strings.EqualFold(resourceType, model.StrImage) {

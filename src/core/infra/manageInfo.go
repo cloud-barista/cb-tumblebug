@@ -31,6 +31,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -51,16 +52,16 @@ func ListInfraId(nsId string) ([]string, error) {
 	key := common.GenInfraKey(nsId, "", "")
 	key += "/"
 
-	keyValue, err := kvstore.GetKvList(key)
+	keys, err := kvstore.GetKeyList(key)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/infra/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + "infra/"))
+	for _, k := range keys {
+		if strings.Contains(k, "/infra/") {
+			trimmedString := strings.TrimPrefix(k, (key + "infra/"))
 			// prevent malformed key (if key for infra id includes '/', the key does not represent Infra ID)
 			if !strings.Contains(trimmedString, "/") {
 				infraList = append(infraList, trimmedString)
@@ -99,16 +100,19 @@ func ListNodeId(nsId string, infraId string) ([]string, error) {
 		return nodeList, err
 	}
 
-	keyValue, err := kvstore.GetKvList(key)
-
+	// WithKeysOnly: etcd returns only key bytes, not values.
+	// For large infras this avoids transferring 10,000+ NodeInfo JSON objects
+	// (~50 MB) that would exceed the gRPC default MaxCallRecvMsgSize (2 MB).
+	keys, err := kvstore.GetKeyList(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/"+model.StrNode+"/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + model.StrNode + "/"))
+	nodePrefix := key + model.StrNode + "/"
+	for _, k := range keys {
+		if strings.HasPrefix(k, nodePrefix) {
+			trimmedString := strings.TrimPrefix(k, nodePrefix)
 			// prevent malformed key (if key for node id includes '/', the key does not represent Node ID)
 			if !strings.Contains(trimmedString, "/") {
 				nodeList = append(nodeList, trimmedString)
@@ -234,15 +238,15 @@ func ListNodeGroupId(nsId string, infraId string) ([]string, error) {
 	key := common.GenInfraKey(nsId, infraId, "")
 	key += "/"
 
-	keyValue, err := kvstore.GetKvList(key)
+	keys, err := kvstore.GetKeyList(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	var nodeGroupList []string
-	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/"+model.StrNodeGroup+"/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + model.StrNodeGroup + "/"))
+	for _, k := range keys {
+		if strings.Contains(k, "/"+model.StrNodeGroup+"/") {
+			trimmedString := strings.TrimPrefix(k, (key + model.StrNodeGroup + "/"))
 			// prevent malformed key (if key for node id includes '/', the key does not represent Node ID)
 			if !strings.Contains(trimmedString, "/") {
 				nodeGroupList = append(nodeGroupList, trimmedString)
@@ -904,7 +908,6 @@ func GetNodeObject(nsId string, infraId string, nodeId string) (model.NodeInfo, 
 		return model.NodeInfo{}, err
 	}
 	if !exists {
-		log.Warn().Msgf("no Node found (ID: %s)", key)
 		return model.NodeInfo{}, fmt.Errorf("no Node found (ID: %s)", key)
 	}
 
@@ -1133,22 +1136,19 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	// Copy results to infraStatus
 	infraStatus.Node = nodeStatusList
 
-	nodeInfos, err := ListInfraNodeInfo(nsId, infraId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return &model.InfraStatusInfo{}, err
+	// If status fetch unexpectedly returned nothing, fall back to NodeInfo from KV.
+	if len(infraStatus.Node) == 0 {
+		nodeInfos, err := ListInfraNodeInfo(nsId, infraId)
+		if err == nil && len(nodeInfos) > 0 {
+			infraStatus.Node = ConvertNodeInfoListToNodeStatusInfoList(nodeInfos)
+		}
 	}
 
-	// If Node status fetch didn't populate all Nodes, use NodeInfo as fallback
-	if len(infraStatus.Node) == 0 && len(nodeInfos) > 0 {
-		// log.Debug().Msgf("No Node status info found, converting from NodeInfo for Infra: %s", infraId)
-		infraStatus.Node = ConvertNodeInfoListToNodeStatusInfoList(nodeInfos)
-	}
-
-	for _, v := range nodeInfos {
+	// Identify master node from the already-fetched node statuses (no extra KV reads).
+	for _, v := range infraStatus.Node {
 		if strings.EqualFold(v.Status, model.StatusRunning) {
 			infraStatus.MasterNodeId = v.Id
-			infraStatus.MasterIp = v.PublicIP
+			infraStatus.MasterIp = v.PublicIp
 			infraStatus.MasterSSHPort = v.SSHPort
 			break
 		}
@@ -1205,7 +1205,7 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	// During Infra creation, len(nodeList) might be smaller than len(infraStatus.Vm) due to timing issues
 	actualNodeCount := len(nodeList)
 	statusNodeCount := len(infraStatus.Node)
-	nodeInfoCount := len(nodeInfos)
+	nodeInfoCount := statusNodeCount
 
 	// Check if Infra is still being created/registered to use more stable Node count calculation.
 	// Note: infraTmp.Status (KV-stored) can become stale (e.g., "Creating" persisted before a
@@ -1596,37 +1596,63 @@ type NodeGroupStatusInfo struct {
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
 // Level 3: Within each region, Nodes are processed with semaphore (maxConcurrentNodesPerRegion)
+// maxConcurrentSpiderCalls bounds the total number of concurrent Spider vmstatus
+// HTTP calls across all CSPs and regions. Each Spider call holds an HTTP response
+// buffer (~50 KB); at 1300 nodes this would otherwise allocate ~65 MB just in
+// buffers, plus goroutine stacks, pushing the process past its memory limit.
+const maxConcurrentSpiderCalls = 50
+
+// globalSpiderSem is a process-wide semaphore for Spider status calls.
+// Declared at package level so it is shared across concurrent infra status polls.
+var globalSpiderSem = make(chan struct{}, maxConcurrentSpiderCalls)
+
 func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) ([]model.NodeStatusInfo, error) {
 	if len(nodeList) == 0 {
 		return []model.NodeStatusInfo{}, nil
 	}
 
-	// Step 1: Group Nodes by CSP and region
-	nodeGroups := make(map[string]map[string][]string)     // CSP -> Region -> NodeIds
-	nodeGroupInfos := make(map[string]NodeGroupStatusInfo) // NodeId -> GroupInfo
+	// Step 1: Group Nodes by CSP and region.
+	// GetNodeObject calls are parallelised (bounded semaphore) to avoid the
+	// sequential ~10 s wall-clock cost for 10,000+ nodes.
+	nodeGroups := make(map[string]map[string][]string) // CSP -> Region -> NodeIds
+
+	const groupConcurrency = 50
+	type groupResult struct {
+		nodeId       string
+		providerName string
+		regionName   string
+	}
+	resultCh := make(chan groupResult, len(nodeList))
+	groupSem := make(chan struct{}, groupConcurrency)
+	var groupWg sync.WaitGroup
 
 	for _, nodeId := range nodeList {
-		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
-		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to get VM object for %s, skipping", nodeId)
-			continue
-		}
+		groupWg.Add(1)
+		go func(nodeId string) {
+			defer groupWg.Done()
+			groupSem <- struct{}{}
+			defer func() { <-groupSem }()
 
-		providerName := nodeInfo.ConnectionConfig.ProviderName
-		regionName := nodeInfo.Region.Region
+			nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
+			if err != nil {
+				log.Warn().Err(err).Msgf("Failed to get VM object for %s, skipping", nodeId)
+				return
+			}
+			resultCh <- groupResult{
+				nodeId:       nodeId,
+				providerName: nodeInfo.ConnectionConfig.ProviderName,
+				regionName:   nodeInfo.Region.Region,
+			}
+		}(nodeId)
+	}
+	groupWg.Wait()
+	close(resultCh)
 
-		// Initialize CSP map if not exists
-		if nodeGroups[providerName] == nil {
-			nodeGroups[providerName] = make(map[string][]string)
+	for r := range resultCh {
+		if nodeGroups[r.providerName] == nil {
+			nodeGroups[r.providerName] = make(map[string][]string)
 		}
-
-		// Add Node to the appropriate group
-		nodeGroups[providerName][regionName] = append(nodeGroups[providerName][regionName], nodeId)
-		nodeGroupInfos[nodeId] = NodeGroupStatusInfo{
-			NodeId:       nodeId,
-			ProviderName: providerName,
-			RegionName:   regionName,
-		}
+		nodeGroups[r.providerName][r.regionName] = append(nodeGroups[r.providerName][r.regionName], r.nodeId)
 	}
 
 	// Step 2: Process CSPs in parallel
@@ -1663,8 +1689,10 @@ func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) 
 					// log.Debug().Msgf("Processing region: %s/%s with %d Nodes (in parallel: %d Nodes/region)",
 					// 	providerName, regionName, len(nodeIdList), maxNodesForRegion)
 
-					// Step 4: Process Nodes within region with rate limiting
-					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
+					// Step 4: Process Nodes within region with rate limiting.
+					// Use the global semaphore instead of a per-region one so that the
+					// total concurrent Spider calls across all regions stays bounded.
+					_ = maxNodesForRegion // per-region limit superseded by globalSpiderSem
 					var nodeWg sync.WaitGroup
 					var nodeMutex sync.Mutex
 					var regionNodeStatuses []model.NodeStatusInfo
@@ -1674,16 +1702,12 @@ func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) 
 						go func(nodeId string) {
 							defer nodeWg.Done()
 
-							// Acquire Node semaphore
-							nodeSemaphore <- struct{}{}
-							defer func() { <-nodeSemaphore }()
-
 							// Fetch Node status — uses StatusStore if fresh, falls back to Spider
 							nodeStatusTmp, err := fetchNodeStatusWithCache(nsId, infraId, nodeId)
 							if err != nil {
-								log.Error().Err(err).Msgf("Failed to fetch status for VM %s", nodeId)
-								nodeStatusTmp.Status = model.StatusFailed
-								nodeStatusTmp.SystemMessage = err.Error()
+								// Debug-level: node may have been deleted concurrently (e.g., by DelInfra).
+								log.Debug().Err(err).Msgf("[fetchNodeStatuses] node %s not found (likely deleted concurrently); skipping", nodeId)
+								return
 							}
 
 							if nodeStatusTmp != (model.NodeStatusInfo{}) {
@@ -1771,7 +1795,9 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 
 	nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		// Debug-level: a concurrent DelInfra may delete the node between the
+		// StatusAgent dispatch and the FetchNodeStatus call — this is a benign race.
+		log.Debug().Err(err).Str("nodeId", nodeId).Msg("[FetchNodeStatus] node not found (likely deleted concurrently)")
 		return statusInfo, err
 	}
 
@@ -1827,6 +1853,28 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 	callResult.Status = ""
 
 	if nodeInfo.Status != model.StatusTerminated && cspResourceName != "" {
+		// Direct SDK fast path: bypass Spider for CSPs with a registered BatchVMStatusFunc.
+		// Benefits: connection pooling, proper retry/backoff, no extra Spider network hop.
+		if handler, ok := cspdirect.GetBatchVMStatusHandler(nodeInfo.ConnectionConfig.ProviderName); ok && nodeInfo.CspResourceId != "" {
+			sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, nodeInfo.ConnectionConfig.CredentialHolder)
+			statuses, sdkErr := handler(sdkCtx, nodeInfo.ConnectionConfig.RegionDetail.RegionName, []string{nodeInfo.CspResourceId})
+			if sdkErr == nil {
+				if s, ok := statuses[nodeInfo.CspResourceId]; ok {
+					callResult.Status = s
+				} else {
+					callResult.Status = model.StatusUndefined
+				}
+				goto applyStatus
+			}
+			log.Warn().Err(sdkErr).Str("provider", nodeInfo.ConnectionConfig.ProviderName).
+				Msgf("[FetchNodeStatus] direct SDK failed for %s; falling back to Spider", nodeId)
+		}
+
+		// Rate-limit all Spider HTTP calls process-wide regardless of call path
+		// (StatusAgent workers, reconcile goroutines, direct callers all share the cap).
+		globalSpiderSem <- struct{}{}
+		defer func() { <-globalSpiderSem }()
+
 		client := clientManager.NewHttpClient()
 		url := model.SpiderRestUrl + "/vmstatus/" + cspResourceName
 		method := "GET"
@@ -1861,13 +1909,18 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 
 			if err != nil {
 				statusInfo.SystemMessage = err.Error()
+				log.Warn().Err(err).Msgf("[FetchNodeStatus] Node %s: Spider error (current status: %s); preserving stable status to avoid false Undefined flip", nodeId, nodeInfo.Status)
 
-				// check if Node is already Terminated
-				if nodeInfo.Status == model.StatusTerminated {
-					// Node was already terminated, maintain the status instead of marking as Undefined
-					// log.Debug().Msgf("VM %s does not exist in CSP but is already Terminated, maintaining status", nodeId)
-					callResult.Status = model.StatusTerminated
-				} else {
+				// On transient errors (connection reset, timeout), preserve stable statuses.
+				// Running/Suspended nodes are left as-is; the next successful poll will catch
+				// real state changes (e.g. spot-instance reclaim).
+				// Creating/Undefined stay Undefined since they're already uncertain.
+				switch nodeInfo.Status {
+				case model.StatusRunning, model.StatusSuspended, model.StatusTerminated,
+					model.StatusSuspending, model.StatusResuming, model.StatusRebooting,
+					model.StatusTerminating:
+					callResult.Status = nodeInfo.Status
+				default:
 					callResult.Status = model.StatusUndefined
 				}
 				break
@@ -1882,6 +1935,7 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 		callResult.Status = model.StatusUndefined
 	}
 
+applyStatus:
 	nativeStatus := callResult.Status
 
 	// log.Debug().Msgf("[FetchNodeStatus] VM %s: Raw NativeStatus from CSP: %s", nodeId, nativeStatus)
@@ -1942,6 +1996,13 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 			callResult.Status = model.StatusTerminated
 		}
 		if strings.EqualFold(callResult.Status, model.StatusSuspending) {
+			callResult.Status = model.StatusTerminating
+		}
+		// Terminate API was already issued; if local status is already Terminating
+		// but CSP still reports Running (terminate not yet acknowledged), hold Terminating.
+		if strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminating) &&
+			strings.EqualFold(callResult.Status, model.StatusRunning) {
+			log.Debug().Msgf("[FetchNodeStatus] VM %s: CSP returned Running during Terminate (local=Terminating), holding Terminating", nodeId)
 			callResult.Status = model.StatusTerminating
 		}
 	}
@@ -2609,28 +2670,38 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 				log.Error().Err(err).Msg("")
 				return deletedResources, err
 			}
-			// Poll until all Nodes reach Terminated (or a non-Terminating state),
-			// because ControlInfraAsync returns immediately while the CSP processes
-			// the termination request in the background (can take several minutes
-			// for bare-metal instances, but typically 10-30 s for regular Nodes).
+			// Wait until all Nodes leave the Terminating state.
+			// StatusAgent (PollHigh = 15 s for Terminating nodes) updates StatusStore
+			// as CSP propagates each termination. We read StatusStore directly instead
+			// of calling GetInfraStatus (which fans out to 1300 CSP SDK calls every 5 s
+			// and causes OOM at scale).
 			const terminateWaitInterval = 5 * time.Second
 			const terminateWaitTimeout = 10 * time.Minute
-			log.Info().Msgf("Waiting for Infra %s to become Terminated (polling every %s, timeout %s)", infraId, terminateWaitInterval, terminateWaitTimeout)
+			log.Info().Msgf("[DelInfra] Waiting for Infra %s termination to propagate (polling StatusStore every %s, timeout %s)",
+				infraId, terminateWaitInterval, terminateWaitTimeout)
 			deadline := time.Now().Add(terminateWaitTimeout)
 			for time.Now().Before(deadline) {
 				time.Sleep(terminateWaitInterval)
-				infraStatus, _ = GetInfraStatus(nsId, infraId)
-				if infraStatus == nil {
+				stillTerminating := false
+				for _, e := range globalStatusStore.Snapshot() {
+					if e.NsId != nsId || e.InfraId != infraId {
+						continue
+					}
+					if strings.EqualFold(e.Status, model.StatusTerminating) {
+						stillTerminating = true
+						break
+					}
+				}
+				if !stillTerminating {
 					break
 				}
-				log.Info().Msgf("Infra %s status: %s", infraId, infraStatus.Status)
-				// Exit the loop once every Node has left the Terminating state
-				if !strings.Contains(infraStatus.Status, model.StatusTerminating) {
-					break
-				}
+				log.Debug().Msgf("[DelInfra] Infra %s: some nodes still Terminating — waiting", infraId)
 			}
+			// Re-read for the status-check below.
+			infraStatus, _ = GetInfraStatus(nsId, infraId)
 			if infraStatus != nil && strings.Contains(infraStatus.Status, model.StatusTerminating) {
-				log.Warn().Msgf("Infra %s is still %s after %s — proceeding with deletion anyway", infraId, infraStatus.Status, terminateWaitTimeout)
+				log.Warn().Msgf("[DelInfra] Infra %s still %s after %s — proceeding with deletion anyway",
+					infraId, infraStatus.Status, terminateWaitTimeout)
 			}
 		}
 
@@ -2684,12 +2755,15 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 			return deletedResources, err
 		}
 
+		// Remove from StatusStore before etcd so StatusAgent cannot dispatch this
+		// node between the etcd deletion and the StatusStore cleanup (which would
+		// produce spurious "no Node found" errors).
+		globalStatusStore.Delete(nsId, infraId, v)
 		err = kvstore.Delete(nodeKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
-		globalStatusStore.Delete(nsId, infraId, v)
 
 		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfo.ImageId, model.StrDelete, nodeKey)
 		if err != nil {

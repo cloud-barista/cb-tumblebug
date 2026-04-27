@@ -79,7 +79,7 @@ func (s *EtcdStore) Get(key string) (string, bool, error) {
 
 // GetWith retrieves the value for a given key from etcd using the provided context.
 func (s *EtcdStore) GetWith(ctx context.Context, key string) (string, bool, error) {
-	resp, err := s.cli.Get(ctx, key)
+	resp, err := s.cli.Get(ctx, key, clientv3.WithSerializable())
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get key: %w", err)
 	}
@@ -104,14 +104,14 @@ func (s *EtcdStore) GetListWith(ctx context.Context, keyPrefix string) ([]string
 	optAscendByKey := clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend)
 
 	// Get all values with the given keyPrefix
-	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey)
+	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey, clientv3.WithSerializable())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	values := []string{}
-	for i, kv := range resp.Kvs {
-		values[i] = string(kv.Value)
+	values := make([]string, 0, len(resp.Kvs))
+	for _, kv := range resp.Kvs {
+		values = append(values, string(kv.Value))
 	}
 	return values, nil
 }
@@ -123,7 +123,7 @@ func (s *EtcdStore) GetKv(key string) (kvstore.KeyValue, bool, error) {
 
 // GetKvWith retrieves a key-value pair from etcd using the provided context.
 func (s *EtcdStore) GetKvWith(ctx context.Context, key string) (kvstore.KeyValue, bool, error) {
-	resp, err := s.cli.Get(ctx, key)
+	resp, err := s.cli.Get(ctx, key, clientv3.WithSerializable())
 	if err != nil {
 		return kvstore.KeyValue{}, false, fmt.Errorf("failed to get key: %w", err)
 	}
@@ -150,16 +150,36 @@ func (s *EtcdStore) GetKvListWith(ctx context.Context, keyPrefix string) ([]kvst
 	optAscendByKey := clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend)
 
 	// Get all key-value pairs with the given keyPrefix
-	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey)
+	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey, clientv3.WithSerializable())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	kvs := []kvstore.KeyValue{}
+	kvs := make([]kvstore.KeyValue, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
 		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
 	}
 	return kvs, nil
+}
+
+// GetKeyList retrieves only keys (no values) with the given keyPrefix from etcd.
+func (s *EtcdStore) GetKeyList(keyPrefix string) ([]string, error) {
+	return s.GetKeyListWith(s.ctx, keyPrefix)
+}
+
+// GetKeyListWith retrieves only keys with the given keyPrefix from etcd using the provided context.
+// Using WithKeysOnly() avoids transferring value bytes, keeping the gRPC response small
+// even for prefixes with thousands of large values.
+func (s *EtcdStore) GetKeyListWith(ctx context.Context, keyPrefix string) ([]string, error) {
+	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), clientv3.WithKeysOnly(), clientv3.WithSerializable())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get key list with keyPrefix: %w", err)
+	}
+	keys := make([]string, 0, len(resp.Kvs))
+	for _, kv := range resp.Kvs {
+		keys = append(keys, string(kv.Key))
+	}
+	return keys, nil
 }
 
 // GetSortedKvList retrieves multiple values for keys with the given keyPrefix, sortBy, and order from etcd.
@@ -170,12 +190,12 @@ func (s *EtcdStore) GetSortedKvList(keyPrefix string, sortBy clientv3.SortTarget
 // GetSortedKvListWith retrieves multiple values for keys with  the given keyPrefix, sortBy, and order from etcd using the provided context.
 func (s *EtcdStore) GetSortedKvListWith(ctx context.Context, keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]kvstore.KeyValue, error) {
 	sortOp := clientv3.WithSort(sortBy, order)
-	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), sortOp)
+	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), sortOp, clientv3.WithSerializable())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	kvs := []kvstore.KeyValue{}
+	kvs := make([]kvstore.KeyValue, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
 		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
 	}
@@ -193,12 +213,12 @@ func (s *EtcdStore) GetKvMapWith(ctx context.Context, keyPrefix string) (kvstore
 	optAscendByKey := clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend)
 
 	// Get all key-value pairs with the given keyPrefix
-	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey)
+	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey, clientv3.WithSerializable())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	kvs := kvstore.KeyValueMap{}
+	kvs := make(kvstore.KeyValueMap, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
 		kvs[string(kv.Key)] = string(kv.Value)
 	}

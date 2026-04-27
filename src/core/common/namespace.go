@@ -28,7 +28,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
-	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 )
 
 func NsValidation() echo.MiddlewareFunc {
@@ -232,31 +231,31 @@ func GetNs(id string) (model.NsInfo, error) {
 
 func ListNs() ([]model.NsInfo, error) {
 	log.Debug().Msg("[List namespace]")
-	key := "/ns"
-	log.Debug().Msg(key)
 
-	keyValue, err := kvstore.GetKvList(key)
-	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
-
+	nsIds, err := ListNsId()
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if keyValue != nil {
-		res := []model.NsInfo{}
-		for _, v := range keyValue {
-			tempObj := model.NsInfo{}
-			err = json.Unmarshal([]byte(v.Value), &tempObj)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-			res = append(res, tempObj)
-		}
-		return res, nil
-		//return true, nil
+	if len(nsIds) == 0 {
+		return nil, nil
 	}
-	return nil, nil // When err == nil && keyValue == nil
+
+	res := make([]model.NsInfo, 0, len(nsIds))
+	for _, nsId := range nsIds {
+		nsKey := "/ns/" + nsId
+		kv, exists, err := kvstore.GetKv(nsKey)
+		if err != nil || !exists {
+			continue
+		}
+		tempObj := model.NsInfo{}
+		if err = json.Unmarshal([]byte(kv.Value), &tempObj); err != nil {
+			log.Error().Err(err).Str("nsId", nsId).Msg("failed to unmarshal NsInfo")
+			continue
+		}
+		res = append(res, tempObj)
+	}
+	return res, nil
 }
 
 func AppendIfMissing(slice []string, i string) []string {
@@ -296,19 +295,20 @@ func ListNsId() ([]string, error) {
 	// }
 	// EOF of Implementation Option 1
 
-	// Implementation Option 2
-	keyValue, err := kvstore.GetKvList(key)
-	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
-
+	// Use GetKeyList to fetch only key bytes — avoids downloading all node JSON
+	// objects (~7 MB) that live under the same /ns prefix.
+	keys, err := kvstore.GetKeyList(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	for _, v := range keyValue {
-		trimmedString := strings.TrimPrefix(v.Key, "/ns/")
-		nsList = append(nsList, trimmedString)
+	for _, k := range keys {
+		trimmed := strings.TrimPrefix(k, "/ns/")
+		// Only top-level namespace entries: "/ns/default" → "default" (no slash)
+		if !strings.Contains(trimmed, "/") && trimmed != "" {
+			nsList = append(nsList, trimmed)
+		}
 	}
-	// EOF of Implementation Option 2
 
 	return nsList, nil
 

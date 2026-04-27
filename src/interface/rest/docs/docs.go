@@ -23090,6 +23090,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "testcloud01-seoul"
                 },
+                "cspImageName": {
+                    "description": "CspImageName is the CSP-side image identifier pre-resolved by EnsureImageAvailable\nat nodegroup level (Alibaba/Azure latest-version resolution included). When non-empty\nand the image is not a custom image, CreateNode skips the redundant per-VM GetImage\nDB call, significantly reducing concurrent DB load during large infra creation.\nCustom images always go through the full GetImage path (this field stays empty for them).",
+                    "type": "string"
+                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP (required for option=register)",
                     "type": "string",
