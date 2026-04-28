@@ -370,7 +370,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 
 			resTrInfo := new(terrariumModel.TerrariumInfo)
 
-			_, err = clientManager.ExecuteHttpRequest(
+			restyResp, err := clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
@@ -380,9 +380,8 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 				resTrInfo,
 				clientManager.VeryShortDuration,
 			)
-
-			if err != nil {
-				log.Err(err).Msg("")
+			if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+				log.Error().Err(err).Msg("")
 				// [Conditions] Terrarium creation failed → mark as Failed to prevent stuck state
 				model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
 				vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
@@ -549,9 +548,19 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Hour)
 		defer cancel()
 
-		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "vpn/aws-to-site", expectedCompletionDuration)
+		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, holder, trId, "vpn/aws-to-site", expectedCompletionDuration)
 		if err != nil {
-			log.Err(err).Msg("")
+			log.Error().Err(err).Msg("")
+			// [Conditions] Polling failed → mark as Failed; the Terraform job may still
+			// be running in Terrarium. The caller can query status via GetRequestStatus.
+			model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
+			vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+			vpnInfo.SystemMessage = err.Error()
+			failVal, marshalErr := json.Marshal(vpnInfo)
+			if marshalErr == nil {
+				_ = kvstore.Put(vpnKey, string(failVal))
+			}
+			return emptyRet, fmt.Errorf("failed to create site-to-site VPN '%s': %w", vpnInfo.Id, err)
 		}
 
 		// Set the VPN info
@@ -652,12 +661,13 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 	return vpnInfo, nil
 }
 
-func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, trId string, enrichments string, expectedCompletionDuration time.Duration) (model.Response, error) {
+func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, holder string, trId string, enrichments string, expectedCompletionDuration time.Duration) (model.Response, error) {
 
 	var emptyRet model.Response
 
 	// Initialize resty client with basic auth
 	client := clientManager.NewHttpClient()
+	client.SetHeader(model.CredentialHolderHeaderKey, holder)
 
 	// Set Terrarium endpoint
 	epTerrarium := model.TerrariumRestUrl
@@ -862,7 +872,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -872,10 +882,9 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 		resTrInfo,
 		clientManager.VeryShortDuration,
 	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to get site-to-site VPN '%s'", vpnId)
 	}
 
 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
@@ -890,7 +899,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	requestBody = clientManager.NoBody
 	resResourceInfo := new(model.Response)
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp2, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -900,10 +909,9 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 		resResourceInfo,
 		clientManager.VeryShortDuration,
 	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp2, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to get site-to-site VPN '%s'", vpnId)
 	}
 
 	jsonData, err := json.Marshal(resResourceInfo.Object)
@@ -1064,7 +1072,7 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1074,9 +1082,8 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId
 		resTrInfo,
 		clientManager.VeryShortDuration,
 	)
-
-	if err != nil {
-		log.Err(err).Msg("")
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
 		// [Conditions] Failed to get terrarium info → mark as Failed to prevent stuck state
 		model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
 		vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
@@ -1256,7 +1263,7 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1266,10 +1273,9 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 		resTrInfo,
 		clientManager.VeryShortDuration,
 	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to get request status of site-to-site VPN '%s'", vpnId)
 	}
 
 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
@@ -1282,7 +1288,7 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 	reqReqStatus := clientManager.NoBody
 	resReqStatus := new(model.Response)
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp2, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1292,10 +1298,9 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 		resReqStatus,
 		clientManager.VeryShortDuration,
 	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp2, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to get request status of site-to-site VPN '%s'", vpnId)
 	}
 	log.Debug().Msgf("resReqStatus: %+v", resReqStatus.Detail)
 

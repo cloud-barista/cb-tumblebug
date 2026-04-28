@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -35,9 +36,10 @@ import (
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetReq body model.SubnetReq true "Details for an Subnet object"
-// @Success 200 {object} model.SubnetInfo
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
+// @Success 201 {object} model.SubnetInfo "Created"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 409 {object} model.SimpleMsg "Conflict"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [post]
@@ -69,7 +71,7 @@ func RestPostSubnet(c echo.Context) error {
 	resp, err := resource.CreateSubnet(ctx, nsId, vNetId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -86,9 +88,9 @@ func RestPostSubnet(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
-// @Success 200 {object} model.SubnetInfo
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
+// @Success 200 {object} model.SubnetInfo "OK"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [get]
@@ -119,7 +121,7 @@ func RestGetSubnet(c echo.Context) error {
 	resp, err := resource.GetSubnet(nsId, vNetId, subnetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -140,9 +142,9 @@ type RestGetAllSubnetResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Success 200 {object} RestGetAllSubnetResponse
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
+// @Success 200 {object} RestGetAllSubnetResponse "OK"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [get]
@@ -166,7 +168,7 @@ func RestGetListSubnet(c echo.Context) error {
 	ret, err := resource.ListSubnet(nsId, vNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -185,9 +187,9 @@ func RestGetListSubnet(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param subnetInfo body model.SubnetInfo true "Details for an Subnet object"
-// @Success 200 {object} model.SubnetInfo
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
+// @Success 200 {object} model.SubnetInfo "OK"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [put]
@@ -230,8 +232,9 @@ type RestGetAllSubnetResponse struct {
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
 // @Param action query string false "Action" Enums(reconcile, force)
-// @Success 200 {object} model.SimpleMsg
-// @Failure 404 {object} model.SimpleMsg
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [delete]
@@ -275,14 +278,14 @@ func RestDelSubnet(c echo.Context) error {
 		resp, err = resource.DeleteSubnet(nsId, vNetId, subnetId, action.String())
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 		}
 	case resource.ActionReconcile:
 		// [Process]
 		resp, err = resource.ReconcileSubnet(nsId, vNetId, subnetId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 		}
 	default:
 		errMsg := fmt.Errorf("invalid action (%s)", action)
@@ -291,7 +294,7 @@ func RestDelSubnet(c echo.Context) error {
 	}
 
 	// [Output]
-	return c.JSON(http.StatusCreated, resp)
+	return c.JSON(http.StatusOK, resp)
 }
 
 /*
@@ -303,8 +306,8 @@ func RestDelSubnet(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} model.SimpleMsg
-// @Failure 404 {object} model.SimpleMsg
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [delete]
@@ -324,9 +327,9 @@ func RestDelAllSubnet(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetReq body model.RegisterSubnetReq true "Details for an Subnet object"
-// @Success 200 {object} model.SubnetInfo
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
+// @Success 201 {object} model.SubnetInfo "Created"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerCspResource/vNet/{vNetId}/subnet [post]
@@ -358,7 +361,7 @@ func RestPostRegisterSubnet(c echo.Context) error {
 	resp, err := resource.RegisterSubnet(ctx, nsId, vNetId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -375,8 +378,9 @@ func RestPostRegisterSubnet(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
-// @Success 200 {object} model.SimpleMsg
-// @Failure 404 {object} model.SimpleMsg
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/deregisterResource/vNet/{vNetId}/subnet/{subnetId} [delete]
@@ -407,9 +411,9 @@ func RestDeleteDeregisterSubnet(c echo.Context) error {
 	resp, err := resource.DeregisterSubnet(nsId, vNetId, subnetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
-	return c.JSON(http.StatusCreated, resp)
+	return c.JSON(http.StatusOK, resp)
 }

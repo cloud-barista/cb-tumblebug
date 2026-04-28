@@ -19,7 +19,7 @@ step() {
 step "[Start Jitsi Video Conference Server]"
 echo "(1)DNS= $DNS / (2)EMAIL= $EMAIL"
 
-# ── Pre-flight checks ───────────────────────────────────────────────────────
+# Pre-flight checks
 echo ""
 echo "=== System Requirements ==="
 echo "  RAM  : 4 GB minimum (8 GB recommended)"
@@ -66,7 +66,7 @@ if [ -z "$EMAIL" ]; then
     exit 1
 fi
 
-# ── Step 1: Resolve IP ──────────────────────────────────────────────────────
+# Step 1: Resolve IP
 # Resolve public IP from DNS record — no dependency on external HTTP services.
 # DNS must already point to this VM's public IP before running this script.
 # dnsutils (dig) is installed here before the main prerequisite block.
@@ -82,7 +82,7 @@ if [ -z "$IP" ]; then
 fi
 echo "Resolved public IP from DNS: $IP"
 
-# ── Step 2: Hostname & hosts ────────────────────────────────────────────────
+# Step 2: Hostname & hosts
 # Add /etc/hosts entry so Jitsi services can resolve their own hostname to
 # the public IP locally. Without this, the hostname may resolve to 127.0.0.1
 # (loopback), causing Jitsi's ICE candidate gathering and XMPP to fail.
@@ -95,7 +95,7 @@ sudo -- sh -c "echo '$IP $DNS' >> /etc/hosts"
 sudo hostnamectl set-hostname "$DNS"
 hostname -f
 
-# ── Step 3: Purge existing Jitsi ───────────────────────────────────────────
+# Step 3: Purge existing Jitsi
 step "Removing existing Jitsi packages (if any)..."
 sudo apt-get purge -y jigasi jitsi-meet jitsi-meet-web-config jitsi-meet-prosody \
     jitsi-meet-turnserver jitsi-meet-web jicofo jitsi-videobridge2 2>&1 \
@@ -131,7 +131,7 @@ sudo apt-get update -qq 2>&1 | grep -E "^(Get:|Err:|E:|Hit:)" | tail -5
 step "Installing lua5.2..."
 sudo apt-get install -y lua5.2 2>&1 | grep -E "^(Setting up|Get:|Err:|E:)" || true
 
-# ── Step 5: Install Jitsi ───────────────────────────────────────────────────
+# Step 5: Install Jitsi
 step "Installing jitsi-meet (this takes a few minutes)..."
 # Pre-answer debconf prompts for non-interactive install.
 # cert-choice: install with self-signed first, then replace with Let's Encrypt below.
@@ -145,7 +145,7 @@ if [ ${PIPESTATUS[0]} -ne 0 ]; then
 fi
 step "jitsi-meet installation complete."
 
-# ── Step 6: Let's Encrypt certificate ──────────────────────────────────────
+# Step 6: Let's Encrypt certificate
 step "Installing certbot and issuing Let's Encrypt certificate (requires port 80 open and valid DNS)..."
 sudo apt-get install -y certbot 2>&1 | grep -E "^(Setting up|Get:|Err:|E:)" || true
 echo "$EMAIL" | sudo DEBIAN_FRONTEND=noninteractive /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh
@@ -157,7 +157,7 @@ if [ $? -ne 0 ]; then
     echo "  echo '$EMAIL' | sudo /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh"
 fi
 
-# ── Step 7: Video quality tuning (config.js) ───────────────────────────────
+# Step 7: Video quality tuning (config.js)
 step "Applying maximum video quality settings (config.js)..."
 CONFIG_JS="/etc/jitsi/meet/${DNS}-config.js"
 
@@ -260,7 +260,7 @@ open('$CONFIG_JS', 'w').write(c)
     echo "  Backup saved at ${CONFIG_JS}.bak"
 fi
 
-# ── Step 8: JVB server-side quality tuning ─────────────────────────────────
+# Step 8: JVB server-side quality tuning
 step "Applying JVB server-side quality settings..."
 JVB_CONF="/etc/jitsi/videobridge/jvb.conf"
 
@@ -288,7 +288,7 @@ else
     echo "  Backup saved at ${JVB_CONF}.bak"
 fi
 
-# ── Step 9: UDP buffer tuning (kernel) ─────────────────────────────────────
+# Step 9: UDP buffer tuning (kernel)
 # JVB streams video over UDP. Small kernel buffers → packet drops → quality degradation.
 step "Tuning UDP kernel buffers..."
 SYSCTL_CONF="/etc/sysctl.conf"
@@ -309,7 +309,7 @@ done
 sudo sysctl -p > /dev/null
 echo "  UDP buffers applied."
 
-# ── Step 10: System limits ──────────────────────────────────────────────────
+# Step 10: System limits
 step "Configuring system limits for large meetings (>100 participants)..."
 # Guard against duplicate entries on re-runs.
 if ! grep -q "DefaultLimitNOFILE=65000" /etc/systemd/system.conf; then
@@ -323,7 +323,7 @@ fi
 # Ref: to add room password authentication
 # https://www.digitalocean.com/community/tutorials/how-to-install-jitsi-meet-on-ubuntu-20-04
 
-# ── Step 11: Restart services ───────────────────────────────────────────────
+# Step 11: Restart services
 step "Restarting Jitsi services..."
 sudo systemctl daemon-reload
 sudo systemctl restart prosody  && echo "  prosody: restarted"

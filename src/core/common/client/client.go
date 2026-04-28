@@ -28,6 +28,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/go-resty/resty/v2"
@@ -1010,4 +1011,17 @@ func ForwardRequestToAny(reqPath string, method string, requestBody interface{})
 	}
 
 	return callResult, nil
+}
+
+// HandleHttpResponse logs the HTTP error with status code (if available)
+// and returns it wrapped as an *errutil.HttpError so callers can recover
+// the exact status code via errors.As.  Returns nil when err is nil.
+func HandleHttpResponse(resp *resty.Response, err error) error {
+	if err == nil {
+		return nil
+	}
+	if resp != nil {
+		return &errutil.HttpError{StatusCode: resp.StatusCode(), Err: err}
+	}
+	return err
 }

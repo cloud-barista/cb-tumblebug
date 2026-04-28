@@ -19,19 +19,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
-	resty "github.com/go-resty/resty/v2"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
@@ -643,13 +642,9 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 
 	log.Trace().Msgf("[Response from Spider] Creating VPC: %+v", spResp)
 
-	if err != nil {
-		if restyResp != nil {
-			log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
-		} else {
-			log.Error().Err(err).Msg("")
-		}
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to create vNet '%s'", vNetInfo.Id)
 	}
 
 	// Set the vNet object with the response from the Spider
@@ -988,7 +983,6 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 
 	trials := 2
 	seconds := uint64(3)
-	var restyResp *resty.Response
 	ok := false
 	// Sleep and retry if the vNet deletion fails
 	for i := range trials {
@@ -1005,7 +999,10 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		client := clientManager.NewHttpClient()
 		method := "DELETE"
 
-		restyResp, err = clientManager.ExecuteHttpRequest(
+		// restyResp is captured so HandleHttpResponse can wrap the error with the
+		// HTTP status code; this lets errutil.IsNotFoundError use the status code
+		// as a secondary signal when the error message alone is ambiguous.
+		restyResp, callErr := clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -1015,11 +1012,12 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 			&spResp,
 			clientManager.MediumDuration,
 		)
+		err = clientManager.HandleHttpResponse(restyResp, callErr)
 
 		log.Trace().Msgf("[Response from Spider] Deleting VPC: %+v", spResp)
 
 		if err != nil {
-			if restyResp != nil && restyResp.StatusCode() == http.StatusNotFound {
+			if errutil.IsNotFoundError(err) {
 				log.Info().Msgf("VPC (%s) not found on CSP, treating as already deleted", vNetId)
 				ok = true
 				err = nil
@@ -1049,7 +1047,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		if marshalErr == nil {
 			_ = kvstore.Put(vNetKey, string(failVal))
 		}
-		return emptyRet, err
+		return emptyRet, fmt.Errorf("failed to delete vNet '%s'", vNetId)
 	}
 	if !ok {
 		err := fmt.Errorf("failed to delete the vNet (%s)", vNetId)
@@ -1163,6 +1161,9 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 
 	log.Debug().Msgf("[Request to Spider] Reconciling VPC: %s", url)
 
+	// restyResp is captured so HandleHttpResponse can wrap the error with the
+	// HTTP status code; this lets errutil.IsNotFoundError use the status code
+	// as a secondary signal when the error message alone is ambiguous.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1173,15 +1174,16 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		&spResp,
 		clientManager.MediumDuration,
 	)
+	err = clientManager.HandleHttpResponse(restyResp, err)
 
 	log.Trace().Msgf("[Response from Spider] Reconciling VPC: %+v", spResp)
 
 	// Only proceed with cleanup when the VPC is confirmed not found (404).
 	// For server errors (5xx) or transport errors, return the error without cleanup
 	// to prevent accidental data loss during Spider/CSP outages.
-	if err != nil && (restyResp == nil || restyResp.StatusCode() != http.StatusNotFound) {
+	if err != nil && !errutil.IsNotFoundError(err) {
 		log.Error().Err(err).Msg("failed to get VPC from Spider, skipping reconciliation")
-		return emptyRet, err
+		return emptyRet, fmt.Errorf("failed to reconcile vNet '%s'", vNetId)
 	}
 
 	if err == nil {
@@ -1434,13 +1436,9 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 
 	log.Trace().Msgf("[Response from Spider] Registering VPC: %+v", spResp)
 
-	if err != nil {
-		if restyResp != nil {
-			log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
-		} else {
-			log.Error().Err(err).Msg("")
-		}
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to register vNet '%s'", vNetInfo.Id)
 	}
 
 	// Set the vNet object with the response from the Spider
@@ -1720,20 +1718,20 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		&spResp,
 		clientManager.MediumDuration,
 	)
+	// restyResp is captured so HandleHttpResponse can wrap the error with the
+	// HTTP status code; this lets errutil.IsNotFoundError use the status code
+	// as a secondary signal when the error message alone is ambiguous.
+	err = clientManager.HandleHttpResponse(restyResp, err)
 
 	log.Trace().Msgf("[Response from Spider] Deregistering VPC: %+v", spResp)
 
 	if err != nil {
-		if restyResp != nil && restyResp.StatusCode() == http.StatusNotFound {
-			// Spider returned 404: resource already gone from Spider
+		if errutil.IsNotFoundError(err) {
+			// Resource already gone from Spider (not found)
 			// Proceed with local cleanup (same as success path)
-			log.Info().Msgf("VNet (%s) not found on Spider (404), proceeding with local cleanup", vNetInfo.Id)
+			log.Info().Msgf("VNet (%s) not found on Spider, proceeding with local cleanup", vNetInfo.Id)
 		} else {
-			if restyResp != nil {
-				log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
-			} else {
-				log.Error().Err(err).Msg("")
-			}
+			log.Error().Err(err).Msg("")
 			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
 			model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
 			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
@@ -1742,7 +1740,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 			if marshalErr == nil {
 				_ = kvstore.Put(vNetKey, string(failVal))
 			}
-			return emptyRet, err
+			return emptyRet, fmt.Errorf("failed to deregister vNet '%s'", vNetId)
 		}
 	} else {
 		ok, err := strconv.ParseBool(spResp.Result)

@@ -44,7 +44,7 @@ if [ -z "${ENV_FILE:-}" ]; then
     if [ "$#" -ge 1 ]; then
         ENV_FILE="$1"
     else
-        # ── Robust Root Discovery ───────────────────────────────────────────
+        # Robust Root Discovery
         # Try to find the project root using git, fallback to searching for go.mod or .git upwards
         PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
         
@@ -57,7 +57,7 @@ if [ -z "${ENV_FILE:-}" ]; then
     fi
 fi
 
-# ── Validate ENV_FILE ───────────────────────────────────────────────
+# Validate ENV_FILE
 if [ -z "${ENV_FILE:-}" ] || [ ! -f "${ENV_FILE}" ]; then
     echo -e "${RED}Error: .env file not found.${NC}"
     echo "Please provide the path to your .env file:"
@@ -80,7 +80,7 @@ fi
 
 echo -e "${YELLOW}[openbao-unseal]${NC} VAULT_ADDR=${VAULT_ADDR}"
 
-# ── Wait for OpenBao to be reachable ─────────────────────────────────
+# Wait for OpenBao to be reachable
 
 echo -n "Waiting for OpenBao to be reachable..."
 for i in $(seq 1 30); do
@@ -127,7 +127,7 @@ if [ ! -f "$INIT_OUTPUT" ]; then
     exit 1
 fi
 
-# ── Unseal ───────────────────────────────────────────────────────────
+# Unseal
 
 UNSEAL_KEY=$(python3 -c "import json; print(json.load(open('${INIT_OUTPUT}'))['keys'][0])" 2>/dev/null \
     || grep -o '"keys":\["[^"]*"' "$INIT_OUTPUT" | sed 's/"keys":\["//' | sed 's/"$//')

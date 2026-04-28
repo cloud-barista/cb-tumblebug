@@ -233,7 +233,7 @@ func createInfra(cmd *cobra.Command, args []string) {
 	var respBytes []byte
 
 	// Set namespace ID, Infra ID, and request body file
-	nsId, _ := cmd.Flags().GetString("namespaceId")
+	nsId, _ := cmd.Flags().GetString("nsId")
 	infraId, _ := cmd.Flags().GetString("infraId")
 	filePath, _ := cmd.Flags().GetString("file")
 
@@ -397,7 +397,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	var respBytes []byte
 
 	// Set namespace ID, Infra ID, VPN ID, and Target CSP
-	nsId, _ := cmd.Flags().GetString("namespaceId")
+	nsId, _ := cmd.Flags().GetString("nsId")
 	infraId, _ := cmd.Flags().GetString("infraId")
 	vpnId, _ := cmd.Flags().GetString("vpnId")
 	targetCsp, _ := cmd.Flags().GetString("targetCsp")
@@ -711,7 +711,7 @@ func getVpnTunnel(cmd *cobra.Command, args []string) {
 	var respBytes []byte
 
 	// Set namespace ID, Infra ID, and VPN ID
-	nsId, _ := cmd.Flags().GetString("namespaceId")
+	nsId, _ := cmd.Flags().GetString("nsId")
 	infraId, _ := cmd.Flags().GetString("infraId")
 	vpnId, _ := cmd.Flags().GetString("vpnId")
 
@@ -781,7 +781,7 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 
 	// Set VPN ID
 	vpnId, _ := cmd.Flags().GetString("vpnId")
-	nsId, _ := cmd.Flags().GetString("namespaceId")
+	nsId, _ := cmd.Flags().GetString("nsId")
 	infraId, _ := cmd.Flags().GetString("infraId")
 
 	log.Debug().
@@ -991,7 +991,7 @@ func terminateInfra(cmd *cobra.Command, args []string) {
 	var respBytes []byte
 
 	// Set namespace ID, Infra ID, and request body file
-	nsId, _ := cmd.Flags().GetString("namespaceId")
+	nsId, _ := cmd.Flags().GetString("nsId")
 	infraId, _ := cmd.Flags().GetString("infraId")
 	option, _ := cmd.Flags().GetString("option")
 

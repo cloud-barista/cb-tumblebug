@@ -59,7 +59,7 @@ services:
       # The port the service listens on
       - traefik.http.services.cb-spider.loadbalancer.server.port=1024
 
-  # ── Examples for future extensions ──────────────────────────────────────────
+  # Examples for future extensions
   # Uncomment the following blocks to expose other services via Traefik.
   # Adjust 'Host' rules or 'PathPrefix' as needed.
 

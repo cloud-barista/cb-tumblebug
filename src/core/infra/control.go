@@ -554,13 +554,13 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					regionSemaphore <- struct{}{}
 					defer func() { <-regionSemaphore }()
 
-					// ── Bulk SDK fast-path ──────────────────────────────────────────────
+					// Bulk SDK fast-path
 					// For Suspend/Resume/Terminate on CSPs with a registered bulk handler,
 					// send all nodes in this region in one (or a few) SDK call(s) instead
 					// of N individual Spider HTTP requests. Reboot always uses Spider.
 					spiderNodeIds := runBulkControlForRegion(nsId, infraId, providerName, regionName, nodeIdList, action, bulkEntries)
 					nodeIdList = spiderNodeIds
-					// ── End bulk SDK fast-path ──────────────────────────────────────────
+					// End bulk SDK fast-path
 
 					// Pre-set transitional status for all Spider-path nodes before the
 					// semaphore-limited goroutines start. Without this, nodes waiting behind

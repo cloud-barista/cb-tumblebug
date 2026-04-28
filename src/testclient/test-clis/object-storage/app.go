@@ -200,7 +200,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 
 	log.Info().Msgf("[%s] ====== START (connection=%s) ======", tc.OsId, tc.ConnectionName)
 
-	// ── 1. Create ────────────────────────────────────────────────────────────
+	// 1. Create
 	reqBody := map[string]interface{}{
 		"bucketName":     tc.OsId,
 		"connectionName": tc.ConnectionName,
@@ -222,7 +222,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 	log.Info().Msgf("[%s] Waiting 3s before Check Existence...", tc.OsId)
 	time.Sleep(3 * time.Second)
 
-	// ── 2. Check Existence ───────────────────────────────────────────────────
+	// 2. Check Existence
 	urlHead := fmt.Sprintf("%s/ns/%s/resources/objectStorage/%s", tbApiBase, nsId, tc.OsId)
 	_, err = callApi("HEAD", urlHead, tbAuth, nil, &logs, fmt.Sprintf("[%s] Check Existence", tc.OsId))
 	if err != nil {
@@ -237,7 +237,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 	log.Info().Msgf("[%s] Waiting 3s before Get...", tc.OsId)
 	time.Sleep(3 * time.Second)
 
-	// ── 3. Get ───────────────────────────────────────────────────────────────
+	// 3. Get
 	urlGet := fmt.Sprintf("%s/ns/%s/resources/objectStorage/%s", tbApiBase, nsId, tc.OsId)
 	respBytes, err = callApi("GET", urlGet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Get", tc.OsId))
 	if err != nil {
@@ -254,7 +254,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 	log.Info().Msgf("[%s] Waiting 3s before Delete...", tc.OsId)
 	time.Sleep(3 * time.Second)
 
-	// ── 4. Delete ────────────────────────────────────────────────────────────
+	// 4. Delete
 	// The server performs DELETE→GET verification internally and returns an error
 	// only when the resource still exists after all retries.
 	urlDelete := fmt.Sprintf("%s/ns/%s/resources/objectStorage/%s", tbApiBase, nsId, tc.OsId)
@@ -268,7 +268,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 	}
 
 
-	// ── 5. Get Support Info ────────────────────────────────────────────────────────
+	// 5. Get Support Info
 	// Derive cspType from the first segment of connectionName (e.g. "aws-ap-northeast-2" → "aws")
 	cspType := strings.SplitN(tc.ConnectionName, "-", 2)[0]
 	urlSupport := fmt.Sprintf("%s/objectStorage/support?cspType=%s", tbApiBase, cspType)
