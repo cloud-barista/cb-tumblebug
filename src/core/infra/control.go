@@ -1662,6 +1662,12 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 			nodeObj.TargetStatus = model.StatusComplete
 			nodeObj.SystemMessage = "presumed not created (no cspResourceName, no CSP record matched Uid); marked Failed by reconcileInfraForward"
 			UpdateNodeInfo(nsId, infraId, nodeObj)
+			globalStatusStore.Update(nsId, infraId, id, func(e *StatusEntry) {
+				e.Status = model.StatusFailed
+				e.LastUpdated = time.Now()
+				e.Priority = PollHigh
+				e.NextPollAt = time.Now()
+			})
 			markedFailed++
 			log.Info().Msgf("reconcileInfraForward: Node %s marked Failed (orphan rescue found no CSP match)", id)
 		}

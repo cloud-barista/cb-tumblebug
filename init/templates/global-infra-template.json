@@ -122,18 +122,18 @@
         "rootDiskSize": 50
       },
       {
-        "name": "g16-tencent-na-siliconvalley",
+        "name": "g16-ap-hongkong",
         "nodeGroupSize": 2,
-        "specId": "tencent+na-siliconvalley+s5.medium2",
-        "imageId": "img-7rotv4ux",
+        "specId": "tencent+ap-hongkong+s2.medium2",
+        "imageId": "img-487zeit5",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
       {
         "name": "g17-tencent-ap-seoul",
         "nodeGroupSize": 2,
-        "specId": "tencent+ap-seoul+sa2.medium2",
-        "imageId": "img-7rotv4ux",
+        "specId": "tencent+ap-seoul+s2.medium2",
+        "imageId": "img-487zeit5",
         "rootDiskType": "default",
         "rootDiskSize": 50
       }

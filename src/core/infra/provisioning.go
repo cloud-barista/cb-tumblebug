@@ -3937,33 +3937,32 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		err = fmt.Errorf("%v", err)
 
 		if isQuotaOrCapacityError(err) {
-			// Quota/capacity rejection: the CSP refused the request before any resource
-			// was provisioned — no VM exists on the CSP side. Mark Failed directly so
-			// the user sees the real cause without a misleading reconcile step.
+			// Definitive pre-create rejection: the CSP refused the request before any
+			// resource was provisioned — no VM exists on the CSP side. Mark Failed
+			// directly so the user sees the real cause without a misleading reconcile step.
+			// Covers: quota/capacity exhaustion, invalid image/spec combinations, etc.
 			nodeInfoData.Status = model.StatusFailed
 			nodeInfoData.TargetAction = model.ActionComplete
 			nodeInfoData.TargetStatus = ""
 			nodeInfoData.SystemMessage = err.Error()
 			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
-			log.Warn().Err(err).Msgf("[CreateNode] VM %s rejected by CSP (quota/capacity limit); marking Failed. "+
-				"Increase the quota or choose a different region/spec.", nodeInfoData.Name)
+			log.Warn().Err(err).Msgf("[CreateNode] VM %s rejected by CSP before provisioning; marking Failed.", nodeInfoData.Name)
 			return err
 		}
 
 		// Spider POST /vm returned an error without VM info (CspResourceName not yet set).
-		// We cannot distinguish whether the VM was created before the error occurred
-		// (e.g. NHN: VM created, then Floating IP assignment fails) or never created at
-		// all (e.g. pre-create auth failure). Mark Undefined rather than Failed so that
-		// action=reconcile can query Spider /allvm and either rescue the VM (if it exists
-		// on CSP) or confirm it never existed and then mark it Failed.
-		nodeInfoData.Status = model.StatusUndefined
-		nodeInfoData.TargetAction = model.ActionComplete // clear create intent; reconcile owns recovery
+		// Mark Failed so the user sees a clear terminal state. If the VM was actually
+		// created on the CSP before the error occurred (e.g. NHN: VM created then
+		// Floating IP assignment failed), action=reconcile will rescue it via /allvm.
+		// Nodes that are Failed with no cspResourceName are routed to orphan rescue
+		// in reconcileInfraForward, so no state is lost.
+		nodeInfoData.Status = model.StatusFailed
+		nodeInfoData.TargetAction = model.ActionComplete
 		nodeInfoData.TargetStatus = ""
 		nodeInfoData.SystemMessage = err.Error()
 		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 		log.Warn().Err(err).Msgf("[CreateNode] Spider returned error for VM %s without VM identity info; "+
-			"marking Undefined (CSP state unknown). Run action=reconcile to determine actual state and rescue "+
-			"any orphaned VM, or action=abort to clean up.", nodeInfoData.Name)
+			"marking Failed. Run action=reconcile to rescue any orphaned CSP VM, or action=refine to remove.", nodeInfoData.Name)
 		return err
 	}
 
