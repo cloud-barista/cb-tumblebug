@@ -562,6 +562,25 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					nodeIdList = spiderNodeIds
 					// ── End bulk SDK fast-path ──────────────────────────────────────────
 
+					// Pre-set transitional status for all Spider-path nodes before the
+					// semaphore-limited goroutines start. Without this, nodes waiting behind
+					// the semaphore continue to show their old status (Running/None/None)
+					// until ControlNodeAsync actually runs for them — which can take minutes
+					// on large Infras. This mirrors what applyBulkTransitionalStatus does
+					// for bulk-SDK nodes.
+					if action != model.ActionReboot {
+						for _, nodeId := range nodeIdList {
+							nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId)
+							if gerr != nil {
+								continue
+							}
+							applyBulkTransitionalStatus(nsId, infraId, bulkControlEntry{
+								nodeId:   nodeId,
+								nodeInfo: nodeObj,
+							}, action)
+						}
+					}
+
 					// Step 4: Process remaining VMs via Spider with rate limiting
 					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
 					var nodeWg sync.WaitGroup
@@ -1172,7 +1191,7 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 }
 
 // isTransientNetworkError returns true for errors that are safe to retry
-// (connection reset by peer, unexpected EOF, broken pipe).
+// (connection reset, EOF, timeout, etc.).
 func isTransientNetworkError(err error) bool {
 	if err == nil {
 		return false
@@ -1181,7 +1200,9 @@ func isTransientNetworkError(err error) bool {
 	return strings.Contains(s, "connection reset by peer") ||
 		strings.Contains(s, "EOF") ||
 		strings.Contains(s, "broken pipe") ||
-		strings.Contains(s, "i/o timeout")
+		strings.Contains(s, "i/o timeout") ||
+		strings.Contains(s, "context deadline exceeded") ||
+		strings.Contains(s, "Client.Timeout")
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
@@ -1441,10 +1462,13 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 			continue
 		}
 
-		// Failed nodes with a known CspResourceName are definitively done;
-		// no orphan search needed.
+		// Failed nodes with a known CspResourceName: verify with the CSP before
+		// giving up. They may be running but were incorrectly marked Failed due to
+		// a transient error (e.g. Spider timeout during status verification after
+		// successful VM creation). Add to knownCspCands so FetchNodeStatus can
+		// confirm the actual CSP state and recover them if they are Running.
 		if isFailed && strings.TrimSpace(nodeObj.CspResourceName) != "" {
-			untouched++
+			knownCspCands = append(knownCspCands, nodeId)
 			continue
 		}
 
@@ -1564,6 +1588,12 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 		if !transientNodeStatus(r.status) {
 			nodeObj.Status = r.status
 			UpdateNodeInfo(nsId, infraId, nodeObj)
+			globalStatusStore.Update(nsId, infraId, r.nodeId, func(e *StatusEntry) {
+				e.Status = r.status
+				e.LastUpdated = time.Now()
+				e.Priority = PollHigh
+				e.NextPollAt = time.Now()
+			})
 			if strings.EqualFold(r.status, model.StatusRunning) {
 				reconciledRunning++
 			}
@@ -1581,6 +1611,17 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 			continue
 		}
 		if !transientNodeStatus(r.status) {
+			nodeObj, gerr := GetNodeObject(nsId, infraId, r.nodeId)
+			if gerr == nil {
+				nodeObj.Status = r.status
+				UpdateNodeInfo(nsId, infraId, nodeObj)
+				globalStatusStore.Update(nsId, infraId, r.nodeId, func(e *StatusEntry) {
+					e.Status = r.status
+					e.LastUpdated = time.Now()
+					e.Priority = PollHigh
+					e.NextPollAt = time.Now()
+				})
+			}
 			if strings.EqualFold(r.status, model.StatusRunning) {
 				reconciledRunning++
 			}
