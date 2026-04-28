@@ -1714,8 +1714,12 @@ func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) 
 							// Fetch Node status — uses StatusStore if fresh, falls back to Spider
 							nodeStatusTmp, err := fetchNodeStatusWithCache(nsId, infraId, nodeId)
 							if err != nil {
-								// Debug-level: node may have been deleted concurrently (e.g., by DelInfra).
-								log.Debug().Err(err).Msgf("[fetchNodeStatuses] node %s not found (likely deleted concurrently); skipping", nodeId)
+								if isTransientNetworkError(err) {
+									log.Warn().Err(err).Msgf("[fetchNodeStatuses] node %s: transient error fetching status; skipping this cycle", nodeId)
+								} else {
+									// Node may have been deleted concurrently (e.g., by DelInfra).
+									log.Debug().Err(err).Msgf("[fetchNodeStatuses] node %s not found; skipping", nodeId)
+								}
 								return
 							}
 
@@ -2020,17 +2024,21 @@ applyStatus:
 		}
 	}
 	if strings.EqualFold(nodeStatusTmp.TargetAction, model.ActionTerminate) {
-		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
+		switch {
+		case strings.EqualFold(callResult.Status, model.StatusTerminated):
+			// confirmed terminated — pass through
+		case strings.EqualFold(callResult.Status, model.StatusTerminating):
+			// deletion in progress — pass through
+		case strings.EqualFold(callResult.Status, model.StatusUndefined):
+			// VM no longer found at CSP — treat as confirmed terminated
 			callResult.Status = model.StatusTerminated
-		}
-		if strings.EqualFold(callResult.Status, model.StatusSuspending) {
-			callResult.Status = model.StatusTerminating
-		}
-		// Terminate API was already issued; if local status is already Terminating
-		// but CSP still reports Running (terminate not yet acknowledged), hold Terminating.
-		if strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminating) &&
-			strings.EqualFold(callResult.Status, model.StatusRunning) {
-			log.Debug().Msgf("[FetchNodeStatus] VM %s: CSP returned Running during Terminate (local=Terminating), holding Terminating", nodeId)
+		default:
+			// CSP returned Running, Suspended, Suspending, etc.
+			// The terminate request has already been dispatched; any non-terminal
+			// status from the CSP is a transient artifact (e.g. Azure briefly reports
+			// Running after DELETE is accepted). Hold Terminating.
+			log.Debug().Msgf("[FetchNodeStatus] VM %s: TargetAction=terminate but CSP returned %s; holding Terminating",
+				nodeId, callResult.Status)
 			callResult.Status = model.StatusTerminating
 		}
 	}
