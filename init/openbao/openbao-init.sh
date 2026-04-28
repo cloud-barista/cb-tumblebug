@@ -50,7 +50,7 @@ if [ -z "${ENV_FILE:-}" ]; then
     if [ "$#" -ge 1 ]; then
         ENV_FILE="$1"
     else
-        # ── Robust Root Discovery ───────────────────────────────────────────
+        # Robust Root Discovery
         # Try to find the project root using git, fallback to searching for go.mod or .git upwards
         PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
         
@@ -63,7 +63,7 @@ if [ -z "${ENV_FILE:-}" ]; then
     fi
 fi
 
-# ── Validate ENV_FILE ───────────────────────────────────────────────
+# Validate ENV_FILE
 if [ -z "${ENV_FILE:-}" ] || [ ! -f "${ENV_FILE}" ]; then
     echo -e "${RED}Error: .env file not found.${NC}"
     echo "Please provide the path to your .env file:"
@@ -86,7 +86,7 @@ fi
 
 echo -e "${YELLOW}[openbao-init]${NC} VAULT_ADDR=${VAULT_ADDR}"
 
-# ── Pre-flight checks ───────────────────────────────────────────────
+# Pre-flight checks
 
 # Wait for OpenBao to be reachable
 echo -n "Waiting for OpenBao to be reachable..."
@@ -114,7 +114,7 @@ if [ "$INIT_STATUS" = "true" ]; then
     exit 0
 fi
 
-# ── Initialize ───────────────────────────────────────────────────────
+# Initialize
 
 echo -e "${YELLOW}[openbao-init]${NC} Initializing OpenBao (1 key share, threshold 1)..."
 
@@ -146,7 +146,7 @@ echo "  Init output saved to: ${INIT_OUTPUT}"
 echo ""
 echo -e "  ${YELLOW}⚠ IMPORTANT: Keep ${INIT_OUTPUT} safe — it contains your unseal key and root token.${NC}"
 
-# ── Unseal ───────────────────────────────────────────────────────────
+# Unseal
 
 echo -e "${YELLOW}[openbao-init]${NC} Unsealing OpenBao..."
 
@@ -162,7 +162,7 @@ else
     echo -e "${RED}[openbao-init]${NC} Unseal may have failed. Check: curl ${VAULT_ADDR}/v1/sys/seal-status" >&2
 fi
 
-# ── Update .env ──────────────────────────────────────────────────────
+# Update .env
 # Write VAULT_TOKEN (unified token for OpenTofu vault provider, host API calls,
 # and docker-compose.yaml injection).
 # Note: BAO_TOKEN was replaced by VAULT_TOKEN for OpenTofu compatibility.
@@ -191,7 +191,7 @@ EOF
     echo -e "${GREEN}[openbao-init]${NC} Created ${ENV_FILE} with VAULT_TOKEN"
 fi
 
-# ── Enable KV v2 secret engine ───────────────────────────────────────
+# Enable KV v2 secret engine
 
 echo -e "${YELLOW}[openbao-init]${NC} Verifying KV v2 secret engine at secret/..."
 
@@ -209,7 +209,7 @@ else
     echo -e "${GREEN}[openbao-init]${NC} KV v2 enabled at secret/"
 fi
 
-# ── Summary ──────────────────────────────────────────────────────────
+# Summary
 
 echo ""
 echo "============================================================"

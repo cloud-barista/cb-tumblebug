@@ -3493,6 +3493,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/downloadFile/infra/{infraId}/node/{nodeId}:
     post:
       tags:
@@ -6989,6 +6995,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
@@ -7198,6 +7210,12 @@ paths:
             application/x-json-stream:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
@@ -7270,6 +7288,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
@@ -7333,6 +7357,12 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "400":
           description: Bad Request
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
           content:
             application/x-json-stream:
               schema:
@@ -7479,6 +7509,12 @@ paths:
                 $ref: '#/components/schemas/model.Response'
         "400":
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
           content:
             application/json:
               schema:
@@ -9456,8 +9492,8 @@ paths:
               $ref: '#/components/schemas/model.RegisterSubnetReq'
         required: true
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           content:
             application/json:
               schema:
@@ -13159,6 +13195,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
@@ -13329,6 +13371,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/vNet/{vNetId}/subnet:
     get:
       tags:
@@ -13419,14 +13467,20 @@ paths:
               $ref: '#/components/schemas/model.SubnetReq'
         required: true
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SubnetInfo'
         "404":
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
           content:
             application/json:
               schema:
@@ -13563,6 +13617,12 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "404":
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
           content:
             application/json:
               schema:

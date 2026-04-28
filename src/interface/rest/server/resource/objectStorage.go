@@ -20,19 +20,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
-
-// isNotFoundError checks if the error indicates a resource was not found
-func isNotFoundError(err error) bool {
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "not found") ||
-		strings.Contains(msg, "does not exist") ||
-		strings.Contains(msg, "cannot get") // KV-store returns "Cannot get <type> <id>." when metadata is absent
-}
 
 // ========== Resource APIs: Object Storage ==========
 
@@ -105,10 +98,7 @@ func RestCreateObjectStorage(c echo.Context) error {
 	// Perform the operation
 	result, err := resource.CreateObjectStorage(ctx, nsId, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			return c.JSON(http.StatusConflict, model.SimpleMsg{Message: err.Error()})
-		}
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, result)
@@ -169,11 +159,8 @@ func RestGetObjectStorage(c echo.Context) error {
 	// [Process]
 	result, err := resource.GetObjectStorage(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, result)
@@ -210,11 +197,8 @@ func RestCheckObjectStorageExistance(c echo.Context) error {
 
 	exists, err := resource.CheckObjectStorageExistence(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	if !exists {
@@ -257,11 +241,8 @@ func RestGetObjectStorageLocation(c echo.Context) error {
 
 	result, err := resource.GetObjectStorageLocation(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, result)
@@ -334,11 +315,8 @@ func RestDeleteObjectStorage(c echo.Context) error {
 
 	err := resource.DeleteObjectStorage(nsId, osId, force, empty)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("Failed to delete object storage")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -392,11 +370,8 @@ func RestSetObjectStorageCORS(c echo.Context) error {
 	// [Process]
 	err := resource.SetObjectStorageCorsConfigurations(nsId, osId, req)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found or CORS configuration not available", osId)})
-		}
 		log.Error().Err(err).Msg("Failed to set CORS configuration")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -439,11 +414,8 @@ func RestGetObjectStorageCORS(c echo.Context) error {
 	// [Process]
 	result, err := resource.GetObjectStorageCorsConfigurations(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found or CORS configuration does not exist", osId)})
-		}
 		log.Error().Err(err).Msg("Failed to get CORS configuration")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -486,11 +458,8 @@ func RestDeleteObjectStorageCORS(c echo.Context) error {
 	// [Process]
 	err := resource.DeleteObjectStorageCorsConfigurations(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found or CORS configuration does not exist", osId)})
-		}
 		log.Error().Err(err).Msg("Failed to delete CORS configuration")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -548,11 +517,8 @@ func RestSetObjectStorageVersioning(c echo.Context) error {
 	// [Process]
 	err := resource.SetObjectStorageVersioning(nsId, osId, req)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("Failed to set versioning configuration")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -595,11 +561,8 @@ func RestGetObjectStorageVersioning(c echo.Context) error {
 	// [Process]
 	result, err := resource.GetObjectStorageVersioning(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("Failed to get versioning configuration")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -642,11 +605,8 @@ func RestListObjectVersions(c echo.Context) error {
 	// [Process]
 	result, err := resource.ListObjectVersions(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("Failed to list object versions")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -709,11 +669,8 @@ func RestDeleteVersionedObject(c echo.Context) error {
 	// [Process]
 	err := resource.DeleteVersionedObject(nsId, osId, objectKey, versionId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object '%s' (versionId: %s) not found in object storage '%s'", objectKey, versionId, osId)})
-		}
 		log.Error().Err(err).Msg("Failed to delete versioned object")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -803,11 +760,8 @@ func RestGeneratePresignedURL(c echo.Context) error {
 	// [Process]
 	result, err := resource.GeneratePresignedURL(nsId, osId, objectKey, time.Duration(expiresSeconds)*time.Second, operation)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' or object '%s' not found", osId, objectKey)})
-		}
 		log.Error().Err(err).Msgf("Failed to generate presigned %s URL", operation)
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -863,11 +817,8 @@ func RestListDataObjects(c echo.Context) error {
 	// [Process]
 	result, err := resource.ListDataObjects(nsId, osId)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object storage '%s' not found", osId)})
-		}
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -922,11 +873,8 @@ func RestGetDataObjectInfo(c echo.Context) error {
 	// [Process]
 	result, err := resource.GetDataObject(nsId, osId, objectKey)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object '%s' not found in object storage '%s'", objectKey, osId)})
-		}
 		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output] Set metadata in response headers
@@ -984,11 +932,8 @@ func RestDeleteDataObject(c echo.Context) error {
 	// [Process]
 	err := resource.DeleteDataObject(nsId, osId, objectKey)
 	if err != nil {
-		if isNotFoundError(err) {
-			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: fmt.Sprintf("Object '%s' not found in object storage '%s'", objectKey, osId)})
-		}
 		log.Error().Err(err).Msg("Failed to delete object")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]

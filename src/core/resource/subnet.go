@@ -18,13 +18,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -366,13 +366,9 @@ func CreateSubnet(ctx context.Context, nsId string, vNetId string, subnetReq *mo
 
 	log.Trace().Msgf("[Response from Spider] Creating Subnet: %+v", spResp)
 
-	if err != nil {
-		if restyResp != nil {
-			log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
-		} else {
-			log.Error().Err(err).Msg("")
-		}
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to create subnet '%s'", subnetInfo.Id)
 	}
 
 	// Search the requested subnet in the response from the Spider
@@ -714,6 +710,9 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
+	// restyResp is captured so HandleHttpResponse can wrap the error with the
+	// HTTP status code; this lets errutil.IsNotFoundError use the status code
+	// as a secondary signal when the error message alone is ambiguous.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -724,11 +723,12 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		&spResp,
 		clientManager.MediumDuration,
 	)
+	err = clientManager.HandleHttpResponse(restyResp, err)
 
 	log.Trace().Msgf("[Response from Spider] Deleting Subnet: %+v", spResp)
 
 	if err != nil {
-		if restyResp != nil && restyResp.StatusCode() == http.StatusNotFound {
+		if errutil.IsNotFoundError(err) {
 			log.Info().Msgf("Subnet (%s) not found on CSP, treating as already deleted and proceeding with local cleanup", subnetInfo.Id)
 		} else {
 			log.Error().Err(err).Msg("")
@@ -740,7 +740,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 			if marshalErr == nil {
 				_ = kvstore.Put(subnetKey, string(failVal))
 			}
-			return emptyRet, err
+			return emptyRet, fmt.Errorf("failed to delete subnet '%s'", subnetInfo.Id)
 		}
 	} else {
 		ok, err := strconv.ParseBool(spResp.Result)
@@ -953,6 +953,9 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 
 	var spResp spiderSubnetInfo
 
+	// restyResp is captured so HandleHttpResponse can wrap the error with the
+	// HTTP status code; this lets errutil.IsNotFoundError use the status code
+	// as a secondary signal when the error message alone is ambiguous.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -963,15 +966,16 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 		&spResp,
 		clientManager.MediumDuration,
 	)
+	err = clientManager.HandleHttpResponse(restyResp, err)
 
 	log.Trace().Msgf("[Response from Spider] Reconciling Subnet: %+v", spResp)
 
 	// Only proceed with cleanup when the subnet is confirmed not found (404).
 	// For server errors (5xx) or transport errors, return the error without cleanup
 	// to prevent accidental data loss during Spider/CSP outages.
-	if err != nil && (restyResp == nil || restyResp.StatusCode() != http.StatusNotFound) {
+	if err != nil && !errutil.IsNotFoundError(err) {
 		log.Error().Err(err).Msg("failed to get subnet from Spider, skipping reconciliation")
-		return emptyRet, err
+		return emptyRet, fmt.Errorf("failed to reconcile subnet '%s'", subnetId)
 	}
 
 	if err == nil {
@@ -1202,13 +1206,9 @@ func RegisterSubnet(ctx context.Context, nsId string, vNetId string, subnetReq *
 
 	log.Trace().Msgf("[Response from Spider] Registering Subnet: %+v", spResp)
 
-	if err != nil {
-		if restyResp != nil {
-			log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
-		} else {
-			log.Error().Err(err).Msg("")
-		}
-		return emptyRet, err
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, fmt.Errorf("failed to register subnet '%s'", subnetInfo.Id)
 	}
 
 	// Set the subbet object with the response from the Spider
@@ -1419,20 +1419,20 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 		&spResp,
 		clientManager.MediumDuration,
 	)
+	// restyResp is captured so HandleHttpResponse can wrap the error with the
+	// HTTP status code; this lets errutil.IsNotFoundError use the status code
+	// as a secondary signal when the error message alone is ambiguous.
+	err = clientManager.HandleHttpResponse(restyResp, err)
 
 	log.Trace().Msgf("[Response from Spider] Deregistering Subnet: %+v", spResp)
 
 	if err != nil {
-		if restyResp != nil && restyResp.StatusCode() == http.StatusNotFound {
-			// Spider returned 404: resource already gone from Spider
+		if errutil.IsNotFoundError(err) {
+			// Resource already gone from Spider (not found)
 			// Proceed with local cleanup (same as success path)
-			log.Info().Msgf("Subnet (%s) not found on Spider (404), proceeding with local cleanup", subnetInfo.Id)
+			log.Info().Msgf("Subnet (%s) not found on Spider, proceeding with local cleanup", subnetInfo.Id)
 		} else {
-			if restyResp != nil {
-				log.Error().Err(err).Int("statusCode", restyResp.StatusCode()).Msg("")
-			} else {
-				log.Error().Err(err).Msg("")
-			}
+			log.Error().Err(err).Msg("")
 			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
 			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
 			subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
@@ -1441,7 +1441,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 			if marshalErr == nil {
 				_ = kvstore.Put(subnetKey, string(failVal))
 			}
-			return emptyRet, err
+			return emptyRet, fmt.Errorf("failed to deregister subnet '%s'", subnetInfo.Id)
 		}
 	} else {
 		ok, err := strconv.ParseBool(spResp.Result)

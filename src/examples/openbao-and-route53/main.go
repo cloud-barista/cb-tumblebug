@@ -31,7 +31,7 @@ import (
 )
 
 
-// ── main ──────────────────────────────────────────────────────────────────────
+// main
 
 func main() {
 	// 1. Load environment variables from .env
@@ -92,7 +92,7 @@ func main() {
 	printRecords(domain, zoneID, zoneName, records)
 }
 
-// ── Step 1: Fetch AWS credentials from OpenBao ────────────────────────────────
+// Step 1: Fetch AWS credentials from OpenBao
 
 type awsCredentials struct {
 	AccessKeyID     string
@@ -151,7 +151,7 @@ func fetchAWSCredsFromOpenBao(vaultAddr, vaultToken string) (*awsCredentials, er
 	}, nil
 }
 
-// ── Step 2: Build AWS Route53 client ─────────────────────────────────────────
+// Step 2: Build AWS Route53 client
 
 func newRoute53Client(ctx context.Context, creds *awsCredentials) (*route53.Client, error) {
 	cfg, err := config.LoadDefaultConfig(ctx,
@@ -170,7 +170,7 @@ func newRoute53Client(ctx context.Context, creds *awsCredentials) (*route53.Clie
 	return route53.NewFromConfig(cfg), nil
 }
 
-// ── Step 3: Find Hosted Zone ─────────────────────────────────────────────────
+// Step 3: Find Hosted Zone
 
 func findHostedZone(ctx context.Context, r53 *route53.Client, domain string) (zoneID, zoneName string, err error) {
 	lookup := domain
@@ -195,7 +195,7 @@ func findHostedZone(ctx context.Context, r53 *route53.Client, domain string) (zo
 	return "", "", fmt.Errorf("no hosted zone found for domain %q", domain)
 }
 
-// ── Step 4: List DNS records ──────────────────────────────────────────────────
+// Step 4: List DNS records 
 
 type dnsRecord struct {
 	Name    string
@@ -252,7 +252,7 @@ func listRecords(ctx context.Context, r53 *route53.Client, zoneID string) ([]dns
 	return records, nil
 }
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
+// Utilities
 
 func printRecords(domain, zoneID, zoneName string, records []dnsRecord) {
 	fmt.Println()

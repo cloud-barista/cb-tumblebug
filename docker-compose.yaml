@@ -229,7 +229,7 @@ services:
       # Logging Configuration (INFO, DEBUG, WARNING, ERROR)
       - MCP_LOG_LEVEL=INFO
 
-  # ── MC-Terrarium ──────────────────────────────────────────────────────────
+  # MC-Terrarium
   # Resource extensions (AWS-to-site VPN) for CB-Tumblebug using OpenTofu.
   # CSP credentials are managed by OpenBao (no more env_file injection).
   mc-terrarium:
@@ -292,7 +292,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── OpenBao (secrets management) ──────────────────────────────────────────
+  # OpenBao (secrets management)
   # OpenBao securely stores and provides CSP credentials via API.
   #
   # [Persistent mode] (default)
@@ -318,7 +318,7 @@ services:
         published: 8200
         protocol: tcp
 
-    # ── Persistent mode (active) ─────────────────────────────────────
+    # Persistent mode (active)
     environment:
       - BAO_ADDR=http://0.0.0.0:8200 # BAO_ADDR is for binding listener inside container
       - SKIP_SETCAP=true
@@ -332,7 +332,7 @@ services:
       - ./container-volume/openbao-data:/openbao/data
       - ./init/openbao/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
 
-    # ── Dev mode (inactive) ────────────────────────────────────────
+    # Dev mode (inactive)
     # To switch to dev mode:
     #   1. Comment out the "Persistent mode" environment, command, and volumes above
     #   2. Uncomment the "Dev mode" environment and command below

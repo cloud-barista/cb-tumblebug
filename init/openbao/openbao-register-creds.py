@@ -31,7 +31,7 @@ from colorama import init as colorama_init
 # Initialize colorama
 colorama_init(autoreset=True)
 
-# ── Argument parsing ──────────────────────────────────────────────
+# Argument parsing
 
 parser = argparse.ArgumentParser(
     description="Initialize MC-Terrarium: OpenBao setup and CSP credential import.",
@@ -63,7 +63,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# ── Configuration ─────────────────────────────────────────────────
+# Configuration
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -179,7 +179,7 @@ KEY_MAP = {
 }
 
 
-# ── Helper functions ──────────────────────────────────────────────
+# Helper functions
 
 
 def load_env_file(path_arg):
@@ -401,7 +401,7 @@ def register_placeholder_secrets(registered_providers):
     return placeholder_count
 
 
-# ── Main ──────────────────────────────────────────────────────────
+# Main
 
 
 def main():
@@ -420,7 +420,7 @@ def main():
     print(f" - {Fore.CYAN}KEY_FILE:{Fore.RESET} {KEY_FILE}")
     print()
 
-    # ── Step 1: OpenBao Status Check ──────────────────────────────
+    # Step 1: OpenBao Status Check
     # Load .env variables first
     load_env_file(args.env_file)
 
@@ -439,7 +439,7 @@ def main():
         print(Fore.GREEN + "OpenBao is initialized and unsealed. Ready.")
     print()
 
-    # ── Step 2: Register CSP credentials ────────────────────────────
+    # Step 2: Register CSP credentials
     if os.path.isfile(ENC_FILE):
         print(Style.BRIGHT + "── CSP Credential Registration ──" + Style.RESET_ALL)
 
