@@ -15,6 +15,7 @@ package infra
 
 import (
 	"context"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -92,13 +93,17 @@ func (a *NodeStatusAgent) Start(ctx context.Context) {
 // SDK call per group, replacing ~N individual FetchNodeStatus calls with one batch call.
 // CSPs without a registered batch handler continue through the individual worker path.
 func (a *NodeStatusAgent) startBatchSweeper(ctx context.Context) {
-	// Short initial delay so individual workers can boot and the startup scan finishes.
+	// Short initial delay so the startup scan finishes registering all nodes
+	// before the first sweep.  Kept small (5 s) so batch-capable CSPs (AWS, …)
+	// start serving grouped DescribeInstances calls quickly, preventing the
+	// individual-worker path from issuing hundreds of ids=1 SDK calls on startup.
 	select {
 	case <-ctx.Done():
 		return
-	case <-time.After(30 * time.Second):
+	case <-time.After(5 * time.Second):
 	}
 
+	log.Info().Msg("[BatchSweeper] Initial delay elapsed — running first batch status sweep for batch-capable CSPs (AWS/GCP/Azure/Tencent/Alibaba)")
 	a.runBatchSweep(ctx)
 
 	ticker := time.NewTicker(pollIntervals[PollNormal])
@@ -151,9 +156,14 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 
 	// Pre-bump NextPollAt for all batch nodes to prevent individual workers from
 	// dispatching them while the SDK call is in flight.
-	nextPoll := now.Add(pollIntervals[PollNormal])
+	// Each node gets a small random jitter (up to 10 % of PollNormal) so that
+	// successive sweeps do not re-synchronise all nodes onto the same instant,
+	// avoiding a thundering-herd on the sweep after startup.
+	jitterRange := int64(pollIntervals[PollNormal] / 10) // 30 s for a 5-min interval
 	for _, nodes := range groups {
 		for _, n := range nodes {
+			jitter := time.Duration(rand.Int63n(jitterRange))
+			nextPoll := now.Add(pollIntervals[PollNormal] + jitter)
 			globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
 				e.NextPollAt = nextPoll
 			})
@@ -260,6 +270,17 @@ func (a *NodeStatusAgent) dispatchEligible() {
 
 		if now.Before(e.NextPollAt) {
 			continue
+		}
+
+		// PollNormal nodes for CSPs with a registered batch handler are handled
+		// exclusively by runBatchSweep (one grouped SDK call per region).
+		// Dispatching them individually here would issue DescribeInstances(ids=1)
+		// per node — magnified by hundreds of nodes at startup, causing connection
+		// reset bursts from AWS.  Leave them for the batch sweeper.
+		if e.Priority == PollNormal && e.CspResourceId != "" {
+			if _, ok := cspdirect.GetBatchVMStatusHandler(e.ProviderName); ok {
+				continue
+			}
 		}
 
 		// Tentatively push NextPollAt to prevent re-dispatch while worker runs.
@@ -466,6 +487,43 @@ func (a *NodeStatusAgent) StartupScan() {
 	if len(normal) > 0 {
 		spreadInterval = pollIntervals[PollNormal] / time.Duration(len(normal))
 	}
+
+	// Classify normal nodes: batch-capable CSPs (handled by BatchSweeper) vs
+	// Spider-path CSPs (handled by individual workers via dispatchEligible).
+	batchCount := 0
+	spiderCount := 0
+	batchCSPs := make(map[string]int)  // provider → count
+	spiderCSPs := make(map[string]int) // provider → count
+	for _, ref := range normal {
+		provider := ref.info.ConnectionConfig.ProviderName
+		if provider == "" {
+			if parts := strings.SplitN(ref.info.ConnectionName, "-", 2); len(parts) > 0 {
+				provider = strings.ToLower(parts[0])
+			}
+		}
+		if _, ok := cspdirect.GetBatchVMStatusHandler(provider); ok && ref.info.CspResourceId != "" {
+			batchCount++
+			batchCSPs[provider]++
+		} else {
+			spiderCount++
+			spiderCSPs[provider]++
+		}
+	}
+
+	spreadWindowEnd := time.Now().Add(time.Duration(len(normal)) * spreadInterval)
+	log.Info().
+		Int("total_normal", len(normal)).
+		Int("batch_path", batchCount).
+		Int("spider_path", spiderCount).
+		Str("spread_interval", spreadInterval.Round(time.Millisecond).String()).
+		Str("spread_window_ends_at", spreadWindowEnd.Format("15:04:05")).
+		Interface("batch_csp_counts", batchCSPs).
+		Interface("spider_csp_counts", spiderCSPs).
+		Msg("[NodeStatusAgent] StartupScan: node status polling schedule — " +
+			"batch-capable CSPs handled by BatchSweeper (first run in ~5s); " +
+			"Spider-path CSPs spread over poll interval; " +
+			"infra status may show stale data until spread window completes")
+
 	for i, ref := range normal {
 		entry := buildStatusEntry(ref.nsId, ref.infraId, ref.info)
 		entry.NextPollAt = time.Now().Add(time.Duration(i) * spreadInterval)
