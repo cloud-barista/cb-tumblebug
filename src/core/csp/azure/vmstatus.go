@@ -63,12 +63,19 @@ func parseAzureArmID(armID string) (azureArmIDParts, error) {
 	}, nil
 }
 
+// azureStatusConcurrency is the maximum number of concurrent VM status calls
+// issued by BatchDescribeInstanceStatuses.  Azure has no native batch-status API,
+// so each VM requires an individual REST call.  Without a cap, calling this with
+// 200 VMs would launch 200 goroutines simultaneously, risking Azure API throttling
+// (HTTP 429) and connection-reset bursts on startup.
+const azureStatusConcurrency = 20
+
 // BatchDescribeInstanceStatuses queries Azure Compute for the given VM ARM resource IDs
 // and returns a map of armResourceID → TB status string.
 //
-// VMs are grouped by resource group. For each resource group, the VMs are fetched
-// in parallel using individual Get calls with InstanceView expansion (which returns
-// the power state). Azure has no batch-status API in the standard SDK.
+// VMs are fetched in parallel (up to azureStatusConcurrency concurrent calls) using
+// individual Get calls with InstanceView expansion (which returns the power state).
+// Azure has no batch-status API in the standard SDK.
 func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceIds []string) (map[string]string, error) {
 	if len(instanceIds) == 0 {
 		return map[string]string{}, nil
@@ -91,19 +98,26 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("Azure vmstatus: failed to create VM client: %w", err)
 	}
 
-	// Fetch all VMs in parallel — Azure has no batch status API.
+	// Fetch VMs in parallel, bounded by azureStatusConcurrency.
+	// Azure has no batch status API, so each VM needs an individual REST call.
+	// The semaphore prevents launching hundreds of goroutines simultaneously
+	// (e.g. at startup with 200 nodes), which would cause HTTP 429 / connection-reset bursts.
 	type vmResult struct {
 		armID  string
 		status string
 		err    error
 	}
 	ch := make(chan vmResult, len(instanceIds))
+	sem := make(chan struct{}, azureStatusConcurrency)
 
 	var wg sync.WaitGroup
 	for _, armID := range instanceIds {
 		wg.Add(1)
 		go func(id string) {
 			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
 			parts, perr := parseAzureArmID(id)
 			if perr != nil {
 				ch <- vmResult{armID: id, err: perr}
