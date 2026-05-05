@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -719,26 +720,26 @@ func (job *ScheduledJob) execute() {
 					job.InfraFlag,
 				)
 			} else {
-				// Process multiple connections
-				allResult := model.RegisterResourceAllResult{
-					RegisterationResult: []model.RegisterResourceResult{},
-				}
+				// Process multiple connections in parallel (same logic as RegisterCspNativeResourcesAll)
+				connConfigs := make([]model.ConnConfig, 0, len(connectionNames))
 				for _, connName := range connectionNames {
-					connResult, connErr := RegisterCspNativeResources(
-						context.Background(),
-						job.NsId,
-						connName,
-						job.InfraNamePrefix,
-						job.Option,
-						job.InfraFlag,
-					)
+					connConfig, connErr := common.GetConnConfig(connName)
 					if connErr != nil {
-						connResult.SystemMessage = fmt.Sprintf("Error: %v", connErr)
+						log.Error().Err(connErr).Msgf("Failed to get ConnConfig for %s, skipping", connName)
+						continue
 					}
-					allResult.RegisterationResult = append(allResult.RegisterationResult, connResult)
+					connConfigs = append(connConfigs, connConfig)
 				}
-				allResult.RegisteredConnection = len(connectionNames)
-				allResult.AvailableConnection = len(connectionNames)
+				startTime := time.Now()
+				allResult := registerConnectionsParallel(
+					context.Background(),
+					job.NsId,
+					connConfigs,
+					job.InfraNamePrefix,
+					job.Option,
+					job.InfraFlag,
+				)
+				allResult.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
 				result = allResult
 			}
 
