@@ -722,13 +722,20 @@ func (job *ScheduledJob) execute() {
 			} else {
 				// Process multiple connections in parallel (same logic as RegisterCspNativeResourcesAll)
 				connConfigs := make([]model.ConnConfig, 0, len(connectionNames))
+				var skippedConns []string
 				for _, connName := range connectionNames {
 					connConfig, connErr := common.GetConnConfig(connName)
 					if connErr != nil {
 						log.Error().Err(connErr).Msgf("Failed to get ConnConfig for %s, skipping", connName)
+						skippedConns = append(skippedConns, connName)
 						continue
 					}
 					connConfigs = append(connConfigs, connConfig)
+				}
+				if len(skippedConns) > 0 {
+					log.Warn().Strs("skipped", skippedConns).
+						Msgf("Job %s: %d/%d connections skipped due to config lookup failure",
+							job.JobId, len(skippedConns), len(connectionNames))
 				}
 				startTime := time.Now()
 				allResult := registerConnectionsParallel(
@@ -740,6 +747,9 @@ func (job *ScheduledJob) execute() {
 					job.InfraFlag,
 				)
 				allResult.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+				// Reflect skipped connections in the totals so callers see the true picture.
+				allResult.RegisteredConnection += len(skippedConns)
+				// Each skipped connection is counted as unavailable (already excluded from AvailableConnection).
 				result = allResult
 			}
 

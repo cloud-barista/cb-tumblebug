@@ -905,6 +905,11 @@ func registerConnectionsParallel(ctx context.Context, nsId string, connConfigs [
 					registerResult, err := RegisterCspNativeResources(ctx, nsId, k.ConfigName, infraNameForRegister, option, infraFlag)
 					if err != nil {
 						log.Error().Err(err).Msgf("Failed to register resources for connection %s", k.ConfigName)
+						// Ensure the result carries identity and error info so the aggregate
+						// errorConnectionCnt check (SystemMessage != "") marks this connection
+						// as unavailable instead of silently counting it as available.
+						registerResult.ConnectionName = k.ConfigName
+						registerResult.SystemMessage = err.Error()
 					}
 					log.Debug().Msgf("Completed registration for connection %s (CSP: %s, elapsed: %ds)",
 						k.ConfigName, providerName, registerResult.ElapsedTime)
