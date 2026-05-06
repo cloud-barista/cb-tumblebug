@@ -837,32 +837,42 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 		return model.RegisterResourceAllResult{}, err
 	}
 
-	totalConnections := len(connectionConfigList.Connectionconfig)
-	if totalConnections == 0 {
+	if len(connectionConfigList.Connectionconfig) == 0 {
 		return model.RegisterResourceAllResult{}, nil
 	}
 
-	// Step 1: Group connections by CSP (ProviderName)
-	cspGroups := make(map[string][]model.ConnConfig) // providerName -> []ConnConfig
-	for _, k := range connectionConfigList.Connectionconfig {
+	output := registerConnectionsParallel(ctx, nsId, connectionConfigList.Connectionconfig, infraNamePrefix, option, infraFlag)
+	output.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+
+	log.Info().Msgf("RegisterCspNativeResourcesAll completed: %d connections, %d errors, %ds elapsed",
+		output.RegisteredConnection, output.RegisteredConnection-output.AvailableConnection, output.ElapsedTime)
+
+	return output, nil
+}
+
+// registerConnectionsParallel runs RegisterCspNativeResources in parallel for the given
+// connections, applying per-CSP rate limits (concurrency cap + random delay).
+// Results are collected via a channel to avoid data races.
+func registerConnectionsParallel(ctx context.Context, nsId string, connConfigs []model.ConnConfig, infraNamePrefix string, option string, infraFlag string) model.RegisterResourceAllResult {
+	totalConnections := len(connConfigs)
+
+	// Group connections by CSP
+	cspGroups := make(map[string][]model.ConnConfig)
+	for _, k := range connConfigs {
 		provider := strings.ToLower(k.ProviderName)
 		cspGroups[provider] = append(cspGroups[provider], k)
 	}
 
-	log.Info().Msgf("RegisterCspNativeResourcesAll: %d connections grouped into %d CSPs (global concurrency limit: %d)",
+	log.Info().Msgf("registerConnectionsParallel: %d connections grouped into %d CSPs (global concurrency limit: %d)",
 		totalConnections, len(cspGroups), csp.GlobalMaxConcurrentConnections)
 	for provider, conns := range cspGroups {
 		maxConns, _, _ := getRegisterRateLimitsForCSP(provider)
 		log.Info().Msgf("  CSP %s: %d connections (max concurrent: %d)", provider, len(conns), maxConns)
 	}
 
-	// Step 2: Create channel to collect results safely (Fix #3: avoid data race on append)
 	resultChan := make(chan model.RegisterResourceResult, totalConnections)
-
-	// Step 3: Global semaphore to cap total concurrent goroutines
 	globalSemaphore := make(chan struct{}, csp.GlobalMaxConcurrentConnections)
 
-	// Step 4: Process CSPs in parallel, each with its own per-CSP semaphore
 	var cspWg sync.WaitGroup
 	for provider, connections := range cspGroups {
 		cspWg.Add(1)
@@ -881,15 +891,12 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 				go func(k model.ConnConfig) {
 					defer connWg.Done()
 
-					// Acquire global semaphore (total concurrency cap)
 					globalSemaphore <- struct{}{}
 					defer func() { <-globalSemaphore }()
 
-					// Acquire per-CSP semaphore (CSP-specific concurrency cap)
 					cspSemaphore <- struct{}{}
 					defer func() { <-cspSemaphore }()
 
-					// Stagger start with CSP-specific delay to avoid API rate limit bursts
 					common.RandomSleep(delayMinMs, delayMaxMs)
 
 					infraNameForRegister := infraNamePrefix + "-" + k.ConfigName
@@ -898,11 +905,15 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 					registerResult, err := RegisterCspNativeResources(ctx, nsId, k.ConfigName, infraNameForRegister, option, infraFlag)
 					if err != nil {
 						log.Error().Err(err).Msgf("Failed to register resources for connection %s", k.ConfigName)
+						// Ensure the result carries identity and error info so the aggregate
+						// errorConnectionCnt check (SystemMessage != "") marks this connection
+						// as unavailable instead of silently counting it as available.
+						registerResult.ConnectionName = k.ConfigName
+						registerResult.SystemMessage = err.Error()
 					}
 					log.Debug().Msgf("Completed registration for connection %s (CSP: %s, elapsed: %ds)",
 						k.ConfigName, providerName, registerResult.ElapsedTime)
 
-					// Send result to channel (no race condition — channel is safe for concurrent sends)
 					resultChan <- registerResult
 				}(connConfig)
 			}
@@ -912,19 +923,17 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 		}(provider, connections)
 	}
 
-	// Step 5: Close channel after all goroutines complete
 	go func() {
 		cspWg.Wait()
 		close(resultChan)
 	}()
 
-	// Step 6: Collect results from channel
 	output := model.RegisterResourceAllResult{}
 	for result := range resultChan {
 		output.RegisterationResult = append(output.RegisterationResult, result)
 	}
 
-	// Step 7: Aggregate overview counts
+	// Aggregate overview counts
 	errorConnectionCnt := 0
 	for _, k := range output.RegisterationResult {
 		output.RegisterationOverview.VNet += k.RegisterationOverview.VNet
@@ -941,7 +950,6 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 		}
 	}
 
-	output.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
 	output.RegisteredConnection = totalConnections
 	output.AvailableConnection = totalConnections - errorConnectionCnt
 
@@ -949,10 +957,7 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 		return output.RegisterationResult[i].ConnectionName < output.RegisterationResult[j].ConnectionName
 	})
 
-	log.Info().Msgf("RegisterCspNativeResourcesAll completed: %d connections, %d errors, %ds elapsed",
-		totalConnections, errorConnectionCnt, output.ElapsedTime)
-
-	return output, err
+	return output
 }
 
 // RegisterCspNativeResources registers specified CSP native resources from a target connection.

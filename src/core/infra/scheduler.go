@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -719,26 +720,36 @@ func (job *ScheduledJob) execute() {
 					job.InfraFlag,
 				)
 			} else {
-				// Process multiple connections
-				allResult := model.RegisterResourceAllResult{
-					RegisterationResult: []model.RegisterResourceResult{},
-				}
+				// Process multiple connections in parallel (same logic as RegisterCspNativeResourcesAll)
+				connConfigs := make([]model.ConnConfig, 0, len(connectionNames))
+				var skippedConns []string
 				for _, connName := range connectionNames {
-					connResult, connErr := RegisterCspNativeResources(
-						context.Background(),
-						job.NsId,
-						connName,
-						job.InfraNamePrefix,
-						job.Option,
-						job.InfraFlag,
-					)
+					connConfig, connErr := common.GetConnConfig(connName)
 					if connErr != nil {
-						connResult.SystemMessage = fmt.Sprintf("Error: %v", connErr)
+						log.Error().Err(connErr).Msgf("Failed to get ConnConfig for %s, skipping", connName)
+						skippedConns = append(skippedConns, connName)
+						continue
 					}
-					allResult.RegisterationResult = append(allResult.RegisterationResult, connResult)
+					connConfigs = append(connConfigs, connConfig)
 				}
-				allResult.RegisteredConnection = len(connectionNames)
-				allResult.AvailableConnection = len(connectionNames)
+				if len(skippedConns) > 0 {
+					log.Warn().Strs("skipped", skippedConns).
+						Msgf("Job %s: %d/%d connections skipped due to config lookup failure",
+							job.JobId, len(skippedConns), len(connectionNames))
+				}
+				startTime := time.Now()
+				allResult := registerConnectionsParallel(
+					context.Background(),
+					job.NsId,
+					connConfigs,
+					job.InfraNamePrefix,
+					job.Option,
+					job.InfraFlag,
+				)
+				allResult.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+				// Reflect skipped connections in the totals so callers see the true picture.
+				allResult.RegisteredConnection += len(skippedConns)
+				// Each skipped connection is counted as unavailable (already excluded from AvailableConnection).
 				result = allResult
 			}
 
