@@ -3,7 +3,11 @@
 A CLI tool for batch-testing the Object Storage (bucket) lifecycle —
 **create → get → delete** — across multiple CSPs via the CB-Tumblebug API.
 
-Supported CSPs: `aws`, `gcp`, `alibaba`, `tencent`, `ibm`, `openstack`, `ncp`, `nhn`, `kt`
+Supported CSPs: `aws`, `azure`, `gcp`, `alibaba`, `tencent`, `ibm`, `openstack`, `ncp`, `nhn`, `kt`
+
+> **Azure constraints**: Versioning and CORS are NOT supported (HTTP 501 returned) — these operate at the
+> Storage Account level in Azure and cannot be configured per-Container (Bucket). Basic Bucket/Object CRUD
+> and Presigned URL (via SAS Token) are fully supported.
 
 ---
 
@@ -61,6 +65,10 @@ testCases:
   - osId: test-bucket-aws
     connectionName: aws-ap-northeast-2
     execute: true # Set to true to include in the test run
+
+  - osId: test-bucket-azure
+    connectionName: azure-koreasouth
+    execute: false # Versioning/CORS not supported; CRUD and PresignedURL work
 
   - osId: test-bucket-gcp
     connectionName: gcp-asia-northeast3

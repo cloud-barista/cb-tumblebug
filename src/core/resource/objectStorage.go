@@ -214,7 +214,7 @@ func checkObjectKey(objectKey string) error {
 
 var cspSupportingObjectStorage = map[string]bool{
 	csp.AWS:       true,
-	csp.Azure:     false, // TODO: to be supported
+	csp.Azure:     true,
 	csp.GCP:       true,
 	csp.Alibaba:   true,
 	csp.Tencent:   true,
@@ -236,7 +236,7 @@ func isObjectStorageSupported(cspType string) bool {
 
 var cspSupportingObjectStorageCors = map[string]bool{
 	csp.AWS:       true,
-	csp.Azure:     false, // TODO: to be decided when Azure object storage is supported
+	csp.Azure:     false, // Azure CORS is set at Storage Account level, not per Container (Bucket); structurally incompatible with S3 bucket-level CORS
 	csp.GCP:       true,
 	csp.Alibaba:   true,
 	csp.Tencent:   true,
@@ -256,9 +256,31 @@ func isObjectStorageCorsSupported(cspType string) bool {
 	return supported
 }
 
+var cspSupportingObjectStoragePresignedUrl = map[string]bool{
+	csp.AWS:       true,
+	csp.Azure:     true, // SAS (Shared Access Signature) Token URL
+	csp.GCP:       true,
+	csp.Alibaba:   true,
+	csp.Tencent:   true,
+	csp.IBM:       true,
+	csp.OpenStack: true,
+	csp.NCP:       true,
+	csp.NHN:       true,
+	csp.KT:        true,
+}
+
+func isObjectStoragePresignedUrlSupported(cspType string) bool {
+	cspType = csp.ResolveCloudPlatform(cspType)
+	supported, exists := cspSupportingObjectStoragePresignedUrl[cspType]
+	if !exists {
+		return false
+	}
+	return supported
+}
+
 var cspSupportingObjectStorageVersioning = map[string]bool{
 	csp.AWS:       true,
-	csp.Azure:     false, // TODO: to be decided when Azure object storage is supported
+	csp.Azure:     false, // Azure Versioning is set at Storage Account level, not per Container (Bucket); structurally incompatible with S3 bucket-level Versioning
 	csp.GCP:       true,
 	csp.Alibaba:   true,
 	csp.Tencent:   true,
@@ -296,11 +318,14 @@ func GetObjectStorageSupport(cspType string) (model.ObjectStorageSupportResponse
 			return response, fmt.Errorf("unknown CSP type: %s", cspType)
 		}
 
+		isPresignedUrlSupported := cspSupportingObjectStoragePresignedUrl[cspType]
+
 		response.ResourceType = model.StrObjectStorage
 		response.Supports = map[string]model.ObjectStorageFeatureSupport{
 			cspType: {
-				Cors:       isCorsSupported,
-				Versioning: isVersioningSupported,
+				Cors:         isCorsSupported,
+				Versioning:   isVersioningSupported,
+				PresignedUrl: isPresignedUrlSupported,
 			},
 		}
 		return response, nil
@@ -313,10 +338,12 @@ func GetObjectStorageSupport(cspType string) (model.ObjectStorageSupportResponse
 	for _, providerName := range csp.AllCSPs {
 		isCorsSupported := cspSupportingObjectStorageCors[providerName]
 		isVersioningSupported := cspSupportingObjectStorageVersioning[providerName]
+		isPresignedUrlSupported := cspSupportingObjectStoragePresignedUrl[providerName]
 
 		allSupports[providerName] = model.ObjectStorageFeatureSupport{
-			Cors:       isCorsSupported,
-			Versioning: isVersioningSupported,
+			Cors:         isCorsSupported,
+			Versioning:   isVersioningSupported,
+			PresignedUrl: isPresignedUrlSupported,
 		}
 	}
 

@@ -8,10 +8,15 @@ tumblebug:
 # Multi-CSP test cases for batch testing (create → get → delete lifecycle)
 # Copy this file to test-config.yaml and adjust values for your environment.
 # Set 'execute: true' for the CSPs you want to include in the test run.
-# CSPs with object storage support: aws, gcp, alibaba, tencent, ibm, openstack, ncp, nhn, kt
+# CSPs with object storage support: aws, azure, gcp, alibaba, tencent, ibm, openstack, ncp, nhn, kt
+# Azure notes: Versioning / CORS are NOT supported (HTTP 501) — Storage Account level only
+# Azure notes: osId must be lowercase, 3–63 chars, hyphens allowed (Azure Container naming rules)
 testCases:
   - osId: test-bucket-aws
     connectionName: aws-ap-northeast-2
+    execute: false
+  - osId: test-bucket-azure
+    connectionName: azure-koreasouth
     execute: false
   - osId: test-bucket-gcp
     connectionName: gcp-asia-northeast3

@@ -160,10 +160,14 @@ type ObjectVersion struct {
 	Owner        Owner  `json:"owner,omitempty"`
 }
 
-// ObjectStorageFeatureSupport represents the feature support information for a CSP
+// ObjectStorageFeatureSupport represents the feature support information for a CSP.
+// Tumblebug focuses on Bucket control/utilization APIs.
+// Object upload/download is supported to the extent of PresignedURL.
+// Multipart upload and Delete Markers are excluded from Tumblebug policy.
 type ObjectStorageFeatureSupport struct {
-	Cors       bool `json:"cors" example:"true"`
-	Versioning bool `json:"versioning" example:"true"`
+	Cors         bool `json:"cors" example:"true"`
+	Versioning   bool `json:"versioning" example:"true"`
+	PresignedUrl bool `json:"presignedUrl" example:"true"`
 }
 
 // ObjectStorageSupportResponse represents the response structure for CSP support information
