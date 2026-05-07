@@ -67,8 +67,9 @@ services:
       # - TB_NODE_ENV=development
       - VAULT_ADDR=http://openbao:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-}
-    healthcheck: # for CB-Tumblebug
-      test: ["CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz"]
+    healthcheck:
+      # for CB-Tumblebug
+      test: [ "CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz" ]
       interval: 1m
       timeout: 5s
       retries: 3
@@ -114,8 +115,9 @@ services:
       - stderr
       - --auth-token
       - simple
-    healthcheck: # for etcd
-      test: ["CMD", "/usr/local/bin/etcd", "--version"]
+    healthcheck:
+      # for etcd
+      test: [ "CMD", "/usr/local/bin/etcd", "--version" ]
       interval: 1m
       timeout: 5s
       retries: 3
@@ -142,7 +144,7 @@ services:
       - POSTGRES_PASSWORD=tumblebug
       - POSTGRES_DB=tumblebug
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tumblebug"]
+      test: [ "CMD-SHELL", "pg_isready -U tumblebug" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -177,8 +179,9 @@ services:
       - ID_TRANSFORM_MODE=OFF
       - ADMINWEB=OFF
       - SPIDER_BACKUP_ENABLED=false
-    healthcheck: # for CB-Spider
-      test: ["CMD", "curl", "-f", "http://localhost:1024/spider/readyz"]
+    healthcheck:
+      # for CB-Spider
+      test: [ "CMD", "curl", "-f", "http://localhost:1024/spider/readyz" ]
       interval: 1m
       timeout: 5s
       retries: 3
@@ -206,8 +209,8 @@ services:
     #   retries: 3
     #   start_period: 10s
 
-  # TB-MCP (Tumblebug Model Context Protocol Server)
-  # This provides MCP interface for CB-Tumblebug to work with AI assistants like Claude
+    # TB-MCP (Tumblebug Model Context Protocol Server)
+    # This provides MCP interface for CB-Tumblebug to work with AI assistants like Claude
   cb-tumblebug-mcp-server:
     build:
       context: ./src/interface/mcp
@@ -282,7 +285,7 @@ services:
       - VAULT_ADDR=http://openbao:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-}
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/terrarium/readyz"]
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/terrarium/readyz" ]
       interval: 10m
       timeout: 5s
       retries: 3
@@ -323,7 +326,7 @@ services:
       - BAO_ADDR=http://0.0.0.0:8200 # BAO_ADDR is for binding listener inside container
       - SKIP_SETCAP=true
     # Fix bind-mount ownership (host UID 1000 → container openbao UID 100)
-    entrypoint: ["sh", "-c"]
+    entrypoint: [ "sh", "-c" ]
     command:
       - |
         chown -R openbao:openbao /openbao/data || { echo "ERROR: chown failed on /openbao/data"; exit 1; }
@@ -348,7 +351,7 @@ services:
       # 'bao status' exit codes:
       #   0 = unsealed, 1 = sealed but running, 2 = uninitialized (first run)
       # All three mean the OpenBao process is up and accepting API calls.
-      test: ["CMD", "sh", "-c", "rc=0; bao status || rc=$$?; [ $$rc -le 2 ]"]
+      test: [ "CMD", "sh", "-c", "rc=0; bao status || rc=$$?; [ $$rc -le 2 ]" ]
       interval: 10s
       timeout: 5s
       retries: 3

@@ -122,6 +122,8 @@ KEY_MAP = {
         "clientSecret": "ARM_CLIENT_SECRET",
         "tenantId": "ARM_TENANT_ID",
         "subscriptionId": "ARM_SUBSCRIPTION_ID",
+        "S3AccessKey": "ARM_STORAGE_ACCOUNT_NAME",  # Storage Account Name (no standard ARM_* env var; used in backend config)
+        "S3SecretKey": "ARM_ACCESS_KEY",  # Storage Account Key (OpenTofu standard env var)
     },
     "gcp": {
         "project_id": "project_id",
@@ -129,8 +131,8 @@ KEY_MAP = {
         "private_key": "private_key",
         "private_key_id": "private_key_id",
         "client_id": "client_id",
-        "S3AccessKey": "S3AccessKey",
-        "S3SecretKey": "S3SecretKey",
+        "S3AccessKey": "GCP_S3_ACCESS_KEY",
+        "S3SecretKey": "GCP_S3_SECRET_KEY",
     },
     "alibaba": {
         "AccessKeyId": "ALIBABA_CLOUD_ACCESS_KEY_ID",
@@ -138,8 +140,8 @@ KEY_MAP = {
     },
     "ibm": {
         "ApiKey": "IC_API_KEY",
-        "S3AccessKey": "S3_ACCESS_KEY",
-        "S3SecretKey": "S3_SECRET_KEY",
+        "S3AccessKey": "IBM_S3_ACCESS_KEY",
+        "S3SecretKey": "IBM_S3_SECRET_KEY",
     },
     "ncp": {
         "ncloud_access_key": "NCLOUD_ACCESS_KEY",
