@@ -27363,6 +27363,10 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
+                "presignedUrl": {
+                    "type": "boolean",
+                    "example": true
+                },
                 "versioning": {
                     "type": "boolean",
                     "example": true
