@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -729,7 +728,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 
 	if err != nil {
 		if errutil.IsNotFoundError(err) {
-			log.Info().Msgf("Subnet (%s) not found on CSP, treating as already deleted and proceeding with local cleanup", subnetInfo.Id)
+			log.Info().Msgf("Subnet (%s) not found on CSP, treating as already deleted", subnetInfo.Id)
 		} else {
 			log.Error().Err(err).Msg("")
 			// [Conditions] Deletion failed → mark as Failed to prevent stuck state
@@ -757,46 +756,44 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 			return emptyRet, err
 		}
 		if !ok {
-			err := fmt.Errorf("failed to delete the subnet (%s)", subnetInfo.Id)
-			log.Error().Err(err).Msg("")
-			// [Conditions] Deletion failed → mark as Failed to prevent stuck state
-			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-			subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
-			subnetInfo.SystemMessage = err.Error()
-			failVal, marshalErr := json.Marshal(subnetInfo)
-			if marshalErr == nil {
-				_ = kvstore.Put(subnetKey, string(failVal))
+			// Spider returned HTTP 200 + Result:false. Some CSPs (e.g. GCP) return 404
+			// for a subnet that is already gone, but Spider does not always propagate
+			// that 404 status — it may wrap it as HTTP 200 + false instead.
+			// Verify via a Spider GET before treating this as a hard failure.
+			verifyURL := fmt.Sprintf("%s/vpc/%s/subnet/%s?ConnectionName=%s",
+				model.SpiderRestUrl, subnetInfo.CspVNetName, subnetInfo.CspResourceName, subnetInfo.ConnectionName)
+			verifyClient := clientManager.NewHttpClient()
+			var verifyResp spiderSubnetInfo
+			verifyNoBody := clientManager.NoBody
+			verifyRestyResp, verifyErr := clientManager.ExecuteHttpRequest(
+				verifyClient, "GET", verifyURL, nil,
+				clientManager.SetUseBody(verifyNoBody),
+				&verifyNoBody,
+				&verifyResp,
+				clientManager.MediumDuration,
+			)
+			verifyErr = clientManager.HandleHttpResponse(verifyRestyResp, verifyErr)
+			if errutil.IsNotFoundError(verifyErr) {
+				log.Info().Msgf("Subnet (%s) not found on CSP, treating as already deleted", subnetInfo.Id)
+			} else {
+				if verifyErr != nil {
+					log.Warn().Err(verifyErr).Msgf("Subnet (%s) deletion could not be verified — treating as failure", subnetInfo.Id)
+				}
+				delErr := fmt.Errorf("failed to delete the subnet (%s)", subnetInfo.Id)
+				log.Error().Err(delErr).Msg("")
+				// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+				model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, delErr.Error())
+				subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
+				subnetInfo.SystemMessage = delErr.Error()
+				failVal, marshalErr := json.Marshal(subnetInfo)
+				if marshalErr == nil {
+					_ = kvstore.Put(subnetKey, string(failVal))
+				}
+				return emptyRet, delErr
 			}
-			return emptyRet, err
 		}
 	}
 
-	// Verify deletion by checking subnet status after deletion request
-	maxRetries := 5
-	for i := 0; i < maxRetries; i++ {
-		log.Debug().Msgf("Waiting 3 seconds (attempt %d/%d) before checking subnet deletion status via GetSubnet", i+1, maxRetries)
-		time.Sleep(3 * time.Second)
-
-		// Use GetSubnet to check if subnet still exists
-		log.Debug().Msgf("Checking if subnet (%s) still exists", subnetInfo.Id)
-		_, checkErr := GetSubnet(nsId, vNetId, subnetId)
-
-		if checkErr != nil {
-			errMsg := checkErr.Error()
-			// Only treat "not found" errors as confirmed deletion
-			if strings.Contains(errMsg, "does not exist") || strings.Contains(errMsg, "404") {
-				log.Info().Msgf("Confirmed subnet (%s) deletion", subnetInfo.Id)
-				break
-			}
-			// Other errors (5xx, transport) — cannot confirm deletion, log and retry
-			log.Warn().Err(checkErr).Msgf("Error checking subnet (%s) deletion status, will retry", subnetInfo.Id)
-		}
-
-		// If this was the last attempt and subnet still exists or status is unknown, log warning but continue
-		if i == maxRetries-1 {
-			log.Warn().Msgf("Subnet (%s) deletion could not be confirmed after %d attempts, proceeding with local cleanup", subnetInfo.Id, maxRetries)
-		}
-	}
 
 	// Delete the saved the subnet info
 	err = kvstore.Delete(subnetKey)
