@@ -408,13 +408,11 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 		return err
 	}
 
-	// Mark as complete regardless of individual VM failures
-	// Similar to Create action, some VMs may fail but the action itself is complete
 	infra.TargetAction = model.ActionComplete
 	infra.TargetStatus = model.StatusComplete
 	UpdateInfraInfo(nsId, infra)
 
-	log.Info().Msgf("Infra %s action %s completed successfully", infraId, action)
+	log.Info().Msgf("Infra %s action %s completed", infraId, action)
 	return nil
 }
 
@@ -518,7 +516,8 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
 	var allErrors []error
-	var successCount int
+	var successCount int    // Spider-path successes
+	var bulkHandledCount int // nodes handled by bulk SDK (not routed to Spider)
 	totalNodeCount := len(nodeList)
 
 	for csp, regions := range nodeGroups {
@@ -544,6 +543,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 			var regionMutex sync.Mutex
 			var cspErrors []error
 			var cspSuccessCount int
+			var cspBulkHandled int
 
 			for region, nodeIds := range regionMap {
 				regionWg.Add(1)
@@ -559,6 +559,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					// send all nodes in this region in one (or a few) SDK call(s) instead
 					// of N individual Spider HTTP requests. Reboot always uses Spider.
 					spiderNodeIds := runBulkControlForRegion(nsId, infraId, providerName, regionName, nodeIdList, action, bulkEntries)
+					regionBulkHandled := len(nodeIdList) - len(spiderNodeIds)
 					nodeIdList = spiderNodeIds
 					// End bulk SDK fast-path
 
@@ -629,6 +630,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					regionMutex.Lock()
 					cspErrors = append(cspErrors, regionErrors...)
 					cspSuccessCount += regionSuccessCount
+					cspBulkHandled += regionBulkHandled
 					regionMutex.Unlock()
 
 					// log.Debug().Msgf("Completed VM control in region %s/%s: %d/%d VMs successful",
@@ -642,6 +644,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 			mutex.Lock()
 			allErrors = append(allErrors, cspErrors...)
 			successCount += cspSuccessCount
+			bulkHandledCount += cspBulkHandled
 			mutex.Unlock()
 
 			// log.Debug().Msgf("Completed VM control for CSP: %s, %d VMs successful", providerName, cspSuccessCount)
@@ -659,11 +662,16 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 	}
 
 	if len(allErrors) > 0 {
+		totalSucceeded := successCount + bulkHandledCount
 		log.Warn().Msgf("Rate-limited VM control completed with some errors: %d CSPs, %d regions, %d/%d VMs successful, %d errors",
-			cspCount, totalRegions, successCount, totalNodeCount, len(allErrors))
-		// Don't return error for partial failures, just log them
+			cspCount, totalRegions, totalSucceeded, totalNodeCount, len(allErrors))
+		if totalSucceeded == 0 {
+			// Every node failed — surface the error so callers can report failure.
+			// Partial failures (some nodes succeeded) are still logged as Warn and
+			// return nil to preserve the existing large-infra partial-success behavior.
+			return fmt.Errorf("%d/%d node control operations failed; first error: %w", len(allErrors), totalNodeCount, allErrors[0])
+		}
 	}
-	// else: Rate-limited VM control completed successfully
 
 	return nil
 }
@@ -1100,6 +1108,22 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		callResult.Error = err
+		// If a terminate request was definitively rejected by the CSP (e.g. AWS
+		// disableApiTermination, OperationNotPermitted), clear TargetAction on the
+		// node so that subsequent status polls reflect the actual CSP state (Running)
+		// rather than holding Terminating forever.
+		// Transient network errors are excluded — those may recover on retry.
+		if action == model.ActionTerminate && !isTransientNetworkError(err) {
+			if nodeObj, fetchErr := GetNodeObject(nsId, infraId, nodeId); fetchErr == nil {
+				nodeObj.TargetAction = model.ActionComplete
+				nodeObj.TargetStatus = model.StatusComplete
+				UpdateNodeInfo(nsId, infraId, nodeObj)
+			}
+			globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+				e.TargetAction = model.ActionComplete
+			})
+			log.Warn().Err(err).Msgf("[ControlNodeAsync] VM %s: terminate rejected by CSP — clearing TargetAction so status reflects actual CSP state", nodeId)
+		}
 		// Sync actual node state from CSP even on failure — the operation may have
 		// partially succeeded (e.g. VM terminated but Floating IP release failed).
 		// Without this, the KV store retains the transitional status set before the
