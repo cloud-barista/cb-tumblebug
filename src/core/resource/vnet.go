@@ -988,9 +988,8 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	for i := range trials {
 		if i > 0 {
 			log.Warn().Msgf("Retrying to delete vNet (%s) after %d seconds...", vNetId, seconds)
+			time.Sleep(time.Duration(seconds) * time.Second)
 		}
-		// Sleep for a while before retrying
-		time.Sleep(time.Duration(seconds) * time.Second)
 
 		log.Debug().Msgf("[Request to Spider] Deleting VPC: %s", url)
 
