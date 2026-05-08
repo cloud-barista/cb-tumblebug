@@ -795,7 +795,10 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 }
 
 // DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace.
-// If empty is true, it first empties bucket contents. If force is true, Spider force-deletes bucket with contents.
+// If force is true, Spider force-deletes the bucket with all its contents.
+// If empty is true, Spider empties the bucket contents first, then deletes it.
+// When empty is true, the post-delete GET verification is skipped because the
+// operation targets bucket contents, not bucket existence.
 func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 
 	// 1. Validate input parameters
@@ -829,8 +832,12 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		return err
 	}
 
-	// 4. [Conditions] Mark as not ready (deleting) before calling Spider API
-	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "Object storage deletion in progress")
+	// 4. [Conditions] Mark as not ready before calling Spider API
+	conditionMsg := "Object storage deletion in progress"
+	if empty {
+		conditionMsg = "Object storage emptying in progress"
+	}
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, conditionMsg)
 	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
 	objStrgInfo.SystemMessage = ""
 	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
@@ -854,12 +861,12 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		client := clientManager.NewHttpClient()
 
 		deleteURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
-		if force {
-			deleteURL = deleteURL + "&force=true"
-		} else if empty {
-			deleteURL = deleteURL + "&empty=true"
+		switch {
+		case force:
+			deleteURL += "&force=true"
+		case empty:
+			deleteURL += "&empty=true"
 		}
-		getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
 
 		// 5-1. DELETE
 		spDelReq := clientManager.NoBody
@@ -881,7 +888,11 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		if delErr != nil {
 			if !errutil.IsNotFoundError(delErr) {
 				// DELETE failed (non-404) → mark as Failed
-				err = fmt.Errorf("DELETE failed for object storage %s: %w", uid, delErr)
+				opDesc := "DELETE"
+				if empty {
+					opDesc = "EMPTY"
+				}
+				err = fmt.Errorf("%s failed for object storage %s: %w", opDesc, uid, delErr)
 				log.Error().Err(err).Msg("")
 				model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
 				objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
@@ -894,11 +905,28 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 			}
 			// 404 → already deleted on CSP
 			log.Warn().Msgf("Spider returned 404 on DELETE for object storage %s — already deleted on CSP", uid)
-		} else {
-			// DELETE 204 succeeded. Verify via GET.
-			// Some CSPs (e.g. AWS S3) have eventual consistency, so GET may still
-			// return the resource briefly. Retry up to maxGetVerifyAttempts times;
-			// if still visible, trust the 204 and proceed.
+		}
+
+		// DELETE 204 succeeded. For the empty option, bucket existence check is not applicable.
+		if delErr == nil && empty {
+			log.Debug().Msgf("Object storage %s DELETE 204 (empty); skipping GET verification", uid)
+			// empty only clears bucket contents — restore Ready condition and return.
+			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+			objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+			objStrgInfo.SystemMessage = ""
+			restoredVal, marshalErr := json.Marshal(objStrgInfo)
+			if marshalErr == nil {
+				_ = kvstore.Put(objStrgKey, string(restoredVal))
+			}
+			return nil
+		}
+
+		// DELETE 204 succeeded. Verify via GET.
+		// Some CSPs (e.g. AWS S3) have eventual consistency, so GET may still
+		// return the resource briefly. Retry up to maxGetVerifyAttempts times;
+		// if still visible, trust the 204 and proceed.
+		if delErr == nil && !empty {
+			getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
 			log.Debug().Msgf("[Response from Spider] Object storage %s DELETE 204; verifying via GET", uid)
 
 			const maxGetVerifyAttempts = 5
@@ -1924,11 +1952,23 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expires time.Duration, o
 
 	log.Debug().Msgf("[Response from Spider] Generating presigned URL: %+v", spResp)
 
-	// 4. Return the presigned URL
+	// 4. Determine CSP-specific required headers.
+	// Some CSPs require additional HTTP headers when using a presigned URL
+	// (e.g. Azure Blob Storage requires x-ms-blob-type for PUT uploads).
+	// Clients must include these headers exactly as provided.
+	var requiredHeaders map[string]string
+	if csp.ResolveCloudPlatform(cspType) == csp.Azure && operation == "upload" {
+		requiredHeaders = map[string]string{
+			"x-ms-blob-type": "BlockBlob",
+		}
+	}
+
+	// 5. Return the presigned URL
 	return model.ObjectStoragePresignedUrlResponse{
-		Expires:      spResp.Expires,
-		Method:       spResp.Method,
-		PreSignedURL: spResp.PreSignedURL,
+		Expires:         spResp.Expires,
+		Method:          spResp.Method,
+		PreSignedURL:    spResp.PreSignedURL,
+		RequiredHeaders: requiredHeaders,
 	}, nil
 }
 

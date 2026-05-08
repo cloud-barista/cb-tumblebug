@@ -27571,6 +27571,15 @@ const docTemplate = `{
                 "presignedURL": {
                     "type": "string",
                     "example": "https://example.com/presigned-url"
+                },
+                "requiredHeaders": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "x-ms-blob-type": "BlockBlob"
+                    }
                 }
             }
         },

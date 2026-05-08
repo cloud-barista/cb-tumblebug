@@ -90,9 +90,10 @@ type ObjectStorageLocationResponse struct {
 
 // ObjectStoragePresignedUrlResponse represents the response structure for presigned URL generation
 type ObjectStoragePresignedUrlResponse struct {
-	Expires      int64  `json:"expires" example:"1693824000"`
-	Method       string `json:"method" example:"GET"`
-	PreSignedURL string `json:"presignedURL" example:"https://example.com/presigned-url"`
+	Expires         int64             `json:"expires" example:"1693824000"`
+	Method          string            `json:"method" example:"GET"`
+	PreSignedURL    string            `json:"presignedURL" example:"https://example.com/presigned-url"`
+	RequiredHeaders map[string]string `json:"requiredHeaders,omitempty" example:"x-ms-blob-type:BlockBlob"`
 }
 
 // ObjectStorageListObjectsResponse represents the response structure for listing objects in a bucket
