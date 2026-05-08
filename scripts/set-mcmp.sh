@@ -146,6 +146,27 @@ else
 fi
 
 # ──────────────
+# Ensure conf/docker/conf/mc-iam-manager/.env exists
+# Docker Compose references this file via env_file: and hard-fails if absent.
+# The same upstream commit also removed this file from git tracking.
+# The main .env (derived from .env.setup) contains all required MC_IAM_MANAGER_*
+# variables, so copying it here satisfies Docker Compose.
+# ──────────────
+IAM_ENV_FILE="$MCMP_DIR/conf/docker/conf/mc-iam-manager/.env"
+if [ ! -f "$IAM_ENV_FILE" ]; then
+  if [ -f "$ENV_FILE" ]; then
+    echo "📋 conf/mc-iam-manager/.env not found. Copying from conf/docker/.env..."
+    cp "$ENV_FILE" "$IAM_ENV_FILE"
+    echo "✅ conf/mc-iam-manager/.env created"
+  else
+    echo "❌ Error: Cannot create conf/mc-iam-manager/.env — source $ENV_FILE not found"
+    exit 1
+  fi
+else
+  echo "✅ conf/mc-iam-manager/.env already exists. Skipping copy."
+fi
+
+# ──────────────
 # Install mc-admin-cli
 # ──────────────
 echo
