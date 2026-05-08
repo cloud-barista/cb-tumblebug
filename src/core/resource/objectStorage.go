@@ -795,7 +795,10 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 }
 
 // DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace.
-// If empty is true, it first empties bucket contents. If force is true, Spider force-deletes bucket with contents.
+// If force is true, Spider force-deletes the bucket with all its contents.
+// If empty is true, Spider empties the bucket contents first, then deletes it.
+// When empty is true, the post-delete GET verification is skipped because the
+// operation targets bucket contents, not bucket existence.
 func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 
 	// 1. Validate input parameters
@@ -829,8 +832,12 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		return err
 	}
 
-	// 4. [Conditions] Mark as not ready (deleting) before calling Spider API
-	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "Object storage deletion in progress")
+	// 4. [Conditions] Mark as not ready before calling Spider API
+	conditionMsg := "Object storage deletion in progress"
+	if empty {
+		conditionMsg = "Object storage emptying in progress"
+	}
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, conditionMsg)
 	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
 	objStrgInfo.SystemMessage = ""
 	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
@@ -849,97 +856,116 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 	connName := objStrgInfo.ConnectionName
 
 	// 5. Call Spider API to delete the object storage, then verify via GET.
-	// If uid is empty, the CSP resource was never successfully created; skip Spider and go straight to metadata cleanup.
+	// If uid is empty, skip Spider and go straight to metadata cleanup.
 	if uid != "" {
 		client := clientManager.NewHttpClient()
 
 		deleteURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
-		if force {
-			deleteURL = deleteURL + "&force=true"
-		} else if empty {
-			deleteURL = deleteURL + "&empty=true"
-		}
-		getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
-
-		const maxDeleteAttempts = 2
-		deleted := false
-
-		for attempt := 1; attempt <= maxDeleteAttempts; attempt++ {
-			// 5-1. DELETE
-			spDelReq := clientManager.NoBody
-			spDelResp := clientManager.NoBody
-			log.Debug().Msgf("[Request to Spider] Deleting the object storage (url: %s, attempt: %d/%d)", deleteURL, attempt, maxDeleteAttempts)
-
-			// delRestyResp is captured so HandleHttpResponse can wrap the error
-			// with the HTTP status code for accurate errutil classification.
-			delRestyResp, delErr := clientManager.ExecuteHttpRequest(
-				client,
-				"DELETE",
-				deleteURL,
-				spiderS3JSONHeaders,
-				clientManager.SetUseBody(spDelReq),
-				&spDelReq,
-				&spDelResp,
-				clientManager.ShortDuration,
-			)
-			delErr = clientManager.HandleHttpResponse(delRestyResp, delErr)
-
-			// Spider returns 404 when the bucket does not exist on the CSP side → already gone.
-			if delErr != nil && errutil.IsNotFoundError(delErr) {
-				log.Warn().Msgf("Spider returned 404 on DELETE for object storage %s (attempt %d/%d) — already deleted", uid, attempt, maxDeleteAttempts)
-				deleted = true
-				break
-			}
-
-			if delErr != nil {
-				log.Warn().Err(delErr).Msgf("DELETE attempt %d/%d failed for object storage %s", attempt, maxDeleteAttempts, uid)
-				// Fall through to GET to check the actual current state
-			}
-
-			// 5-2. GET to verify deletion
-			spGetReq := clientManager.NoBody
-			spGetResp := spiderGetBucketInfoRes{}
-			log.Debug().Msgf("[Request to Spider] Verifying object storage deletion via GET (url: %s)", getURL)
-
-			// getRestyResp is captured so HandleHttpResponse can wrap the error
-			// with the HTTP status code for accurate errutil classification.
-			getRestyResp, getErr := clientManager.ExecuteHttpRequest(
-				client,
-				"GET",
-				getURL,
-				spiderS3JSONHeaders,
-				clientManager.SetUseBody(spGetReq),
-				&spGetReq,
-				&spGetResp,
-				clientManager.ShortDuration,
-			)
-			getErr = clientManager.HandleHttpResponse(getRestyResp, getErr)
-			if getErr != nil {
-				// GET returned error → resource no longer exists → confirmed deleted
-				log.Info().Msgf("[Response from Spider] Object storage %s confirmed deleted (GET returned: %v)", uid, getErr)
-				deleted = true
-				break
-			}
-
-			// GET succeeded → resource still exists on the CSP side
-			if attempt < maxDeleteAttempts {
-				log.Warn().Msgf("Object storage %s still exists after DELETE attempt %d/%d, retrying...", uid, attempt, maxDeleteAttempts)
-				time.Sleep(3 * time.Second)
-			}
+		switch {
+		case force:
+			deleteURL += "&force=true"
+		case empty:
+			deleteURL += "&empty=true"
 		}
 
-		if !deleted {
-			err = fmt.Errorf("object storage %s still exists on CSP after %d delete attempts", uid, maxDeleteAttempts)
-			log.Error().Err(err).Msg("")
-			// [Conditions] Deletion failed → mark as Failed to prevent stuck state
-			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+		// 5-1. DELETE
+		spDelReq := clientManager.NoBody
+		spDelResp := clientManager.NoBody
+		log.Debug().Msgf("[Request to Spider] Deleting the object storage (url: %s)", deleteURL)
+
+		delRestyResp, delErr := clientManager.ExecuteHttpRequest(
+			client,
+			"DELETE",
+			deleteURL,
+			spiderS3JSONHeaders,
+			clientManager.SetUseBody(spDelReq),
+			&spDelReq,
+			&spDelResp,
+			clientManager.ShortDuration,
+		)
+		delErr = clientManager.HandleHttpResponse(delRestyResp, delErr)
+
+		if delErr != nil {
+			if !errutil.IsNotFoundError(delErr) {
+				// DELETE failed (non-404) → mark as Failed
+				opDesc := "DELETE"
+				if empty {
+					opDesc = "EMPTY"
+				}
+				err = fmt.Errorf("%s failed for object storage %s: %w", opDesc, uid, delErr)
+				log.Error().Err(err).Msg("")
+				model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+				objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+				objStrgInfo.SystemMessage = err.Error()
+				failVal, marshalErr := json.Marshal(objStrgInfo)
+				if marshalErr == nil {
+					_ = kvstore.Put(objStrgKey, string(failVal))
+				}
+				return err
+			}
+			// 404 → already deleted on CSP
+			log.Warn().Msgf("Spider returned 404 on DELETE for object storage %s — already deleted on CSP", uid)
+		}
+
+		// DELETE 204 succeeded. For the empty option, bucket existence check is not applicable.
+		if delErr == nil && empty {
+			log.Debug().Msgf("Object storage %s DELETE 204 (empty); skipping GET verification", uid)
+			// empty only clears bucket contents — restore Ready condition and return.
+			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
 			objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
-			objStrgInfo.SystemMessage = err.Error()
-			failVal, marshalErr := json.Marshal(objStrgInfo)
+			objStrgInfo.SystemMessage = ""
+			restoredVal, marshalErr := json.Marshal(objStrgInfo)
 			if marshalErr == nil {
-				_ = kvstore.Put(objStrgKey, string(failVal))
+				_ = kvstore.Put(objStrgKey, string(restoredVal))
 			}
-			return err
+			return nil
+		}
+
+		// DELETE 204 succeeded. Verify via GET.
+		// Some CSPs (e.g. AWS S3) have eventual consistency, so GET may still
+		// return the resource briefly. Retry up to maxGetVerifyAttempts times;
+		// if still visible, trust the 204 and proceed.
+		if delErr == nil && !empty {
+			getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+			log.Debug().Msgf("[Response from Spider] Object storage %s DELETE 204; verifying via GET", uid)
+
+			const maxGetVerifyAttempts = 5
+			const getVerifyInterval = 10 * time.Second
+			confirmedByGet := false
+
+			for getAttempt := 1; getAttempt <= maxGetVerifyAttempts; getAttempt++ {
+				spGetReq := clientManager.NoBody
+				spGetResp := spiderGetBucketInfoRes{}
+
+				getRestyResp, getErr := clientManager.ExecuteHttpRequest(
+					client,
+					"GET",
+					getURL,
+					spiderS3JSONHeaders,
+					clientManager.SetUseBody(spGetReq),
+					&spGetReq,
+					&spGetResp,
+					clientManager.ShortDuration,
+				)
+				getErr = clientManager.HandleHttpResponse(getRestyResp, getErr)
+
+				if getErr != nil {
+					// GET 404 → confirmed deleted
+					log.Info().Msgf("Object storage %s deletion confirmed (GET 404)", uid)
+					confirmedByGet = true
+					break
+				}
+
+				if getAttempt < maxGetVerifyAttempts {
+					log.Debug().Msgf("Object storage %s still visible via GET (attempt %d/%d); waiting %s...", uid, getAttempt, maxGetVerifyAttempts, getVerifyInterval)
+					time.Sleep(getVerifyInterval)
+				}
+			}
+
+			if !confirmedByGet {
+				// Still visible after all retries — trust DELETE 204 and proceed
+				log.Warn().Msgf("Object storage %s still visible via GET after %d attempts; trusting DELETE 204 and removing metadata", uid, maxGetVerifyAttempts)
+			}
 		}
 	} else {
 		log.Warn().Msgf("Object storage %s has no CSP resource (Uid is empty). Skipping Spider DELETE and removing metadata only.", osId)
@@ -1926,11 +1952,23 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expires time.Duration, o
 
 	log.Debug().Msgf("[Response from Spider] Generating presigned URL: %+v", spResp)
 
-	// 4. Return the presigned URL
+	// 4. Determine CSP-specific required headers.
+	// Some CSPs require additional HTTP headers when using a presigned URL
+	// (e.g. Azure Blob Storage requires x-ms-blob-type for PUT uploads).
+	// Clients must include these headers exactly as provided.
+	var requiredHeaders map[string]string
+	if csp.ResolveCloudPlatform(cspType) == csp.Azure && operation == "upload" {
+		requiredHeaders = map[string]string{
+			"x-ms-blob-type": "BlockBlob",
+		}
+	}
+
+	// 5. Return the presigned URL
 	return model.ObjectStoragePresignedUrlResponse{
-		Expires:      spResp.Expires,
-		Method:       spResp.Method,
-		PreSignedURL: spResp.PreSignedURL,
+		Expires:         spResp.Expires,
+		Method:          spResp.Method,
+		PreSignedURL:    spResp.PreSignedURL,
+		RequiredHeaders: requiredHeaders,
 	}, nil
 }
 
