@@ -936,48 +936,20 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 
 		// DELETE 204 succeeded. Verify via GET.
 		// Some CSPs (e.g. AWS S3) have eventual consistency, so GET may still
-		// return the resource briefly. Retry up to maxGetVerifyAttempts times;
-		// if still visible, trust the 204 and proceed.
+		// return the resource briefly. Retry up to 5 times;
+		// if still visible, trust the 204 and proceed (intentional policy: S3 metadata lag is transient).
 		if delErr == nil && !empty {
 			getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
 			log.Debug().Msgf("[Response from Spider] Object storage %s DELETE 204; verifying via GET", uid)
 
-			const maxGetVerifyAttempts = 5
-			const getVerifyInterval = 10 * time.Second
-			confirmedByGet := false
-
-			for getAttempt := 1; getAttempt <= maxGetVerifyAttempts; getAttempt++ {
-				spGetReq := clientManager.NoBody
-				spGetResp := spiderGetBucketInfoRes{}
-
-				getRestyResp, getErr := clientManager.ExecuteHttpRequest(
-					client,
-					"GET",
-					getURL,
-					spiderS3JSONHeaders,
-					clientManager.SetUseBody(spGetReq),
-					&spGetReq,
-					&spGetResp,
-					clientManager.ShortDuration,
-				)
-				getErr = clientManager.HandleHttpResponse(getRestyResp, getErr)
-
-				if getErr != nil {
-					// GET 404 → confirmed deleted
-					log.Info().Msgf("Object storage %s deletion confirmed (GET 404)", uid)
-					confirmedByGet = true
-					break
+			osDeleted, verifyErr := PollResourceDeletedViaSpider(getURL, spiderS3JSONHeaders, DefaultPollMaxAttempts, DefaultPollInterval)
+			if !osDeleted {
+				if verifyErr != nil {
+					log.Warn().Err(verifyErr).Msgf("Object storage %s verification GET failed; trusting DELETE 204 and removing metadata", uid)
+				} else {
+					// Still visible after all retries — trust DELETE 204 and proceed
+					log.Warn().Msgf("Object storage %s still visible via GET after 5 attempts; trusting DELETE 204 and removing metadata", uid)
 				}
-
-				if getAttempt < maxGetVerifyAttempts {
-					log.Debug().Msgf("Object storage %s still visible via GET (attempt %d/%d); waiting %s...", uid, getAttempt, maxGetVerifyAttempts, getVerifyInterval)
-					time.Sleep(getVerifyInterval)
-				}
-			}
-
-			if !confirmedByGet {
-				// Still visible after all retries — trust DELETE 204 and proceed
-				log.Warn().Msgf("Object storage %s still visible via GET after %d attempts; trusting DELETE 204 and removing metadata", uid, maxGetVerifyAttempts)
 			}
 		}
 	} else {

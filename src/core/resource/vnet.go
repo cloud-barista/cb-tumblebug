@@ -295,15 +295,13 @@ func IsAvailableForUseInCSP(vNetReq *model.VNetReq, provider string) (bool, erro
 
 			// It's not available if the CIDR blocks are the same
 			if vNetIpNet.String() == reservedIpNet.String() {
-				err := fmt.Errorf("vNet CIDR block %s is in the reserved CIDR blocks (provider: %s)", vNetCidrBlock, provider)
-				log.Warn().Msgf(err.Error())
+				log.Warn().Msgf("vNet CIDR block %s is in the reserved CIDR blocks (provider: %s)", vNetCidrBlock, provider)
 				// return false, err
 			}
 
 			// Check if the vNet CIDR block is in the reserved CIDR blocks
 			if reservedIpNet.Contains(vNetIpNet.IP) {
-				err := fmt.Errorf("vNet CIDR block %s is in the reserved CIDR blocks (provider: %s)", vNetCidrBlock, provider)
-				log.Warn().Msgf(err.Error())
+				log.Warn().Msgf("vNet CIDR block %s is in the reserved CIDR blocks (provider: %s)", vNetCidrBlock, provider)
 				// return false, err
 			}
 		}
@@ -508,7 +506,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	vNetInfo.ConnectionName = vNetReq.ConnectionName
 	connConfig, err := common.GetConnConfig(vNetInfo.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %w", err)
 		log.Error().Err(err).Msg("")
 	}
 	vNetInfo.ConnectionConfig = connConfig
@@ -897,7 +895,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	action, valid := ParseNetworkAction(actionParam)
 	if !valid {
 		errMsg := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Msgf(errMsg.Error())
+		log.Warn().Msg(errMsg.Error())
 		return emptyRet, errMsg
 	}
 
@@ -931,7 +929,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		subnetDelAction = ActionForce
 	default:
 		err := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Msgf(err.Error())
+		log.Warn().Msg(err.Error())
 		return emptyRet, err
 	}
 
@@ -1005,8 +1003,11 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	trials := 2
 	seconds := uint64(3)
 	ok := false
-	// Sleep and retry if the vNet deletion fails
+
+	// Retry loop: handles transient network/transport errors (e.g. 503, timeout)
+	// and, less commonly, transient Result:false responses (e.g. rate-limiting).
 	for i := range trials {
+		// On the second attempt, wait before retrying to avoid hammering the CSP.
 		if i > 0 {
 			log.Warn().Msgf("Retrying to delete vNet (%s) after %d seconds...", vNetId, seconds)
 			time.Sleep(time.Duration(seconds) * time.Second)
@@ -1014,15 +1015,13 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 
 		log.Debug().Msgf("[Request to Spider] Deleting VPC: %s", url)
 
-		var spResp spiderBooleanInfoResp
+		var spResp spiderBooleanInfoResp // response body: {"Result":"true"|"false"}
 
 		client := clientManager.NewHttpClient()
 		method := "DELETE"
 
-		// restyResp is captured so HandleHttpResponse can wrap the error with the
-		// HTTP status code; this lets errutil.IsNotFoundError use the status code
-		// as a secondary signal when the error message alone is ambiguous.
-		restyResp, callErr := clientManager.ExecuteHttpRequest(
+		// restyResp is captured so HandleHttpResponse can wrap the HTTP status code for errutil.IsNotFoundError.
+		restyResp, callErr := clientManager.ExecuteHttpRequest( // send DELETE request to Spider
 			client,
 			method,
 			url,
@@ -1032,39 +1031,60 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 			&spResp,
 			clientManager.MediumDuration,
 		)
-		err = clientManager.HandleHttpResponse(restyResp, callErr)
+		err = clientManager.HandleHttpResponse(restyResp, callErr) // normalize HTTP error into err
 
 		log.Trace().Msgf("[Response from Spider] Deleting VPC: %+v", spResp)
 
 		if err != nil {
 			if errutil.IsNotFoundError(err) {
+				// 404: vNet is already gone on the CSP side — treat as successful deletion.
 				log.Info().Msgf("VPC (%s) not found on CSP, treating as already deleted", vNetId)
-				ok = true
-				err = nil
-				break
+				ok = true // mark as deleted
+				err = nil // clear error; not a failure
+				break     // no further retries needed
 			}
-			log.Error().Err(err).Msg("")
+			// Other errors (5xx, transport failure): log and retry.
+			log.Warn().Err(err).Msg("")
 			continue
 		}
+		// Parse Spider's boolean result field ("true" or "false").
 		ok, err = strconv.ParseBool(spResp.Result)
 		if err != nil {
+			// Unexpected response format — retry.
 			log.Error().Err(err).Msg("")
 			continue
 		}
 		if ok {
-			break
+			break // Result:true — Spider confirmed deletion; exit loop immediately.
 		}
+		// Result:false — deletion rejected (e.g. subnet dependency); retry once.
 	}
 
-	// Finally, check if the vNet deletion was successful
+	// Check final result after all trials
 	if err != nil {
+		// A network/transport error persisted through all retries.
 		markVNetDeleteFailedThenReconcile(nsId, vNetId, vNetKey, &vNetInfo, err)
 		return emptyRet, fmt.Errorf("failed to delete vNet '%s'", vNetId)
 	}
 	if !ok {
-		err := fmt.Errorf("failed to delete the vNet (%s)", vNetId)
-		markVNetDeleteFailedThenReconcile(nsId, vNetId, vNetKey, &vNetInfo, err)
-		return emptyRet, err
+		// Spider returned Result:false on every attempt — treat as a hard deletion failure.
+		delErr := fmt.Errorf("failed to delete the vNet (%s)", vNetId)
+		markVNetDeleteFailedThenReconcile(nsId, vNetId, vNetKey, &vNetInfo, delErr)
+		return emptyRet, delErr
+	}
+
+	// Poll via Spider GET after Result:true, because some CSPs delete asynchronously;
+	// the resource may still be visible briefly after Spider reports success (eventual consistency).
+	// Spider's DELETE success is authoritative; polling failures are warnings only (trust DELETE policy).
+	verifyURL := fmt.Sprintf("%s/vpc/%s?ConnectionName=%s",
+		model.SpiderRestUrl, vNetInfo.CspResourceName, vNetInfo.ConnectionName)
+	deleted, verifyErr := PollResourceDeletedViaSpider(verifyURL, nil, DefaultPollMaxAttempts, DefaultPollInterval)
+	if !deleted {
+		if verifyErr != nil {
+			log.Warn().Err(verifyErr).Msgf("vNet (%s): GET inconclusive after DELETE; trusting DELETE and removing metadata", vNetId)
+		} else {
+			log.Warn().Msgf("vNet (%s) still visible via Spider after polling; trusting DELETE and removing metadata", vNetId)
+		}
 	}
 
 	// Delete the saved the vNet info
@@ -1657,7 +1677,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	// Validate options: withSubnets
 	if withSubnets != "" && withSubnets != "true" && withSubnets != "false" {
 		errMsg := fmt.Errorf("invalid option, withSubnets (%s)", withSubnets)
-		log.Warn().Msgf(errMsg.Error())
+		log.Warn().Msg(errMsg.Error())
 		return emptyRet, errMsg
 	}
 	if withSubnets == "" {

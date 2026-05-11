@@ -70,17 +70,17 @@ type Condition struct {
 
 **Common (Ready condition)**
 
-| Reason             | Used By           | Situation                  |
-| ------------------ | ----------------- | -------------------------- |
-| `Creating`         | VNet, Subnet, VPN | Creation in progress       |
-| `CreationFailed`   | VNet, Subnet, VPN | Creation failed            |
-| `Deleting`         | VNet, Subnet, VPN | Deletion in progress       |
-| `DeletionFailed`   | VNet, Subnet, VPN | Deletion failed            |
-| `Registering`      | VNet, Subnet      | Registration in progress   |
-| `RegisterFailed`   | VNet, Subnet      | Registration failed        |
-| `Deregistering`    | VNet, Subnet      | Deregistration in progress |
-| `DeregisterFailed` | VNet, Subnet      | Deregistration failed      |
-| `Available`        | VNet, Subnet, VPN | Operational and healthy    |
+| Reason             | Used By           | Situation                                                                                                                                     |
+| ------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Creating`         | VNet, Subnet, VPN | Creation in progress                                                                                                                          |
+| `CreationFailed`   | VNet, Subnet, VPN | Creation failed                                                                                                                               |
+| `Deleting`         | VNet, Subnet, VPN | Deletion in progress                                                                                                                          |
+| `DeletionFailed`   | VNet, Subnet, VPN | Deletion failed                                                                                                                               |
+| `Registering`      | VNet, Subnet      | Registration in progress                                                                                                                      |
+| `RegisterFailed`   | VNet, Subnet      | Registration failed                                                                                                                           |
+| `Deregistering`    | VNet, Subnet      | Deregistration in progress                                                                                                                    |
+| `DeregisterFailed` | VNet, Subnet      | Deregistration failed                                                                                                                         |
+| `Available`        | VNet, Subnet, VPN | Operational and healthy                                                                                                                       |
 | `Restored`         | VNet, Subnet, VPN | Status restored to Available by Reconcile after a terminal-failure (e.g., `DeletionFailed`) when the CSP resource is confirmed to still exist |
 
 **Synced condition**
@@ -221,6 +221,15 @@ They do not support Register/Deregister operations.
 | Success | (resource removed)         |           |                      |            |
 | Failure | `False` / `DeletionFailed` | unchanged | unchanged            | `Failed`   |
 
+> **Post-deletion verification**
+>
+> - **In most cases polling does not trigger** — the first GET returns 404 immediately and the resource is confirmed deleted on the first attempt.
+> - Polling handles CSP anomalies (Spider-controlled resources only):
+>   - GCP may return HTTP 200 + `Result:false` for an already-deleted resource;
+>   - some CSPs report success while deletion is still in-flight.
+> - All Spider-controlled resources follow a **"trust DELETE" policy**: Spider's DELETE success is authoritative. GET visibility after DELETE reflects CSP async deletion or eventual consistency, not a real failure. Polling failures are logged as warnings only.
+> - **VPN is exempt from polling**: Terrarium uses OpenTofu (declarative) and already retries deletion once on failure. A successful DELETE response guarantees `terraform destroy` completed.
+
 ### 5.3. Register (VNet/Subnet only)
 
 | Phase   | Ready                      | Synced                  | ChildrenReady (VNet) | Status        |
@@ -244,12 +253,12 @@ CSP/Spider/Terrarium resource (Actual). It is the single corrective entry point 
 when the metadata and the real resource have drifted apart — typically because a
 previous operation failed, was interrupted, or was bypassed.
 
-| Scenario                             | Metadata               | CSP/Terrarium | Action            | Result                                     |
-| ------------------------------------ | ---------------------- | ------------- | ----------------- | ------------------------------------------ |
-| Healthy                              | exists / `Available`   | exists        | `NoActionNeeded`  | unchanged                                  |
-| Orphaned metadata                    | exists                 | missing (404) | `MetadataRemoved` | metadata + label deleted                   |
-| **Stuck in terminal-failure state**  | `Failed(DeletionFailed` or `DeregisterFailed)` | exists | **`StatusRestored`** | `Ready=True / Restored`, `Synced=True / Available`, `Status=Available` |
-| Spider/Terrarium transient outage    | any                    | 5xx / network | (none)            | error returned, status unchanged           |
+| Scenario                            | Metadata                                       | CSP/Terrarium | Action               | Result                                                                 |
+| ----------------------------------- | ---------------------------------------------- | ------------- | -------------------- | ---------------------------------------------------------------------- |
+| Healthy                             | exists / `Available`                           | exists        | `NoActionNeeded`     | unchanged                                                              |
+| Orphaned metadata                   | exists                                         | missing (404) | `MetadataRemoved`    | metadata + label deleted                                               |
+| **Stuck in terminal-failure state** | `Failed(DeletionFailed` or `DeregisterFailed)` | exists        | **`StatusRestored`** | `Ready=True / Restored`, `Synced=True / Available`, `Status=Available` |
+| Spider/Terrarium transient outage   | any                                            | 5xx / network | (none)               | error returned, status unchanged                                       |
 
 **Restore guard (conservative):** Status is restored to `Available` only when **all** of
 the following hold:

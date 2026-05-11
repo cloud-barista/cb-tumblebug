@@ -1137,6 +1137,8 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId
 		markVpnDeleteFailedThenReconcile(ctx, nsId, infraId, vpnId, vpnKey, &vpnInfo, err)
 		return emptyRet, err
 	}
+	// Terrarium uses OpenTofu (declarative), and executeWithOneRetry already retries once on failure.
+	// A successful DELETE response means terraform destroy completed — no further polling needed.
 
 	log.Debug().Msgf("resDeleteSiteToSiteVpn: %+v", resDeleteSiteToSiteVpn.Message)
 	log.Trace().Msgf("resDeleteSiteToSiteVpn: %+v", resDeleteSiteToSiteVpn.Detail)
