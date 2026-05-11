@@ -572,6 +572,27 @@ func ListSubnet(nsId string, vNetId string) ([]model.SubnetInfo, error) {
 	return subnetInfoList, nil
 }
 
+// markSubnetDeleteFailedThenReconcile persists the subnet as
+// Failed(DeletionFailed) and then runs a single-shot self-heal ReconcileSubnet
+// (any reconcile error is logged at WARN only).
+//
+// `cause` is the original delete error; it populates both the Condition
+// message and SystemMessage. The caller decides what error to return.
+func markSubnetDeleteFailedThenReconcile(nsId, vNetId, subnetId, subnetKey string, subnetInfo *model.SubnetInfo, cause error) {
+	log.Error().Err(cause).Msg("")
+	// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+	model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
+	subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
+	subnetInfo.SystemMessage = cause.Error()
+	if failVal, marshalErr := json.Marshal(subnetInfo); marshalErr == nil {
+		_ = kvstore.Put(subnetKey, string(failVal))
+	}
+	// Self-heal: opportunistic single-shot Reconcile after recording Failed state.
+	if _, recErr := ReconcileSubnet(nsId, vNetId, subnetId); recErr != nil {
+		log.Warn().Err(recErr).Msgf("auto-reconcile after delete failure failed for subnet %s/%s/%s", nsId, vNetId, subnetId)
+	}
+}
+
 // DeleteSubnet deletes and returns the result
 func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam string) (model.SimpleMsg, error) {
 	log.Info().Msg("DeleteSubnet")
@@ -730,29 +751,13 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		if errutil.IsNotFoundError(err) {
 			log.Info().Msgf("Subnet (%s) not found on CSP, treating as already deleted", subnetInfo.Id)
 		} else {
-			log.Error().Err(err).Msg("")
-			// [Conditions] Deletion failed → mark as Failed to prevent stuck state
-			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-			subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
-			subnetInfo.SystemMessage = err.Error()
-			failVal, marshalErr := json.Marshal(subnetInfo)
-			if marshalErr == nil {
-				_ = kvstore.Put(subnetKey, string(failVal))
-			}
+			markSubnetDeleteFailedThenReconcile(nsId, vNetId, subnetId, subnetKey, &subnetInfo, err)
 			return emptyRet, fmt.Errorf("failed to delete subnet '%s'", subnetInfo.Id)
 		}
 	} else {
 		ok, err := strconv.ParseBool(spResp.Result)
 		if err != nil {
-			log.Error().Err(err).Msg("")
-			// [Conditions] Deletion failed → mark as Failed to prevent stuck state
-			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-			subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
-			subnetInfo.SystemMessage = err.Error()
-			failVal, marshalErr := json.Marshal(subnetInfo)
-			if marshalErr == nil {
-				_ = kvstore.Put(subnetKey, string(failVal))
-			}
+			markSubnetDeleteFailedThenReconcile(nsId, vNetId, subnetId, subnetKey, &subnetInfo, err)
 			return emptyRet, err
 		}
 		if !ok {
@@ -780,15 +785,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 					log.Warn().Err(verifyErr).Msgf("Subnet (%s) deletion could not be verified — treating as failure", subnetInfo.Id)
 				}
 				delErr := fmt.Errorf("failed to delete the subnet (%s)", subnetInfo.Id)
-				log.Error().Err(delErr).Msg("")
-				// [Conditions] Deletion failed → mark as Failed to prevent stuck state
-				model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, delErr.Error())
-				subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
-				subnetInfo.SystemMessage = delErr.Error()
-				failVal, marshalErr := json.Marshal(subnetInfo)
-				if marshalErr == nil {
-					_ = kvstore.Put(subnetKey, string(failVal))
-				}
+				markSubnetDeleteFailedThenReconcile(nsId, vNetId, subnetId, subnetKey, &subnetInfo, delErr)
 				return emptyRet, delErr
 			}
 		}
@@ -976,11 +973,58 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 	}
 
 	if err == nil {
-		// [Output]
-		err := fmt.Errorf("may not be reconciled, subnet info (id: %s) exists", subnetId)
-		log.Warn().Err(err).Msg("")
-		ret.Message = err.Error()
-		return ret, err
+		// Subnet exists on CSP. Restore status only when metadata is stuck in
+		// a terminal-failure state (e.g., DeletionFailed) — typically caused
+		// by a dependency that has since been resolved.
+		if model.ShouldRestoreToAvailable(subnetInfo.Conditions) {
+			prevReason := ""
+			if r := model.GetCondition(subnetInfo.Conditions, model.ConditionReady); r != nil {
+				prevReason = r.Reason
+			}
+			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored,
+				fmt.Sprintf("Restored from %s; CSP resource exists", prevReason))
+			model.SetCondition(&subnetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+			subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
+			subnetInfo.SystemMessage = ""
+
+			sVal, mErr := json.Marshal(subnetInfo)
+			if mErr != nil {
+				log.Error().Err(mErr).Msg("")
+				return emptyRet, mErr
+			}
+			if pErr := kvstore.Put(subnetKey, string(sVal)); pErr != nil {
+				log.Error().Err(pErr).Msg("")
+				return emptyRet, pErr
+			}
+
+			// Reflect the restored subnet status into the parent vNet's
+			// SubnetInfoList and recompute ChildrenReady.
+			for i, s := range vNetInfo.SubnetInfoList {
+				if s.Id == subnetId {
+					vNetInfo.SubnetInfoList[i] = subnetInfo
+					break
+				}
+			}
+			if len(vNetInfo.SubnetInfoList) > 0 {
+				model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonAllReady, "")
+			} else {
+				model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
+			}
+			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+			if vVal, vmErr := json.Marshal(vNetInfo); vmErr == nil {
+				if vpErr := kvstore.Put(vNetKey, string(vVal)); vpErr != nil {
+					log.Warn().Err(vpErr).Msg("failed to persist updated vNet info after subnet restore")
+				}
+			}
+
+			ret.Message = fmt.Sprintf("subnet (%s) status restored to Available from %s; CSP resource exists", subnetId, prevReason)
+			log.Info().Msg(ret.Message)
+			return ret, nil
+		}
+
+		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetId)
+		log.Info().Msg(ret.Message)
+		return ret, nil
 	}
 
 	/*

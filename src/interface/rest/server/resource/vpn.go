@@ -492,13 +492,21 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Description
 // @Description - Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.
 // @Description
+// @Description **Query option:**
+// @Description
+// @Description | option | Description |
+// @Description |--------|-------------|
+// @Description | (none) | Standard delete via Terrarium. |
+// @Description | `reconcile` | Do not call the Terrarium delete API. Instead, check whether the Terrarium resource actually exists. If it is missing, remove orphaned Tumblebug metadata. If it exists but the metadata is stuck in a terminal-failure state (e.g., `Failed(DeletionFailed)`), restore the status to `Available`. Returns a reconcile result object instead of a normal delete response. |
 // @Tags [Infra Resource] Site-to-site VPN Management (preview)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
+// @Param option query string false "Delete option" Enums(reconcile)
 // @Success 200 {object} model.SimpleMsg "OK"
+// @Success 200 {object} model.VpnReconcileResponse "OK (option=reconcile only)"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -531,6 +539,22 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
 		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	option := strings.ToLower(c.QueryParam("option"))
+	if option != "" && option != "reconcile" {
+		err := fmt.Errorf("invalid option %q: must be one of reconcile", option)
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	if option == "reconcile" {
+		result, err := resource.ReconcileSiteToSiteVPN(ctx, nsId, infraId, vpnId)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to reconcile site-to-site VPN")
+			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		}
+		return c.JSON(http.StatusOK, result)
 	}
 
 	resp, err := resource.DeleteSiteToSiteVPN(ctx, nsId, infraId, vpnId)

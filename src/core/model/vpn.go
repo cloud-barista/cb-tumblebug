@@ -255,3 +255,25 @@ type VpnHealthCheckTargetNodeInfo struct {
 	PrivateIP string `json:"privateIp" example:"10.2.0.4"`
 	CSP       string `json:"csp" example:"gcp"`
 }
+
+// VpnReconcileResponse represents the result of a reconcile operation on a site-to-site VPN.
+// Reconcile checks for discrepancies between Tumblebug metadata and the actual Terrarium/CSP
+// resource, then takes corrective action (e.g., removing orphaned metadata when the
+// Terrarium resource no longer exists, or restoring the status to Available when the
+// resource is alive but metadata is stuck in a terminal-failure state).
+type VpnReconcileResponse struct {
+	// VpnId is the Tumblebug resource ID that was reconciled
+	VpnId string `json:"vpnId" example:"vpn01"`
+	// MetadataStatus indicates whether Tumblebug metadata was found in the key-value store
+	// Possible values: "Found", "NotFound"
+	MetadataStatus string `json:"metadataStatus" example:"Found"`
+	// CspResourceStatus indicates whether the corresponding Terrarium/CSP resource actually exists
+	// Possible values: "Exists", "NotFound", "Skipped"
+	// "Skipped" means the check was not performed because the metadata had no Uid (terrarium ID).
+	CspResourceStatus string `json:"cspResourceStatus" example:"NotFound"`
+	// Action describes what corrective action was taken
+	// Possible values: "NoActionNeeded", "MetadataRemoved", "StatusRestored"
+	Action string `json:"action" example:"MetadataRemoved"`
+	// Message provides a human-readable description of the reconcile result
+	Message string `json:"message" example:"Orphaned metadata removed: Terrarium resource does not exist"`
+}

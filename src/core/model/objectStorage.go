@@ -191,7 +191,11 @@ type ObjectStorageReconcileResponse struct {
 	// "Skipped" means the CSP check was not performed because the metadata had no CSP resource ID (Uid is empty)
 	CspResourceStatus string `json:"cspResourceStatus" example:"NotFound"`
 	// Action describes what corrective action was taken
-	// Possible values: "NoActionNeeded", "MetadataRemoved", "MetadataUpdated"
+	// Possible values: "NoActionNeeded", "MetadataRemoved", "MetadataUpdated", "StatusRestored"
+	// "StatusRestored" means the resource status was restored to Available because
+	// the CSP resource still exists but Tumblebug metadata was stuck in a terminal
+	// failure state (e.g., DeletionFailed) — typically caused by a dependency that
+	// has since been resolved.
 	Action string `json:"action" example:"MetadataRemoved"`
 	// Message provides a human-readable description of the reconcile result
 	Message string `json:"message" example:"Orphaned metadata removed: CSP resource does not exist"`

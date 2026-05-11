@@ -72,13 +72,14 @@ Object Storage does not use the `ChildrenReady` condition (no child resources).
 
 **Ready condition**
 
-| Reason           | Used By        | Situation            |
-| ---------------- | -------------- | -------------------- |
-| `Creating`       | Object Storage | Creation in progress |
-| `CreationFailed` | Object Storage | Creation failed      |
-| `Deleting`       | Object Storage | Deletion in progress |
-| `DeletionFailed` | Object Storage | Deletion failed      |
-| `Available`      | Object Storage | Operational          |
+| Reason           | Used By        | Situation                                                                                                        |
+| ---------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Creating`       | Object Storage | Creation in progress                                                                                             |
+| `CreationFailed` | Object Storage | Creation failed                                                                                                  |
+| `Deleting`       | Object Storage | Deletion in progress                                                                                             |
+| `DeletionFailed` | Object Storage | Deletion failed                                                                                                  |
+| `Available`      | Object Storage | Operational                                                                                                      |
+| `Restored`       | Object Storage | Status restored to Available by Reconcile after `DeletionFailed` when the CSP bucket is confirmed to still exist |
 
 **Synced condition**
 
@@ -145,6 +146,30 @@ so that the Failed state is durable.
 
 On failure, `SystemMessage` is set with the error detail and the resource is persisted to kvstore.
 
+### 5.3. Reconcile
+
+`ReconcileObjectStorage` reconciles the gap between Tumblebug metadata (Desired) and the
+actual CSP bucket (Actual). Same pattern as network resources — see
+[Network §5.5 Reconcile](network-status-management.md#55-reconcile) for the full design.
+
+| Scenario                            | Metadata                 | CSP bucket    | Action               | Result                                                                 |
+| ----------------------------------- | ------------------------ | ------------- | -------------------- | ---------------------------------------------------------------------- |
+| Healthy                             | exists / `Available`     | exists        | `NoActionNeeded`     | unchanged                                                              |
+| Never created (Uid empty)           | exists / `Failed`        | n/a           | `MetadataRemoved`    | metadata deleted                                                       |
+| Orphaned metadata                   | exists                   | missing (404) | `MetadataRemoved`    | metadata + label deleted                                               |
+| **Stuck in terminal-failure state** | `Failed(DeletionFailed)` | exists        | **`StatusRestored`** | `Ready=True / Restored`, `Synced=True / Available`, `Status=Available` |
+| Spider transient outage             | any                      | 5xx / network | (none)               | error returned, status unchanged                                       |
+
+**Restore guard:** Status is restored to `Available` only when the CSP bucket is
+confirmed to exist AND `ConditionReady` is `False` with `Reason == DeletionFailed`.
+`CreationFailed` and in-flight states are intentionally excluded.
+
+**Auto-trigger after delete failure:** When `DeleteObjectStorage` fails and records the
+resource as `Failed(DeletionFailed)`, `ReconcileObjectStorage` is automatically invoked
+**once** immediately after the failure is persisted. The original delete error is still
+returned to the caller unchanged; auto-reconcile errors are logged at WARN only. There
+is no internal retry loop or background scheduler.
+
 ---
 
 ## 6. Status Derivation
@@ -183,11 +208,11 @@ Storage and network resources share the same Conditions infrastructure:
 
 Domain-specific differences:
 
-| Aspect          | Network (`NetworkStatus*`)              | Storage (`StorageStatus*`) |
-| --------------- | --------------------------------------- | -------------------------- |
-| Status values   | 7 (includes Registering, Deregistering) | 5 (no Register/Deregister) |
-| Condition types | Ready, Synced, ChildrenReady            | Ready, Synced              |
-| Operations      | Create, Delete, Register, Deregister    | Create, Delete             |
+| Aspect          | Network (`NetworkStatus*`)                      | Storage (`StorageStatus*`) |
+| --------------- | ----------------------------------------------- | -------------------------- |
+| Status values   | 7 (includes Registering, Deregistering)         | 5 (no Register/Deregister) |
+| Condition types | Ready, Synced, ChildrenReady                    | Ready, Synced              |
+| Operations      | Create, Delete, Register, Deregister, Reconcile | Create, Delete, Reconcile  |
 
 ---
 
@@ -197,4 +222,4 @@ Domain-specific differences:
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `src/core/model/condition.go`        | `Condition` struct, `ResourceStatus*` base constants, `StorageStatus*` aliases, `DeriveObjectStorageStatus()` |
 | `src/core/model/objectStorage.go`    | `ObjectStorageInfo.Conditions []Condition`, `ObjectStorageInfo.SystemMessage string`                          |
-| `src/core/resource/objectStorage.go` | Conditions transitions for `CreateObjectStorage`, `DeleteObjectStorage`                                       |
+| `src/core/resource/objectStorage.go` | Conditions transitions for `CreateObjectStorage`, `DeleteObjectStorage`, `ReconcileObjectStorage`             |
