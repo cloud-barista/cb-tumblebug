@@ -70,17 +70,18 @@ type Condition struct {
 
 **Common (Ready condition)**
 
-| Reason             | Used By           | Situation                  |
-| ------------------ | ----------------- | -------------------------- |
-| `Creating`         | VNet, Subnet, VPN | Creation in progress       |
-| `CreationFailed`   | VNet, Subnet, VPN | Creation failed            |
-| `Deleting`         | VNet, Subnet, VPN | Deletion in progress       |
-| `DeletionFailed`   | VNet, Subnet, VPN | Deletion failed            |
-| `Registering`      | VNet, Subnet      | Registration in progress   |
-| `RegisterFailed`   | VNet, Subnet      | Registration failed        |
-| `Deregistering`    | VNet, Subnet      | Deregistration in progress |
-| `DeregisterFailed` | VNet, Subnet      | Deregistration failed      |
-| `Available`        | VNet, Subnet, VPN | Operational and healthy    |
+| Reason             | Used By           | Situation                                                                                                                                     |
+| ------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Creating`         | VNet, Subnet, VPN | Creation in progress                                                                                                                          |
+| `CreationFailed`   | VNet, Subnet, VPN | Creation failed                                                                                                                               |
+| `Deleting`         | VNet, Subnet, VPN | Deletion in progress                                                                                                                          |
+| `DeletionFailed`   | VNet, Subnet, VPN | Deletion failed                                                                                                                               |
+| `Registering`      | VNet, Subnet      | Registration in progress                                                                                                                      |
+| `RegisterFailed`   | VNet, Subnet      | Registration failed                                                                                                                           |
+| `Deregistering`    | VNet, Subnet      | Deregistration in progress                                                                                                                    |
+| `DeregisterFailed` | VNet, Subnet      | Deregistration failed                                                                                                                         |
+| `Available`        | VNet, Subnet, VPN | Operational and healthy                                                                                                                       |
+| `Restored`         | VNet, Subnet, VPN | Status restored to Available by Reconcile after a terminal-failure (e.g., `DeletionFailed`) when the CSP resource is confirmed to still exist |
 
 **Synced condition**
 
@@ -220,6 +221,15 @@ They do not support Register/Deregister operations.
 | Success | (resource removed)         |           |                      |            |
 | Failure | `False` / `DeletionFailed` | unchanged | unchanged            | `Failed`   |
 
+> **Post-deletion verification**
+>
+> - **In most cases polling does not trigger** — the first GET returns 404 immediately and the resource is confirmed deleted on the first attempt.
+> - Polling handles CSP anomalies (Spider-controlled resources only):
+>   - GCP may return HTTP 200 + `Result:false` for an already-deleted resource;
+>   - some CSPs report success while deletion is still in-flight.
+> - All Spider-controlled resources follow a **"trust DELETE" policy**: Spider's DELETE success is authoritative. GET visibility after DELETE reflects CSP async deletion or eventual consistency, not a real failure. Polling failures are logged as warnings only.
+> - **VPN is exempt from polling**: Terrarium uses OpenTofu (declarative) and already retries deletion once on failure. A successful DELETE response guarantees `terraform destroy` completed.
+
 ### 5.3. Register (VNet/Subnet only)
 
 | Phase   | Ready                      | Synced                  | ChildrenReady (VNet) | Status        |
@@ -235,6 +245,53 @@ They do not support Register/Deregister operations.
 | Start   | `False` / `Deregistering`    | unchanged | unchanged            | `Deregistering` |
 | Success | (resource removed)           |           |                      |                 |
 | Failure | `False` / `DeregisterFailed` | unchanged | unchanged            | `Failed`        |
+
+### 5.5. Reconcile
+
+`Reconcile` reconciles the gap between Tumblebug metadata (Desired) and the actual
+CSP/Spider/Terrarium resource (Actual). It is the single corrective entry point used
+when the metadata and the real resource have drifted apart — typically because a
+previous operation failed, was interrupted, or was bypassed.
+
+| Scenario                            | Metadata                                       | CSP/Terrarium | Action               | Result                                                                 |
+| ----------------------------------- | ---------------------------------------------- | ------------- | -------------------- | ---------------------------------------------------------------------- |
+| Healthy                             | exists / `Available`                           | exists        | `NoActionNeeded`     | unchanged                                                              |
+| Orphaned metadata                   | exists                                         | missing (404) | `MetadataRemoved`    | metadata + label deleted                                               |
+| **Stuck in terminal-failure state** | `Failed(DeletionFailed` or `DeregisterFailed)` | exists        | **`StatusRestored`** | `Ready=True / Restored`, `Synced=True / Available`, `Status=Available` |
+| Spider/Terrarium transient outage   | any                                            | 5xx / network | (none)               | error returned, status unchanged                                       |
+
+**Restore guard (conservative):** Status is restored to `Available` only when **all** of
+the following hold:
+
+1. CSP/Spider/Terrarium GET (or HEAD) returns success — the resource is confirmed alive.
+2. `ConditionReady.Status == False`.
+3. `ConditionReady.Reason ∈ { DeletionFailed, DeregisterFailed }` — only terminal-failure
+   states are restored.
+
+In-flight states (`Creating`, `Deleting`, `Registering`, `Deregistering`) and
+`CreationFailed` are intentionally **excluded** to avoid masking concurrent operations
+or partially-created resources. For `CreationFailed`, users should explicitly delete and
+recreate the resource.
+
+When a child Subnet's status is restored, the parent VNet's `ChildrenReady` Condition is
+recomputed and persisted alongside.
+
+**Auto-trigger after delete failure (self-healing):** When `DeleteVNet`, `DeleteSubnet`,
+`DeleteSiteToSiteVPN`, or `DeleteObjectStorage` fails and records the resource as
+`Failed(DeletionFailed)`, Reconcile is automatically invoked **once** for the affected
+resource immediately after the failure is persisted. The original delete error is still
+returned to the caller unchanged; the auto-reconcile is opportunistic and any error from
+it is logged at WARN level only. This means:
+
+- If the failure was caused by a transient dependency that was removed before the next
+  user action, the next read will already show `Available` (no manual recovery needed).
+- If the CSP resource is in fact gone, the orphaned metadata is cleaned up automatically.
+- If the failure is persistent (e.g., a long-lived dependency), the resource remains
+  `Failed(DeletionFailed)` and the user can call Reconcile (or retry the delete after
+  removing the dependency).
+
+The auto-trigger performs at most one attempt per delete failure — there is no internal
+retry loop or background scheduler.
 
 ---
 

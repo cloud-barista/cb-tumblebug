@@ -60,6 +60,11 @@ const (
 	ReasonResourceNotFound = "ResourceNotFound"
 	ReasonSyncCheckFailed  = "SyncCheckFailed"
 
+	// ReasonRestored indicates the resource status was restored to Available
+	// by Reconcile after a previously failed terminal operation
+	// (e.g., DeletionFailed) when the CSP resource was confirmed to still exist.
+	ReasonRestored = "Restored"
+
 	// Reasons for ChildrenReady condition
 	ReasonNoChildren       = "NoChildren"
 	ReasonAllReady         = "AllReady"
@@ -161,6 +166,27 @@ func GetCondition(conditions []Condition, condType ConditionType) *Condition {
 func IsConditionTrue(conditions []Condition, condType ConditionType) bool {
 	c := GetCondition(conditions, condType)
 	return c != nil && c.Status == ConditionTrue
+}
+
+// ShouldRestoreToAvailable reports whether a resource is in a terminal-failure
+// state (Ready=False with Reason ∈ {DeletionFailed, DeregisterFailed}) that
+// can be safely restored to Available by Reconcile when the CSP resource is
+// confirmed to still exist.
+//
+// In-flight states (Creating, Deleting, Registering, Deregistering) and
+// CreationFailed are intentionally excluded — restoring those could mask
+// concurrent operations or partially-created resources.
+func ShouldRestoreToAvailable(conditions []Condition) bool {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status != ConditionFalse {
+		return false
+	}
+	switch ready.Reason {
+	case ReasonDeletionFailed, ReasonDeregisterFailed:
+		return true
+	default:
+		return false
+	}
 }
 
 // DeriveVNetStatus derives the VNet status from its Conditions.

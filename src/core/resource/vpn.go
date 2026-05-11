@@ -24,6 +24,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -979,6 +980,27 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	return vpnInfo, nil
 }
 
+// markVpnDeleteFailedThenReconcile persists the VPN as Failed(DeletionFailed)
+// and then runs a single-shot self-heal ReconcileSiteToSiteVPN (any reconcile
+// error is logged at WARN only).
+//
+// `cause` is the original delete error; it populates both the Condition
+// message and SystemMessage. The caller decides what error to return.
+func markVpnDeleteFailedThenReconcile(ctx context.Context, nsId, infraId, vpnId, vpnKey string, vpnInfo *model.VpnInfo, cause error) {
+	log.Error().Err(cause).Msg("")
+	// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
+	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.SystemMessage = cause.Error()
+	if failVal, marshalErr := json.Marshal(vpnInfo); marshalErr == nil {
+		_ = kvstore.Put(vpnKey, string(failVal))
+	}
+	// Self-heal: opportunistic single-shot Reconcile after recording Failed state.
+	if _, recErr := ReconcileSiteToSiteVPN(ctx, nsId, infraId, vpnId); recErr != nil {
+		log.Warn().Err(recErr).Msgf("auto-reconcile after delete failure failed for VPN %s/%s/%s", nsId, infraId, vpnId)
+	}
+}
+
 // DeleteSiteToSiteVPN deletes a site-to-site VPN via Terrarium
 func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId string) (model.SimpleMsg, error) {
 
@@ -1083,15 +1105,7 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId
 		clientManager.VeryShortDuration,
 	)
 	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
-		log.Error().Err(err).Msg("")
-		// [Conditions] Failed to get terrarium info → mark as Failed to prevent stuck state
-		model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-		vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
-		vpnInfo.SystemMessage = err.Error()
-		failVal, marshalErr := json.Marshal(vpnInfo)
-		if marshalErr == nil {
-			_ = kvstore.Put(vpnKey, string(failVal))
-		}
+		markVpnDeleteFailedThenReconcile(ctx, nsId, infraId, vpnId, vpnKey, &vpnInfo, err)
 		return emptyRet, err
 	}
 
@@ -1120,17 +1134,11 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId
 	})
 
 	if err != nil {
-		log.Err(err).Msg("")
-		// [Conditions] Deletion failed → mark as Failed to prevent stuck state
-		model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-		vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
-		vpnInfo.SystemMessage = err.Error()
-		failVal, marshalErr := json.Marshal(vpnInfo)
-		if marshalErr == nil {
-			_ = kvstore.Put(vpnKey, string(failVal))
-		}
+		markVpnDeleteFailedThenReconcile(ctx, nsId, infraId, vpnId, vpnKey, &vpnInfo, err)
 		return emptyRet, err
 	}
+	// Terrarium uses OpenTofu (declarative), and executeWithOneRetry already retries once on failure.
+	// A successful DELETE response means terraform destroy completed — no further polling needed.
 
 	log.Debug().Msgf("resDeleteSiteToSiteVpn: %+v", resDeleteSiteToSiteVpn.Message)
 	log.Trace().Msgf("resDeleteSiteToSiteVpn: %+v", resDeleteSiteToSiteVpn.Detail)
@@ -1305,4 +1313,162 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 	log.Debug().Msgf("resReqStatus: %+v", resReqStatus.Detail)
 
 	return *resReqStatus, nil
+}
+
+// ReconcileSiteToSiteVPN checks for discrepancies between Tumblebug VPN metadata
+// and the actual Terrarium resource, then takes corrective action:
+//   - If the Terrarium resource no longer exists, orphaned metadata is removed.
+//   - If the Terrarium resource exists but the metadata is stuck in a terminal-failure
+//     state (Ready=False with Reason ∈ {DeletionFailed, DeregisterFailed}),
+//     the status is restored to Available.
+//
+// In-flight states (Creating, Deleting, etc.) and CreationFailed are intentionally
+// not restored to avoid masking concurrent operations or partially-created resources.
+func ReconcileSiteToSiteVPN(ctx context.Context, nsId, infraId, vpnId string) (model.VpnReconcileResponse, error) {
+	var emptyRet model.VpnReconcileResponse
+
+	// 1. Validate input parameters
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if err := common.CheckString(infraId); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if err := common.CheckString(vpnId); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	result := model.VpnReconcileResponse{
+		VpnId: vpnId,
+	}
+
+	// 2. Fetch metadata from the key-value store
+	resourceType := model.StrVPN
+	vpnKey := common.GenResourceKey(nsId, resourceType, vpnId)
+
+	vpnKv, exists, err := kvstore.GetKv(vpnKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if !exists {
+		// Metadata not found – nothing to reconcile
+		result.MetadataStatus = "NotFound"
+		result.CspResourceStatus = "Skipped"
+		result.Action = "NoActionNeeded"
+		result.Message = fmt.Sprintf("No metadata found for VPN '%s'; nothing to reconcile", vpnId)
+		log.Warn().Msgf("ReconcileSiteToSiteVPN: %s", result.Message)
+		return result, nil
+	}
+
+	var vpnInfo model.VpnInfo
+	if err := json.Unmarshal([]byte(vpnKv.Value), &vpnInfo); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	result.MetadataStatus = "Found"
+
+	// 3. If Uid is empty the Terrarium resource was never created; metadata is orphaned
+	if vpnInfo.Uid == "" {
+		result.CspResourceStatus = "Skipped"
+		log.Warn().Msgf("ReconcileSiteToSiteVPN: VPN '%s' has no Terrarium resource (Uid empty); removing orphaned metadata", vpnId)
+
+		if delErr := kvstore.Delete(vpnKey); delErr != nil {
+			log.Error().Err(delErr).Msg("ReconcileSiteToSiteVPN: failed to delete orphaned metadata")
+			return emptyRet, delErr
+		}
+		result.Action = "MetadataRemoved"
+		result.Message = "Orphaned metadata removed: Terrarium resource was never created (Uid is empty)"
+		return result, nil
+	}
+
+	// 4. Check whether the Terrarium resource actually exists
+	client := clientManager.NewHttpClient()
+	holder := common.CredentialHolderFromContext(ctx)
+	if holder == "" || strings.EqualFold(holder, "admin") {
+		holder = "admin"
+	}
+	client.SetHeader(model.CredentialHolderHeaderKey, holder)
+
+	trId := vpnInfo.Uid
+	url := fmt.Sprintf("%s/tr/%s", model.TerrariumRestUrl, trId)
+	requestBody := clientManager.NoBody
+	resTrInfo := new(terrariumModel.TerrariumInfo)
+	log.Debug().Msgf("[ReconcileSiteToSiteVPN] GET %s", url)
+
+	restyResp, getErr := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		resTrInfo,
+		clientManager.VeryShortDuration,
+	)
+	getErr = clientManager.HandleHttpResponse(restyResp, getErr)
+
+	// Only proceed with cleanup when the resource is confirmed not found.
+	// For server errors (5xx) or transport errors, return without changing state
+	// to prevent accidental data loss during Terrarium/CSP outages.
+	if getErr != nil && !errutil.IsNotFoundError(getErr) {
+		log.Error().Err(getErr).Msg("failed to get terrarium info, skipping reconciliation")
+		return emptyRet, fmt.Errorf("failed to reconcile VPN '%s'", vpnId)
+	}
+
+	if getErr == nil {
+		// 5a. Terrarium resource exists.
+		result.CspResourceStatus = "Exists"
+
+		if model.ShouldRestoreToAvailable(vpnInfo.Conditions) {
+			prevReason := ""
+			if r := model.GetCondition(vpnInfo.Conditions, model.ConditionReady); r != nil {
+				prevReason = r.Reason
+			}
+			model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored,
+				fmt.Sprintf("Restored from %s; Terrarium resource exists", prevReason))
+			model.SetCondition(&vpnInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+			vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+			vpnInfo.SystemMessage = ""
+
+			val, mErr := json.Marshal(vpnInfo)
+			if mErr != nil {
+				log.Error().Err(mErr).Msg("ReconcileSiteToSiteVPN: failed to marshal restored info")
+				return emptyRet, mErr
+			}
+			if pErr := kvstore.Put(vpnKey, string(val)); pErr != nil {
+				log.Error().Err(pErr).Msg("ReconcileSiteToSiteVPN: failed to persist restored info")
+				return emptyRet, pErr
+			}
+
+			result.Action = "StatusRestored"
+			result.Message = fmt.Sprintf("Terrarium resource exists; status restored to Available from %s", prevReason)
+			log.Info().Msgf("ReconcileSiteToSiteVPN: VPN '%s' status restored to Available (from %s)", vpnId, prevReason)
+			return result, nil
+		}
+
+		result.Action = "NoActionNeeded"
+		result.Message = "Terrarium resource exists; metadata is consistent"
+		log.Info().Msgf("ReconcileSiteToSiteVPN: VPN '%s' exists on Terrarium — no action needed", vpnId)
+		return result, nil
+	}
+
+	// 5b. Terrarium resource does not exist (404)
+	result.CspResourceStatus = "NotFound"
+	log.Warn().Err(getErr).Msgf("ReconcileSiteToSiteVPN: VPN '%s' not found on Terrarium; removing orphaned metadata", trId)
+
+	if delErr := kvstore.Delete(vpnKey); delErr != nil {
+		log.Error().Err(delErr).Msg("ReconcileSiteToSiteVPN: failed to delete orphaned metadata")
+		return emptyRet, delErr
+	}
+	if labelErr := label.DeleteLabelObject(model.StrVPN, vpnInfo.Uid); labelErr != nil {
+		log.Warn().Err(labelErr).Msg("ReconcileSiteToSiteVPN: failed to delete label (non-fatal)")
+	}
+
+	result.Action = "MetadataRemoved"
+	result.Message = fmt.Sprintf("Orphaned metadata removed: Terrarium resource '%s' does not exist", trId)
+	return result, nil
 }

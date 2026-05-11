@@ -30,6 +30,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -690,6 +691,64 @@ func verifyResourceDeletedOnSpider(deleteUrl string, connectionName string, reso
 
 	// If GET succeeded (HTTP 200), the resource still exists on Spider — this is unexpected after a successful DELETE
 	return fmt.Errorf("resource %s/%s still exists on Spider after DELETE reported success (re-verification GET returned HTTP 200)", resourceType, resourceId)
+}
+
+// Default parameters for post-deletion polling via Spider.
+const (
+	DefaultPollMaxAttempts = 5
+	DefaultPollInterval    = 3 * time.Second
+)
+
+// PollResourceDeletedViaSpider polls Spider GET (query-param ConnectionName) up to maxAttempts×interval
+// to confirm deletion. Handles GCP anomaly (200+Result:false → deleted) and eventual consistency.
+// Returns: (true,nil) confirmed | (false,nil) still exists | (false,err) inconclusive.
+func PollResourceDeletedViaSpider(getURL string, headers map[string]string, maxAttempts int, interval time.Duration) (deleted bool, verifyErr error) {
+	var lastErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		reqBody := clientManager.NoBody
+		var rawResult interface{}
+		client := clientManager.NewHttpClient()
+
+		restyResp, callErr := clientManager.ExecuteHttpRequest(
+			client,
+			"GET",
+			getURL,
+			headers,
+			clientManager.SetUseBody(reqBody),
+			&reqBody,
+			&rawResult,
+			clientManager.ShortDuration,
+		)
+		err := clientManager.HandleHttpResponse(restyResp, callErr)
+
+		if err != nil {
+			if errutil.IsNotFoundError(err) {
+				if attempt > 1 {
+					log.Debug().Msgf("PollResourceDeletedViaSpider: confirmed deleted on attempt %d/%d: %s", attempt, maxAttempts, getURL)
+				}
+				return true, nil
+			}
+			// Other error (5xx, network) — inconclusive; continue polling
+			log.Warn().Err(err).Msgf("PollResourceDeletedViaSpider: inconclusive error on attempt %d/%d: %s", attempt, maxAttempts, getURL)
+			lastErr = err
+		} else {
+			// HTTP 200 — check for GCP-style Result:false (resource is actually gone)
+			bodyBytes, _ := json.Marshal(rawResult)
+			if result := gjson.GetBytes(bodyBytes, "Result").String(); strings.EqualFold(result, "false") {
+				if attempt > 1 {
+					log.Debug().Msgf("PollResourceDeletedViaSpider: confirmed deleted (Result:false) on attempt %d/%d: %s", attempt, maxAttempts, getURL)
+				}
+				return true, nil
+			}
+			// Resource still visible
+			lastErr = nil
+		}
+
+		if attempt < maxAttempts {
+			time.Sleep(interval)
+		}
+	}
+	return false, lastErr
 }
 
 // DeregisterResource deregisters the TB Resource object from Spider and TB without deleting the actual CSP resource

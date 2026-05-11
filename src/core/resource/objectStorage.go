@@ -794,13 +794,33 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 	return false
 }
 
+// markObjectStorageDeleteFailedThenReconcile persists the object storage as
+// Failed(DeletionFailed) and then runs a single-shot self-heal
+// ReconcileObjectStorage (any reconcile error is logged at WARN only).
+//
+// `cause` is the original delete error; it populates both the Condition
+// message and SystemMessage. The caller decides what error to return.
+func markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey string, objStrgInfo *model.ObjectStorageInfo, cause error) {
+	log.Error().Err(cause).Msg("")
+	// [Conditions] Deletion failed → mark as Failed to prevent stuck state
+	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
+	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+	objStrgInfo.SystemMessage = cause.Error()
+	if failVal, marshalErr := json.Marshal(objStrgInfo); marshalErr == nil {
+		_ = kvstore.Put(objStrgKey, string(failVal))
+	}
+	// Self-heal: opportunistic single-shot Reconcile after recording Failed state.
+	if _, recErr := ReconcileObjectStorage(nsId, osId); recErr != nil {
+		log.Warn().Err(recErr).Msgf("auto-reconcile after delete failure failed for objectStorage %s/%s", nsId, osId)
+	}
+}
+
 // DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace.
 // If force is true, Spider force-deletes the bucket with all its contents.
 // If empty is true, Spider empties the bucket contents first, then deletes it.
 // When empty is true, the post-delete GET verification is skipped because the
 // operation targets bucket contents, not bucket existence.
 func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
-
 	// 1. Validate input parameters
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -893,14 +913,7 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 					opDesc = "EMPTY"
 				}
 				err = fmt.Errorf("%s failed for object storage %s: %w", opDesc, uid, delErr)
-				log.Error().Err(err).Msg("")
-				model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-				objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
-				objStrgInfo.SystemMessage = err.Error()
-				failVal, marshalErr := json.Marshal(objStrgInfo)
-				if marshalErr == nil {
-					_ = kvstore.Put(objStrgKey, string(failVal))
-				}
+				markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey, &objStrgInfo, err)
 				return err
 			}
 			// 404 → already deleted on CSP
@@ -923,48 +936,20 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 
 		// DELETE 204 succeeded. Verify via GET.
 		// Some CSPs (e.g. AWS S3) have eventual consistency, so GET may still
-		// return the resource briefly. Retry up to maxGetVerifyAttempts times;
-		// if still visible, trust the 204 and proceed.
+		// return the resource briefly. Retry up to 5 times;
+		// if still visible, trust the 204 and proceed (intentional policy: S3 metadata lag is transient).
 		if delErr == nil && !empty {
 			getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
 			log.Debug().Msgf("[Response from Spider] Object storage %s DELETE 204; verifying via GET", uid)
 
-			const maxGetVerifyAttempts = 5
-			const getVerifyInterval = 10 * time.Second
-			confirmedByGet := false
-
-			for getAttempt := 1; getAttempt <= maxGetVerifyAttempts; getAttempt++ {
-				spGetReq := clientManager.NoBody
-				spGetResp := spiderGetBucketInfoRes{}
-
-				getRestyResp, getErr := clientManager.ExecuteHttpRequest(
-					client,
-					"GET",
-					getURL,
-					spiderS3JSONHeaders,
-					clientManager.SetUseBody(spGetReq),
-					&spGetReq,
-					&spGetResp,
-					clientManager.ShortDuration,
-				)
-				getErr = clientManager.HandleHttpResponse(getRestyResp, getErr)
-
-				if getErr != nil {
-					// GET 404 → confirmed deleted
-					log.Info().Msgf("Object storage %s deletion confirmed (GET 404)", uid)
-					confirmedByGet = true
-					break
+			osDeleted, verifyErr := PollResourceDeletedViaSpider(getURL, spiderS3JSONHeaders, DefaultPollMaxAttempts, DefaultPollInterval)
+			if !osDeleted {
+				if verifyErr != nil {
+					log.Warn().Err(verifyErr).Msgf("Object storage %s verification GET failed; trusting DELETE 204 and removing metadata", uid)
+				} else {
+					// Still visible after all retries — trust DELETE 204 and proceed
+					log.Warn().Msgf("Object storage %s still visible via GET after 5 attempts; trusting DELETE 204 and removing metadata", uid)
 				}
-
-				if getAttempt < maxGetVerifyAttempts {
-					log.Debug().Msgf("Object storage %s still visible via GET (attempt %d/%d); waiting %s...", uid, getAttempt, maxGetVerifyAttempts, getVerifyInterval)
-					time.Sleep(getVerifyInterval)
-				}
-			}
-
-			if !confirmedByGet {
-				// Still visible after all retries — trust DELETE 204 and proceed
-				log.Warn().Msgf("Object storage %s still visible via GET after %d attempts; trusting DELETE 204 and removing metadata", uid, maxGetVerifyAttempts)
 			}
 		}
 	} else {
@@ -988,17 +973,14 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 	return nil
 }
 
-// ReconcileObjectStorage detects and repairs discrepancies between Tumblebug metadata
-// and the actual state of the CSP resource.
+// ReconcileObjectStorage repairs discrepancies between Tumblebug metadata and
+// the actual CSP resource:
+//  1. Uid empty (CSP resource never created) → orphaned metadata removed.
+//  2. Uid set but CSP bucket missing → orphaned metadata removed.
+//  3. CSP bucket exists and metadata stuck in Failed(DeletionFailed) →
+//     status restored to Available.
 //
-// Reconcile covers two main scenarios that arise from partial failures:
-//  1. The CSP resource was never created (Uid is empty) but metadata was persisted
-//     in a Failed state → the metadata is orphaned and is removed.
-//  2. The CSP resource creation or deletion failed mid-way (Uid is set) but the bucket
-//     no longer exists on the CSP side → the orphaned metadata is removed.
-//
-// If the CSP resource does exist and the metadata accurately reflects its state,
-// no action is taken and "NoActionNeeded" is returned.
+// Otherwise returns "NoActionNeeded".
 func ReconcileObjectStorage(nsId, osId string) (model.ObjectStorageReconcileResponse, error) {
 	var emptyRet model.ObjectStorageReconcileResponse
 
@@ -1075,8 +1057,40 @@ func ReconcileObjectStorage(nsId, osId string) (model.ObjectStorageReconcileResp
 	headErr = clientManager.HandleHttpResponse(headRestyResp, headErr)
 
 	if headErr == nil {
-		// 5a. CSP resource exists — no corrective action required
+		// 5a. CSP resource exists.
 		result.CspResourceStatus = "Exists"
+
+		// If metadata is stuck in a terminal-failure state (e.g., DeletionFailed)
+		// while the CSP resource is alive, restore the status to Available.
+		// This typically happens when a previous Delete failed due to a
+		// dependency that has since been resolved.
+		if model.ShouldRestoreToAvailable(objStrgInfo.Conditions) {
+			prevReason := ""
+			if r := model.GetCondition(objStrgInfo.Conditions, model.ConditionReady); r != nil {
+				prevReason = r.Reason
+			}
+			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored,
+				fmt.Sprintf("Restored from %s; CSP resource exists", prevReason))
+			model.SetCondition(&objStrgInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+			objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+			objStrgInfo.SystemMessage = ""
+
+			restoredVal, marshalErr := json.Marshal(objStrgInfo)
+			if marshalErr != nil {
+				log.Error().Err(marshalErr).Msg("ReconcileObjectStorage: failed to marshal restored info")
+				return emptyRet, marshalErr
+			}
+			if putErr := kvstore.Put(objStrgKey, string(restoredVal)); putErr != nil {
+				log.Error().Err(putErr).Msg("ReconcileObjectStorage: failed to persist restored info")
+				return emptyRet, putErr
+			}
+
+			result.Action = "StatusRestored"
+			result.Message = fmt.Sprintf("CSP resource exists; status restored to Available from %s", prevReason)
+			log.Info().Msgf("ReconcileObjectStorage: bucket '%s' status restored to Available (from %s)", uid, prevReason)
+			return result, nil
+		}
+
 		result.Action = "NoActionNeeded"
 		result.Message = "CSP resource exists; metadata is consistent"
 		log.Info().Msgf("ReconcileObjectStorage: bucket '%s' exists on CSP — no action needed", uid)

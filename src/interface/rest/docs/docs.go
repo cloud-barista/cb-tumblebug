@@ -8759,7 +8759,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a site-to-site VPN\n\n- Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.\n",
+                "description": "Delete a site-to-site VPN\n\n- Note: A one-time retry is performed to handle transient failures caused by CSP-internal timing issues between dependent resources.\n\n**Query option:**\n\n| option | Description |\n|--------|-------------|\n| (none) | Standard delete via Terrarium. |\n| ` + "`" + `reconcile` + "`" + ` | Do not call the Terrarium delete API. Instead, check whether the Terrarium resource actually exists. If it is missing, remove orphaned Tumblebug metadata. If it exists but the metadata is stuck in a terminal-failure state (e.g., ` + "`" + `Failed(DeletionFailed)` + "`" + `), restore the status to ` + "`" + `Available` + "`" + `. Returns a reconcile result object instead of a normal delete response. |",
                 "consumes": [
                     "application/json"
                 ],
@@ -8797,6 +8797,15 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "enum": [
+                            "reconcile"
+                        ],
+                        "type": "string",
+                        "description": "Delete option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Custom request ID for tracking",
                         "name": "x-request-id",
@@ -8811,9 +8820,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "OK (option=reconcile only)",
                         "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
+                            "$ref": "#/definitions/model.VpnReconcileResponse"
                         }
                     },
                     "400": {
@@ -27587,7 +27596,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "action": {
-                    "description": "Action describes what corrective action was taken\nPossible values: \"NoActionNeeded\", \"MetadataRemoved\", \"MetadataUpdated\"",
+                    "description": "Action describes what corrective action was taken\nPossible values: \"NoActionNeeded\", \"MetadataRemoved\", \"MetadataUpdated\", \"StatusRestored\"\n\"StatusRestored\" means the resource status was restored to Available because\nthe CSP resource still exists but Tumblebug metadata was stuck in a terminal\nfailure state (e.g., DeletionFailed) — typically caused by a dependency that\nhas since been resolved.",
                     "type": "string",
                     "example": "MetadataRemoved"
                 },
@@ -31774,6 +31783,36 @@ const docTemplate = `{
                 "packetLoss": {
                     "type": "string",
                     "example": "0%"
+                }
+            }
+        },
+        "model.VpnReconcileResponse": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "Action describes what corrective action was taken\nPossible values: \"NoActionNeeded\", \"MetadataRemoved\", \"StatusRestored\"",
+                    "type": "string",
+                    "example": "MetadataRemoved"
+                },
+                "cspResourceStatus": {
+                    "description": "CspResourceStatus indicates whether the corresponding Terrarium/CSP resource actually exists\nPossible values: \"Exists\", \"NotFound\", \"Skipped\"\n\"Skipped\" means the check was not performed because the metadata had no Uid (terrarium ID).",
+                    "type": "string",
+                    "example": "NotFound"
+                },
+                "message": {
+                    "description": "Message provides a human-readable description of the reconcile result",
+                    "type": "string",
+                    "example": "Orphaned metadata removed: Terrarium resource does not exist"
+                },
+                "metadataStatus": {
+                    "description": "MetadataStatus indicates whether Tumblebug metadata was found in the key-value store\nPossible values: \"Found\", \"NotFound\"",
+                    "type": "string",
+                    "example": "Found"
+                },
+                "vpnId": {
+                    "description": "VpnId is the Tumblebug resource ID that was reconciled",
+                    "type": "string",
+                    "example": "vpn01"
                 }
             }
         },
