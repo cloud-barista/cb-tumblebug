@@ -10514,7 +10514,16 @@ paths:
       tags:
       - "[Infra Resource] Object Storage Management"
       summary: List object storages (buckets)
-      description: Get the list of object storages (buckets)
+      description: |-
+        Get the list of object storages (buckets)
+
+        **Filtering with filterKey and filterVal:**
+        Both parameters perform a case-insensitive substring match against the stored JSON of each resource.
+        A resource is included in the result only when its JSON contains **both** the filterKey string and the filterVal string.
+
+        Common filterKey examples:
+        - `connectionName` — filter by cloud connection (e.g. filterVal: `aws-ap-northeast-2`)
+        - `status`         — filter by resource status  (e.g. filterVal: `Available`)
       operationId: ListObjectStorages
       parameters:
       - name: nsId
@@ -10533,12 +10542,12 @@ paths:
           - id
       - name: filterKey
         in: query
-        description: "Field key for filtering (ex: cspResourceName)"
+        description: "Field key for filtering (ex: connectionName)"
         schema:
           type: string
       - name: filterVal
         in: query
-        description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
+        description: "Field value for filtering (ex: aws-ap-northeast-2)"
         schema:
           type: string
       - name: x-request-id

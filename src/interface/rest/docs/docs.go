@@ -12452,7 +12452,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/objectStorage": {
             "get": {
-                "description": "Get the list of object storages (buckets)",
+                "description": "Get the list of object storages (buckets)\n\n**Filtering with filterKey and filterVal:**\nBoth parameters perform a case-insensitive substring match against the stored JSON of each resource.\nA resource is included in the result only when its JSON contains **both** the filterKey string and the filterVal string.\n\nCommon filterKey examples:\n- ` + "`" + `connectionName` + "`" + ` — filter by cloud connection (e.g. filterVal: ` + "`" + `aws-ap-northeast-2` + "`" + `)\n- ` + "`" + `status` + "`" + `         — filter by resource status  (e.g. filterVal: ` + "`" + `Available` + "`" + `)",
                 "consumes": [
                     "application/json"
                 ],
@@ -12484,13 +12484,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field key for filtering (ex: cspResourceName)",
+                        "description": "Field key for filtering (ex: connectionName)",
                         "name": "filterKey",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)",
+                        "description": "Field value for filtering (ex: aws-ap-northeast-2)",
                         "name": "filterVal",
                         "in": "query"
                     },
