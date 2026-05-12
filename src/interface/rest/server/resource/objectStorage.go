@@ -108,13 +108,21 @@ func RestCreateObjectStorage(c echo.Context) error {
 // @ID ListObjectStorages
 // @Summary List object storages (buckets)
 // @Description Get the list of object storages (buckets)
+// @Description
+// @Description **Filtering with filterKey and filterVal:**
+// @Description Both parameters perform a case-insensitive substring match against the stored JSON of each resource.
+// @Description A resource is included in the result only when its JSON contains **both** the filterKey string and the filterVal string.
+// @Description
+// @Description Common filterKey examples:
+// @Description - `connectionName` — filter by cloud connection (e.g. filterVal: `aws-ap-northeast-2`)
+// @Description - `status`         — filter by resource status  (e.g. filterVal: `Available`)
 // @Tags [Infra Resource] Object Storage Management
 // @Accept json
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
-// @Param filterKey query string false "Field key for filtering (ex: cspResourceName)"
-// @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
+// @Param filterKey query string false "Field key for filtering (ex: connectionName)"
+// @Param filterVal query string false "Field value for filtering (ex: aws-ap-northeast-2)"
 // @Success 200 {object} JSONResult{[DEFAULT]=model.ObjectStorageListResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
