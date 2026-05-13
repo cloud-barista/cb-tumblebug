@@ -182,6 +182,8 @@ var DragonflyRestUrl string
 var TerrariumRestUrl string
 var APIUsername string
 var APIPassword string
+var SpiderAPIUsername string
+var SpiderAPIPassword string
 var DBUrl string
 var DBDatabase string
 var DBUser string
@@ -207,6 +209,8 @@ const (
 	StrTerrariumRestUrl      string = "TB_TERRARIUM_REST_URL"
 	StrAPIUsername           string = "TB_API_USERNAME"
 	StrAPIPassword           string = "TB_API_PASSWORD"
+	StrSpiderAPIUsername     string = "TB_SPIDER_USERNAME"
+	StrSpiderAPIPassword     string = "TB_SPIDER_PASSWORD"
 	StrDBUrl                 string = "TB_POSTGRES_ENDPOINT"
 	StrDBDatabase            string = "TB_POSTGRES_DATABASE"
 	StrDBUser                string = "TB_POSTGRES_USER"

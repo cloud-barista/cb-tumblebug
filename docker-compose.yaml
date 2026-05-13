@@ -1,31 +1,34 @@
 networks:
-  internal_network:
-    internal: true
-  external_network:
+  cloud-barista:
     driver: bridge
+
+x-default-healthcheck: &default-healthcheck
+  interval: 1m
+  timeout: 5s
+  retries: 3
+  start_period: 10s
 
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.12.9
+    image: cloudbaristaorg/cb-tumblebug:0.12.10
     container_name: cb-tumblebug
     build:
       context: .
       dockerfile: Dockerfile
     networks:
-      - internal_network
-      - external_network
+      - cloud-barista
     ports:
-      - 1323:1323
+      - target: 1323
+        published: 1323
+        protocol: tcp
     depends_on:
       cb-tumblebug-etcd:
         condition: service_started
-      cb-spider:
-        condition: service_started
       cb-tumblebug-postgres:
         condition: service_healthy
-      mc-terrarium:
-        condition: service_healthy
+      cb-spider:
+        condition: service_started
     volumes:
       - ./conf/:/app/conf/
       - ./assets/:/app/assets/
@@ -44,9 +47,11 @@ services:
       # - TB_ETCD_USERNAME=default
       # - TB_ETCD_PASSWORD=default
       - TB_POSTGRES_ENDPOINT=cb-tumblebug-postgres:5432
-      - TB_POSTGRES_DATABASE=tumblebug
-      - TB_POSTGRES_USER=tumblebug
-      - TB_POSTGRES_PASSWORD=tumblebug
+      - TB_POSTGRES_DATABASE=${POSTGRES_DB:-tumblebug}
+      - TB_POSTGRES_USER=${POSTGRES_USER:-tumblebug}
+      - TB_POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tumblebug}
+      - TB_SPIDER_USERNAME=${SP_API_USERNAME:?Please set SP_API_USERNAME}
+      - TB_SPIDER_PASSWORD=${SP_API_PASSWORD:?Please set SP_API_PASSWORD}
       - TB_TERRARIUM_API_USERNAME=${TERRARIUM_API_USERNAME:?Please set TERRARIUM_API_USERNAME}
       - TB_TERRARIUM_API_PASSWORD=${TERRARIUM_API_PASSWORD:?Please set TERRARIUM_API_PASSWORD}
       # - TB_ALLOW_ORIGINS=*
@@ -67,13 +72,10 @@ services:
       # - TB_NODE_ENV=development
       - VAULT_ADDR=http://openbao:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-}
+    restart: unless-stopped
     healthcheck:
-      # for CB-Tumblebug
       test: [ "CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz" ]
-      interval: 1m
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      <<: *default-healthcheck
 
   # CB-Tumblebug ETCD
   # This is used for storing CB-Tumblebug metadata.
@@ -81,7 +83,7 @@ services:
     image: gcr.io/etcd-development/etcd:v3.5.21
     container_name: cb-tumblebug-etcd
     networks:
-      - internal_network
+      - cloud-barista
     ports:
       - 2379:2379
       - 2380:2380
@@ -115,13 +117,10 @@ services:
       - stderr
       - --auth-token
       - simple
+    restart: unless-stopped
     healthcheck:
-      # for etcd
-      test: [ "CMD", "/usr/local/bin/etcd", "--version" ]
-      interval: 1m
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      test: [ "CMD", "/usr/local/bin/etcdctl", "endpoint", "health", "--endpoints=http://localhost:2379" ]
+      <<: *default-healthcheck
 
   # CB-Tumblebug PostgreSQL
   # This is used for storing CB-Tumblebug Spec and Image.
@@ -130,21 +129,18 @@ services:
     container_name: cb-tumblebug-postgres
     restart: always
     networks:
-      - internal_network
-      # Enable external network for outbound access (not ideal for security)
-      # In production, comment this out to disable external access
-      - external_network
-    ports:
-      - 5432:5432
+      - cloud-barista
+    # ports:
+    #   - 5432:5432  # Uncomment for direct DB access (pgAdmin, debugging). Not recommended in production.
     volumes:
       - ./container-volume/cb-tumblebug-container/meta_db/postgres:/var/lib/postgresql/data
     command: postgres -c max_connections=500
     environment:
-      - POSTGRES_USER=tumblebug
-      - POSTGRES_PASSWORD=tumblebug
-      - POSTGRES_DB=tumblebug
+      - POSTGRES_USER=${POSTGRES_USER:-tumblebug}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tumblebug}
+      - POSTGRES_DB=${POSTGRES_DB:-tumblebug}
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U tumblebug" ]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -158,8 +154,7 @@ services:
     #   context: ../cb-spider
     #   dockerfile: Dockerfile
     networks:
-      - internal_network
-      - external_network # for outbound access (not ideal for security)
+      - cloud-barista
     # Uncomment below if you want to access CB-Spider for remote
     # ports:
     #   - 1024:1024
@@ -172,20 +167,17 @@ services:
     environment:
       - PLUGIN_SW=OFF
       - SERVER_ADDRESS=0.0.0.0:1024
-      - SPIDER_USERNAME=${SPIDER_USERNAME:?Please set SPIDER_USERNAME}
-      - SPIDER_PASSWORD=${SPIDER_PASSWORD:?Please set SPIDER_PASSWORD}
+      - SPIDER_USERNAME=${SP_API_USERNAME:?Please set SP_API_USERNAME}
+      - SPIDER_PASSWORD=${SP_API_PASSWORD:?Please set SP_API_PASSWORD}
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
       - ADMINWEB=OFF
       - SPIDER_BACKUP_ENABLED=false
+    restart: unless-stopped
     healthcheck:
-      # for CB-Spider
       test: [ "CMD", "curl", "-f", "http://localhost:1024/spider/readyz" ]
-      interval: 1m
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      <<: *default-healthcheck
 
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
@@ -196,12 +188,12 @@ services:
     #   context: ../cb-mapui
     #   dockerfile: Dockerfile
     networks:
-      - internal_network
-      - external_network # Keep this for the time being to support legacy access methods (http://localhost:1324)
+      - cloud-barista
     ports:
       - target: 1324
         published: 1324
         protocol: tcp
+    restart: unless-stopped
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost:1324"]
     #   interval: 30s
@@ -217,20 +209,23 @@ services:
       dockerfile: Dockerfile
     container_name: cb-tumblebug-mcp-server
     networks:
-      - internal_network
-      - external_network
+      - cloud-barista
     ports:
       - "8000:8000"
+    depends_on:
+      cb-tumblebug:
+        condition: service_healthy
     environment:
       # TB-MCP Configuration
       - TUMBLEBUG_API_BASE_URL=http://cb-tumblebug:1323/tumblebug
-      - TUMBLEBUG_USERNAME=default
-      - TUMBLEBUG_PASSWORD=default
+      - TUMBLEBUG_USERNAME=${TB_API_USERNAME:?Please set TB_API_USERNAME}
+      - TUMBLEBUG_PASSWORD=${TB_API_PASSWORD:?Please set TB_API_PASSWORD}
       - PYTHONUNBUFFERED=1
       - MCP_SERVER_HOST=0.0.0.0
       - MCP_SERVER_PORT=8000
       # Logging Configuration (INFO, DEBUG, WARNING, ERROR)
       - MCP_LOG_LEVEL=INFO
+    restart: unless-stopped
 
   # MC-Terrarium
   # Resource extensions (AWS-to-site VPN) for CB-Tumblebug using OpenTofu.
@@ -242,8 +237,7 @@ services:
     #   context: ../mc-terrarium
     #   dockerfile: Dockerfile
     networks:
-      - internal_network # Inter-service communication (OpenBao access)
-      - external_network # CSP API calls (requires internet access)
+      - cloud-barista
     ports:
       - target: 8055
         published: 8055
@@ -286,10 +280,7 @@ services:
       - VAULT_TOKEN=${VAULT_TOKEN:-}
     healthcheck:
       test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/terrarium/readyz" ]
-      interval: 10m
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      <<: *default-healthcheck
     depends_on:
       openbao:
         condition: service_healthy
@@ -314,8 +305,7 @@ services:
     cap_add:
       - IPC_LOCK
     networks:
-      - internal_network # Inter-service communication (terrarium connects here)
-      - external_network # Host port exposure (for CLI/API access from host)
+      - cloud-barista
     ports:
       - target: 8200
         published: 8200
@@ -363,7 +353,7 @@ services:
   #   image: swaggerapi/swagger-ui
   #   container_name: swagger-ui
   #   networks:
-  #     - external_network
+  #     - cloud-barista
   #   ports:
   #     - 1325:8080
   #   volumes:
@@ -387,8 +377,7 @@ services:
   #   image: alpine:latest
   #   container_name: cb-tumblebug-etcd-conf
   #   networks:
-  #     - internal_network
-  #     - external_network
+  #     - cloud-barista
   #   depends_on:
   #     - cb-tumblebug-etcd
   #   volumes:
@@ -417,8 +406,7 @@ services:
     restart: always
     attach: false # Exclude from docker compose up foreground output
     networks:
-      - internal_network
-      - external_network
+      - cloud-barista
     ports:
       - 3000:3000
     environment:
@@ -428,8 +416,8 @@ services:
       # - MB_DB_USER=tumblebug
       # - MB_DB_PASS=tumblebug
       # - MB_DB_HOST=cb-tumblebug-postgres
-      - MB_ADMIN_EMAIL=admin1@your.org
-      - MB_ADMIN_PASSWORD=admin1@your.org
+      - MB_ADMIN_EMAIL=${MB_ADMIN_EMAIL:-admin1@your.org}
+      - MB_ADMIN_PASSWORD=${MB_ADMIN_PASSWORD:-admin1@your.org}
       - MB_ADMIN_FIRST_NAME=Cloud
       - MB_ADMIN_LAST_NAME=Barista
       - MB_SITE_NAME=CB-Tumblebug Analytics
@@ -461,8 +449,7 @@ services:
     image: alpine:latest
     container_name: cb-tumblebug-metabase-init
     networks:
-      - internal_network
-      - external_network
+      - cloud-barista
     depends_on:
       cb-tumblebug-metabase:
         condition: service_started
@@ -475,12 +462,12 @@ services:
       - METABASE_URL=http://cb-tumblebug-metabase:3000
       - POSTGRES_HOST=cb-tumblebug-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=tumblebug
-      - POSTGRES_DATABASE=tumblebug
-      - POSTGRES_USER=tumblebug
-      - POSTGRES_PASSWORD=tumblebug
-      - ADMIN_EMAIL=admin1@your.org
-      - ADMIN_PASSWORD=admin1@your.org
+      - POSTGRES_DB=${POSTGRES_DB:-tumblebug}
+      - POSTGRES_DATABASE=${POSTGRES_DB:-tumblebug}
+      - POSTGRES_USER=${POSTGRES_USER:-tumblebug}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tumblebug}
+      - ADMIN_EMAIL=${MB_ADMIN_EMAIL:-admin1@your.org}
+      - ADMIN_PASSWORD=${MB_ADMIN_PASSWORD:-admin1@your.org}
     command: |
       sh -c "
         apk add --no-cache curl jq >/dev/null 2>&1
@@ -516,8 +503,7 @@ services:
   #   container_name: cb-tumblebug-pgadmin
   #   restart: always
   #   networks:
-  #     - internal_network
-  #     - external_network
+  #     - cloud-barista
   #   ports:
   #     - 5050:80
   #   volumes:

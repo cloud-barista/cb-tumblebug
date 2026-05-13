@@ -183,6 +183,12 @@ func UpdateGlobalVariable(id string) error {
 	case model.StrAPIPassword:
 		model.APIPassword = configInfo.Value
 		log.Debug().Msg("<TB_API_PASSWORD> ********")
+	case model.StrSpiderAPIUsername:
+		model.SpiderAPIUsername = configInfo.Value
+		log.Debug().Msg("<TB_SPIDER_USERNAME> " + model.SpiderAPIUsername)
+	case model.StrSpiderAPIPassword:
+		model.SpiderAPIPassword = configInfo.Value
+		log.Debug().Msg("<TB_SPIDER_PASSWORD> ********")
 	case model.StrDBUrl:
 		model.DBUrl = configInfo.Value
 		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
@@ -232,6 +238,12 @@ func InitConfig(id string) error {
 	case model.StrAPIPassword:
 		model.APIPassword = NVL(os.Getenv("TB_API_PASSWORD"), "default")
 		log.Debug().Msg("<TB_API_PASSWORD> ********")
+	case model.StrSpiderAPIUsername:
+		model.SpiderAPIUsername = NVL(os.Getenv("TB_SPIDER_USERNAME"), model.APIUsername)
+		log.Debug().Msg("<TB_SPIDER_USERNAME> " + model.SpiderAPIUsername)
+	case model.StrSpiderAPIPassword:
+		model.SpiderAPIPassword = NVL(os.Getenv("TB_SPIDER_PASSWORD"), model.APIPassword)
+		log.Debug().Msg("<TB_SPIDER_PASSWORD> ********")
 	case model.StrDBUrl:
 		model.DBUrl = NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
 		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
