@@ -126,6 +126,47 @@ else
 fi
 
 # ──────────────
+# Ensure conf/docker/.env exists
+# Since the upstream commit removed .env from git tracking (security),
+# a fresh clone only has .env.setup. Copy it if .env is absent.
+# ──────────────
+ENV_FILE="$MCMP_DIR/conf/docker/.env"
+ENV_SETUP_FILE="$MCMP_DIR/conf/docker/.env.setup"
+if [ ! -f "$ENV_FILE" ]; then
+  if [ -f "$ENV_SETUP_FILE" ]; then
+    echo "📋 conf/docker/.env not found. Copying from .env.setup..."
+    cp "$ENV_SETUP_FILE" "$ENV_FILE"
+    echo "✅ conf/docker/.env created from .env.setup"
+  else
+    echo "❌ Error: Neither conf/docker/.env nor conf/docker/.env.setup found in $MCMP_DIR"
+    exit 1
+  fi
+else
+  echo "✅ conf/docker/.env already exists. Skipping copy."
+fi
+
+# ──────────────
+# Ensure conf/docker/conf/mc-iam-manager/.env exists
+# Docker Compose references this file via env_file: and hard-fails if absent.
+# The same upstream commit also removed this file from git tracking.
+# The main .env (derived from .env.setup) contains all required MC_IAM_MANAGER_*
+# variables, so copying it here satisfies Docker Compose.
+# ──────────────
+IAM_ENV_FILE="$MCMP_DIR/conf/docker/conf/mc-iam-manager/.env"
+if [ ! -f "$IAM_ENV_FILE" ]; then
+  if [ -f "$ENV_FILE" ]; then
+    echo "📋 conf/mc-iam-manager/.env not found. Copying from conf/docker/.env..."
+    cp "$ENV_FILE" "$IAM_ENV_FILE"
+    echo "✅ conf/mc-iam-manager/.env created"
+  else
+    echo "❌ Error: Cannot create conf/mc-iam-manager/.env — source $ENV_FILE not found"
+    exit 1
+  fi
+else
+  echo "✅ conf/mc-iam-manager/.env already exists. Skipping copy."
+fi
+
+# ──────────────
 # Install mc-admin-cli
 # ──────────────
 echo
