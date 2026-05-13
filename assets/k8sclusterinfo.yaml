@@ -22,20 +22,20 @@ k8scluster:
     requiredSubnetCount: 2
     version:
       - region: [common]
-        available:
+        available: # Updated: 2026-05-11 (verified with aws eks describe-cluster-versions --region ap-northeast-2)
+          - name: "1.35"
+            id: "1.35"
+          - name: "1.34"
+            id: "1.34"
           - name: "1.33"
             id: "1.33"
-          - name: "1.32"
-            id: "1.32"
-          - name: "1.31"
-            id: "1.31"
-          # Deprecated versions (not available in AWS console as of 2025-08)  
+          # Deprecated versions (not available in AWS console as of 2026-05)
+          # - name: "1.32"
+          #   id: "1.32"
+          # - name: "1.31"
+          #   id: "1.31"
           # - name: "1.30"
           #   id: "1.30"
-          # - name: "1.29"
-          #   id: "1.29"
-          # - name: "1.28"
-          #   id: "1.28"
     rootDisk:
       - region: [common]
         type:
