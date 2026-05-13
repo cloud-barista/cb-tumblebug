@@ -55,6 +55,9 @@ func init() {
 	model.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8055/terrarium")
 	model.APIUsername = common.NVL(os.Getenv("TB_API_USERNAME"), "default")
 	model.APIPassword = common.NVL(os.Getenv("TB_API_PASSWORD"), "default")
+	// Spider-specific credentials: fall back to TB_API_USERNAME/PASSWORD if not explicitly set
+	model.SpiderAPIUsername = common.NVL(os.Getenv("TB_SPIDER_USERNAME"), model.APIUsername)
+	model.SpiderAPIPassword = common.NVL(os.Getenv("TB_SPIDER_PASSWORD"), model.APIPassword)
 	model.DBUrl = common.NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
 	model.DBDatabase = common.NVL(os.Getenv("TB_POSTGRES_DATABASE"), "tumblebug")
 	model.DBUser = common.NVL(os.Getenv("TB_POSTGRES_USER"), "tumblebug")

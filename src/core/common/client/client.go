@@ -104,15 +104,14 @@ func shouldSkipInternalCallLog(method, url string) bool {
 	return false
 }
 
-// NewHttpClient creates a new HTTP client with Basic Auth configured.
-// It uses the global APIUsername and APIPassword from model package.
-// This is useful for internal API calls that require authentication (e.g., Spider, Terrarium).
+// NewHttpClient creates a new HTTP client with Spider Basic Auth configured.
+// It uses SpiderAPIUsername and SpiderAPIPassword from model package (env: TB_SPIDER_USERNAME/PASSWORD).
 // Note: SetDisableWarn(true) suppresses the "Using Basic Auth in HTTP mode" warning
 // since internal service communication is within trusted network.
 func NewHttpClient() *resty.Client {
 	client := resty.New().SetCloseConnection(true)
 	client.SetDisableWarn(true)
-	client.SetBasicAuth(model.APIUsername, model.APIPassword)
+	client.SetBasicAuth(model.SpiderAPIUsername, model.SpiderAPIPassword)
 	return client
 }
 
