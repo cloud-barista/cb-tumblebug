@@ -1048,6 +1048,31 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 	 *	Delete the subnet info in case of the subnet does not exist
 	 */
 
+	// [Via Spider] Purge Spider subnet metadata by force delete (CSP resource already gone).
+	// Note: Spider sends a force delete request to the CSP and removes its own metadata
+	// regardless of whether the CSP-side deletion succeeds or fails.
+	spForceDelReqt := spiderSubnetRemoveReq{ConnectionName: subnetInfo.ConnectionName}
+	forceDelURL := fmt.Sprintf("%s/vpc/%s/subnet/%s?force=true",
+		model.SpiderRestUrl, subnetInfo.CspVNetName, subnetInfo.CspResourceName)
+	log.Debug().Msgf("[Request to Spider] Purge Spider subnet metadata by force delete: %s", forceDelURL)
+	var spForceDelResp spiderBooleanInfoResp
+	restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
+		clientManager.NewHttpClient(),
+		"DELETE",
+		forceDelURL,
+		nil,
+		clientManager.SetUseBody(spForceDelReqt),
+		&spForceDelReqt,
+		&spForceDelResp,
+		clientManager.MediumDuration,
+	)
+	forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
+	if forceDelErr != nil {
+		log.Warn().Err(forceDelErr).Msgf("Purge Spider subnet metadata by force delete failed for %s (continuing reconcile)", subnetInfo.CspResourceName)
+	} else {
+		log.Info().Msgf("Purge Spider subnet metadata by force delete succeeded for %s", subnetInfo.CspResourceName)
+	}
+
 	// Delete the saved the subnet info
 	err = kvstore.Delete(subnetKey)
 	if err != nil {

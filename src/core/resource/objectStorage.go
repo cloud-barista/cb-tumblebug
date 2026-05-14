@@ -1101,6 +1101,30 @@ func ReconcileObjectStorage(nsId, osId string) (model.ObjectStorageReconcileResp
 	result.CspResourceStatus = "NotFound"
 	log.Warn().Err(headErr).Msgf("ReconcileObjectStorage: bucket '%s' not found on CSP; removing orphaned metadata", uid)
 
+	// [Via Spider] Purge Spider bucket metadata by force delete (CSP resource already gone).
+	// Note: Spider sends a force delete request to the CSP and removes its own metadata
+	// regardless of whether the CSP-side deletion succeeds or fails.
+	forceDelURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s&force=true", model.SpiderRestUrl, uid, connName)
+	log.Debug().Msgf("[ReconcileObjectStorage] Purge Spider bucket metadata by force delete: %s", forceDelURL)
+	spForceDelReq := clientManager.NoBody
+	spForceDelResp := clientManager.NoBody
+	restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
+		clientManager.NewHttpClient(),
+		"DELETE",
+		forceDelURL,
+		spiderS3JSONHeaders,
+		clientManager.SetUseBody(spForceDelReq),
+		&spForceDelReq,
+		&spForceDelResp,
+		clientManager.ShortDuration,
+	)
+	forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
+	if forceDelErr != nil {
+		log.Warn().Err(forceDelErr).Msgf("ReconcileObjectStorage: Purge Spider bucket metadata by force delete failed for %s (continuing reconcile)", uid)
+	} else {
+		log.Info().Msgf("ReconcileObjectStorage: Purge Spider bucket metadata by force delete succeeded for %s", uid)
+	}
+
 	// Remove metadata from kvstore
 	if delErr := kvstore.Delete(objStrgKey); delErr != nil {
 		log.Error().Err(delErr).Msg("ReconcileObjectStorage: failed to delete orphaned metadata")

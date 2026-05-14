@@ -1286,6 +1286,30 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	 * delete the information of vNet and subnets from the key-value stores
 	 */
 
+	// [Via Spider] Purge Spider VPC metadata by force delete (CSP resource already gone).
+	// Note: Spider sends a force delete request to the CSP and removes its own metadata
+	// regardless of whether the CSP-side deletion succeeds or fails.
+	spForceDelReqt := spiderVpcDeleteReq{ConnectionName: vNetInfo.ConnectionName}
+	forceDelURL := fmt.Sprintf("%s/vpc/%s?force=true", model.SpiderRestUrl, vNetInfo.CspResourceName)
+	log.Debug().Msgf("[Request to Spider] Purge Spider VPC metadata by force delete: %s", forceDelURL)
+	var spForceDelResp spiderBooleanInfoResp
+	restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
+		clientManager.NewHttpClient(),
+		"DELETE",
+		forceDelURL,
+		nil,
+		clientManager.SetUseBody(spForceDelReqt),
+		&spForceDelReqt,
+		&spForceDelResp,
+		clientManager.MediumDuration,
+	)
+	forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
+	if forceDelErr != nil {
+		log.Warn().Err(forceDelErr).Msgf("Purge Spider VPC metadata by force delete failed for %s (continuing reconcile)", vNetInfo.CspResourceName)
+	} else {
+		log.Info().Msgf("Purge Spider VPC metadata by force delete succeeded for %s", vNetInfo.CspResourceName)
+	}
+
 	// Delete subnet objects from the key-value store
 	// Read the stored subnets
 	subnetKvList, err := kvstore.GetKvList(vNetKey + "/subnet")
