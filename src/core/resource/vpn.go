@@ -24,7 +24,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -293,8 +293,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 	exists, err = CheckResource(nsId, resourceType, vpnInfo.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the site-to-site VPN (%s) exists or not", vpnInfo.Id)
-		return emptyRet, err
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to check if the site-to-site VPN (%s) exists or not", vpnInfo.Id))
 	}
 
 	// For retry, read the stored VPN info if exists
@@ -561,7 +560,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 			if marshalErr == nil {
 				_ = kvstore.Put(vpnKey, string(failVal))
 			}
-			return emptyRet, fmt.Errorf("failed to create site-to-site VPN '%s': %w", vpnInfo.Id, err)
+			return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to create site-to-site VPN '%s'", vpnInfo.Id))
 		}
 
 		// Set the VPN info
@@ -832,8 +831,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	exists, err := CheckResource(nsId, resourceType, vpnId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the site-to-site VPN (%s) exists or not", vpnId)
-		return emptyRet, err
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to check if the site-to-site VPN (%s) exists or not", vpnId))
 	}
 	if !exists {
 		err := fmt.Errorf("does not exist, site-to-site VPN: %s", vpnId)
@@ -885,7 +883,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	)
 	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get site-to-site VPN '%s'", vpnId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get site-to-site VPN '%s'", vpnId))
 	}
 
 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
@@ -912,7 +910,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	)
 	if err = clientManager.HandleHttpResponse(restyResp2, err); err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get site-to-site VPN '%s'", vpnId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get site-to-site VPN '%s'", vpnId))
 	}
 
 	jsonData, err := json.Marshal(resResourceInfo.Object)
@@ -1038,8 +1036,7 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId
 	exists, err := CheckResource(nsId, resourceType, vpnId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the site-to-site VPN (%s) exists or not", vpnId)
-		return emptyRet, err
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to check if the site-to-site VPN (%s) exists or not", vpnId))
 	}
 	if !exists {
 		err := fmt.Errorf("does not exist, site-to-site VPN: %s", vpnId)
@@ -1230,8 +1227,7 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 	exists, err := CheckResource(nsId, resourceType, vpnId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the site-to-site VPN (%s) exists or not", vpnId)
-		return emptyRet, err
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to check if the site-to-site VPN (%s) exists or not", vpnId))
 	}
 	if !exists {
 		err := fmt.Errorf("does not exist, site-to-site VPN: %s", vpnId)
@@ -1283,7 +1279,7 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 	)
 	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get request status of site-to-site VPN '%s'", vpnId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get request status of site-to-site VPN '%s'", vpnId))
 	}
 
 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
@@ -1308,7 +1304,7 @@ func GetRequestStatusOfSiteToSiteVpn(ctx context.Context, nsId string, infraId s
 	)
 	if err = clientManager.HandleHttpResponse(restyResp2, err); err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get request status of site-to-site VPN '%s'", vpnId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get request status of site-to-site VPN '%s'", vpnId))
 	}
 	log.Debug().Msgf("resReqStatus: %+v", resReqStatus.Detail)
 
@@ -1414,9 +1410,9 @@ func ReconcileSiteToSiteVPN(ctx context.Context, nsId, infraId, vpnId string) (m
 	// Only proceed with cleanup when the resource is confirmed not found.
 	// For server errors (5xx) or transport errors, return without changing state
 	// to prevent accidental data loss during Terrarium/CSP outages.
-	if getErr != nil && !errutil.IsNotFoundError(getErr) {
+	if getErr != nil && !apierr.IsNotFound(getErr) {
 		log.Error().Err(getErr).Msg("failed to get terrarium info, skipping reconciliation")
-		return emptyRet, fmt.Errorf("failed to reconcile VPN '%s'", vpnId)
+		return emptyRet, apierr.Wrap(getErr, fmt.Sprintf("failed to reconcile VPN '%s'", vpnId))
 	}
 
 	if getErr == nil {

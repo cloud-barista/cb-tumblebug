@@ -30,7 +30,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -3101,7 +3101,7 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 		err = clientManager.HandleHttpResponse(restyResp, err)
 
 		if err != nil {
-			if errutil.IsNotFoundError(err) {
+			if apierr.IsNotFound(err) {
 				log.Warn().Err(err).Msg("VM not found in cb-spider IID store; proceeding with TB registry cleanup")
 			} else {
 				log.Error().Err(err).Msg("")

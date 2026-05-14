@@ -28,7 +28,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/go-resty/resty/v2"
@@ -1013,14 +1013,16 @@ func ForwardRequestToAny(reqPath string, method string, requestBody interface{})
 }
 
 // HandleHttpResponse logs the HTTP error with status code (if available)
-// and returns it wrapped as an *errutil.HttpError so callers can recover
+// and returns it wrapped as a *apierr.StatusError so callers can recover
 // the exact status code via errors.As.  Returns nil when err is nil.
 func HandleHttpResponse(resp *resty.Response, err error) error {
 	if err == nil {
 		return nil
 	}
 	if resp != nil {
-		return &errutil.HttpError{StatusCode: resp.StatusCode(), Err: err}
+		return &apierr.StatusError{StatusCode: resp.StatusCode(), Cause: err}
 	}
-	return err
+	// Transport error (e.g. connection refused, timeout) — no HTTP response.
+	// Still wrap in *StatusError so callers can always rely on Wrap working.
+	return &apierr.StatusError{Cause: err}
 }
