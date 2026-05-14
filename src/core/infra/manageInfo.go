@@ -3065,39 +3065,6 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 		return err
 	}
 
-	// Check if associated resources exist before deregistration
-	var relatedResources []string
-
-	// Check DataDisks
-	for _, dataDiskId := range nodeInfo.DataDiskIds {
-		exists, _ := resource.CheckResource(nsId, model.StrDataDisk, dataDiskId)
-		if exists {
-			relatedResources = append(relatedResources, fmt.Sprintf("DataDisk: %s", dataDiskId))
-		}
-	}
-
-	// Check SecurityGroups
-	for _, sgId := range nodeInfo.SecurityGroupIds {
-		exists, _ := resource.CheckResource(nsId, model.StrSecurityGroup, sgId)
-		if exists {
-			relatedResources = append(relatedResources, fmt.Sprintf("SecurityGroup: %s", sgId))
-		}
-	}
-
-	// Check SSHKey
-	if nodeInfo.SshKeyId != "" {
-		exists, _ := resource.CheckResource(nsId, model.StrSSHKey, nodeInfo.SshKeyId)
-		if exists {
-			relatedResources = append(relatedResources, fmt.Sprintf("SSHKey: %s", nodeInfo.SshKeyId))
-		}
-	}
-
-	// If any resources are missing, return error
-	if len(relatedResources) > 0 {
-		err := fmt.Errorf("cannot deregister VM '%s': the following associated resources do not exist: %v", nodeId, relatedResources)
-		return err
-	}
-
 	// Call Spider deregister API
 	var callResult interface{}
 	client := clientManager.NewHttpClient()
@@ -3111,25 +3078,37 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 		ConnectionName: nodeInfo.ConnectionName,
 	}
 
-	url := model.SpiderRestUrl + "/regvm/" + nodeInfo.CspResourceName
-	log.Debug().Msg("Sending deregister DELETE request to " + url)
+	if nodeInfo.CspResourceName == "" {
+		// CspResourceName is not set — the VM was never registered in Spider's IID store
+		// (e.g. imported via registerCspResources without Spider registration).
+		// Skip the Spider call and proceed directly to TB registry cleanup.
+		log.Warn().Msgf("CspResourceName is empty for node '%s'; skipping Spider deregister call", nodeId)
+	} else {
+		url := model.SpiderRestUrl + "/regvm/" + nodeInfo.CspResourceName
+		log.Debug().Msg("Sending deregister DELETE request to " + url)
 
-	_, err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		clientManager.VeryShortDuration,
-	)
+		_, err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			clientManager.VeryShortDuration,
+		)
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
+		if err != nil {
+			if strings.Contains(err.Error(), "does not exist") {
+				log.Warn().Err(err).Msg("VM not found in cb-spider IID store; proceeding with TB registry cleanup")
+			} else {
+				log.Error().Err(err).Msg("")
+				return err
+			}
+		} else {
+			log.Debug().Msg("Deregister request finished from " + url)
+		}
 	}
-	log.Debug().Msg("Deregister request finished from " + url)
 
 	// delete the Node info from TB
 	key := common.GenInfraKey(nsId, infraId, nodeId)
