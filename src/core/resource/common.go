@@ -836,7 +836,7 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 
 	log.Debug().Msg("Sending deregister DELETE request to " + url)
 
-	_, err = clientManager.ExecuteHttpRequest(
+	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -846,12 +846,13 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 		&callResult,
 		clientManager.VeryShortDuration,
 	)
+	err = clientManager.HandleHttpResponse(restyResp, err)
 
 	if err != nil {
 		// If cb-spider reports the resource doesn't exist, it was never registered in Spider
 		// (e.g. imported via registerCspResources). Treat as already deregistered from Spider
 		// and proceed to clean up the TB registry.
-		if strings.Contains(err.Error(), "does not exist") {
+		if errutil.IsNotFoundError(err) {
 			log.Warn().Err(err).Msg("Resource not found in cb-spider IID store; proceeding with TB registry cleanup")
 		} else {
 			log.Error().Err(err).Msg("")

@@ -30,6 +30,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -3087,7 +3088,7 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 		url := model.SpiderRestUrl + "/regvm/" + nodeInfo.CspResourceName
 		log.Debug().Msg("Sending deregister DELETE request to " + url)
 
-		_, err = clientManager.ExecuteHttpRequest(
+		restyResp, err := clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -3097,9 +3098,10 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 			&callResult,
 			clientManager.VeryShortDuration,
 		)
+		err = clientManager.HandleHttpResponse(restyResp, err)
 
 		if err != nil {
-			if strings.Contains(err.Error(), "does not exist") {
+			if errutil.IsNotFoundError(err) {
 				log.Warn().Err(err).Msg("VM not found in cb-spider IID store; proceeding with TB registry cleanup")
 			} else {
 				log.Error().Err(err).Msg("")
