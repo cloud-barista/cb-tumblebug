@@ -23,7 +23,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -429,8 +429,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	}
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the object storage (%s) exists or not", objStrgInfo.Id)
-		return emptyRet, err
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to check if the object storage (%s) exists or not", objStrgInfo.Id))
 	}
 
 	// 6. [Conditions] Mark as not ready (creating) before calling Spider API
@@ -474,7 +473,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		log.Debug().Msgf("[Request to Spider] Creating a object storage (url: %s, request body: %+v)", url, spReq)
 
 		// restyResp is captured so HandleHttpResponse can wrap the error with the
-		// HTTP status code; this lets errutil.IsConflictError use the status code
+		// HTTP status code; this lets apierr.IsConflict use the status code
 		// as a secondary signal when the error message alone is ambiguous.
 		restyResp, err := clientManager.ExecuteHttpRequest(
 			client,
@@ -489,10 +488,10 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		err = clientManager.HandleHttpResponse(restyResp, err)
 
 		if err != nil {
-			if errutil.IsConflictError(err) {
+			if apierr.IsConflict(err) {
 				retryCount++
 				if retryCount >= maxRetries {
-					err = fmt.Errorf("failed to create object storage after %d retries", maxRetries)
+					err = apierr.Wrap(err, fmt.Sprintf("failed to create object storage after %d retries", maxRetries))
 					log.Error().Err(err).Msg("")
 					// [Conditions] Creation failed → mark as Failed to prevent stuck state
 					model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
@@ -536,7 +535,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	log.Debug().Msgf("[Request to Spider] Getting the created object storage info (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -559,7 +558,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		if marshalErr == nil {
 			_ = kvstore.Put(objStrgKey, string(failVal))
 		}
-		return emptyRet, fmt.Errorf("failed to create objectStorage '%s'", objStrgInfo.Id)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to create objectStorage '%s'", objStrgInfo.Id))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Getting the created object storage info: %+v", spGetBucketInfoRes)
@@ -687,7 +686,7 @@ func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
 	log.Debug().Msgf("[Request to Spider] Getting the object storage info (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -702,7 +701,7 @@ func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get objectStorage '%s'", osId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get objectStorage '%s'", osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Getting the object storage info: %+v", spResp)
@@ -906,7 +905,7 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		delErr = clientManager.HandleHttpResponse(delRestyResp, delErr)
 
 		if delErr != nil {
-			if !errutil.IsNotFoundError(delErr) {
+			if !apierr.IsNotFound(delErr) {
 				// DELETE failed (non-404) → mark as Failed
 				opDesc := "DELETE"
 				if empty {
@@ -1043,7 +1042,7 @@ func ReconcileObjectStorage(nsId, osId string) (model.ObjectStorageReconcileResp
 	log.Debug().Msgf("[ReconcileObjectStorage] HEAD %s", headURL)
 
 	// headRestyResp is captured so HandleHttpResponse can wrap the error with
-	// the HTTP status code for accurate errutil classification.
+	// the HTTP status code for accurate apierr classification.
 	headRestyResp, headErr := clientManager.ExecuteHttpRequest(
 		client,
 		"HEAD",
@@ -1191,7 +1190,7 @@ func CheckObjectStorageExistence(nsId, osId string) (bool, error) {
 	log.Debug().Msgf("[Request to Spider] Checking existence of the object storage (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1262,7 +1261,7 @@ func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationRes
 	log.Debug().Msgf("[Request to Spider] Getting the object storage location (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1277,7 +1276,7 @@ func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationRes
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get location of objectStorage '%s'", osId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get location of objectStorage '%s'", osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Getting the object storage location: %+v", spResp)
@@ -1351,7 +1350,7 @@ func SetObjectStorageCorsConfigurations(nsId, osId string, req model.ObjectStora
 
 	log.Debug().Msgf("[Request to Spider] Setting the object storage CORS configuration (url: %s, request body: %+v)", url, spReq)
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1366,7 +1365,7 @@ func SetObjectStorageCorsConfigurations(nsId, osId string, req model.ObjectStora
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return fmt.Errorf("failed to set CORS for objectStorage '%s'", osId)
+		return apierr.Wrap(err, fmt.Sprintf("failed to set CORS for objectStorage '%s'", osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Setting the object storage CORS configuration (No response body): %+v", spResp)
@@ -1419,7 +1418,7 @@ func GetObjectStorageCorsConfigurations(nsId, osId string) (model.ObjectStorageG
 
 	log.Debug().Msgf("[Request to Spider] Getting the object storage CORS configuration (url: %s)", url)
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code; this lets errutil.IsNotFoundError use the status code
+	// HTTP status code; this lets apierr.IsNotFound use the status code
 	// as a secondary signal when the error message alone is ambiguous.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
@@ -1434,7 +1433,7 @@ func GetObjectStorageCorsConfigurations(nsId, osId string) (model.ObjectStorageG
 	err = clientManager.HandleHttpResponse(restyResp, err)
 
 	if err != nil {
-		if errutil.IsNotFoundError(err) {
+		if apierr.IsNotFound(err) {
 			// Return empty CORS configuration if not found
 			err := fmt.Errorf("not found CORS configuration for object storage: %s", osId)
 			log.Warn().Err(err).Msg(err.Error())
@@ -1510,7 +1509,7 @@ func DeleteObjectStorageCorsConfigurations(nsId, osId string) error {
 
 	log.Debug().Msgf("[Request to Spider] Deleting the object storage CORS configuration (url: %s)", url)
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1525,7 +1524,7 @@ func DeleteObjectStorageCorsConfigurations(nsId, osId string) error {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return fmt.Errorf("failed to delete CORS for objectStorage '%s'", osId)
+		return apierr.Wrap(err, fmt.Sprintf("failed to delete CORS for objectStorage '%s'", osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Deleting the object storage CORS configuration (No response body): %+v", spResp)
@@ -1586,7 +1585,7 @@ func SetObjectStorageVersioning(nsId, osId string, req model.ObjectStorageSetVer
 
 	log.Debug().Msgf("[Request to Spider] Setting the object storage versioning configuration (url: %s, request body: %+v)", url, spReq)
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1601,7 +1600,7 @@ func SetObjectStorageVersioning(nsId, osId string, req model.ObjectStorageSetVer
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return fmt.Errorf("failed to set versioning for objectStorage '%s'", osId)
+		return apierr.Wrap(err, fmt.Sprintf("failed to set versioning for objectStorage '%s'", osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Setting the object storage versioning configuration (No response body): %+v", spResp)
@@ -1655,7 +1654,7 @@ func GetObjectStorageVersioning(nsId, osId string) (model.ObjectStorageGetVersio
 	log.Debug().Msgf("[Request to Spider] Getting the object storage versioning configuration (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1670,7 +1669,7 @@ func GetObjectStorageVersioning(nsId, osId string) (model.ObjectStorageGetVersio
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get versioning of objectStorage '%s'", osId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get versioning of objectStorage '%s'", osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Getting the object storage versioning configuration: %+v", spResp)
@@ -1729,7 +1728,7 @@ func ListObjectVersions(nsId, osId string) (model.ObjectStorageListObjectVersion
 	log.Debug().Msgf("[Request to Spider] Listing object versions (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1744,7 +1743,7 @@ func ListObjectVersions(nsId, osId string) (model.ObjectStorageListObjectVersion
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to list object versions of objectStorage '%s'", osId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to list object versions of objectStorage '%s'", osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Listing object versions: %+v", spResp)
@@ -1882,7 +1881,7 @@ func DeleteVersionedObject(nsId, osId, objectKey, versionId string) error {
 	log.Debug().Msgf("[Request to Spider] Deleting versioned object (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1897,7 +1896,7 @@ func DeleteVersionedObject(nsId, osId, objectKey, versionId string) error {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return fmt.Errorf("failed to delete versioned object '%s' in objectStorage '%s'", objectKey, osId)
+		return apierr.Wrap(err, fmt.Sprintf("failed to delete versioned object '%s' in objectStorage '%s'", objectKey, osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Deleting versioned object (No response body): %+v", spResp)
@@ -1970,7 +1969,7 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expires time.Duration, o
 	log.Debug().Msgf("[Request to Spider] Generating presigned URL (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1985,7 +1984,7 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expires time.Duration, o
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to generate presigned URL for object '%s' in objectStorage '%s'", objectKey, osId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to generate presigned URL for object '%s' in objectStorage '%s'", objectKey, osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Generating presigned URL: %+v", spResp)
@@ -2098,7 +2097,7 @@ func GetDataObject(nsId, osId, objectKey string) (model.Object, error) {
 
 	// restyRes is captured for header extraction (ETag, Last-Modified) and also
 	// passed to HandleHttpResponse so the error is wrapped with the HTTP status
-	// code for accurate errutil classification.
+	// code for accurate apierr classification.
 	restyRes, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -2111,7 +2110,7 @@ func GetDataObject(nsId, osId, objectKey string) (model.Object, error) {
 	)
 	if err = clientManager.HandleHttpResponse(restyRes, err); err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, fmt.Errorf("failed to get object '%s' in objectStorage '%s'", objectKey, osId)
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get object '%s' in objectStorage '%s'", objectKey, osId))
 	}
 	log.Debug().Msgf("[Response from Spider] Getting the object info (No response body): %+v", spResp)
 
@@ -2178,7 +2177,7 @@ func DeleteDataObject(nsId, osId, objectKey string) error {
 	log.Debug().Msgf("[Request to Spider] Deleting the object (url: %s)", url)
 
 	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code for accurate errutil classification.
+	// HTTP status code for accurate apierr classification.
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -2193,7 +2192,7 @@ func DeleteDataObject(nsId, osId, objectKey string) error {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return fmt.Errorf("failed to delete object '%s' in objectStorage '%s'", objectKey, osId)
+		return apierr.Wrap(err, fmt.Sprintf("failed to delete object '%s' in objectStorage '%s'", objectKey, osId))
 	}
 
 	log.Debug().Msgf("[Response from Spider] Deleting the object (No response body): %+v", spResp)

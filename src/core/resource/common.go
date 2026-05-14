@@ -30,7 +30,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -722,7 +722,7 @@ func PollResourceDeletedViaSpider(getURL string, headers map[string]string, maxA
 		err := clientManager.HandleHttpResponse(restyResp, callErr)
 
 		if err != nil {
-			if errutil.IsNotFoundError(err) {
+			if apierr.IsNotFound(err) {
 				if attempt > 1 {
 					log.Debug().Msgf("PollResourceDeletedViaSpider: confirmed deleted on attempt %d/%d: %s", attempt, maxAttempts, getURL)
 				}
@@ -852,7 +852,7 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 		// If cb-spider reports the resource doesn't exist, it was never registered in Spider
 		// (e.g. imported via registerCspResources). Treat as already deregistered from Spider
 		// and proceed to clean up the TB registry.
-		if errutil.IsNotFoundError(err) {
+		if apierr.IsNotFound(err) {
 			log.Warn().Err(err).Msg("Resource not found in cb-spider IID store; proceeding with TB registry cleanup")
 		} else {
 			log.Error().Err(err).Msg("")

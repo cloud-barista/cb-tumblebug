@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -71,7 +71,7 @@ func RestPostSubnet(c echo.Context) error {
 	resp, err := resource.CreateSubnet(ctx, nsId, vNetId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -121,7 +121,7 @@ func RestGetSubnet(c echo.Context) error {
 	resp, err := resource.GetSubnet(nsId, vNetId, subnetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -168,7 +168,7 @@ func RestGetListSubnet(c echo.Context) error {
 	ret, err := resource.ListSubnet(nsId, vNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -278,14 +278,14 @@ func RestDelSubnet(c echo.Context) error {
 		resp, err = resource.DeleteSubnet(nsId, vNetId, subnetId, action.String())
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 	case resource.ActionReconcile:
 		// [Process]
 		resp, err = resource.ReconcileSubnet(nsId, vNetId, subnetId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 	default:
 		errMsg := fmt.Errorf("invalid action (%s)", action)
@@ -361,7 +361,7 @@ func RestPostRegisterSubnet(c echo.Context) error {
 	resp, err := resource.RegisterSubnet(ctx, nsId, vNetId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -411,7 +411,7 @@ func RestDeleteDeregisterSubnet(c echo.Context) error {
 	resp, err := resource.DeregisterSubnet(nsId, vNetId, subnetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]

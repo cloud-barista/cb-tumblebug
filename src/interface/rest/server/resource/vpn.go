@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -70,7 +70,7 @@ func RestGetSitesInInfra(c echo.Context) error {
 	SitesInfo, err := ExtractSitesInfoFromInfraInfo(nsId, infraId)
 	if err != nil {
 		log.Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, SitesInfo)
@@ -346,7 +346,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	resp, err := resource.CreateSiteToSiteVPN(ctx, nsId, infraId, vpnReq, action)
 	if err != nil {
 		log.Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, resp)
@@ -402,14 +402,14 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 		vpnInfoList, err := resource.GetAllSiteToSiteVPN(ctx, nsId, infraId)
 		if err != nil {
 			log.Err(err).Msg("")
-			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 		return c.JSON(http.StatusOK, vpnInfoList)
 	case "IdList":
 		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(ctx, nsId, infraId)
 		if err != nil {
 			log.Err(err).Msg("")
-			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 		return c.JSON(http.StatusOK, vpnIdList)
 	default:
@@ -479,7 +479,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	resp, err := resource.GetSiteToSiteVPN(ctx, nsId, infraId, vpnId, detail, refreshBool)
 	if err != nil {
 		log.Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, resp)
@@ -552,7 +552,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		result, err := resource.ReconcileSiteToSiteVPN(ctx, nsId, infraId, vpnId)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to reconcile site-to-site VPN")
-			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 		return c.JSON(http.StatusOK, result)
 	}
@@ -560,7 +560,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	resp, err := resource.DeleteSiteToSiteVPN(ctx, nsId, infraId, vpnId)
 	if err != nil {
 		log.Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, resp)
@@ -621,7 +621,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	resp, err := resource.GetRequestStatusOfSiteToSiteVpn(ctx, nsId, infraId, vpnId, reqId)
 	if err != nil {
 		log.Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, resp)

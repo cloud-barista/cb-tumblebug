@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -98,7 +98,7 @@ func RestCreateObjectStorage(c echo.Context) error {
 	// Perform the operation
 	result, err := resource.CreateObjectStorage(ctx, nsId, req)
 	if err != nil {
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, result)
@@ -168,7 +168,7 @@ func RestGetObjectStorage(c echo.Context) error {
 	result, err := resource.GetObjectStorage(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, result)
@@ -206,7 +206,7 @@ func RestCheckObjectStorageExistance(c echo.Context) error {
 	exists, err := resource.CheckObjectStorageExistence(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	if !exists {
@@ -250,7 +250,7 @@ func RestGetObjectStorageLocation(c echo.Context) error {
 	result, err := resource.GetObjectStorageLocation(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, result)
@@ -324,7 +324,7 @@ func RestDeleteObjectStorage(c echo.Context) error {
 	err := resource.DeleteObjectStorage(nsId, osId, force, empty)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to delete object storage")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -379,7 +379,7 @@ func RestSetObjectStorageCORS(c echo.Context) error {
 	err := resource.SetObjectStorageCorsConfigurations(nsId, osId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to set CORS configuration")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -423,7 +423,7 @@ func RestGetObjectStorageCORS(c echo.Context) error {
 	result, err := resource.GetObjectStorageCorsConfigurations(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get CORS configuration")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -467,7 +467,7 @@ func RestDeleteObjectStorageCORS(c echo.Context) error {
 	err := resource.DeleteObjectStorageCorsConfigurations(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to delete CORS configuration")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -526,7 +526,7 @@ func RestSetObjectStorageVersioning(c echo.Context) error {
 	err := resource.SetObjectStorageVersioning(nsId, osId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to set versioning configuration")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -570,7 +570,7 @@ func RestGetObjectStorageVersioning(c echo.Context) error {
 	result, err := resource.GetObjectStorageVersioning(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get versioning configuration")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -614,7 +614,7 @@ func RestListObjectVersions(c echo.Context) error {
 	result, err := resource.ListObjectVersions(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list object versions")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -678,7 +678,7 @@ func RestDeleteVersionedObject(c echo.Context) error {
 	err := resource.DeleteVersionedObject(nsId, osId, objectKey, versionId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to delete versioned object")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -769,7 +769,7 @@ func RestGeneratePresignedURL(c echo.Context) error {
 	result, err := resource.GeneratePresignedURL(nsId, osId, objectKey, time.Duration(expiresSeconds)*time.Second, operation)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to generate presigned %s URL", operation)
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -826,7 +826,7 @@ func RestListDataObjects(c echo.Context) error {
 	result, err := resource.ListDataObjects(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -882,7 +882,7 @@ func RestGetDataObjectInfo(c echo.Context) error {
 	result, err := resource.GetDataObject(nsId, osId, objectKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output] Set metadata in response headers
@@ -941,7 +941,7 @@ func RestDeleteDataObject(c echo.Context) error {
 	err := resource.DeleteDataObject(nsId, osId, objectKey)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to delete object")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]

@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/errutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -72,7 +72,7 @@ func RestPostVNet(c echo.Context) error {
 	resp, err := resource.CreateVNet(ctx, nsId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output] Return the created vNet info
@@ -139,7 +139,7 @@ func RestGetVNet(c echo.Context) error {
 	resp, err := resource.GetVNet(nsId, vNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output]
@@ -239,14 +239,14 @@ func RestDelVNet(c echo.Context) error {
 		resp, err = resource.DeleteVNet(nsId, vNetId, action.String())
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 	case resource.ActionReconcile:
 		// [Process]
 		resp, err = resource.ReconcileVNet(nsId, vNetId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 	default:
 		errMsg := fmt.Errorf("invalid action (%s)", action)
@@ -325,7 +325,7 @@ func RestPostRegisterVNet(c echo.Context) error {
 	resp, err := resource.RegisterVNet(ctx, nsId, reqt)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output] Return the registered vNet info
@@ -381,7 +381,7 @@ func RestDeleteDeregisterVNet(c echo.Context) error {
 	resp, err := resource.DeregisterVNet(nsId, vNetId, withSubnets)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return c.JSON(errutil.ApiStatus(err), model.SimpleMsg{Message: err.Error()})
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 
 	// [Output] Return the deregistered result
