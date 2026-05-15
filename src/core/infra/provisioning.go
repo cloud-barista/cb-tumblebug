@@ -183,7 +183,12 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 
 	// Build Node ID list
 	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
-		nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
+		if nodeRequest.CspResourceId != "" {
+			// Register mode: node ID is the nodeGroup ID itself (no index suffix)
+			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id)
+		} else {
+			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
+		}
 	}
 
 	// Marshal with error handling
@@ -665,7 +670,12 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	}
 
 	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
-		nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
+		if nodeRequest.CspResourceId != "" {
+			// Register mode: node ID is the nodeGroup ID itself (no index suffix)
+			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id)
+		} else {
+			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
+		}
 	}
 
 	val, _ := json.Marshal(nodeGroupInfoData)
@@ -686,7 +696,12 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		nodeInfoData := model.NodeInfo{}
 
 		nodeInfoData.NodeGroupId = common.ToLower(nodeRequest.Name)
-		nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
+		if nodeRequest.CspResourceId != "" {
+			// Register mode: node name is the nodeGroup name itself (no index suffix)
+			nodeInfoData.Name = common.ToLower(nodeRequest.Name)
+		} else {
+			nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
+		}
 
 		log.Debug().Msg("nodeInfoData.Name: " + nodeInfoData.Name)
 
@@ -754,7 +769,12 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 				break
 			}
 			nodeInfoData.NodeGroupId = common.ToLower(nodeRequest.Name)
-			nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
+			if nodeRequest.CspResourceId != "" {
+				// Register mode: node name is the nodeGroup name itself (no index suffix)
+				nodeInfoData.Name = common.ToLower(nodeRequest.Name)
+			} else {
+				nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
+			}
 		}
 		nodeInfoData.Id = nodeInfoData.Name
 		nodeId := nodeInfoData.Id
@@ -1074,7 +1094,12 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				nodeInfo.Name = common.ToLower(nodeGroupReq.Name)
 			} else {
 				nodeInfo.NodeGroupId = common.ToLower(nodeGroupReq.Name)
-				nodeInfo.Name = common.ToLower(nodeGroupReq.Name) + "-" + strconv.Itoa(i)
+				if nodeGroupReq.CspResourceId != "" {
+					// Register mode: node name is the nodeGroup name itself (no index suffix)
+					nodeInfo.Name = common.ToLower(nodeGroupReq.Name)
+				} else {
+					nodeInfo.Name = common.ToLower(nodeGroupReq.Name) + "-" + strconv.Itoa(i)
+				}
 			}
 			nodeInfo.Id = nodeInfo.Name
 
