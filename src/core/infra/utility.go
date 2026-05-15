@@ -1075,17 +1075,17 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 			}
 			var registeredNodes []registeredNodeInfo
 
-			for idx, r := range res.Resources.OnCspOnly.Info {
-				// Generate a temporary unique nodegroup name for initial registration
-				tempNodeGroupName := common.ChangeIdString(fmt.Sprintf("reg-%s-%d", connConfig, idx))
+			for _, r := range res.Resources.OnCspOnly.Info {
+				// NodeGroup/Node name: use CSP resource ID for consistency with other resources (VNet, SG, etc.)
+				tempNodeGroupName := genName(r.CspResourceId)
 
 				var infraName string
 				if useSingleInfra {
 					// Use the same Infra name for all Nodes
 					infraName = singleInfraName
 				} else {
-					// Create separate Infra for each Node (use shorter name)
-					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.RefNameOrId))
+					// Create separate Infra per Node; include CSP resource ID for traceability
+					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.CspResourceId))
 				}
 
 				var nodeId string
