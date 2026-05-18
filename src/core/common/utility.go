@@ -32,6 +32,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/pem"
 
@@ -40,7 +41,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
-	uid "github.com/rs/xid"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
@@ -129,9 +129,24 @@ func SetupViperPaths(v *viper.Viper) {
 
 // Infra utilities
 
-// GenUid is func to return a uid string
+const maxUidLength = 20
+
+var b32Encoding = base32.NewEncoding("0123456789abcdefghijklmnopqrstuv").WithPadding(base32.NoPadding)
+
+// GenUid returns a uid string of exactly maxUidLength characters.
+// The prefix length is derived from model.StrUidPrefix; the remaining characters
+// are filled with crypto/rand bytes encoded in lowercase base32.
+// Changing either maxUidLength or StrUidPrefix automatically adjusts the random part.
 func GenUid() string {
-	return model.StrUidPrefix + uid.New().String()
+	prefix := model.StrUidPrefix
+	randomLen := maxUidLength - len(prefix)
+	byteCount := (randomLen*5 + 7) / 8
+	b := make([]byte, byteCount)
+	for {
+		if _, err := crand.Read(b); err == nil {
+			return prefix + b32Encoding.EncodeToString(b)[:randomLen]
+		}
+	}
 }
 
 // GenRandomPassword is func to return a RandomPassword
