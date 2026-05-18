@@ -202,7 +202,10 @@ func ApplyCredentialKeyMap(provider string, kvList []model.KeyValue) map[string]
 }
 
 // BuildSecretPathForHolder builds the OpenBao secret path using holder and provider directly.
+// Both holder and provider are lowercased to stay consistent with BuildSecretPath.
 func BuildSecretPathForHolder(holder, provider string) string {
+	holder = strings.ToLower(holder)
+	provider = strings.ToLower(provider)
 	if strings.EqualFold(holder, model.DefaultCredentialHolder) {
 		return fmt.Sprintf("secret/data/csp/%s", provider)
 	}
@@ -210,7 +213,8 @@ func BuildSecretPathForHolder(holder, provider string) string {
 }
 
 // WriteOpenBaoSecret writes key-value data to OpenBao at the given KV v2 path (upsert).
-func WriteOpenBaoSecret(path string, data map[string]interface{}) error {
+// ctx allows request-scoped cancellation and timeout, consistent with ReadOpenBaoSecret.
+func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]interface{}) error {
 	if model.VaultToken == "" {
 		return fmt.Errorf("VAULT_TOKEN is not set")
 	}
@@ -223,7 +227,7 @@ func WriteOpenBaoSecret(path string, data map[string]interface{}) error {
 	}
 	client.SetToken(model.VaultToken)
 
-	_, err = client.Logical().Write(path, map[string]interface{}{
+	_, err = client.Logical().WriteWithContext(ctx, path, map[string]interface{}{
 		"data": data,
 	})
 	if err != nil {
@@ -275,7 +279,7 @@ func BuildSecretPath(ctx context.Context, provider string) string {
 		holder = v
 	}
 
-	if holder == "admin" {
+	if strings.EqualFold(holder, model.DefaultCredentialHolder) {
 		return fmt.Sprintf("secret/data/csp/%s", provider)
 	}
 	return fmt.Sprintf("secret/data/users/%s/csp/%s", holder, provider)

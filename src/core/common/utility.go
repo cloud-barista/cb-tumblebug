@@ -15,6 +15,7 @@ limitations under the License.
 package common
 
 import (
+	"context"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -1022,7 +1023,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	if model.VaultToken != "" {
 		secretPath := csp.BuildSecretPathForHolder(req.CredentialHolder, req.ProviderName)
 		secretData := csp.ApplyCredentialKeyMap(req.ProviderName, decryptedKeyValueList)
-		if err := csp.WriteOpenBaoSecret(secretPath, secretData); err != nil {
+		if err := csp.WriteOpenBaoSecret(context.Background(), secretPath, secretData); err != nil {
 			log.Warn().Err(err).Msgf("Failed to register credential in OpenBao (non-fatal): provider=%s holder=%s", req.ProviderName, req.CredentialHolder)
 		} else {
 			log.Info().Msgf("Registered credential in OpenBao: path=%s", secretPath)
