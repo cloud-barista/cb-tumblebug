@@ -184,8 +184,9 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 	// Build Node ID list
 	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
 		if nodeRequest.CspResourceId != "" {
-			// Register mode: node ID is the nodeGroup ID itself (no index suffix)
+			// Register mode: one node per registration, no index suffix
 			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id)
+			break
 		} else {
 			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
 		}
@@ -671,8 +672,9 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 
 	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
 		if nodeRequest.CspResourceId != "" {
-			// Register mode: node ID is the nodeGroup ID itself (no index suffix)
+			// Register mode: one node per registration, no index suffix
 			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id)
+			break
 		} else {
 			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
 		}
