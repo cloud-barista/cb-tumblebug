@@ -142,11 +142,8 @@ func GenUid() string {
 	randomLen := maxUidLength - len(prefix)
 	byteCount := (randomLen*5 + 7) / 8
 	b := make([]byte, byteCount)
-	for {
-		if _, err := crand.Read(b); err == nil {
-			return prefix + b32Encoding.EncodeToString(b)[:randomLen]
-		}
-	}
+	crand.Read(b) // Go 1.20+: always succeeds; OS random source is guaranteed available
+	return prefix + b32Encoding.EncodeToString(b)[:randomLen]
 }
 
 // GenRandomPassword is func to return a RandomPassword
