@@ -1074,18 +1074,24 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 				networkKey string
 			}
 			var registeredNodes []registeredNodeInfo
+			// Explicitly track which nodegroup names were created as temporaries in Phase 1,
+			// so Phase 2 cleanup does not rely on name prefix conventions.
+			tempNodeGroupNames := make(map[string]bool)
 
-			for idx, r := range res.Resources.OnCspOnly.Info {
-				// Generate a temporary unique nodegroup name for initial registration
-				tempNodeGroupName := common.ChangeIdString(fmt.Sprintf("reg-%s-%d", connConfig, idx))
+			for _, r := range res.Resources.OnCspOnly.Info {
+				// NodeGroup/Node name: use CSP resource ID for consistency with other resources (VNet, SG, etc.)
+				tempNodeGroupName := genName(r.CspResourceId)
+				if useSingleInfra {
+					tempNodeGroupNames[tempNodeGroupName] = true
+				}
 
 				var infraName string
 				if useSingleInfra {
 					// Use the same Infra name for all Nodes
 					infraName = singleInfraName
 				} else {
-					// Create separate Infra for each Node (use shorter name)
-					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.RefNameOrId))
+					// Create separate Infra per Node; include CSP resource ID for traceability
+					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.CspResourceId))
 				}
 
 				var nodeId string
@@ -1192,8 +1198,8 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						nodeInfo.NodeGroupId = newNodeGroupName
 						UpdateNodeInfo(nsId, singleInfraName, nodeInfo)
 
-						// Delete old nodegroup if it was temporary (starts with "reg-")
-						if oldNodeGroupId != "" && strings.HasPrefix(oldNodeGroupId, "reg-") && oldNodeGroupId != newNodeGroupName {
+						// Delete old nodegroup if it was a temporary one created in Phase 1
+						if oldNodeGroupId != "" && tempNodeGroupNames[oldNodeGroupId] && oldNodeGroupId != newNodeGroupName {
 							oldNodeGroupKey := common.GenInfraNodeGroupKey(nsId, singleInfraName, oldNodeGroupId)
 							kvstore.Delete(oldNodeGroupKey)
 						}
