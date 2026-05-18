@@ -15,6 +15,7 @@ limitations under the License.
 package common
 
 import (
+	"context"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -37,8 +38,9 @@ import (
 	"encoding/pem"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
+	modelcsp "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	"github.com/rs/zerolog/log"
@@ -687,10 +689,10 @@ func RegisterAllCloudInfo() error {
 	for providerName, cspDetail := range RuntimeCloudInfo.CSPs {
 		if cspDetail.CloudPlatform != "" {
 			// Derived CSP: maps to the base platform (e.g., openstack-new01 → openstack)
-			csp.RegisterCloudPlatform(providerName, cspDetail.CloudPlatform)
+			modelcsp.RegisterCloudPlatform(providerName, cspDetail.CloudPlatform)
 		} else {
 			// Standard CSP: identity mapping (e.g., aws → aws)
-			csp.RegisterCloudPlatform(providerName, providerName)
+			modelcsp.RegisterCloudPlatform(providerName, providerName)
 		}
 	}
 
@@ -720,7 +722,7 @@ func RegisterCloudInfo(providerName string) error {
 	// Resolve the cloud platform type for Spider registration.
 	// Spider uses ProviderName to select the correct driver handler,
 	// so it must be the platform type (e.g., "OPENSTACK") not the CSP instance name (e.g., "OPENSTACK-NEW01").
-	platformName := csp.ResolveCloudPlatform(providerName)
+	platformName := modelcsp.ResolveCloudPlatform(providerName)
 
 	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/driver"
@@ -764,7 +766,7 @@ func RegisterRegionZone(providerName string, regionName string) error {
 
 	// Use platform name for Spider's ProviderName (driver selection),
 	// but keep CSP instance name in RegionName for uniqueness.
-	platformName := csp.ResolveCloudPlatform(providerName)
+	platformName := modelcsp.ResolveCloudPlatform(providerName)
 	requestBody := model.SpiderRegionZoneInfo{ProviderName: strings.ToUpper(platformName), RegionName: regionName}
 
 	// register representative regionZone (region only)
@@ -984,7 +986,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	// Resolve cloud platform type for Spider registration.
 	// Spider uses ProviderName to select the correct driver handler,
 	// so it must be the platform type (e.g., "OPENSTACK") not the CSP instance name (e.g., "OPENSTACK-NEW01").
-	platformName := csp.ResolveCloudPlatform(req.ProviderName)
+	platformName := modelcsp.ResolveCloudPlatform(req.ProviderName)
 
 	reqToSpider := model.CredentialInfo{
 		CredentialName:   genneratedCredentialName,
@@ -1016,6 +1018,17 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 		return model.CredentialInfo{}, err
 	}
 	//PrintJsonPretty(callResult)
+
+	// Register credentials in OpenBao for runtime CSP access (non-fatal: warn and continue if unavailable)
+	if model.VaultToken != "" {
+		secretPath := csp.BuildSecretPathForHolder(req.CredentialHolder, req.ProviderName)
+		secretData := csp.ApplyCredentialKeyMap(req.ProviderName, decryptedKeyValueList)
+		if err := csp.WriteOpenBaoSecret(context.Background(), secretPath, secretData); err != nil {
+			log.Warn().Err(err).Msgf("Failed to register credential in OpenBao (non-fatal): provider=%s holder=%s", req.ProviderName, req.CredentialHolder)
+		} else {
+			log.Info().Msgf("Registered credential in OpenBao: path=%s", secretPath)
+		}
+	}
 
 	callResult.CredentialHolder = req.CredentialHolder
 	callResult.ProviderName = strings.ToLower(callResult.ProviderName)
@@ -1229,7 +1242,7 @@ func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, er
 	requestBody.ConfigName = connConfig.ConfigName
 	// Spider needs the platform type (e.g., "OPENSTACK") for driver selection,
 	// not the CSP instance name (e.g., "openstack-new01")
-	requestBody.ProviderName = strings.ToUpper(csp.ResolveCloudPlatform(connConfig.ProviderName))
+	requestBody.ProviderName = strings.ToUpper(modelcsp.ResolveCloudPlatform(connConfig.ProviderName))
 	requestBody.DriverName = connConfig.DriverName
 	requestBody.CredentialName = connConfig.CredentialName
 	requestBody.RegionName = connConfig.RegionZoneInfoName

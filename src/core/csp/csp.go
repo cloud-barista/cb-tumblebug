@@ -113,6 +113,129 @@ func GetBatchVMControlHandler(provider, action string) (BatchVMControlFunc, bool
 	}
 }
 
+// credentialKeyMap maps each CSP's YAML credential keys to the environment variable
+// names expected by OpenTofu providers and cb-tumblebug's runtime credential lookup.
+// Must stay in sync with init/openbao/openbao-register-creds.py KEY_MAP.
+var credentialKeyMap = map[string]map[string]string{
+	"aws": {
+		"aws_access_key_id":     "AWS_ACCESS_KEY_ID",
+		"aws_secret_access_key": "AWS_SECRET_ACCESS_KEY",
+	},
+	"azure": {
+		"clientId":       "ARM_CLIENT_ID",
+		"clientSecret":   "ARM_CLIENT_SECRET",
+		"tenantId":       "ARM_TENANT_ID",
+		"subscriptionId": "ARM_SUBSCRIPTION_ID",
+		"S3AccessKey":    "ARM_STORAGE_ACCOUNT_NAME",
+		"S3SecretKey":    "ARM_ACCESS_KEY",
+	},
+	"gcp": {
+		"project_id":     "project_id",
+		"client_email":   "client_email",
+		"private_key":    "private_key",
+		"private_key_id": "private_key_id",
+		"client_id":      "client_id",
+		"S3AccessKey":    "GCP_S3_ACCESS_KEY",
+		"S3SecretKey":    "GCP_S3_SECRET_KEY",
+	},
+	"alibaba": {
+		"AccessKeyId":     "ALIBABA_CLOUD_ACCESS_KEY_ID",
+		"AccessKeySecret": "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
+	},
+	"ibm": {
+		"ApiKey":    "IC_API_KEY",
+		"S3AccessKey": "IBM_S3_ACCESS_KEY",
+		"S3SecretKey": "IBM_S3_SECRET_KEY",
+	},
+	"ncp": {
+		"ncloud_access_key": "NCLOUD_ACCESS_KEY",
+		"ncloud_secret_key": "NCLOUD_SECRET_KEY",
+	},
+	"tencent": {
+		"SecretId": "TENCENTCLOUD_SECRET_ID",
+		"SecretKey": "TENCENTCLOUD_SECRET_KEY",
+	},
+	"kt": {
+		"IdentityEndpoint": "KT_IDENTITY_ENDPOINT",
+		"Username":         "KT_USERNAME",
+		"Password":         "KT_PASSWORD",
+		"DomainName":       "KT_DOMAIN_NAME",
+		"ProjectID":        "KT_PROJECT_ID",
+		"S3AccessKey":      "KT_S3_ACCESS_KEY",
+		"S3SecretKey":      "KT_S3_SECRET_KEY",
+	},
+	"nhn": {
+		"IdentityEndpoint": "NHN_IDENTITY_ENDPOINT",
+		"Username":         "NHN_USERNAME",
+		"Password":         "NHN_PASSWORD",
+		"DomainName":       "NHN_DOMAIN_NAME",
+		"TenantId":         "NHN_TENANT_ID",
+		"S3AccessKey":      "NHN_S3_ACCESS_KEY",
+		"S3SecretKey":      "NHN_S3_SECRET_KEY",
+	},
+	"openstack": {
+		"IdentityEndpoint": "OS_AUTH_URL",
+		"Username":         "OS_USERNAME",
+		"Password":         "OS_PASSWORD",
+		"DomainName":       "OS_DOMAIN_NAME",
+		"ProjectID":        "OS_PROJECT_ID",
+		"S3AccessKey":      "OS_S3_ACCESS_KEY",
+		"S3SecretKey":      "OS_S3_SECRET_KEY",
+	},
+}
+
+// ApplyCredentialKeyMap transforms a credential key-value list using the CSP-specific
+// key mapping. Keys not present in the map are passed through unchanged.
+func ApplyCredentialKeyMap(provider string, kvList []model.KeyValue) map[string]interface{} {
+	keyMap := credentialKeyMap[strings.ToLower(provider)]
+	result := make(map[string]interface{}, len(kvList))
+	for _, kv := range kvList {
+		targetKey := kv.Key
+		if keyMap != nil {
+			if mapped, ok := keyMap[kv.Key]; ok {
+				targetKey = mapped
+			}
+		}
+		result[targetKey] = kv.Value
+	}
+	return result
+}
+
+// BuildSecretPathForHolder builds the OpenBao secret path using holder and provider directly.
+// Both holder and provider are lowercased to stay consistent with BuildSecretPath.
+func BuildSecretPathForHolder(holder, provider string) string {
+	holder = strings.ToLower(holder)
+	provider = strings.ToLower(provider)
+	if strings.EqualFold(holder, model.DefaultCredentialHolder) {
+		return fmt.Sprintf("secret/data/csp/%s", provider)
+	}
+	return fmt.Sprintf("secret/data/users/%s/csp/%s", holder, provider)
+}
+
+// WriteOpenBaoSecret writes key-value data to OpenBao at the given KV v2 path (upsert).
+// ctx allows request-scoped cancellation and timeout, consistent with ReadOpenBaoSecret.
+func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]interface{}) error {
+	if model.VaultToken == "" {
+		return fmt.Errorf("VAULT_TOKEN is not set")
+	}
+
+	vaultConfig := api.DefaultConfig()
+	vaultConfig.Address = model.VaultAddr
+	client, err := api.NewClient(vaultConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create OpenBao client: %w", err)
+	}
+	client.SetToken(model.VaultToken)
+
+	_, err = client.Logical().WriteWithContext(ctx, path, map[string]interface{}{
+		"data": data,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write secret to OpenBao at %s: %w", path, err)
+	}
+	return nil
+}
+
 // ReadOpenBaoSecret reads a secret from OpenBao at the given path and returns the data map.
 // It validates that VaultToken is set and the secret exists.
 // A context is used for request-scoped cancellation and timeout.
@@ -156,7 +279,7 @@ func BuildSecretPath(ctx context.Context, provider string) string {
 		holder = v
 	}
 
-	if holder == "admin" {
+	if strings.EqualFold(holder, model.DefaultCredentialHolder) {
 		return fmt.Sprintf("secret/data/csp/%s", provider)
 	}
 	return fmt.Sprintf("secret/data/users/%s/csp/%s", holder, provider)
