@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -1172,44 +1172,19 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	 *	Check and reconcile the info of vNet and associated subnets
 	 */
 
-	// [Via Spider] Get a vNet
-	client := clientManager.NewHttpClient()
-	method := "GET"
-	spReqt := clientManager.NoBody
-	var spResp spiderVPCInfo
-
-	// API to get a vNet
-	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
-	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
-	url += queryParams
-
-	log.Debug().Msgf("[Request to Spider] Reconciling VPC: %s", url)
-
-	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code; this lets apierr.IsNotFound use the status code
-	// as a secondary signal when the error message alone is ambiguous.
-	restyResp, err := clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(spReqt),
-		&spReqt,
-		&spResp,
-		clientManager.MediumDuration,
-	)
-	err = clientManager.HandleHttpResponse(restyResp, err)
-
-	log.Trace().Msgf("[Response from Spider] Reconciling VPC: %+v", spResp)
-
-	// Only proceed with cleanup when the VPC is confirmed not found (404).
-	// For server errors (5xx) or transport errors, return the error without cleanup
-	// to prevent accidental data loss during Spider/CSP outages.
-	if err != nil && !apierr.IsNotFound(err) {
-		log.Error().Err(err).Msg("failed to get VPC from Spider, skipping reconciliation")
+	// [Via Spider] List all VPCs to determine the exact Spider/CSP state.
+	log.Debug().Msgf("[Request to Spider] Listing all VPCs for connection: %s", vNetInfo.ConnectionName)
+	allVpcList, err := deepScanResourcesOn(vNetInfo.ConnectionName, model.StrVNet)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to list VPCs from Spider, skipping reconciliation")
 		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile vNet '%s'", vNetId))
 	}
-	if err == nil {
+
+	vpcState := vpcStateInSpiderAllList(vNetInfo.CspResourceName, allVpcList)
+	log.Debug().Msgf("VPC '%s' state in Spider: %q", vNetInfo.CspResourceName, vpcState)
+
+	switch vpcState {
+	case "exists":
 		// VPC exists on CSP. Recurse into child subnets first so that any
 		// per-subnet drift (orphaned metadata, stuck statuses) is settled
 		// before evaluating the parent vNet status.
@@ -1278,35 +1253,44 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		ret.Message = fmt.Sprintf("vNet (%s) exists on CSP; metadata is consistent (no action needed)", vNetId)
 		log.Info().Msg(ret.Message)
 		return ret, nil
-	}
 
-	/*
-	 * In case of the VPC info/resource does not exist in Spider/CSP
-	 * delete the information of vNet and subnets from the key-value stores
-	 */
+	case "cspOnly":
+		// CSP resource still exists but Spider has no IID.
+		// Preserve TB metadata — deleting it would orphan the CSP resource.
+		// TODO: consider re-registering the CSP-only VPC into Spider.
+		ret.Message = fmt.Sprintf("vNet (%s) exists on CSP but has no Spider IID (cspOnly); TB metadata preserved", vNetId)
+		log.Warn().Msg(ret.Message)
+		return ret, nil
 
-	// [Via Spider] Purge Spider VPC metadata by force delete (CSP resource already gone).
-	// Note: Spider sends a force delete request to the CSP and removes its own metadata
-	// regardless of whether the CSP-side deletion succeeds or fails.
-	spForceDelReqt := spiderVpcDeleteReq{ConnectionName: vNetInfo.ConnectionName}
-	forceDelURL := fmt.Sprintf("%s/vpc/%s?force=true", model.SpiderRestUrl, vNetInfo.CspResourceName)
-	log.Debug().Msgf("[Request to Spider] Purge Spider VPC metadata by force delete: %s", forceDelURL)
-	var spForceDelResp spiderBooleanInfoResp
-	restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
-		clientManager.NewHttpClient(),
-		"DELETE",
-		forceDelURL,
-		nil,
-		clientManager.SetUseBody(spForceDelReqt),
-		&spForceDelReqt,
-		&spForceDelResp,
-		clientManager.MediumDuration,
-	)
-	forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
-	if forceDelErr != nil {
-		log.Warn().Err(forceDelErr).Msgf("Purge Spider VPC metadata by force delete failed for %s (continuing reconcile)", vNetInfo.CspResourceName)
-	} else {
-		log.Info().Msgf("Purge Spider VPC metadata by force delete succeeded for %s", vNetInfo.CspResourceName)
+	case "spiderOnly":
+		/*
+		 * VPC is gone from CSP (or was never registered in Spider).
+		 * Purge the Spider IID only when Spider still tracks it, then remove TB metadata.
+		 */
+		// Spider still has the IID but the CSP resource is gone: force-delete to purge the IID.
+		spForceDelReqt := spiderVpcDeleteReq{ConnectionName: vNetInfo.ConnectionName}
+		forceDelURL := fmt.Sprintf("%s/vpc/%s?force=true", model.SpiderRestUrl, vNetInfo.CspResourceName)
+		log.Debug().Msgf("[Request to Spider] Purge Spider VPC metadata by force delete: %s", forceDelURL)
+		var spForceDelResp spiderBooleanInfoResp
+		restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
+			clientManager.NewHttpClient(),
+			"DELETE",
+			forceDelURL,
+			nil,
+			clientManager.SetUseBody(spForceDelReqt),
+			&spForceDelReqt,
+			&spForceDelResp,
+			clientManager.MediumDuration,
+		)
+		forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
+		if forceDelErr != nil {
+			log.Warn().Err(forceDelErr).Msgf("Purge Spider VPC metadata by force delete failed for %s (continuing reconcile)", vNetInfo.CspResourceName)
+		} else {
+			log.Info().Msgf("Purge Spider VPC metadata by force delete succeeded for %s", vNetInfo.CspResourceName)
+		}
+
+	case "absent":
+		// No Spider IID to purge; the resource is gone from both Spider and CSP.
 	}
 
 	// Delete subnet objects from the key-value store
