@@ -33,7 +33,6 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -437,7 +436,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 				} else {
 					log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
 				}
-				// Validate: AWS/GCP must use isKubernetesImage=true images
+				// Validate: type-identifier CSPs (AWS/GCP/Tencent) must use registered K8s node image types
 				if createErr = validateK8sImageForProvider(nsId, connConfig.ProviderName, v.ImageId); createErr != nil {
 					return emptyObj, createErr
 				}
@@ -735,7 +734,7 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 			} else {
 				log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
 			}
-			// Validate: AWS/GCP must use isKubernetesImage=true images
+			// Validate: type-identifier CSPs (AWS/GCP/Tencent) must use registered K8s node image types
 			if err = validateK8sImageForProvider(nsId, connConfig.ProviderName, u.ImageId); err != nil {
 				return emptyObj, err
 			}
@@ -2328,26 +2327,28 @@ func convertSpiderNodeGroupStatusToK8sNodeGroupStatus(spNodeGroupStatus model.Sp
 	return model.K8sNodeGroupInactive
 }
 
-// validateK8sImageForProvider validates that the provided imageId is a valid K8s node image
-// for AWS/GCP. These providers only support type-based image selection (not direct imageId).
+// validateK8sImageForProvider validates that the provided imageId is a registered
+// K8s node image type for CSPs that use the type-identifier model (AWS/GCP/Tencent).
+// For these CSPs, only image entries registered via cloudimage.csv
+// (IsKubernetesImage=true) are accepted.
 func validateK8sImageForProvider(nsId, providerName, imageId string) error {
-	switch strings.ToLower(providerName) {
-	case csp.AWS, csp.GCP:
-		imgInfo, err := GetImage(nsId, imageId)
+	if !usesTypeIdentifierK8sImage(providerName) {
+		return nil
+	}
+	imgInfo, err := GetImage(nsId, imageId)
+	if err != nil {
+		imgInfo, err = GetImage(model.SystemCommonNs, imageId)
 		if err != nil {
-			imgInfo, err = GetImage(model.SystemCommonNs, imageId)
-			if err != nil {
-				return fmt.Errorf("image(%s) not found", imageId)
-			}
+			return fmt.Errorf("image(%s) not found", imageId)
 		}
-		if !imgInfo.IsKubernetesImage {
-			return fmt.Errorf(
-				"provider(%s) only supports K8s node image types for cluster creation. "+
-					"Image(%s) is not a valid K8s node image type. "+
-					"Use searchImage(isKubernetesImage=true, provider=%s) to find valid options",
-				providerName, imageId, providerName,
-			)
-		}
+	}
+	if !imgInfo.IsKubernetesImage {
+		return fmt.Errorf(
+			"provider(%s) requires a registered K8s node image type for cluster creation. "+
+				"Image(%s) is not a valid K8s node image type. "+
+				"Use searchImage(isKubernetesImage=true, provider=%s) to find valid options",
+			providerName, imageId, providerName,
+		)
 	}
 	return nil
 }
