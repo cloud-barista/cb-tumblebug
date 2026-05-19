@@ -948,47 +948,19 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 	 *	Check and reconcile the subnet info
 	 */
 
-	// [Via Spider] Get the subnet
-	client := clientManager.NewHttpClient()
-	method := "GET"
-
-	// API to get a subnet
-	url := fmt.Sprintf("%s/vpc/%s/subnet/%s", model.SpiderRestUrl, subnetInfo.CspVNetName, subnetInfo.CspResourceName)
-	queryParams := "?ConnectionName=" + subnetInfo.ConnectionName
-	url += queryParams
-
-	spReqt := clientManager.NoBody
-
-	log.Debug().Msgf("[Request to Spider] Reconciling Subnet: %s", url)
-
-	var spResp spiderSubnetInfo
-
-	// restyResp is captured so HandleHttpResponse can wrap the error with the
-	// HTTP status code; this lets apierr.IsNotFound use the status code
-	// as a secondary signal when the error message alone is ambiguous.
-	restyResp, err := clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(spReqt),
-		&spReqt,
-		&spResp,
-		clientManager.MediumDuration,
-	)
-	err = clientManager.HandleHttpResponse(restyResp, err)
-
-	log.Trace().Msgf("[Response from Spider] Reconciling Subnet: %+v", spResp)
-
-	// Only proceed with cleanup when the subnet is confirmed not found (404).
-	// For server errors (5xx) or transport errors, return the error without cleanup
-	// to prevent accidental data loss during Spider/CSP outages.
-	if err != nil && !apierr.IsNotFound(err) {
-		log.Error().Err(err).Msg("failed to get subnet from Spider, skipping reconciliation")
-		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile subnet '%s'", subnetId))
+	// [Via Spider] List all VPC info to determine the exact Spider/CSP state of the subnet.
+	log.Debug().Msgf("[Request to Spider] Listing all VPC info for connection: %s", subnetInfo.ConnectionName)
+	allListInfo, allVpcErr := deepScanVpcInfoOn(subnetInfo.ConnectionName)
+	if allVpcErr != nil {
+		log.Error().Err(allVpcErr).Msg("failed to list VPC info from Spider, skipping reconciliation")
+		return emptyRet, apierr.Wrap(allVpcErr, fmt.Sprintf("failed to reconcile subnet '%s'", subnetId))
 	}
 
-	if err == nil {
+	subnetState := subnetStateInAllVpcInfo(subnetInfo.CspVNetName, subnetInfo.CspResourceName, allListInfo)
+	log.Debug().Msgf("Subnet '%s' state in Spider: %q", subnetInfo.CspResourceName, subnetState)
+
+	switch subnetState {
+	case "exists":
 		// Subnet exists on CSP. Restore status only when metadata is stuck in
 		// a terminal-failure state (e.g., DeletionFailed) — typically caused
 		// by a dependency that has since been resolved.
@@ -1041,35 +1013,47 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetId)
 		log.Info().Msg(ret.Message)
 		return ret, nil
-	}
 
-	/*
-	 *	Delete the subnet info in case of the subnet does not exist
-	 */
+	case "cspOnly":
+		// CSP resource still exists but Spider has no IID.
+		// Preserve TB metadata — deleting it would orphan the CSP resource.
+		// TODO: consider re-registering the CSP-only subnet into Spider.
+		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP but has no Spider IID (cspOnly); TB metadata preserved", subnetId)
+		log.Warn().Msg(ret.Message)
+		return ret, nil
 
-	// [Via Spider] Purge Spider subnet metadata by force delete (CSP resource already gone).
-	// Note: Spider sends a force delete request to the CSP and removes its own metadata
-	// regardless of whether the CSP-side deletion succeeds or fails.
-	spForceDelReqt := spiderSubnetRemoveReq{ConnectionName: subnetInfo.ConnectionName}
-	forceDelURL := fmt.Sprintf("%s/vpc/%s/subnet/%s?force=true",
-		model.SpiderRestUrl, subnetInfo.CspVNetName, subnetInfo.CspResourceName)
-	log.Debug().Msgf("[Request to Spider] Purge Spider subnet metadata by force delete: %s", forceDelURL)
-	var spForceDelResp spiderBooleanInfoResp
-	restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
-		clientManager.NewHttpClient(),
-		"DELETE",
-		forceDelURL,
-		nil,
-		clientManager.SetUseBody(spForceDelReqt),
-		&spForceDelReqt,
-		&spForceDelResp,
-		clientManager.MediumDuration,
-	)
-	forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
-	if forceDelErr != nil {
-		log.Warn().Err(forceDelErr).Msgf("Purge Spider subnet metadata by force delete failed for %s (continuing reconcile)", subnetInfo.CspResourceName)
-	} else {
-		log.Info().Msgf("Purge Spider subnet metadata by force delete succeeded for %s", subnetInfo.CspResourceName)
+
+	case "spiderOnly":
+		/*
+		 *	Subnet is gone from CSP (or was never registered in Spider).
+		 *	Purge the Spider IID only when Spider still tracks it, then remove TB metadata.
+		 */
+
+		// Spider still has the IID but the CSP resource is gone: force-delete to purge the IID.
+		spForceDelReqt := spiderSubnetRemoveReq{ConnectionName: subnetInfo.ConnectionName}
+		forceDelURL := fmt.Sprintf("%s/vpc/%s/subnet/%s?force=true",
+			model.SpiderRestUrl, subnetInfo.CspVNetName, subnetInfo.CspResourceName)
+		log.Debug().Msgf("[Request to Spider] Purge Spider subnet metadata by force delete: %s", forceDelURL)
+		var spForceDelResp spiderBooleanInfoResp
+		restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
+			clientManager.NewHttpClient(),
+			"DELETE",
+			forceDelURL,
+			nil,
+			clientManager.SetUseBody(spForceDelReqt),
+			&spForceDelReqt,
+			&spForceDelResp,
+			clientManager.MediumDuration,
+		)
+		forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
+		if forceDelErr != nil {
+			log.Warn().Err(forceDelErr).Msgf("Purge Spider subnet metadata by force delete failed for %s (continuing reconcile)", subnetInfo.CspResourceName)
+		} else {
+			log.Info().Msgf("Purge Spider subnet metadata by force delete succeeded for %s", subnetInfo.CspResourceName)
+		}
+
+	case "absent":
+		// No Spider IID to purge; the resource is gone from both Spider and CSP.
 	}
 
 	// Delete the saved the subnet info

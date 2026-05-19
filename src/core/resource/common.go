@@ -29,8 +29,8 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -3273,4 +3273,109 @@ func CheckAssociatedCspResourceExistence(nsId string, resourceType string, resou
 	log.Debug().Str("cspResourceId", cspResourceId).Str("connection", connConfig).
 		Str("resourceType", resourceType).Msg("Resource not found in any list")
 	return false, false, nil
+}
+
+// deepScanResourcesOn queries Spider's all-resource endpoint and returns the
+// three-way classification list (MappedList, OnlySpiderList, OnlyCSPList).
+// StrSubnet is not supported here; use deepScanVpcInfoOn instead.
+func deepScanResourcesOn(connName, resourceType string) (model.SpiderAllList, error) {
+	var spiderURL string
+	switch resourceType {
+	case model.StrNLB:
+		spiderURL = model.SpiderRestUrl + "/allnlb"
+	case model.StrNode:
+		spiderURL = model.SpiderRestUrl + "/allvm"
+	case model.StrVNet:
+		spiderURL = model.SpiderRestUrl + "/allvpc"
+	case model.StrSecurityGroup:
+		spiderURL = model.SpiderRestUrl + "/allsecuritygroup"
+	case model.StrSSHKey:
+		spiderURL = model.SpiderRestUrl + "/allkeypair"
+	case model.StrDataDisk:
+		spiderURL = model.SpiderRestUrl + "/alldisk"
+	case model.StrCustomImage:
+		spiderURL = model.SpiderRestUrl + "/allmyimage"
+	default:
+		return model.SpiderAllList{}, fmt.Errorf("unsupported resource type for fetchSpiderAllList: %s", resourceType)
+	}
+	body := model.CspResourceStatusRequest{ConnectionName: connName}
+	var result model.SpiderAllListWrapper
+	client := clientManager.NewHttpClient()
+	client.SetAllowGetMethodPayload(true)
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		client, "GET", spiderURL, nil,
+		clientManager.SetUseBody(body), &body, &result, clientManager.MediumDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		return model.SpiderAllList{}, err
+	}
+	return result.AllList, nil
+}
+
+// deepScanVpcInfoOn queries Spider's /allvpcinfo endpoint and returns the full VPC
+// list including per-VPC subnet lists, preserving the VPC-Subnet relationship.
+func deepScanVpcInfoOn(connName string) (model.SpiderAllVpcListInfo, error) {
+	noBody := clientManager.NoBody
+	url := fmt.Sprintf("%s/allvpcinfo?ConnectionName=%s", model.SpiderRestUrl, connName)
+	var result model.SpiderAllVpcInfoWrapper
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		clientManager.NewHttpClient(), "GET", url, nil,
+		clientManager.SetUseBody(noBody), &noBody, &result, clientManager.MediumDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		return model.SpiderAllVpcListInfo{}, err
+	}
+	return result.AllListInfo, nil
+}
+
+// vpcStateInSpiderAllList returns the state of a VPC name across Spider and CSP:
+// "exists", "spiderOnly", "cspOnly", or "absent".
+func vpcStateInSpiderAllList(name string, all model.SpiderAllList) string {
+	for _, item := range all.MappedList {
+		if item.NameId == name {
+			return "exists"
+		}
+	}
+	for _, item := range all.OnlySpiderList {
+		if item.NameId == name {
+			return "spiderOnly"
+		}
+	}
+	for _, item := range all.OnlyCSPList {
+		if item.NameId == name {
+			return "cspOnly"
+		}
+	}
+	return "absent"
+}
+
+// subnetStateInAllVpcInfo returns the state of a subnet across Spider and CSP:
+// "exists", "spiderOnly", "cspOnly", or "absent".
+func subnetStateInAllVpcInfo(vpcName, subnetName string, allListInfo model.SpiderAllVpcListInfo) string {
+	for _, vpc := range allListInfo.MappedInfoList {
+		if vpc.IId.NameId == vpcName {
+			for _, subnet := range vpc.SubnetInfoList {
+				if subnet.IId.NameId == subnetName {
+					return "exists"
+				}
+			}
+			return "spiderOnly" // VPC in CSP but subnet gone
+		}
+	}
+	for _, vpc := range allListInfo.OnlySpiderList {
+		if vpc.IId.NameId == vpcName {
+			return "spiderOnly" // VPC IID in Spider but CSP has no trace
+		}
+	}
+	for _, vpc := range allListInfo.OnlyCSPInfoList {
+		if vpc.IId.NameId == vpcName {
+			for _, subnet := range vpc.SubnetInfoList {
+				if subnet.IId.NameId == subnetName {
+					return "cspOnly" // CSP has the subnet but Spider has no IID
+				}
+			}
+			return "absent" // VPC in CSP but subnet truly gone
+		}
+	}
+	return "absent" // VPC not found anywhere
 }
