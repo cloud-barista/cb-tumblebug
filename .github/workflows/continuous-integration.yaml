@@ -7,16 +7,15 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - "**.md"
-      - ".all-contributorsrc"
-      - ".gitignore"
-      - "LICENSE"
-      - "CODEOWNERS"
-      - "assets/**"
-      - "scripts/**"
-      - "src/testclient/scripts/**"
-      - "docs/**"
+    paths:
+      - "src/**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - "go.work"
+      - "go.work.sum"
+      - "Dockerfile"
+      - "Makefile"
+      - ".github/workflows/continuous-integration.yaml"
 
 permissions:
   contents: read
@@ -56,7 +55,6 @@ jobs:
     # This job runs on Ubuntu-latest (Ubuntu 22.04 LTS checked on 2023-12-13)
     # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
     runs-on: ubuntu-22.04
-    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v6
