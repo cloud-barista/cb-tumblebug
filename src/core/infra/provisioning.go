@@ -5471,14 +5471,8 @@ func CleanupCorruptedProvisioningLogs() error {
 
 	cleanupCount := 0
 	for _, key := range keys {
-		keyValue, _, err := kvstore.GetKv(key.Key)
-		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to get value for key: %s", key.Key)
-			continue
-		}
-
-		// Check if the value is empty or invalid JSON
-		if keyValue.Value == "" {
+		// Check if the value is empty or invalid JSON (key already contains Value from GetKvList)
+		if key.Value == "" {
 			log.Debug().Msgf("Deleting empty provisioning log: %s", key.Key)
 			if deleteErr := kvstore.Delete(key.Key); deleteErr != nil {
 				log.Error().Err(deleteErr).Msgf("Failed to delete empty log: %s", key.Key)
@@ -5490,7 +5484,7 @@ func CleanupCorruptedProvisioningLogs() error {
 
 		// Test JSON validity
 		var testLog model.ProvisioningLog
-		if err := json.Unmarshal([]byte(keyValue.Value), &testLog); err != nil {
+		if err := json.Unmarshal([]byte(key.Value), &testLog); err != nil {
 			log.Debug().Msgf("Deleting corrupted provisioning log: %s", key.Key)
 			if deleteErr := kvstore.Delete(key.Key); deleteErr != nil {
 				log.Error().Err(deleteErr).Msgf("Failed to delete corrupted log: %s", key.Key)
