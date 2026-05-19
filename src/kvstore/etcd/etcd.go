@@ -239,6 +239,20 @@ func (s *EtcdStore) DeleteWith(ctx context.Context, key string) error {
 	return nil
 }
 
+// DeleteWithPrefix removes all key-value pairs with the given prefix in a single etcd request.
+func (s *EtcdStore) DeleteWithPrefix(keyPrefix string) error {
+	return s.DeleteWithPrefixWith(s.ctx, keyPrefix)
+}
+
+// DeleteWithPrefixWith removes all key-value pairs with the given prefix in a single etcd request using the provided context.
+func (s *EtcdStore) DeleteWithPrefixWith(ctx context.Context, keyPrefix string) error {
+	_, err := s.cli.Delete(ctx, keyPrefix, clientv3.WithPrefix())
+	if err != nil {
+		return fmt.Errorf("failed to delete keys with prefix %q: %w", keyPrefix, err)
+	}
+	return nil
+}
+
 // WatchKey watches for changes on the given key.
 func (s *EtcdStore) WatchKey(key string) clientv3.WatchChan {
 	return s.WatchKeyWith(s.ctx, key)

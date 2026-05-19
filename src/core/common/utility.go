@@ -1591,15 +1591,13 @@ func DeleteObject(key string) error {
 
 // DeleteObjects is func to delete objects
 func DeleteObjects(key string) error {
-	keyValue, _ := kvstore.GetKvList(key)
-	for _, v := range keyValue {
-		err := kvstore.Delete(v.Key)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
+	trimmedKey := strings.TrimSpace(key)
+	if trimmedKey == "" {
+		err := fmt.Errorf("invalid empty key for prefix delete")
+		log.Error().Err(err).Msg("")
+		return err
 	}
-	return nil
+	return kvstore.DeleteWithPrefix(trimmedKey)
 }
 
 func CheckElement(a string, list []string) bool {

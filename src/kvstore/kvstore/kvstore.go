@@ -36,6 +36,8 @@ type Store interface {
 	GetKvMapWith(ctx context.Context, keyPrefix string) (KeyValueMap, error)
 	Delete(key string) error
 	DeleteWith(ctx context.Context, key string) error
+	DeleteWithPrefix(keyPrefix string) error
+	DeleteWithPrefixWith(ctx context.Context, keyPrefix string) error
 	WatchKey(key string) clientv3.WatchChan
 	WatchKeyWith(ctx context.Context, key string) clientv3.WatchChan
 	WatchKeys(keyPrefix string) clientv3.WatchChan
@@ -262,6 +264,24 @@ func DeleteWith(ctx context.Context, key string) error {
 		return err
 	}
 	return store.DeleteWith(ctx, key)
+}
+
+// DeleteWithPrefix removes all key-value pairs with the given prefix in one request
+func DeleteWithPrefix(keyPrefix string) error {
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+	return store.DeleteWithPrefix(keyPrefix)
+}
+
+// DeleteWithPrefixWith removes all key-value pairs with the given prefix in one request with context
+func DeleteWithPrefixWith(ctx context.Context, keyPrefix string) error {
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+	return store.DeleteWithPrefixWith(ctx, keyPrefix)
 }
 
 // WatchKey watches for changes on a specific key
