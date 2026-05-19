@@ -11,7 +11,7 @@ x-default-healthcheck: &default-healthcheck
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.12.10
+    image: cloudbaristaorg/cb-tumblebug:0.12.11
     container_name: cb-tumblebug
     build:
       context: .
@@ -148,7 +148,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.12.18
+    image: cloudbaristaorg/cb-spider:0.12.23
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -161,17 +161,14 @@ services:
     volumes:
       - ./container-volume/cb-spider-container/meta_db/:/root/go/src/github.com/cloud-barista/cb-spider/meta_db/
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
-      # Note: cb-spider 0.12.8+ Docker image excludes cloud-driver-libs/ (static mode optimization).
-      # This directory is maintained in assets/spider/ and must be updated when upgrading cb-spider.
-      - ./assets/spider/:/root/go/src/github.com/cloud-barista/cb-spider/cloud-driver-libs/
     environment:
-      - PLUGIN_SW=OFF
       - SERVER_ADDRESS=0.0.0.0:1024
       - SPIDER_USERNAME=${SP_API_USERNAME:?Please set SP_API_USERNAME}
       - SPIDER_PASSWORD=${SP_API_PASSWORD:?Please set SP_API_PASSWORD}
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
+      - PLUGIN_SW=OFF
       - ADMINWEB=OFF
       - SPIDER_BACKUP_ENABLED=false
     restart: unless-stopped
@@ -182,7 +179,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.12.32
+    image: cloudbaristaorg/cb-mapui:0.12.34
     container_name: cb-mapui
     # build:
     #   context: ../cb-mapui
