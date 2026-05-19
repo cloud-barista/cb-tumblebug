@@ -82,14 +82,18 @@ func IsNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	if containsAny(err.Error(), notFoundPatterns) {
-		return true
-	}
 	var se *StatusError
-	if errors.As(err, &se) && se.StatusCode == http.StatusNotFound {
-		return true
+	if errors.As(err, &se) {
+		if se.StatusCode == http.StatusNotFound {
+			return true
+		}
+		// 5xx: server-side error — never infer "not found" from message alone.
+		if se.StatusCode >= 500 {
+			return false
+		}
 	}
-	return false
+	// No HTTP status (transport error) or non-5xx: fall back to message patterns.
+	return containsAny(err.Error(), notFoundPatterns)
 }
 
 // IsConflict reports whether err represents a conflict / already-exists condition.
@@ -97,14 +101,18 @@ func IsConflict(err error) bool {
 	if err == nil {
 		return false
 	}
-	if containsAny(err.Error(), conflictPatterns) {
-		return true
-	}
 	var se *StatusError
-	if errors.As(err, &se) && se.StatusCode == http.StatusConflict {
-		return true
+	if errors.As(err, &se) {
+		if se.StatusCode == http.StatusConflict {
+			return true
+		}
+		// 5xx: server-side error — never infer "conflict" from message alone.
+		if se.StatusCode >= 500 {
+			return false
+		}
 	}
-	return false
+	// No HTTP status (transport error) or non-5xx: fall back to message patterns.
+	return containsAny(err.Error(), conflictPatterns)
 }
 
 var notFoundPatterns = []string{
