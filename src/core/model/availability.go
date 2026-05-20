@@ -75,8 +75,8 @@ type AvailabilityResult struct {
 	InstanceType string             `json:"instanceType"`
 	Available    bool               `json:"available"`
 	Zones        []ZoneAvailability `json:"zones,omitempty"`
-	Reason       string             `json:"reason,omitempty"`    // explanation when Available is false (or when no checker)
-	Source       string             `json:"source,omitempty"`    // checker identifier for tracing (e.g., "alibaba:DescribeAvailableResource")
-	Cached       bool               `json:"cached,omitempty"`    // true if served from cache
-	QueriedAt    time.Time          `json:"queriedAt,omitempty"` // time of original (uncached) query
+	Reason       string             `json:"reason,omitempty"` // explanation when Available is false (or when no checker)
+	Source       string             `json:"source,omitempty"` // checker identifier for tracing (e.g., "alibaba:DescribeAvailableResource")
+	Cached       bool               `json:"cached,omitempty"` // true if served from cache
+	QueriedAt    time.Time          `json:"queriedAt"`        // time of original (uncached) query
 }

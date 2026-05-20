@@ -117,7 +117,7 @@ func CheckAvailability(ctx context.Context, q model.AvailabilityQuery) model.Ava
 	}
 
 	// Slow path: dedupe concurrent misses.
-	v, _, _ := availabilityGroup.Do(key, func() (interface{}, error) {
+	v, _, _ := availabilityGroup.Do(key, func() (any, error) {
 		// Re-check cache inside singleflight to avoid redundant API calls
 		// when a prior in-flight request just populated it.
 		if v, ok := availabilityCache.Load(key); ok {

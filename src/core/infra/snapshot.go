@@ -540,7 +540,7 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 }
 
 func Difference_dataDisks(a, b []model.ResourceOnTumblebugInfo) []model.ResourceOnTumblebugInfo {
-	mb := make(map[interface{}]struct{}, len(b))
+	mb := make(map[any]struct{}, len(b))
 	for _, x := range b {
 		mb[x] = struct{}{}
 	}

@@ -217,7 +217,7 @@ func RestGetAllRequests(c echo.Context) error {
 	var allRequests []clientManager.RequestDetails
 
 	// Filtering the requests
-	clientManager.RequestMap.Range(func(key, value interface{}) bool {
+	clientManager.RequestMap.Range(func(key, value any) bool {
 		if details, ok := value.(clientManager.RequestDetails); ok {
 			if (statusFilter == "" || strings.ToLower(details.Status) == statusFilter) &&
 				(methodFilter == "" || strings.ToLower(details.RequestInfo.Method) == methodFilter) &&
@@ -262,7 +262,7 @@ func RestGetAllRequests(c echo.Context) error {
 		log.Info().Msgf("Filtered request log saved to: %s", logPath)
 
 		// Return only the file path when savefile is requested
-		return Send(c, http.StatusOK, map[string]interface{}{
+		return Send(c, http.StatusOK, map[string]any{
 			"message":   "Filtered requests saved successfully",
 			"file_path": logPath,
 			"count":     len(allRequests),
@@ -306,7 +306,7 @@ func RestDeleteRequest(c echo.Context) error {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /requests [delete]
 func RestDeleteAllRequests(c echo.Context) error {
-	clientManager.RequestMap.Range(func(key, value interface{}) bool {
+	clientManager.RequestMap.Range(func(key, value any) bool {
 		clientManager.RequestMap.Delete(key)
 		return true
 	})

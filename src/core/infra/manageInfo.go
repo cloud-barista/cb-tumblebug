@@ -112,8 +112,8 @@ func ListNodeId(nsId string, infraId string) ([]string, error) {
 
 	nodePrefix := key + model.StrNode + "/"
 	for _, k := range keys {
-		if strings.HasPrefix(k, nodePrefix) {
-			trimmedString := strings.TrimPrefix(k, nodePrefix)
+		if after, ok := strings.CutPrefix(k, nodePrefix); ok {
+			trimmedString := after
 			// prevent malformed key (if key for node id includes '/', the key does not represent Node ID)
 			if !strings.Contains(trimmedString, "/") {
 				nodeList = append(nodeList, trimmedString)
@@ -1225,10 +1225,7 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	var numNode int
 	if isCreating {
 		// During creation, use the larger of the two counts to avoid showing decreasing Node counts
-		numNode = actualNodeCount
-		if statusNodeCount > actualNodeCount {
-			numNode = statusNodeCount
-		}
+		numNode = max(statusNodeCount, actualNodeCount)
 		// Additionally, ensure we don't show a Node count smaller than the previous maximum
 		if numNode < infraStatus.StatusCount.CountTotal && infraStatus.StatusCount.CountTotal > 0 {
 			numNode = infraStatus.StatusCount.CountTotal
@@ -1242,10 +1239,7 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		// For stable Infra states (all Nodes in same state), use the most reliable source to avoid count fluctuation
 		// This applies to Terminated, Suspended, Failed, Running, etc.
 		// Use the maximum of available counts, prioritizing nodeInfos as they are stored persistently
-		numNode = nodeInfoCount
-		if actualNodeCount > numNode {
-			numNode = actualNodeCount
-		}
+		numNode = max(actualNodeCount, nodeInfoCount)
 		if len(infraTmp.Node) > numNode {
 			numNode = len(infraTmp.Node)
 		}
@@ -2408,7 +2402,7 @@ func ProvisionDataDisk(ctx context.Context, nsId string, infraId string, nodeId 
 		return model.NodeInfo{}, err
 	}
 	retry := 3
-	for i := 0; i < retry; i++ {
+	for range retry {
 		nodeInfo, err := AttachDetachDataDisk(nsId, infraId, nodeId, model.AttachDataDisk, newDataDisk.Id, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -2459,7 +2453,7 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 
 	client := clientManager.NewHttpClient()
 	method := "PUT"
-	var callResult interface{}
+	var callResult any
 	//var requestBody interface{}
 
 	requestBody := model.SpiderDiskAttachDetachReqWrapper{
@@ -2607,7 +2601,7 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 	return node, nil
 }
 
-func GetAvailableDataDisks(nsId string, infraId string, nodeId string, option string) (interface{}, error) {
+func GetAvailableDataDisks(nsId string, infraId string, nodeId string, option string) (any, error) {
 	nodeKey := common.GenInfraKey(nsId, infraId, nodeId)
 
 	// Check existence of the key. If no key, no update.
@@ -3067,7 +3061,7 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 	}
 
 	// Call Spider deregister API
-	var callResult interface{}
+	var callResult any
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 

@@ -688,7 +688,7 @@ func fetchAWSCredsFromOpenBao(ctx context.Context, vaultAddr, vaultToken, path s
 	}
 	log.Debug().Msg("[DNS] Secret read successfully from OpenBao")
 
-	data, ok := secret.Data["data"].(map[string]interface{})
+	data, ok := secret.Data["data"].(map[string]any)
 	if !ok {
 		log.Error().Msg("[DNS] Invalid secret format: 'data' field missing or not a map")
 		return nil, fmt.Errorf("invalid secret format: 'data' field missing or not a map")

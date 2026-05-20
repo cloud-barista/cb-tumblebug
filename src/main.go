@@ -189,7 +189,7 @@ func setupAndWaitForInternalServices() {
 		maxRetries := 30
 		retryInterval := 3 * time.Second
 
-		for i := 0; i < maxRetries; i++ {
+		for i := range maxRetries {
 			db, dbErr := gorm.Open(postgres.Open(dsn), &gorm.Config{
 				Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 			})
@@ -222,7 +222,7 @@ func setupAndWaitForInternalServices() {
 		maxRetries := 60
 		retryInterval := 3 * time.Second
 
-		for i := 0; i < maxRetries; i++ {
+		for i := range maxRetries {
 			if err := common.CheckSpiderReady(); err == nil {
 				log.Info().Msgf("setup: CB-Spider is ready (attempt %d)", i+1)
 				return
@@ -245,7 +245,7 @@ func setupAndWaitForInternalServices() {
 			etcdEndpoints[i] = strings.TrimSpace(etcdEndpoints[i])
 		}
 
-		for i := 0; i < maxRetries; i++ {
+		for i := range maxRetries {
 			// Build etcd configuration, optionally enabling authentication
 			etcdCfg := etcd.Config{
 				Endpoints:   etcdEndpoints,
@@ -747,13 +747,11 @@ func main() {
 
 	// Launch API servers (REST)
 	wg := new(sync.WaitGroup)
-	wg.Add(1)
 
 	// Start REST Server
-	go func() {
+	wg.Go(func() {
 		restServer.RunServer()
-		wg.Done()
-	}()
+	})
 
 	wg.Wait()
 }

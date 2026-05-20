@@ -429,7 +429,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
-	var childResources interface{}
+	var childResources any
 
 	var url string
 	uid := ""
@@ -663,7 +663,7 @@ func verifyResourceDeletedOnSpider(deleteUrl string, connectionName string, reso
 	}
 	requestBody := JsonTemplate{ConnectionName: connectionName}
 
-	var verifyResult interface{}
+	var verifyResult any
 	client := clientManager.NewHttpClient()
 
 	log.Debug().Msgf("Re-verifying deletion: GET %s (connectionName=%s)", getUrl, connectionName)
@@ -708,7 +708,7 @@ func PollResourceDeletedViaSpider(getURL string, headers map[string]string, maxA
 	var lastErr error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		reqBody := clientManager.NoBody
-		var rawResult interface{}
+		var rawResult any
 		client := clientManager.NewHttpClient()
 
 		restyResp, callErr := clientManager.ExecuteHttpRequest(
@@ -832,7 +832,7 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 		return err
 	}
 
-	var callResult interface{}
+	var callResult any
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
@@ -909,7 +909,7 @@ func CheckSubnetInUseByNodes(nsId string, vNetId string, subnetId string) (bool,
 // DelEleInSlice delete an element from slice by index
 //   - arr: the reference of slice
 //   - index: the index of element will be deleted
-func DelEleInSlice(arr interface{}, index int) {
+func DelEleInSlice(arr any, index int) {
 	vField := reflect.ValueOf(arr)
 	value := vField.Elem()
 	if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
@@ -1014,7 +1014,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 }
 
 // ListResource returns the list of TB Resource objects of given resourceType
-func ListResource(nsId string, resourceType string, filterKey string, filterVal string) (interface{}, error) {
+func ListResource(nsId string, resourceType string, filterKey string, filterVal string) (any, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1419,21 +1419,19 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 		objList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
 		switch cmd {
 		case model.StrAdd:
-			for _, v := range objList {
-				if v == objectKey {
-					errString := objectKey + " is already associated with " + resourceType + " " + resourceId + "."
-					err = fmt.Errorf(errString)
-					return nil, err
-				}
+			if slices.Contains(objList, objectKey) {
+				errString := objectKey + " is already associated with " + resourceType + " " + resourceId + "."
+				err = fmt.Errorf(errString)
+				return nil, err
 			}
-			var anyJson map[string]interface{}
+			var anyJson map[string]any
 			json.Unmarshal([]byte(keyValue.Value), &anyJson)
 			if anyJson["associatedObjectList"] == nil {
 				arrayToBe := []string{objectKey}
 
 				anyJson["associatedObjectList"] = arrayToBe
 			} else { // anyJson["associatedObjectList"] != nil
-				arrayAsIs := anyJson["associatedObjectList"].([]interface{})
+				arrayAsIs := anyJson["associatedObjectList"].([]any)
 
 				arrayToBe := append(arrayAsIs, objectKey)
 
@@ -1505,7 +1503,7 @@ func BatchRemoveFromAssociatedObjectList(nsId string, resourceType string, resou
 		toRemove[k] = struct{}{}
 	}
 
-	var anyJson map[string]interface{}
+	var anyJson map[string]any
 	if err := json.Unmarshal([]byte(keyValue.Value), &anyJson); err != nil {
 		return err
 	}
@@ -1514,12 +1512,12 @@ func BatchRemoveFromAssociatedObjectList(nsId string, resourceType string, resou
 	if !ok || raw == nil {
 		return nil
 	}
-	existing, ok := raw.([]interface{})
+	existing, ok := raw.([]any)
 	if !ok {
 		return nil
 	}
 
-	filtered := make([]interface{}, 0, len(existing))
+	filtered := make([]any, 0, len(existing))
 	for _, v := range existing {
 		s, ok := v.(string)
 		if ok {
@@ -1576,7 +1574,7 @@ func isStableDiskStatus(status model.DiskStatus) bool {
 }
 
 // GetResource returns the requested TB Resource object
-func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
+func GetResource(nsId string, resourceType string, resourceId string) (any, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -2040,7 +2038,7 @@ type IdNameOnly struct {
 }
 
 // GetIdFromStruct accepts any struct for argument, and returns value of the field 'Id'
-func GetIdFromStruct(u interface{}) (string, error) {
+func GetIdFromStruct(u any) (string, error) {
 	jsonInByteStream, err := json.Marshal(u)
 	if err != nil {
 		return "", err
@@ -2053,7 +2051,7 @@ func GetIdFromStruct(u interface{}) (string, error) {
 }
 
 // GetNameFromStruct accepts any struct for argument, and returns value of the field 'Name'
-func GetNameFromStruct(u interface{}) (string, error) {
+func GetNameFromStruct(u any) (string, error) {
 	jsonInByteStream, err := json.Marshal(u)
 	if err != nil {
 		return "", err
@@ -2746,7 +2744,7 @@ func ToNamingRuleCompatible(rawName string) string {
 }
 
 // UpdateResourceObject is func to update the resource object
-func UpdateResourceObject(nsId string, resourceType string, resourceObject interface{}) {
+func UpdateResourceObject(nsId string, resourceType string, resourceObject any) {
 	resourceId, err := GetIdFromStruct(resourceObject)
 	if resourceId == "" || err != nil {
 		log.Debug().Msgf("in UpdateResourceObject; failed to extract resourceId") // for debug
@@ -2799,7 +2797,7 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 	}
 
 	// Implementation 2
-	var oldObject interface{}
+	var oldObject any
 	err = json.Unmarshal([]byte(keyValue.Value), &oldObject)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -3190,7 +3188,7 @@ func checkSubnetRegistrationInSpider(client *resty.Client, vpcNameId, subnetName
 		model.SpiderRestUrl, vpcNameId, subnetNameId, connConfig)
 
 	noBody := clientManager.NoBody
-	var result interface{}
+	var result any
 
 	_, err := clientManager.ExecuteHttpRequest(
 		client,

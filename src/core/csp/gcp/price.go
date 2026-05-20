@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"regexp"
 	"sort"
@@ -111,7 +112,7 @@ func FetchAllGCPPrices() (*GCPPriceCache, error) {
 
 	// Collect results and parse
 	var fetchErrors []string
-	for i := 0; i < len(gcpPricingSubPages); i++ {
+	for range gcpPricingSubPages {
 		r := <-results
 		if r.err != nil {
 			fetchErrors = append(fetchErrors, fmt.Sprintf("%s: %v", r.url, r.err))
@@ -131,9 +132,7 @@ func FetchAllGCPPrices() (*GCPPriceCache, error) {
 			if cache.data[region] == nil {
 				cache.data[region] = make(map[string]nodePriceEntry, len(machines))
 			}
-			for mt, entry := range machines {
-				cache.data[region][mt] = entry
-			}
+			maps.Copy(cache.data[region], machines)
 		}
 		cache.mu.Unlock()
 
@@ -257,15 +256,15 @@ func parsePricingPage(html string) (map[string]map[string]nodePriceEntry, error)
 	}
 
 	// data[0][2] contains the sections (machine families)
-	topLevel, ok := dataArray.([]interface{})
+	topLevel, ok := dataArray.([]any)
 	if !ok || len(topLevel) == 0 {
 		return nil, fmt.Errorf("unexpected data format: top level not array")
 	}
-	firstItem, ok := topLevel[0].([]interface{})
+	firstItem, ok := topLevel[0].([]any)
 	if !ok || len(firstItem) < 3 {
 		return nil, fmt.Errorf("unexpected data format: data[0] too short")
 	}
-	sections, ok := firstItem[2].([]interface{})
+	sections, ok := firstItem[2].([]any)
 	if !ok {
 		return nil, fmt.Errorf("unexpected data format: data[0][2] not array")
 	}
@@ -273,7 +272,7 @@ func parsePricingPage(html string) (map[string]map[string]nodePriceEntry, error)
 	results := make(map[string]map[string]nodePriceEntry)
 
 	for _, sec := range sections {
-		secArr, ok := sec.([]interface{})
+		secArr, ok := sec.([]any)
 		if !ok || len(secArr) == 0 {
 			continue
 		}
@@ -297,7 +296,7 @@ func parsePricingPage(html string) (map[string]map[string]nodePriceEntry, error)
 }
 
 // extractDataArray extracts and parses the JSON data array from the AF_initDataCallback block.
-func extractDataArray(html string) (interface{}, error) {
+func extractDataArray(html string) (any, error) {
 	cbStart := strings.Index(html, "AF_initDataCallback(")
 	if cbStart < 0 {
 		return nil, fmt.Errorf("AF_initDataCallback not found")
@@ -341,7 +340,7 @@ func extractDataArray(html string) (interface{}, error) {
 found:
 	dataStr := jsBlock[dataStart:end]
 
-	var data interface{}
+	var data any
 	if err := json.Unmarshal([]byte(dataStr), &data); err != nil {
 		return nil, fmt.Errorf("JSON parse error: %w", err)
 	}
@@ -394,10 +393,7 @@ func parseSection(sectionStr string, results map[string]map[string]nodePriceEntr
 		nameEnd := m[1]
 
 		// Search within a limited forward window for vCPU and memory
-		windowEnd := nameEnd + maxMachineFieldWindow
-		if windowEnd > len(sectionStr) {
-			windowEnd = len(sectionStr)
-		}
+		windowEnd := min(nameEnd+maxMachineFieldWindow, len(sectionStr))
 		window := sectionStr[nameEnd:windowEnd]
 
 		var vcpu, mem string

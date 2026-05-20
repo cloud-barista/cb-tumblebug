@@ -53,10 +53,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 	result := make(map[string]string, len(instanceIds))
 
 	for i := 0; i < len(instanceIds); i += alibabaBatchSize {
-		end := i + alibabaBatchSize
-		if end > len(instanceIds) {
-			end = len(instanceIds)
-		}
+		end := min(i+alibabaBatchSize, len(instanceIds))
 		batch := instanceIds[i:end]
 
 		// Alibaba DescribeInstances takes InstanceIds as a JSON-encoded array string.

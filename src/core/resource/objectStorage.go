@@ -169,7 +169,7 @@ type spiderObjectVersion struct {
 	ETag         string      `json:"ETag,omitempty" example:"9b2cf535f27731c974343645a3985328"`
 	Size         int64       `json:"Size,omitempty" example:"1024"`
 	StorageClass string      `json:"StorageClass,omitempty" example:"STANDARD"`
-	Owner        spiderOwner `json:"Owner,omitempty"`
+	Owner        spiderOwner `json:"Owner"`
 }
 
 // spiderS3JSONHeaders sets Accept header to ensure Spider returns JSON responses (not XML)

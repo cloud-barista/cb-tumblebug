@@ -78,7 +78,7 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 
 				// Unmarshal the latest response body
 				latestResponse := responseJsonLines[len(responseJsonLines)-1]
-				var resData interface{}
+				var resData any
 				if err := json.Unmarshal(latestResponse, &resData); err != nil {
 					log.Error().Err(err).Msg("Error while unmarshaling response body")
 					return
@@ -93,7 +93,7 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 				details.Status = "Success"
 				if c.Response().Status >= 400 {
 					details.Status = "Error"
-					if data, ok := resData.(map[string]interface{}); ok {
+					if data, ok := resData.(map[string]any); ok {
 						if message, exists := data["message"]; exists && message != nil {
 							if msgStr, ok := message.(string); ok {
 								details.ErrorResponse = msgStr
@@ -110,9 +110,9 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 				if len(responseJsonLines) > 1 {
 					// handle streaming response
 					// convert JSON lines to JSON array
-					var responseJsonArray []interface{}
+					var responseJsonArray []any
 					for _, jsonLine := range responseJsonLines {
-						var obj interface{}
+						var obj any
 						err := json.Unmarshal(jsonLine, &obj)
 						if err != nil {
 							log.Error().Err(err).Msg("error unmarshalling JSON line")
@@ -125,9 +125,9 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 					// single response
 					// type casting is required
 					switch data := resData.(type) {
-					case map[string]interface{}:
+					case map[string]any:
 						details.ResponseData = data
-					case []interface{}:
+					case []any:
 						details.ResponseData = data
 					case string:
 						details.ResponseData = data

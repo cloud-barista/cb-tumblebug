@@ -17,6 +17,7 @@ package infra
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -999,10 +1000,10 @@ func RestAnalyzeProvisioningRisk(c echo.Context) error {
 	// Get additional analysis data
 	provisioningLog, _ := infra.GetProvisioningLog(specId)
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"riskLevel":   riskLevel,
 		"riskMessage": riskMessage,
-		"analysis": map[string]interface{}{
+		"analysis": map[string]any{
 			"specId":       specId,
 			"cspImageName": cspImageName,
 			"hasHistory":   provisioningLog != nil,
@@ -1016,27 +1017,21 @@ func RestAnalyzeProvisioningRisk(c echo.Context) error {
 			failureRate = float64(provisioningLog.FailureCount) / float64(totalAttempts)
 		}
 
-		result["analysis"].(map[string]interface{})["failureCount"] = provisioningLog.FailureCount
-		result["analysis"].(map[string]interface{})["successCount"] = provisioningLog.SuccessCount
-		result["analysis"].(map[string]interface{})["totalAttempts"] = totalAttempts
-		result["analysis"].(map[string]interface{})["failureRate"] = failureRate
-		result["analysis"].(map[string]interface{})["lastUpdated"] = provisioningLog.LastUpdated
-		result["analysis"].(map[string]interface{})["imageInFailureList"] = false
-		result["analysis"].(map[string]interface{})["imageInSuccessList"] = false
+		result["analysis"].(map[string]any)["failureCount"] = provisioningLog.FailureCount
+		result["analysis"].(map[string]any)["successCount"] = provisioningLog.SuccessCount
+		result["analysis"].(map[string]any)["totalAttempts"] = totalAttempts
+		result["analysis"].(map[string]any)["failureRate"] = failureRate
+		result["analysis"].(map[string]any)["lastUpdated"] = provisioningLog.LastUpdated
+		result["analysis"].(map[string]any)["imageInFailureList"] = false
+		result["analysis"].(map[string]any)["imageInSuccessList"] = false
 
 		// Check if this specific image has history
-		for _, img := range provisioningLog.FailureImages {
-			if img == cspImageName {
-				result["analysis"].(map[string]interface{})["imageInFailureList"] = true
-				break
-			}
+		if slices.Contains(provisioningLog.FailureImages, cspImageName) {
+			result["analysis"].(map[string]any)["imageInFailureList"] = true
 		}
 
-		for _, img := range provisioningLog.SuccessImages {
-			if img == cspImageName {
-				result["analysis"].(map[string]interface{})["imageInSuccessList"] = true
-				break
-			}
+		if slices.Contains(provisioningLog.SuccessImages, cspImageName) {
+			result["analysis"].(map[string]any)["imageInSuccessList"] = true
 		}
 	}
 

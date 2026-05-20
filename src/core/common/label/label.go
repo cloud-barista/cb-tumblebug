@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strings"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -171,9 +172,7 @@ func CreateOrUpdateLabel(ctx context.Context, labelType, uid string, resourceKey
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal existing label data: %w", err)
 		}
-		for key, value := range labels {
-			labelInfo.Labels[key] = value
-		}
+		maps.Copy(labelInfo.Labels, labels)
 	} else {
 		// If label info does not exist or is empty, create a new one
 		labelInfo = model.LabelInfo{
@@ -323,9 +322,9 @@ func GetLabels(labelType, uid string) (label model.LabelInfo, err error) {
 // MatchesLabelSelector checks if the labels match the given label selector.
 func MatchesLabelSelector(labels map[string]string, labelSelector string) bool {
 	// Split the labelSelector into individual selectors
-	selectors := strings.Split(labelSelector, ",")
+	selectors := strings.SplitSeq(labelSelector, ",")
 
-	for _, selector := range selectors {
+	for selector := range selectors {
 		selector = strings.TrimSpace(selector)
 
 		switch {
@@ -393,8 +392,8 @@ func MatchesLabelSelector(labels map[string]string, labelSelector string) bool {
 }
 
 // GetResourcesByLabelSelector retrieves resources based on a label selector.
-func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}, error) {
-	var matchedResources []interface{}
+func GetResourcesByLabelSelector(labelType, labelSelector string) ([]any, error) {
+	var matchedResources []any
 
 	// Fetch all label entries for the resourceType
 	listKey := fmt.Sprintf("/label/%s", labelType)
@@ -579,9 +578,7 @@ func MergeCSPResourceLabel(ctx context.Context, labelType, uid string, resourceK
 		log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
 
 		// Merge CSP labels with existing labels (CSP labels have priority)
-		for key, value := range lbs {
-			labelInfo.Labels[key] = value
-		}
+		maps.Copy(labelInfo.Labels, lbs)
 	}
 
 	// Save the updated model.LabelInfo back to the Key-Value store

@@ -59,7 +59,7 @@ func SendMessage(c echo.Context, httpCode int, msg string) error {
 	return c.JSON(httpCode, Status{Message: msg})
 }
 
-func Send(c echo.Context, httpCode int, json interface{}) error {
+func Send(c echo.Context, httpCode int, json any) error {
 	return c.JSON(httpCode, json)
 }
 
@@ -497,7 +497,7 @@ func RestGetObject(c echo.Context) error {
 		return SendMessage(c, http.StatusOK, "Cannot find ["+parentKey+"] object")
 	}
 
-	var contentJSON map[string]interface{}
+	var contentJSON map[string]any
 	json.Unmarshal([]byte(content), &contentJSON)
 
 	return c.JSON(http.StatusOK, &contentJSON)
@@ -582,7 +582,7 @@ func RestInspectResources(c echo.Context) error {
 
 	log.Debug().Msgf("[List Resource Status: %s]", u.ResourceType)
 
-	var content interface{}
+	var content any
 	var err error
 	// if u.Type == model.StrVNet || u.Type == model.StrSecurityGroup || u.Type == model.StrSSHKey {
 	// 	content, err = infra.InspectResources(u.ConnectionName, u.Type)
@@ -821,7 +821,7 @@ func RestForwardAnyReqToAny(c echo.Context) error {
 	log.Info().Msgf("reqPath: %s", reqPath)
 
 	method := "GET"
-	var requestBody interface{}
+	var requestBody any
 	if c.Request().Body != nil {
 		bodyBytes, err := io.ReadAll(c.Request().Body)
 		if err != nil {

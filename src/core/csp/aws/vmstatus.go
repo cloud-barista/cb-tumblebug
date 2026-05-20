@@ -62,10 +62,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 	result := make(map[string]string, len(instanceIds))
 
 	for i := 0; i < len(instanceIds); i += describeInstancesBatchSize {
-		end := i + describeInstancesBatchSize
-		if end > len(instanceIds) {
-			end = len(instanceIds)
-		}
+		end := min(i+describeInstancesBatchSize, len(instanceIds))
 		batch := instanceIds[i:end]
 
 		out, err := client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{

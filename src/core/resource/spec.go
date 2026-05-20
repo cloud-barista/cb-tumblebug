@@ -2142,9 +2142,9 @@ func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpe
 	url := model.SpiderRestUrl + "/anycall"
 	method := "POST"
 
-	requestBody := map[string]interface{}{
+	requestBody := map[string]any{
 		"ConnectionName": connConfig.ConfigName,
-		"ReqInfo": map[string]interface{}{
+		"ReqInfo": map[string]any{
 			"FID": "GetInstanceTypeAvailableAllZones",
 			"IKeyValueList": []map[string]string{
 				{"Key": "InstanceType", "Value": cspSpecName},
@@ -2153,7 +2153,7 @@ func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpe
 	}
 
 	// Make API call
-	var apiResponse map[string]interface{}
+	var apiResponse map[string]any
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -2172,7 +2172,7 @@ func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpe
 	}
 
 	// Parse response
-	oKeyValueList, ok := apiResponse["OKeyValueList"].([]interface{})
+	oKeyValueList, ok := apiResponse["OKeyValueList"].([]any)
 	if !ok {
 		result.ErrorMessage = "Invalid API response format: OKeyValueList not found"
 		result.QueryDurationMs = time.Since(startTime).Milliseconds()
@@ -2183,7 +2183,7 @@ func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpe
 	var queryResult string
 
 	for _, item := range oKeyValueList {
-		if keyValue, ok := item.(map[string]interface{}); ok {
+		if keyValue, ok := item.(map[string]any); ok {
 			key, keyOk := keyValue["Key"].(string)
 			value, valueOk := keyValue["Value"].(string)
 
@@ -2216,8 +2216,8 @@ func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpe
 	// Format: "region1:zone1,region1:zone2,region2:zone1,..."
 	regionZoneMap := make(map[string][]string)
 
-	zonePairs := strings.Split(availableZones, ",")
-	for _, pair := range zonePairs {
+	zonePairs := strings.SplitSeq(availableZones, ",")
+	for pair := range zonePairs {
 		parts := strings.Split(strings.TrimSpace(pair), ":")
 		if len(parts) == 2 {
 			region := strings.TrimSpace(parts[0])
@@ -2555,13 +2555,7 @@ func UpdateExistingSpecListByAvailableRegionZones(ctx context.Context, nsId stri
 					specsToIgnore[provider][region] = make([]string, 0)
 				}
 				// Check if spec is already in the list for this region
-				found := false
-				for _, existingSpec := range specsToIgnore[provider][region] {
-					if existingSpec == specName {
-						found = true
-						break
-					}
-				}
+				found := slices.Contains(specsToIgnore[provider][region], specName)
 				if !found {
 					specsToIgnore[provider][region] = append(specsToIgnore[provider][region], specName)
 				}
@@ -2639,10 +2633,7 @@ func UpdateExistingSpecListByAvailableRegionZones(ctx context.Context, nsId stri
 
 		// Log a few examples of deleted specs for reference
 		if len(specIdsToDelete) > 0 {
-			exampleCount := len(specIdsToDelete)
-			if exampleCount > 5 {
-				exampleCount = 5
-			}
+			exampleCount := min(len(specIdsToDelete), 5)
 			log.Debug().
 				Strs("exampleDeletedSpecs", specIdsToDelete[:exampleCount]).
 				Msg("Examples of deleted specs")
@@ -2808,10 +2799,7 @@ func RegisterSpecWithInfoInBulk(specList []model.SpecInfo) error {
 
 	total := len(dedupedSpecList)
 	for i := 0; i < total; i += batchSize {
-		end := i + batchSize
-		if end > total {
-			end = total
-		}
+		end := min(i+batchSize, total)
 		batch := dedupedSpecList[i:end]
 
 		// Start transaction
@@ -2905,7 +2893,7 @@ func GetSpec(nsId string, specKey string) (model.SpecInfo, error) {
 }
 
 // Retrieve field-to-column mapping information for the model
-func getColumnMapping(modelType interface{}) map[string]string {
+func getColumnMapping(modelType any) map[string]string {
 	stmt := &gorm.Statement{DB: model.ORM}
 	stmt.Parse(modelType)
 
@@ -3073,19 +3061,20 @@ func BulkUpdateSpec(nsId string, updates map[string]float32) (int, error) {
 	}
 
 	// Build CASE statement with explicit CAST
-	caseClause := "CASE id "
-	args := make([]interface{}, 0, len(updates)*2)
+	var caseClause strings.Builder
+	caseClause.WriteString("CASE id ")
+	args := make([]any, 0, len(updates)*2)
 
 	for specId, price := range updates {
-		caseClause += "WHEN ? THEN CAST(? AS NUMERIC) "
+		caseClause.WriteString("WHEN ? THEN CAST(? AS NUMERIC) ")
 		args = append(args, specId, price)
 	}
-	caseClause += "END"
+	caseClause.WriteString("END")
 
 	// Execute with proper casting
 	result := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND id IN ?", nsId, specIds).
-		Update("cost_per_hour", gorm.Expr(caseClause, args...))
+		Update("cost_per_hour", gorm.Expr(caseClause.String(), args...))
 
 	if result.Error != nil {
 		return 0, result.Error
@@ -3275,7 +3264,7 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 
 		// Extract global patterns
 		if globalPatternsRaw := ignoreViper.Get("global.patterns"); globalPatternsRaw != nil {
-			if patterns, ok := globalPatternsRaw.([]interface{}); ok {
+			if patterns, ok := globalPatternsRaw.([]any); ok {
 				for _, pattern := range patterns {
 					if str, ok := pattern.(string); ok {
 						config.Global.Patterns = append(config.Global.Patterns, str)
@@ -3287,9 +3276,9 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 		// Extract CSP-specific patterns
 		config.CSPs = make(map[string]model.CSPIgnorePatterns)
 		if cspsRaw := ignoreViper.Get("csps"); cspsRaw != nil {
-			if cspsMap, ok := cspsRaw.(map[string]interface{}); ok {
+			if cspsMap, ok := cspsRaw.(map[string]any); ok {
 				for cspName, cspDataRaw := range cspsMap {
-					if cspData, ok := cspDataRaw.(map[string]interface{}); ok {
+					if cspData, ok := cspDataRaw.(map[string]any); ok {
 						var cspConfig model.CSPIgnorePatterns
 
 						// Extract description
@@ -3301,7 +3290,7 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 
 						// Extract global_patterns with proper type handling
 						if globalPatternsRaw, exists := cspData["global_patterns"]; exists && globalPatternsRaw != nil {
-							if patterns, ok := globalPatternsRaw.([]interface{}); ok {
+							if patterns, ok := globalPatternsRaw.([]any); ok {
 								for _, pattern := range patterns {
 									if str, ok := pattern.(string); ok {
 										cspConfig.GlobalPatterns = append(cspConfig.GlobalPatterns, str)
@@ -3312,13 +3301,13 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 
 						// Extract regions
 						if regionsRaw, exists := cspData["regions"]; exists && regionsRaw != nil {
-							if regionsMap, ok := regionsRaw.(map[string]interface{}); ok {
+							if regionsMap, ok := regionsRaw.(map[string]any); ok {
 								cspConfig.Regions = make(map[string]model.RegionIgnorePatterns)
 								for regionName, regionDataRaw := range regionsMap {
 									var regionConfig model.RegionIgnorePatterns
 
 									// New format: direct array under region name
-									if regionPatterns, ok := regionDataRaw.([]interface{}); ok {
+									if regionPatterns, ok := regionDataRaw.([]any); ok {
 										for _, pattern := range regionPatterns {
 											if str, ok := pattern.(string); ok {
 												regionConfig.Patterns = append(regionConfig.Patterns, str)

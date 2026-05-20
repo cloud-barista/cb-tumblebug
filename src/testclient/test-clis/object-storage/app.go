@@ -62,8 +62,8 @@ type ApiLog struct {
 	Step            string
 	Method          string
 	URL             string
-	RequestPayload  interface{}
-	ResponsePayload interface{}
+	RequestPayload  any
+	ResponsePayload any
 	ResponseStatus  string
 	ElapsedTime     string
 }
@@ -201,7 +201,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 	log.Info().Msgf("[%s] ====== START (connection=%s) ======", tc.OsId, tc.ConnectionName)
 
 	// 1. Create
-	reqBody := map[string]interface{}{
+	reqBody := map[string]any{
 		"bucketName":     tc.OsId,
 		"connectionName": tc.ConnectionName,
 		"description":    "created by object-storage batch test CLI",
@@ -298,30 +298,31 @@ func saveDetailedReport(osId string, logs []ApiLog) {
 	}
 	filename := fmt.Sprintf("test-results/%s.md", osId)
 
-	md := fmt.Sprintf("# Object Storage Test: %s\n\n", osId)
-	md += fmt.Sprintf("Generated: %s\n\n", time.Now().Format(time.RFC3339))
+	var md strings.Builder
+	md.WriteString(fmt.Sprintf("# Object Storage Test: %s\n\n", osId))
+	md.WriteString(fmt.Sprintf("Generated: %s\n\n", time.Now().Format(time.RFC3339)))
 
 	for i, entry := range logs {
-		md += fmt.Sprintf("## Step %d: %s\n\n", i+1, entry.Step)
-		md += fmt.Sprintf("- **Method**: `%s`\n", entry.Method)
-		md += fmt.Sprintf("- **URL**: `%s`\n", entry.URL)
-		md += fmt.Sprintf("- **Status**: %s\n", entry.ResponseStatus)
-		md += fmt.Sprintf("- **Elapsed**: %s\n\n", entry.ElapsedTime)
+		md.WriteString(fmt.Sprintf("## Step %d: %s\n\n", i+1, entry.Step))
+		md.WriteString(fmt.Sprintf("- **Method**: `%s`\n", entry.Method))
+		md.WriteString(fmt.Sprintf("- **URL**: `%s`\n", entry.URL))
+		md.WriteString(fmt.Sprintf("- **Status**: %s\n", entry.ResponseStatus))
+		md.WriteString(fmt.Sprintf("- **Elapsed**: %s\n\n", entry.ElapsedTime))
 
 		if entry.RequestPayload != nil {
 			masked := maskSensitiveFields(entry.RequestPayload)
 			reqJson, _ := json.MarshalIndent(masked, "", "  ")
-			md += "### Request Body\n```json\n" + string(reqJson) + "\n```\n\n"
+			md.WriteString("### Request Body\n```json\n" + string(reqJson) + "\n```\n\n")
 		}
 		if entry.ResponsePayload != nil {
 			masked := maskSensitiveFields(entry.ResponsePayload)
 			respJson, _ := json.MarshalIndent(masked, "", "  ")
-			md += "### Response Body\n```json\n" + string(respJson) + "\n```\n\n"
+			md.WriteString("### Response Body\n```json\n" + string(respJson) + "\n```\n\n")
 		}
-		md += "---\n\n"
+		md.WriteString("---\n\n")
 	}
 
-	if err := os.WriteFile(filename, []byte(md), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(md.String()), 0644); err != nil {
 		log.Warn().Err(err).Msgf("Failed to write report: %s", filename)
 		return
 	}
@@ -335,18 +336,19 @@ func generateSummaryReport(filename string, results []TestResult) {
 		return
 	}
 
-	md := "# Object Storage Batch Test Summary\n\n"
-	md += "## Test Workflow\n\n"
-	md += "1. **Create** — `PUT /ns/{nsId}/resources/objectStorage`\n"
-	md += "2. **Check Existence** — `HEAD /ns/{nsId}/resources/objectStorage/{osId}`\n"
-	md += "3. **Get** — `GET /ns/{nsId}/resources/objectStorage/{osId}`\n"
-	md += "4. **Delete** — `DELETE /ns/{nsId}/resources/objectStorage/{osId}` (with retry and verification)\n"
-	md += "5. **Get Support Info** — `GET /objectStorage/support?cspType={cspType}`\n\n"
-	md += fmt.Sprintf("Generated: %s\n\n---\n\n", time.Now().Format(time.RFC3339))
+	var md strings.Builder
+	md.WriteString("# Object Storage Batch Test Summary\n\n")
+	md.WriteString("## Test Workflow\n\n")
+	md.WriteString("1. **Create** — `PUT /ns/{nsId}/resources/objectStorage`\n")
+	md.WriteString("2. **Check Existence** — `HEAD /ns/{nsId}/resources/objectStorage/{osId}`\n")
+	md.WriteString("3. **Get** — `GET /ns/{nsId}/resources/objectStorage/{osId}`\n")
+	md.WriteString("4. **Delete** — `DELETE /ns/{nsId}/resources/objectStorage/{osId}` (with retry and verification)\n")
+	md.WriteString("5. **Get Support Info** — `GET /objectStorage/support?cspType={cspType}`\n\n")
+	md.WriteString(fmt.Sprintf("Generated: %s\n\n---\n\n", time.Now().Format(time.RFC3339)))
 
-	md += "## Results\n\n"
-	md += "| osId | Connection | Create | Check Existence | Get | Delete | Support Info | Overall |\n"
-	md += "| ---- | ---------- | ------ | --------------- | --- | ------ | ------------ | ------- |\n"
+	md.WriteString("## Results\n\n")
+	md.WriteString("| osId | Connection | Create | Check Existence | Get | Delete | Support Info | Overall |\n")
+	md.WriteString("| ---- | ---------- | ------ | --------------- | --- | ------ | ------------ | ------- |\n")
 	for _, r := range results {
 		overall := "✅"
 		if !strings.HasPrefix(r.CreateStatus, "Success") ||
@@ -356,13 +358,13 @@ func generateSummaryReport(filename string, results []TestResult) {
 			!strings.HasPrefix(r.SupportStatus, "Success") {
 			overall = "❌"
 		}
-		md += fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s | %s |\n",
-			r.OsId, r.ConnectionName, r.CreateStatus, r.CheckExistenceStatus, r.GetStatus, r.DeleteStatus, r.SupportStatus, overall)
+		md.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s | %s |\n",
+			r.OsId, r.ConnectionName, r.CreateStatus, r.CheckExistenceStatus, r.GetStatus, r.DeleteStatus, r.SupportStatus, overall))
 	}
-	md += "\n---\n\n"
-	md += "### Detailed Logs\n\nSee `test-results/<osId>.md` for per-CSP API trace logs.\n"
+	md.WriteString("\n---\n\n")
+	md.WriteString("### Detailed Logs\n\nSee `test-results/<osId>.md` for per-CSP API trace logs.\n")
 
-	if err := os.WriteFile(filename, []byte(md), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(md.String()), 0644); err != nil {
 		log.Warn().Err(err).Msgf("Failed to write summary report: %s", filename)
 		return
 	}
@@ -375,7 +377,7 @@ func generateSummaryReport(filename string, results []TestResult) {
 
 // maskSensitiveFields recursively replaces values of known sensitive keys with "****".
 // This is applied before writing request/response payloads to report files.
-func maskSensitiveFields(v interface{}) interface{} {
+func maskSensitiveFields(v any) any {
 	sensitive := map[string]bool{
 		"password": true, "passwd": true, "secret": true,
 		"credential": true, "credentials": true,
@@ -384,8 +386,8 @@ func maskSensitiveFields(v interface{}) interface{} {
 		"privatekey": true, "private_key": true,
 	}
 	switch val := v.(type) {
-	case map[string]interface{}:
-		out := make(map[string]interface{}, len(val))
+	case map[string]any:
+		out := make(map[string]any, len(val))
 		for k, v2 := range val {
 			if sensitive[strings.ToLower(k)] {
 				out[k] = "****"
@@ -394,8 +396,8 @@ func maskSensitiveFields(v interface{}) interface{} {
 			}
 		}
 		return out
-	case []interface{}:
-		out := make([]interface{}, len(val))
+	case []any:
+		out := make([]any, len(val))
 		for i, v2 := range val {
 			out[i] = maskSensitiveFields(v2)
 		}
@@ -420,7 +422,7 @@ func callApi(
 	method string,
 	apiUrl string,
 	auth map[string]string,
-	reqBody interface{},
+	reqBody any,
 	logs *[]ApiLog,
 	step string,
 ) ([]byte, error) {
@@ -474,11 +476,11 @@ func callApi(
 
 	// Record log entry (with sensitive fields masked)
 	if logs != nil {
-		var reqPayload interface{}
+		var reqPayload any
 		if body != nil {
 			json.Unmarshal(body, &reqPayload)
 		}
-		var respPayload interface{}
+		var respPayload any
 		json.Unmarshal(resp.Body(), &respPayload)
 
 		*logs = append(*logs, ApiLog{

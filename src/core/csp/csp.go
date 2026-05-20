@@ -186,9 +186,9 @@ var credentialKeyMap = map[string]map[string]string{
 
 // ApplyCredentialKeyMap transforms a credential key-value list using the CSP-specific
 // key mapping. Keys not present in the map are passed through unchanged.
-func ApplyCredentialKeyMap(provider string, kvList []model.KeyValue) map[string]interface{} {
+func ApplyCredentialKeyMap(provider string, kvList []model.KeyValue) map[string]any {
 	keyMap := credentialKeyMap[strings.ToLower(provider)]
-	result := make(map[string]interface{}, len(kvList))
+	result := make(map[string]any, len(kvList))
 	for _, kv := range kvList {
 		targetKey := kv.Key
 		if keyMap != nil {
@@ -214,7 +214,7 @@ func BuildSecretPathForHolder(holder, provider string) string {
 
 // WriteOpenBaoSecret writes key-value data to OpenBao at the given KV v2 path (upsert).
 // ctx allows request-scoped cancellation and timeout, consistent with ReadOpenBaoSecret.
-func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]interface{}) error {
+func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]any) error {
 	if model.VaultToken == "" {
 		return fmt.Errorf("VAULT_TOKEN is not set")
 	}
@@ -227,7 +227,7 @@ func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]interf
 	}
 	client.SetToken(model.VaultToken)
 
-	_, err = client.Logical().WriteWithContext(ctx, path, map[string]interface{}{
+	_, err = client.Logical().WriteWithContext(ctx, path, map[string]any{
 		"data": data,
 	})
 	if err != nil {
@@ -239,7 +239,7 @@ func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]interf
 // ReadOpenBaoSecret reads a secret from OpenBao at the given path and returns the data map.
 // It validates that VaultToken is set and the secret exists.
 // A context is used for request-scoped cancellation and timeout.
-func ReadOpenBaoSecret(ctx context.Context, path string) (map[string]interface{}, error) {
+func ReadOpenBaoSecret(ctx context.Context, path string) (map[string]any, error) {
 	if model.VaultToken == "" {
 		return nil, fmt.Errorf("VAULT_TOKEN is not set")
 	}
@@ -260,7 +260,7 @@ func ReadOpenBaoSecret(ctx context.Context, path string) (map[string]interface{}
 		return nil, fmt.Errorf("secret not found at %s", path)
 	}
 
-	data, ok := secret.Data["data"].(map[string]interface{})
+	data, ok := secret.Data["data"].(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid secret format at %s: 'data' field missing or not a map", path)
 	}
@@ -286,7 +286,7 @@ func BuildSecretPath(ctx context.Context, provider string) string {
 }
 
 // GetString safely extracts a string value from a map.
-func GetString(data map[string]interface{}, key string) string {
+func GetString(data map[string]any, key string) string {
 	v, _ := data[key].(string)
 	return v
 }

@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -259,10 +260,8 @@ func ListNs() ([]model.NsInfo, error) {
 }
 
 func AppendIfMissing(slice []string, i string) []string {
-	for _, ele := range slice {
-		if ele == i {
-			return slice
-		}
+	if slices.Contains(slice, i) {
+		return slice
 	}
 	return append(slice, i)
 }

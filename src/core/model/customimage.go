@@ -76,7 +76,7 @@ type NodeSnapshotResult struct {
 	NodeName    string    `json:"nodeName" example:"aws-ap-northeast-2-g1-1"`
 	Status      string    `json:"status" example:"Success" enums:"Success,Failed"`
 	ImageId     string    `json:"imageId,omitempty" example:"custom-image-g1"`
-	ImageInfo   ImageInfo `json:"imageInfo,omitempty"`
+	ImageInfo   ImageInfo `json:"imageInfo"`
 	Error       string    `json:"error,omitempty"`
 }
 

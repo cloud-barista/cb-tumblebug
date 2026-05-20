@@ -251,9 +251,9 @@ func RunAllBenchmarks(nsId string, infraId string, host string) (*model.Benchmar
 	const mrttArrayXMax = 300
 	const mrttArrayYMax = 300
 	mrttArray := make([][]string, mrttArrayXMax)
-	for i := 0; i < mrttArrayXMax; i++ {
+	for i := range mrttArrayXMax {
 		mrttArray[i] = make([]string, mrttArrayYMax)
-		for j := 0; j < mrttArrayYMax; j++ {
+		for j := range mrttArrayYMax {
 			mrttArray[i][j] = empty
 		}
 	}
@@ -388,9 +388,9 @@ func RunLatencyBenchmark(nsId string, infraId string, host string) (*model.Bench
 	const mrttArrayXMax = 300
 	const mrttArrayYMax = 300
 	mrttArray := make([][]string, mrttArrayXMax)
-	for i := 0; i < mrttArrayXMax; i++ {
+	for i := range mrttArrayXMax {
 		mrttArray[i] = make([]string, mrttArrayYMax)
-		for j := 0; j < mrttArrayYMax; j++ {
+		for j := range mrttArrayYMax {
 			mrttArray[i][j] = empty
 		}
 	}

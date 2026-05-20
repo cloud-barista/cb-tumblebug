@@ -105,9 +105,9 @@ func ConvertTbToSpiderSecurityRuleInfo(t model.FirewallRuleInfo) model.SpiderSec
 func ConvertFirewallRuleRequestObjToInfoObjs(req model.FirewallRuleReq) []model.FirewallRuleInfo {
 	var infos []model.FirewallRuleInfo
 	separator := ","
-	ports := strings.Split(req.Ports, separator)
+	ports := strings.SplitSeq(req.Ports, separator)
 
-	for _, port := range ports {
+	for port := range ports {
 		infos = append(infos, model.FirewallRuleInfo{
 			Port:      port,
 			Protocol:  req.Protocol,
@@ -1025,7 +1025,7 @@ func portsOverlap(portsA, portsB string) bool {
 // parsePortsToRanges parses a string of ports (e.g., "22, 80-90, 443") into a slice of port ranges.
 func parsePortsToRanges(ports string) [][2]int {
 	var result [][2]int
-	for _, p := range strings.Split(ports, ",") {
+	for p := range strings.SplitSeq(ports, ",") {
 		p = strings.TrimSpace(p)
 		if p == "" {
 			continue
@@ -1148,7 +1148,7 @@ func UpdateMultipleFirewallRules(nsId string, securityGroupIds []string, desired
 	var successCount, failedCount int
 
 	// Wait for all goroutines to complete
-	for i := 0; i < len(securityGroupIds); i++ {
+	for range securityGroupIds {
 		res := <-resultChan
 		responses[res.index] = res.response
 

@@ -125,7 +125,7 @@ type DataDiskInfo struct {
 	DiskSize             int        `json:"diskSize" example:"77"`      // Disk size in GB
 	Status               DiskStatus `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
 	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/infra/infra01/node/aws-ap-southeast-1-1"`
-	CreatedTime          time.Time  `json:"createdTime,omitempty" example:"2022-10-12T05:09:51.05Z"`
+	CreatedTime          time.Time  `json:"createdTime" example:"2022-10-12T05:09:51.05Z"`
 	KeyValueList         []KeyValue `json:"keyValueList,omitempty"`
 	Description          string     `json:"description,omitempty" example:"Available"`
 

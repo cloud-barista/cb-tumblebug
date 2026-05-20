@@ -342,19 +342,14 @@ func ListImages(ctx context.Context, region string) ([]model.SpiderImageInfo, er
 	var workerWG sync.WaitGroup
 	var errCount int64
 
-	workerCount := defaultPublisherWorkers
-	if len(publishers) < workerCount {
-		workerCount = len(publishers)
-	}
+	workerCount := min(len(publishers), defaultPublisherWorkers)
 
 	if DEBUG_AZURE_IMAGE {
 		log.Debug().Str("region", region).Int("workerCount", workerCount).Int("publisherCount", len(publishers)).Msg("[AzureImage:DEBUG] Starting worker pool")
 	}
 
 	for w := 0; w < workerCount; w++ {
-		workerWG.Add(1)
-		go func() {
-			defer workerWG.Done()
+		workerWG.Go(func() {
 			for publisher := range jobs {
 				if DEBUG_AZURE_IMAGE {
 					log.Debug().Str("region", region).Str("publisher", publisher).Msg("[AzureImage:DEBUG] Processing publisher")
@@ -373,7 +368,7 @@ func ListImages(ctx context.Context, region string) ([]model.SpiderImageInfo, er
 					imagesCh <- items
 				}
 			}
-		}()
+		})
 	}
 
 	// Filter publishers based on configuration and add to jobs channel
@@ -741,7 +736,7 @@ func callWithRetry[T any](ctx context.Context, op string, fn func() (T, error)) 
 	var zero T
 	var lastErr error
 
-	for i := 0; i < maxRetries; i++ {
+	for i := range maxRetries {
 		if ctx.Err() != nil {
 			return zero, ctx.Err()
 		}

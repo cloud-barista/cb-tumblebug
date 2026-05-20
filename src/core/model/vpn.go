@@ -70,7 +70,7 @@ func NewSiteInfo(nsId, infraId string) *SitesInfo {
 
 type SiteProperty struct {
 	VNetId              string              `json:"vNetId" example:"vnet01"`
-	CspSpecificProperty CspSpecificProperty `json:"cspSpecificProperty,omitempty"`
+	CspSpecificProperty CspSpecificProperty `json:"cspSpecificProperty"`
 }
 
 type CspSpecificProperty struct {
@@ -129,12 +129,12 @@ type RestPostVpnRequest struct {
 }
 
 type Response struct {
-	Success bool                   `json:"success" example:"true"`
-	Status  int                    `json:"status,omitempty" example:"200"`
-	Message string                 `json:"message" example:"Any message"`
-	Detail  string                 `json:"details,omitempty" example:"Any details"`
-	Object  map[string]interface{} `json:"object,omitempty"`
-	List    []interface{}          `json:"list,omitempty"`
+	Success bool           `json:"success" example:"true"`
+	Status  int            `json:"status,omitempty" example:"200"`
+	Message string         `json:"message" example:"Any message"`
+	Detail  string         `json:"details,omitempty" example:"Any details"`
+	Object  map[string]any `json:"object,omitempty"`
+	List    []any          `json:"list,omitempty"`
 }
 
 type VpnIdList struct {

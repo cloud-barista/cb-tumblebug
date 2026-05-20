@@ -103,7 +103,7 @@ func FetchNodePricesByRegionFiltered(ctx context.Context, region string, targetI
 	results := make(chan result, len(instanceTypes))
 
 	var wg sync.WaitGroup
-	for i := 0; i < workerCount; i++ {
+	for i := range workerCount {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
@@ -246,7 +246,7 @@ func callDescribePriceWithRetry(client *ecs.Client, req *ecs.DescribePriceReques
 	baseBackoff := parsePositiveEnvInt("TB_ALIBABA_PRICE_BACKOFF_MS", defaultAlibabaRetryBaseBackoff)
 
 	var lastErr error
-	for attempt := 0; attempt < maxRetry; attempt++ {
+	for attempt := range maxRetry {
 		resp, err := client.DescribePrice(req)
 		if err == nil {
 			return resp, nil

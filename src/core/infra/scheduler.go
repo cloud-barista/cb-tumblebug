@@ -89,8 +89,8 @@ type ScheduledJob struct {
 
 	// Job status
 	Status              JobStatus `json:"status"`
-	LastExecutedAt      time.Time `json:"lastExecutedAt,omitempty"`
-	NextExecutionAt     time.Time `json:"nextExecutionAt,omitempty"`
+	LastExecutedAt      time.Time `json:"lastExecutedAt"`
+	NextExecutionAt     time.Time `json:"nextExecutionAt"`
 	ExecutionCount      int       `json:"executionCount"`
 	SuccessCount        int       `json:"successCount"`        // Total successful executions
 	FailureCount        int       `json:"failureCount"`        // Total failed executions
@@ -648,7 +648,7 @@ func (job *ScheduledJob) execute() {
 
 	// Execute task in goroutine to support context cancellation
 	type executionResult struct {
-		result interface{}
+		result any
 		err    error
 	}
 	// Use buffered channel to prevent goroutine leak on timeout
@@ -671,7 +671,7 @@ func (job *ScheduledJob) execute() {
 			}
 		}()
 
-		var result interface{}
+		var result any
 		var err error
 
 		// Execute based on job type
