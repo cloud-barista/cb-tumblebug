@@ -97,7 +97,7 @@ func main() {
 	time.Sleep(10 * time.Second)
 
 	kvstore.Delete("/mykey")
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		kvstore.Delete("/myprefixkey/key" + strconv.Itoa(i))
 	}
 
@@ -170,7 +170,7 @@ func ExampleRaceConditionTest(ctx context.Context) {
 	wg.Add(goroutines)
 
 	// Start goroutines
-	for i := 0; i < goroutines; i++ {
+	for range goroutines {
 		go func() {
 			defer wg.Done()
 
@@ -189,7 +189,7 @@ func ExampleRaceConditionTest(ctx context.Context) {
 				log.Fatalf("Failed to get lock: %v", err)
 			}
 
-			for j := 0; j < iterations; j++ {
+			for range iterations {
 
 				err = lock.Lock(ctx)
 				if err != nil {

@@ -603,7 +603,7 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 			rateLimitMessage := "limit"
 			maxTrials := 5
 			if strings.Contains(temp.SystemMessage, rateLimitMessage) {
-				for i := 0; i < maxTrials; i++ {
+				for range maxTrials {
 					common.RandomSleep(40*1000, 80*1000)
 					inspectResult, err = InspectResources(k.ConfigName, model.StrVNet)
 					if err != nil {
@@ -1273,8 +1273,8 @@ func getValidatedOptionMap(option string) (map[string]bool, error) {
 			doMap[op] = true
 		}
 	} else {
-		reqOptions := strings.Split(strings.ReplaceAll(option, " ", ""), ",")
-		for _, op := range reqOptions {
+		reqOptions := strings.SplitSeq(strings.ReplaceAll(option, " ", ""), ",")
+		for op := range reqOptions {
 			if op == "" {
 				continue
 			}

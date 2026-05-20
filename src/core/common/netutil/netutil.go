@@ -213,7 +213,7 @@ func CalculateBroadcastAddr(ipNet *net.IPNet) (string, error) {
 	ip := ipNet.IP
 	mask := ipNet.Mask
 	broadcast := make(net.IP, len(ip))
-	for i := 0; i < len(ip); i++ {
+	for i := range ip {
 		broadcast[i] = ip[i] | ^mask[i]
 	}
 	broadcastAddress := broadcast.String()
@@ -373,7 +373,7 @@ func SubnettingByMinimumSubnetCount(cidrBlock string, minSubnets int) ([]string,
 	numSubnets := int(math.Pow(2, float64(subnetBits)))
 
 	var subnets []string
-	for i := 0; i < numSubnets; i++ {
+	for i := range numSubnets {
 		ip := make(net.IP, len(network.IP))
 		copy(ip, network.IP)
 
@@ -468,7 +468,7 @@ func isSubnetOf(parentCIDR, childCIDR string) bool {
 
 // hasOverlappingSubnets checks if there are overlapping subnets within the same network.
 func hasOverlappingSubnets(subnets []Network) error {
-	for i := 0; i < len(subnets); i++ {
+	for i := range subnets {
 		for j := i + 1; j < len(subnets); j++ {
 			if cidrOverlap(subnets[i].CidrBlock, subnets[j].CidrBlock) {
 				return fmt.Errorf("overlapping subnets found: '%s' and '%s'", subnets[i].CidrBlock, subnets[j].CidrBlock)
@@ -591,7 +591,7 @@ func DeriveVNetAndSubnets(baseIP net.IP, subnetSize, subnetCount int) (string, [
 
 	baseIPUint := IpToUint32(baseIP)
 
-	for i := 0; i < adjustSubnetCount; i++ {
+	for i := range adjustSubnetCount {
 		start := baseIPUint + uint32(i*actualSubnetSize)
 		subnetIP := Uint32ToIP(start)
 		subnetCIDR := 32 - int(math.Log2(float64(actualSubnetSize)))

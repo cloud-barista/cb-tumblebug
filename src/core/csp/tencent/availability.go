@@ -87,13 +87,13 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 	req := cvm.NewDescribeZoneInstanceConfigInfosRequest()
 	filters := []*cvm.Filter{
 		{
-			Name:   tccommon.StringPtr("instance-type"),
+			Name:   new("instance-type"),
 			Values: tccommon.StringPtrs([]string{instanceType}),
 		},
 	}
 	if zone := strings.TrimSpace(q.PreferredZone); zone != "" {
 		filters = append(filters, &cvm.Filter{
-			Name:   tccommon.StringPtr("zone"),
+			Name:   new("zone"),
 			Values: tccommon.StringPtrs([]string{zone}),
 		})
 	}

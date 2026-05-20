@@ -246,7 +246,7 @@ func fetchNodeSKUs(ctx context.Context, creds *azureCreds, cred *azidentity.Clie
 
 	skus := make(map[string]*skuDetail)
 	pager := client.NewListPager(&armcompute.ResourceSKUsClientListOptions{
-		Filter: toPtr(fmt.Sprintf("location eq '%s'", region)),
+		Filter: new(fmt.Sprintf("location eq '%s'", region)),
 	})
 
 	for pager.More() {
@@ -365,8 +365,4 @@ func getCreds(ctx context.Context) (*azureCreds, error) {
 		TenantID:       tenantID,
 		SubscriptionID: subscriptionID,
 	}, nil
-}
-
-func toPtr[T any](v T) *T {
-	return &v
 }

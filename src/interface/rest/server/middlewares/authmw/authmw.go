@@ -3,6 +3,7 @@ package authmw
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -145,12 +146,7 @@ func retrospectToken(c echo.Context) {
 
 // HasRole checks if a slice contains a specific element
 func HasRole(roleList []string, role string) bool {
-	for _, s := range roleList {
-		if s == role {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(roleList, role)
 }
 
 // [Keep this code block] This function is required for frontend web server

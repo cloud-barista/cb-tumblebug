@@ -65,10 +65,7 @@ func BatchStopInstances(ctx context.Context, region string, instanceIds []string
 
 	result := make(map[string]string, len(instanceIds))
 	for i := 0; i < len(instanceIds); i += batchControlSize {
-		end := i + batchControlSize
-		if end > len(instanceIds) {
-			end = len(instanceIds)
-		}
+		end := min(i+batchControlSize, len(instanceIds))
 		out, err := client.StopInstances(ctx, &ec2.StopInstancesInput{
 			InstanceIds: instanceIds[i:end],
 		})
@@ -100,10 +97,7 @@ func BatchStartInstances(ctx context.Context, region string, instanceIds []strin
 
 	result := make(map[string]string, len(instanceIds))
 	for i := 0; i < len(instanceIds); i += batchControlSize {
-		end := i + batchControlSize
-		if end > len(instanceIds) {
-			end = len(instanceIds)
-		}
+		end := min(i+batchControlSize, len(instanceIds))
 		out, err := client.StartInstances(ctx, &ec2.StartInstancesInput{
 			InstanceIds: instanceIds[i:end],
 		})
@@ -135,10 +129,7 @@ func BatchTerminateInstances(ctx context.Context, region string, instanceIds []s
 
 	result := make(map[string]string, len(instanceIds))
 	for i := 0; i < len(instanceIds); i += batchControlSize {
-		end := i + batchControlSize
-		if end > len(instanceIds) {
-			end = len(instanceIds)
-		}
+		end := min(i+batchControlSize, len(instanceIds))
 		out, err := client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
 			InstanceIds: instanceIds[i:end],
 		})

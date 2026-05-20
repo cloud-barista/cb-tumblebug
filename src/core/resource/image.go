@@ -818,10 +818,7 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 
 	total := len(dedupedImageList)
 	for i := 0; i < total; i += batchSize {
-		end := i + batchSize
-		if end > total {
-			end = total
-		}
+		end := min(i+batchSize, total)
 		batch := dedupedImageList[i:end]
 
 		// Batch processing with deadlock retry (max 2 attempts)
@@ -829,7 +826,7 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 		var result *gorm.DB
 		var lastErr error
 
-		for attempt := 0; attempt < maxRetries; attempt++ {
+		for attempt := range maxRetries {
 			tx := model.ORM.Begin()
 			if tx.Error != nil {
 				log.Error().Err(tx.Error).Msg("Failed to begin transaction")

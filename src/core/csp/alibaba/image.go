@@ -103,7 +103,7 @@ func ResolveLatestIdByFamily(ctx context.Context, region, family string) (imageI
 		id       string
 		creation string
 	}
-	v, err, _ := familyGroup.Do(key, func() (interface{}, error) {
+	v, err, _ := familyGroup.Do(key, func() (any, error) {
 		// Re-check cache inside the singleflight to avoid a redundant API call
 		// when a prior in-flight request just populated it.
 		if v, ok := familyCache.Load(key); ok {

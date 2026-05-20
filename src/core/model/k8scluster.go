@@ -350,7 +350,7 @@ type K8sClusterInfo struct {
 	// CspResourceId is resource identifier managed by CSP
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
-	SpiderViewK8sClusterDetail SpiderClusterInfo `json:"spiderViewK8sClusterDetail,omitempty"`
+	SpiderViewK8sClusterDetail SpiderClusterInfo `json:"spiderViewK8sClusterDetail"`
 }
 
 // SpiderNetworkInfo is a struct to handle Cluster Network information from the CB-Spider's REST API response
@@ -428,7 +428,7 @@ type K8sNodeGroupInfo struct {
 	// CspResourceId is resource identifier managed by CSP
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
-	SpiderViewK8sNodeGroupDetail SpiderNodeGroupInfo `json:"spiderViewK8sNodeGroupDetail,omitempty"`
+	SpiderViewK8sNodeGroupDetail SpiderNodeGroupInfo `json:"spiderViewK8sNodeGroupDetail"`
 }
 
 // K8sNodeInfo is a struct to handle K8sCluster's Node information

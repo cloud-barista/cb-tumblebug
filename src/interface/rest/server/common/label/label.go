@@ -156,7 +156,7 @@ func RestGetLabels(c echo.Context) error {
 
 // ResourcesResponse is a struct to wrap the results of a label selector query
 type ResourcesResponse struct {
-	Results []interface{} `json:"results"`
+	Results []any `json:"results"`
 }
 
 // RestGetResourcesByLabelSelector godoc

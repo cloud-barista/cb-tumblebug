@@ -90,8 +90,8 @@ type ScheduleJobStatus struct {
 	IntervalSeconds     int       `json:"intervalSeconds" example:"60"`
 	Enabled             bool      `json:"enabled" example:"true"`
 	CreatedAt           time.Time `json:"createdAt" example:"2023-10-27T10:30:00Z"`
-	LastExecutedAt      time.Time `json:"lastExecutedAt,omitempty" example:"2023-10-27T11:30:00Z"`
-	NextExecutionAt     time.Time `json:"nextExecutionAt,omitempty" example:"2023-10-27T12:30:00Z"`
+	LastExecutedAt      time.Time `json:"lastExecutedAt" example:"2023-10-27T11:30:00Z"`
+	NextExecutionAt     time.Time `json:"nextExecutionAt" example:"2023-10-27T12:30:00Z"`
 	ExecutionCount      int       `json:"executionCount" example:"5"`
 	SuccessCount        int       `json:"successCount" example:"4"`        // Total successful executions
 	FailureCount        int       `json:"failureCount" example:"1"`        // Total failed executions
@@ -288,22 +288,22 @@ type SpiderConnectionName struct {
 }
 
 // ResourceTypeRegistry is map for Resource type
-var ResourceTypeRegistry = map[string]func() interface{}{
-	StrSSHKey:        func() interface{} { return &SshKeyInfo{} },
-	StrImage:         func() interface{} { return &ImageInfo{} },
-	StrCustomImage:   func() interface{} { return &ImageInfo{} },
-	StrSecurityGroup: func() interface{} { return &SecurityGroupInfo{} },
-	StrSpec:          func() interface{} { return &SpecInfo{} },
-	StrVNet:          func() interface{} { return &VNetInfo{} },
-	StrSubnet:        func() interface{} { return &SubnetInfo{} },
-	StrDataDisk:      func() interface{} { return &DataDiskInfo{} },
-	StrNLB:           func() interface{} { return &NLBInfo{} },
-	StrNode:          func() interface{} { return &NodeInfo{} },
-	StrInfra:         func() interface{} { return &InfraInfo{} },
-	StrK8s:           func() interface{} { return &K8sClusterInfo{} },
-	StrNamespace:     func() interface{} { return &NsInfo{} },
-	StrVPN:           func() interface{} { return &VpnInfo{} },
-	StrGlobalDns:     func() interface{} { return &GlobalDnsRecordInfo{} },
+var ResourceTypeRegistry = map[string]func() any{
+	StrSSHKey:        func() any { return &SshKeyInfo{} },
+	StrImage:         func() any { return &ImageInfo{} },
+	StrCustomImage:   func() any { return &ImageInfo{} },
+	StrSecurityGroup: func() any { return &SecurityGroupInfo{} },
+	StrSpec:          func() any { return &SpecInfo{} },
+	StrVNet:          func() any { return &VNetInfo{} },
+	StrSubnet:        func() any { return &SubnetInfo{} },
+	StrDataDisk:      func() any { return &DataDiskInfo{} },
+	StrNLB:           func() any { return &NLBInfo{} },
+	StrNode:          func() any { return &NodeInfo{} },
+	StrInfra:         func() any { return &InfraInfo{} },
+	StrK8s:           func() any { return &K8sClusterInfo{} },
+	StrNamespace:     func() any { return &NsInfo{} },
+	StrVPN:           func() any { return &VpnInfo{} },
+	StrGlobalDns:     func() any { return &GlobalDnsRecordInfo{} },
 }
 
 // ResourceIds is struct for containing id and name of each Resource type
@@ -543,20 +543,20 @@ type ResourceOnTumblebugInfo struct {
 
 // RegisterResourceAllResult is struct for Register Resource Result for All Clouds
 type RegisterResourceAllResult struct {
-	ElapsedTime           int                      `json:"elapsedTime"`
-	RegisteredConnection  int                      `json:"registeredConnection"`
-	AvailableConnection   int                      `json:"availableConnection"`
-	RegistrationOverview RegistrationOverview    `json:"registerationOverview"`
-	RegisterationResult   []RegisterResourceResult `json:"registerationResult"`
+	ElapsedTime          int                      `json:"elapsedTime"`
+	RegisteredConnection int                      `json:"registeredConnection"`
+	AvailableConnection  int                      `json:"availableConnection"`
+	RegistrationOverview RegistrationOverview     `json:"registerationOverview"`
+	RegisterationResult  []RegisterResourceResult `json:"registerationResult"`
 }
 
 // RegisterResourceResult is struct for Register Resource Result
 type RegisterResourceResult struct {
-	ConnectionName        string                `json:"connectionName"`
-	SystemMessage         string                `json:"systemMessage"`
-	ElapsedTime           int                   `json:"elapsedTime"`
+	ConnectionName       string               `json:"connectionName"`
+	SystemMessage        string               `json:"systemMessage"`
+	ElapsedTime          int                  `json:"elapsedTime"`
 	RegistrationOverview RegistrationOverview `json:"registerationOverview"`
-	RegisterationOutputs  IdList                `json:"registerationOutputs"`
+	RegisterationOutputs IdList               `json:"registerationOutputs"`
 }
 
 // RegisterResource is struct for Register Resource

@@ -53,7 +53,6 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 	// Convert map to *string map for ARM SDK
 	armTags := make(map[string]*string, len(tags))
 	for k, v := range tags {
-		v := v // capture loop var
 		armTags[k] = &v
 	}
 

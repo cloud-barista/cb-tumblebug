@@ -196,8 +196,8 @@ type ApiLog struct {
 	Step            string
 	Method          string
 	URL             string
-	RequestPayload  interface{}
-	ResponsePayload interface{}
+	RequestPayload  any
+	ResponsePayload any
 	ResponseStatus  string
 	ElapsedTime     string
 }
@@ -561,11 +561,11 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	urlPostVpn := fmt.Sprintf("%s/ns/%s/infra/%s/vpn", tbApiBase, nsId, infraId)
 
 	// Set properties for site2 based on targetCsp
-	var site2Props map[string]interface{}
+	var site2Props map[string]any
 	switch targetCspLower {
 	case "gcp":
-		site2Props = map[string]interface{}{
-			"cspSpecificProperty": map[string]interface{}{
+		site2Props = map[string]any{
+			"cspSpecificProperty": map[string]any{
 				"gcp": map[string]string{
 					"bgpAsn": "65530",
 				},
@@ -573,8 +573,8 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 			"vNetId": targetVNetId,
 		}
 	case "azure":
-		site2Props = map[string]interface{}{
-			"cspSpecificProperty": map[string]interface{}{
+		site2Props = map[string]any{
+			"cspSpecificProperty": map[string]any{
 				"azure": map[string]string{
 					"bgpAsn":            "65531",
 					"gatewaySubnetCidr": "",
@@ -584,8 +584,8 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 			"vNetId": targetVNetId,
 		}
 	case "alibaba":
-		site2Props = map[string]interface{}{
-			"cspSpecificProperty": map[string]interface{}{
+		site2Props = map[string]any{
+			"cspSpecificProperty": map[string]any{
 				"alibaba": map[string]string{
 					"bgpAsn": "65532",
 				},
@@ -593,23 +593,23 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 			"vNetId": targetVNetId,
 		}
 	case "tencent":
-		site2Props = map[string]interface{}{
+		site2Props = map[string]any{
 			"vNetId": targetVNetId,
 		}
 	case "ibm", "dcs":
-		site2Props = map[string]interface{}{
+		site2Props = map[string]any{
 			"vNetId": targetVNetId,
 		}
 	default:
-		site2Props = map[string]interface{}{
+		site2Props = map[string]any{
 			"vNetId": targetVNetId,
 		}
 	}
 
-	reqVpn := map[string]interface{}{
+	reqVpn := map[string]any{
 		"name": vpnId,
-		"site1": map[string]interface{}{
-			"cspSpecificProperty": map[string]interface{}{
+		"site1": map[string]any{
+			"cspSpecificProperty": map[string]any{
 				"aws": map[string]string{
 					"bgpAsn": "64512",
 				},
@@ -653,7 +653,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	urlGetVpnIds := fmt.Sprintf("%s/ns/%s/infra/%s/vpn?option=IdList", tbApiBase, nsId, infraId)
 	respBytes, err = callApi("GET", urlGetVpnIds, tbAuth, nil, nil, "List VPN IDs")
 	if err == nil {
-		var vpnIds map[string]interface{}
+		var vpnIds map[string]any
 		json.Unmarshal(respBytes, &vpnIds)
 		prettyVpnIds, _ := json.MarshalIndent(vpnIds, "", "   ")
 		log.Debug().Msgf("[GET all VPNs IdList Response] \n%s", string(prettyVpnIds))
@@ -663,7 +663,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	urlGetVpnInfos := fmt.Sprintf("%s/ns/%s/infra/%s/vpn?option=InfoList", tbApiBase, nsId, infraId)
 	respBytes, err = callApi("GET", urlGetVpnInfos, tbAuth, nil, nil, "List VPN Infos")
 	if err == nil {
-		var vpnInfos map[string]interface{}
+		var vpnInfos map[string]any
 		json.Unmarshal(respBytes, &vpnInfos)
 		prettyVpnInfos, _ := json.MarshalIndent(vpnInfos, "", "   ")
 		log.Debug().Msgf("[GET all VPNs InfoList Response] \n%s", string(prettyVpnInfos))
@@ -673,7 +673,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	// VPN Health Check (bidirectional ping test)
 
 	urlHealthCheck := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s/health", tbApiBase, nsId, infraId, vpnId)
-	reqHealth := map[string]interface{}{
+	reqHealth := map[string]any{
 		"userName":    "cb-user",
 		"pingCount":   4,
 		"intervalSec": 15,
@@ -828,7 +828,7 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	var res map[string]interface{}
+	var res map[string]any
 	json.Unmarshal(respBytes, &res)
 
 	prettyResDestroy, _ := json.MarshalIndent(res, "", "   ")
@@ -1194,21 +1194,21 @@ func runVpnTestCase(nsId, infraId string, infraInfo *model.InfraInfo, tc TestCas
 	}
 
 	// 1. POST VPN
-	site2Props := map[string]interface{}{"vNetId": targetVNetId}
+	site2Props := map[string]any{"vNetId": targetVNetId}
 	tcSite2Lower := strings.ToLower(tc.Site2)
 	switch tcSite2Lower {
 	case "gcp":
-		site2Props["cspSpecificProperty"] = map[string]interface{}{"gcp": map[string]string{"bgpAsn": "65530"}}
+		site2Props["cspSpecificProperty"] = map[string]any{"gcp": map[string]string{"bgpAsn": "65530"}}
 	case "azure":
-		site2Props["cspSpecificProperty"] = map[string]interface{}{"azure": map[string]string{"bgpAsn": "65531", "gatewaySubnetCidr": "", "vpnSku": "VpnGw1AZ"}}
+		site2Props["cspSpecificProperty"] = map[string]any{"azure": map[string]string{"bgpAsn": "65531", "gatewaySubnetCidr": "", "vpnSku": "VpnGw1AZ"}}
 	case "alibaba":
-		site2Props["cspSpecificProperty"] = map[string]interface{}{"alibaba": map[string]string{"bgpAsn": "65532"}}
+		site2Props["cspSpecificProperty"] = map[string]any{"alibaba": map[string]string{"bgpAsn": "65532"}}
 	}
 
-	reqVpn := map[string]interface{}{
+	reqVpn := map[string]any{
 		"name": tc.VpnId,
-		"site1": map[string]interface{}{
-			"cspSpecificProperty": map[string]interface{}{"aws": map[string]string{"bgpAsn": "64512"}},
+		"site1": map[string]any{
+			"cspSpecificProperty": map[string]any{"aws": map[string]string{"bgpAsn": "64512"}},
 			"vNetId":              awsVNetId,
 		},
 		"site2": site2Props,
@@ -1238,7 +1238,7 @@ func runVpnTestCase(nsId, infraId string, infraInfo *model.InfraInfo, tc TestCas
 
 	// 4. VPN Health Check (bidirectional ping test via health API)
 	urlHealthCheck := fmt.Sprintf("%s/ns/%s/infra/%s/vpn/%s/health", tbApiBase, nsId, infraId, tc.VpnId)
-	reqHealth := map[string]interface{}{
+	reqHealth := map[string]any{
 		"userName":    "cb-user",
 		"pingCount":   4,
 		"intervalSec": 15,
@@ -1307,60 +1307,62 @@ func runVpnTestCase(nsId, infraId string, infraInfo *model.InfraInfo, tc TestCas
 
 func saveDetailedReport(filename, title string, logs []ApiLog, extraInfo string) {
 	os.MkdirAll("test-results", 0755)
-	md := fmt.Sprintf("# %s\n\n", title)
+	var md strings.Builder
+	md.WriteString(fmt.Sprintf("# %s\n\n", title))
 	if extraInfo != "" {
-		md += fmt.Sprintf("%s\n\n", extraInfo)
+		md.WriteString(fmt.Sprintf("%s\n\n", extraInfo))
 	}
 	for i, log := range logs {
-		md += fmt.Sprintf("## Step %d: %s\n\n", i+1, log.Step)
-		md += fmt.Sprintf("- **Method**: %s\n", log.Method)
-		md += fmt.Sprintf("- **URL**: %s\n", log.URL)
-		md += fmt.Sprintf("- **Status**: %s\n", log.ResponseStatus)
-		md += fmt.Sprintf("- **Elapsed**: %s\n\n", log.ElapsedTime)
+		md.WriteString(fmt.Sprintf("## Step %d: %s\n\n", i+1, log.Step))
+		md.WriteString(fmt.Sprintf("- **Method**: %s\n", log.Method))
+		md.WriteString(fmt.Sprintf("- **URL**: %s\n", log.URL))
+		md.WriteString(fmt.Sprintf("- **Status**: %s\n", log.ResponseStatus))
+		md.WriteString(fmt.Sprintf("- **Elapsed**: %s\n\n", log.ElapsedTime))
 
 		if log.RequestPayload != nil {
 			reqJson, _ := json.MarshalIndent(log.RequestPayload, "", "  ")
-			md += "### Request Body\n```json\n" + string(reqJson) + "\n```\n\n"
+			md.WriteString("### Request Body\n```json\n" + string(reqJson) + "\n```\n\n")
 		}
 		if log.ResponsePayload != nil {
 			respJson, _ := json.MarshalIndent(log.ResponsePayload, "", "  ")
-			md += "### Response Body\n```json\n" + string(respJson) + "\n```\n\n"
+			md.WriteString("### Response Body\n```json\n" + string(respJson) + "\n```\n\n")
 		}
-		md += "---\n\n"
+		md.WriteString("---\n\n")
 	}
-	os.WriteFile(filename, []byte(md), 0644)
+	os.WriteFile(filename, []byte(md.String()), 0644)
 }
 
 func generateSummaryReport(filename string, results []TestResult, interrupted bool) {
 	os.MkdirAll("test-results", 0755)
-	md := "# VPN Batch Test Summary\n\n"
-	md += "## Test Workflow\n\n"
-	md += "1. **Phase 1: Infrastructure Provisioning** (Infra creation with multi-cloud VMs)\n"
-	md += "2. **Phase 2: VPN Tests** (Sequential VPN creation > View > Health Check (ping) > Deletion)\n"
-	md += "3. **Phase 3: Cleanup** (Infra termination and Shared Resource deletion)\n\n"
-	md += "--- \n\n"
+	var md strings.Builder
+	md.WriteString("# VPN Batch Test Summary\n\n")
+	md.WriteString("## Test Workflow\n\n")
+	md.WriteString("1. **Phase 1: Infrastructure Provisioning** (Infra creation with multi-cloud VMs)\n")
+	md.WriteString("2. **Phase 2: VPN Tests** (Sequential VPN creation > View > Health Check (ping) > Deletion)\n")
+	md.WriteString("3. **Phase 3: Cleanup** (Infra termination and Shared Resource deletion)\n\n")
+	md.WriteString("--- \n\n")
 
 	if interrupted {
-		md += "> [!WARNING]\n> The batch test was interrupted due to a failure.\n\n"
+		md.WriteString("> [!WARNING]\n> The batch test was interrupted due to a failure.\n\n")
 	}
 
-	md += "## Step-by-Step VPN Test Results\n\n"
-	md += "| Test Case | Create | Health Check (ping) | Delete | Result |\n"
-	md += "| --- | --- | --- | --- | --- |\n"
+	md.WriteString("## Step-by-Step VPN Test Results\n\n")
+	md.WriteString("| Test Case | Create | Health Check (ping) | Delete | Result |\n")
+	md.WriteString("| --- | --- | --- | --- | --- |\n")
 	for _, res := range results {
 		status := "✅"
 		if res.CreateRes != "Success" || res.HealthCheckStatus != "Success" || res.DeleteRes != "Success" {
 			status = "❌"
 		}
-		md += fmt.Sprintf("| %s to %s | %s | %s | %s | %s |\n", res.TestCase.Site1, res.TestCase.Site2, res.CreateRes, res.HealthCheckStatus, res.DeleteRes, status)
+		md.WriteString(fmt.Sprintf("| %s to %s | %s | %s | %s | %s |\n", res.TestCase.Site1, res.TestCase.Site2, res.CreateRes, res.HealthCheckStatus, res.DeleteRes, status))
 	}
-	md += "\n---\n\n"
-	md += "### Detailed Logs\n\n"
-	md += "- For infrastructure provisioning details, see `provision.md`.\n"
-	md += "- For detailed VPN test traces, see corresponding `<site1>-to-<site2>-vpn.md` files.\n"
-	md += "- For cleanup operation details, see `cleanup.md`.\n"
+	md.WriteString("\n---\n\n")
+	md.WriteString("### Detailed Logs\n\n")
+	md.WriteString("- For infrastructure provisioning details, see `provision.md`.\n")
+	md.WriteString("- For detailed VPN test traces, see corresponding `<site1>-to-<site2>-vpn.md` files.\n")
+	md.WriteString("- For cleanup operation details, see `cleanup.md`.\n")
 
-	os.WriteFile(filename, []byte(md), 0644)
+	os.WriteFile(filename, []byte(md.String()), 0644)
 }
 
 // Helper to check if Tumblebug returned a "not found" / "does not exist" error
@@ -1383,7 +1385,7 @@ func callApi(
 	method string,
 	apiUrl string,
 	auth map[string]string,
-	reqBody interface{},
+	reqBody any,
 	logs *[]ApiLog,
 	step string,
 ) ([]byte, error) {
@@ -1440,11 +1442,11 @@ func callApi(
 
 	// Record logs if requested
 	if logs != nil {
-		var reqPayload interface{}
+		var reqPayload any
 		if body != nil {
 			json.Unmarshal(body, &reqPayload)
 		}
-		var respPayload interface{}
+		var respPayload any
 		json.Unmarshal(resp.Body(), &respPayload)
 
 		*logs = append(*logs, ApiLog{

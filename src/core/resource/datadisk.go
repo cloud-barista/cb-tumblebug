@@ -254,7 +254,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.DataDiskUpsizeReq) 
 
 	url := fmt.Sprintf("%s/disk/%s/size", model.SpiderRestUrl, dataDisk.CspResourceName)
 	method := "PUT"
-	var callResult interface{}
+	var callResult any
 
 	_, err = clientManager.ExecuteHttpRequest(
 		client,

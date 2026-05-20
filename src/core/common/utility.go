@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -419,7 +420,7 @@ func LookupKeyValueList(kvl []model.KeyValue, key string) string {
 }
 
 // PrintJsonPretty is func to print JSON pretty with indent
-func PrintJsonPretty(v interface{}) {
+func PrintJsonPretty(v any) {
 	prettyJSON, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		fmt.Printf("%+v\n", v)
@@ -542,7 +543,7 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 // CheckSpiderStatus is func to check if CB-Spider is ready
 func CheckSpiderReady() error {
 
-	var callResult interface{}
+	var callResult any
 	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/readyz"
 	method := "GET"
@@ -1436,7 +1437,7 @@ func GetCloudInfo() (model.CloudInfo, error) {
 }
 
 // ConvertToMessage is func to change input data to gRPC message
-func ConvertToMessage(inType string, inData string, obj interface{}) error {
+func ConvertToMessage(inType string, inData string, obj any) error {
 	//logger := logging.NewLogger()
 
 	if inType == "yaml" {
@@ -1459,7 +1460,7 @@ func ConvertToMessage(inType string, inData string, obj interface{}) error {
 }
 
 // ConvertToOutput is func to convert gRPC message to print format
-func ConvertToOutput(outType string, obj interface{}) (string, error) {
+func ConvertToOutput(outType string, obj any) (string, error) {
 	//logger := logging.NewLogger()
 
 	if outType == "yaml" {
@@ -1500,7 +1501,7 @@ func ConvertToOutput(outType string, obj interface{}) (string, error) {
 }
 
 // CopySrcToDest is func to copy data from source to target
-func CopySrcToDest(src interface{}, dest interface{}) error {
+func CopySrcToDest(src any, dest any) error {
 	//logger := logging.NewLogger()
 
 	j, err := json.MarshalIndent(src, "", "  ")
@@ -1601,12 +1602,7 @@ func DeleteObjects(key string) error {
 }
 
 func CheckElement(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(list, a)
 }
 
 const (
@@ -1827,10 +1823,7 @@ func GetK8sRequiredSubnetCount(providerName string) (int, error) {
 	}
 
 	// Set default value is 1
-	requiredSubnetCount := 1
-	if k8sClusterDetail.RequiredSubnetCount > 1 {
-		requiredSubnetCount = k8sClusterDetail.RequiredSubnetCount
-	}
+	requiredSubnetCount := max(k8sClusterDetail.RequiredSubnetCount, 1)
 
 	return requiredSubnetCount, nil
 }
@@ -1895,10 +1888,7 @@ func CompareVersions(version1, version2 string) int {
 	v2Parts := strings.Split(version2, ".")
 
 	// Adjust length by appending 0 if necessary
-	maxLength := len(v1Parts)
-	if len(v2Parts) > maxLength {
-		maxLength = len(v2Parts)
-	}
+	maxLength := max(len(v2Parts), len(v1Parts))
 
 	for i := 0; i < maxLength; i++ {
 		var v1, v2 int

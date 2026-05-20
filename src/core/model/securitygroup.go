@@ -141,8 +141,8 @@ type SecurityGroupUpdateResponse struct {
 	Name     string            `json:"name"`
 	Success  bool              `json:"success"`
 	Message  string            `json:"message,omitempty"`
-	Updated  SecurityGroupInfo `json:"updated,omitempty"`
-	Previous SecurityGroupInfo `json:"previous,omitempty"`
+	Updated  SecurityGroupInfo `json:"updated"`
+	Previous SecurityGroupInfo `json:"previous"`
 }
 
 // RestWrapperSecurityGroupUpdateResponse is a struct to handle 'Update security group' response toward CB-Tumblebug.

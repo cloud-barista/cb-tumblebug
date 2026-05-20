@@ -56,16 +56,13 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 	result := make(map[string]string, len(instanceIds))
 
 	for i := 0; i < len(instanceIds); i += tencentBatchSize {
-		end := i + tencentBatchSize
-		if end > len(instanceIds) {
-			end = len(instanceIds)
-		}
+		end := min(i+tencentBatchSize, len(instanceIds))
 		batch := instanceIds[i:end]
 
 		req := cvm.NewDescribeInstancesRequest()
 		ptrs := make([]*string, len(batch))
 		for j := range batch {
-			ptrs[j] = tccommon.StringPtr(batch[j])
+			ptrs[j] = new(batch[j])
 		}
 		req.InstanceIds = ptrs
 

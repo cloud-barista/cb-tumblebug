@@ -783,10 +783,10 @@ type NodeInfo struct {
 	ConnectionConfig ConnConfig   `json:"connectionConfig"`
 	SpecId           string       `json:"specId"`
 	CspSpecName      string       `json:"cspSpecName"`
-	Spec             SpecSummary  `json:"spec,omitempty"`
+	Spec             SpecSummary  `json:"spec"`
 	ImageId          string       `json:"imageId"`
 	CspImageName     string       `json:"cspImageName"`
-	Image            ImageSummary `json:"image,omitempty"`
+	Image            ImageSummary `json:"image"`
 	VNetId           string       `json:"vNetId"`
 	CspVNetId        string       `json:"cspVNetId"`
 	SubnetId         string       `json:"subnetId"`

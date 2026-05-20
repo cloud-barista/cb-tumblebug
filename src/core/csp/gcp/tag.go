@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"regexp"
 	"sort"
 	"strings"
@@ -211,12 +212,8 @@ func upsertNodeLabels(svc *compute.Service, projectID, zone, instanceName string
 
 	// Merge: existing labels + new labels (new overwrites on conflict)
 	merged := make(map[string]string)
-	for k, v := range instance.Labels {
-		merged[k] = v
-	}
-	for k, v := range labels {
-		merged[k] = v
-	}
+	maps.Copy(merged, instance.Labels)
+	maps.Copy(merged, labels)
 
 	// Enforce GCP's 64-label limit after merge
 	if len(merged) > gcpMaxLabels {
@@ -253,12 +250,8 @@ func upsertDiskLabels(svc *compute.Service, projectID, zone, diskName string, la
 
 	// Merge: existing labels + new labels
 	merged := make(map[string]string)
-	for k, v := range disk.Labels {
-		merged[k] = v
-	}
-	for k, v := range labels {
-		merged[k] = v
-	}
+	maps.Copy(merged, disk.Labels)
+	maps.Copy(merged, labels)
 
 	// Enforce GCP's 64-label limit after merge
 	if len(merged) > gcpMaxLabels {

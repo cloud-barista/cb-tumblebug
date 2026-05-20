@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -205,12 +206,7 @@ func ValidateVNetReq(vNetReq *model.VNetReq) error {
 }
 
 func ContainsZone(zones []string, zone string) bool {
-	for _, z := range zones {
-		if z == zone {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(zones, zone)
 }
 
 func IsAvailableForUseInCSP(vNetReq *model.VNetReq, provider string) (bool, error) {

@@ -19,7 +19,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -160,12 +162,7 @@ func createNodeObjectSafe(nsId, infraId string, nodeInfoData *model.NodeInfo) er
 
 // contains checks if a string slice contains a specific string
 func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, item)
 }
 
 // createNodeGroup creates a nodeGroup with proper error handling
@@ -257,9 +254,7 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 		model.LabelUid:         uid,
 		model.LabelDescription: req.Description,
 	}
-	for key, value := range req.Label {
-		labels[key] = value
-	}
+	maps.Copy(labels, req.Label)
 
 	return label.CreateOrUpdateLabel(ctx, model.StrInfra, uid, key, labels)
 }
@@ -932,10 +927,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	// Count total VMs to be created (minimum 1 per nodeGroup)
 	for _, nodeGroupReq := range req.NodeGroups {
-		nodeCount := nodeGroupReq.NodeGroupSize
-		if nodeCount < 1 {
-			nodeCount = 1
-		}
+		nodeCount := max(nodeGroupReq.NodeGroupSize, 1)
 		totalNodeCount += nodeCount
 	}
 
@@ -1019,10 +1011,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	// Process VM requests and build configurations
 	for _, nodeGroupReq := range req.NodeGroups {
-		nodeGroupSize := nodeGroupReq.NodeGroupSize
-		if nodeGroupSize < 1 {
-			nodeGroupSize = 1
-		}
+		nodeGroupSize := max(nodeGroupReq.NodeGroupSize, 1)
 
 		log.Debug().Msgf("Processing VM request '%s' with nodeGroupSize: %d", nodeGroupReq.Name, nodeGroupSize)
 
@@ -1597,25 +1586,26 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		DelInfra(nsId, infraId, "force")
 
 		// Build comprehensive error message with history
-		errorMsg := fmt.Sprintf("Infra '%s' validation failed due to resource availability errors.\n\n", req.Name)
+		var errorMsg strings.Builder
+		errorMsg.WriteString(fmt.Sprintf("Infra '%s' validation failed due to resource availability errors.\n\n", req.Name))
 
 		// Add error history if available
 		if len(errorHistory) > 0 {
-			errorMsg += "Error Timeline:\n"
+			errorMsg.WriteString("Error Timeline:\n")
 			for i, errEntry := range errorHistory {
-				errorMsg += fmt.Sprintf(" %d. %s\n", i+1, errEntry)
+				errorMsg.WriteString(fmt.Sprintf(" %d. %s\n", i+1, errEntry))
 			}
-			errorMsg += "\n"
+			errorMsg.WriteString("\n")
 		}
 
 		// Add validation error details
-		errorMsg += "Resource Validation Failures:\n"
+		errorMsg.WriteString("Resource Validation Failures:\n")
 		for _, errStr := range validationErrors {
-			errorMsg += fmt.Sprintf(" • %s\n", errStr)
+			errorMsg.WriteString(fmt.Sprintf(" • %s\n", errStr))
 		}
-		errorMsg += fmt.Sprintf("\nSummary: %d out of %d NodeGroups failed validation", len(validationErrors), len(nodeGroupReqs))
+		errorMsg.WriteString(fmt.Sprintf("\nSummary: %d out of %d NodeGroups failed validation", len(validationErrors), len(nodeGroupReqs)))
 
-		return emptyInfra, errors.New(errorMsg)
+		return emptyInfra, errors.New(errorMsg.String())
 	}
 
 	// Check if nodeRequest has elements
@@ -1790,22 +1780,23 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 					}
 
 					// Build comprehensive error message with complete history
-					errorMsg := fmt.Sprintf("Infra '%s' creation failed - all NodeGroups failed resource preparation.\n\n", req.Name)
+					var errorMsg strings.Builder
+					errorMsg.WriteString(fmt.Sprintf("Infra '%s' creation failed - all NodeGroups failed resource preparation.\n\n", req.Name))
 
 					// Add full error history
 					if len(errorHistory) > 0 {
-						errorMsg += "Complete Error Timeline:\n"
+						errorMsg.WriteString("Complete Error Timeline:\n")
 						for i, errEntry := range errorHistory {
-							errorMsg += fmt.Sprintf("  %d. %s\n", i+1, errEntry)
+							errorMsg.WriteString(fmt.Sprintf("  %d. %s\n", i+1, errEntry))
 						}
-						errorMsg += "\n"
+						errorMsg.WriteString("\n")
 					}
 
-					errorMsg += "Summary: All NodeGroups failed during resource preparation phase.\n"
-					errorMsg += "Common causes: VPC/subnet limits, insufficient permissions, region capacity issues, or network configuration problems.\n"
-					errorMsg += "Check the error timeline above for specific failure details."
+					errorMsg.WriteString("Summary: All NodeGroups failed during resource preparation phase.\n")
+					errorMsg.WriteString("Common causes: VPC/subnet limits, insufficient permissions, region capacity issues, or network configuration problems.\n")
+					errorMsg.WriteString("Check the error timeline above for specific failure details.")
 
-					return emptyInfra, fmt.Errorf("%s", errorMsg)
+					return emptyInfra, fmt.Errorf("%s", errorMsg.String())
 				}
 
 				// Partial failure: some NodeGroups succeeded, some failed.
@@ -1853,22 +1844,23 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 			UpdateInfraInfo(nsId, infraTmp)
 
 			// Build comprehensive error message
-			errorMsg := fmt.Sprintf("Infra '%s' creation failed - no NodeGroups were successfully prepared.\n\n", req.Name)
+			var errorMsg strings.Builder
+			errorMsg.WriteString(fmt.Sprintf("Infra '%s' creation failed - no NodeGroups were successfully prepared.\n\n", req.Name))
 
 			// Add full error history
 			if len(errorHistory) > 0 {
-				errorMsg += "Complete Error Timeline:\n"
+				errorMsg.WriteString("Complete Error Timeline:\n")
 				for i, errEntry := range errorHistory {
-					errorMsg += fmt.Sprintf("  %d. %s\n", i+1, errEntry)
+					errorMsg.WriteString(fmt.Sprintf("  %d. %s\n", i+1, errEntry))
 				}
-				errorMsg += "\n"
+				errorMsg.WriteString("\n")
 			}
 
-			errorMsg += "Summary: All NodeGroups failed during resource preparation phase.\n"
-			errorMsg += "This indicates that no VM NodeGroups could be prepared for provisioning.\n"
-			errorMsg += "Check the error timeline above for specific failure details."
+			errorMsg.WriteString("Summary: All NodeGroups failed during resource preparation phase.\n")
+			errorMsg.WriteString("This indicates that no VM NodeGroups could be prepared for provisioning.\n")
+			errorMsg.WriteString("Check the error timeline above for specific failure details.")
 
-			return emptyInfra, fmt.Errorf("%s", errorMsg)
+			return emptyInfra, fmt.Errorf("%s", errorMsg.String())
 		}
 	}
 
@@ -1908,28 +1900,29 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		addErrorToHistory("Infra Creation", fmt.Sprintf("Infra '%s' creation failed (see Detail below)", req.Name))
 
 		// Build comprehensive error message
-		errorMsg := fmt.Sprintf("Infra '%s' creation failed in final provisioning stage.\n\n", req.Name)
+		var errorMsg strings.Builder
+		errorMsg.WriteString(fmt.Sprintf("Infra '%s' creation failed in final provisioning stage.\n\n", req.Name))
 
 		// Add error history (timeline events only, no full error duplication)
 		if len(errorHistory) > 0 {
-			errorMsg += "Complete Error Timeline:\n"
+			errorMsg.WriteString("Complete Error Timeline:\n")
 			for i, errEntry := range errorHistory {
-				errorMsg += fmt.Sprintf("  %d. %s\n", i+1, errEntry)
+				errorMsg.WriteString(fmt.Sprintf("  %d. %s\n", i+1, errEntry))
 			}
-			errorMsg += "\n"
+			errorMsg.WriteString("\n")
 		}
 
 		// Full error appears only once here
-		errorMsg += fmt.Sprintf("Detail: %s\n", err.Error())
+		errorMsg.WriteString(fmt.Sprintf("Detail: %s\n", err.Error()))
 
 		// Check if NodeGroups is empty (which causes the validation error in CreateInfra)
 		if len(infraReq.NodeGroups) == 0 {
-			errorMsg += "\nRoot Cause: No VM NodeGroups were successfully prepared for provisioning.\n"
-			errorMsg += "This typically indicates that all VM resource preparation failed during the earlier stages.\n"
-			errorMsg += "Please check the error timeline above for specific resource creation failures (e.g., VPC limits, permissions, etc.)."
+			errorMsg.WriteString("\nRoot Cause: No VM NodeGroups were successfully prepared for provisioning.\n")
+			errorMsg.WriteString("This typically indicates that all VM resource preparation failed during the earlier stages.\n")
+			errorMsg.WriteString("Please check the error timeline above for specific resource creation failures (e.g., VPC limits, permissions, etc.).")
 		}
 
-		return result, fmt.Errorf("%s", errorMsg)
+		return result, fmt.Errorf("%s", errorMsg.String())
 	}
 
 	return result, err
@@ -2050,10 +2043,7 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 
 			// Add cost estimation if available
 			if specInfo.CostPerHour > 0 {
-				nodeGroupSizeInt := nodeGroupDynamicReq.NodeGroupSize
-				if nodeGroupSizeInt < 1 {
-					nodeGroupSizeInt = 1
-				}
+				nodeGroupSizeInt := max(nodeGroupDynamicReq.NodeGroupSize, 1)
 				nodeReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", float64(specInfo.CostPerHour)*float64(nodeGroupSizeInt))
 				nodeCost = float64(specInfo.CostPerHour) * float64(nodeGroupSizeInt)
 			} else {
@@ -3067,7 +3057,7 @@ func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *mod
 
 	// Collect errors from both goroutines
 	var errorMessages []string
-	for i := 0; i < 2; i++ {
+	for range 2 {
 
 		if err := <-errorChan; err != nil {
 			errorMessages = append(errorMessages, err.Error())
@@ -4281,9 +4271,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		model.LabelVNetId:          nodeInfoData.VNetId,
 		model.LabelSubnetId:        nodeInfoData.SubnetId,
 	}
-	for key, value := range nodeInfoData.Label {
-		labels[key] = value
-	}
+	maps.Copy(labels, nodeInfoData.Label)
 	err = label.CreateOrUpdateLabel(ctx, model.StrNode, nodeInfoData.Uid, nodeKey, labels)
 	if err != nil {
 		err = fmt.Errorf("cannot create label object: %v", err)
@@ -5560,10 +5548,9 @@ func getRecentUniqueFailureMessages(provisioningLog *model.ProvisioningLog, maxM
 	// Process messages from most recent to oldest (assuming they are stored in chronological order)
 	// We'll take the last entries as the most recent ones
 	messages := provisioningLog.FailureMessages
-	startIdx := len(messages) - maxMessages*2 // Look at more messages to find unique ones
-	if startIdx < 0 {
-		startIdx = 0
-	}
+	startIdx := max(
+		// Look at more messages to find unique ones
+		len(messages)-maxMessages*2, 0)
 
 	// Process from the end (most recent) backwards
 	for i := len(messages) - 1; i >= startIdx && len(recentMessages) < maxMessages; i-- {

@@ -158,7 +158,7 @@ type ObjectVersion struct {
 	ETag         string `json:"eTag,omitempty" example:"9b2cf535f27731c974343645a3985328"`
 	Size         int64  `json:"size,omitempty" example:"1024"`
 	StorageClass string `json:"storageClass,omitempty" example:"STANDARD"`
-	Owner        Owner  `json:"owner,omitempty"`
+	Owner        Owner  `json:"owner"`
 }
 
 // ObjectStorageFeatureSupport represents the feature support information for a CSP.

@@ -28,6 +28,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -160,7 +161,7 @@ func cancelByKey(xRequestId, nodeId string) bool {
 // Returns the number of cancelled executions
 func CancelActiveCommandsForNode(nodeId string) int {
 	cancelled := 0
-	cancelFuncs.Range(func(key, value interface{}) bool {
+	cancelFuncs.Range(func(key, value any) bool {
 		keyStr, ok := key.(string)
 		if !ok {
 			return true
@@ -548,11 +549,11 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, no
 
 // mapToString converts a map[int]string to a single string
 func mapToString(m map[int]string) string {
-	var result string
+	var result strings.Builder
 	for _, v := range m {
-		result += v + "\n"
+		result.WriteString(v + "\n")
 	}
-	return result
+	return result.String()
 }
 
 // resolveTargetIpForBastion returns the IP that should be used as the SSH tunnel
@@ -936,15 +937,15 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, infraId st
 			// Update status to Failed
 			if cmdIndex > 0 {
 				// Convert map to string for storage
-				stdoutStr := ""
+				var stdoutStr strings.Builder
 				stderrStr := ""
 				for _, v := range result.stdout {
-					stdoutStr += v + "\n"
+					stdoutStr.WriteString(v + "\n")
 				}
 				for _, v := range result.stderr {
 					stderrStr += v + "\n"
 				}
-				UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Command execution failed", result.err.Error(), stdoutStr, stderrStr)
+				UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Command execution failed", result.err.Error(), stdoutStr.String(), stderrStr)
 			}
 			*returnResult = append(*returnResult, sshResultTmp)
 			return
@@ -961,15 +962,15 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, infraId st
 		// Update status to Completed
 		if cmdIndex > 0 {
 			// Convert map to string for storage
-			stdoutStr := ""
+			var stdoutStr strings.Builder
 			stderrStr := ""
 			for _, v := range result.stdout {
-				stdoutStr += v + "\n"
+				stdoutStr.WriteString(v + "\n")
 			}
 			for _, v := range result.stderr {
 				stderrStr += v + "\n"
 			}
-			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr, stderrStr)
+			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr.String(), stderrStr)
 		}
 		*returnResult = append(*returnResult, sshResultTmp)
 
@@ -1085,13 +1086,10 @@ func CheckConnectivity(host string, port string) error {
 	maxTimeout := 60 * time.Second
 
 	var lastErr error
-	for i := 0; i < retrycheck; i++ {
+	for i := range retrycheck {
 		// Fix timeout calculation: start with initialTimeout for first attempt (i=0)
 		// then progressively increase for subsequent attempts
-		timeout := time.Duration(float64(initialTimeout) * (1.0 + 0.5*float64(i)))
-		if timeout > maxTimeout {
-			timeout = maxTimeout
-		}
+		timeout := min(time.Duration(float64(initialTimeout)*(1.0+0.5*float64(i))), maxTimeout)
 
 		log.Debug().Msgf("[Check SSH Port] %v:%v (Attempt %d/%d, Timeout: %v)",
 			host, port, i+1, retrycheck, timeout)
@@ -1571,7 +1569,7 @@ CONNECTION_ESTABLISHED:
 	sshRetryCount := 3
 	var lastSSHErr error
 
-	for i := 0; i < sshRetryCount; i++ {
+	for i := range sshRetryCount {
 		ncc, chans, reqs, err = ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
 		if err == nil {
 			break
@@ -3088,7 +3086,7 @@ func updateNodeCommandStatusSafe(nsId, infraId, nodeId string, updateFunc func(*
 
 	// Retry mechanism for concurrent access
 	maxRetries := 3
-	for attempt := 0; attempt < maxRetries; attempt++ {
+	for attempt := range maxRetries {
 		// Get current Node info
 		keyValue, exists, err := kvstore.GetKv(key)
 		if !exists || err != nil {
@@ -3174,13 +3172,7 @@ func filterCommands(commandStatus []model.CommandStatusInfo, filter *model.Comma
 	for _, cmd := range commandStatus {
 		// Apply status filter - check if command status is in the allowed list
 		if len(filter.Status) > 0 {
-			found := false
-			for _, status := range filter.Status {
-				if cmd.Status == status {
-					found = true
-					break
-				}
-			}
+			found := slices.Contains(filter.Status, cmd.Status)
 			if !found {
 				continue
 			}
@@ -3239,10 +3231,7 @@ func applyPagination(commandStatus []model.CommandStatusInfo, offset, limit int)
 		return []model.CommandStatusInfo{}
 	}
 
-	end := offset + limit
-	if end > len(commandStatus) {
-		end = len(commandStatus)
-	}
+	end := min(offset+limit, len(commandStatus))
 
 	return commandStatus[offset:end]
 }

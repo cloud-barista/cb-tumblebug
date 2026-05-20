@@ -571,7 +571,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 
 		// Use a map on unmarshaling the JSON data instead of terrariumModel.TerrariumInfo
 		// for better data extraction
-		var trVpnInfo map[string]interface{}
+		var trVpnInfo map[string]any
 		err = json.Unmarshal(jsonData, &trVpnInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -590,13 +590,13 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 		}
 
 		// Extract the detail of CSPs' resources (NOTE: currently Terrarium supports AWS-to-site VPN)
-		cspResources, exists := trVpnInfo[site1TrKey].(map[string]interface{})
+		cspResources, exists := trVpnInfo[site1TrKey].(map[string]any)
 		if !exists {
 			log.Error().Msgf("%s resources not found in VPN info", site1CspName)
 		}
 		vpnInfo.VpnSites[0].ResourceDetails = extractResourceDetails(cspResources)
 
-		cspResources2, exists2 := trVpnInfo[site2TrKey].(map[string]interface{})
+		cspResources2, exists2 := trVpnInfo[site2TrKey].(map[string]any)
 		if !exists2 {
 			log.Error().Msgf("%s resources not found in VPN info", site2CspName)
 		}
@@ -735,19 +735,19 @@ func calculateWaitDuration(elapsedTime time.Duration, expectedCompletionDuration
 }
 
 // extractResourceDetails collects all resource details from a CSP's data map
-func extractResourceDetails(cspData map[string]interface{}) []model.ResourceDetail {
+func extractResourceDetails(cspData map[string]any) []model.ResourceDetail {
 	var details []model.ResourceDetail
 
 	// Process top-level resources
 	for _, value := range cspData {
 		// Handle different types of values
 		switch v := value.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			// Process map values
 			resourceDetails := processResourceMap(v)
 			details = append(details, resourceDetails...)
 
-		case []interface{}:
+		case []any:
 			// Process array/list values
 			resourceDetails := processResourceArray(v)
 			details = append(details, resourceDetails...)
@@ -758,7 +758,7 @@ func extractResourceDetails(cspData map[string]interface{}) []model.ResourceDeta
 }
 
 // processResourceMap extracts resource details from a map
-func processResourceMap(resourceMap map[string]interface{}) []model.ResourceDetail {
+func processResourceMap(resourceMap map[string]any) []model.ResourceDetail {
 	var details []model.ResourceDetail
 
 	var resourceDetail model.ResourceDetail
@@ -782,12 +782,12 @@ func processResourceMap(resourceMap map[string]interface{}) []model.ResourceDeta
 }
 
 // processResourceArray extracts resource details from an array/slice
-func processResourceArray(array []interface{}) []model.ResourceDetail {
+func processResourceArray(array []any) []model.ResourceDetail {
 	var details []model.ResourceDetail
 
 	for _, item := range array {
 		// Process each item in the array
-		if resourceMap, ok := item.(map[string]interface{}); ok {
+		if resourceMap, ok := item.(map[string]any); ok {
 			itemDetails := processResourceMap(resourceMap)
 			details = append(details, itemDetails...)
 		}
@@ -920,7 +920,7 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	}
 	// Use a map on unmarshaling the JSON data instead of terrariumModel.TerrariumInfo
 	// for better data extraction
-	var trVpnInfo map[string]interface{}
+	var trVpnInfo map[string]any
 	err = json.Unmarshal(jsonData, &trVpnInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -931,13 +931,13 @@ func GetSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId st
 	// Extract the detail of CSPs' resources (NOTE: currently Terrarium supports AWS-to-site VPN)
 	for _, provider := range resTrInfo.Providers {
 		if provider == csp.AWS {
-			cspResources, exists := trVpnInfo[provider].(map[string]interface{})
+			cspResources, exists := trVpnInfo[provider].(map[string]any)
 			if !exists {
 				log.Error().Msgf("AWS resources not found in VPN info")
 			}
 			vpnInfo.VpnSites[0].ResourceDetails = extractResourceDetails(cspResources)
 		} else {
-			cspResources, exists := trVpnInfo[provider].(map[string]interface{})
+			cspResources, exists := trVpnInfo[provider].(map[string]any)
 			if !exists {
 				log.Error().Msgf("%s resources not found in VPN info", provider)
 			}

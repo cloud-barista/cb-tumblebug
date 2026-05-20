@@ -24,13 +24,13 @@ type RestPostSqlDBRequest struct {
 	DBEngineVersion     string                      `json:"dbEngineVersion,omitempty" validate:"required" example:"8.0.39"`
 	DBAdminUsername     string                      `json:"dbAdminUsername" validate:"required" example:"mydbadmin"`
 	DBAdminPassword     string                      `json:"dbAdminPassword" validate:"required" example:"Password1234!"`
-	RequiredCSPResource RequiredCSPResourceForSqlDB `json:"requiredCSPResource,omitempty"`
+	RequiredCSPResource RequiredCSPResourceForSqlDB `json:"requiredCSPResource"`
 }
 
 type RequiredCSPResourceForSqlDB struct {
-	AWS   RequiredAWSResourceForSqlDB   `json:"aws,omitempty"`
-	Azure RequiredAzureResourceForSqlDB `json:"azure,omitempty"`
-	NCP   RequiredNCPResourceForSqlDB   `json:"ncp,omitempty"`
+	AWS   RequiredAWSResourceForSqlDB   `json:"aws"`
+	Azure RequiredAzureResourceForSqlDB `json:"azure"`
+	NCP   RequiredNCPResourceForSqlDB   `json:"ncp"`
 }
 
 type RequiredAWSResourceForSqlDB struct {
@@ -61,8 +61,8 @@ type SqlDBInfo struct {
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
 	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
 	// CspResourceId is resource identifier managed by CSP
-	CspResourceId string      `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
-	Status        string      `json:"status"`
-	Description   string      `json:"description"`
-	Details       interface{} `json:"details"`
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+	Status        string `json:"status"`
+	Description   string `json:"description"`
+	Details       any    `json:"details"`
 }

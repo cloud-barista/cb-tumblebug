@@ -309,7 +309,7 @@ func RestGetNodeDataDisk(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	var content interface{}
+	var content any
 	if optionFlag == "id" {
 		content = model.IdList{
 			IdList: result.([]string),

@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/url"
 	"path"
 	"reflect"
@@ -336,7 +337,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		return emptyObj, createErr
 	}
 
-	var tmpInf interface{}
+	var tmpInf any
 	tmpInf, createErr = GetResource(nsId, model.StrVNet, req.VNetId)
 	if createErr != nil {
 		return emptyObj, createErr
@@ -562,9 +563,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		model.LabelConnectionName:  tbK8sCInfo.ConnectionName,
 	}
 	// Add user labels (user labels override system labels if conflict)
-	for key, value := range tbK8sCInfo.Label {
-		labels[key] = value
-	}
+	maps.Copy(labels, tbK8sCInfo.Label)
 	k8sClusterKey := common.GenK8sClusterKey(nsId, k8sClusterId)
 	labelErr := label.CreateOrUpdateLabel(ctx, model.StrK8s, uid, k8sClusterKey, labels)
 	if labelErr != nil {
@@ -887,7 +886,7 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 	method := "DELETE"
 	client.SetTimeout(10 * time.Minute)
 
-	var ifRes interface{}
+	var ifRes any
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -905,7 +904,7 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 	}
 
 	if ifRes != nil {
-		if mapRes, ok := ifRes.(map[string]interface{}); ok {
+		if mapRes, ok := ifRes.(map[string]any); ok {
 			result := mapRes["Result"]
 			if result == "true" {
 				// Successfully removed from CSP, now update local cluster info
@@ -1364,7 +1363,7 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 }
 
 // ListK8sCluster returns the list of TB K8sCluster objects of given nsId
-func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{}, error) {
+func ListK8sCluster(nsId string, filterKey string, filterVal string) (any, error) {
 	// log.Info().Msg("ListK8sCluster")
 
 	k8sIdList, err := ListK8sClusterId(nsId)
@@ -1474,7 +1473,7 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	method := "DELETE"
 	client.SetTimeout(20 * time.Minute)
 
-	var ifRes interface{}
+	var ifRes any
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1501,7 +1500,7 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	}
 
 	if ifRes != nil {
-		if mapRes, ok := ifRes.(map[string]interface{}); ok {
+		if mapRes, ok := ifRes.(map[string]any); ok {
 			result := mapRes["Result"]
 			if result == "true" {
 				if option != "force" {

@@ -132,11 +132,9 @@ func RecommendSpec(ctx context.Context, nsId string, plan model.RecommendSpecReq
 	}
 
 	// Set final limit
-	finalLimitNum := plan.Limit
-	// Default to no limit if not set
-	if finalLimitNum < 0 {
-		finalLimitNum = 0
-	}
+	finalLimitNum := max(
+		// Default to no limit if not set
+		plan.Limit, 0)
 
 	// Apply final limit to the filter request
 	if finalLimitNum > 0 {

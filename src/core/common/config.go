@@ -124,14 +124,14 @@ func formatZones(zones []string) string {
 	if len(zones) == 0 {
 		return ""
 	}
-	var formattedZones string
+	var formattedZones strings.Builder
 	for i, zone := range zones {
-		formattedZones += zone
+		formattedZones.WriteString(zone)
 		if i < len(zones)-1 {
-			formattedZones += " "
+			formattedZones.WriteString(" ")
 		}
 	}
-	return formattedZones
+	return formattedZones.String()
 }
 
 func UpdateConfig(u *model.ConfigReq) (model.ConfigInfo, error) {

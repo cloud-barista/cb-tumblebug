@@ -188,7 +188,7 @@ func cleanURL(url string) string {
 }
 
 // SetUseBody returns false if the given body is NoBody
-func SetUseBody(requestBody interface{}) bool {
+func SetUseBody(requestBody any) bool {
 	if str, ok := requestBody.(string); ok {
 		return str != NoBody
 	}
@@ -595,7 +595,7 @@ type RequestInfo struct {
 	Method string            `json:"method"`         // HTTP method (GET, POST, etc.), indicating the request's action type.
 	URL    string            `json:"url"`            // The URL the request is made to.
 	Header map[string]string `json:"header"`         // Key-value pairs of the request headers.
-	Body   interface{}       `json:"body,omitempty"` // Optional: request body
+	Body   any               `json:"body,omitempty"` // Optional: request body
 }
 
 // RequestDetails contains detailed information about an HTTP request and its processing status.
@@ -604,7 +604,7 @@ type RequestDetails struct {
 	EndTime       time.Time   `json:"endTime"`       // The time when the request was fully processed.
 	Status        string      `json:"status"`        // The current status of the request (e.g., "Handling", "Error", "Success").
 	RequestInfo   RequestInfo `json:"requestInfo"`   // Extracted information about the request.
-	ResponseData  interface{} `json:"responseData"`  // The data sent back in response to the request.
+	ResponseData  any         `json:"responseData"`  // The data sent back in response to the request.
 	ErrorResponse string      `json:"errorResponse"` // A message describing any error that occurred during request processing.
 }
 
@@ -674,7 +674,7 @@ func cleanupRequestMap() {
 	var expiredEntries []RequestDetails
 
 	// Phase 1: Collect expired entries
-	RequestMap.Range(func(key, value interface{}) bool {
+	RequestMap.Range(func(key, value any) bool {
 		details, ok := value.(RequestDetails)
 		if !ok {
 			// Entry has unexpected type; remove it without adjusting the counter,
@@ -727,7 +727,7 @@ func evictOldestEntries(count int) {
 	}
 	var entries []keyedEntry
 
-	RequestMap.Range(func(key, value interface{}) bool {
+	RequestMap.Range(func(key, value any) bool {
 		details, ok := value.(RequestDetails)
 		if !ok {
 			return true
@@ -773,7 +773,7 @@ func evictOldestEntries(count int) {
 func autoSaveRequestMap() {
 	var allEntries []RequestDetails
 
-	RequestMap.Range(func(key, value interface{}) bool {
+	RequestMap.Range(func(key, value any) bool {
 		if details, ok := value.(RequestDetails); ok {
 			allEntries = append(allEntries, details)
 		}
@@ -835,9 +835,9 @@ func getRequestLogDir() string {
 
 // ProgressInfo contains the progress information of a request.
 type ProgressInfo struct {
-	Title string      `json:"title"`
-	Info  interface{} `json:"info"`
-	Time  time.Time   `json:"time"`
+	Title string    `json:"title"`
+	Info  any       `json:"info"`
+	Time  time.Time `json:"time"`
 }
 
 // ExtractRequestInfo extracts necessary information from http.Request
@@ -865,7 +865,7 @@ func ExtractRequestInfo(r *http.Request) RequestInfo {
 	}
 
 	//var bodyString string
-	var bodyObject interface{}
+	var bodyObject any
 	if r.Body != nil { // Check if the body is not nil
 		bodyBytes, err := io.ReadAll(r.Body)
 		if err == nil {
@@ -905,7 +905,7 @@ func ExtractRequestInfo(r *http.Request) RequestInfo {
 // }
 
 // EndRequestWithLog updates the request details and sends the final response.
-func EndRequestWithLog(c echo.Context, err error, responseData interface{}) error {
+func EndRequestWithLog(c echo.Context, err error, responseData any) error {
 
 	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
 
@@ -957,14 +957,14 @@ func EndRequestWithLog(c echo.Context, err error, responseData interface{}) erro
 }
 
 // UpdateRequestProgress updates the handling status of the request.
-func UpdateRequestProgress(reqID string, progressData interface{}) {
+func UpdateRequestProgress(reqID string, progressData any) {
 	if v, ok := RequestMap.Load(reqID); ok {
 		details := v.(RequestDetails)
 
-		var responseData []interface{}
+		var responseData []any
 		if details.ResponseData != nil {
 			// Convert existing ResponseData to []interface{}
-			responseData = details.ResponseData.([]interface{})
+			responseData = details.ResponseData.([]any)
 		}
 		// Append the new progressData to the existing ResponseData
 		responseData = append(responseData, progressData)
@@ -975,9 +975,9 @@ func UpdateRequestProgress(reqID string, progressData interface{}) {
 }
 
 // ForwardRequestToAny forwards the given request to the specified path
-func ForwardRequestToAny(reqPath string, method string, requestBody interface{}) (interface{}, error) {
+func ForwardRequestToAny(reqPath string, method string, requestBody any) (any, error) {
 	client := NewHttpClient()
-	var callResult interface{}
+	var callResult any
 
 	url := model.SpiderRestUrl + "/" + reqPath
 
@@ -987,7 +987,7 @@ func ForwardRequestToAny(reqPath string, method string, requestBody interface{})
 		return nil, fmt.Errorf("requestBody is not []byte type")
 	}
 
-	var requestBodyMap map[string]interface{}
+	var requestBodyMap map[string]any
 	err := json.Unmarshal(requestBodyBytes, &requestBodyMap)
 	if err != nil {
 		return nil, fmt.Errorf("JSON unmarshal error: %v", err)

@@ -592,7 +592,7 @@ func ListNLBId(nsId string, infraId string) ([]string, error) {
 }
 
 // ListNLB returns the list of TB NLB objects of given nsId
-func ListNLB(nsId string, infraId string, filterKey string, filterVal string) (interface{}, error) {
+func ListNLB(nsId string, infraId string, filterKey string, filterVal string) (any, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -716,7 +716,7 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 	url := fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, nlbInfo.CspResourceName)
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
-	var callResult interface{}
+	var callResult any
 
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
@@ -1208,7 +1208,7 @@ func RemoveNLBNodes(nsId string, infraId string, resourceId string, u *model.NLB
 
 	url := fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
 	method := "DELETE"
-	var callResult interface{}
+	var callResult any
 
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
