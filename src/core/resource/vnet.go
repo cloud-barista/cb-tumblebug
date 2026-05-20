@@ -859,7 +859,7 @@ func markVNetDeleteFailedThenReconcile(nsId, vNetId, vNetKey string, vNetInfo *m
 		_ = kvstore.Put(vNetKey, string(failVal))
 	}
 	// Self-heal: opportunistic single-shot Reconcile after recording Failed state.
-	if _, recErr := ReconcileVNet(nsId, vNetId); recErr != nil {
+	if _, recErr := ReconcileVNet(nsId, vNetId, nil); recErr != nil {
 		log.Warn().Err(recErr).Msgf("auto-reconcile after delete failure failed for vNet %s/%s", nsId, vNetId)
 	}
 }
@@ -1108,7 +1108,9 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	return ret, nil
 }
 
-func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
+// ReconcileVNet checks if the CSP/Spider VNet still exists and reconciles metadata accordingly.
+// optPreloadedVNetStatus: optional pre-fetched VNet status; if nil, will be fetched internally.
+func ReconcileVNet(nsId string, vNetId string, optPreloadedVNetStatus *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
 	log.Info().Msg("ReconcileVNet")
 
 	/*
@@ -1169,11 +1171,20 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	 */
 
 	// [Via Spider] List all VPCs to determine the exact Spider/CSP state.
-	log.Debug().Msgf("[Request to Spider] Listing all VPCs for connection: %s", vNetInfo.ConnectionName)
-	vpcStatusResp, err := GetCspResourceStatus(vNetInfo.ConnectionName, model.StrVNet)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to get VPC resource status from Spider, skipping reconciliation")
-		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile vNet '%s'", vNetId))
+	var vpcStatusResp model.CspResourceStatusResponse
+	if optPreloadedVNetStatus != nil && len(optPreloadedVNetStatus.AllList.MappedList) > 0 {
+		// Use preloaded status if available
+		vpcStatusResp = *optPreloadedVNetStatus
+		log.Debug().Msgf("Using preloaded VNet status for reconciliation (connection: %s)", vNetInfo.ConnectionName)
+	} else {
+		// No preloaded status, fetch from Spider
+		log.Debug().Msgf("[Request to Spider] Listing all VPCs for connection: %s", vNetInfo.ConnectionName)
+		var err error
+		vpcStatusResp, err = GetCspResourceStatus(vNetInfo.ConnectionName, model.StrVNet)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get VPC resource status from Spider, skipping reconciliation")
+			return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile vNet '%s'", vNetId))
+		}
 	}
 
 	vpcState := getResourceState(vNetInfo.CspResourceName, vpcStatusResp)
@@ -1192,6 +1203,19 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 			return emptyRet, err2
 		}
 
+		// Fetch subnet status once for all subnets to optimize API calls
+		var optPreloadedSubnetStatus *model.CspResourceStatusResponse
+		if len(subnetKvList) > 0 {
+			log.Debug().Msgf("[Request to Spider] Listing all Subnets for connection: %s", vNetInfo.ConnectionName)
+			subnetStatus, subnetErr := GetCspResourceStatus(vNetInfo.ConnectionName, model.StrSubnet)
+			if subnetErr != nil {
+				log.Warn().Err(subnetErr).Msg("failed to get subnet status; each ReconcileSubnet will retry individually")
+				optPreloadedSubnetStatus = nil // nil means each ReconcileSubnet will fetch individually
+			} else {
+				optPreloadedSubnetStatus = &subnetStatus
+			}
+		}
+
 		for _, subnetKv := range subnetKvList {
 			subnetInfo := model.SubnetInfo{}
 			if uErr := json.Unmarshal([]byte(subnetKv.Value), &subnetInfo); uErr != nil {
@@ -1200,7 +1224,7 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 			}
 			log.Trace().Msgf("subnetInfo: %+v", subnetInfo)
 
-			if _, sErr := ReconcileSubnet(nsId, vNetId, subnetInfo.Id); sErr != nil {
+			if _, sErr := ReconcileSubnet(nsId, vNetId, subnetInfo.Id, optPreloadedSubnetStatus); sErr != nil {
 				log.Warn().Err(sErr).Msg("")
 			}
 		}

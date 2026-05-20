@@ -588,7 +588,7 @@ func markSubnetDeleteFailedThenReconcile(nsId, vNetId, subnetId, subnetKey strin
 		_ = kvstore.Put(subnetKey, string(failVal))
 	}
 	// Self-heal: opportunistic single-shot Reconcile after recording Failed state.
-	if _, recErr := ReconcileSubnet(nsId, vNetId, subnetId); recErr != nil {
+	if _, recErr := ReconcileSubnet(nsId, vNetId, subnetId, nil); recErr != nil {
 		log.Warn().Err(recErr).Msgf("auto-reconcile after delete failure failed for subnet %s/%s/%s", nsId, vNetId, subnetId)
 	}
 }
@@ -862,7 +862,9 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	return ret, nil
 }
 
-func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg, error) {
+// ReconcileSubnet checks if the CSP/Spider subnet still exists and reconciles metadata accordingly.
+// optPreloadedSubnetStatus: optional pre-fetched subnet status; if nil, will be fetched internally.
+func ReconcileSubnet(nsId string, vNetId string, subnetId string, optPreloadedSubnetStatus *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
 	log.Info().Msg("ReconcileSubnet")
 
 	/*
@@ -949,11 +951,20 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 	 */
 
 	// [Via Spider] Get subnet resource status to determine the exact Spider/CSP state.
-	log.Debug().Msgf("[Request to Spider] Getting subnet resource status for connection: %s", subnetInfo.ConnectionName)
-	subnetStatusResp, err := GetCspResourceStatus(subnetInfo.ConnectionName, model.StrSubnet)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to get subnet resource status from Spider, skipping reconciliation")
-		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile subnet '%s'", subnetId))
+	var subnetStatusResp model.CspResourceStatusResponse
+	if optPreloadedSubnetStatus != nil && len(optPreloadedSubnetStatus.AllList.MappedList) > 0 {
+		// Use preloaded status if available
+		subnetStatusResp = *optPreloadedSubnetStatus
+		log.Debug().Msgf("Using preloaded subnet status for reconciliation (connection: %s)", subnetInfo.ConnectionName)
+	} else {
+		// No preloaded status, fetch from Spider
+		log.Debug().Msgf("[Request to Spider] Getting subnet resource status for connection: %s", subnetInfo.ConnectionName)
+		var err error
+		subnetStatusResp, err = GetCspResourceStatus(subnetInfo.ConnectionName, model.StrSubnet)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get subnet resource status from Spider, skipping reconciliation")
+			return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile subnet '%s'", subnetId))
+		}
 	}
 
 	subnetState := getResourceState(subnetInfo.CspResourceName, subnetStatusResp)

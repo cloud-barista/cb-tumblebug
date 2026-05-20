@@ -243,7 +243,7 @@ func RestDelVNet(c echo.Context) error {
 		}
 	case resource.ActionReconcile:
 		// [Process]
-		resp, err = resource.ReconcileVNet(nsId, vNetId)
+		resp, err = resource.ReconcileVNet(nsId, vNetId, nil)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
