@@ -16,16 +16,33 @@ NC='\033[0m' # No Color
 # Container name: use env var override, or auto-detect from known names
 if [ -n "$TB_POSTGRES_CONTAINER" ]; then
     CONTAINER_NAME="$TB_POSTGRES_CONTAINER"
-elif docker ps --format "{{.Names}}" | grep -q "^cb-tumblebug-postgres$"; then
+elif docker ps --format "{{.Names}}" | grep -Fxq "cb-tumblebug-postgres"; then
     CONTAINER_NAME="cb-tumblebug-postgres"
-elif docker ps --format "{{.Names}}" | grep -q "^mc-infra-manager-postgres$"; then
+elif docker ps --format "{{.Names}}" | grep -Fxq "mc-infra-manager-postgres"; then
     CONTAINER_NAME="mc-infra-manager-postgres"
 else
-    # Fallback: first running container with 'postgres' in the name
-    CONTAINER_NAME=$(docker ps --format "{{.Names}}" | grep "postgres" | head -1)
+    CONTAINER_NAME=""
 fi
+
+if [ -z "$CONTAINER_NAME" ]; then
+    echo -e "${RED}Error: No running PostgreSQL container found.${NC}"
+    echo "Set TB_POSTGRES_CONTAINER to the container name and retry:"
+    echo "  TB_POSTGRES_CONTAINER=my-postgres $0"
+    exit 1
+fi
+
 DB_USER="${TB_POSTGRES_USER:-tumblebug}"
 DB_NAME="${TB_POSTGRES_DATABASE:-tumblebug}"
+
+# Validate DB_USER and DB_NAME: allow only safe identifier characters
+_validate_identifier() {
+    if ! echo "$1" | grep -Eq '^[a-zA-Z_][a-zA-Z0-9_]*$'; then
+        echo -e "${RED}Error: Invalid identifier '$1' — only letters, digits, and underscores are allowed.${NC}"
+        exit 1
+    fi
+}
+_validate_identifier "$DB_USER"
+_validate_identifier "$DB_NAME"
 DEFAULT_BACKUP="./assets/assets.dump.gz"
 BACKUP_FILE="${1:-$DEFAULT_BACKUP}"
 
@@ -47,8 +64,8 @@ if [ ! -f "$BACKUP_FILE" ]; then
     exit 1
 fi
 
-# Check if container is running
-if ! docker ps | grep -q "$CONTAINER_NAME"; then
+# Check if container is running (exact name match)
+if ! docker ps --format "{{.Names}}" | grep -Fxq "$CONTAINER_NAME"; then
     echo -e "${RED}Error: PostgreSQL container '$CONTAINER_NAME' is not running${NC}"
     echo "Please start the container with: make up"
     exit 1
@@ -94,8 +111,8 @@ WHERE pg_stat_activity.datname = '$DB_NAME'
 
 # Drop and recreate database
 echo -e "${YELLOW}Step 4/5: Recreating database...${NC}"
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null || true
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME;"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS \"$DB_NAME\";" 2>/dev/null || true
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "CREATE DATABASE \"$DB_NAME\";"
 
 # Restore backup
 echo -e "${YELLOW}Step 5/5: Restoring database...${NC}"
