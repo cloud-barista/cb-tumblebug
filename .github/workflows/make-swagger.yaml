@@ -6,6 +6,10 @@ on:
     paths:
       - 'src/core/**/**.go'
       - 'src/interface/rest/server/**/**.go'
+
+permissions:
+  contents: read
+
 jobs:
   update-swagger-doc:
     name: Update Swagger doc
