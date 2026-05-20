@@ -948,15 +948,15 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 	 *	Check and reconcile the subnet info
 	 */
 
-	// [Via Spider] List all VPC info to determine the exact Spider/CSP state of the subnet.
-	log.Debug().Msgf("[Request to Spider] Listing all VPC info for connection: %s", subnetInfo.ConnectionName)
-	allListInfo, allVpcErr := deepScanVpcInfoOn(subnetInfo.ConnectionName)
-	if allVpcErr != nil {
-		log.Error().Err(allVpcErr).Msg("failed to list VPC info from Spider, skipping reconciliation")
-		return emptyRet, apierr.Wrap(allVpcErr, fmt.Sprintf("failed to reconcile subnet '%s'", subnetId))
+	// [Via Spider] Get subnet resource status to determine the exact Spider/CSP state.
+	log.Debug().Msgf("[Request to Spider] Getting subnet resource status for connection: %s", subnetInfo.ConnectionName)
+	subnetStatusResp, err := GetCspResourceStatus(subnetInfo.ConnectionName, model.StrSubnet)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get subnet resource status from Spider, skipping reconciliation")
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile subnet '%s'", subnetId))
 	}
 
-	subnetState := subnetStateInAllVpcInfo(subnetInfo.CspVNetName, subnetInfo.CspResourceName, allListInfo)
+	subnetState := getResourceState(subnetInfo.CspResourceName, subnetStatusResp)
 	log.Debug().Msgf("Subnet '%s' state in Spider: %q", subnetInfo.CspResourceName, subnetState)
 
 	switch subnetState {
@@ -1021,7 +1021,6 @@ func ReconcileSubnet(nsId string, vNetId string, subnetId string) (model.SimpleM
 		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP but has no Spider IID (cspOnly); TB metadata preserved", subnetId)
 		log.Warn().Msg(ret.Message)
 		return ret, nil
-
 
 	case "spiderOnly":
 		/*

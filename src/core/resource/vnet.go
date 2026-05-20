@@ -1174,13 +1174,13 @@ func ReconcileVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 
 	// [Via Spider] List all VPCs to determine the exact Spider/CSP state.
 	log.Debug().Msgf("[Request to Spider] Listing all VPCs for connection: %s", vNetInfo.ConnectionName)
-	allVpcList, err := deepScanResourcesOn(vNetInfo.ConnectionName, model.StrVNet)
+	vpcStatusResp, err := GetCspResourceStatus(vNetInfo.ConnectionName, model.StrVNet)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to list VPCs from Spider, skipping reconciliation")
+		log.Error().Err(err).Msg("failed to get VPC resource status from Spider, skipping reconciliation")
 		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to reconcile vNet '%s'", vNetId))
 	}
 
-	vpcState := vpcStateInSpiderAllList(vNetInfo.CspResourceName, allVpcList)
+	vpcState := getResourceState(vNetInfo.CspResourceName, vpcStatusResp)
 	log.Debug().Msgf("VPC '%s' state in Spider: %q", vNetInfo.CspResourceName, vpcState)
 
 	switch vpcState {
