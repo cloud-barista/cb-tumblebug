@@ -388,7 +388,7 @@ func GetMonitoringData(nsId string, infraId string, metric string) (model.MonRes
 
 			// Create a result for this Node with error information
 			errResult := model.MonResultSimple{
-				NodeId:   nodeId,
+				NodeId: nodeId,
 				Metric: metric,
 				Value:  "Error",
 				Err:    fmt.Sprintf("Failed to get Node IP: %v", err),
@@ -442,7 +442,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, infraID string, nod
 
 	// Initialize result object
 	resultTmp := model.MonResultSimple{
-		NodeId:   nodeID,
+		NodeId: nodeID,
 		Metric: metric,
 	}
 

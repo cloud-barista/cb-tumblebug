@@ -149,9 +149,9 @@ func ConvertSpiderMyImageToTumblebugCustomImage(connConfig model.ConnConfig, spi
 
 	tumblebugCustomImage := model.ImageInfo{
 		// CustomImage-specific fields
-		ResourceType: model.StrCustomImage,
-		CspImageId:   spiderMyImage.IId.SystemId,
-		SourceNodeUid:  "", // This should be filled by caller if available
+		ResourceType:  model.StrCustomImage,
+		CspImageId:    spiderMyImage.IId.SystemId,
+		SourceNodeUid: "", // This should be filled by caller if available
 
 		// Composite primary key fields
 		ProviderName: connConfig.ProviderName,
@@ -262,9 +262,9 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 	// Create ImageInfo based on new structure
 	content := model.ImageInfo{
 		// CustomImage-specific fields
-		ResourceType: resourceType,
-		CspImageId:   callResult.IId.SystemId,
-		SourceNodeUid:  "", // Not available for registered images
+		ResourceType:  resourceType,
+		CspImageId:    callResult.IId.SystemId,
+		SourceNodeUid: "", // Not available for registered images
 
 		// Composite primary key fields
 		Namespace:    nsId,

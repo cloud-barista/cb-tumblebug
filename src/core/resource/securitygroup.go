@@ -104,8 +104,8 @@ func ConvertTbToSpiderSecurityRuleInfo(t model.FirewallRuleInfo) model.SpiderSec
 // It handles single ports, port ranges, and multiple ports/ranges in a comma-separated format.
 func ConvertFirewallRuleRequestObjToInfoObjs(req model.FirewallRuleReq) []model.FirewallRuleInfo {
 	var infos []model.FirewallRuleInfo
-	seperator := ","
-	ports := strings.Split(req.Ports, seperator)
+	separator := ","
+	ports := strings.Split(req.Ports, separator)
 
 	for _, port := range ports {
 		infos = append(infos, model.FirewallRuleInfo{

@@ -100,7 +100,7 @@ func PrintCredentialInfo(credential model.Credential) {
 
 	for credentialholder, providers := range credential.Credentialholder {
 		for provider, credentials := range providers {
-			for key, _ := range credentials {
+			for key := range credentials {
 				t.AppendRow(table.Row{credentialholder, provider, key, "********"})
 			}
 		}

@@ -53,7 +53,7 @@ const defaultRateLimit = 5.0 // req/s for unknown CSPs
 //     until the operation completes (ReleaseLock) or the lock TTL expires.
 type NodeStatusAgent struct {
 	workerCh chan StatusEntry // items ready to be polled
-	limiters sync.Map        // map[string]*rate.Limiter, keyed "provider/region"
+	limiters sync.Map         // map[string]*rate.Limiter, keyed "provider/region"
 	workers  int
 }
 

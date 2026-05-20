@@ -74,7 +74,7 @@ type SpiderDiskInfo struct {
 	// Fields for response
 	IId IID // {NameId, SystemId}
 
-	Status  DiskStatus // DiskCreating | DiskAvailable | DiskAttached | DiskDeleting | DiskError
+	Status    DiskStatus // DiskCreating | DiskAvailable | DiskAttached | DiskDeleting | DiskError
 	OwnerNode IID        // When the Status is DiskAttached
 
 	CreatedTime  time.Time

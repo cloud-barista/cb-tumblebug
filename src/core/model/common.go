@@ -298,7 +298,7 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 	StrSubnet:        func() interface{} { return &SubnetInfo{} },
 	StrDataDisk:      func() interface{} { return &DataDiskInfo{} },
 	StrNLB:           func() interface{} { return &NLBInfo{} },
-	StrNode:            func() interface{} { return &NodeInfo{} },
+	StrNode:          func() interface{} { return &NodeInfo{} },
 	StrInfra:         func() interface{} { return &InfraInfo{} },
 	StrK8s:           func() interface{} { return &K8sClusterInfo{} },
 	StrNamespace:     func() interface{} { return &NsInfo{} },
@@ -449,7 +449,7 @@ type inspectOverview struct {
 	SshKey        int `json:"sshKey"`
 	DataDisk      int `json:"dataDisk"`
 	CustomImage   int `json:"customImage"`
-	Node            int `json:"node"`
+	Node          int `json:"node"`
 	NLB           int `json:"nlb"`
 }
 
@@ -546,7 +546,7 @@ type RegisterResourceAllResult struct {
 	ElapsedTime           int                      `json:"elapsedTime"`
 	RegisteredConnection  int                      `json:"registeredConnection"`
 	AvailableConnection   int                      `json:"availableConnection"`
-	RegisterationOverview RegisterationOverview    `json:"registerationOverview"`
+	RegistrationOverview RegistrationOverview    `json:"registerationOverview"`
 	RegisterationResult   []RegisterResourceResult `json:"registerationResult"`
 }
 
@@ -555,18 +555,18 @@ type RegisterResourceResult struct {
 	ConnectionName        string                `json:"connectionName"`
 	SystemMessage         string                `json:"systemMessage"`
 	ElapsedTime           int                   `json:"elapsedTime"`
-	RegisterationOverview RegisterationOverview `json:"registerationOverview"`
+	RegistrationOverview RegistrationOverview `json:"registerationOverview"`
 	RegisterationOutputs  IdList                `json:"registerationOutputs"`
 }
 
 // RegisterResource is struct for Register Resource
-type RegisterationOverview struct {
+type RegistrationOverview struct {
 	VNet          int `json:"vNet"`
 	SecurityGroup int `json:"securityGroup"`
 	SshKey        int `json:"sshKey"`
 	DataDisk      int `json:"dataDisk"`
 	CustomImage   int `json:"customImage"`
-	Node            int `json:"node"`
+	Node          int `json:"node"`
 	NLB           int `json:"nlb"`
 	Failed        int `json:"failed"`
 }

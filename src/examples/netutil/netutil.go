@@ -116,7 +116,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	fmt.Printf("Netmask: %s\n", netmask)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	log.Debug().Msg("\nCalculate the number of hosts that can be accomodated in a given CIDR block")
+	log.Debug().Msg("\nCalculate the number of hosts that can be accommodated in a given CIDR block")
 
 	hosts, err := netutil.GetSizeOfHosts(cidrBlock)
 	if err != nil {

@@ -75,9 +75,9 @@ func familyCacheKey(region, family string) string {
 //   - imageId:      resolved latest image ID, empty if not found
 //   - creationTime: ISO8601 creation time of the resolved image (as returned by ECS)
 //   - err:          non-nil only on transport/credential/API errors; a legitimate
-//                   "family has no available image" result is returned as
-//                   (imageId="", creationTime="", err=nil) so the caller can
-//                   fall back to the original image ID.
+//     "family has no available image" result is returned as
+//     (imageId="", creationTime="", err=nil) so the caller can
+//     fall back to the original image ID.
 func ResolveLatestIdByFamily(ctx context.Context, region, family string) (imageId string, creationTime string, err error) {
 	region = strings.TrimSpace(region)
 	family = strings.TrimSpace(family)

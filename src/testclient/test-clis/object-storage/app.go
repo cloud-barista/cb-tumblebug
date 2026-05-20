@@ -77,13 +77,13 @@ type TestCase struct {
 
 // TestResult holds the outcome of each lifecycle step for one CSP.
 type TestResult struct {
-	OsId                  string
-	ConnectionName        string
-	CreateStatus          string
-	CheckExistenceStatus  string
-	GetStatus             string
-	DeleteStatus          string
-	SupportStatus         string
+	OsId                 string
+	ConnectionName       string
+	CreateStatus         string
+	CheckExistenceStatus string
+	GetStatus            string
+	DeleteStatus         string
+	SupportStatus        string
 }
 
 func main() {
@@ -266,7 +266,6 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 		result.DeleteStatus = "Success"
 		log.Info().Msgf("[%s] Delete OK", tc.OsId)
 	}
-
 
 	// 5. Get Support Info
 	// Derive cspType from the first segment of connectionName (e.g. "aws-ap-northeast-2" → "aws")

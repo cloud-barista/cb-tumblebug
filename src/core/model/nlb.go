@@ -250,8 +250,8 @@ type NLBInfo struct {
 }
 
 type NLBHealthInfo struct { // Tumblebug
-	AllNodes     []string
-	HealthyNodes []string
+	AllNodes       []string
+	HealthyNodes   []string
 	UnHealthyNodes []string
 }
 

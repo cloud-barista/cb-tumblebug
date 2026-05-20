@@ -61,5 +61,4 @@ type SubnetInfo struct { // Tumblebug
 	BastionNodes  []BastionNode `json:"bastionNodes,omitempty"`
 	KeyValueList  []KeyValue    `json:"keyValueList,omitempty"`
 	Description   string        `json:"description"`
-
 }

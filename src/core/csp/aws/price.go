@@ -40,7 +40,7 @@ type awsPriceItem struct {
 			OperatingSystem string `json:"operatingSystem"`
 			Tenancy         string `json:"tenancy"`
 			PreInstalledSw  string `json:"preInstalledSw"`
-			CapacitystStatus string `json:"capacitystatus"`
+			CapacityStatus  string `json:"capacitystatus"`
 		} `json:"attributes"`
 	} `json:"product"`
 	Terms struct {
@@ -49,7 +49,7 @@ type awsPriceItem struct {
 }
 
 type awsOfferTerm struct {
-	Sku             string                      `json:"sku"`
+	Sku             string                       `json:"sku"`
 	PriceDimensions map[string]awsPriceDimension `json:"priceDimensions"`
 }
 

@@ -460,7 +460,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 
 	// Step 1: Group VMs by CSP and region; also collect bulk-eligible entries.
 	nodeGroups := make(map[string]map[string][]string) // CSP -> Region -> NodeIds
-	nodeGroupInfos := make(map[string]NodeControlInfo)  // NodeId -> ControlInfo
+	nodeGroupInfos := make(map[string]NodeControlInfo) // NodeId -> ControlInfo
 	// bulkEntries holds extra per-node data for the bulk SDK fast-path.
 	// Populated for nodes whose CSP has a registered BatchVMControlHandler and
 	// whose CspResourceId is known. Reboot is always routed through Spider.
@@ -516,7 +516,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
 	var allErrors []error
-	var successCount int    // Spider-path successes
+	var successCount int     // Spider-path successes
 	var bulkHandledCount int // nodes handled by bulk SDK (not routed to Spider)
 	totalNodeCount := len(nodeList)
 
@@ -894,8 +894,8 @@ func postBulkControlCleanup(nsId, infraId string, be bulkControlEntry, action st
 	if err != nil {
 		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, ni.ImageId, model.StrDelete, key) //nolint:errcheck
 	}
-	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, ni.SshKeyId, model.StrDelete, key)          //nolint:errcheck
-	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, ni.VNetId, model.StrDelete, key)              //nolint:errcheck
+	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, ni.SshKeyId, model.StrDelete, key) //nolint:errcheck
+	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, ni.VNetId, model.StrDelete, key)     //nolint:errcheck
 	for _, sg := range ni.SecurityGroupIds {
 		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, sg, model.StrDelete, key) //nolint:errcheck
 	}

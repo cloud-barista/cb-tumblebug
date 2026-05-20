@@ -225,13 +225,13 @@ type VpnHealthCheckResponse struct {
 
 // VpnPingDirectionResult is the result of a single-direction ping test
 type VpnPingDirectionResult struct {
-	Direction string                     `json:"direction" example:"site1→site2"`
-	SourceNode  VpnHealthCheckSourceNodeInfo `json:"sourceNode"`
-	TargetNode  VpnHealthCheckTargetNodeInfo `json:"targetNode"`
-	Reachable bool                       `json:"reachable" example:"true"`
-	Attempts  int                        `json:"attempts" example:"3"`
-	PingStats VpnPingStats               `json:"pingStats"`
-	Message   string                     `json:"message" example:"Ping succeeded on attempt 3/20"`
+	Direction  string                       `json:"direction" example:"site1→site2"`
+	SourceNode VpnHealthCheckSourceNodeInfo `json:"sourceNode"`
+	TargetNode VpnHealthCheckTargetNodeInfo `json:"targetNode"`
+	Reachable  bool                         `json:"reachable" example:"true"`
+	Attempts   int                          `json:"attempts" example:"3"`
+	PingStats  VpnPingStats                 `json:"pingStats"`
+	Message    string                       `json:"message" example:"Ping succeeded on attempt 3/20"`
 }
 
 // VpnPingStats holds parsed ping statistics
@@ -244,14 +244,14 @@ type VpnPingStats struct {
 
 // VpnHealthCheckSourceNodeInfo is source Node info used in health check
 type VpnHealthCheckSourceNodeInfo struct {
-	NodeId      string `json:"nodeId" example:"aws-ap-northeast-2-1"`
+	NodeId    string `json:"nodeId" example:"aws-ap-northeast-2-1"`
 	PrivateIP string `json:"privateIp" example:"10.1.0.4"`
 	CSP       string `json:"csp" example:"aws"`
 }
 
 // VpnHealthCheckTargetNodeInfo is target Node info used in health check
 type VpnHealthCheckTargetNodeInfo struct {
-	NodeId      string `json:"nodeId" example:"gcp-asia-northeast3-1"`
+	NodeId    string `json:"nodeId" example:"gcp-asia-northeast3-1"`
 	PrivateIP string `json:"privateIp" example:"10.2.0.4"`
 	CSP       string `json:"csp" example:"gcp"`
 }
