@@ -13,9 +13,19 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-CONTAINER_NAME="cb-tumblebug-postgres"
-DB_USER="tumblebug"
-DB_NAME="tumblebug"
+# Container name: use env var override, or auto-detect from known names
+if [ -n "$TB_POSTGRES_CONTAINER" ]; then
+    CONTAINER_NAME="$TB_POSTGRES_CONTAINER"
+elif docker ps --format "{{.Names}}" | grep -q "^cb-tumblebug-postgres$"; then
+    CONTAINER_NAME="cb-tumblebug-postgres"
+elif docker ps --format "{{.Names}}" | grep -q "^mc-infra-manager-postgres$"; then
+    CONTAINER_NAME="mc-infra-manager-postgres"
+else
+    # Fallback: first running container with 'postgres' in the name
+    CONTAINER_NAME=$(docker ps --format "{{.Names}}" | grep "postgres" | head -1)
+fi
+DB_USER="${TB_POSTGRES_USER:-tumblebug}"
+DB_NAME="${TB_POSTGRES_DATABASE:-tumblebug}"
 DEFAULT_BACKUP="./assets/assets.dump.gz"
 BACKUP_FILE="${1:-$DEFAULT_BACKUP}"
 
