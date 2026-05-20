@@ -28643,7 +28643,7 @@ const docTemplate = `{
                 },
                 "object": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {}
                 },
                 "status": {
                     "type": "integer",
