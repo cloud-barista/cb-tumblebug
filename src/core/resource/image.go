@@ -60,6 +60,21 @@ func ImageReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// usesTypeIdentifierK8sImage returns true for CSPs whose K8s node images are
+// abstract type identifiers (e.g., AMI type, image family) registered via
+// cloudimage.csv, not real images discovered through the CSP image API.
+//
+// For these CSPs, IsKubernetesImage=true is set only by cloudimage.csv loading
+// (keyword-based detection on VM images is skipped), and K8s cluster creation
+// must validate that the requested imageId resolves to a registered entry.
+func usesTypeIdentifierK8sImage(providerName string) bool {
+	switch csp.ResolveCloudPlatform(providerName) {
+	case csp.AWS, csp.GCP, csp.Tencent:
+		return true
+	}
+	return false
+}
+
 // ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object
 func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage model.SpiderImageInfo) (model.ImageInfo, error) {
 
@@ -132,10 +147,10 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	if common.IsGPUImage(searchStr) {
 		tumblebugImage.IsGPUImage = true
 	}
-	// Check if this is a Kubernetes image
-	// AWS/GCP do not use imageId for K8s node creation; skip keyword-based detection.
-	// IsKubernetesImage=true for AWS/GCP is set only via cloudimage.csv asset loading.
-	if platformName != csp.AWS && platformName != csp.GCP {
+	// Check if this is a Kubernetes image.
+	// Skip keyword-based detection for type-identifier CSPs (AWS/GCP/Tencent):
+	// their IsKubernetesImage=true is established via cloudimage.csv loading only.
+	if !usesTypeIdentifierK8sImage(platformName) {
 		if common.IsK8sImage(searchStr) {
 			tumblebugImage.IsKubernetesImage = true
 		}
@@ -841,56 +856,56 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 
 				// Switch to individual processing if duplicate key error occurs
 				if strings.Contains(result.Error.Error(), "duplicate key value") {
-				log.Warn().Msg("Falling back to individual record processing due to duplicate key issue")
+					log.Warn().Msg("Falling back to individual record processing due to duplicate key issue")
 
-				// Process individual records
-				altTx := model.ORM.Begin()
-				for _, img := range batch {
-					var exists bool
-					altTx.Raw("SELECT EXISTS(SELECT 1 FROM image_infos WHERE namespace = ? AND provider_name = ? AND csp_image_name = ?)",
-						img.Namespace, img.ProviderName, img.CspImageName).Scan(&exists)
+					// Process individual records
+					altTx := model.ORM.Begin()
+					for _, img := range batch {
+						var exists bool
+						altTx.Raw("SELECT EXISTS(SELECT 1 FROM image_infos WHERE namespace = ? AND provider_name = ? AND csp_image_name = ?)",
+							img.Namespace, img.ProviderName, img.CspImageName).Scan(&exists)
 
-					if exists {
-						// Update - using composite key
-						if err := altTx.Model(&model.ImageInfo{}).
-							Where("namespace = ? AND provider_name = ? AND csp_image_name = ?",
-								img.Namespace, img.ProviderName, img.CspImageName).
-							Updates(img).Error; err != nil {
-							altTx.Rollback()
-							return err
-						}
-					} else {
-						// Insert
-						if err := altTx.Create(&img).Error; err != nil {
-							altTx.Rollback()
-							return err
+						if exists {
+							// Update - using composite key
+							if err := altTx.Model(&model.ImageInfo{}).
+								Where("namespace = ? AND provider_name = ? AND csp_image_name = ?",
+									img.Namespace, img.ProviderName, img.CspImageName).
+								Updates(img).Error; err != nil {
+								altTx.Rollback()
+								return err
+							}
+						} else {
+							// Insert
+							if err := altTx.Create(&img).Error; err != nil {
+								altTx.Rollback()
+								return err
+							}
 						}
 					}
+
+					if err := altTx.Commit().Error; err != nil {
+						return err
+					}
+
+					log.Info().Msgf("Individual processing completed for batch %d-%d", i, end-1)
+					break
 				}
 
-				if err := altTx.Commit().Error; err != nil {
+				if lastErr != nil {
+					log.Error().Err(lastErr).Msgf("Failed after %d deadlock retry attempts for batch %d-%d", maxRetries, i, end-1)
+					return lastErr
+				}
+
+				log.Error().Err(result.Error).Msg("Error inserting images in bulk")
+				return result.Error
+			} else {
+				// Success - commit and exit retry loop
+				if err := tx.Commit().Error; err != nil {
+					log.Error().Err(err).Msg("Failed to commit transaction")
 					return err
 				}
-
-				log.Info().Msgf("Individual processing completed for batch %d-%d", i, end-1)
 				break
 			}
-
-			if lastErr != nil {
-				log.Error().Err(lastErr).Msgf("Failed after %d deadlock retry attempts for batch %d-%d", maxRetries, i, end-1)
-				return lastErr
-			}
-
-			log.Error().Err(result.Error).Msg("Error inserting images in bulk")
-			return result.Error
-		} else {
-			// Success - commit and exit retry loop
-			if err := tx.Commit().Error; err != nil {
-				log.Error().Err(err).Msg("Failed to commit transaction")
-				return err
-			}
-			break
-		}
 		}
 
 		//log.Info().Msgf("Bulk insert/update success: %d records affected", result.RowsAffected)
@@ -1753,9 +1768,9 @@ func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, c
 		imageInfo.OSDistribution = osDistribution
 	}
 
-	// AWS/GCP rows registered in cloudimage.csv are always K8s node image types.
-	// They are not real imageIds but type identifiers (ami-type / image-type).
-	if strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.AWS) || strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.GCP) {
+	// Type-identifier CSP rows registered in cloudimage.csv are always K8s node image types.
+	// They are not real imageIds but abstract type identifiers (ami-type / image-type / NodePoolOs).
+	if usesTypeIdentifierK8sImage(providerName) {
 		imageInfo.IsKubernetesImage = true
 	}
 
@@ -1807,9 +1822,9 @@ func mergeCSPDetails(target *model.ImageInfo, source *model.ImageInfo) {
 	target.CreationDate = source.CreationDate
 	target.ImageStatus = source.ImageStatus
 	target.IsGPUImage = source.IsGPUImage
-	// Do not overwrite IsKubernetesImage for AWS/GCP CSV-loaded images.
+	// Do not overwrite IsKubernetesImage for type-identifier CSPs (AWS/GCP/Tencent).
 	// Their IsKubernetesImage=true is set by policy (cloudimage.csv), not by CSP lookup.
-	if !strings.EqualFold(csp.ResolveCloudPlatform(target.ProviderName), csp.AWS) && !strings.EqualFold(csp.ResolveCloudPlatform(target.ProviderName), csp.GCP) {
+	if !usesTypeIdentifierK8sImage(target.ProviderName) {
 		target.IsKubernetesImage = source.IsKubernetesImage
 	}
 	target.Details = source.Details
@@ -1831,8 +1846,9 @@ func updateExistingImageFromCSV(existingImage model.ImageInfo, osType, descripti
 		existingImage.OSDistribution = osDistribution
 	}
 
-	// Re-apply policy: AWS/GCP CSV-registered images are always K8s node image types.
-	if strings.EqualFold(csp.ResolveCloudPlatform(existingImage.ProviderName), csp.AWS) || strings.EqualFold(csp.ResolveCloudPlatform(existingImage.ProviderName), csp.GCP) {
+	// Re-apply policy: type-identifier CSP images registered via cloudimage.csv
+	// are always K8s node image types.
+	if usesTypeIdentifierK8sImage(existingImage.ProviderName) {
 		existingImage.IsKubernetesImage = true
 	}
 

@@ -39,3 +39,13 @@ AWS,all,WINDOWS_CORE_2025_x86_64,Windows Server 2025,"EKS Node - Windows Server 
 GCP,all,COS_CONTAINERD,Container-Optimized OS,"GKE Node - COS, containerd, x86_64/ARM64",,k8s,x86_64,COS_CONTAINERD
 GCP,all,UBUNTU_CONTAINERD,Ubuntu 22.04 LTS,"GKE Node - Ubuntu 22.04, containerd, x86_64/ARM64",,k8s,x86_64,UBUNTU_CONTAINERD
 GCP,all,WINDOWS_LTSC_CONTAINERD,Windows Server 2019 LTSC,"GKE Node - Windows Server 2019 LTSC, containerd, x86_64",,k8s,x86_64,WINDOWS_LTSC_CONTAINERD
+TENCENT,all,tlinux4_x86_64_public,TencentOS Server 4,"TKE Node - TencentOS Server 4, x86_64",,k8s,x86_64,tlinux4_x86_64_public
+TENCENT,all,tlinux3.1x86_64,TencentOS Server 3.1 (TK4),"TKE Node - TencentOS Server 3.1 (TK4), x86_64",,k8s,x86_64,tlinux3.1x86_64
+TENCENT,all,tlinux2.4(tkernel4)x86_64_HCC,TencentOS Server 2.4 (TK4) HCC,"TKE Node - TencentOS Server 2.4 (TK4) HCC, x86_64",,k8s,x86_64,tlinux2.4(tkernel4)x86_64_HCC
+TENCENT,all,tlinux2.4(tkernel4)x86_64,TencentOS Server 2.4 (TK4),"TKE Node - TencentOS Server 2.4 (TK4), x86_64",,k8s,x86_64,tlinux2.4(tkernel4)x86_64
+TENCENT,all,tlinux2.4x86_64,TencentOS Server 2.4,"TKE Node - TencentOS Server 2.4 (legacy), x86_64",,k8s,x86_64,tlinux2.4x86_64
+TENCENT,all,centos7.8.0_x64,CentOS 7.8,"TKE Node - CentOS 7.8, x86_64",,k8s,x86_64,centos7.8.0_x64
+TENCENT,all,centos8.0x86_64,CentOS 8.0,"TKE Node - CentOS 8.0, x86_64 (Beta)",,k8s,x86_64,centos8.0x86_64
+TENCENT,all,ubuntu20.04x86_64,Ubuntu 20.04,"TKE Node - Ubuntu 20.04, x86_64 (Beta)",,k8s,x86_64,ubuntu20.04x86_64
+TENCENT,all,ubuntu22.04x86_64,Ubuntu 22.04,"TKE Node - Ubuntu 22.04, x86_64",,k8s,x86_64,ubuntu22.04x86_64
+TENCENT,all,redhat7.9x86_64,Red Hat Enterprise Linux 7.9,"TKE Node - Red Hat Enterprise Linux 7.9, x86_64",,k8s,x86_64,redhat7.9x86_64
