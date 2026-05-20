@@ -1927,7 +1927,7 @@ func getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId string) (string, error) 
 }
 
 func runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName string, commands []string) (*model.K8sClusterContainerCmdResults, error) {
-	log.Debug().Msgf("[Run Remote Command To K8sCluster's Conatiner] %s, %s, %s, %s", k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName)
+	log.Debug().Msgf("[Run Remote Command To K8sCluster's Container] %s, %s, %s, %s", k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName)
 
 	results := &model.K8sClusterContainerCmdResults{}
 
@@ -1999,7 +1999,7 @@ func runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName
 }
 
 func transferFileToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName string, fileData []byte, fileName, targetPath string) (*model.K8sClusterContainerCmdResult, error) {
-	log.Debug().Msgf("[Transfer a File To K8sCluster's Conatiner] %s, %s, %s, %s, %s, %s", k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName, fileName, targetPath)
+	log.Debug().Msgf("[Transfer a File To K8sCluster's Container] %s, %s, %s, %s, %s, %s", k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName, fileName, targetPath)
 
 	result := &model.K8sClusterContainerCmdResult{}
 

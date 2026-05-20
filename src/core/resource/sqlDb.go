@@ -51,7 +51,7 @@ const (
 	// // In Use status
 	// SqlDBInUse SqlDBStatus = "InUse" // The network is currently in use.
 
-	// // Unknwon status
+	// // Unknown status
 	// SqlDBUnknown SqlDBStatus = "Unknown" // The network status is unknown.
 
 	// // NetworkError Handling
@@ -466,7 +466,7 @@ func CreateSqlDB(ctx context.Context, nsId string, sqlDbReq *model.RestPostSqlDB
 	// apply
 	// wait until the task is completed
 	// or response immediately with requestId as it is a time-consuming task
-	// and provide seperate api to check the status
+	// and provide separate api to check the status
 	method = "POST"
 	url = fmt.Sprintf("%s/tr/%s/sql-db", epTerrarium, trId)
 	requestBody = clientManager.NoBody

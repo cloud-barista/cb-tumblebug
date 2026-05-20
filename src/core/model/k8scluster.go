@@ -135,7 +135,7 @@ type K8sNodeGroupReq struct {
 	ImageId      string `json:"imageId" example:"image-01"`
 	SpecId       string `json:"specId" example:"spec-01"`
 	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize int    `json:"rootDiskSize" example:"40"` // Root disk size in GB. 0 = use CSP default.
+	RootDiskSize int    `json:"rootDiskSize" example:"40"`                                    // Root disk size in GB. 0 = use CSP default.
 	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
 
 	// autoscale config.
@@ -536,8 +536,8 @@ type K8sClusterDynamicReq struct {
 	// ImageId is field for id of a image in common namespace
 	ImageId string `json:"imageId" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
 
-	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"` // Root disk size in GB. 0 = use CSP default.
+	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"`                                    // Root disk size in GB. 0 = use CSP default.
 
 	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
 	DesiredNodeSize int    `json:"desiredNodeSize,omitempty" example:"1"`
@@ -565,8 +565,8 @@ type K8sNodeGroupDynamicReq struct {
 	// ImageId is field for id of a image in common namespace
 	ImageId string `json:"imageId" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
 
-	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"` // Root disk size in GB. 0 = use CSP default.
+	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"`                                    // Root disk size in GB. 0 = use CSP default.
 
 	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
 	DesiredNodeSize int    `json:"desiredNodeSize,omitempty" example:"1"`

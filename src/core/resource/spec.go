@@ -516,8 +516,8 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 		tumblebugSpec.ConnectionName = connConfig.ConfigName
 		tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
 		tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
-		tumblebugSpec.InfraType = model.StrNode  // default value should be enhanced later
-		tumblebugSpec.SystemLabel = "auto-gen" // default value
+		tumblebugSpec.InfraType = model.StrNode // default value should be enhanced later
+		tumblebugSpec.SystemLabel = "auto-gen"  // default value
 		tumblebugSpec.AssociatedObjectList = []string{}
 
 		tumblebugSpec.CostPerHour = -1

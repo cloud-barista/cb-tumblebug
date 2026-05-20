@@ -481,7 +481,7 @@ func GetNLB(nsId string, infraId string, resourceId string) (model.NLBInfo, erro
 	return res, err
 }
 
-// GetMcNlbAccess returns the requested TB G-NLB access info (currenly Infra)
+// GetMcNlbAccess returns the requested TB G-NLB access info (currently Infra)
 func GetMcNlbAccess(nsId string, infraId string) (*model.InfraAccessInfo, error) {
 	nlbInfraId := infraId + nlbPostfix
 	return GetInfraAccessInfo(nsId, nlbInfraId, "")

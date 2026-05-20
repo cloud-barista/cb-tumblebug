@@ -29,7 +29,7 @@ const (
 type MonAgentInstallReq struct {
 	NsId     string `json:"nsId,omitempty"`
 	InfraId  string `json:"infraId,omitempty"`
-	NodeId     string `json:"nodeId,omitempty"`
+	NodeId   string `json:"nodeId,omitempty"`
 	PublicIp string `json:"publicIp,omitempty"`
 	Port     string `json:"port,omitempty"`
 	UserName string `json:"userName,omitempty"`
@@ -40,7 +40,7 @@ type MonAgentInstallReq struct {
 // MonResultSimple struct is for containing node monitoring results
 type MonResultSimple struct {
 	Metric string `json:"metric"`
-	NodeId   string `json:"nodeId"`
+	NodeId string `json:"nodeId"`
 	Value  string `json:"value"`
 	Err    string `json:"err"`
 }

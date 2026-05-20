@@ -34,7 +34,7 @@ type SnapshotReq struct {
 type SpiderMyImageReq struct {
 	ConnectionName string
 	ReqInfo        struct {
-		Name     string
+		Name       string
 		SourceNode string
 	}
 }
@@ -65,15 +65,15 @@ type CustomImageReq struct {
 
 	ConnectionName string `json:"connectionName"`
 	Name           string `json:"name" validate:"required"`
-	SourceNodeId     string `json:"sourceNodeId"`
+	SourceNodeId   string `json:"sourceNodeId"`
 	Description    string `json:"description"`
 }
 
 // NodeSnapshotResult represents the result of creating a snapshot for a single Node
 type NodeSnapshotResult struct {
 	NodeGroupId string    `json:"nodeGroupId" example:"g1"`
-	NodeId        string    `json:"nodeId" example:"g1-1"`
-	NodeName      string    `json:"nodeName" example:"aws-ap-northeast-2-g1-1"`
+	NodeId      string    `json:"nodeId" example:"g1-1"`
+	NodeName    string    `json:"nodeName" example:"aws-ap-northeast-2-g1-1"`
 	Status      string    `json:"status" example:"Success" enums:"Success,Failed"`
 	ImageId     string    `json:"imageId,omitempty" example:"custom-image-g1"`
 	ImageInfo   ImageInfo `json:"imageInfo,omitempty"`
@@ -82,10 +82,10 @@ type NodeSnapshotResult struct {
 
 // InfraSnapshotResult represents the result of creating snapshots for an entire Infra
 type InfraSnapshotResult struct {
-	InfraId      string             `json:"infraId" example:"infra01"`
-	Namespace    string             `json:"namespace" example:"default"`
-	SuccessCount int                `json:"successCount" example:"3"`
-	FailCount    int                `json:"failCount" example:"0"`
+	InfraId      string               `json:"infraId" example:"infra01"`
+	Namespace    string               `json:"namespace" example:"default"`
+	SuccessCount int                  `json:"successCount" example:"3"`
+	FailCount    int                  `json:"failCount" example:"0"`
 	Results      []NodeSnapshotResult `json:"results"`
 }
 

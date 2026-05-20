@@ -39,8 +39,8 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.InfraSshCmdR
 	for i, result := range internal {
 		apiResult := model.SshCmdResultForAPI{
 			InfraId: result.InfraId,
-			NodeId:    result.NodeId,
-			NodeIp:    result.NodeIp,
+			NodeId:  result.NodeId,
+			NodeIp:  result.NodeIp,
 			Command: result.Command,
 			Stdout:  result.Stdout,
 			Stderr:  result.Stderr,
@@ -123,9 +123,9 @@ func RestPostCmdInfra(c echo.Context) error {
 					Type:      model.EventCommandDone,
 					Timestamp: time.Now().Format(time.RFC3339Nano),
 					Summary: &model.CommandDoneSummary{
-						TotalNodes:       0,
-						CompletedNodes:   0,
-						FailedNodes:      0,
+						TotalNodes:     0,
+						CompletedNodes: 0,
+						FailedNodes:    0,
 						ElapsedSeconds: 0,
 						Error:          err.Error(),
 					},
@@ -844,7 +844,7 @@ func RestGetNodeHandlingCommandCount(c echo.Context) error {
 	}
 
 	result := model.HandlingCommandCountResponse{
-		NodeId:          nodeId,
+		NodeId:        nodeId,
 		HandlingCount: handlingCount,
 	}
 	return clientManager.EndRequestWithLog(c, nil, result)
@@ -876,7 +876,7 @@ func RestGetInfraHandlingCommandCount(c echo.Context) error {
 
 	result := model.InfraHandlingCommandCountResponse{
 		InfraId:            infraId,
-		NodeHandlingCounts:   nodeHandlingCounts,
+		NodeHandlingCounts: nodeHandlingCounts,
 		TotalHandlingCount: totalHandlingCount,
 	}
 	return clientManager.EndRequestWithLog(c, nil, result)

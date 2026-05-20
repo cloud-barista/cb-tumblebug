@@ -143,7 +143,7 @@ var credentialKeyMap = map[string]map[string]string{
 		"AccessKeySecret": "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
 	},
 	"ibm": {
-		"ApiKey":    "IC_API_KEY",
+		"ApiKey":      "IC_API_KEY",
 		"S3AccessKey": "IBM_S3_ACCESS_KEY",
 		"S3SecretKey": "IBM_S3_SECRET_KEY",
 	},
@@ -152,7 +152,7 @@ var credentialKeyMap = map[string]map[string]string{
 		"ncloud_secret_key": "NCLOUD_SECRET_KEY",
 	},
 	"tencent": {
-		"SecretId": "TENCENTCLOUD_SECRET_ID",
+		"SecretId":  "TENCENTCLOUD_SECRET_ID",
 		"SecretKey": "TENCENTCLOUD_SECRET_KEY",
 	},
 	"kt": {

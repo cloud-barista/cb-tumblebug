@@ -48,10 +48,10 @@ func CreateNodeSnapshot(nsId string, infraId string, nodeId string, snapshotReq 
 	requestBody := model.SpiderMyImageReq{
 		ConnectionName: node.ConnectionName,
 		ReqInfo: struct {
-			Name     string
+			Name       string
 			SourceNode string
 		}{
-			Name:     snapshotName,
+			Name:       snapshotName,
 			SourceNode: node.CspResourceName,
 		},
 	}
@@ -131,9 +131,9 @@ func CreateNodeSnapshot(nsId string, infraId string, nodeId string, snapshotReq 
 	// Use ConnectionConfig from Node (already contains all necessary information)
 	tempImageInfo := model.ImageInfo{
 		// CustomImage-specific fields
-		ResourceType: model.StrCustomImage,
-		CspImageId:   tempSpiderMyImageInfo.IId.SystemId,
-		SourceNodeUid:  node.Uid,
+		ResourceType:  model.StrCustomImage,
+		CspImageId:    tempSpiderMyImageInfo.IId.SystemId,
+		SourceNodeUid: node.Uid,
 
 		// Composite primary key fields (inherited from source image)
 		Namespace:    nsId,
@@ -236,8 +236,8 @@ func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.Snapshot
 	// Snapshot task structure with provider information
 	type snapshotTask struct {
 		nodegroupId    string
-		nodeId           string
-		nodeName         string
+		nodeId         string
+		nodeName       string
 		providerName   string
 		connectionName string
 	}
@@ -256,8 +256,8 @@ func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.Snapshot
 		if node.Status == model.StatusRunning {
 			tasks = append(tasks, snapshotTask{
 				nodegroupId:    node.NodeGroupId,
-				nodeId:           node.Id,
-				nodeName:         node.Name,
+				nodeId:         node.Id,
+				nodeName:       node.Name,
 				providerName:   node.ConnectionConfig.ProviderName,
 				connectionName: node.ConnectionName,
 			})
@@ -314,8 +314,8 @@ func CreateInfraSnapshot(nsId string, infraId string, snapshotReq model.Snapshot
 
 			nodeResult := model.NodeSnapshotResult{
 				NodeGroupId: t.nodegroupId,
-				NodeId:        t.nodeId,
-				NodeName:      t.nodeName,
+				NodeId:      t.nodeId,
+				NodeName:    t.nodeName,
 			}
 
 			// Generate unique snapshot name per VM

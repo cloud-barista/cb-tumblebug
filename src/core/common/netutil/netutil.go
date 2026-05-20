@@ -306,7 +306,7 @@ func SubnettingBy(request SubnettingRequest) (Network, error) {
 	return subnetting(*network, request.SubnettingRules)
 }
 
-// subnetting recursivly divides a CIDR block into subnets according to the subnetting rules.
+// subnetting recursively divides a CIDR block into subnets according to the subnetting rules.
 func subnetting(network Network, rules []SubnettingRule) (Network, error) {
 	// return the network if there are no more rule
 	if len(rules) == 0 {

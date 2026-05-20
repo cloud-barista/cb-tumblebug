@@ -80,7 +80,7 @@ func releaseBastionSlot(bastionEndpoint string) {
 // can publish real-time log lines without changing its function signature.
 type sshLogMeta struct {
 	XRequestId   string
-	NodeId         string
+	NodeId       string
 	CommandIndex int
 }
 
@@ -106,7 +106,7 @@ type cancelInfo struct {
 	CancelFunc context.CancelFunc
 	NsId       string
 	InfraId    string
-	NodeId       string
+	NodeId     string
 	XRequestId string
 	Index      int
 }
@@ -421,9 +421,9 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 		Type:      model.EventCommandDone,
 		Timestamp: time.Now().Format(time.RFC3339Nano),
 		Summary: &model.CommandDoneSummary{
-			TotalNodes:       len(nodeList),
-			CompletedNodes:   completedNodes,
-			FailedNodes:      failedNodes,
+			TotalNodes:     len(nodeList),
+			CompletedNodes: completedNodes,
+			FailedNodes:    failedNodes,
 			ElapsedSeconds: elapsedSec,
 		},
 	})
@@ -437,8 +437,8 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, no
 
 	result := model.SshCmdResult{
 		InfraId: infraId,
-		NodeId:    nodeId,
-		NodeIp:    nodeIP,
+		NodeId:  nodeId,
+		NodeIp:  nodeIP,
 		Command: make(map[int]string),
 		Stdout:  make(map[int]string),
 		Stderr:  make(map[int]string),
@@ -1669,7 +1669,7 @@ CONNECTION_ESTABLISHED:
 					}
 					PublishCommandEvent(logMeta.XRequestId, model.CommandStreamEvent{
 						Type:         model.EventCommandLog,
-						NodeId:         logMeta.NodeId,
+						NodeId:       logMeta.NodeId,
 						CommandIndex: logMeta.CommandIndex,
 						Timestamp:    time.Now().Format(time.RFC3339Nano),
 						Log: &model.CommandLogEntry{
@@ -1699,7 +1699,7 @@ CONNECTION_ESTABLISHED:
 					}
 					PublishCommandEvent(logMeta.XRequestId, model.CommandStreamEvent{
 						Type:         model.EventCommandLog,
-						NodeId:         logMeta.NodeId,
+						NodeId:       logMeta.NodeId,
 						CommandIndex: logMeta.CommandIndex,
 						Timestamp:    time.Now().Format(time.RFC3339Nano),
 						Log: &model.CommandLogEntry{
@@ -1815,8 +1815,8 @@ func TransferFileToInfra(nsId string, infraId string, nodeGroupId string, nodeId
 			// Create the result for this Node
 			result := model.SshCmdResult{
 				InfraId: infraId,
-				NodeId:    nodeId,
-				NodeIp:    targetNodeIP,
+				NodeId:  nodeId,
+				NodeIp:  targetNodeIP,
 				Command: map[int]string{0: fmt.Sprintf("scp %s to %s", fileName, targetPath)},
 				Stdout:  map[int]string{},
 				Stderr:  map[int]string{},
@@ -1934,8 +1934,8 @@ func TransferFileAndCmdToInfra(nsId string, infraId string, nodeGroupId string, 
 			}
 			cmdResult := model.SshCmdResult{
 				InfraId: infraId,
-				NodeId:    nodeId,
-				NodeIp:    nodeIp,
+				NodeId:  nodeId,
+				NodeIp:  nodeIp,
 				Command: map[int]string{0: command},
 				Stdout:  stdout,
 				Stderr:  stderr,
@@ -3295,7 +3295,7 @@ func AddCommandStatusInfo(nsId, infraId, nodeId, xRequestId, commandRequested, c
 	if xRequestId != "" {
 		PublishCommandEvent(xRequestId, model.CommandStreamEvent{
 			Type:         model.EventCommandStatus,
-			NodeId:         nodeId,
+			NodeId:       nodeId,
 			CommandIndex: nextIndex,
 			Timestamp:    time.Now().Format(time.RFC3339Nano),
 			Status: &model.CommandStatusInfo{
@@ -3399,7 +3399,7 @@ func UpdateCommandStatusInfo(nsId, infraId, nodeId string, index int, status mod
 	if updatedXRequestId != "" && updatedStatusInfo != nil {
 		PublishCommandEvent(updatedXRequestId, model.CommandStreamEvent{
 			Type:         model.EventCommandStatus,
-			NodeId:         nodeId,
+			NodeId:       nodeId,
 			CommandIndex: index,
 			Timestamp:    time.Now().Format(time.RFC3339Nano),
 			Status:       updatedStatusInfo,
@@ -3907,19 +3907,19 @@ func GetInfraActiveCommands(nsId, infraId string, statusFilter []model.CommandEx
 				// Create individual task for each VM's command
 				for _, cmd := range commandList.Commands {
 					task := model.ExecutionTask{
-						TaskId:         fmt.Sprintf("%s:%s:%d", cmd.XRequestId, nodeId, cmd.Index), // Unique per VM
-						XRequestId:     cmd.XRequestId,
-						NsId:           ns,
-						InfraId:        infra,
-						NodeId:           nodeId,
-						CommandIndex:   cmd.Index,
-						Command:        []string{cmd.CommandRequested},
-						Status:         cmd.Status,
-						StartedAt:      cmd.StartedTime,
-						CompletedAt:    cmd.CompletedTime,
-						ElapsedSeconds: cmd.ElapsedTime, // Already in seconds
-						Message:        cmd.ResultSummary,
-						TargetNodeCount:  1,
+						TaskId:          fmt.Sprintf("%s:%s:%d", cmd.XRequestId, nodeId, cmd.Index), // Unique per VM
+						XRequestId:      cmd.XRequestId,
+						NsId:            ns,
+						InfraId:         infra,
+						NodeId:          nodeId,
+						CommandIndex:    cmd.Index,
+						Command:         []string{cmd.CommandRequested},
+						Status:          cmd.Status,
+						StartedAt:       cmd.StartedTime,
+						CompletedAt:     cmd.CompletedTime,
+						ElapsedSeconds:  cmd.ElapsedTime, // Already in seconds
+						Message:         cmd.ResultSummary,
+						TargetNodeCount: 1,
 						CompletedNodeCount: func() int {
 							if isTerminalStatus(cmd.Status) {
 								return 1

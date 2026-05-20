@@ -936,14 +936,14 @@ func registerConnectionsParallel(ctx context.Context, nsId string, connConfigs [
 	// Aggregate overview counts
 	errorConnectionCnt := 0
 	for _, k := range output.RegisterationResult {
-		output.RegisterationOverview.VNet += k.RegisterationOverview.VNet
-		output.RegisterationOverview.SecurityGroup += k.RegisterationOverview.SecurityGroup
-		output.RegisterationOverview.SshKey += k.RegisterationOverview.SshKey
-		output.RegisterationOverview.DataDisk += k.RegisterationOverview.DataDisk
-		output.RegisterationOverview.CustomImage += k.RegisterationOverview.CustomImage
-		output.RegisterationOverview.Node += k.RegisterationOverview.Node
-		output.RegisterationOverview.NLB += k.RegisterationOverview.NLB
-		output.RegisterationOverview.Failed += k.RegisterationOverview.Failed
+		output.RegistrationOverview.VNet += k.RegistrationOverview.VNet
+		output.RegistrationOverview.SecurityGroup += k.RegistrationOverview.SecurityGroup
+		output.RegistrationOverview.SshKey += k.RegistrationOverview.SshKey
+		output.RegistrationOverview.DataDisk += k.RegistrationOverview.DataDisk
+		output.RegistrationOverview.CustomImage += k.RegistrationOverview.CustomImage
+		output.RegistrationOverview.Node += k.RegistrationOverview.Node
+		output.RegistrationOverview.NLB += k.RegistrationOverview.NLB
+		output.RegistrationOverview.Failed += k.RegistrationOverview.Failed
 
 		if k.SystemMessage != "" {
 			errorConnectionCnt++
@@ -988,7 +988,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 				}
 				_, err = resource.RegisterCustomImageWithId(nsId, &req)
-				appendResult(&result, model.StrCustomImage, req.Name, err, &result.RegisterationOverview.CustomImage)
+				appendResult(&result, model.StrCustomImage, req.Name, err, &result.RegistrationOverview.CustomImage)
 			}
 		}
 	}
@@ -1004,7 +1004,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed VNet (registered to CB-TB)",
 				}
 				_, err = resource.RegisterVNet(ctx, nsId, &req)
-				appendResult(&result, model.StrVNet, req.Name, err, &result.RegisterationOverview.VNet)
+				appendResult(&result, model.StrVNet, req.Name, err, &result.RegistrationOverview.VNet)
 			}
 		}
 	}
@@ -1020,7 +1020,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					VNetId: "unknown", Description: "Ref name: " + r.RefNameOrId + ". CSP managed Security Group (registered to CB-TB)",
 				}
 				_, err = resource.CreateSecurityGroup(ctx, nsId, &req, optionFlag)
-				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegisterationOverview.SecurityGroup)
+				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegistrationOverview.SecurityGroup)
 			}
 		}
 	}
@@ -1037,7 +1037,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed SSH Key (registered to CB-TB)",
 				}
 				_, err = resource.CreateSshKey(ctx, nsId, &req, optionFlag)
-				appendResult(&result, model.StrSSHKey, req.Name, err, &result.RegisterationOverview.SshKey)
+				appendResult(&result, model.StrSSHKey, req.Name, err, &result.RegistrationOverview.SshKey)
 			}
 		}
 	}
@@ -1068,7 +1068,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 			// Phase 1: Register all Nodes and collect network info
 			// We'll use temporary nodegroup names first, then reorganize
 			type registeredNodeInfo struct {
-				nodeId       string
+				nodeId     string
 				vnetId     string
 				subnetId   string
 				networkKey string
@@ -1106,7 +1106,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 					}
 					infraInfo, err := CreateInfraGroupNode(ctx, nsId, infraName, nodeGroupReq, true)
-					appendResult(&result, model.StrNode, tempNodeGroupName, err, &result.RegisterationOverview.Node)
+					appendResult(&result, model.StrNode, tempNodeGroupName, err, &result.RegistrationOverview.Node)
 					if err == nil {
 						registeredInfras[infraName] = true
 						// Get the Node ID from the newly added Node
@@ -1128,7 +1128,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						}},
 					}
 					infraInfo, err := CreateInfra(ctx, nsId, &req, optionFlag, false)
-					appendResult(&result, model.StrNode, tempNodeGroupName, err, &result.RegisterationOverview.Node)
+					appendResult(&result, model.StrNode, tempNodeGroupName, err, &result.RegistrationOverview.Node)
 
 					if err == nil {
 						registeredInfras[infraName] = true
@@ -1150,7 +1150,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					if err == nil && nodeInfo.VNetId != "" {
 						networkKey := fmt.Sprintf("%s_%s", nodeInfo.VNetId, nodeInfo.SubnetId)
 						registeredNodes = append(registeredNodes, registeredNodeInfo{
-							nodeId:       nodeId,
+							nodeId:     nodeId,
 							vnetId:     nodeInfo.VNetId,
 							subnetId:   nodeInfo.SubnetId,
 							networkKey: networkKey,
@@ -1244,7 +1244,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed Data Disk (registered to CB-TB)",
 				}
 				_, err = resource.CreateDataDisk(ctx, nsId, &req, optionFlag)
-				appendResult(&result, model.StrDataDisk, req.Name, err, &result.RegisterationOverview.DataDisk)
+				appendResult(&result, model.StrDataDisk, req.Name, err, &result.RegistrationOverview.DataDisk)
 			}
 		}
 	}
@@ -1297,7 +1297,7 @@ func validateReqOptions(doMap map[string]bool) error {
 		model.StrVNet:          true,
 		model.StrSecurityGroup: true,
 		model.StrSSHKey:        true,
-		model.StrNode:            true,
+		model.StrNode:          true,
 		model.StrDataDisk:      true,
 	}
 
@@ -1309,7 +1309,7 @@ func validateReqOptions(doMap map[string]bool) error {
 
 	requiredDeps := map[string][]string{
 		model.StrDataDisk:      {model.StrNode},
-		model.StrNode:            {model.StrSecurityGroup, model.StrSSHKey},
+		model.StrNode:          {model.StrSecurityGroup, model.StrSSHKey},
 		model.StrSecurityGroup: {model.StrVNet},
 	}
 
@@ -1336,7 +1336,7 @@ func appendResult(result *model.RegisterResourceResult, resType, name string, er
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to register %s: %s", resType, name)
 		status = " [Failed] " + err.Error()
-		result.RegisterationOverview.Failed++
+		result.RegistrationOverview.Failed++
 	} else {
 		if successCounter != nil {
 			*successCounter++

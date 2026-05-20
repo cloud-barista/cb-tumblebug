@@ -131,9 +131,3 @@ func getAWSCreds(ctx context.Context) (accessKey, secretKey string, err error) {
 	}
 	return accessKey, secretKey, nil
 }
-
-
-
-
-
-

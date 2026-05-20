@@ -28277,7 +28277,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "registerationOverview": {
-                    "$ref": "#/definitions/model.RegisterationOverview"
+                    "$ref": "#/definitions/model.RegistrationOverview"
                 },
                 "registerationResult": {
                     "type": "array",
@@ -28303,7 +28303,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.IdList"
                 },
                 "registerationOverview": {
-                    "$ref": "#/definitions/model.RegisterationOverview"
+                    "$ref": "#/definitions/model.RegistrationOverview"
                 },
                 "systemMessage": {
                     "type": "string"
@@ -28357,7 +28357,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RegisterationOverview": {
+        "model.RegistrationOverview": {
             "type": "object",
             "properties": {
                 "customImage": {

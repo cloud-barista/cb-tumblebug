@@ -23422,7 +23422,7 @@ components:
         elapsedTime:
           type: integer
         registerationOverview:
-          $ref: '#/components/schemas/model.RegisterationOverview'
+          $ref: '#/components/schemas/model.RegistrationOverview'
         registerationResult:
           type: array
           items:
@@ -23439,7 +23439,7 @@ components:
         registerationOutputs:
           $ref: '#/components/schemas/model.IdList'
         registerationOverview:
-          $ref: '#/components/schemas/model.RegisterationOverview'
+          $ref: '#/components/schemas/model.RegistrationOverview'
         systemMessage:
           type: string
     model.RegisterSubnetReq:
@@ -23474,7 +23474,7 @@ components:
           type: string
         name:
           type: string
-    model.RegisterationOverview:
+    model.RegistrationOverview:
       type: object
       properties:
         customImage:
