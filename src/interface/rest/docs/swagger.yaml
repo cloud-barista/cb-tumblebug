@@ -23675,7 +23675,8 @@ components:
           example: Any message
         object:
           type: object
-          additionalProperties: true
+          additionalProperties:
+            type: object
         status:
           type: integer
           example: 200
