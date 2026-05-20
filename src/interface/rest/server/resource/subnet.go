@@ -282,7 +282,7 @@ func RestDelSubnet(c echo.Context) error {
 		}
 	case resource.ActionReconcile:
 		// [Process]
-		resp, err = resource.ReconcileSubnet(nsId, vNetId, subnetId)
+		resp, err = resource.ReconcileSubnet(nsId, vNetId, subnetId, nil)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
