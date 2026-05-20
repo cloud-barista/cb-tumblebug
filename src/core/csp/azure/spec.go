@@ -366,8 +366,3 @@ func getCreds(ctx context.Context) (*azureCreds, error) {
 		SubscriptionID: subscriptionID,
 	}, nil
 }
-
-//go:fix inline
-func toPtr[T any](v T) *T {
-	return new(v)
-}
