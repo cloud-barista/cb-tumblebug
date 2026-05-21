@@ -127,14 +127,14 @@ cloud:
 	v.SetConfigType("yaml")
 	err = v.ReadConfig(bytes.NewReader([]byte(yamlData)))
 	if err != nil {
-		log.Fatal().Err(err).Msgf("")
+		log.Fatal().Err(err).Msg("")
 	}
 
 	// Unmarshal the data into the CloudInfo struct
 	var cloudInfo CloudInfo
 	err = v.Unmarshal(&cloudInfo)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("")
+		log.Fatal().Err(err).Msg("")
 	}
 
 	// Print the min and max CIDR prefix length for each CSP

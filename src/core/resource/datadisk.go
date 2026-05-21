@@ -147,7 +147,7 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 	}
 	content.ConnectionConfig, err = common.GetConnConfig(content.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 		log.Error().Err(err).Msg("")
 	}
 

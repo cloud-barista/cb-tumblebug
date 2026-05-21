@@ -147,7 +147,7 @@ func RestGetAllResources(c echo.Context) error {
 
 		resourceList, err := resource.ListResource(nsId, resourceType, filterKey, filterVal)
 		if err != nil {
-			err := fmt.Errorf("Failed to list " + resourceType + "s; " + err.Error())
+			err = fmt.Errorf("Failed to list %ss; %s", resourceType, err.Error())
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 
@@ -209,7 +209,7 @@ func RestGetAllResources(c echo.Context) error {
 			content.ObjectStorage = resourceList.([]model.ObjectStorageInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		default:
-			err := fmt.Errorf("Not accepatble resourceType: " + resourceType)
+			err := fmt.Errorf("Not accepatble resourceType: %s", resourceType)
 			return clientManager.EndRequestWithLog(c, err, nil)
 
 		}
@@ -232,7 +232,7 @@ func RestGetResource(c echo.Context) error {
 
 	result, err := resource.GetResource(nsId, resourceType, resourceId)
 	if err != nil {
-		errorMessage := fmt.Errorf("Failed to find " + resourceType + " " + resourceId)
+		errorMessage := fmt.Errorf("Failed to find %s %s", resourceType, resourceId)
 		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
 	return clientManager.EndRequestWithLog(c, err, result)

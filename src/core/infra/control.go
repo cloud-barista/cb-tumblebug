@@ -59,7 +59,7 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return err.Error(), err
 	}
 
@@ -232,7 +232,7 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		return "Refined the Infra", nil
 
 	} else {
-		return "", fmt.Errorf(action + " not supported")
+		return "", fmt.Errorf("%s not supported", action)
 	}
 }
 
@@ -259,7 +259,7 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 	check, _ := CheckNode(nsId, infraId, nodeId)
 
 	if !check {
-		err := fmt.Errorf("The vm " + nodeId + " does not exist.")
+		err := fmt.Errorf("The vm %s does not exist.", nodeId)
 		return err.Error(), err
 	}
 
@@ -311,7 +311,7 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 	} else {
 		close(results)
 		wg.Done()
-		return "", fmt.Errorf("not supported action: " + action)
+		return "", fmt.Errorf("not supported action: %s", action)
 	}
 	checkErr := <-results
 	if checkErr.Error != nil {
@@ -974,7 +974,7 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 
 	// Prevent malformed cspResourceName
 	if cspResourceName == "" || common.CheckString(cspResourceName) != nil {
-		callResult.Error = fmt.Errorf("Not valid requested CSPNativeNodeId: [" + cspResourceName + "]")
+		callResult.Error = fmt.Errorf("Not valid requested CSPNativeNodeId: [%s]", cspResourceName)
 		// temp.Status = model.StatusFailed
 		temp.SystemMessage = callResult.Error.Error()
 		UpdateNodeInfo(nsId, infraId, temp)

@@ -242,7 +242,7 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 
 	if !check {
 		temp := []model.SshCmdResult{}
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return temp, err
 	}
 
@@ -482,7 +482,7 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, no
 		} else {
 			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 		}
-		result.Err = fmt.Errorf(errorMsg)
+		result.Err = fmt.Errorf("%s", errorMsg)
 		if cmdIndex > 0 {
 			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Node not in running status", errorMsg, "", "")
 		}
@@ -551,7 +551,8 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, no
 func mapToString(m map[int]string) string {
 	var result strings.Builder
 	for _, v := range m {
-		result.WriteString(v + "\n")
+		result.WriteString(v)
+		result.WriteString("\n")
 	}
 	return result.String()
 }
@@ -814,7 +815,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, infraId string, node
 		} else {
 			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 		}
-		sshResultTmp.Err = fmt.Errorf(errorMsg)
+		sshResultTmp.Err = fmt.Errorf("%s", errorMsg)
 		*returnResult = append(*returnResult, sshResultTmp)
 		return
 	}
@@ -895,7 +896,7 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, infraId st
 		} else {
 			errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 		}
-		sshResultTmp.Err = fmt.Errorf(errorMsg)
+		sshResultTmp.Err = fmt.Errorf("%s", errorMsg)
 		// Update status to Failed
 		if cmdIndex > 0 {
 			UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusFailed, "Node not in running status", errorMsg, "", "")
@@ -940,7 +941,8 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, infraId st
 				var stdoutStr strings.Builder
 				stderrStr := ""
 				for _, v := range result.stdout {
-					stdoutStr.WriteString(v + "\n")
+					stdoutStr.WriteString(v)
+					stdoutStr.WriteString("\n")
 				}
 				for _, v := range result.stderr {
 					stderrStr += v + "\n"
@@ -965,7 +967,8 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, infraId st
 			var stdoutStr strings.Builder
 			stderrStr := ""
 			for _, v := range result.stdout {
-				stdoutStr.WriteString(v + "\n")
+				stdoutStr.WriteString(v)
+				stdoutStr.WriteString("\n")
 			}
 			for _, v := range result.stderr {
 				stderrStr += v + "\n"
@@ -1127,7 +1130,7 @@ func GetNodeSshKey(nsId string, infraId string, nodeId string) (string, string, 
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("Cannot find the key from DB. key: " + key)
+		err = fmt.Errorf("Cannot find the key from DB. key: %s", key)
 		return "", "", "", err
 	}
 
@@ -1677,6 +1680,9 @@ CONNECTION_ESTABLISHED:
 						},
 					})
 				}
+				if err := scanner.Err(); err != nil {
+					log.Error().Err(err).Msg("Error reading stdout from command")
+				}
 			} else {
 				// Legacy mode: bulk copy
 				io.Copy(io.MultiWriter(os.Stdout, &stdoutBuf), stdoutPipe)
@@ -1706,6 +1712,9 @@ CONNECTION_ESTABLISHED:
 							LineNumber: stderrLineNum,
 						},
 					})
+				}
+				if err := scanner.Err(); err != nil {
+					log.Error().Err(err).Msg("Error reading stderr from command")
 				}
 			} else {
 				io.Copy(io.MultiWriter(os.Stderr, &stderrBuf), stderrPipe)
@@ -1848,7 +1857,7 @@ func TransferFileToInfra(nsId string, infraId string, nodeGroupId string, nodeId
 				} else {
 					errorMsg = fmt.Sprintf("Node '%s' is in '%s' status (not Running). Please change the Node status to Running and try again", nodeId, nodeInfo.Status)
 				}
-				result.Err = fmt.Errorf(errorMsg)
+				result.Err = fmt.Errorf("%s", errorMsg)
 				result.Stderr[0] = errorMsg
 				resultMutex.Lock()
 				resultArray = append(resultArray, result)

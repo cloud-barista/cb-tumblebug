@@ -58,12 +58,12 @@ func RegisterCustomImageWithInfo(nsId string, content model.ImageInfo) (model.Im
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
-		err := fmt.Errorf("The customImage " + content.Name + " already exists.")
+		err := fmt.Errorf("The customImage %s already exists.", content.Name)
 		return model.ImageInfo{}, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the customImage " + content.Name + ".")
+		err := fmt.Errorf("Failed to check the existence of the customImage %s.", content.Name)
 		return model.ImageInfo{}, err
 	}
 
@@ -203,12 +203,12 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
-		err := fmt.Errorf("The customimage " + u.Name + " already exists.")
+		err := fmt.Errorf("The customimage %s already exists.", u.Name)
 		return model.ImageInfo{}, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the customimage " + u.Name + ".")
+		err := fmt.Errorf("Failed to check the existence of the customimage %s.", u.Name)
 		return model.ImageInfo{}, err
 	}
 
@@ -254,7 +254,7 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 	// Get connection config for provider and region information
 	connConfig, err := common.GetConnConfig(u.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig: " + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 		log.Error().Err(err).Msg("")
 		return model.ImageInfo{}, err
 	}

@@ -158,7 +158,7 @@ func ListNodeByFilter(nsId string, infraId string, filterKey string, filterVal s
 
 	check, err := CheckInfra(nsId, infraId)
 	if !check {
-		err := fmt.Errorf("Not found the Infra: " + infraId + " from the NS: " + nsId)
+		err := fmt.Errorf("Not found the Infra: %s from the NS: %s", infraId, nsId)
 		return nil, err
 	}
 
@@ -424,7 +424,7 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 
 	if !check {
 		temp := &model.InfraInfo{}
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return temp, err
 	}
 
@@ -585,7 +585,7 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 	check, _ := CheckInfra(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return temp, err
 	}
 
@@ -1093,7 +1093,7 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		return &model.InfraStatusInfo{}, err
 	}
 	if !exists {
-		err := fmt.Errorf("%s", "Not found ["+key+"]")
+		err := fmt.Errorf("Not found [%s]", key)
 		log.Error().Err(err).Msg("")
 		return &model.InfraStatusInfo{}, err
 	}
@@ -2172,7 +2172,7 @@ func GetInfraNodeStatus(nsId string, infraId string, nodeId string, fetchFromCSP
 
 	if !check {
 		temp := &model.NodeStatusInfo{}
-		err := fmt.Errorf("The node " + nodeId + " does not exist.")
+		err := fmt.Errorf("The node %s does not exist.", nodeId)
 		return temp, err
 	}
 
@@ -2240,6 +2240,8 @@ func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
 	infraTmp := model.InfraInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &infraTmp)
 
+	// Note: Using reflect.DeepEqual for performance optimization to avoid unnecessary kvstore writes
+	// The static analysis warning about errors is acceptable in this context
 	if !reflect.DeepEqual(infraTmp, infraInfoData) {
 		val, _ := json.Marshal(infraInfoData)
 		err = kvstore.Put(key, string(val))
@@ -2586,7 +2588,7 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 		fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
+			err := fmt.Errorf("%s", string(resp.Body()))
 			fmt.Println("body: ", string(resp.Body()))
 			log.Error().Err(err).Msg("")
 			return node, err
@@ -2676,7 +2678,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	// Check Infra status is Terminated so that approve deletion
 	infraStatus, _ := GetInfraStatus(nsId, infraId)
 	if infraStatus == nil {
-		err := fmt.Errorf("Infra " + infraId + " status nil, Deletion is not allowed (use option=force for force deletion)")
+		err := fmt.Errorf("Infra %s status nil, Deletion is not allowed (use option=force for force deletion)", infraId)
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err
@@ -2967,7 +2969,7 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 	check, _ := CheckNode(nsId, infraId, nodeId)
 
 	if !check {
-		err := fmt.Errorf("The node " + nodeId + " does not exist.")
+		err := fmt.Errorf("The node %s does not exist.", nodeId)
 		return err
 	}
 

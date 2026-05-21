@@ -33,7 +33,7 @@ func OrchestrationController() {
 	nsList, err := common.ListNsId()
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
+		err = fmt.Errorf("an error occurred while getting namespaces' list: %s", err.Error())
 		return
 	}
 
@@ -390,7 +390,7 @@ func CreateInfraPolicy(nsId string, infraId string, u *model.InfraPolicyReq) (mo
 
 	if check {
 		temp := model.InfraPolicyInfo{}
-		err := fmt.Errorf("The Infra Policy Obj " + infraId + " already exists.")
+		err := fmt.Errorf("The Infra Policy Obj %s already exists.", infraId)
 		return temp, err
 	}
 
@@ -472,7 +472,7 @@ func GetAllInfraPolicyObject(nsId string) ([]model.InfraPolicyInfo, error) {
 		}
 
 		if !exists {
-			return nil, fmt.Errorf("Cannot find " + key)
+			return nil, fmt.Errorf("Cannot find %s", key)
 		}
 		infraTmp := model.InfraPolicyInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &infraTmp)
@@ -526,7 +526,7 @@ func DelInfraPolicy(nsId string, infraId string) error {
 	check, _ := CheckInfraPolicy(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The infra Policy " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra Policy %s does not exist.", infraId)
 		return err
 	}
 

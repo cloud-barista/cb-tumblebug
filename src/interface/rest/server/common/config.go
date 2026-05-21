@@ -54,7 +54,7 @@ func RestInitConfig(c echo.Context) error {
 
 	err := common.InitConfig(c.Param("configId"))
 	if err != nil {
-		err := fmt.Errorf("Failed to init the config " + c.Param("configId"))
+		err := fmt.Errorf("Failed to init the config %s", c.Param("configId"))
 		return clientManager.EndRequestWithLog(c, err, nil)
 	} else {
 		// return SendMessage(c, http.StatusOK, "The config "+c.Param("configId")+" has been initialized.")
@@ -85,7 +85,7 @@ func RestGetConfig(c echo.Context) error {
 
 	content, err := common.GetConfig(c.Param("configId"))
 	if err != nil {
-		err := fmt.Errorf("Failed to find the config " + c.Param("configId"))
+		err := fmt.Errorf("Failed to find the config %s", c.Param("configId"))
 		return clientManager.EndRequestWithLog(c, err, nil)
 	} else {
 		return clientManager.EndRequestWithLog(c, err, content)
