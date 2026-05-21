@@ -215,10 +215,7 @@ func CheckString(name string) error {
 	filtered := r.FindString(name)
 
 	if filtered != name {
-		err := fmt.Errorf(name + ": The name must follow these rules: " +
-			"1. The first character must be a letter (case-insensitive). " +
-			"2. All following characters can be a dash, letter (case-insensitive), digit, or +. " +
-			"3. The last character cannot be a dash.")
+		err := fmt.Errorf("%s: The name must follow these rules: 1. The first character must be a letter (case-insensitive). 2. All following characters can be a dash, letter (case-insensitive), digit, or +. 3. The last character cannot be a dash.", name)
 		return err
 	}
 
@@ -491,7 +488,7 @@ func GetConnConfig(ConnConfigName string) (model.ConnConfig, error) {
 		return model.ConnConfig{}, err
 	}
 	if !exists {
-		return model.ConnConfig{}, fmt.Errorf("Cannot find the model.ConnConfig " + key)
+		return model.ConnConfig{}, fmt.Errorf("Cannot find the model.ConnConfig %s", key)
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &connConfig)
 	if err != nil {
@@ -1420,7 +1417,7 @@ func RetrieveRegionListFromCsp() (model.RetrievedRegionList, error) {
 
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
+		err := fmt.Errorf("%s", string(resp.Body()))
 		log.Error().Err(err).Msg("")
 		content := model.RetrievedRegionList{}
 		return content, err
@@ -1672,7 +1669,7 @@ func GetAvailableK8sVersion(providerName string, regionName string) (*[]model.K8
 			region = strings.ToLower(region)
 			if strings.EqualFold(region, regionName) {
 				if len(versionDetail.Available) == 0 {
-					availableVersion = &[]model.K8sClusterVersionDetailAvailable{{model.StrEmpty, model.StrEmpty}}
+					availableVersion = &[]model.K8sClusterVersionDetailAvailable{{Name: model.StrEmpty, Id: model.StrEmpty}}
 				} else {
 					availableVersion = &versionDetail.Available
 				}
@@ -1687,7 +1684,7 @@ func GetAvailableK8sVersion(providerName string, regionName string) (*[]model.K8
 			region = strings.ToLower(region)
 			if strings.EqualFold(region, model.StrCommon) {
 				if len(versionDetail.Available) == 0 {
-					availableVersion = &[]model.K8sClusterVersionDetailAvailable{{model.StrEmpty, model.StrEmpty}}
+					availableVersion = &[]model.K8sClusterVersionDetailAvailable{{Name: model.StrEmpty, Id: model.StrEmpty}}
 				} else {
 					availableVersion = &versionDetail.Available
 				}
@@ -1721,7 +1718,7 @@ func GetAvailableK8sNodeImage(providerName string, regionName string) (*[]model.
 			region = strings.ToLower(region)
 			if strings.EqualFold(region, regionName) {
 				if len(nodeImageDetail.Available) == 0 {
-					availableNodeImage = &[]model.K8sClusterNodeImageDetailAvailable{{model.StrEmpty, model.StrEmpty}}
+					availableNodeImage = &[]model.K8sClusterNodeImageDetailAvailable{{Name: model.StrEmpty, Id: model.StrEmpty}}
 					break
 				} else {
 					availableNodeImage = &nodeImageDetail.Available
@@ -1737,7 +1734,7 @@ func GetAvailableK8sNodeImage(providerName string, regionName string) (*[]model.
 			region = strings.ToLower(region)
 			if strings.EqualFold(region, model.StrCommon) {
 				if len(nodeImageDetail.Available) == 0 {
-					availableNodeImage = &[]model.K8sClusterNodeImageDetailAvailable{{model.StrEmpty, model.StrEmpty}}
+					availableNodeImage = &[]model.K8sClusterNodeImageDetailAvailable{{Name: model.StrEmpty, Id: model.StrEmpty}}
 					break
 				} else {
 					availableNodeImage = &nodeImageDetail.Available

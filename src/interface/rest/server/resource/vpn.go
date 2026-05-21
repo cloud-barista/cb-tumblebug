@@ -322,7 +322,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	// Bind the request body to RestPostVpnRequest struct
 	vpnReq := new(model.RestPostVpnRequest)
 	if err := c.Bind(vpnReq); err != nil {
-		log.Warn().Err(err).Msgf("")
+		log.Warn().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 

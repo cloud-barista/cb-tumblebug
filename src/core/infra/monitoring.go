@@ -179,7 +179,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, infraID string, infraS
 		// fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err = fmt.Errorf("CB-DF HTTP Status: " + strconv.Itoa(res.StatusCode) + " / " + string(body))
+			err = fmt.Errorf("CB-DF HTTP Status: %s / %s", strconv.Itoa(res.StatusCode), string(body))
 			log.Error().Err(err).Msg("")
 			errStr += "/ " + err.Error()
 		}
@@ -236,7 +236,7 @@ func InstallMonitorAgentToInfra(nsId string, infraId string, infraServiceType st
 
 	if !check {
 		temp := model.AgentInstallContentWrapper{}
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return temp, err
 	}
 
@@ -270,15 +270,8 @@ func InstallMonitorAgentToInfra(nsId string, infraId string, infraServiceType st
 
 		// Request agent installation (skip if in installing or installed status)
 		if nodeObjTmp.MonAgentStatus != "installed" && nodeObjTmp.MonAgentStatus != "installing" {
-
-			// Avoid RunRemoteCommand to not ready Node
-			if err == nil {
-				wg.Add(1)
-				go CallMonitoringAsync(&wg, nsId, infraId, infraServiceType, v, req.UserName, method, cmd, &resultArray)
-			} else {
-				log.Error().Err(err).Msg("")
-			}
-
+			wg.Add(1)
+			go CallMonitoringAsync(&wg, nsId, infraId, infraServiceType, v, req.UserName, method, cmd, &resultArray)
 		}
 	}
 	wg.Wait() //goroutin sync wg

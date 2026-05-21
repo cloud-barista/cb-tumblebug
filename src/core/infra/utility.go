@@ -231,7 +231,7 @@ func TrimIP(sshAccessPoint string) (string, error) {
 	if port >= 1 && port <= 65535 { // valid port number
 		return portString, nil
 	} else {
-		err := fmt.Errorf("In TrimIP(), detected port number seems wrong: " + portString)
+		err := fmt.Errorf("In TrimIP(), detected port number seems wrong: %s", portString)
 		return strconv.Itoa(0), err
 	}
 }
@@ -250,7 +250,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 	nsList, err := common.ListNsId()
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
+		err = fmt.Errorf("an error occurred while getting namespaces' list: %s", err.Error())
 		return nullObj, err
 	}
 	TbResourceList := model.ResourceOnTumblebug{}
@@ -468,7 +468,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				}
 			}
 		default:
-			err = fmt.Errorf("Invalid resourceType: " + resourceType)
+			err = fmt.Errorf("Invalid resourceType: %s", resourceType)
 			return nullObj, err
 		}
 	}
@@ -1175,7 +1175,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					var newNodeGroupName string
 					if len(networkGroups) == 1 {
 						// All VMs in same network - use simple name
-						newNodeGroupName = fmt.Sprintf("reg-group")
+						newNodeGroupName = "reg-group"
 					} else {
 						// Multiple networks - use indexed name
 						newNodeGroupName = fmt.Sprintf("reg-group%d", nodegroupIndex)
@@ -1368,18 +1368,18 @@ func FindTbNodeByCspId(nsId string, infraId string, nodeCspResourceId string) (m
 	check, err := CheckInfra(nsId, infraId)
 
 	if !check {
-		err := fmt.Errorf("The Infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The Infra %s does not exist.", infraId)
 		return model.NodeInfo{}, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the Infra " + infraId + ".")
+		err := fmt.Errorf("Failed to check the existence of the Infra %s.", infraId)
 		return model.NodeInfo{}, err
 	}
 
 	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the Infra " + infraId + ".")
+		err := fmt.Errorf("Failed to get the Infra %s.", infraId)
 		return model.NodeInfo{}, err
 	}
 

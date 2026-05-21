@@ -300,7 +300,7 @@ func createInfra(cmd *cobra.Command, args []string) {
 
 	prettyResTbReadiness, err := json.MarshalIndent(resTbReadiness, "", "   ")
 	if err != nil {
-		log.Error().Err(err).Msgf("")
+		log.Error().Err(err).Msg("")
 		return
 	}
 	log.Debug().Msgf("[Response] %+v", string(prettyResTbReadiness))
@@ -466,7 +466,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 
 	prettyResTbReadiness, err := json.MarshalIndent(resTbReadiness, "", "   ")
 	if err != nil {
-		log.Error().Err(err).Msgf("")
+		log.Error().Err(err).Msg("")
 		return
 	}
 	log.Debug().Msgf("[Response] %+v", string(prettyResTbReadiness))
@@ -499,7 +499,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 
 	prettyInfraInfo, err := json.MarshalIndent(infraInfo, "", "   ")
 	if err != nil {
-		log.Error().Err(err).Msgf("")
+		log.Error().Err(err).Msg("")
 		return
 	}
 
@@ -1321,11 +1321,15 @@ func saveDetailedReport(filename, title string, logs []ApiLog, extraInfo string)
 
 		if log.RequestPayload != nil {
 			reqJson, _ := json.MarshalIndent(log.RequestPayload, "", "  ")
-			md.WriteString("### Request Body\n```json\n" + string(reqJson) + "\n```\n\n")
+			md.WriteString("### Request Body\n```json\n")
+			md.WriteString(string(reqJson))
+			md.WriteString("\n```\n\n")
 		}
 		if log.ResponsePayload != nil {
 			respJson, _ := json.MarshalIndent(log.ResponsePayload, "", "  ")
-			md.WriteString("### Response Body\n```json\n" + string(respJson) + "\n```\n\n")
+			md.WriteString("### Response Body\n```json\n")
+			md.WriteString(string(respJson))
+			md.WriteString("\n```\n\n")
 		}
 		md.WriteString("---\n\n")
 	}

@@ -210,7 +210,7 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 
 	if len(resourceIdList) == 0 {
 		errString := fmt.Sprintf("There is no %s resource in %s", resourceType, nsId)
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		log.Error().Err(err).Msg("")
 		return model.ResourceDeleteResults{Results: resultList}, err
 	}
@@ -401,7 +401,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return err
 	}
 
@@ -1033,7 +1033,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		// continue
 	} else {
 		errString := "Cannot list " + resourceType + "s."
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return nil, err
 	}
 
@@ -1274,7 +1274,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		}
 	}
 
-	err = fmt.Errorf("Some exceptional case happened. Please check the references of " + common.GetFuncName())
+	err = fmt.Errorf("Some exceptional case happened. Please check the references of %s", common.GetFuncName())
 	return nil, err // if interface{} == nil, make err be returned. Should not come this part if there is no err.
 }
 
@@ -1296,7 +1296,7 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return -1, err
 	}
 
@@ -1317,7 +1317,7 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 		return inUseCount, nil
 	}
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
-	err = fmt.Errorf(errString)
+	err = fmt.Errorf("%s", errString)
 	return -1, err
 }
 
@@ -1341,7 +1341,7 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return nil, err
 	}
 
@@ -1373,7 +1373,7 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 		return result, nil
 	}
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
-	err = fmt.Errorf(errString)
+	err = fmt.Errorf("%s", errString)
 	return nil, err
 }
 
@@ -1421,7 +1421,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 		case model.StrAdd:
 			if slices.Contains(objList, objectKey) {
 				errString := objectKey + " is already associated with " + resourceType + " " + resourceId + "."
-				err = fmt.Errorf(errString)
+				err = fmt.Errorf("%s", errString)
 				return nil, err
 			}
 			var anyJson map[string]any
@@ -1452,7 +1452,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			}
 			if foundVal == "" {
 				errString := "Cannot find the associated object " + objectKey + "."
-				err = fmt.Errorf(errString)
+				err = fmt.Errorf("%s", errString)
 				return nil, err
 			} else {
 				keyValue.Value, err = sjson.Delete(keyValue.Value, "associatedObjectList."+strconv.Itoa(foundKey))
@@ -1477,7 +1477,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 		return result, nil
 	}
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
-	err = fmt.Errorf(errString)
+	err = fmt.Errorf("%s", errString)
 	return nil, err
 }
 
@@ -1603,7 +1603,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (any, erro
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				errString := fmt.Sprintf("The %s %s does not exist.", resourceType, resourceId)
-				return nil, fmt.Errorf(errString)
+				return nil, fmt.Errorf("%s", errString)
 			}
 			log.Error().Err(result.Error).Msg("")
 			return nil, result.Error
@@ -1687,7 +1687,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (any, erro
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				errString := fmt.Sprintf("The %s %s does not exist.", resourceType, resourceId)
-				return nil, fmt.Errorf(errString)
+				return nil, fmt.Errorf("%s", errString)
 			}
 			log.Error().Err(result.Error).Msg("")
 			return nil, result.Error
@@ -1807,7 +1807,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (any, erro
 		//return true, nil
 	}
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
-	err = fmt.Errorf(errString)
+	err = fmt.Errorf("%s", errString)
 	return nil, err
 }
 
@@ -2878,7 +2878,7 @@ func GetCspResourceName(nsId string, resourceType string, resourceId string) (st
 	if !exists {
 		//log.Error().Err(err).Msg("")
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
-		return "", fmt.Errorf("cannot find the key " + key)
+		return "", fmt.Errorf("cannot find the key %s", key)
 	}
 
 	switch resourceType {
@@ -2942,7 +2942,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	if !exists {
 		//log.Error().Err(err).Msg("")
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
-		return "", fmt.Errorf("cannot find the key " + key)
+		return "", fmt.Errorf("cannot find the key %s", key)
 	}
 
 	// need to handle subnet in a different way

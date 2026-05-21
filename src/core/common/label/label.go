@@ -280,7 +280,7 @@ func RemoveLabel(ctx context.Context, labelType, uid, key string) error {
 
 	err = kvstore.Put(labelKey, string(updatedLabelData))
 	if err != nil {
-		log.Error().Err(err).Msgf("")
+		log.Error().Err(err).Msg("")
 		return err
 	}
 

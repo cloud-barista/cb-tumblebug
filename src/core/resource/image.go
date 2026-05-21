@@ -949,12 +949,12 @@ func RegisterImageWithId(nsId string, u *model.ImageReq, update bool, RDBonly bo
 		check, err := CheckResource(nsId, resourceType, u.Name)
 		if !update {
 			if check {
-				err := fmt.Errorf("The image " + u.Name + " already exists.")
+				err := fmt.Errorf("The image %s already exists.", u.Name)
 				return content, err
 			}
 		}
 		if err != nil {
-			err := fmt.Errorf("Failed to check the existence of the image " + u.Name + ".")
+			err := fmt.Errorf("Failed to check the existence of the image %s.", u.Name)
 			return content, err
 		}
 	}
@@ -1030,13 +1030,13 @@ func RegisterImageWithInfo(nsId string, content *model.ImageInfo, update bool) (
 
 	if !update {
 		if check {
-			err := fmt.Errorf("The image " + content.Name + " already exists.")
+			err := fmt.Errorf("The image %s already exists.", content.Name)
 			return model.ImageInfo{}, err
 		}
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the image " + content.Name + ".")
+		err := fmt.Errorf("Failed to check the existence of the image %s.", content.Name)
 		return model.ImageInfo{}, err
 	}
 
@@ -2590,19 +2590,19 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.ImageInfo, RD
 		}
 
 		if !check {
-			err := fmt.Errorf("The image " + imageId + " does not exist.")
+			err := fmt.Errorf("The image %s does not exist.", imageId)
 			return temp, err
 		}
 
 		tempInterface, err := GetResource(nsId, resourceType, imageId)
 		if err != nil {
-			err := fmt.Errorf("Failed to get the image " + imageId + ".")
+			err := fmt.Errorf("Failed to get the image %s.", imageId)
 			return temp, err
 		}
 		asIsImage := model.ImageInfo{}
 		err = common.CopySrcToDest(&tempInterface, &asIsImage)
 		if err != nil {
-			err := fmt.Errorf("Failed to CopySrcToDest() " + imageId + ".")
+			err := fmt.Errorf("Failed to CopySrcToDest() %s.", imageId)
 			return temp, err
 		}
 

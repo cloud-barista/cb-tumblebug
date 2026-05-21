@@ -78,7 +78,7 @@ func HandleK8sClusterAction(nsId string, k8sClusterId string, action string) (st
 	check, _ := CheckK8sCluster(nsId, k8sClusterId)
 
 	if !check {
-		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		err := fmt.Errorf("The K8sCluster %s does not exist.", k8sClusterId)
 		return err.Error(), err
 	}
 
@@ -96,7 +96,7 @@ func HandleK8sClusterAction(nsId string, k8sClusterId string, action string) (st
 
 		return "Withdraw the holding K8sCluster", nil
 	} else {
-		return "", fmt.Errorf(action + " not supported")
+		return "", fmt.Errorf("%s not supported", action)
 	}
 }
 
@@ -235,7 +235,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 	}
 
 	if check {
-		err := fmt.Errorf("already exists", k8sClusterId)
+		err := fmt.Errorf("%s already exists", k8sClusterId)
 		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 		return emptyObj, err
 	}
@@ -252,7 +252,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 	uid := common.GenUid()
 	connConfig, err := common.GetConnConfig(req.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err := fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 		return emptyObj, err
 	}
@@ -428,7 +428,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 					spImgName, err = GetCspResourceName(model.SystemCommonNs, model.StrImage, v.ImageId)
 					if spImgName == "" || err != nil {
 						errAgg += err.Error()
-						createErr = fmt.Errorf(errAgg)
+						createErr = fmt.Errorf("%s", errAgg)
 						log.Err(createErr).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", v.ImageId, nsId)
 						return emptyObj, createErr
 					} else {
@@ -457,7 +457,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 			spSpecName, err = GetCspResourceName(model.SystemCommonNs, model.StrSpec, v.SpecId)
 			if spSpecName == "" || err != nil {
 				errAgg += err.Error()
-				createErr = fmt.Errorf(errAgg)
+				createErr = fmt.Errorf("%s", errAgg)
 				log.Err(createErr).Msgf("Not found the Spec %s both from ns %s and SystemCommonNs", v.SpecId, nsId)
 				return emptyObj, createErr
 			} else {
@@ -723,7 +723,7 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 				spImgName, err = GetCspResourceName(model.SystemCommonNs, model.StrImage, u.ImageId)
 				if spImgName == "" || err != nil {
 					errAgg += err.Error()
-					err = fmt.Errorf(errAgg)
+					err = fmt.Errorf("%s", errAgg)
 					log.Err(err).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", u.ImageId, nsId)
 					log.Err(err).Msgf("Failed to Add K8sNodeGroup to K8sCluster(%s)", k8sClusterId)
 					return emptyObj, err
@@ -753,7 +753,7 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 		spSpecName, err = GetCspResourceName(model.SystemCommonNs, model.StrSpec, u.SpecId)
 		if spSpecName == "" || err != nil {
 			errAgg += err.Error()
-			err = fmt.Errorf(errAgg)
+			err = fmt.Errorf("%s", errAgg)
 			log.Err(err).Msgf("Not found the Spec %s both from ns %s and SystemCommonNs", u.SpecId, nsId)
 			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 			return emptyObj, err
@@ -1665,7 +1665,7 @@ func UpgradeK8sCluster(ctx context.Context, nsId string, k8sClusterId string, u 
 func checkK8sClusterEnablement(connectionName string) error {
 	connConfig, err := common.GetConnConfig(connectionName)
 	if err != nil {
-		err := fmt.Errorf("failed to get the connConfig " + connectionName + ": " + err.Error())
+		err := fmt.Errorf("failed to get the connConfig %s: %s", connectionName, err.Error())
 		return err
 	}
 
@@ -1691,7 +1691,7 @@ func checkK8sClusterEnablement(connectionName string) error {
 	getCloudSetting()
 
 	if cloudSetting.K8sCluster.Enable != "y" {
-		err := fmt.Errorf("k8scluster management function is not enabled for cloud(" + fnCloudType + ")")
+		err := fmt.Errorf("k8scluster management function is not enabled for cloud(%s)", fnCloudType)
 		return err
 	}
 
@@ -2223,12 +2223,12 @@ func fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(tbK8sNGInfoList *[]model.K8
 	var err error
 	if tbK8sNGInfoList == nil {
 		err = fmt.Errorf("invalid K8sNodeGroupInfoList")
-		log.Err(err).Msgf("")
+		log.Err(err).Msg("")
 		return
 	}
 	if tbK8sNGReqList == nil {
 		err = fmt.Errorf("invalid K8sNodeGroupReqList")
-		log.Err(err).Msgf("")
+		log.Err(err).Msg("")
 		return
 	}
 
@@ -2243,12 +2243,12 @@ func updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(tbK8sNGInfoList *[]mo
 	var err error
 	if tbK8sNGInfoList == nil {
 		err = fmt.Errorf("invalid K8sNodeGroupInfoList")
-		log.Err(err).Msgf("")
+		log.Err(err).Msg("")
 		return
 	}
 	if spNGInfoList == nil {
 		err = fmt.Errorf("invalid SpiderNodeGroupInfoList")
-		log.Err(err).Msgf("")
+		log.Err(err).Msg("")
 		return
 	}
 

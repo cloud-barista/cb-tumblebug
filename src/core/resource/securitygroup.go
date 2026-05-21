@@ -191,7 +191,7 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 
 	if check {
 		temp := model.SecurityGroupInfo{}
-		err := fmt.Errorf("The securityGroup " + u.Name + " already exists.")
+		err := fmt.Errorf("The securityGroup %s already exists.", u.Name)
 		return temp, err
 	}
 	if err != nil {
@@ -259,12 +259,12 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 		vNetInfo := model.VNetInfo{}
 		tempInterface, err := GetResource(nsId, model.StrVNet, u.VNetId)
 		if err != nil {
-			err := fmt.Errorf("Failed to get the VNetInfo " + u.VNetId + ".")
+			err := fmt.Errorf("Failed to get the VNetInfo %s.", u.VNetId)
 			return model.SecurityGroupInfo{}, err
 		}
 		err = common.CopySrcToDest(&tempInterface, &vNetInfo)
 		if err != nil {
-			err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() " + u.VNetId + ".")
+			err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() %s.", u.VNetId)
 			return model.SecurityGroupInfo{}, err
 		}
 		requestBody.ReqInfo.VPCName = vNetInfo.CspResourceName
@@ -342,7 +342,7 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 	content.AssociatedObjectList = []string{}
 	content.ConnectionConfig, err = common.GetConnConfig(content.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 		log.Error().Err(err).Msg("")
 	}
 
@@ -760,7 +760,7 @@ func GetSecurityGroup(nsId string, securityGroupId string) (model.SecurityGroupI
 
 	tempInterface, err := GetResource(nsId, model.StrSecurityGroup, securityGroupId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the SecurityGroupInfo " + securityGroupId + ".")
+		err := fmt.Errorf("Failed to get the SecurityGroupInfo %s.", securityGroupId)
 		return sg, err
 	}
 	err = common.CopySrcToDest(&tempInterface, &sg)

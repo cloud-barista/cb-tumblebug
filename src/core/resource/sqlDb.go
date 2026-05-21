@@ -162,7 +162,7 @@ func CreateSqlDB(ctx context.Context, nsId string, sqlDbReq *model.RestPostSqlDB
 	sqlDBInfo.ConnectionName = sqlDbReq.ConnectionName
 	sqlDBInfo.ConnectionConfig, err = common.GetConnConfig(sqlDBInfo.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 		log.Error().Err(err).Msg("")
 	}
 
@@ -201,7 +201,7 @@ func CreateSqlDB(ctx context.Context, nsId string, sqlDbReq *model.RestPostSqlDB
 		sqlDBInfo.ConnectionName = sqlDbReq.ConnectionName
 		sqlDBInfo.ConnectionConfig, err = common.GetConnConfig(sqlDBInfo.ConnectionName)
 		if err != nil {
-			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+			err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 			log.Error().Err(err).Msg("")
 		}
 	}

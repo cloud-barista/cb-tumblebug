@@ -648,7 +648,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
-		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): " + err.Error())
+		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): %s", err.Error())
 		log.Error().Err(err).Msg("")
 	}
 	if exists {
@@ -683,7 +683,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	// check stored nodeGroup object
 	_, _, err = kvstore.GetKv(key)
 	if err != nil {
-		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): " + err.Error())
+		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): %s", err.Error())
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -721,7 +721,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		nodeInfoData.ConnectionName = nodeRequest.ConnectionName
 		nodeInfoData.ConnectionConfig, err = common.GetConnConfig(nodeRequest.ConnectionName)
 		if err != nil {
-			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+			err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
 			log.Error().Err(err).Msg("")
 		}
 		nodeInfoData.Location = nodeInfoData.ConnectionConfig.RegionDetail.Location
@@ -1508,7 +1508,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		return emptyInfra, err
 	}
 	if check {
-		err := fmt.Errorf("The infra " + req.Name + " already exists.")
+		err := fmt.Errorf("The infra %s already exists.", req.Name)
 		addErrorToHistory("Infra Existence Check", err.Error())
 		return emptyInfra, err
 	}
@@ -2961,7 +2961,7 @@ func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId strin
 		return emptyInfra, err
 	}
 	if check {
-		err := fmt.Errorf("The name for NodeGroup (prefix of VM Id) " + req.Name + " already exists.")
+		err := fmt.Errorf("The name for NodeGroup (prefix of VM Id) %s already exists.", req.Name)
 		return emptyInfra, err
 	}
 
@@ -3845,7 +3845,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 			if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 				errAgg += err.Error()
-				err = fmt.Errorf(errAgg)
+				err = fmt.Errorf("%s", errAgg)
 
 				nodeInfoData.Status = model.StatusFailed
 				nodeInfoData.SystemMessage = err.Error()
@@ -3878,9 +3878,9 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		requestBody.ReqInfo.SubnetName = subnetInfo.CspResourceName
 		if requestBody.ReqInfo.SubnetName == "" {
 			nodeInfoData.Status = model.StatusFailed
-			nodeInfoData.SystemMessage = err.Error()
+			nodeInfoData.SystemMessage = fmt.Sprintf("Empty SubnetName for SubnetId %s in VNetId %s", nodeInfoData.SubnetId, nodeInfoData.VNetId)
 			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
-			log.Error().Err(err).Msg("")
+			log.Error().Msg(nodeInfoData.SystemMessage)
 			return err
 		}
 
@@ -4411,7 +4411,7 @@ func checkCommonResAvailableForK8sClusterDynamicReq(ctx context.Context, dReq *m
 	// validate the GetConnConfig for spec
 	connConfig, err := common.GetConnConfig(connName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get ConnectionName (" + connName + ") for Spec (" + dReq.SpecId + ") is not found.")
+		err := fmt.Errorf("Failed to get ConnectionName (%s) for Spec (%s) is not found.", connName, dReq.SpecId)
 		log.Error().Err(err).Msg("")
 		return err
 	}
@@ -4509,7 +4509,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 	// validate the GetConnConfig for spec
 	connection, err := common.GetConnConfig(k8sReq.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to Get ConnectionName (" + k8sReq.ConnectionName + ") for Spec (" + dReq.SpecId + ") is not found.")
+		err := fmt.Errorf("Failed to Get ConnectionName (%s) for Spec (%s) is not found.", k8sReq.ConnectionName, dReq.SpecId)
 		log.Err(err).Msg("")
 		return emptyK8sReq, err
 	}
@@ -4545,7 +4545,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 	_, err = resource.GetResource(nsId, model.StrVNet, k8sReq.VNetId)
 	if err != nil {
 		if !onDemand {
-			err := fmt.Errorf("Failed to get the vNet " + k8sReq.VNetId + " from " + k8sReq.ConnectionName)
+			err := fmt.Errorf("Failed to get the vNet %s from %s", k8sReq.VNetId, k8sReq.ConnectionName)
 			log.Err(err).Msg("Failed to get the vNet")
 			return emptyK8sReq, err
 		}
@@ -4571,7 +4571,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 	_, err = resource.GetResource(nsId, model.StrSSHKey, k8sngReq.SshKeyId)
 	if err != nil {
 		if !onDemand {
-			err := fmt.Errorf("Failed to get the SSHKey " + k8sngReq.SshKeyId + " from " + k8sReq.ConnectionName)
+			err := fmt.Errorf("Failed to get the SSHKey %s from %s", k8sngReq.SshKeyId, k8sReq.ConnectionName)
 			log.Err(err).Msg("Failed to get the SSHKey")
 			return emptyK8sReq, err
 		}
@@ -4596,7 +4596,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
 	if err != nil {
 		if !onDemand {
-			err := fmt.Errorf("Failed to get the securityGroup " + securityGroup + " from " + k8sReq.ConnectionName)
+			err := fmt.Errorf("Failed to get the securityGroup %s from %s", securityGroup, k8sReq.ConnectionName)
 			log.Err(err).Msg("Failed to get the securityGroup")
 			return emptyK8sReq, err
 		}
@@ -4742,7 +4742,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 
 	// If ConnectionName for K8sNodeGroup must be same as ConnectionName for K8sCluster
 	if specInfo.ConnectionName != k8sClusterInfo.ConnectionName {
-		err := fmt.Errorf("ConnectionName(" + specInfo.ConnectionName + ") of K8sNodeGroup Must Match ConnectionName(" + k8sClusterInfo.ConnectionName + ") of K8sCluster")
+		err := fmt.Errorf("ConnectionName(%s) of K8sNodeGroup Must Match ConnectionName(%s) of K8sCluster", specInfo.ConnectionName, k8sClusterInfo.ConnectionName)
 		log.Err(err).Msg("")
 		return emptyK8sNgReq, err
 	}
@@ -4773,7 +4773,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 	k8sNgReq.SshKeyId = resourceName
 	_, err = resource.GetResource(nsId, model.StrSSHKey, k8sNgReq.SshKeyId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the SSHKey " + k8sNgReq.SshKeyId + " from " + k8sClusterInfo.ConnectionName)
+		err := fmt.Errorf("Failed to get the SSHKey %s from %s", k8sNgReq.SshKeyId, k8sClusterInfo.ConnectionName)
 		log.Err(err).Msg("Failed to get the SSHKey")
 		return emptyK8sNgReq, err
 	} else {

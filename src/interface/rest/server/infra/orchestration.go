@@ -76,12 +76,12 @@ func RestGetInfraPolicy(c echo.Context) error {
 
 	result, err := infra.GetInfraPolicyObject(nsId, infraId)
 	if err != nil {
-		errorMessage := fmt.Errorf("Error to find InfraPolicyObject : " + infraId + "ERROR : " + err.Error())
+		errorMessage := fmt.Errorf("Error to find InfraPolicyObject : %s ERROR : %s", infraId, err.Error())
 		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
 
 	if result.Id == "" {
-		errorMessage := fmt.Errorf("Failed to find InfraPolicyObject : " + infraId)
+		errorMessage := fmt.Errorf("Failed to find InfraPolicyObject : %s", infraId)
 		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
 	return clientManager.EndRequestWithLog(c, err, result)

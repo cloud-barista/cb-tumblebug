@@ -50,14 +50,14 @@ func RestPostSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	if err := common.CheckString(nsId); err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	vNetId := c.Param("vNetId")
 	if err := common.CheckString(vNetId); err != nil {
 		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -100,20 +100,20 @@ func RestGetSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	if err := common.CheckString(nsId); err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	vNetId := c.Param("vNetId")
 	if err := common.CheckString(vNetId); err != nil {
 		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	subnetId := c.Param("subnetId")
 	if err := common.CheckString(subnetId); err != nil {
 		errMsg := fmt.Errorf("invalid subnetId (%s)", subnetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -154,13 +154,13 @@ func RestGetListSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	if err := common.CheckString(nsId); err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	vNetId := c.Param("vNetId")
 	if err := common.CheckString(vNetId); err != nil {
 		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -245,20 +245,20 @@ func RestDelSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	if err := common.CheckString(nsId); err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	vNetId := c.Param("vNetId")
 	if err := common.CheckString(vNetId); err != nil {
 		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	subnetId := c.Param("subnetId")
 	if err := common.CheckString(subnetId); err != nil {
 		errMsg := fmt.Errorf("invalid subnetId (%s)", subnetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -266,7 +266,7 @@ func RestDelSubnet(c echo.Context) error {
 	action, vaild := resource.ParseNetworkAction(paramAction)
 	if !vaild {
 		errMsg := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Err(errMsg).Msgf(errMsg.Error())
+		log.Warn().Err(errMsg).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -289,7 +289,7 @@ func RestDelSubnet(c echo.Context) error {
 		}
 	default:
 		errMsg := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Err(errMsg).Msgf(errMsg.Error())
+		log.Warn().Err(errMsg).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -340,14 +340,14 @@ func RestPostRegisterSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	if err := common.CheckString(nsId); err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	vNetId := c.Param("vNetId")
 	if err := common.CheckString(vNetId); err != nil {
 		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -391,19 +391,19 @@ func RestDeleteDeregisterSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	if err := common.CheckString(nsId); err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	vNetId := c.Param("vNetId")
 	if err := common.CheckString(vNetId); err != nil {
 		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 	subnetId := c.Param("subnetId")
 	if err := common.CheckString(subnetId); err != nil {
 		errMsg := fmt.Errorf("invalid subnetId (%s)", subnetId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 

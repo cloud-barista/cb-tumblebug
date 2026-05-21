@@ -66,7 +66,7 @@ func CreateNs(ctx context.Context, u *model.NsReq) (model.NsInfo, error) {
 
 	if check {
 		temp := model.NsInfo{}
-		err := fmt.Errorf("CreateNs(); The namespace " + u.Name + " already exists.")
+		err := fmt.Errorf("CreateNs(); The namespace %s already exists.", u.Name)
 		return temp, err
 	}
 

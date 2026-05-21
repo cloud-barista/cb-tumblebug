@@ -195,40 +195,40 @@ func CreateNLB(nsId string, infraId string, u *model.NLBReq, option string) (mod
 	check, err := CheckNLB(nsId, infraId, u.TargetGroup.NodeGroupId)
 
 	if check {
-		err := fmt.Errorf("The nlb " + u.TargetGroup.NodeGroupId + " already exists.")
+		err := fmt.Errorf("The nlb %s already exists.", u.TargetGroup.NodeGroupId)
 		return emptyObj, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the nlb " + u.TargetGroup.NodeGroupId + ".")
+		err := fmt.Errorf("Failed to check the existence of the nlb %s.", u.TargetGroup.NodeGroupId)
 		return emptyObj, err
 	}
 
 	nodeIDs, err := ListNodeByNodeGroup(nsId, infraId, u.TargetGroup.NodeGroupId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get Nodes in the NodeGroup " + u.TargetGroup.NodeGroupId + ".")
+		err := fmt.Errorf("Failed to get Nodes in the NodeGroup %s.", u.TargetGroup.NodeGroupId)
 		return emptyObj, err
 	}
 	if len(nodeIDs) == 0 {
-		err := fmt.Errorf("There are no Nodes in the NodeGroup " + u.TargetGroup.NodeGroupId + ".")
+		err := fmt.Errorf("There are no Nodes in the NodeGroup %s.", u.TargetGroup.NodeGroupId)
 		return emptyObj, err
 	}
 
 	node, err := GetNodeObject(nsId, infraId, nodeIDs[0])
 	if err != nil {
-		err := fmt.Errorf("Failed to get Node " + nodeIDs[0] + ".")
+		err := fmt.Errorf("Failed to get Node %s.", nodeIDs[0])
 		return emptyObj, err
 	}
 
 	vNetInfo := model.VNetInfo{}
 	tempInterface, err := resource.GetResource(nsId, model.StrVNet, node.VNetId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the VNetInfo " + node.VNetId + ".")
+		err := fmt.Errorf("Failed to get the VNetInfo %s.", node.VNetId)
 		return emptyObj, err
 	}
 	err = common.CopySrcToDest(&tempInterface, &vNetInfo)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() " + node.VNetId + ".")
+		err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() %s.", node.VNetId)
 		return emptyObj, err
 	}
 
@@ -256,7 +256,7 @@ func CreateNLB(nsId string, infraId string, u *model.NLBReq, option string) (mod
 
 	connConfig, err := common.GetConnConfig(node.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the connConfig " + node.ConnectionName + ".")
+		err := fmt.Errorf("Failed to get the connConfig %s.", node.ConnectionName)
 		return emptyObj, err
 	}
 
@@ -451,7 +451,7 @@ func GetNLB(nsId string, infraId string, resourceId string) (model.NLBInfo, erro
 
 	if !check {
 		errString := "The NLB " + resourceId + " does not exist."
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return emptyObj, err
 	}
 
@@ -477,7 +477,7 @@ func GetNLB(nsId string, infraId string, resourceId string) (model.NLBInfo, erro
 		return res, nil
 	}
 	errString := "Cannot get the NLB " + resourceId + "."
-	err = fmt.Errorf(errString)
+	err = fmt.Errorf("%s", errString)
 	return res, err
 }
 
@@ -642,11 +642,7 @@ func ListNLB(nsId string, infraId string, filterKey string, filterVal string) (a
 	} else { //return empty object according to resourceType
 		res := []model.NLBInfo{}
 		return res, nil
-
 	}
-
-	err = fmt.Errorf("Some exceptional case happened. Please check the references of " + common.GetFuncName())
-	return nil, err // if interface{} == nil, make err be returned. Should not come this part if there is no err.
 }
 
 // DelNLB deletes the TB NLB object
@@ -678,7 +674,7 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 
 	if !check {
 		errString := "The NLB " + resourceId + " does not exist."
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return err
 	}
 
@@ -697,7 +693,7 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 			// continue
 		} else {
 			errString := " [Failed]" + " Associated with [" + strings.Join(associatedList[:], ", ") + "]"
-			err := fmt.Errorf(errString)
+			err := fmt.Errorf("%s", errString)
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -826,18 +822,18 @@ func GetNLBHealth(nsId string, infraId string, nlbId string) (model.NLBHealthInf
 	check, err := CheckNLB(nsId, infraId, nlbId)
 
 	if !check {
-		err := fmt.Errorf("The nlb " + nlbId + " does not exist.")
+		err := fmt.Errorf("The nlb %s does not exist.", nlbId)
 		return model.NLBHealthInfo{}, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the nlb " + nlbId + ".")
+		err := fmt.Errorf("Failed to check the existence of the nlb %s.", nlbId)
 		return model.NLBHealthInfo{}, err
 	}
 
 	nlb, err := GetNLB(nsId, infraId, nlbId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the NLB " + nlbId + ".")
+		err := fmt.Errorf("Failed to get the NLB %s.", nlbId)
 		return model.NLBHealthInfo{}, err
 	}
 
@@ -963,13 +959,13 @@ func AddNLBNodes(nsId string, infraId string, resourceId string, u *model.NLBAdd
 
 	if !check {
 		temp := model.NLBInfo{}
-		err := fmt.Errorf("The nlb " + resourceId + " does not exist.")
+		err := fmt.Errorf("The nlb %s does not exist.", resourceId)
 		return temp, err
 	}
 
 	if err != nil {
 		temp := model.NLBInfo{}
-		err := fmt.Errorf("Failed to check the existence of the nlb " + resourceId + ".")
+		err := fmt.Errorf("Failed to check the existence of the nlb %s.", resourceId)
 		return temp, err
 	}
 
@@ -990,7 +986,7 @@ func AddNLBNodes(nsId string, infraId string, resourceId string, u *model.NLBAdd
 	nlb, err := GetNLB(nsId, infraId, resourceId)
 	if err != nil {
 		temp := model.NLBInfo{}
-		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
+		err := fmt.Errorf("Failed to get the nlb object %s.", resourceId)
 		return temp, err
 	}
 
@@ -1131,13 +1127,13 @@ func RemoveNLBNodes(nsId string, infraId string, resourceId string, u *model.NLB
 
 	if !check {
 		// temp := model.NLBInfo{}
-		err := fmt.Errorf("The nlb " + resourceId + " does not exist.")
+		err := fmt.Errorf("The nlb %s does not exist.", resourceId)
 		return err
 	}
 
 	if err != nil {
 		// temp := model.NLBInfo{}
-		err := fmt.Errorf("Failed to check the existence of the nlb " + resourceId + ".")
+		err := fmt.Errorf("Failed to check the existence of the nlb %s.", resourceId)
 		return err
 	}
 
@@ -1158,7 +1154,7 @@ func RemoveNLBNodes(nsId string, infraId string, resourceId string, u *model.NLB
 	nlb, err := GetNLB(nsId, infraId, resourceId)
 	if err != nil {
 		// temp := model.NLBInfo{}
-		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
+		err := fmt.Errorf("Failed to get the nlb object %s.", resourceId)
 		return err
 	}
 
@@ -1188,7 +1184,7 @@ func RemoveNLBNodes(nsId string, infraId string, resourceId string, u *model.NLB
 		for _, v := range u.VMIDList {
 			infraId_nodeId := strings.Split(v, "/")
 			if len(infraId_nodeId) != 2 {
-				err := fmt.Errorf("Cannot retrieve VM info: " + v)
+				err := fmt.Errorf("Cannot retrieve VM info: %s", v)
 				log.Error().Err(err).Msg("")
 				return model.NLBInfo{}, err
 			}

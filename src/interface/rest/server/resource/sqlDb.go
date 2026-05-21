@@ -239,7 +239,7 @@ func RestGetAllSqlDB(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -254,7 +254,7 @@ func RestGetAllSqlDB(c echo.Context) error {
 	option := c.QueryParam("option")
 	if option != "InfoList" && option != "IdList" && option != "" {
 		errMsg := fmt.Errorf("invalid option (%s)", option)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -314,21 +314,21 @@ func RestPostSqlDB(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	action := c.QueryParam("action")
 	if action != "retry" && action != "" {
 		errMsg := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	// Bind the request body to RestPostSqlDbRequest struct
 	sqlDbReq := new(model.RestPostSqlDBRequest)
 	if err := c.Bind(sqlDbReq); err != nil {
-		log.Warn().Err(err).Msgf("")
+		log.Warn().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
@@ -346,7 +346,7 @@ func RestPostSqlDB(c echo.Context) error {
 	err = common.CheckString(sqlDbReq.Name)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid sqlDbName (%s)", sqlDbReq.Name)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -384,7 +384,7 @@ func RestGetSqlDB(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -392,7 +392,7 @@ func RestGetSqlDB(c echo.Context) error {
 	err = common.CheckString(sqlDbId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid sqlDbId (%s)", sqlDbId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -454,7 +454,7 @@ func RestDeleteSqlDB(c echo.Context) error {
 	err := common.CheckString(nsId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
@@ -462,7 +462,7 @@ func RestDeleteSqlDB(c echo.Context) error {
 	err = common.CheckString(sqlDbId)
 	if err != nil {
 		errMsg := fmt.Errorf("invalid sqlDbId (%s)", sqlDbId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
+		log.Warn().Err(err).Msg(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 

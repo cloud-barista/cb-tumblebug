@@ -2114,7 +2114,7 @@ func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpe
 	if !strings.EqualFold(provider, csp.Alibaba) {
 		result.ErrorMessage = fmt.Sprintf("Provider %s is not supported yet. Currently only Alibaba Cloud is supported.", provider)
 		result.QueryDurationMs = time.Since(startTime).Milliseconds()
-		return result, fmt.Errorf(result.ErrorMessage)
+		return result, fmt.Errorf("%s", result.ErrorMessage)
 	}
 
 	// Get any verified connection config for this provider. The legacy
@@ -2176,7 +2176,7 @@ func GetAvailableRegionZonesForSpec(ctx context.Context, provider string, cspSpe
 	if !ok {
 		result.ErrorMessage = "Invalid API response format: OKeyValueList not found"
 		result.QueryDurationMs = time.Since(startTime).Milliseconds()
-		return result, fmt.Errorf(result.ErrorMessage)
+		return result, fmt.Errorf("%s", result.ErrorMessage)
 	}
 
 	var availableZones string

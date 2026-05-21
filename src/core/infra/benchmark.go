@@ -124,7 +124,7 @@ func CallMilkyway(wg *sync.WaitGroup, nodeList []string, nsId string, infraId st
 		// fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+			err := fmt.Errorf("%s", string(body))
 			log.Error().Err(err).Msg("")
 			errStr = err.Error()
 		}
@@ -166,7 +166,7 @@ func RunAllBenchmarks(nsId string, infraId string, host string) (*model.Benchmar
 
 	if !check {
 		temp := &model.BenchmarkInfoArray{}
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return temp, err
 	}
 
@@ -226,6 +226,10 @@ func RunAllBenchmarks(nsId string, infraId string, host string) (*model.Benchmar
 	}
 
 	file, err := os.OpenFile("benchmarking.csv", os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to open benchmarking.csv")
+		return &content, err
+	}
 	defer file.Close()
 	csvWriter := csv.NewWriter(file)
 	strsTmp := []string{}
@@ -340,14 +344,14 @@ func RunAllBenchmarks(nsId string, infraId string, host string) (*model.Benchmar
 	}
 
 	file2, err := os.OpenFile("cloudlatencymap.csv", os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to open cloudlatencymap.csv")
+		return nil, err
+	}
 	defer file2.Close()
 	csvWriter2 := csv.NewWriter(file2)
 	csvWriter2.WriteAll(mrttArray)
 	csvWriter2.Flush()
-
-	if err != nil {
-		return nil, fmt.Errorf("Benchmark Error")
-	}
 
 	return &content, nil
 }
@@ -374,7 +378,7 @@ func RunLatencyBenchmark(nsId string, infraId string, host string) (*model.Bench
 
 	if !check {
 		temp := &model.BenchmarkInfoArray{}
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return temp, err
 	}
 
@@ -479,14 +483,14 @@ func RunLatencyBenchmark(nsId string, infraId string, host string) (*model.Bench
 	}
 
 	file2, err := os.OpenFile("cloudlatencymap.csv", os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to open cloudlatencymap.csv")
+		return nil, err
+	}
 	defer file2.Close()
 	csvWriter2 := csv.NewWriter(file2)
 	csvWriter2.WriteAll(mrttArray)
 	csvWriter2.Flush()
-
-	if err != nil {
-		return nil, fmt.Errorf("Benchmark Error")
-	}
 
 	return &content, nil
 }
@@ -513,7 +517,7 @@ func CoreGetBenchmark(nsId string, infraId string, action string, host string) (
 
 	if !check {
 		temp := &model.BenchmarkInfoArray{}
-		err := fmt.Errorf("The infra " + infraId + " does not exist.")
+		err := fmt.Errorf("The infra %s does not exist.", infraId)
 		return temp, err
 	}
 
@@ -536,7 +540,7 @@ func CoreGetBenchmark(nsId string, infraId string, action string, host string) (
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("Benchmark Error")
+		return nil, fmt.Errorf("Benchmark Error: %w", err)
 	}
 
 	return &content, nil
