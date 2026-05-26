@@ -11,7 +11,7 @@ x-default-healthcheck: &default-healthcheck
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.12.12
+    image: cloudbaristaorg/cb-tumblebug:0.12.13
     container_name: cb-tumblebug
     build:
       context: .
@@ -148,7 +148,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.12.23
+    image: cloudbaristaorg/cb-spider:0.12.24
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
