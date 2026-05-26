@@ -174,6 +174,9 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 			}
 		}
 
+		// Correct manufacturer when Spider reports incorrect info (e.g., IBM labels Gaudi/MI300X as NVIDIA)
+		tumblebugSpec.AcceleratorModel = normalizeAcceleratorModel(tumblebugSpec.AcceleratorModel)
+
 		// Log if there are multiple GPUs defined
 		if len(spiderSpec.Gpu) > 1 {
 			log.Warn().Msgf("Spec %s has multiple GPUs defined (%d GPUs). Only using the first GPU information.",
@@ -182,6 +185,32 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	}
 
 	return tumblebugSpec, nil
+}
+
+// normalizeAcceleratorModel corrects the manufacturer prefix based on known GPU model names.
+// Spider drivers may report incorrect manufacturer info (e.g., IBM labels Intel Gaudi and AMD MI300X as NVIDIA).
+// Models not listed here are left unchanged and trusted as-is.
+func normalizeAcceleratorModel(model string) string {
+	upper := strings.ToUpper(model)
+
+	// Intel GPU models (order matters: longer/more specific first)
+	for _, m := range []string{"GAUDI3", "GAUDI2", "GAUDI"} {
+		if strings.Contains(upper, m) {
+			return "Intel " + m
+		}
+	}
+
+	// AMD GPU models
+	for _, m := range []string{
+		"RADEON PRO V710", "RADEON PRO V620",
+		"MI300X", "MI300A", "MI300", "MI250X", "MI250", "MI210", "MI100", "INSTINCT",
+	} {
+		if strings.Contains(upper, m) {
+			return "AMD " + m
+		}
+	}
+
+	return model
 }
 
 // extractArchitecture extracts architecture information based on CSP-specific logic
