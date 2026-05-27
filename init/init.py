@@ -598,30 +598,34 @@ def print_assets_summary(ns_id="system"):
 
         rows = []
         for p in providers:
+            total = p.get("specCount", 0)
+            priced = p.get("pricedSpecCount", 0)
+            pct = f"{round(priced / total * 100)}%" if total > 0 else "N/A"
             rows.append(
                 [
                     p.get("providerName", ""),
-                    p.get("specCount", 0),
-                    p.get("pricedSpecCount", 0),
-                    p.get("unpricedSpecCount", 0),
                     p.get("imageCount", 0),
+                    total,
+                    pct,
                 ]
             )
 
         print(
             tabulate(
                 rows,
-                headers=["Provider", "Specs", "Specs(priced)", "Specs(price-NA)", "Images"],
+                headers=["Provider", "Images", "Specs", "(Priced)"],
                 tablefmt="simple",
+                colalign=("left", "right", "right", "right"),
             )
         )
 
+        total_specs = payload.get('totalSpecCount', 0)
+        total_priced = payload.get('pricedSpecCount', 0)
+        total_pct = f"{round(total_priced / total_specs * 100)}%" if total_specs > 0 else "N/A"
         print(
             Fore.CYAN
             + "Totals: "
-            + f"specs={payload.get('totalSpecCount', 0)}, "
-            + f"priced={payload.get('pricedSpecCount', 0)}, "
-            + f"price-NA={payload.get('unpricedSpecCount', 0)}, "
+            + f"specs={total_specs} ({total_pct} priced), "
             + f"images={payload.get('totalImageCount', 0)}"
         )
     except requests.RequestException as e:
