@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # deployHermesAgent.sh
 #
-# All-in-one deployment script for a Hermes Agent tasting environment.
+# All-in-one deployment script for a Hermes Agent testing environment.
 #
 # It can install and configure:
 #   1. vLLM with an OpenAI-compatible API server
@@ -348,7 +348,10 @@ while [ $# -gt 0 ]; do
     --discord-allowed-users) DISCORD_ALLOWED_USERS="${2:?}"; shift 2 ;;
     --gateway-allow-all-users) GATEWAY_ALLOW_ALL_USERS="${2:?}"; shift 2 ;;
 
-    --ntfy-topic) NTFY_TOPIC="${2:?}"; shift 2 ;;
+    --ntfy-topic)
+      NTFY_TOPIC="${2:?}"
+      [[ "$NTFY_TOPIC" =~ ^[a-zA-Z0-9_-]+$ ]] || die "--ntfy-topic may only contain letters, digits, hyphens, and underscores."
+      shift 2 ;;
     --ntfy-native) NTFY_NATIVE_ENABLED="${2:?}"; shift 2 ;;
     --ntfy-allow-inbound) NTFY_ALLOW_INBOUND="${2:?}"; shift 2 ;;
     --ntfy-server-url) NTFY_SERVER_URL="${2:?}"; shift 2 ;;
@@ -390,7 +393,8 @@ if [ -n "$HF_TOKEN_FILE" ]; then
 fi
 
 if [ -z "$HERMES_API_KEY" ]; then
-  HERMES_API_KEY="hermes-$(openssl rand -hex 16)"
+  # Use /dev/urandom (always available) so this works before openssl is installed
+  HERMES_API_KEY="hermes-$(tr -dc 'a-f0-9' < /dev/urandom | head -c 32)"
 fi
 
 if [ -z "$VLLM_BASE_URL" ]; then
@@ -540,7 +544,7 @@ configure_vllm_service() {
     extra_args="--enable-auto-tool-choice --tool-call-parser ${TOOL_CALL_PARSER}"
   fi
 
-  install -o "$RUN_AS_USER" -g "$RUN_AS_USER" -m 0644 /dev/null "$USER_HOME/vllm-serve.log"
+  as_root install -o "$RUN_AS_USER" -g "$RUN_AS_USER" -m 0644 /dev/null "$USER_HOME/vllm-serve.log"
 
   as_root tee /etc/systemd/system/vllm.service >/dev/null <<EOF
 [Unit]
@@ -911,7 +915,7 @@ EOF
   as_root install -d -m 700 -o "$RUN_AS_USER" -g "$RUN_AS_USER" "$mem_dir"
   local mem_file="$mem_dir/MEMORY.md"
   touch "$mem_file"
-  if ! grep -q "etri-son-hermes-agent\|${NTFY_TOPIC}" "$mem_file" 2>/dev/null; then
+  if ! grep -qF "${NTFY_TOPIC}" "$mem_file" 2>/dev/null; then
     cat >> "$mem_file" <<EOF
 
 - When the user asks for alerts, alarms, notifications, completion notices, or cron result notices, send a short ntfy notification when appropriate. Prefer Hermes native ntfy delivery with deliver="ntfy" for cron jobs or target="ntfy:${NTFY_TOPIC}" for direct messages. If native delivery is not available, use: ~/.hermes/scripts/notify_ntfy.sh "<title>" "<message>" "<priority>" "<tags>". The configured ntfy topic is ${NTFY_TOPIC}. Do not send ntfy if the user explicitly says not to.
