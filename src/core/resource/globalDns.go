@@ -168,6 +168,17 @@ func UpdateGlobalDnsRecord(ctx context.Context, req *model.GlobalDnsRecordReq) (
 		return model.SimpleMsg{Message: fmt.Sprintf("Successfully updated %d geoproximity records for %s", len(nodeLocs), req.RecordName)}, nil
 	}
 
+	if req.RoutingPolicy == "weighted" {
+		log.Debug().Str("recordName", req.RecordName).Int("ipCount", len(ips)).Msg("[DNS] Upserting weighted records")
+		err = upsertWeightedRecords(ctx, r53, zoneID, req.RecordName, req.RecordType, req.TTL, ips)
+		if err != nil {
+			log.Error().Err(err).Msg("[DNS] Failed to upsert weighted records")
+			return model.SimpleMsg{}, fmt.Errorf("failed to update weighted records: %w", err)
+		}
+		log.Info().Str("recordName", req.RecordName).Int("ipCount", len(ips)).Msg("[DNS] Successfully updated weighted Route53 records")
+		return model.SimpleMsg{Message: fmt.Sprintf("Successfully updated %d weighted records for %s", len(ips), req.RecordName)}, nil
+	}
+
 	// Simple routing
 	log.Debug().Str("zoneID", zoneID).Str("recordName", req.RecordName).Str("recordType", req.RecordType).Int64("ttl", req.TTL).Strs("ips", ips).Msg("[DNS] Upserting Route53 record")
 	err = upsertRoute53Record(ctx, r53, zoneID, req.RecordName, req.RecordType, req.TTL, ips)
@@ -238,6 +249,8 @@ func GetGlobalDnsRecord(ctx context.Context, domainName string, recordName strin
 				info.GeoLatitude = aws.ToString(rs.GeoProximityLocation.Coordinates.Latitude)
 				info.GeoLongitude = aws.ToString(rs.GeoProximityLocation.Coordinates.Longitude)
 			}
+		} else if rs.Weight != nil {
+			info.RoutingPolicy = "weighted"
 		} else if rs.SetIdentifier != nil {
 			info.RoutingPolicy = "other"
 		} else {
@@ -847,6 +860,77 @@ func upsertGeoproximityRecords(ctx context.Context, r53 *route53.Client, zoneID,
 		log.Error().Err(err).Msg("[DNS] Geoproximity ChangeResourceRecordSets failed")
 	} else {
 		log.Debug().Msg("[DNS] Geoproximity ChangeResourceRecordSets succeeded")
+	}
+	return err
+}
+
+// upsertWeightedRecords creates or updates one weighted record per value (IP), each with equal weight (1).
+// Route 53 selects one record per DNS query in proportion to its weight share.
+func upsertWeightedRecords(ctx context.Context, r53 *route53.Client, zoneID, name, rtype string, ttl int64, ips []string) error {
+	if ttl == 0 {
+		ttl = 300
+	}
+
+	var changes []types.Change
+	newSetIDs := make(map[string]bool)
+
+	for i, ip := range ips {
+		setId := fmt.Sprintf("%s-w-%d", name, i+1)
+		newSetIDs[setId] = true
+		log.Debug().Str("setId", setId).Str("ip", ip).Msg("[DNS] Preparing weighted record")
+		changes = append(changes, types.Change{
+			Action: types.ChangeActionUpsert,
+			ResourceRecordSet: &types.ResourceRecordSet{
+				Name:          aws.String(name),
+				Type:          types.RRType(rtype),
+				TTL:           aws.Int64(ttl),
+				SetIdentifier: aws.String(setId),
+				Weight:        aws.Int64(1),
+				ResourceRecords: []types.ResourceRecord{
+					{Value: aws.String(ip)},
+				},
+			},
+		})
+	}
+
+	// Delete stale weighted records from previous calls
+	fqdn := name
+	if !strings.HasSuffix(fqdn, ".") {
+		fqdn += "."
+	}
+	listOut, listErr := r53.ListResourceRecordSets(ctx, &route53.ListResourceRecordSetsInput{
+		HostedZoneId:    aws.String(zoneID),
+		StartRecordName: aws.String(name),
+		StartRecordType: types.RRType(rtype),
+	})
+	if listErr == nil {
+		for _, rs := range listOut.ResourceRecordSets {
+			rsName := aws.ToString(rs.Name)
+			if rsName != fqdn || rs.Type != types.RRType(rtype) {
+				continue
+			}
+			sid := aws.ToString(rs.SetIdentifier)
+			if rs.Weight != nil && sid != "" && !newSetIDs[sid] {
+				log.Debug().Str("staleSetId", sid).Msg("[DNS] Deleting stale weighted record")
+				changes = append(changes, types.Change{
+					Action:            types.ChangeActionDelete,
+					ResourceRecordSet: &rs,
+				})
+			}
+		}
+	} else {
+		log.Warn().Err(listErr).Msg("[DNS] Failed to list existing records for stale cleanup; proceeding with upsert only")
+	}
+
+	log.Debug().Int("changeCount", len(changes)).Msg("[DNS] Sending weighted ChangeResourceRecordSets (UPSERT)")
+	_, err := r53.ChangeResourceRecordSets(ctx, &route53.ChangeResourceRecordSetsInput{
+		HostedZoneId: aws.String(zoneID),
+		ChangeBatch:  &types.ChangeBatch{Changes: changes},
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("[DNS] Weighted ChangeResourceRecordSets failed")
+	} else {
+		log.Debug().Msg("[DNS] Weighted ChangeResourceRecordSets succeeded")
 	}
 	return err
 }

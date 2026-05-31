@@ -22,7 +22,7 @@ type GlobalDnsRecordReq struct {
 	RecordName    string `json:"recordName" example:"infra.example.com" description:"Record Name (FQDN) to update"`
 	RecordType    string `json:"recordType" example:"A" enums:"A,AAAA,CNAME,TXT" description:"DNS Record Type"`
 	TTL           int64  `json:"ttl" example:"300" description:"Time To Live (seconds)"`
-	RoutingPolicy string `json:"routingPolicy,omitempty" example:"simple" enums:"simple,geoproximity" description:"Routing policy (default: simple)"`
+	RoutingPolicy string `json:"routingPolicy,omitempty" example:"simple" enums:"simple,geoproximity,weighted" description:"Routing policy (default: simple)"`
 
 	// --- IP Source Selection ---
 	SetBy GlobalDnsIPSource `json:"setBy" validate:"required" description:"IP source selection (Choose exactly one)"`
