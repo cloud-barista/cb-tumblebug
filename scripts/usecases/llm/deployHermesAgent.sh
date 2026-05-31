@@ -337,7 +337,7 @@ while [ $# -gt 0 ]; do
 
     --hermes-context-length) HERMES_CONTEXT_LENGTH="${2:?}"; shift 2 ;;
     --hermes-api-port) HERMES_API_PORT="${2:?}"; shift 2 ;;
-    --hermes-api-key) HERMES_API_KEY="${2:-}"; shift 2 ;;
+    --hermes-api-key) HERMES_API_KEY="${2?}"; shift 2 ;;
     --max-turns) HERMES_MAX_TURNS="${2:?}"; shift 2 ;;
     --provider-timeout-seconds) PROVIDER_TIMEOUT_SECONDS="${2:?}"; shift 2 ;;
     --provider-stale-timeout-seconds) PROVIDER_STALE_TIMEOUT_SECONDS="${2:?}"; shift 2 ;;
