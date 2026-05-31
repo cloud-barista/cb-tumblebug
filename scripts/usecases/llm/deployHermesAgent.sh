@@ -337,7 +337,7 @@ while [ $# -gt 0 ]; do
 
     --hermes-context-length) HERMES_CONTEXT_LENGTH="${2:?}"; shift 2 ;;
     --hermes-api-port) HERMES_API_PORT="${2:?}"; shift 2 ;;
-    --hermes-api-key) HERMES_API_KEY="${2:?}"; shift 2 ;;
+    --hermes-api-key) HERMES_API_KEY="${2?}"; shift 2 ;;
     --max-turns) HERMES_MAX_TURNS="${2:?}"; shift 2 ;;
     --provider-timeout-seconds) PROVIDER_TIMEOUT_SECONDS="${2:?}"; shift 2 ;;
     --provider-stale-timeout-seconds) PROVIDER_STALE_TIMEOUT_SECONDS="${2:?}"; shift 2 ;;
@@ -393,8 +393,9 @@ if [ -n "$HF_TOKEN_FILE" ]; then
 fi
 
 if [ -z "$HERMES_API_KEY" ]; then
-  # Use /dev/urandom (always available) so this works before openssl is installed
-  HERMES_API_KEY="hermes-$(tr -dc 'a-f0-9' < /dev/urandom | head -c 32)"
+  # /proc/sys/kernel/random/uuid is always available on Linux, produces a finite
+  # value (no SIGPIPE risk), and requires no external tools beyond tr.
+  HERMES_API_KEY="hermes-$(tr -d '-\n' < /proc/sys/kernel/random/uuid)"
 fi
 
 if [ -z "$VLLM_BASE_URL" ]; then
