@@ -693,6 +693,7 @@ func RunServer() {
 	// g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
 	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet)
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
+	g.PUT("/:nsId/resources/vNet/reconcile", rest_resource.RestReconcileAllVNets)
 
 	// Template-based vNet provisioning
 	g.POST("/:nsId/resources/vNet/template/:templateId", rest_resource.RestPostVNetFromTemplate)

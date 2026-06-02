@@ -267,7 +267,7 @@ func IsAvailableForUseInCSP(vNetReq *model.VNetReq, provider string) (bool, erro
 	}
 
 	// * 4. Check if the prefix length of the vNet CIDR block is in range of CSP's vNet prefix length
-	// Note: GCP does not have VPC network CIDR block so skip the prefix length check
+	// Note: GCP does not have vNet (VPC) CIDR block requirement, so skip the prefix length check
 	if csp.VNet != nil {
 		vNetPrefixMin := csp.VNet.PrefixLength.Min
 		vNetPrefixMax := csp.VNet.PrefixLength.Max
@@ -364,7 +364,7 @@ type spiderConnectionRequest struct {
 	ConnectionName string `json:"ConnectionName" validate:"required" example:"aws-connection"`
 }
 
-// VPCRegisterRequest represents the request body for registering a VPC.
+// spiderVPCRegisterRequest represents the Spider API request body for registering a vNet (VPC in Spider).
 type spiderVPCRegisterRequest struct {
 	ConnectionName string                       `json:"ConnectionName" validate:"required" example:"aws-connection"`
 	ReqInfo        spiderVPCRegisterRequestInfo `json:"ReqInfo" validate:"required"`
@@ -375,7 +375,7 @@ type spiderVPCRegisterRequestInfo struct {
 	CSPId string `json:"CSPId" validate:"required" example:"csp-vpc-1234"`
 }
 
-// CreateVPCRequest represents the request body for creating a VPC.
+// spiderCreateVPCRequest represents the Spider API request body for creating a vNet (VPC in Spider).
 type spiderCreateVPCRequest struct {
 	ConnectionName  string                     `json:"ConnectionName" validate:"required" example:"aws-connection"`
 	IDTransformMode string                     `json:"IDTransformMode,omitempty" validate:"omitempty" example:"ON"` // ON: transform CSP ID, OFF: no-transform CSP ID
@@ -384,7 +384,7 @@ type spiderCreateVPCRequest struct {
 
 type spiderCreateVPCRequestInfo struct {
 	Name           string                       `json:"Name" validate:"required" example:"vpc-01"`
-	IPv4_CIDR      string                       `json:"IPv4_CIDR" validate:"omitempty"` // Some CSPs unsupported VPC CIDR
+	IPv4_CIDR      string                       `json:"IPv4_CIDR" validate:"omitempty"` // Some CSPs do not support vNet (VPC) CIDR
 	SubnetInfoList []spiderAddSubnetRequestInfo `json:"SubnetInfoList" validate:"required"`
 	TagList        []model.KeyValue             `json:"TagList,omitempty" validate:"omitempty"`
 }
@@ -394,7 +394,7 @@ type spiderCreateVPCRequestInfo struct {
 // }
 
 // type spiderListVPCResponse struct {
-// 	Result []spiderVPCInfo `json:"vpc" validate:"required" description:"A list of VPC information"`
+// 	Result []spiderVPCInfo `json:"vpc" validate:"required" description:"A list of vNet (VPC) information"`
 // }
 
 type spiderVpcDeleteReq struct {
@@ -1151,11 +1151,11 @@ func SyncVNetState(nsId string, vNetInfo *model.VNetInfo, optPreloadedVNetStatus
 	}
 
 	vnetState := getResourceState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, vpcStatusResp)
-	log.Debug().Msgf("VPC '%s' state in Spider: %q", vNetInfo.CspResourceName, vnetState)
+	log.Debug().Msgf("vNet '%s' state in Spider: %q", vNetInfo.CspResourceName, vnetState)
 
 	switch vnetState {
 	case "exists":
-		// VPC exists on CSP. Recurse into child subnets first so that any
+		// vNet exists on CSP. Recurse into child subnets first so that any
 		// per-subnet drift (orphaned metadata, stuck statuses) is settled
 		// before evaluating the parent vNet status.
 		log.Info().Msgf("vNet (%s) exists on CSP; reconciling child subnets", vNetInfo.Id)
@@ -1166,8 +1166,8 @@ func SyncVNetState(nsId string, vNetInfo *model.VNetInfo, optPreloadedVNetStatus
 			return emptyRet, err2
 		}
 
-		// Fetch subnet status scoped to this VPC.
-		log.Debug().Msgf("[Request to Spider] Listing Subnets for VPC %s (connection: %s)",
+		// Fetch subnet status scoped to this vNet.
+		log.Debug().Msgf("[Request to Spider] Listing Subnets for vNet %s (connection: %s)",
 			vNetInfo.CspResourceName, vNetInfo.ConnectionName)
 		subnetStatus, subnetErr := GetCspResourceStatus(
 			vNetInfo.ConnectionName,
@@ -1227,23 +1227,27 @@ func SyncVNetState(nsId string, vNetInfo *model.VNetInfo, optPreloadedVNetStatus
 			return ret, nil
 		}
 
-		ret.Message = fmt.Sprintf(
-			"vNet (%s) reconciled: VPC exists on CSP; subnets: %d checked / %d consistent / %d restored / %d cleaned / %d csp-only / %d error(s)",
-			vNetInfo.Id, subnetSummary.Total, subnetSummary.NoAction, subnetSummary.Restored, subnetSummary.Cleaned, subnetSummary.CspOnly, subnetSummary.Errors)
+		// Build message with all counts for complete status visibility
+		subnetInfo := fmt.Sprintf("%d consistent / %d restored / %d cleaned / %d csp-only / %d error(s)",
+			subnetSummary.NoAction, subnetSummary.Restored, subnetSummary.Cleaned,
+			subnetSummary.CspOnly, subnetSummary.Errors)
+
+		ret.Message = fmt.Sprintf("vNet (%s) on CSP (%s) reconciled; %d subnets: %s",
+			vNetInfo.Id, vNetInfo.ConnectionName, subnetSummary.Total, subnetInfo)
 		log.Info().Msg(ret.Message)
 		return ret, nil
 
 	case "cspOnly":
 		// CSP resource still exists but Spider has no IID.
 		// Preserve TB metadata — deleting it would orphan the CSP resource.
-		// TODO: consider re-registering the CSP-only VPC into Spider.
+		// TODO: consider re-registering the CSP-only vNet into Spider.
 		ret.Message = fmt.Sprintf("vNet (%s) exists on CSP but has no Spider IID (cspOnly); TB metadata preserved", vNetInfo.Id)
 		log.Warn().Msg(ret.Message)
 		return ret, nil
 
 	case "spiderOnly":
 		/*
-		 * VPC is gone from CSP (or was never registered in Spider).
+		 * vNet is gone from CSP (or was never registered in Spider).
 		 * Purge the Spider IID only when Spider still tracks it, then remove TB metadata.
 		 */
 		// Spider still has the IID but the CSP resource is gone: force-delete to purge the IID.

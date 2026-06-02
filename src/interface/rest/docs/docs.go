@@ -15802,6 +15802,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/vNet/reconcile": {
+            "put": {
+                "description": "Reconcile all VNets and their subnets in the namespace by comparing TB metadata with CSP state. TB metadata is the source of truth; only TB-registered resources are reconciled.\n\n⚠️ **PERFORMANCE NOTE**: Reconciliation may take 1-2 minutes per cloud connection due to CSP API response time. Plan accordingly for namespaces with multiple cloud connections.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Reconcile all VNets in namespace",
+                "operationId": "ReconcileAllVNets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "maximum": 20,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 5,
+                        "description": "Maximum concurrent reconciliation operations (1-20)",
+                        "name": "maxConcurrent",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reconciliation results",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourceReconcileResults"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/vNet/template/{templateId}": {
             "post": {
                 "description": "Create a new vNet by applying a vNet Template.\nThe template provides the base vNet configuration (connectionName, cidrBlock, subnets),\nand the apply request allows overriding the vNet name and description.\n\n**Override Behavior (Phase 1):**\n- ` + "`" + `name` + "`" + ` (required): Name for the new vNet\n- ` + "`" + `description` + "`" + ` (optional): Overrides the template's description\n- All other configuration (connectionName, cidrBlock, subnets) comes from the template",
@@ -28606,6 +28673,88 @@ const docTemplate = `{
                 },
                 "objectKey": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ResourceReconcileResult": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "description": "Connection name",
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "elapsed": {
+                    "description": "Human-readable elapsed time",
+                    "type": "string",
+                    "example": "2.3s"
+                },
+                "elapsedSeconds": {
+                    "description": "Elapsed time in seconds (numeric, 2 decimal places)",
+                    "type": "number",
+                    "example": 2.31
+                },
+                "error": {
+                    "description": "Error detail if reconciliation failed",
+                    "type": "string",
+                    "example": "failed to get CSP status: connection timeout"
+                },
+                "message": {
+                    "description": "Descriptive message about the reconciliation outcome",
+                    "type": "string",
+                    "example": "vNet (vnet00) on CSP (aws-ap-northeast-2) reconciled; 2 subnet(s): 2 consistent / 0 restored / 0 cleaned / 0 csp-only / 0 error(s)"
+                },
+                "resourceId": {
+                    "description": "Resource ID",
+                    "type": "string",
+                    "example": "vnet00"
+                },
+                "resourceType": {
+                    "description": "Resource type (e.g., \"vNet\", \"securityGroup\", \"sshKey\")",
+                    "type": "string",
+                    "example": "vNet"
+                },
+                "success": {
+                    "description": "Whether the reconciliation was successful",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.ResourceReconcileResults": {
+            "type": "object",
+            "properties": {
+                "elapsed": {
+                    "description": "Human-readable total elapsed time",
+                    "type": "string",
+                    "example": "1m 46s"
+                },
+                "elapsedSeconds": {
+                    "description": "Total elapsed time in seconds (numeric, 2 decimal places)",
+                    "type": "number",
+                    "example": 106.43
+                },
+                "failedCount": {
+                    "description": "Number of failed reconciliations",
+                    "type": "integer",
+                    "example": 1
+                },
+                "results": {
+                    "description": "Individual results per resource",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ResourceReconcileResult"
+                    }
+                },
+                "successCount": {
+                    "description": "Number of successfully reconciled resources",
+                    "type": "integer",
+                    "example": 9
+                },
+                "total": {
+                    "description": "Total number of resources processed",
+                    "type": "integer",
+                    "example": 10
                 }
             }
         },

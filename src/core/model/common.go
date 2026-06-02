@@ -163,6 +163,42 @@ type ResourceDeleteResults struct {
 	Results []ResourceDeleteResult `json:"results"`
 }
 
+// ResourceReconcileResult represents the result of a single resource reconciliation operation.
+type ResourceReconcileResult struct {
+	// Resource type (e.g., "vNet", "securityGroup", "sshKey")
+	ResourceType string `json:"resourceType" example:"vNet"`
+	// Resource ID
+	ResourceId string `json:"resourceId" example:"vnet00"`
+	// Connection name
+	ConnectionName string `json:"connectionName" example:"aws-ap-northeast-2"`
+	// Whether the reconciliation was successful
+	Success bool `json:"success" example:"true"`
+	// Elapsed time in seconds (numeric, 2 decimal places)
+	ElapsedSeconds float64 `json:"elapsedSeconds" example:"2.31"`
+	// Human-readable elapsed time
+	Elapsed string `json:"elapsed" example:"2.3s"`
+	// Descriptive message about the reconciliation outcome
+	Message string `json:"message,omitempty" example:"vNet (vnet00) on CSP (aws-ap-northeast-2) reconciled; 2 subnet(s): 2 consistent / 0 restored / 0 cleaned / 0 csp-only / 0 error(s)"`
+	// Error detail if reconciliation failed
+	Error string `json:"error,omitempty" example:"failed to get CSP status: connection timeout"`
+}
+
+// ResourceReconcileResults represents the aggregated results of a batch resource reconciliation operation.
+type ResourceReconcileResults struct {
+	// Total number of resources processed
+	Total int `json:"total" example:"10"`
+	// Number of successfully reconciled resources
+	SuccessCount int `json:"successCount" example:"9"`
+	// Number of failed reconciliations
+	FailedCount int `json:"failedCount" example:"1"`
+	// Total elapsed time in seconds (numeric, 2 decimal places)
+	ElapsedSeconds float64 `json:"elapsedSeconds" example:"106.43"`
+	// Human-readable total elapsed time
+	Elapsed string `json:"elapsed" example:"1m 46s"`
+	// Individual results per resource
+	Results []ResourceReconcileResult `json:"results"`
+}
+
 // OptionalParameter is struct for optional parameter for function (ex. NodeId)
 type OptionalParameter struct {
 	Value string

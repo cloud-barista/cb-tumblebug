@@ -13650,6 +13650,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/vNet/reconcile:
+    put:
+      tags:
+      - "[Infra Resource] Network Management"
+      summary: Reconcile all VNets in namespace
+      description: |-
+        Reconcile all VNets and their subnets in the namespace by comparing TB metadata with CSP state. TB metadata is the source of truth; only TB-registered resources are reconciled.
+
+        ⚠️ **PERFORMANCE NOTE**: Reconciliation may take 1-2 minutes per cloud connection due to CSP API response time. Plan accordingly for namespaces with multiple cloud connections.
+      operationId: ReconcileAllVNets
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: maxConcurrent
+        in: query
+        description: Maximum concurrent reconciliation operations (1-20)
+        schema:
+          maximum: 20
+          minimum: 1
+          type: integer
+          default: 5
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Reconciliation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ResourceReconcileResults'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/vNet/template/{templateId}:
     post:
       tags:
@@ -23649,6 +23705,71 @@ components:
           type: string
         objectKey:
           type: string
+    model.ResourceReconcileResult:
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: Connection name
+          example: aws-ap-northeast-2
+        elapsed:
+          type: string
+          description: Human-readable elapsed time
+          example: 2.3s
+        elapsedSeconds:
+          type: number
+          description: "Elapsed time in seconds (numeric, 2 decimal places)"
+          example: 2.31
+        error:
+          type: string
+          description: Error detail if reconciliation failed
+          example: "failed to get CSP status: connection timeout"
+        message:
+          type: string
+          description: Descriptive message about the reconciliation outcome
+          example: "vNet (vnet00) on CSP (aws-ap-northeast-2) reconciled; 2 subnet(s):\
+            \ 2 consistent / 0 restored / 0 cleaned / 0 csp-only / 0 error(s)"
+        resourceId:
+          type: string
+          description: Resource ID
+          example: vnet00
+        resourceType:
+          type: string
+          description: "Resource type (e.g., \"vNet\", \"securityGroup\", \"sshKey\"\
+            )"
+          example: vNet
+        success:
+          type: boolean
+          description: Whether the reconciliation was successful
+          example: true
+    model.ResourceReconcileResults:
+      type: object
+      properties:
+        elapsed:
+          type: string
+          description: Human-readable total elapsed time
+          example: 1m 46s
+        elapsedSeconds:
+          type: number
+          description: "Total elapsed time in seconds (numeric, 2 decimal places)"
+          example: 106.43
+        failedCount:
+          type: integer
+          description: Number of failed reconciliations
+          example: 1
+        results:
+          type: array
+          description: Individual results per resource
+          items:
+            $ref: '#/components/schemas/model.ResourceReconcileResult'
+        successCount:
+          type: integer
+          description: Number of successfully reconciled resources
+          example: 9
+        total:
+          type: integer
+          description: Total number of resources processed
+          example: 10
     model.ResourcesByManageType:
       type: object
       properties:
