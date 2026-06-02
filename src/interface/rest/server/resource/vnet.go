@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -239,14 +240,28 @@ func RestDelVNet(c echo.Context) error {
 		resp, err = resource.DeleteVNet(nsId, vNetId, action.String())
 		if err != nil {
 			log.Error().Err(err).Msg("")
+
+			// Trigger Self-healing upon deletion failure
+			log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", vNetId)
+			manager := reconcile.GetManager()
+			if _, recErr := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, vNetId, nil); recErr != nil {
+				log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", vNetId)
+			}
+
 			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 	case resource.ActionReconcile:
 		// [Process]
-		resp, err = resource.ReconcileVNet(nsId, vNetId, nil)
+		manager := reconcile.GetManager()
+		res, err := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, vNetId, nil)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
+		}
+		if simpleMsg, ok := res.(model.SimpleMsg); ok {
+			resp = simpleMsg
+		} else {
+			resp = model.SimpleMsg{Message: "reconcile completed"}
 		}
 	default:
 		errMsg := fmt.Errorf("invalid action (%s)", action)
