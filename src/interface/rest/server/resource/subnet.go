@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -281,11 +282,16 @@ func RestDelSubnet(c echo.Context) error {
 			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 		}
 	case resource.ActionReconcile:
-		// [Process]
-		resp, err = resource.ReconcileSubnet(nsId, vNetId, subnetId, nil)
+		manager := reconcile.GetManager()
+		res, err := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, vNetId, nil)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
+		}
+		if simpleMsg, ok := res.(model.SimpleMsg); ok {
+			resp = simpleMsg
+		} else {
+			resp = model.SimpleMsg{Message: "reconcile completed"}
 		}
 	default:
 		errMsg := fmt.Errorf("invalid action (%s)", action)

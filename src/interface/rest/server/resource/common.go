@@ -23,6 +23,7 @@ import (
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 )
 
@@ -47,6 +48,17 @@ func RestDelAllResources(c echo.Context) error {
 	log.Info().Msgf("Starting DelAllResources for nsId: %s, resourceType: %s", nsId, resourceType)
 
 	content, err := resource.DelAllResources(nsId, resourceType, subString, forceFlag)
+
+	for _, result := range content.Results {
+		if result.ResourceType == model.StrVNet && !result.Success {
+			// Trigger Self-healing upon deletion failure
+			log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", result.ResourceId)
+			manager := reconcile.GetManager()
+			if _, recErr := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, result.ResourceId, nil); recErr != nil {
+				log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", result.ResourceId)
+			}
+		}
+	}
 
 	log.Info().Msgf("DelAllResources completed for nsId: %s, resourceType: %s — total: %d, success: %d, failed: %d", nsId, resourceType, content.Total, content.SuccessCount, content.FailedCount)
 
@@ -74,6 +86,16 @@ func RestDelResource(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	err := resource.DelResource(nsId, resourceType, resourceId, forceFlag)
+
+	// If deletion failed for a VNet, trigger Reconcile to attempt self-healing (e.g., by removing dangling references from VMs and retrying deletion).
+	if err != nil && resourceType == model.StrVNet {
+		log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", resourceId)
+		manager := reconcile.GetManager()
+		if _, recErr := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, resourceId, nil); recErr != nil {
+			log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", resourceId)
+		}
+	}
+
 	content := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been deleted"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
@@ -396,6 +418,18 @@ func RestDelAllSharedResources(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	content, err := resource.DeleteSharedResources(nsId)
+
+	for _, result := range content.Results {
+		if result.ResourceType == model.StrVNet && !result.Success {
+			// Trigger Self-healing upon deletion failure
+			log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", result.ResourceId)
+			manager := reconcile.GetManager()
+			if _, recErr := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, result.ResourceId, nil); recErr != nil {
+				log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", result.ResourceId)
+			}
+		}
+	}
+
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
