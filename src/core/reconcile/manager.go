@@ -11,6 +11,7 @@ import (
 // Reconciler is an interface that every resource-specific reconciler must implement.
 type Reconciler interface {
 	Reconcile(ctx context.Context, nsId string, resourceId string, optPreloadedStatus *model.CspResourceStatusResponse) (any, error)
+	ReconcileAll(ctx context.Context, nsId string, maxConcurrent int) (model.ResourceReconcileResults, error)
 }
 
 // Manager is a singleton registry that holds and routes reconcile requests to appropriate Reconcilers.
@@ -50,4 +51,17 @@ func (m *Manager) RunReconcile(ctx context.Context, nsId string, resourceType st
 	}
 
 	return reconciler.Reconcile(ctx, nsId, resourceId, optPreloadedStatus)
+}
+
+// RunReconcileAll routes the namespace-level batch reconcile request to the registered Reconciler.
+func (m *Manager) RunReconcileAll(ctx context.Context, nsId string, resourceType string, maxConcurrent int) (model.ResourceReconcileResults, error) {
+	m.mux.RLock()
+	reconciler, exists := m.reconcilers[resourceType]
+	m.mux.RUnlock()
+
+	if !exists {
+		return model.ResourceReconcileResults{}, fmt.Errorf("no reconciler registered for resource type: %s", resourceType)
+	}
+
+	return reconciler.ReconcileAll(ctx, nsId, maxConcurrent)
 }

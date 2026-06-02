@@ -17,6 +17,7 @@ package resource
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
@@ -401,4 +402,52 @@ func RestDeleteDeregisterVNet(c echo.Context) error {
 
 	// [Output] Return the deregistered result
 	return c.JSON(http.StatusOK, resp)
+}
+
+// RestReconcileAllVNets godoc
+// @ID ReconcileAllVNets
+// @Summary Reconcile all VNets in namespace
+// @Description Reconcile all VNets and their subnets in the namespace by comparing TB metadata with CSP state. TB metadata is the source of truth; only TB-registered resources are reconciled.
+// @Description
+// @Description ⚠️ **PERFORMANCE NOTE**: Reconciliation may take 1-2 minutes per cloud connection due to CSP API response time. Plan accordingly for namespaces with multiple cloud connections.
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param maxConcurrent query int false "Maximum concurrent reconciliation operations (1-20)" default(5) minimum(1) maximum(20)
+// @Success 200 {object} model.ResourceReconcileResults "Reconciliation results"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/vNet/reconcile [put]
+func RestReconcileAllVNets(c echo.Context) error {
+	ctx := c.Request().Context()
+	nsId := c.Param("nsId")
+
+	// Parse maxConcurrent parameter
+	maxConcurrent := 5
+	if mc := c.QueryParam("maxConcurrent"); mc != "" {
+		parsed, err := strconv.Atoi(mc)
+		if err != nil || parsed <= 0 || parsed > 20 {
+			errMsg := fmt.Errorf("invalid maxConcurrent value: %s (must be 1-20)", mc)
+			log.Warn().Msg(errMsg.Error())
+			return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+		}
+		maxConcurrent = parsed
+	}
+
+	// Run batch reconciliation
+	manager := reconcile.GetManager()
+	results, err := manager.RunReconcileAll(ctx, nsId, model.StrVNet, maxConcurrent)
+
+	if err != nil {
+		log.Error().Err(err).Msgf("ReconcileAll failed for namespace: %s", nsId)
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
+	}
+
+	log.Info().Msgf("ReconcileAll VNets completed for namespace %s: total=%d, success=%d, failed=%d",
+		nsId, results.Total, results.SuccessCount, results.FailedCount)
+
+	return c.JSON(http.StatusOK, results)
 }
