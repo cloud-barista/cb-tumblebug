@@ -137,7 +137,8 @@ type ImageInfo struct {
 
 	IsGPUImage        bool `json:"isGPUImage" gorm:"column:is_gpu_image" enum:"true|false" default:"false" description:"Whether the image is GPU-enabled or not."`
 	IsKubernetesImage bool `json:"isKubernetesImage" gorm:"column:is_kubernetes_image" enum:"true|false" default:"false" description:"Whether this image can be used to create K8s nodes. For AWS/GCP, only type identifiers registered in cloudimage.csv are true."`
-	IsBasicImage      bool `json:"isBasicImage" gorm:"column:is_basic_image" enum:"true|false" default:"false" description:"Whether the image is a basic OS image or not."`
+	IsBasicImage      bool `json:"isBasicImage" gorm:"column:is_basic_image" enum:"true|false" default:"false" description:"Whether the image is a basic non-GPU OS image (clean OS install, no pre-installed GPU drivers)."`
+	IsBasicGpuImage   bool `json:"isBasicGpuImage" gorm:"column:is_basic_gpu_image" enum:"true|false" default:"false" description:"Whether the image is a basic GPU image (GPU drivers pre-installed, recommended for GPU workloads). Mutually exclusive with isBasicImage."`
 
 	OSType string `json:"osType" gorm:"column:os_type" example:"ubuntu 22.04" description:"Simplified OS name and version string"`
 
@@ -221,6 +222,11 @@ type SearchImageRequest struct {
 	// If true, the search results will include only the basic OS distribution without additional applications.
 	// If false or not specified, the search results will include images with additional applications installed.
 	IncludeBasicImageOnly *bool `json:"includeBasicImageOnly" example:"false" description:"Return basic OS distribution only without additional applications."`
+
+	// IsBasicGpuImage filters for GPU images with GPU drivers pre-installed.
+	// Mutually exclusive with isBasicImage: basic GPU images have isBasicImage=false.
+	// If not specified, both true and false images will be included in the search results.
+	IsBasicGpuImage *bool `json:"isBasicGpuImage" example:"false" description:"Filter for GPU images with drivers pre-installed (recommended for GPU workloads)."`
 
 	// MaxResults is the maximum number of images to be returned in the search results.
 	// If not specified, all images will be returned.
