@@ -20627,6 +20627,9 @@ components:
         infraType:
           type: string
           description: "vm|k8s|kubernetes|container, etc."
+        isBasicGpuImage:
+          type: boolean
+          default: false
         isBasicImage:
           type: boolean
           default: false
@@ -24238,6 +24241,13 @@ components:
             Whether the search results should include deprecated images or not.
             If not specified, deprecated images will not be included in the search results.
             In usual, deprecated images are not recommended to use, but they can be used if necessary.
+          example: false
+        isBasicGpuImage:
+          type: boolean
+          description: |-
+            IsBasicGpuImage filters for GPU images with GPU drivers pre-installed.
+            Note: images with isBasicGpuImage=true always have isBasicImage=false (they are mutually exclusive on returned image objects).
+            If not specified, both true and false images will be included in the search results.
           example: false
         isGPUImage:
           type: boolean

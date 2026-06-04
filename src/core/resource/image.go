@@ -2139,6 +2139,10 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 	}
 
 	if req.IsBasicGpuImage != nil {
+		// isBasicGpuImage=true implies isGPUImage=true; reject contradictory filters
+		if *req.IsBasicGpuImage && req.IsGPUImage != nil && !*req.IsGPUImage {
+			return nil, cnt, fmt.Errorf("isBasicGpuImage=true is incompatible with isGPUImage=false")
+		}
 		sqlQuery = sqlQuery.Where("is_basic_gpu_image = ?", *req.IsBasicGpuImage)
 	}
 
@@ -3000,7 +3004,12 @@ func shouldSkipImage(imageName, osDistribution, providerName, regionName string)
 
 	// Check global patterns
 	for _, pattern := range config.Global.Patterns {
-		if matched, _ := filepath.Match(strings.ToLower(pattern), combined); matched {
+		matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
+		if matchErr != nil {
+			log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml global.patterns")
+			continue
+		}
+		if matched {
 			return true
 		}
 	}
@@ -3013,14 +3022,24 @@ func shouldSkipImage(imageName, osDistribution, providerName, regionName string)
 	}
 
 	for _, pattern := range cspConfig.GlobalPatterns {
-		if matched, _ := filepath.Match(strings.ToLower(pattern), combined); matched {
+		matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
+		if matchErr != nil {
+			log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml csps.*.global_patterns")
+			continue
+		}
+		if matched {
 			return true
 		}
 	}
 
 	if regionPatterns, ok := cspConfig.Regions[regionName]; ok {
 		for _, pattern := range regionPatterns.Patterns {
-			if matched, _ := filepath.Match(strings.ToLower(pattern), combined); matched {
+			matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
+			if matchErr != nil {
+				log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml csps.*.regions")
+				continue
+			}
+			if matched {
 				return true
 			}
 		}

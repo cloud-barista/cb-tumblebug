@@ -224,9 +224,9 @@ type SearchImageRequest struct {
 	IncludeBasicImageOnly *bool `json:"includeBasicImageOnly" example:"false" description:"Return basic OS distribution only without additional applications."`
 
 	// IsBasicGpuImage filters for GPU images with GPU drivers pre-installed.
-	// Mutually exclusive with isBasicImage: basic GPU images have isBasicImage=false.
+	// Note: images with isBasicGpuImage=true always have isBasicImage=false (they are mutually exclusive on returned image objects).
 	// If not specified, both true and false images will be included in the search results.
-	IsBasicGpuImage *bool `json:"isBasicGpuImage" example:"false" description:"Filter for GPU images with drivers pre-installed (recommended for GPU workloads)."`
+	IsBasicGpuImage *bool `json:"isBasicGpuImage" example:"false" description:"Filter for GPU images with drivers pre-installed. Images matching this filter always have isBasicImage=false."`
 
 	// MaxResults is the maximum number of images to be returned in the search results.
 	// If not specified, all images will be returned.
