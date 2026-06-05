@@ -76,6 +76,37 @@ func RestRecommendSpecOptions(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestRecommendAlternativeNodeConfig godoc
+// @ID RecommendAlternativeNodeConfig
+// @Summary Recommend alternative node configurations in a target CSP/region
+// @Description Given a nodegroup configuration (source spec + image), find the best-matching
+// @Description spec and image combinations in a target CSP/region.
+// @Description Per-field match policies (required / preferred / open) give fine-grained control over
+// @Description which attributes must match exactly, which may vary within a tolerance, and which are ignored.
+// @Description Similarity scores (0–100) are computed from "preferred" fields only.
+// @Tags [MC-Infra] Infra Provisioning and Management
+// @Accept  json
+// @Produce json
+// @Param recommendAlternativeNodeConfigReq body model.RecommendAlternativeNodeConfigReq true "Source nodegroup config and target CSP/region with match criteria"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Success 200 {object} model.RecommendAlternativeNodeConfigResponse
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /recommendAlternativeNodeConfig [post]
+func RestRecommendAlternativeNodeConfig(c echo.Context) error {
+	nsId := model.SystemCommonNs
+
+	req := &model.RecommendAlternativeNodeConfigReq{}
+	if err := c.Bind(req); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	ctx := c.Request().Context()
+	content, err := infra.RecommendAlternativeNodeConfig(ctx, nsId, *req)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 type RestPostInfraRecommendResponse struct {
 	//VmReq          []VmRecommendReq    `json:"nodeReq"`
 	NodeRecommend  []model.NodeRecommendInfo `json:"nodeRecommend"`

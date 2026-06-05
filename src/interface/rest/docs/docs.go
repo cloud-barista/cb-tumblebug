@@ -18845,6 +18845,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/recommendAlternativeNodeConfig": {
+            "post": {
+                "description": "Given a nodegroup configuration (source spec + image), find the best-matching\nspec and image combinations in a target CSP/region.\nPer-field match policies (required / preferred / open) give fine-grained control over\nwhich attributes must match exactly, which may vary within a tolerance, and which are ignored.\nSimilarity scores (0–100) are computed from \"preferred\" fields only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Recommend alternative node configurations in a target CSP/region",
+                "operationId": "RecommendAlternativeNodeConfig",
+                "parameters": [
+                    {
+                        "description": "Source nodegroup config and target CSP/region with match criteria",
+                        "name": "recommendAlternativeNodeConfigReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RecommendAlternativeNodeConfigReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RecommendAlternativeNodeConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/recommendSpec": {
             "post": {
                 "description": "Recommend specs for configuring an infrastructure (filter and priority)\nFind details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234\nGet available options by /recommendSpecOptions for filtering and prioritizing specs in RecommendSpec API",
@@ -21988,6 +22047,40 @@ const docTemplate = `{
                     "type": "string",
                     "default": "65532",
                     "example": "65532"
+                }
+            }
+        },
+        "model.AlternativeNodeConfigCandidate": {
+            "type": "object",
+            "properties": {
+                "alternativeImages": {
+                    "description": "AlternativeImages are additional image options (up to ImageAlternativeLimit).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ImageInfo"
+                    }
+                },
+                "primaryImage": {
+                    "description": "PrimaryImage is the best-matched image for the candidate spec.\nFor GPU specs: prefers isBasicGpuImage=true, then isGPUImage=true.\nFor non-GPU specs: prefers isBasicImage=true.\nNil when no image is found.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ImageInfo"
+                        }
+                    ]
+                },
+                "rank": {
+                    "description": "Rank is 1-based; lower rank = higher similarity.",
+                    "type": "integer"
+                },
+                "similarityScore": {
+                    "description": "SimilarityScore is 0.0–100.0; computed from \"preferred\" fields only.",
+                    "type": "number"
+                },
+                "spec": {
+                    "$ref": "#/definitions/model.SpecInfo"
+                },
+                "specDiff": {
+                    "$ref": "#/definitions/model.SpecDiff"
                 }
             }
         },
@@ -26616,6 +26709,19 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MatchPolicy": {
+            "type": "string",
+            "enum": [
+                "required",
+                "preferred",
+                "open"
+            ],
+            "x-enum-varnames": [
+                "MatchRequired",
+                "MatchPreferred",
+                "MatchOpen"
+            ]
+        },
         "model.McNetConfigurationDetails": {
             "type": "object",
             "properties": {
@@ -28211,6 +28317,80 @@ const docTemplate = `{
                 "ready": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "model.RecommendAlternativeNodeConfigReq": {
+            "type": "object",
+            "required": [
+                "sourceSpecId",
+                "targetProviderName"
+            ],
+            "properties": {
+                "imageAlternativeLimit": {
+                    "description": "ImageAlternativeLimit is the number of alternative images to return per candidate (default: 3).",
+                    "type": "integer",
+                    "example": 3
+                },
+                "matchCriteria": {
+                    "description": "MatchCriteria overrides the default per-field match policy.\nOmitted fields use their documented defaults.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SpecMatchCriteria"
+                        }
+                    ]
+                },
+                "osType": {
+                    "description": "OSType overrides the OS type for image search (e.g., \"ubuntu\").\nWhen omitted, the osType of SourceImageId is used; if that is also unavailable, no OS filter is applied.",
+                    "type": "string",
+                    "example": "ubuntu"
+                },
+                "sourceImageId": {
+                    "description": "SourceImageId is the CSP image name or TB image ID used in the source nodegroup.\nWhen provided, its osType is used to guide image recommendation in the target CSP.",
+                    "type": "string",
+                    "example": "ami-00b02e8f2be5634d2"
+                },
+                "sourceSpecId": {
+                    "description": "SourceSpecId is the TB spec ID of the existing nodegroup (e.g., \"aws+us-east-2+p4d.24xlarge\").",
+                    "type": "string",
+                    "example": "aws+us-east-2+p4d.24xlarge"
+                },
+                "specCandidateLimit": {
+                    "description": "SpecCandidateLimit is the maximum number of candidate specs to return (default: 5).",
+                    "type": "integer",
+                    "example": 5
+                },
+                "targetProviderName": {
+                    "description": "TargetProviderName is the CSP to search in (e.g., \"gcp\", \"azure\").",
+                    "type": "string",
+                    "example": "gcp"
+                },
+                "targetRegionName": {
+                    "description": "TargetRegionName constrains the search to a specific region.\nWhen omitted, all regions of the target CSP are searched.",
+                    "type": "string",
+                    "example": "us-central1"
+                },
+                "tolerancePercent": {
+                    "description": "TolerancePercent is the ±% range applied to fields with \"preferred\" policy (default: 20).",
+                    "type": "integer",
+                    "example": 20
+                }
+            }
+        },
+        "model.RecommendAlternativeNodeConfigResponse": {
+            "type": "object",
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AlternativeNodeConfigCandidate"
+                    }
+                },
+                "sourceImage": {
+                    "$ref": "#/definitions/model.ImageInfo"
+                },
+                "sourceSpec": {
+                    "$ref": "#/definitions/model.SpecInfo"
                 }
             }
         },
@@ -30037,6 +30217,40 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SpecDiff": {
+            "type": "object",
+            "properties": {
+                "accelCountDiff": {
+                    "description": "candidate - source",
+                    "type": "integer"
+                },
+                "accelMemGBDiff": {
+                    "description": "candidate - source",
+                    "type": "number"
+                },
+                "accelModelMatch": {
+                    "type": "boolean"
+                },
+                "accelTypeMatch": {
+                    "type": "boolean"
+                },
+                "architectureMatch": {
+                    "type": "boolean"
+                },
+                "costPerHourDiff": {
+                    "description": "negative = cheaper in target CSP",
+                    "type": "number"
+                },
+                "memoryGiBDiff": {
+                    "description": "candidate.memoryGiB - source.memoryGiB",
+                    "type": "number"
+                },
+                "vCPUDiff": {
+                    "description": "candidate.vCPU - source.vCPU",
+                    "type": "integer"
+                }
+            }
+        },
         "model.SpecFetchOption": {
             "type": "object",
             "properties": {
@@ -30351,6 +30565,122 @@ const docTemplate = `{
                 },
                 "vCPU": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.SpecMatchCriteria": {
+            "type": "object",
+            "properties": {
+                "acceleratorCount": {
+                    "description": "Default: preferred (applied only when source spec has a GPU)",
+                    "enum": [
+                        "required",
+                        "preferred",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "preferred"
+                },
+                "acceleratorMemoryGB": {
+                    "description": "Default: preferred (applied only when source spec has a GPU)",
+                    "enum": [
+                        "required",
+                        "preferred",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "preferred"
+                },
+                "acceleratorModel": {
+                    "description": "Default: open — constrain only when a specific GPU model is needed (e.g., \"A100\")",
+                    "enum": [
+                        "required",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "open"
+                },
+                "acceleratorType": {
+                    "description": "Default: required — GPU vs non-GPU is a fundamental workload difference",
+                    "enum": [
+                        "required",
+                        "preferred",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "required"
+                },
+                "architecture": {
+                    "description": "Default: required — mixing architectures breaks binary compatibility",
+                    "enum": [
+                        "required",
+                        "preferred",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "required"
+                },
+                "costPerHour": {
+                    "description": "Default: open — used only for ranking, not filtering",
+                    "enum": [
+                        "required",
+                        "preferred",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "open"
+                },
+                "memoryGiB": {
+                    "description": "Default: preferred",
+                    "enum": [
+                        "required",
+                        "preferred",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "preferred"
+                },
+                "vCPU": {
+                    "description": "Default: preferred",
+                    "enum": [
+                        "required",
+                        "preferred",
+                        "open"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MatchPolicy"
+                        }
+                    ],
+                    "example": "preferred"
                 }
             }
         },
