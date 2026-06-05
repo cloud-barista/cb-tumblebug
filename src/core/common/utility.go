@@ -2080,8 +2080,49 @@ func IsGPUImage(combinedInfo string) bool {
 
 	infoLower := strings.ToLower(combinedInfo)
 
+	// Check exclude patterns first — any match overrides positive GPU patterns
+	for _, exc := range RuntimeExtractPatternsInfo.ExtractPatterns.GPUExcludePatterns {
+		if strings.Contains(infoLower, strings.ToLower(exc)) {
+			return false
+		}
+	}
+
 	for _, pattern := range RuntimeExtractPatternsInfo.ExtractPatterns.GPUPatterns {
 		if strings.Contains(infoLower, strings.ToLower(pattern)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// CheckBasicGpuImage checks if the given combined info matches any basic GPU image patterns.
+// Uses CSP-specific include patterns with a common exclude pre-filter.
+func CheckBasicGpuImage(combinedInfo string, providerName string) bool {
+	rules := RuntimeExtractPatternsInfo.ExtractPatterns.BasicGpuImageRules
+	if rules == nil {
+		return false
+	}
+
+	providerNameLower := strings.ToLower(providerName)
+
+	// Apply common exclude patterns first
+	for _, exc := range rules.Common.Exclude {
+		if matchesPattern(combinedInfo, exc) {
+			return false
+		}
+	}
+
+	// Determine include patterns: CSP-specific overrides common
+	includePatterns := rules.Common.Include
+	if rules.CspSpecific != nil {
+		if cspPatterns, exists := rules.CspSpecific[providerNameLower]; exists && len(cspPatterns.Include) > 0 {
+			includePatterns = cspPatterns.Include
+		}
+	}
+
+	for _, pattern := range includePatterns {
+		if matchesPattern(combinedInfo, pattern) {
 			return true
 		}
 	}

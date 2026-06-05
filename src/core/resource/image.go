@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
@@ -32,6 +33,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -200,10 +202,20 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 
 	// Only mark as basic image if the image is "Available"
 	// Non-available images (deprecated, unavailable, etc.) should not be considered basic
+	// isBasicImage and isBasicGpuImage are mutually exclusive:
+	// - isBasicImage: clean non-GPU OS install (no GPU drivers)
+	// - isBasicGpuImage: GPU image with drivers pre-installed
 	if tumblebugImage.ImageStatus == model.ImageAvailable {
-		tumblebugImage.IsBasicImage = common.CheckBasicOSImage(tumblebugImage.OSDistribution, providerName)
+		if tumblebugImage.IsGPUImage {
+			tumblebugImage.IsBasicGpuImage = common.CheckBasicGpuImage(searchStr, providerName)
+			tumblebugImage.IsBasicImage = false
+		} else {
+			tumblebugImage.IsBasicImage = common.CheckBasicOSImage(tumblebugImage.OSDistribution, providerName)
+			tumblebugImage.IsBasicGpuImage = false
+		}
 	} else {
 		tumblebugImage.IsBasicImage = false
+		tumblebugImage.IsBasicGpuImage = false
 	}
 
 	tumblebugImage.OSDiskType = spiderImage.OSDiskType
@@ -1307,16 +1319,31 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 	// Pre-allocate slice with known capacity to reduce memory allocations
 	tmpImageList := make([]model.ImageInfo, 0, len(spiderImageList.Image))
 
+	// Get connConfig once for skip checks (providerName, regionName)
+	fetchConnConfig, connConfigErr := common.GetConnConfig(connConfig)
+	fetchProviderName := ""
+	fetchRegionName := ""
+	if connConfigErr == nil {
+		fetchProviderName = fetchConnConfig.ProviderName
+		fetchRegionName = fetchConnConfig.RegionDetail.RegionName
+	}
+
 	// Process images and clean up memory immediately
 	for i := range spiderImageList.Image {
 		spiderImage := spiderImageList.Image[i]
 
+		// Pre-filter: skip images already known to be unavailable before conversion
 		if spiderImage.ImageStatus == model.ImageUnavailable {
-			// log.Debug().Msgf("Skipping image in the unavailable status: %s (%s)", spiderImage.IId.NameId, connConfig)
-
-			// Clear the processed item immediately
 			spiderImageList.Image[i] = model.SpiderImageInfo{}
 			continue
+		}
+
+		// Pre-filter: skip images matching cloudimage_ignore.yaml (e.g., ParallelCluster AMIs)
+		if fetchProviderName != "" {
+			if shouldSkipImage(spiderImage.IId.NameId, spiderImage.OSDistribution, fetchProviderName, fetchRegionName) {
+				spiderImageList.Image[i] = model.SpiderImageInfo{}
+				continue
+			}
 		}
 
 		tumblebugImage, err := ConvertSpiderImageToTumblebugImage(nsId, connConfig, spiderImage)
@@ -1326,6 +1353,13 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 			spiderImageList.Image = nil
 			tmpImageList = nil
 			return 0, err
+		}
+
+		// Post-filter: skip deprecated images (some CSPs report DEPRECATED images as Available;
+		// ConvertSpiderImageToTumblebugImage applies keyword-based detection to correct this)
+		if tumblebugImage.ImageStatus == model.ImageDeprecated {
+			spiderImageList.Image[i] = model.SpiderImageInfo{}
+			continue
 		}
 
 		imageCount++
@@ -1814,6 +1848,7 @@ func mergeCSPDetails(target *model.ImageInfo, source *model.ImageInfo) {
 	target.OSPlatform = source.OSPlatform
 	target.OSDistribution = source.OSDistribution
 	target.IsBasicImage = source.IsBasicImage
+	target.IsBasicGpuImage = source.IsBasicGpuImage
 	target.OSDiskType = source.OSDiskType
 	target.OSDiskSizeGB = source.OSDiskSizeGB
 	target.CreationDate = source.CreationDate
@@ -2103,6 +2138,14 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 		sqlQuery = sqlQuery.Where("is_kubernetes_image = ?", *req.IsKubernetesImage)
 	}
 
+	if req.IsBasicGpuImage != nil {
+		// isBasicGpuImage=true implies isGPUImage=true; reject contradictory filters
+		if *req.IsBasicGpuImage && req.IsGPUImage != nil && !*req.IsGPUImage {
+			return nil, cnt, fmt.Errorf("isBasicGpuImage=true is incompatible with isGPUImage=false")
+		}
+		sqlQuery = sqlQuery.Where("is_basic_gpu_image = ?", *req.IsBasicGpuImage)
+	}
+
 	// Check if isRegisteredByAsset is true
 	// If it is true, filter by system_label = StrFromAssets
 	if req.IsRegisteredByAsset != nil {
@@ -2176,16 +2219,26 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 		}
 	}
 
-	// Move basic images to the front using partition approach (O(n) instead of O(n log n))
+	// Move basic images and basic GPU images to the front using partition approach (O(n))
+	// Priority: isBasicImage=true first, then isBasicGpuImage=true, then the rest
 	if len(images) > 0 {
 		basicIndex := 0
 		for i := 0; i < len(images); i++ {
 			if images[i].IsBasicImage {
 				if i != basicIndex {
-					// Swap basic image to the front
 					images[basicIndex], images[i] = images[i], images[basicIndex]
 				}
 				basicIndex++
+			}
+		}
+		// Then move basic GPU images immediately after basic OS images
+		gpuBasicIndex := basicIndex
+		for i := basicIndex; i < len(images); i++ {
+			if images[i].IsBasicGpuImage {
+				if i != gpuBasicIndex {
+					images[gpuBasicIndex], images[i] = images[i], images[gpuBasicIndex]
+				}
+				gpuBasicIndex++
 			}
 		}
 	}
@@ -2848,4 +2901,149 @@ func extractCorrespondingImageIds(details []model.KeyValue) []string {
 		}
 	}
 	return nil
+}
+
+var (
+	imageIgnoreConfig     *model.CloudImageIgnoreConfig
+	imageIgnoreConfigOnce sync.Once
+	imageIgnoreConfigErr  error
+)
+
+// loadCloudImageIgnoreConfig loads cloudimage_ignore.yaml (once, then cached).
+func loadCloudImageIgnoreConfig() (*model.CloudImageIgnoreConfig, error) {
+	imageIgnoreConfigOnce.Do(func() {
+		ignoreViper := viper.New()
+		common.SetupViperPaths(ignoreViper)
+		ignoreViper.SetConfigName("cloudimage_ignore")
+		ignoreViper.SetConfigType("yaml")
+
+		if err := ignoreViper.ReadInConfig(); err != nil {
+			log.Warn().Err(err).Msg("Could not load cloudimage_ignore.yaml, no image filtering will be applied")
+			imageIgnoreConfigErr = err
+			return
+		}
+
+		log.Debug().Str("path", ignoreViper.ConfigFileUsed()).Msg("Found cloudimage_ignore.yaml")
+
+		var config model.CloudImageIgnoreConfig
+
+		// Extract global patterns
+		if raw := ignoreViper.Get("global.patterns"); raw != nil {
+			if patterns, ok := raw.([]any); ok {
+				for _, p := range patterns {
+					if s, ok := p.(string); ok {
+						config.Global.Patterns = append(config.Global.Patterns, s)
+					}
+				}
+			}
+		}
+
+		// Extract CSP-specific patterns
+		config.CSPs = make(map[string]model.CSPImageIgnorePatterns)
+		if cspsRaw := ignoreViper.Get("csps"); cspsRaw != nil {
+			if cspsMap, ok := cspsRaw.(map[string]any); ok {
+				for cspName, cspDataRaw := range cspsMap {
+					if cspData, ok := cspDataRaw.(map[string]any); ok {
+						var cspConfig model.CSPImageIgnorePatterns
+
+						if desc, exists := cspData["description"]; exists {
+							if s, ok := desc.(string); ok {
+								cspConfig.Description = s
+							}
+						}
+
+						if raw, exists := cspData["global_patterns"]; exists && raw != nil {
+							if patterns, ok := raw.([]any); ok {
+								for _, p := range patterns {
+									if s, ok := p.(string); ok {
+										cspConfig.GlobalPatterns = append(cspConfig.GlobalPatterns, s)
+									}
+								}
+							}
+						}
+
+						if regionsRaw, exists := cspData["regions"]; exists && regionsRaw != nil {
+							if regionsMap, ok := regionsRaw.(map[string]any); ok {
+								cspConfig.Regions = make(map[string]model.RegionIgnorePatterns)
+								for regionName, regionDataRaw := range regionsMap {
+									var regionConfig model.RegionIgnorePatterns
+									if regionPatterns, ok := regionDataRaw.([]any); ok {
+										for _, p := range regionPatterns {
+											if s, ok := p.(string); ok {
+												regionConfig.Patterns = append(regionConfig.Patterns, s)
+											}
+										}
+									}
+									cspConfig.Regions[regionName] = regionConfig
+								}
+							}
+						}
+
+						config.CSPs[cspName] = cspConfig
+					}
+				}
+			}
+		}
+
+		imageIgnoreConfig = &config
+		log.Info().Msg("Successfully loaded cloudimage_ignore.yaml")
+	})
+
+	return imageIgnoreConfig, imageIgnoreConfigErr
+}
+
+// shouldSkipImage returns true if the image matches any pattern in cloudimage_ignore.yaml.
+// combinedInfo should be imageName + " " + osDistribution (case-insensitive matching applied internally).
+func shouldSkipImage(imageName, osDistribution, providerName, regionName string) bool {
+	config, err := loadCloudImageIgnoreConfig()
+	if err != nil || config == nil {
+		return false
+	}
+
+	combined := strings.ToLower(imageName + " " + osDistribution)
+
+	// Check global patterns
+	for _, pattern := range config.Global.Patterns {
+		matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
+		if matchErr != nil {
+			log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml global.patterns")
+			continue
+		}
+		if matched {
+			return true
+		}
+	}
+
+	// Check CSP-specific patterns
+	cspKey := strings.ToLower(csp.ResolveCloudPlatform(providerName))
+	cspConfig, exists := config.CSPs[cspKey]
+	if !exists {
+		return false
+	}
+
+	for _, pattern := range cspConfig.GlobalPatterns {
+		matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
+		if matchErr != nil {
+			log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml csps.*.global_patterns")
+			continue
+		}
+		if matched {
+			return true
+		}
+	}
+
+	if regionPatterns, ok := cspConfig.Regions[regionName]; ok {
+		for _, pattern := range regionPatterns.Patterns {
+			matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
+			if matchErr != nil {
+				log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml csps.*.regions")
+				continue
+			}
+			if matched {
+				return true
+			}
+		}
+	}
+
+	return false
 }

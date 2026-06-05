@@ -1,0 +1,25 @@
+# Cloud Image Ignore Configuration
+# Defines patterns for images that should be skipped during image fetching operations.
+# Matched images are dropped during fetch, before any conversion or storage in DB.
+# Pattern matching is case-insensitive and supports * and ? wildcards and [abc] character classes.
+
+# Global patterns that apply to all CSPs
+global:
+  patterns: []
+
+# CSP-specific ignore patterns
+csps:
+  aws:
+    description: "AWS image ignore patterns"
+    global_patterns:
+      - "*parallelcluster*"          # AWS ParallelCluster AMIs — HPC cluster orchestration tool only, not for general VM use
+      - "*elasticbeanstalk*"         # Elastic Beanstalk PaaS AMIs — managed by EB service, not for direct VM use
+      - "*-ecs-*"                    # ECS-optimized AMIs — ECS container worker nodes (distinct from EKS), not for general VM use
+      - "*ecs*optimized*"            # Windows ECS Optimized AMIs — underscore format not caught by *-ecs-*
+      - "*ecs-managed-instances*"    # ECS managed node images — ECS internal managed images
+      - "*lambda-managed-instances*" # Lambda internal worker images — not for user VM creation
+      - "*storage*gateway*"          # AWS Storage Gateway appliance AMIs — virtual storage appliance, not for general VM use
+      - "*datasync*"                 # AWS DataSync appliance AMIs — managed data transfer service, not for general VM use
+      - "*cloud9*"                   # AWS Cloud9 IDE AMIs — cloud IDE environment, not for general VM use
+      - "*dcv-*"                     # NICE DCV AMIs — remote visualization streaming tool, not for general VM use
+    regions: {}

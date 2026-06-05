@@ -181,6 +181,52 @@ extractionPatterns:
     - "caffe"
     - "machine learning"
     - "optimized-for-ml"
+
+  # GPU image exclusion patterns (case-insensitive, any match overrides gpuPatterns → not GPU)
+  gpuExcludePatterns:
+    - "nhncloud_allow_gpu_flavor:false"           # NHN: property key indicating GPU NOT allowed
+    - "workloads on vms that have attached gpus"  # GCP: gVNIC description mentioning GPUs incidentally
+
+  # Rules for identifying basic GPU images per CSP
+  # Follows the same include/exclude wildcard logic as basicImageRules
+  basicGpuImageRules:
+    common:
+      include: []
+      exclude:
+        - "*windows*"   # Exclude Windows-based GPU images from basic selection
+    cspSpecific:
+      aws:
+        include:
+          - "*deep learning*nvidia*gpu ami*ubuntu*"  # AWS Deep Learning AMI (DLAMI) Ubuntu — single-VM GPU use
+      gcp:
+        include:
+          - "*deeplearning-platform-release*"   # Google Deep Learning VM (CUDA/PyTorch/TF)
+          - "*ubuntu-os-accelerator-images*"    # Ubuntu + NVIDIA driver
+          - "*rocky-linux-accelerator-cloud*"   # Rocky Linux + NVIDIA driver
+          - "*ml-images*"                       # Google ML-optimized images
+      azure:
+        include:
+          - "*microsoft-dsvm:ubuntu-hpc*"   # Ubuntu HPC (GPU-optimized)
+          - "*microsoft-dsvm:ubuntu-2004*"  # DSVM Ubuntu 20.04
+          - "*microsoft-dsvm:ubuntu-2204*"  # DSVM Ubuntu 22.04
+      ibm:
+        include:
+          - "*red hat enterprise linux ai*nvidia*"  # RHEL AI for NVIDIA accelerators
+      alibaba:
+        include:
+          - "*ubuntu*gpu*driver*cuda*"   # Ubuntu with NVIDIA GPU Driver and CUDA
+      ncp:
+        include:
+          - "*ubuntu*gpu*"   # Ubuntu GPU image (e.g. ubuntu-24.04-gpu)
+          - "*rocky*gpu*"    # Rocky Linux GPU image
+      kt:
+        include:
+          - "*ubuntu*gpusvr*"   # KT GPU server Ubuntu images (CUDA pre-installed)
+          - "*rocky*gpusvr*"    # KT GPU server Rocky Linux images
+      nhn:
+        include:
+          - "*ubuntu*nvidia*"        # Ubuntu with NVIDIA driver
+          - "*ubuntu*deep learning*" # Ubuntu Deep Learning image
   
   # Kubernetes image identification patterns (case-insensitive, any match = Kubernetes)
   k8sPatterns:

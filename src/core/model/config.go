@@ -62,9 +62,24 @@ type ExtractPatternsInfo struct {
 
 // ExtractPatterns is structure for extraction patterns
 type ExtractPatterns struct {
-	OSType      map[string]OSTypeDetail `mapstructure:"osType" json:"os_type"`
-	GPUPatterns []string                `mapstructure:"gpuPatterns" json:"gpu_patterns"`
-	K8sPatterns []string                `mapstructure:"k8sPatterns" json:"k8s_patterns"`
+	OSType             map[string]OSTypeDetail `mapstructure:"osType" json:"os_type"`
+	GPUPatterns        []string                `mapstructure:"gpuPatterns" json:"gpu_patterns"`
+	GPUExcludePatterns []string                `mapstructure:"gpuExcludePatterns" json:"gpu_exclude_patterns"`
+	BasicGpuImageRules *BasicImageRules        `mapstructure:"basicGpuImageRules" json:"basic_gpu_image_rules,omitempty"`
+	K8sPatterns        []string                `mapstructure:"k8sPatterns" json:"k8s_patterns"`
+}
+
+// CloudImageIgnoreConfig represents the structure of cloudimage_ignore.yaml
+type CloudImageIgnoreConfig struct {
+	Global GlobalIgnorePatterns             `yaml:"global"`
+	CSPs   map[string]CSPImageIgnorePatterns `yaml:"csps,omitempty"`
+}
+
+// CSPImageIgnorePatterns represents ignore patterns for a specific CSP
+type CSPImageIgnorePatterns struct {
+	Description    string                          `yaml:"description,omitempty"`
+	GlobalPatterns []string                        `yaml:"global_patterns,omitempty"`
+	Regions        map[string]RegionIgnorePatterns `yaml:"regions,omitempty"`
 }
 
 // OSTypeDetail is structure for OS type detail information

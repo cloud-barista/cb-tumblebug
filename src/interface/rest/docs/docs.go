@@ -24517,6 +24517,10 @@ const docTemplate = `{
                     "description": "vm|k8s|kubernetes|container, etc.",
                     "type": "string"
                 },
+                "isBasicGpuImage": {
+                    "type": "boolean",
+                    "default": false
+                },
                 "isBasicImage": {
                     "type": "boolean",
                     "default": false
@@ -29389,6 +29393,11 @@ const docTemplate = `{
                 },
                 "includeDeprecatedImage": {
                     "description": "Whether the search results should include deprecated images or not.\nIf not specified, deprecated images will not be included in the search results.\nIn usual, deprecated images are not recommended to use, but they can be used if necessary.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "isBasicGpuImage": {
+                    "description": "IsBasicGpuImage filters for GPU images with GPU drivers pre-installed.\nNote: images with isBasicGpuImage=true always have isBasicImage=false (they are mutually exclusive on returned image objects).\nIf not specified, both true and false images will be included in the search results.",
                     "type": "boolean",
                     "example": false
                 },
