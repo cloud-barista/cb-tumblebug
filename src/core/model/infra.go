@@ -1525,6 +1525,119 @@ type ParameterKeyVal struct {
 	Val []string `json:"val" example:"44.146838/-116.411403"`                                                   // ["Latitude,Longitude","12,543",..,"31,433"]
 }
 
+// MatchPolicy defines how strictly a spec field is matched during alternative node config recommendation.
+type MatchPolicy string
+
+const (
+	// MatchRequired enforces exact match (tolerance = 0%). String fields must equal exactly.
+	// Required fields are applied as DB filters; they do not contribute to the similarity score
+	// because all returned candidates are guaranteed to satisfy them.
+	MatchRequired MatchPolicy = "required"
+
+	// MatchPreferred applies the global TolerancePercent as a range filter and contributes
+	// to the similarity score proportionally.
+	MatchPreferred MatchPolicy = "preferred"
+
+	// MatchOpen skips both the filter and the similarity score for this field.
+	// The field still appears in SpecDiff for informational comparison.
+	MatchOpen MatchPolicy = "open"
+)
+
+// SpecMatchCriteria holds per-field match policies for RecommendAlternativeNodeConfig.
+// Fields left as zero-value ("") use their default policy (see field comments).
+type SpecMatchCriteria struct {
+	// Default: required — mixing architectures breaks binary compatibility
+	Architecture MatchPolicy `json:"architecture,omitempty" example:"required" enums:"required,preferred,open"`
+	// Default: preferred
+	VCPU MatchPolicy `json:"vCPU,omitempty" example:"preferred" enums:"required,preferred,open"`
+	// Default: preferred
+	MemoryGiB MatchPolicy `json:"memoryGiB,omitempty" example:"preferred" enums:"required,preferred,open"`
+	// Default: required — GPU vs non-GPU is a fundamental workload difference
+	AcceleratorType MatchPolicy `json:"acceleratorType,omitempty" example:"required" enums:"required,preferred,open"`
+	// Default: open — constrain only when a specific GPU model is needed (e.g., "A100")
+	AcceleratorModel MatchPolicy `json:"acceleratorModel,omitempty" example:"open" enums:"required,open"`
+	// Default: preferred (applied only when source spec has a GPU)
+	AcceleratorCount MatchPolicy `json:"acceleratorCount,omitempty" example:"preferred" enums:"required,preferred,open"`
+	// Default: preferred (applied only when source spec has a GPU)
+	AcceleratorMemoryGB MatchPolicy `json:"acceleratorMemoryGB,omitempty" example:"preferred" enums:"required,preferred,open"`
+	// Default: open — used only for ranking, not filtering
+	CostPerHour MatchPolicy `json:"costPerHour,omitempty" example:"open" enums:"required,preferred,open"`
+}
+
+// RecommendAlternativeNodeConfigReq is the request body for /recommendAlternativeNodeConfig.
+type RecommendAlternativeNodeConfigReq struct {
+	// SourceSpecId is the TB spec ID of the existing nodegroup (e.g., "aws+us-east-2+p4d.24xlarge").
+	SourceSpecId string `json:"sourceSpecId" validate:"required" example:"aws+us-east-2+p4d.24xlarge"`
+
+	// SourceImageId is the CSP image name or TB image ID used in the source nodegroup.
+	// When provided, its osType is used to guide image recommendation in the target CSP.
+	SourceImageId string `json:"sourceImageId,omitempty" example:"ami-00b02e8f2be5634d2"`
+
+	// TargetProviderName is the CSP to search in (e.g., "gcp", "azure").
+	TargetProviderName string `json:"targetProviderName" validate:"required" example:"gcp"`
+
+	// TargetRegionName constrains the search to a specific region.
+	// When omitted, all regions of the target CSP are searched.
+	TargetRegionName string `json:"targetRegionName,omitempty" example:"us-central1"`
+
+	// TolerancePercent is the ±% range applied to fields with "preferred" policy (default: 20).
+	TolerancePercent int `json:"tolerancePercent,omitempty" example:"20"`
+
+	// MatchCriteria overrides the default per-field match policy.
+	// Omitted fields use their documented defaults.
+	MatchCriteria SpecMatchCriteria `json:"matchCriteria,omitempty"`
+
+	// SpecCandidateLimit is the maximum number of candidate specs to return (default: 5).
+	SpecCandidateLimit int `json:"specCandidateLimit,omitempty" example:"5"`
+
+	// ImageAlternativeLimit is the number of alternative images to return per candidate (default: 3).
+	ImageAlternativeLimit int `json:"imageAlternativeLimit,omitempty" example:"3"`
+
+	// OSType overrides the OS type for image search (e.g., "ubuntu").
+	// When omitted, the osType of SourceImageId is used; if that is also unavailable, no OS filter is applied.
+	OSType string `json:"osType,omitempty" example:"ubuntu"`
+}
+
+// SpecDiff captures the field-by-field delta between a candidate spec and the source spec.
+// Positive numeric values mean the candidate has more than the source.
+type SpecDiff struct {
+	VCPUDiff            int     `json:"vCPUDiff"`            // candidate.vCPU - source.vCPU
+	MemoryGiBDiff       float32 `json:"memoryGiBDiff"`       // candidate.memoryGiB - source.memoryGiB
+	CostPerHourDiff     float32 `json:"costPerHourDiff"`     // negative = cheaper in target CSP
+	ArchitectureMatch   bool    `json:"architectureMatch"`
+	AccelTypeMatch      bool    `json:"accelTypeMatch"`
+	AccelModelMatch     bool    `json:"accelModelMatch"`
+	AccelCountDiff      int     `json:"accelCountDiff"`      // candidate - source
+	AccelMemGBDiff      float32 `json:"accelMemGBDiff"`      // candidate - source
+}
+
+// AlternativeNodeConfigCandidate is one ranked result in RecommendAlternativeNodeConfigResponse.
+type AlternativeNodeConfigCandidate struct {
+	// Rank is 1-based; lower rank = higher similarity.
+	Rank int `json:"rank"`
+	// SimilarityScore is 0.0–100.0; computed from "preferred" fields only.
+	SimilarityScore float64 `json:"similarityScore"`
+
+	Spec     SpecInfo `json:"spec"`
+	SpecDiff SpecDiff `json:"specDiff"`
+
+	// PrimaryImage is the best-matched image for the candidate spec.
+	// For GPU specs: prefers isBasicGpuImage=true, then isGPUImage=true.
+	// For non-GPU specs: prefers isBasicImage=true.
+	// Nil when no image is found.
+	PrimaryImage *ImageInfo `json:"primaryImage,omitempty"`
+
+	// AlternativeImages are additional image options (up to ImageAlternativeLimit).
+	AlternativeImages []ImageInfo `json:"alternativeImages,omitempty"`
+}
+
+// RecommendAlternativeNodeConfigResponse is the response of /recommendAlternativeNodeConfig.
+type RecommendAlternativeNodeConfigResponse struct {
+	SourceSpec  SpecInfo   `json:"sourceSpec"`
+	SourceImage *ImageInfo `json:"sourceImage,omitempty"`
+	Candidates  []AlternativeNodeConfigCandidate `json:"candidates"`
+}
+
 // SpecBenchmarkInfo is struct for SpecBenchmarkInfo
 type SpecBenchmarkInfo struct {
 	SpecId     string `json:"specid"`

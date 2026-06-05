@@ -403,6 +403,7 @@ func RunServer() {
 
 	e.POST("/tumblebug/recommendSpec", rest_infra.RestRecommendSpec)
 	e.GET("/tumblebug/recommendSpecOptions", rest_infra.RestRecommendSpecOptions)
+	e.POST("/tumblebug/recommendAlternativeNodeConfig", rest_infra.RestRecommendAlternativeNodeConfig)
 	e.POST("/tumblebug/infraDynamicCheckRequest", rest_infra.RestPostInfraDynamicCheckRequest)
 	e.POST("/tumblebug/specImagePairReview", rest_infra.RestPostSpecImagePairReview)
 	e.POST("/tumblebug/systemInfra", rest_infra.RestPostSystemInfra)

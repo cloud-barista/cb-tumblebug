@@ -15862,6 +15862,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.ReadyzResponse'
+  /recommendAlternativeNodeConfig:
+    post:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Recommend alternative node configurations in a target CSP/region
+      description: |-
+        Given a nodegroup configuration (source spec + image), find the best-matching
+        spec and image combinations in a target CSP/region.
+        Per-field match policies (required / preferred / open) give fine-grained control over
+        which attributes must match exactly, which may vary within a tolerance, and which are ignored.
+        Similarity scores (0–100) are computed from "preferred" fields only.
+      operationId: RecommendAlternativeNodeConfig
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Source nodegroup config and target CSP/region with match criteria
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RecommendAlternativeNodeConfigReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RecommendAlternativeNodeConfigResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: recommendAlternativeNodeConfigReq
   /recommendSpec:
     post:
       tags:
@@ -18736,6 +18787,34 @@ components:
           type: string
           example: "65532"
           default: "65532"
+    model.AlternativeNodeConfigCandidate:
+      type: object
+      properties:
+        alternativeImages:
+          type: array
+          description: AlternativeImages are additional image options (up to ImageAlternativeLimit).
+          items:
+            $ref: '#/components/schemas/model.ImageInfo'
+        primaryImage:
+          type: object
+          description: |-
+            PrimaryImage is the best-matched image for the candidate spec.
+            For GPU specs: prefers isBasicGpuImage=true, then isGPUImage=true.
+            For non-GPU specs: prefers isBasicImage=true.
+            Nil when no image is found.
+          allOf:
+          - $ref: '#/components/schemas/model.ImageInfo'
+        rank:
+          type: integer
+          description: Rank is 1-based; lower rank = higher similarity.
+        similarityScore:
+          type: number
+          description: SimilarityScore is 0.0–100.0; computed from "preferred" fields
+            only.
+        spec:
+          $ref: '#/components/schemas/model.SpecInfo'
+        specDiff:
+          $ref: '#/components/schemas/model.SpecDiff'
     model.AssetsSummaryResponse:
       type: object
       properties:
@@ -22219,6 +22298,16 @@ components:
           type: number
         longitude:
           type: number
+    model.MatchPolicy:
+      type: string
+      enum:
+      - required
+      - preferred
+      - open
+      x-enum-varnames:
+      - MatchRequired
+      - MatchPreferred
+      - MatchOpen
     model.McNetConfigurationDetails:
       type: object
       properties:
@@ -23390,6 +23479,73 @@ components:
         ready:
           type: boolean
           example: true
+    model.RecommendAlternativeNodeConfigReq:
+      required:
+      - sourceSpecId
+      - targetProviderName
+      type: object
+      properties:
+        imageAlternativeLimit:
+          type: integer
+          description: "ImageAlternativeLimit is the number of alternative images\
+            \ to return per candidate (default: 3)."
+          example: 3
+        matchCriteria:
+          type: object
+          description: |-
+            MatchCriteria overrides the default per-field match policy.
+            Omitted fields use their documented defaults.
+          allOf:
+          - $ref: '#/components/schemas/model.SpecMatchCriteria'
+        osType:
+          type: string
+          description: |-
+            OSType overrides the OS type for image search (e.g., "ubuntu").
+            When omitted, the osType of SourceImageId is used; if that is also unavailable, no OS filter is applied.
+          example: ubuntu
+        sourceImageId:
+          type: string
+          description: |-
+            SourceImageId is the CSP image name or TB image ID used in the source nodegroup.
+            When provided, its osType is used to guide image recommendation in the target CSP.
+          example: ami-00b02e8f2be5634d2
+        sourceSpecId:
+          type: string
+          description: "SourceSpecId is the TB spec ID of the existing nodegroup (e.g.,\
+            \ \"aws+us-east-2+p4d.24xlarge\")."
+          example: aws+us-east-2+p4d.24xlarge
+        specCandidateLimit:
+          type: integer
+          description: "SpecCandidateLimit is the maximum number of candidate specs\
+            \ to return (default: 5)."
+          example: 5
+        targetProviderName:
+          type: string
+          description: "TargetProviderName is the CSP to search in (e.g., \"gcp\"\
+            , \"azure\")."
+          example: gcp
+        targetRegionName:
+          type: string
+          description: |-
+            TargetRegionName constrains the search to a specific region.
+            When omitted, all regions of the target CSP are searched.
+          example: us-central1
+        tolerancePercent:
+          type: integer
+          description: "TolerancePercent is the ±% range applied to fields with \"\
+            preferred\" policy (default: 20)."
+          example: 20
+    model.RecommendAlternativeNodeConfigResponse:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.AlternativeNodeConfigCandidate'
+        sourceImage:
+          $ref: '#/components/schemas/model.ImageInfo'
+        sourceSpec:
+          $ref: '#/components/schemas/model.SpecInfo'
     model.RecommendSpecReq:
       type: object
       properties:
@@ -24754,6 +24910,30 @@ components:
         totalSpecsChecked:
           type: integer
           example: 50
+    model.SpecDiff:
+      type: object
+      properties:
+        accelCountDiff:
+          type: integer
+          description: candidate - source
+        accelMemGBDiff:
+          type: number
+          description: candidate - source
+        accelModelMatch:
+          type: boolean
+        accelTypeMatch:
+          type: boolean
+        architectureMatch:
+          type: boolean
+        costPerHourDiff:
+          type: number
+          description: negative = cheaper in target CSP
+        memoryGiBDiff:
+          type: number
+          description: candidate.memoryGiB - source.memoryGiB
+        vCPUDiff:
+          type: integer
+          description: candidate.vCPU - source.vCPU
     model.SpecFetchOption:
       type: object
       properties:
@@ -24993,6 +25173,59 @@ components:
           example: wef12awefadf1221edcf
         vCPU:
           type: integer
+    model.SpecMatchCriteria:
+      type: object
+      properties:
+        acceleratorCount:
+          type: object
+          description: "Default: preferred (applied only when source spec has a GPU)"
+          example: preferred
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
+        acceleratorMemoryGB:
+          type: object
+          description: "Default: preferred (applied only when source spec has a GPU)"
+          example: preferred
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
+        acceleratorModel:
+          type: object
+          description: "Default: open — constrain only when a specific GPU model is\
+            \ needed (e.g., \"A100\")"
+          example: open
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
+        acceleratorType:
+          type: object
+          description: "Default: required — GPU vs non-GPU is a fundamental workload\
+            \ difference"
+          example: required
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
+        architecture:
+          type: object
+          description: "Default: required — mixing architectures breaks binary compatibility"
+          example: required
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
+        costPerHour:
+          type: object
+          description: "Default: open — used only for ranking, not filtering"
+          example: open
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
+        memoryGiB:
+          type: object
+          description: "Default: preferred"
+          example: preferred
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
+        vCPU:
+          type: object
+          description: "Default: preferred"
+          example: preferred
+          allOf:
+          - $ref: '#/components/schemas/model.MatchPolicy'
     model.SpecRegionZoneInfo:
       type: object
       properties:

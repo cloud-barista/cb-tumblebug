@@ -229,6 +229,394 @@ func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
 	return strings.Join(orderParts, ", "), nil
 }
 
+// RecommendAlternativeNodeConfig finds the best-matching node configurations (spec + image)
+// in a target CSP/region for an existing source nodegroup configuration.
+func RecommendAlternativeNodeConfig(
+	ctx context.Context,
+	nsId string,
+	req model.RecommendAlternativeNodeConfigReq,
+) (model.RecommendAlternativeNodeConfigResponse, error) {
+
+	resp := model.RecommendAlternativeNodeConfigResponse{}
+
+	// --- 1. Resolve defaults ---
+	if req.TolerancePercent <= 0 {
+		req.TolerancePercent = 20
+	}
+	if req.SpecCandidateLimit <= 0 {
+		req.SpecCandidateLimit = 5
+	}
+	if req.ImageAlternativeLimit <= 0 {
+		req.ImageAlternativeLimit = 3
+	}
+	criteria := applyDefaultMatchPolicies(req.MatchCriteria)
+
+	// --- 2. Load source spec ---
+	sourceSpec, err := resource.GetSpec(nsId, req.SourceSpecId)
+	if err != nil {
+		return resp, fmt.Errorf("source spec not found: %w", err)
+	}
+	resp.SourceSpec = sourceSpec
+
+	// --- 3. Resolve OS type for image search ---
+	osType := req.OSType
+	if osType == "" && req.SourceImageId != "" {
+		osType = resolveOSTypeFromImage(nsId, req.SourceImageId)
+	}
+
+	// --- 4. Optionally echo back the source image ---
+	if req.SourceImageId != "" {
+		if img := lookupImageByNameOrId(nsId, sourceSpec.ProviderName, req.SourceImageId); img != nil {
+			resp.SourceImage = img
+		}
+	}
+
+	// --- 5. Build filter for target CSP/region ---
+	filterReq := buildAlternativeFilter(sourceSpec, criteria, req.TolerancePercent,
+		req.TargetProviderName, req.TargetRegionName)
+
+	// Fetch more candidates than needed; we re-rank by similarity score
+	fetchLimit := req.SpecCandidateLimit * 4
+	if fetchLimit < 20 {
+		fetchLimit = 20
+	}
+	filterReq.Limit = fetchLimit
+
+	orderBy := "CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC"
+	candidateSpecs, err := resource.FilterSpecsByRange(nsId, filterReq, orderBy)
+	if err != nil {
+		return resp, fmt.Errorf("spec search failed: %w", err)
+	}
+
+	// --- 6. Score and rank ---
+	type scored struct {
+		spec  model.SpecInfo
+		score float64
+	}
+	var scoredList []scored
+	for _, cand := range candidateSpecs {
+		s := computeAlternativeSimilarityScore(sourceSpec, cand, criteria)
+		if s < 0 {
+			continue // incompatible (e.g., GPU type mismatch on required field)
+		}
+		scoredList = append(scoredList, scored{cand, s})
+	}
+	sort.Slice(scoredList, func(i, j int) bool {
+		if math.Abs(scoredList[i].score-scoredList[j].score) > 0.001 {
+			return scoredList[i].score > scoredList[j].score
+		}
+		// Tie-break: prefer lower cost
+		ci := scoredList[i].spec.CostPerHour
+		cj := scoredList[j].spec.CostPerHour
+		if ci <= 0 {
+			return false
+		}
+		if cj <= 0 {
+			return true
+		}
+		return ci < cj
+	})
+	if len(scoredList) > req.SpecCandidateLimit {
+		scoredList = scoredList[:req.SpecCandidateLimit]
+	}
+
+	// --- 7. Attach images in parallel ---
+	isGPU := strings.ToLower(sourceSpec.AcceleratorType) == "gpu"
+	candidates := make([]model.AlternativeNodeConfigCandidate, len(scoredList))
+	var wg sync.WaitGroup
+	for i, s := range scoredList {
+		wg.Add(1)
+		go func(i int, s scored) {
+			defer wg.Done()
+			primary, alts := selectAlternativeImages(nsId, s.spec.Id, s.spec.ProviderName, s.spec.RegionName, isGPU, osType,
+				req.ImageAlternativeLimit)
+			candidates[i] = model.AlternativeNodeConfigCandidate{
+				Rank:              i + 1,
+				SimilarityScore:   math.Round(s.score*10) / 10,
+				Spec:              s.spec,
+				SpecDiff:          buildSpecDiff(sourceSpec, s.spec),
+				PrimaryImage:      primary,
+				AlternativeImages: alts,
+			}
+		}(i, s)
+	}
+	wg.Wait()
+
+	resp.Candidates = candidates
+	return resp, nil
+}
+
+// applyDefaultMatchPolicies fills in default policies for any zero-value fields.
+func applyDefaultMatchPolicies(c model.SpecMatchCriteria) model.SpecMatchCriteria {
+	if c.Architecture == "" {
+		c.Architecture = model.MatchRequired
+	}
+	if c.VCPU == "" {
+		c.VCPU = model.MatchPreferred
+	}
+	if c.MemoryGiB == "" {
+		c.MemoryGiB = model.MatchPreferred
+	}
+	if c.AcceleratorType == "" {
+		c.AcceleratorType = model.MatchRequired
+	}
+	if c.AcceleratorModel == "" {
+		c.AcceleratorModel = model.MatchOpen
+	}
+	if c.AcceleratorCount == "" {
+		c.AcceleratorCount = model.MatchPreferred
+	}
+	if c.AcceleratorMemoryGB == "" {
+		c.AcceleratorMemoryGB = model.MatchPreferred
+	}
+	if c.CostPerHour == "" {
+		c.CostPerHour = model.MatchOpen
+	}
+	return c
+}
+
+// buildAlternativeFilter constructs a FilterSpecsByRangeRequest from the source spec
+// applying the per-field match policies and tolerance.
+func buildAlternativeFilter(
+	src model.SpecInfo,
+	criteria model.SpecMatchCriteria,
+	tolerancePercent int,
+	targetProvider, targetRegion string,
+) model.FilterSpecsByRangeRequest {
+
+	req := model.FilterSpecsByRangeRequest{}
+	req.ProviderName = targetProvider
+	req.RegionName = targetRegion
+
+	tol := float32(tolerancePercent) / 100.0
+
+	applyNumericRange := func(policy model.MatchPolicy, val float32) model.Range {
+		if val <= 0 || policy == model.MatchOpen {
+			return model.Range{} // zero Range = no constraint in FilterSpecsByRange
+		}
+		switch policy {
+		case model.MatchRequired:
+			return model.Range{Min: val, Max: val}
+		default: // MatchPreferred
+			return model.Range{Min: val * (1 - tol), Max: val * (1 + tol)}
+		}
+	}
+
+	// Architecture (string field)
+	if criteria.Architecture == model.MatchRequired && src.Architecture != "" {
+		req.Architecture = src.Architecture
+	}
+
+	// vCPU
+	req.VCPU = applyNumericRange(criteria.VCPU, float32(src.VCPU))
+
+	// MemoryGiB
+	req.MemoryGiB = applyNumericRange(criteria.MemoryGiB, src.MemoryGiB)
+
+	// AcceleratorType (string field — required or open only, preferred acts like required for strings)
+	if criteria.AcceleratorType != model.MatchOpen && src.AcceleratorType != "" {
+		req.AcceleratorType = src.AcceleratorType
+	}
+
+	// AcceleratorModel (string field — required only)
+	if criteria.AcceleratorModel == model.MatchRequired && src.AcceleratorModel != "" {
+		req.AcceleratorModel = src.AcceleratorModel
+	}
+
+	// GPU-only numeric fields
+	if strings.ToLower(src.AcceleratorType) == "gpu" {
+		req.AcceleratorCount = applyNumericRange(criteria.AcceleratorCount,
+			float32(src.AcceleratorCount))
+		req.AcceleratorMemoryGB = applyNumericRange(criteria.AcceleratorMemoryGB,
+			src.AcceleratorMemoryGB)
+	}
+
+	return req
+}
+
+// computeAlternativeSimilarityScore returns a 0–100 score for how similar candidate is to source.
+// Returns -1 if the candidate is incompatible (required field mismatch for string fields).
+// Only "preferred" fields contribute to the score; required and open fields are excluded.
+func computeAlternativeSimilarityScore(
+	src, cand model.SpecInfo,
+	criteria model.SpecMatchCriteria,
+) float64 {
+
+	isGPU := strings.ToLower(src.AcceleratorType) == "gpu"
+
+	// Incompatibility checks for required string fields
+	if criteria.Architecture == model.MatchRequired &&
+		src.Architecture != "" && cand.Architecture != "" &&
+		!strings.EqualFold(src.Architecture, cand.Architecture) {
+		return -1
+	}
+	if criteria.AcceleratorType == model.MatchRequired &&
+		!strings.EqualFold(src.AcceleratorType, cand.AcceleratorType) {
+		return -1
+	}
+
+	// Fields hold a (policy, ratio) pair where ratio is 0.0–1.0.
+	type fieldEntry struct {
+		policy model.MatchPolicy
+		ratio  float64
+	}
+
+	matchRatio := func(a, b float64) float64 {
+		if a <= 0 || b <= 0 {
+			return 0
+		}
+		if a < b {
+			return a / b
+		}
+		return b / a
+	}
+
+	archRatio := func() float64 {
+		if strings.EqualFold(src.Architecture, cand.Architecture) {
+			return 1.0
+		}
+		return 0.0
+	}
+
+	var fields []fieldEntry
+	if isGPU {
+		fields = []fieldEntry{
+			{criteria.VCPU, matchRatio(float64(src.VCPU), float64(cand.VCPU))},
+			{criteria.MemoryGiB, matchRatio(float64(src.MemoryGiB), float64(cand.MemoryGiB))},
+			{criteria.AcceleratorCount, matchRatio(float64(src.AcceleratorCount), float64(cand.AcceleratorCount))},
+			{criteria.AcceleratorMemoryGB, matchRatio(float64(src.AcceleratorMemoryGB), float64(cand.AcceleratorMemoryGB))},
+			{criteria.Architecture, archRatio()},
+		}
+	} else {
+		fields = []fieldEntry{
+			{criteria.VCPU, matchRatio(float64(src.VCPU), float64(cand.VCPU))},
+			{criteria.MemoryGiB, matchRatio(float64(src.MemoryGiB), float64(cand.MemoryGiB))},
+			{criteria.Architecture, archRatio()},
+		}
+	}
+
+	// Define max weight per field index
+	gpuMaxWeights := []float64{15, 15, 35, 25, 10}
+	nonGPUMaxWeights := []float64{40, 40, 20}
+	maxWeights := nonGPUMaxWeights
+	if isGPU {
+		maxWeights = gpuMaxWeights
+	}
+
+	// Sum earned / max for preferred fields only
+	earned := 0.0
+	maxTotal := 0.0
+	for i, f := range fields {
+		if i >= len(maxWeights) {
+			break
+		}
+		if f.policy != model.MatchPreferred {
+			continue
+		}
+		mw := maxWeights[i]
+		maxTotal += mw
+		earned += f.ratio * mw
+	}
+
+	if maxTotal == 0 {
+		return 100 // all fields are required/open — any candidate that passed the filter scores 100
+	}
+	return (earned / maxTotal) * 100
+}
+
+// buildSpecDiff computes the delta between candidate and source spec.
+func buildSpecDiff(src, cand model.SpecInfo) model.SpecDiff {
+	return model.SpecDiff{
+		VCPUDiff:          int(cand.VCPU) - int(src.VCPU),
+		MemoryGiBDiff:     cand.MemoryGiB - src.MemoryGiB,
+		CostPerHourDiff:   cand.CostPerHour - src.CostPerHour,
+		ArchitectureMatch: strings.EqualFold(src.Architecture, cand.Architecture),
+		AccelTypeMatch:    strings.EqualFold(src.AcceleratorType, cand.AcceleratorType),
+		AccelModelMatch:   strings.EqualFold(src.AcceleratorModel, cand.AcceleratorModel),
+		AccelCountDiff:    int(cand.AcceleratorCount) - int(src.AcceleratorCount),
+		AccelMemGBDiff:    cand.AcceleratorMemoryGB - src.AcceleratorMemoryGB,
+	}
+}
+
+// selectAlternativeImages searches for images matching specId and returns a primary + alternatives.
+// For GPU specs, primary preference is isBasicGpuImage, then isGPUImage.
+// For non-GPU specs, primary preference is isBasicImage.
+func selectAlternativeImages(
+	nsId, specId, providerName, regionName string,
+	isGPU bool,
+	osType string,
+	altLimit int,
+) (*model.ImageInfo, []model.ImageInfo) {
+
+	req := model.SearchImageRequest{
+		MatchedSpecId: specId,
+		ProviderName:  providerName,
+		RegionName:    regionName,
+		OSType:        osType,
+	}
+	images, _, err := resource.SearchImage(nsId, req, false)
+	if err != nil || len(images) == 0 {
+		return nil, nil
+	}
+
+	var primary *model.ImageInfo
+	var alternatives []model.ImageInfo
+
+	for i := range images {
+		img := images[i]
+		if primary == nil {
+			if isGPU && img.IsBasicGpuImage {
+				primary = &images[i]
+				continue
+			}
+			if !isGPU && img.IsBasicImage {
+				primary = &images[i]
+				continue
+			}
+		}
+		if primary == nil && isGPU && img.IsGPUImage {
+			primary = &images[i]
+			continue
+		}
+		if len(alternatives) < altLimit {
+			alternatives = append(alternatives, img)
+		}
+		if primary != nil && len(alternatives) >= altLimit {
+			break
+		}
+	}
+
+	// If still no primary, take the first image
+	if primary == nil && len(images) > 0 {
+		primary = &images[0]
+		if len(images) > 1 && len(alternatives) < altLimit {
+			for i := 1; i < len(images) && len(alternatives) < altLimit; i++ {
+				alternatives = append(alternatives, images[i])
+			}
+		}
+	}
+
+	return primary, alternatives
+}
+
+// resolveOSTypeFromImage looks up an image and returns its osType field.
+func resolveOSTypeFromImage(nsId, imageId string) string {
+	img, err := resource.GetImage(nsId, imageId)
+	if err != nil {
+		return ""
+	}
+	return img.OSType
+}
+
+// lookupImageByNameOrId returns an ImageInfo pointer if the image is found, nil otherwise.
+func lookupImageByNameOrId(nsId, providerName, imageId string) *model.ImageInfo {
+	img, err := resource.GetImage(nsId, imageId)
+	if err != nil {
+		return nil
+	}
+	return &img
+}
+
 // RecommendNodeLatency func prioritize specs by latency based on given Infra (fair)
 func RecommendNodeLatency(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
 
