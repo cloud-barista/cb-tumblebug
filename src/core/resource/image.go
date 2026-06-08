@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
@@ -1530,7 +1529,7 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 			// Adjust parallel connections for specific providers
 			providerParallelConn := parallelConnPerProvider
 			if csp.ResolveCloudPlatform(provider) == csp.AWS {
-				providerParallelConn = 3 // to handle more parallel connections
+				providerParallelConn = 2 // reduced to mitigate large DescribeImages response stream pressure
 			}
 			if csp.ResolveCloudPlatform(provider) == csp.Alibaba {
 				providerParallelConn = 2 // reduced to mitigate deadlock pressure
@@ -2992,6 +2991,75 @@ func loadCloudImageIgnoreConfig() (*model.CloudImageIgnoreConfig, error) {
 	return imageIgnoreConfig, imageIgnoreConfigErr
 }
 
+var (
+	imageIgnoreRegexpCache   = make(map[string]*regexp.Regexp)
+	imageIgnoreRegexpCacheMu sync.RWMutex
+)
+
+// compileIgnorePattern converts a glob pattern (supporting *, ?, and [abc]
+// character classes) into a compiled regexp that performs case-insensitive
+// substring matching. Unlike filepath.Match, the pattern is NOT anchored to
+// the whole string and '*' also matches '/'. This is required because the
+// matched text combines imageName + osDistribution, where the descriptive
+// name may appear anywhere (e.g. AWS prepends an opaque "ami-xxxx" ID).
+// Compiled patterns are cached for reuse.
+func compileIgnorePattern(pattern string) (*regexp.Regexp, error) {
+	imageIgnoreRegexpCacheMu.RLock()
+	if re, ok := imageIgnoreRegexpCache[pattern]; ok {
+		imageIgnoreRegexpCacheMu.RUnlock()
+		return re, nil
+	}
+	imageIgnoreRegexpCacheMu.RUnlock()
+
+	var sb strings.Builder
+	sb.WriteString("(?i)") // case-insensitive, substring (no ^...$ anchors)
+	for i := 0; i < len(pattern); i++ {
+		c := pattern[i]
+		switch c {
+		case '*':
+			sb.WriteString(".*")
+		case '?':
+			sb.WriteString(".")
+		case '[':
+			// Pass through a character class up to the matching ']'.
+			j := i + 1
+			for j < len(pattern) && pattern[j] != ']' {
+				j++
+			}
+			if j >= len(pattern) {
+				// No closing ']': treat '[' literally.
+				sb.WriteString(regexp.QuoteMeta("["))
+			} else {
+				sb.WriteString(pattern[i : j+1])
+				i = j
+			}
+		default:
+			sb.WriteString(regexp.QuoteMeta(string(c)))
+		}
+	}
+
+	re, err := regexp.Compile(sb.String())
+	if err != nil {
+		return nil, err
+	}
+
+	imageIgnoreRegexpCacheMu.Lock()
+	imageIgnoreRegexpCache[pattern] = re
+	imageIgnoreRegexpCacheMu.Unlock()
+	return re, nil
+}
+
+// matchIgnorePattern reports whether text matches the glob pattern using
+// case-insensitive substring semantics.
+func matchIgnorePattern(text, pattern, source string) bool {
+	re, err := compileIgnorePattern(pattern)
+	if err != nil {
+		log.Warn().Err(err).Str("pattern", pattern).Msgf("Invalid glob in cloudimage_ignore.yaml %s", source)
+		return false
+	}
+	return re.MatchString(text)
+}
+
 // shouldSkipImage returns true if the image matches any pattern in cloudimage_ignore.yaml.
 // combinedInfo should be imageName + " " + osDistribution (case-insensitive matching applied internally).
 func shouldSkipImage(imageName, osDistribution, providerName, regionName string) bool {
@@ -3000,16 +3068,11 @@ func shouldSkipImage(imageName, osDistribution, providerName, regionName string)
 		return false
 	}
 
-	combined := strings.ToLower(imageName + " " + osDistribution)
+	combined := imageName + " " + osDistribution
 
 	// Check global patterns
 	for _, pattern := range config.Global.Patterns {
-		matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
-		if matchErr != nil {
-			log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml global.patterns")
-			continue
-		}
-		if matched {
+		if matchIgnorePattern(combined, pattern, "global.patterns") {
 			return true
 		}
 	}
@@ -3022,24 +3085,14 @@ func shouldSkipImage(imageName, osDistribution, providerName, regionName string)
 	}
 
 	for _, pattern := range cspConfig.GlobalPatterns {
-		matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
-		if matchErr != nil {
-			log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml csps.*.global_patterns")
-			continue
-		}
-		if matched {
+		if matchIgnorePattern(combined, pattern, "csps.*.global_patterns") {
 			return true
 		}
 	}
 
 	if regionPatterns, ok := cspConfig.Regions[regionName]; ok {
 		for _, pattern := range regionPatterns.Patterns {
-			matched, matchErr := filepath.Match(strings.ToLower(pattern), combined)
-			if matchErr != nil {
-				log.Warn().Err(matchErr).Str("pattern", pattern).Msg("Invalid glob in cloudimage_ignore.yaml csps.*.regions")
-				continue
-			}
-			if matched {
+			if matchIgnorePattern(combined, pattern, "csps.*.regions") {
 				return true
 			}
 		}

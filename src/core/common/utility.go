@@ -513,6 +513,7 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 
 	var callResult model.SpiderAllListWrapper
 	client := clientManager.NewHttpClient()
+	client.SetTimeout(clientManager.AvailabilityCheckTimeout)
 	url := model.SpiderRestUrl + "/allkeypair"
 	method := "GET"
 	requestBody := model.SpiderConnectionName{}
@@ -1099,16 +1100,26 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 		var wg sync.WaitGroup
 		results := make(chan model.ConnConfig, len(filteredConnections.Connectionconfig))
 
+		total := len(filteredConnections.Connectionconfig)
+		log.Info().Msgf("[%s] Verifying %d connection(s) in parallel (timeout: %s each) ...",
+			req.ProviderName, total, clientManager.AvailabilityCheckTimeout)
+
 		for _, connConfig := range filteredConnections.Connectionconfig {
 			wg.Add(1)
 			go func(connConfig model.ConnConfig) {
 				defer wg.Done()
 				RandomSleep(0, 10*1000)
+				log.Info().Msgf("[%s] Checking availability: %s", req.ProviderName, connConfig.ConfigName)
 				verified, err := CheckConnConfigAvailable(connConfig.ConfigName)
 				if err != nil {
-					log.Error().Err(err).Msgf("Cannot check model.ConnConfig %s is available", connConfig.ConfigName)
+					log.Error().Err(err).Msgf("[%s] Cannot check ConnConfig %s (will mark unverified)", req.ProviderName, connConfig.ConfigName)
 				}
 				connConfig.Verified = verified
+				status := "✗"
+				if verified {
+					status = "✓"
+				}
+				log.Info().Msgf("[%s] %s %s", req.ProviderName, status, connConfig.ConfigName)
 				if verified {
 					regionInfo, err := GetRegion(connConfig.ProviderName, connConfig.RegionDetail.RegionName)
 					if err != nil {
