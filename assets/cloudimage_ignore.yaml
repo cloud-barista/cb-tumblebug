@@ -12,14 +12,52 @@ csps:
   aws:
     description: "AWS image ignore patterns"
     global_patterns:
+      # ── Managed-service / internal AMIs (not for direct EC2/EKS provisioning) ──
       - "*parallelcluster*"          # AWS ParallelCluster AMIs — HPC cluster orchestration tool only, not for general VM use
       - "*elasticbeanstalk*"         # Elastic Beanstalk PaaS AMIs — managed by EB service, not for direct VM use
       - "*-ecs-*"                    # ECS-optimized AMIs — ECS container worker nodes (distinct from EKS), not for general VM use
       - "*ecs*optimized*"            # Windows ECS Optimized AMIs — underscore format not caught by *-ecs-*
       - "*ecs-managed-instances*"    # ECS managed node images — ECS internal managed images
       - "*lambda-managed-instances*" # Lambda internal worker images — not for user VM creation
+      - "*lambda-elevator*"          # Lambda microVM internal worker images — AWS internal use only
       - "*storage*gateway*"          # AWS Storage Gateway appliance AMIs — virtual storage appliance, not for general VM use
       - "*datasync*"                 # AWS DataSync appliance AMIs — managed data transfer service, not for general VM use
       - "*cloud9*"                   # AWS Cloud9 IDE AMIs — cloud IDE environment, not for general VM use
       - "*dcv-*"                     # NICE DCV AMIs — remote visualization streaming tool, not for general VM use
+      # ── EKS managed node group AMIs ──────────────────────────────────────────
+      # EKS managed node groups select images via AMI type (NodegroupAmiType,
+      # e.g. AL2023_x86_64_STANDARD, BOTTLEROCKET_x86_64), not by explicit AMI
+      # ID — AWS resolves the actual AMI internally at node group creation.
+      # Skipped here as they are not selected via direct image ID lookup.
+      - "amazon-eks-node-*"          # EKS-optimized AL2 / AL2023 node AMIs
+      - "amazon-eks-gpu-node-*"      # EKS-optimized GPU node AMIs (nvidia, neuron)
+      - "bottlerocket-aws-k8s-*"     # Bottlerocket OS AMIs for EKS node groups
+      # ── EKS Auto Mode internal AMIs ───────────────────────────────────────
+      # AWS-managed automatically in EKS Auto Mode; users cannot specify these
+      # AMI IDs in launch templates or node groups. Variants: standard, nvidia,
+      # neuron, amdgpu, amd. Pattern covers all K8s versions and architectures.
+      - "eks-auto-*"
+      # ── Mac dedicated-host AMIs ───────────────────────────────────────────────
+      # Only usable on mac1/mac2 dedicated hardware, not standard EC2 instances.
+      - "*amzn-ec2-macos*"           # Amazon macOS AMIs (arm64_mac / x86_64_mac)
+      - "*macos*sonoma*"             # macOS Sonoma
+      - "*macos*ventura*"            # macOS Ventura
+      - "*macos*monterey*"           # macOS Monterey
+      # ── Ubuntu pre-release / testing builds ───────────────────────────────────
+      # Unstable daily or testing images — not suitable for production VM/EKS use.
+      - "*images-testing*"           # Ubuntu images-testing path (pre-release)
+      - "*ubuntu*daily*"             # Ubuntu daily builds
+      # ── EOL operating systems ─────────────────────────────────────────────────
+      # Past vendor end-of-life: no security patches available.
+      - "*ubuntu*14.04*"             # Ubuntu 14.04 LTS — EOL Apr 2019
+      - "*ubuntu*16.04*"             # Ubuntu 16.04 LTS — EOL Apr 2021
+      - "*ubuntu*18.04*"             # Ubuntu 18.04 LTS — EOL Apr 2023
+      - "*-debian-9-*"               # Debian 9 Stretch — EOL Jun 2022
+      - "*debian*stretch*"           # Debian 9 Stretch (name variant)
+      - "*-debian-10-*"              # Debian 10 Buster — EOL Jun 2024
+      - "*debian*buster*"            # Debian 10 Buster (name variant)
+      - "*rhel-7*"                   # RHEL 7 — EOL Jun 2024
+      - "*rhel7*"                    # RHEL 7 (no-dash variant)
+      - "*sles-12*"                  # SUSE Linux Enterprise 12 — EOL Oct 2024
+      - "*sles12*"                   # SUSE Linux Enterprise 12 (no-dash variant)
     regions: {}

@@ -75,6 +75,12 @@ const (
 	LongDuration = 10 * time.Second
 	// VeryLongDuration is a duration for very long-term cache
 	VeryLongDuration = 300 * time.Second
+
+	// AvailabilityCheckTimeout is the per-request HTTP timeout used when probing
+	// whether a connection config is reachable via Spider. Kept separate from the
+	// cache-duration constants above because it controls network I/O, not caching.
+	// 60 s is generous enough for slow CSPs while preventing indefinite hangs.
+	AvailabilityCheckTimeout = 60 * time.Second
 )
 
 // NoBody is a constant for empty body
