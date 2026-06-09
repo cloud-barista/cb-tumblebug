@@ -11,7 +11,7 @@ x-default-healthcheck: &default-healthcheck
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.12.13
+    image: cloudbaristaorg/cb-tumblebug:0.12.14
     container_name: cb-tumblebug
     build:
       context: .
