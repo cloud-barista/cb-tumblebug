@@ -1985,6 +1985,25 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		nodeReview.ProviderName = specInfo.ProviderName
 		nodeReview.RegionName = specInfo.RegionName
 
+		// Check that the resolved connection exists and is verified.
+		// Provisioning uses GetConnConfigList with filterVerified=true, so an
+		// unverified connection will cause a "cannot find the connection config"
+		// error at runtime — catch it here in the review stage instead.
+		connConfig, connErr := common.GetConnConfig(resolvedConnectionName)
+		if connErr != nil {
+			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf(
+				"Connection '%s' (derived from spec '%s') not found: %v",
+				resolvedConnectionName, nodeGroupDynamicReq.SpecId, connErr))
+			nodeReview.CanCreate = false
+			viable = false
+		} else if !connConfig.Verified {
+			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf(
+				"Connection '%s' is not verified. Complete connection verification before provisioning",
+				resolvedConnectionName))
+			nodeReview.CanCreate = false
+			viable = false
+		}
+
 		// Check if spec is available in CSP using the provider-agnostic
 		// availability checker (Alibaba: DescribeAvailableResource, Azure:
 		// Resource SKU + quota, ...). Falls back to CB-Spider LookupSpec for
@@ -2096,12 +2115,25 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		}
 	}
 
-	// Validate ConnectionName if specified
+	// Validate ConnectionName if explicitly specified in the request.
+	// Treat missing or unverified connections as hard errors: provisioning uses
+	// GetConnConfigList(filterVerified=true) so an unverified connection is
+	// silently excluded at runtime, producing a confusing "cannot find the
+	// connection config" failure instead of an actionable message.
 	if nodeGroupDynamicReq.ConnectionName != "" {
-		_, err := common.GetConnConfig(nodeGroupDynamicReq.ConnectionName)
+		explicitConn, err := common.GetConnConfig(nodeGroupDynamicReq.ConnectionName)
 		if err != nil {
-			nodeReview.Warnings = append(nodeReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", nodeGroupDynamicReq.ConnectionName))
-			hasNodeWarning = true
+			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf(
+				"Specified connection '%s' not found: %v",
+				nodeGroupDynamicReq.ConnectionName, err))
+			nodeReview.CanCreate = false
+			viable = false
+		} else if !explicitConn.Verified {
+			nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf(
+				"Specified connection '%s' is not verified. Complete connection verification before provisioning",
+				nodeGroupDynamicReq.ConnectionName))
+			nodeReview.CanCreate = false
+			viable = false
 		} else {
 			nodeReview.ConnectionName = nodeGroupDynamicReq.ConnectionName
 		}
@@ -2275,6 +2307,40 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 		result.ConnectionName = resolvedConnectionName
 		result.ProviderName = specInfo.ProviderName
 		result.RegionName = specInfo.RegionName
+
+		// Verify the resolved connection exists and is verified before proceeding.
+		// An unverified connection passes GetConnConfig but is filtered out by
+		// GetConnConfigList(filterVerified=true) used during actual provisioning,
+		// which produces a confusing runtime error. Surface it here instead.
+		pairConn, pairConnErr := common.GetConnConfig(resolvedConnectionName)
+		if pairConnErr != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf(
+				"Connection '%s' not found: %v", resolvedConnectionName, pairConnErr))
+			result.SpecValidation = model.ReviewResourceValidation{
+				ResourceId:  specId,
+				IsAvailable: false,
+				Status:      "Unavailable",
+				Message:     fmt.Sprintf("Connection '%s' not found", resolvedConnectionName),
+			}
+			result.IsValid = false
+			result.Status = "Error"
+			result.Message = fmt.Sprintf("Connection '%s' not found", resolvedConnectionName)
+			return result, nil
+		} else if !pairConn.Verified {
+			result.Errors = append(result.Errors, fmt.Sprintf(
+				"Connection '%s' is not verified. Complete connection verification before provisioning",
+				resolvedConnectionName))
+			result.SpecValidation = model.ReviewResourceValidation{
+				ResourceId:  specId,
+				IsAvailable: false,
+				Status:      "Unavailable",
+				Message:     fmt.Sprintf("Connection '%s' is not verified", resolvedConnectionName),
+			}
+			result.IsValid = false
+			result.Status = "Error"
+			result.Message = fmt.Sprintf("Connection '%s' is not verified", resolvedConnectionName)
+			return result, nil
+		}
 
 		// Check if spec is available in CSP using the provider-agnostic
 		// availability checker (Alibaba: DescribeAvailableResource, Azure:
