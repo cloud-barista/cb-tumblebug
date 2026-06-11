@@ -105,7 +105,7 @@ jobs:
           context: ./src/interface/mcp
           file: ./src/interface/mcp/Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=local,src=/tmp/.buildx-cache-mcp
           cache-to: type=local,dest=/tmp/.buildx-cache-mcp,mode=max
