@@ -1,0 +1,70 @@
+# This workflow performs continuous integration (CI) for the TB-MCP server.
+# It builds the MCP server container image (without pushing) to validate that
+# changes under src/interface/mcp do not break the image build.
+name: Continuous Integration (CI) - MCP Server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/interface/mcp/**"
+      - ".github/workflows/continuous-integration-mcp.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/interface/mcp/**"
+      - ".github/workflows/continuous-integration-mcp.yaml"
+
+# Cancel in-progress runs of this workflow for the same ref to save resources.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The job key is "build-mcp-container-image"
+  build-mcp-container-image:
+    # Job name is "Build the MCP server container image"
+    name: Build the MCP server container image
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          driver-opts: image=moby/buildkit:latest
+
+      - name: Cache Docker layers
+        uses: actions/cache@v5
+        with:
+          path: /tmp/.buildx-cache-mcp
+          key: ${{ runner.os }}-buildx-mcp-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-mcp-
+
+      - name: Build the MCP server image (no push)
+        env:
+          DOCKER_BUILDKIT: 1
+          IMAGE_NAME: ${{ github.event.repository.name }}-mcp-server
+        run: |
+          docker buildx build \
+            --cache-from=type=local,src=/tmp/.buildx-cache-mcp \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-mcp,mode=max \
+            --file ./src/interface/mcp/Dockerfile \
+            --tag $IMAGE_NAME:ci \
+            --load \
+            ./src/interface/mcp
