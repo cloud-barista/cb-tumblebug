@@ -201,6 +201,8 @@ services:
     # TB-MCP (Tumblebug Model Context Protocol Server)
     # This provides MCP interface for CB-Tumblebug to work with AI assistants like Claude
   cb-tumblebug-mcp-server:
+    # image: cloudbaristaorg/cb-tumblebug-mcp-server:0.12.14
+    # needs to be aligned with the main CB-Tumblebug image version for consistency
     build:
       context: ./src/interface/mcp
       dockerfile: Dockerfile

@@ -1,0 +1,114 @@
+# This workflow performs continuous delivery (CD) for the TB-MCP server.
+# It builds the MCP server container image and publishes it to container registries.
+name: Continuous Delivery (CD) - MCP Server
+
+# When it's time to do a release,
+# do a full cross-platform build for the MCP server image and
+# push it to Docker Hub and GitHub Container Registry (GHCR).
+#
+# Triggers mirror the main CD workflow (push to main + version tags) so the
+# MCP server image is always published with the same version tags as the main
+# CB-Tumblebug image. The paths-ignore list skips builds that cannot affect the
+# MCP image (docs, scripts, markdown, etc.).
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "scripts/**"
+      - "**.md"
+      - ".gitignore"
+      - "LICENSE"
+      - "CODEOWNERS"
+      - ".all-contributorsrc"
+      - "assets/**"
+      - "src/testclient/scripts/**"
+      - "src/testclient/test-clis/**"
+  # workflow trigger button
+  # workflow_dispatch:
+
+env:
+  DOCKER_REGISTRY_NAME: cloudbaristaorg
+  GHCR_REGISTRY_NAME: ${{ github.repository_owner }}
+  # Image name: cb-tumblebug-mcp-server
+  IMAGE_NAME: ${{ github.event.repository.name }}-mcp-server
+
+jobs:
+  # The job key is "publish-mcp-container-image"
+  publish-mcp-container-image:
+    # Job name is "Publish the MCP server container image"
+    name: Publish the MCP server container image
+
+    if: github.repository_owner == 'cloud-barista'
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+      - name: Extract metadata from Git reference and GitHub events
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            # image name for Docker Hub
+            ${{env.DOCKER_REGISTRY_NAME}}/${{env.IMAGE_NAME}}
+            # image name for GitHub Container Registry (GHCR)
+            ghcr.io/${{env.GHCR_REGISTRY_NAME}}/${{env.IMAGE_NAME}}
+          tags: |
+            # minimal (e.g., 1.2.3) for a push tag event
+            type=semver,enable=true,pattern={{version}}
+            # edge tag to reflect the last commit of the main branch
+            type=edge,enable=true,branch=main
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Cache Docker layers
+        uses: actions/cache@v5
+        with:
+          path: /tmp/.buildx-cache-mcp
+          key: ${{ runner.os }}-buildx-mcp-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-mcp-
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Build and publish
+        id: docker_build
+        uses: docker/build-push-action@v7
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: ./src/interface/mcp
+          file: ./src/interface/mcp/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=local,src=/tmp/.buildx-cache-mcp
+          cache-to: type=local,dest=/tmp/.buildx-cache-mcp,mode=max
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}

@@ -28,6 +28,8 @@ on:
       - "assets/**"
       - "src/testclient/scripts/**"
       - "src/testclient/test-clis/**"
+      # The MCP server image is built/published by continuous-delivery-mcp.yaml
+      - "src/interface/mcp/**"
   # workflow trigger button
   # workflow_dispatch:
 
