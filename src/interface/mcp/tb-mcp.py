@@ -136,7 +136,9 @@ logger.info(f"Logging level: {log_level}")
 logger.info(f"MCP Server will start on {host}:{port}")
 
 # Initialize MCP server
-mcp = FastMCP("cb-tumblebug")
+# mask_error_details=True: hide internal exception details from MCP clients
+# (only generic error messages are returned). Errors are still logged server-side.
+mcp = FastMCP("cb-tumblebug", mask_error_details=True)
 
 # mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
 
