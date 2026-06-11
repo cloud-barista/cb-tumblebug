@@ -61,7 +61,8 @@ VLLM_MODEL="Qwen/Qwen3-30B-A3B-Instruct-2507-FP8"
 VLLM_HOST="0.0.0.0"
 VLLM_PORT="8000"
 CTX_LEN="65536"
-HERMES_CONTEXT_LENGTH="64000"
+HERMES_CONTEXT_LENGTH=""            # empty = auto-follow CTX_LEN (kept in sync with vLLM --max-model-len)
+HERMES_MAX_TOKENS="4096"
 GPU_UTIL="0.88"
 MAX_BATCHED_TOKENS="4096"
 TOOL_CALL_PARSER="hermes"
@@ -135,7 +136,8 @@ Ollama fallback/comparison options:
   --ollama-model MODEL                   Default: qwen3:30b
 
 Hermes options:
-  --hermes-context-length TOKENS         Default: 64000
+  --hermes-context-length TOKENS         Default: follows --ctx-len (currently 65536). Set explicitly to override.
+  --hermes-max-tokens TOKENS             Default: 4096
   --hermes-api-port PORT                 Default: 8642
   --hermes-api-key KEY                   Default: generated
   --max-turns N                          Default: 90
@@ -336,6 +338,7 @@ while [ $# -gt 0 ]; do
     --ollama-model) OLLAMA_MODEL="${2:?}"; shift 2 ;;
 
     --hermes-context-length) HERMES_CONTEXT_LENGTH="${2:?}"; shift 2 ;;
+    --hermes-max-tokens) HERMES_MAX_TOKENS="${2:?}"; shift 2 ;;
     --hermes-api-port) HERMES_API_PORT="${2:?}"; shift 2 ;;
     --hermes-api-key) HERMES_API_KEY="${2?}"; shift 2 ;;
     --max-turns) HERMES_MAX_TURNS="${2:?}"; shift 2 ;;
@@ -384,6 +387,13 @@ fi
 
 USER_HOME=$(getent passwd "$RUN_AS_USER" | cut -d: -f6)
 [ -n "$USER_HOME" ] || die "Cannot resolve home for $RUN_AS_USER"
+
+# Keep Hermes context length in sync with the vLLM serving window unless the
+# user explicitly provided --hermes-context-length. This prevents a mismatch
+# where vLLM serves a different max-model-len than Hermes believes it has.
+if [ -z "$HERMES_CONTEXT_LENGTH" ]; then
+  HERMES_CONTEXT_LENGTH="$CTX_LEN"
+fi
 
 if [ -n "$HF_TOKEN_FILE" ]; then
   if [ ! -f "$HF_TOKEN_FILE" ]; then
@@ -772,6 +782,7 @@ configure_hermes_config() {
   VLLM_MODEL="$VLLM_MODEL" \
   VLLM_BASE_URL="$VLLM_BASE_URL" \
   HERMES_CONTEXT_LENGTH="$HERMES_CONTEXT_LENGTH" \
+  HERMES_MAX_TOKENS="$HERMES_MAX_TOKENS" \
   HERMES_MAX_TURNS="$HERMES_MAX_TURNS" \
   HERMES_API_HOST="$HERMES_API_HOST" \
   HERMES_API_PORT="$HERMES_API_PORT" \
@@ -803,6 +814,7 @@ cfg["model"] = {
     "default": os.environ["VLLM_MODEL"],
     "base_url": os.environ["VLLM_BASE_URL"],
     "context_length": int(os.environ["HERMES_CONTEXT_LENGTH"]),
+    "max_tokens": int(os.environ["HERMES_MAX_TOKENS"]),
 }
 cfg["max_turns"] = int(os.environ["HERMES_MAX_TURNS"])
 
