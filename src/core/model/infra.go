@@ -338,12 +338,12 @@ type InfraDynamicReq struct {
 	// VNetTemplateId specifies the vNet template ID (from system namespace) to use when
 	// auto-creating shared vNet resources. Propagates to all NodeGroups unless overridden
 	// at the NodeGroup level. If empty, the default hard-coded CIDR behavior is used.
-	VNetTemplateId string `json:"vNetTemplateId,omitempty" example:"default-vnet"`
+	VNetTemplateId string `json:"vNetTemplateId,omitempty" example:"vnet-default"`
 
 	// SgTemplateId specifies the SecurityGroup template ID (from system namespace) to use
 	// when auto-creating shared SecurityGroup resources. Propagates to all NodeGroups unless
 	// overridden at the NodeGroup level. If empty, the default all-open behavior is used.
-	SgTemplateId string `json:"sgTemplateId,omitempty" example:"default-sg"`
+	SgTemplateId string `json:"sgTemplateId,omitempty" example:"sg-default"`
 }
 
 // CreateNodeGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)

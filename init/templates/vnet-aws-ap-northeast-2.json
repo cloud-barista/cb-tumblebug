@@ -1,7 +1,7 @@
 {
   "nsId": "system",
   "resourceType": "vNet",
-  "name": "aws-standard-vpc",
+  "name": "vnet-aws-ap-northeast-2",
   "description": "Standard AWS VPC with 3 subnets (public, private, database) in ap-northeast-2",
   "vNetReq": {
     "connectionName": "aws-ap-northeast-2",

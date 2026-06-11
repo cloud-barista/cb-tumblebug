@@ -1,7 +1,7 @@
 {
   "nsId": "system",
   "resourceType": "securityGroup",
-  "name": "web-sg",
+  "name": "sg-across-web",
   "description": "SecurityGroup template for web servers. Opens SSH (22), HTTP (80), HTTPS (443), and common app ports (8080, 8443) inbound.",
   "securityGroupReq": {
     "firewallRules": [

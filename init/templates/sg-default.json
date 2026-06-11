@@ -1,7 +1,7 @@
 {
   "nsId": "system",
   "resourceType": "securityGroup",
-  "name": "default-sg",
+  "name": "sg-default",
   "description": "Default SecurityGroup template for Infra dynamic provisioning. Opens all TCP/UDP ports and ICMP inbound (development/testing use). For production, use a more restrictive template such as web-sg.",
   "securityGroupReq": {
     "firewallRules": [

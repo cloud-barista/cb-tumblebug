@@ -1,0 +1,105 @@
+{
+  "resourceType": "infra",
+  "name": "infra-tencent-global",
+  "description": "Global TENCENT Infra test - 1 VM per region",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-tencent-ap-bangkok",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-bangkok+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g2-tencent-ap-beijing",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-beijing+s5.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g3-tencent-ap-chengdu",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-chengdu+bf1.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g4-tencent-ap-chongqing",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-chongqing+sa2.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g5-tencent-ap-guangzhou",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-guangzhou+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g6-tencent-ap-hongkong",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-hongkong+sa2.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g7-tencent-ap-jakarta",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-jakarta+bf1.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g8-tencent-ap-nanjing",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-nanjing+sa2.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g9-tencent-ap-seoul",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-seoul+sa2.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g10-tencent-ap-shanghai",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-shanghai+s5.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g11-tencent-ap-singapore",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-singapore+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g12-tencent-ap-tokyo",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-tokyo+s5.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g13-tencent-eu-frankfurt",
+        "nodeGroupSize": 1,
+        "specId": "tencent+eu-frankfurt+s5.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g14-tencent-na-ashburn",
+        "nodeGroupSize": 1,
+        "specId": "tencent+na-ashburn+bf1.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g15-tencent-na-siliconvalley",
+        "nodeGroupSize": 1,
+        "specId": "tencent+na-siliconvalley+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g16-tencent-sa-saopaulo",
+        "nodeGroupSize": 1,
+        "specId": "tencent+sa-saopaulo+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      }
+    ]
+  }
+}

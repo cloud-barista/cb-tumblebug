@@ -1,0 +1,15 @@
+{
+  "resourceType": "infra",
+  "name": "infra-openstack-global",
+  "description": "Global OPENSTACK Infra test - 1 VM per region",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-openstack-regionone",
+        "nodeGroupSize": 1,
+        "specId": "openstack+regionone+m1.amphora",
+        "imageId": "0b583339-0a62-4e5d-9cfb-4666539961d0"
+      }
+    ]
+  }
+}

@@ -1,0 +1,261 @@
+{
+  "resourceType": "infra",
+  "name": "infra-gcp-global",
+  "description": "Global GCP Infra test - 1 VM per region",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-gcp-africa-south1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+africa-south1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g2-gcp-asia-east1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-east1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g3-gcp-asia-east2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-east2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g4-gcp-asia-northeast1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-northeast1+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g5-gcp-asia-northeast2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-northeast2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g6-gcp-asia-northeast3",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-northeast3+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g7-gcp-asia-south1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-south1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g8-gcp-asia-south2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-south2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g9-gcp-asia-southeast1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-southeast1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g10-gcp-asia-southeast2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-southeast2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g11-gcp-australia-southeast1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+australia-southeast1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g12-gcp-australia-southeast2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+australia-southeast2+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g13-gcp-europe-central2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-central2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g14-gcp-europe-north1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-north1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g15-gcp-europe-north2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-north2+e2-highcpu-2",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g16-gcp-europe-southwest1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-southwest1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g17-gcp-europe-west1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g18-gcp-europe-west10",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west10+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g19-gcp-europe-west12",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west12+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g20-gcp-europe-west2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g21-gcp-europe-west3",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west3+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g22-gcp-europe-west4",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west4+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g23-gcp-europe-west6",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west6+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g24-gcp-europe-west8",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west8+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g25-gcp-europe-west9",
+        "nodeGroupSize": 1,
+        "specId": "gcp+europe-west9+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g26-gcp-me-central1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+me-central1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g27-gcp-me-central2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+me-central2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g28-gcp-me-west1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+me-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g29-gcp-northamerica-northeast1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+northamerica-northeast1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g30-gcp-northamerica-northeast2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+northamerica-northeast2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g31-gcp-northamerica-south1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+northamerica-south1+e2-highcpu-2",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g32-gcp-southamerica-east1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+southamerica-east1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g33-gcp-southamerica-west1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+southamerica-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g34-gcp-us-central1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-central1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g35-gcp-us-east1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-east1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g36-gcp-us-east4",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-east4+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g37-gcp-us-east5",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-east5+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g38-gcp-us-south1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-south1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g39-gcp-us-west1",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g40-gcp-us-west2",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-west2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g41-gcp-us-west3",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-west3+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      },
+      {
+        "name": "g42-gcp-us-west4",
+        "nodeGroupSize": 1,
+        "specId": "gcp+us-west4+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520"
+      }
+    ]
+  }
+}
