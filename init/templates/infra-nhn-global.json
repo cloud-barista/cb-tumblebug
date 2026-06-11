@@ -1,0 +1,27 @@
+{
+  "resourceType": "infra",
+  "name": "infra-nhn-global",
+  "description": "Global NHN Infra test - 1 VM per region",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-nhn-jp1",
+        "nodeGroupSize": 1,
+        "specId": "nhn+jp1+t2.c1m1",
+        "imageId": "614f1e49-ef03-45f0-b476-76b07bdd91f0"
+      },
+      {
+        "name": "g2-nhn-kr1",
+        "nodeGroupSize": 1,
+        "specId": "nhn+kr1+t2.c1m1",
+        "imageId": "0f07c795-2a46-44fc-a61b-fa0d96763ce2"
+      },
+      {
+        "name": "g3-nhn-kr2",
+        "nodeGroupSize": 1,
+        "specId": "nhn+kr2+t2.c1m1",
+        "imageId": "8fab9909-617f-4bf4-8cd7-38bfc27a0129"
+      }
+    ]
+  }
+}

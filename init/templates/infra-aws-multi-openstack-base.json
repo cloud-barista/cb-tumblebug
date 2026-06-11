@@ -1,7 +1,7 @@
 {
   "nsId": "system",
   "resourceType": "infra",
-  "name": "mc-openstack-template",
+  "name": "infra-aws-multi-openstack-base",
   "description": "Template extracted from Infra: mc-openstack",
   "infraDynamicReq": {
     "name": "mc-openstack",

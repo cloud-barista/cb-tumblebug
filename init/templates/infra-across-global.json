@@ -1,6 +1,6 @@
 {
   "resourceType": "infra",
-  "name": "global-infra-test",
+  "name": "infra-across-global",
   "description": "Global Infra test with VMs across multiple CSP regions worldwide",
   "infraDynamicReq": {
     "nodeGroups": [

@@ -1,0 +1,75 @@
+{
+  "resourceType": "infra",
+  "name": "infra-ibm-global",
+  "description": "Global IBM Infra test - 1 VM per region",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-ibm-au-syd",
+        "nodeGroupSize": 1,
+        "specId": "ibm+au-syd+nxf-2x1",
+        "imageId": "r026-c8e249d4-f148-4416-a3c6-555b7a02f67d"
+      },
+      {
+        "name": "g2-ibm-br-sao",
+        "nodeGroupSize": 1,
+        "specId": "ibm+br-sao+nxf-2x1",
+        "imageId": "r042-ef493a79-9d67-4609-8763-1d12bb3e69dd"
+      },
+      {
+        "name": "g3-ibm-ca-mon",
+        "nodeGroupSize": 1,
+        "specId": "ibm+ca-mon+nxf-2x1",
+        "imageId": "r058-c1252e9b-bb36-45a0-b8df-4ca5826dc9bb"
+      },
+      {
+        "name": "g4-ibm-ca-tor",
+        "nodeGroupSize": 1,
+        "specId": "ibm+ca-tor+nxf-2x1",
+        "imageId": "r038-f96b6748-6c6d-4e43-a1a1-d7644edd51db"
+      },
+      {
+        "name": "g5-ibm-eu-de",
+        "nodeGroupSize": 1,
+        "specId": "ibm+eu-de+nxf-2x1",
+        "imageId": "r010-134d23b2-c7c4-4b7d-b13f-85b375cdac1d"
+      },
+      {
+        "name": "g6-ibm-eu-es",
+        "nodeGroupSize": 1,
+        "specId": "ibm+eu-es+nxf-2x1",
+        "imageId": "r050-f68b8927-a954-4f06-9e72-0c9c07714fa8"
+      },
+      {
+        "name": "g7-ibm-eu-gb",
+        "nodeGroupSize": 1,
+        "specId": "ibm+eu-gb+nxf-2x1",
+        "imageId": "r018-eaaf2cd4-9404-468c-bee9-7fc211658d09"
+      },
+      {
+        "name": "g8-ibm-jp-osa",
+        "nodeGroupSize": 1,
+        "specId": "ibm+jp-osa+nxf-2x1",
+        "imageId": "r034-ed053bf7-43c9-4b64-844b-77918ac3d597"
+      },
+      {
+        "name": "g9-ibm-jp-tok",
+        "nodeGroupSize": 1,
+        "specId": "ibm+jp-tok+nxf-2x1",
+        "imageId": "r022-7b087e37-53f6-4613-9670-e8cfed3d2527"
+      },
+      {
+        "name": "g10-ibm-us-east",
+        "nodeGroupSize": 1,
+        "specId": "ibm+us-east+nxf-2x1",
+        "imageId": "r014-c89a433d-ef18-4e8d-84dc-8078b9eee3e0"
+      },
+      {
+        "name": "g11-ibm-us-south",
+        "nodeGroupSize": 1,
+        "specId": "ibm+us-south+nxf-2x1",
+        "imageId": "r006-1e956f16-e519-48ad-aaeb-3926991f4e41"
+      }
+    ]
+  }
+}

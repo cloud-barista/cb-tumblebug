@@ -1,0 +1,27 @@
+{
+  "resourceType": "infra",
+  "name": "infra-ncp-global",
+  "description": "Global NCP Infra test - 1 VM per region",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-ncp-jpn",
+        "nodeGroupSize": 1,
+        "specId": "ncp+jpn+c2-g3a",
+        "imageId": "22224744"
+      },
+      {
+        "name": "g2-ncp-kr",
+        "nodeGroupSize": 1,
+        "specId": "ncp+kr+mi1-g3",
+        "imageId": "23214590"
+      },
+      {
+        "name": "g3-ncp-sgn",
+        "nodeGroupSize": 1,
+        "specId": "ncp+sgn+c2-g3",
+        "imageId": "23037369"
+      }
+    ]
+  }
+}

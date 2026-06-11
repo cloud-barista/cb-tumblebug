@@ -1,0 +1,177 @@
+{
+  "resourceType": "infra",
+  "name": "infra-aws-global",
+  "description": "Global AWS Infra test - 1 VM per region",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-aws-af-south-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+af-south-1+t3.nano",
+        "imageId": "ami-0571924e89eb0c38f"
+      },
+      {
+        "name": "g2-aws-ap-east-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-east-1+t3.nano",
+        "imageId": "ami-0228b479ce1349440"
+      },
+      {
+        "name": "g3-aws-ap-northeast-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-1+t3a.nano",
+        "imageId": "ami-0379a1f991c2beceb"
+      },
+      {
+        "name": "g4-aws-ap-northeast-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-2+t3a.nano",
+        "imageId": "ami-0828e678be4b791cc"
+      },
+      {
+        "name": "g5-aws-ap-northeast-3",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-3+t3.nano",
+        "imageId": "ami-015848aede63207c3"
+      },
+      {
+        "name": "g6-aws-ap-south-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-south-1+t3a.nano",
+        "imageId": "ami-03f76f0957a44f4ab"
+      },
+      {
+        "name": "g7-aws-ap-south-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-south-2+t3.nano",
+        "imageId": "ami-0eab39170eb2844c5"
+      },
+      {
+        "name": "g8-aws-ap-southeast-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-southeast-1+t3a.nano",
+        "imageId": "ami-0a010a0312b1400ee"
+      },
+      {
+        "name": "g9-aws-ap-southeast-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-southeast-2+t3a.nano",
+        "imageId": "ami-0e04e402c10e358ef"
+      },
+      {
+        "name": "g10-aws-ap-southeast-3",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-southeast-3+t3.nano",
+        "imageId": "ami-090813c1b06f13dba"
+      },
+      {
+        "name": "g11-aws-ap-southeast-4",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-southeast-4+t3.nano",
+        "imageId": "ami-0236c3015f21b2400"
+      },
+      {
+        "name": "g12-aws-ca-central-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+ca-central-1+t3a.nano",
+        "imageId": "ami-0b1810181317dc8de"
+      },
+      {
+        "name": "g13-aws-ca-west-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+ca-west-1+t3.nano",
+        "imageId": "ami-08df2ec5bffef601d"
+      },
+      {
+        "name": "g14-aws-eu-central-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-central-1+t3a.nano",
+        "imageId": "ami-0c905937c14bd22b0"
+      },
+      {
+        "name": "g15-aws-eu-central-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-central-2+t3.nano",
+        "imageId": "ami-0fe6ea1b187752116"
+      },
+      {
+        "name": "g16-aws-eu-north-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-north-1+t3.nano",
+        "imageId": "ami-0eed6a7e3bd86ff98"
+      },
+      {
+        "name": "g17-aws-eu-south-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-south-1+t3a.nano",
+        "imageId": "ami-04667b4c6d765e36f"
+      },
+      {
+        "name": "g18-aws-eu-south-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-south-2+t3.nano",
+        "imageId": "ami-02eebc1c66cd54359"
+      },
+      {
+        "name": "g19-aws-eu-west-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-west-1+t3a.nano",
+        "imageId": "ami-063de3f344649c32c"
+      },
+      {
+        "name": "g20-aws-eu-west-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-west-2+t3a.nano",
+        "imageId": "ami-054d71fa8b4a0fd06"
+      },
+      {
+        "name": "g21-aws-eu-west-3",
+        "nodeGroupSize": 1,
+        "specId": "aws+eu-west-3+t3a.nano",
+        "imageId": "ami-0a68eb8e20f8d99f0"
+      },
+      {
+        "name": "g22-aws-il-central-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+il-central-1+t3a.nano",
+        "imageId": "ami-07b9264ffe2d09a8e"
+      },
+      {
+        "name": "g23-aws-me-central-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+me-central-1+c5.large",
+        "imageId": "ami-0c0d7a3f7f76dd1a6"
+      },
+      {
+        "name": "g24-aws-sa-east-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+sa-east-1+t3a.nano",
+        "imageId": "ami-07a97e8b2b25e67a8"
+      },
+      {
+        "name": "g25-aws-us-east-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+us-east-1+t3a.nano",
+        "imageId": "ami-0cf474e33a6362af9"
+      },
+      {
+        "name": "g26-aws-us-east-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+us-east-2+t3a.nano",
+        "imageId": "ami-07b1dc51b61742d9b"
+      },
+      {
+        "name": "g27-aws-us-west-1",
+        "nodeGroupSize": 1,
+        "specId": "aws+us-west-1+t3a.nano",
+        "imageId": "ami-09091a60cac273afc"
+      },
+      {
+        "name": "g28-aws-us-west-2",
+        "nodeGroupSize": 1,
+        "specId": "aws+us-west-2+t3a.nano",
+        "imageId": "ami-0ababc7e5826abb79"
+      }
+    ]
+  }
+}
