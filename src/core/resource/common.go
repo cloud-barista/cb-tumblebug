@@ -1360,6 +1360,13 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 		return nil, err
 	}
 
+	// Image, CustomImage, and Spec are stored in PostgreSQL, not in kvstore.
+	// They do not maintain an associatedObjectList in ETCD, so return empty here.
+	switch resourceType {
+	case model.StrImage, model.StrCustomImage, model.StrSpec:
+		return []string{}, nil
+	}
+
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
 	keyValue, exists, err := kvstore.GetKv(key)
