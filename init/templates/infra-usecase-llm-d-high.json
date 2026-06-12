@@ -1,6 +1,6 @@
 {
   "resourceType": "infra",
-  "name": "infra-azure-llm-d-high",
+  "name": "infra-usecase-llm-d-high",
   "description": "llm-d-high",
   "infraDynamicReq": {
     "nodeGroups": [

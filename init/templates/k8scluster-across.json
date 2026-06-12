@@ -1,0 +1,82 @@
+{
+  "resourceType": "k8sCluster",
+  "name": "k8scluster-across",
+  "description": "Multi-cloud K8s cluster template covering AWS, Alibaba, Azure, GCP, NHN, Tencent, NCP",
+  "k8sMultiClusterDynamicReq": {
+    "namePrefix": "k8scluster",
+    "clusters": [
+      {
+        "specId": "aws+ap-northeast-2+t3a.xlarge",
+        "imageId": "default",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      },
+      {
+        "specId": "alibaba+ap-northeast-2+ecs.t6-c1m4.xlarge",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      },
+      {
+        "specId": "azure+koreacentral+standard_b4ms",
+        "imageId": "default",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      },
+      {
+        "specId": "gcp+asia-east1+e2-standard-4",
+        "imageId": "default",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      },
+      {
+        "specId": "nhn+kr1+m2.c4m8",
+        "imageId": "107cc02d-02d8-44fd-84d6-6c316045b817",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      },
+      {
+        "specId": "tencent+ap-seoul+s5.medium4",
+        "imageId": "img-22trbn9x",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      },
+      {
+        "specId": "ncp+kr+s4-g3",
+        "imageId": "default",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      },
+      {
+        "specId": "ibm+jp-osa+bxf-4x16",
+        "imageId": "default",
+        "nodeGroupName": "k8sng01",
+        "desiredNodeSize": 1,
+        "minNodeSize": 1,
+        "maxNodeSize": 2,
+        "onAutoScaling": "true"
+      }
+    ]
+  }
+}

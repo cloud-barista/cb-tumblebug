@@ -34,15 +34,21 @@ type SnapshotReq struct {
 type SpiderMyImageReq struct {
 	ConnectionName string
 	ReqInfo        struct {
-		Name       string
-		SourceNode string
+		Name string
+		// SourceNode carries the CSP VM (Node) identifier. The JSON tag MUST
+		// remain "SourceVM" because CB-Spider's /myimage (SnapshotVM) API
+		// contract expects the "SourceVM" field. Renaming the wire field
+		// causes CB-Spider to receive an empty VM id ("VM '' does not exist").
+		SourceNode string `json:"SourceVM"`
 	}
 }
 
 type SpiderMyImageInfo struct {
 	IId IID // {NameId, SystemId}
 
-	SourceNode IID
+	// SourceNode is the CSP VM (Node) the image was created from. The JSON tag
+	// MUST remain "SourceVM" to match CB-Spider's MyImageInfo response field.
+	SourceNode IID `json:"SourceVM"`
 
 	Status CustomImageStatus // Available | Deleting
 

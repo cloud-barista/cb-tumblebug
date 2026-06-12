@@ -281,6 +281,7 @@ const (
 	StrInfra                 string = "infra"
 	StrNodeGroup             string = "nodeGroup"
 	StrK8s                   string = "k8s"
+	StrK8sCluster            string = "k8sCluster"
 	StrKubernetes            string = "kubernetes"
 	StrCluster               string = "cluster"
 	StrContainer             string = "container"

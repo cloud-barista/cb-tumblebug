@@ -9523,6 +9523,80 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/k8sCluster/template/{templateId}": {
+            "post": {
+                "description": "Provision a new set of K8s clusters by applying a K8s Cluster Dynamic Template.\nThe template provides the full K8sMultiClusterDynamicReq configuration, and the\napply request allows overriding the namePrefix and description.\n\n**Override Behavior (Phase 1):**\n- ` + "`" + `namePrefix` + "`" + ` (required): Overrides the namePrefix for all clusters\n- ` + "`" + `description` + "`" + ` (optional): Propagated to each cluster's description\n- All other configuration (specId, imageId, nodeGroupSize, etc.) comes from the template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Management"
+                ],
+                "summary": "Provision K8s multi-cluster from a Template",
+                "operationId": "PostK8sMultiClusterDynamicFromTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID to apply",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template apply request with namePrefix and optional description",
+                        "name": "applyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterTemplateApplyReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully provisioned K8s multi-cluster from template",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sMultiClusterInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template or namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal provisioning error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/k8sCluster/{k8sClusterId}": {
             "get": {
                 "description": "Get K8sCluster",
@@ -9649,6 +9723,84 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/extractTemplate": {
+            "post": {
+                "description": "Extract the configuration of an existing K8s cluster and save it as a\nK8s Cluster Dynamic Template for reuse.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Template Management"
+                ],
+                "summary": "Extract a K8s Cluster Dynamic Template from an existing K8s cluster",
+                "operationId": "PostK8sClusterExtractTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "K8s Cluster ID to extract from",
+                        "name": "k8sClusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name for the new template",
+                        "name": "templateName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully extracted template",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterDynamicTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "K8s cluster not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Template already exists",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -16931,6 +17083,355 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
                         "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/k8sCluster": {
+            "get": {
+                "description": "List all K8s Cluster Dynamic Templates in a namespace.\nOptionally filter by keyword matching against template name or description (case-insensitive).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Template Management"
+                ],
+                "summary": "List all K8s Cluster Dynamic Templates",
+                "operationId": "GetAllK8sClusterDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Keyword to filter templates by name or description",
+                        "name": "filterKeyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of templates",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterDynamicTemplateListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a reusable K8s Cluster Dynamic Template. Templates store K8sMultiClusterDynamic\nrequest configurations that can be applied later to provision multi-cloud K8s clusters\nwith consistent settings.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Template Management"
+                ],
+                "summary": "Create a K8s Cluster Dynamic Template",
+                "operationId": "PostK8sClusterDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "K8s Cluster Dynamic Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterDynamicTemplateReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created template",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterDynamicTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or template name",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Template already exists",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all K8s Cluster Dynamic Templates in a namespace.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Template Management"
+                ],
+                "summary": "Delete all K8s Cluster Dynamic Templates",
+                "operationId": "DeleteAllK8sClusterDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All templates deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/template/k8sCluster/{templateId}": {
+            "get": {
+                "description": "Retrieve a specific K8s Cluster Dynamic Template by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Template Management"
+                ],
+                "summary": "Get a K8s Cluster Dynamic Template",
+                "operationId": "GetK8sClusterDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterDynamicTemplateInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing K8s Cluster Dynamic Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Template Management"
+                ],
+                "summary": "Update a K8s Cluster Dynamic Template",
+                "operationId": "PutK8sClusterDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "K8s Cluster Dynamic Template request",
+                        "name": "templateReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterDynamicTemplateReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated template information",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterDynamicTemplateInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Template not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific K8s Cluster Dynamic Template.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[K8s] K8s Cluster Template Management"
+                ],
+                "summary": "Delete a K8s Cluster Dynamic Template",
+                "operationId": "DeleteK8sClusterDynamicTemplate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
                         "in": "header"
                     }
                 ],
@@ -25973,6 +26474,92 @@ const docTemplate = `{
                 }
             }
         },
+        "model.K8sClusterDynamicTemplateInfo": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt is the creation timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "Multi-cloud K8s cluster template"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the template",
+                    "type": "string",
+                    "example": "k8s-across-global"
+                },
+                "k8sMultiClusterDynamicReq": {
+                    "description": "K8sMultiClusterDynamicReq is the template body (K8s multi-cluster dynamic request)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.K8sMultiClusterDynamicReq"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the template",
+                    "type": "string",
+                    "example": "k8s-across-global"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string",
+                    "example": "k8sCluster"
+                },
+                "source": {
+                    "description": "Source indicates where this template was created from\n- \"user\": manually created by user\n- \"k8sCluster:{nsId}/{k8sClusterId}\": extracted from an existing K8sCluster",
+                    "type": "string",
+                    "example": "user"
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt is the last update timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "model.K8sClusterDynamicTemplateListResponse": {
+            "type": "object",
+            "properties": {
+                "templates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterDynamicTemplateInfo"
+                    }
+                }
+            }
+        },
+        "model.K8sClusterDynamicTemplateReq": {
+            "type": "object",
+            "required": [
+                "k8sMultiClusterDynamicReq",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description of the template",
+                    "type": "string",
+                    "example": "Multi-cloud K8s cluster template"
+                },
+                "k8sMultiClusterDynamicReq": {
+                    "description": "K8sMultiClusterDynamicReq is the template body (K8s multi-cluster dynamic request configuration)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.K8sMultiClusterDynamicReq"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name is the template ID and name",
+                    "type": "string",
+                    "example": "k8s-across-global"
+                }
+            }
+        },
         "model.K8sClusterFailedInfo": {
             "type": "object",
             "properties": {
@@ -26341,6 +26928,24 @@ const docTemplate = `{
                 "K8sClusterUpdating",
                 "K8sClusterDeleting"
             ]
+        },
+        "model.K8sClusterTemplateApplyReq": {
+            "type": "object",
+            "required": [
+                "namePrefix"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Description for the new K8s clusters (optional, propagated to all clusters)",
+                    "type": "string",
+                    "example": "K8s clusters created from template"
+                },
+                "namePrefix": {
+                    "description": "NamePrefix for the new K8s clusters to be created from the template (maps to K8sMultiClusterDynamicReq.NamePrefix)",
+                    "type": "string",
+                    "example": "my-k8s"
+                }
+            }
         },
         "model.K8sClusterTokenResponse": {
             "type": "object",

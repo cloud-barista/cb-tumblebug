@@ -582,6 +582,20 @@ func RunServer() {
 	g.POST("/:nsId/k8sClusterDynamic", rest_resource.RestPostK8sClusterDynamic)
 	g.POST("/:nsId/k8sMultiClusterDynamic", rest_resource.RestPostK8sMultiClusterDynamic)
 	g.POST("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroupDynamic", rest_resource.RestPostK8sNodeGroupDynamic)
+
+	// Template-based K8s multi-cluster provisioning
+	g.POST("/:nsId/k8sCluster/template/:templateId", rest_resource.RestPostK8sMultiClusterDynamicFromTemplate)
+
+	// Template extraction from existing K8s cluster
+	g.POST("/:nsId/k8sCluster/:k8sClusterId/extractTemplate", rest_resource.RestPostK8sClusterExtractTemplate)
+
+	// K8s Cluster Dynamic Template Management
+	g.POST("/:nsId/template/k8sCluster", rest_resource.RestPostK8sClusterDynamicTemplate)
+	g.GET("/:nsId/template/k8sCluster", rest_resource.RestGetAllK8sClusterDynamicTemplate)
+	g.GET("/:nsId/template/k8sCluster/:templateId", rest_resource.RestGetK8sClusterDynamicTemplate)
+	g.PUT("/:nsId/template/k8sCluster/:templateId", rest_resource.RestPutK8sClusterDynamicTemplate)
+	g.DELETE("/:nsId/template/k8sCluster/:templateId", rest_resource.RestDeleteK8sClusterDynamicTemplate)
+	g.DELETE("/:nsId/template/k8sCluster", rest_resource.RestDeleteAllK8sClusterDynamicTemplate)
 	g.GET("/:nsId/control/k8sCluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
 
 	g.POST("/:nsId/cmd/k8sCluster/:k8sClusterId", rest_resource.RestPostCmdK8sCluster)

@@ -219,3 +219,61 @@ type SecurityGroupTemplateApplyReq struct {
 type SecurityGroupTemplateListResponse struct {
 	Templates []SecurityGroupTemplateInfo `json:"templates"`
 }
+
+// [Template for K8s Multi-Cluster Dynamic Provisioning]
+
+// K8sClusterDynamicTemplateInfo is struct for K8s Cluster Dynamic Template information stored in ETCD
+type K8sClusterDynamicTemplateInfo struct {
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType" example:"k8sCluster"`
+
+	// Id is unique identifier for the template
+	Id string `json:"id" example:"k8s-across-global"`
+
+	// Name is human-readable string to represent the template
+	Name string `json:"name" example:"k8s-across-global"`
+
+	// Description of the template
+	Description string `json:"description" example:"Multi-cloud K8s cluster template"`
+
+	// Source indicates where this template was created from
+	// - "user": manually created by user
+	// - "k8sCluster:{nsId}/{k8sClusterId}": extracted from an existing K8sCluster
+	Source string `json:"source" example:"user"`
+
+	// CreatedAt is the creation timestamp
+	CreatedAt string `json:"createdAt" example:"2024-01-01T00:00:00Z"`
+
+	// UpdatedAt is the last update timestamp
+	UpdatedAt string `json:"updatedAt" example:"2024-01-01T00:00:00Z"`
+
+	// K8sMultiClusterDynamicReq is the template body (K8s multi-cluster dynamic request)
+	K8sMultiClusterDynamicReq K8sMultiClusterDynamicReq `json:"k8sMultiClusterDynamicReq"`
+}
+
+// K8sClusterDynamicTemplateReq is struct for creating/updating a K8s Cluster Dynamic Template
+type K8sClusterDynamicTemplateReq struct {
+	// Name is the template ID and name
+	Name string `json:"name" validate:"required" example:"k8s-across-global"`
+
+	// Description of the template
+	Description string `json:"description" example:"Multi-cloud K8s cluster template"`
+
+	// K8sMultiClusterDynamicReq is the template body (K8s multi-cluster dynamic request configuration)
+	K8sMultiClusterDynamicReq K8sMultiClusterDynamicReq `json:"k8sMultiClusterDynamicReq" validate:"required"`
+}
+
+// K8sClusterTemplateApplyReq is struct for applying a K8s Cluster template to provision multi-cluster
+// Phase 1: Only namePrefix and description overrides are supported
+type K8sClusterTemplateApplyReq struct {
+	// NamePrefix for the new K8s clusters to be created from the template (maps to K8sMultiClusterDynamicReq.NamePrefix)
+	NamePrefix string `json:"namePrefix" validate:"required" example:"my-k8s"`
+
+	// Description for the new K8s clusters (optional, propagated to all clusters)
+	Description string `json:"description" example:"K8s clusters created from template"`
+}
+
+// K8sClusterDynamicTemplateListResponse is struct for listing K8s Cluster Dynamic Templates
+type K8sClusterDynamicTemplateListResponse struct {
+	Templates []K8sClusterDynamicTemplateInfo `json:"templates"`
+}

@@ -344,10 +344,6 @@ func CreateInfraDynamicTemplateWithReq(nsId string, templateName string, descrip
 	return templateInfo, nil
 }
 
-// =====================================================================
-// vNet Template CRUD Functions
-// =====================================================================
-
 // CreateVNetTemplate creates a new vNet Template
 func CreateVNetTemplate(nsId string, req *model.VNetTemplateReq) (model.VNetTemplateInfo, error) {
 	emptyResult := model.VNetTemplateInfo{}
@@ -626,10 +622,6 @@ func DeleteAllVNetTemplate(nsId string) error {
 	return nil
 }
 
-// =====================================================================
-// SecurityGroup Template CRUD Functions
-// =====================================================================
-
 // CreateSecurityGroupTemplate creates a new SecurityGroup Template
 func CreateSecurityGroupTemplate(nsId string, req *model.SecurityGroupTemplateReq) (model.SecurityGroupTemplateInfo, error) {
 	emptyResult := model.SecurityGroupTemplateInfo{}
@@ -888,4 +880,316 @@ func DeleteAllSecurityGroupTemplate(nsId string) error {
 	}
 
 	return nil
+}
+
+// CreateK8sClusterDynamicTemplate creates a new K8s Cluster Dynamic Template
+func CreateK8sClusterDynamicTemplate(nsId string, req *model.K8sClusterDynamicTemplateReq) (model.K8sClusterDynamicTemplateInfo, error) {
+	emptyResult := model.K8sClusterDynamicTemplateInfo{}
+
+	err := CheckString(req.Name)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid template name")
+		return emptyResult, err
+	}
+
+	check, err := CheckNs(nsId)
+	if !check {
+		return emptyResult, fmt.Errorf("namespace '%s' does not exist", nsId)
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+
+	key := GenTemplateKey(nsId, model.StrK8sCluster, req.Name)
+	_, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+	if exists {
+		return emptyResult, fmt.Errorf("template '%s' already exists in namespace '%s'", req.Name, nsId)
+	}
+
+	now := time.Now().Format(time.RFC3339)
+	templateInfo := model.K8sClusterDynamicTemplateInfo{
+		ResourceType:              model.StrK8sCluster,
+		Id:                        req.Name,
+		Name:                      req.Name,
+		Description:               req.Description,
+		Source:                    "user",
+		CreatedAt:                 now,
+		UpdatedAt:                 now,
+		K8sMultiClusterDynamicReq: req.K8sMultiClusterDynamicReq,
+	}
+
+	val, err := json.Marshal(templateInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal template info")
+		return emptyResult, err
+	}
+
+	err = kvstore.Put(key, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("failed to store template in ETCD")
+		return emptyResult, err
+	}
+
+	return templateInfo, nil
+}
+
+// GetK8sClusterDynamicTemplate retrieves a K8s Cluster Dynamic Template by ID
+func GetK8sClusterDynamicTemplate(nsId string, templateId string) (model.K8sClusterDynamicTemplateInfo, error) {
+	emptyResult := model.K8sClusterDynamicTemplateInfo{}
+
+	err := CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+
+	err = CheckString(templateId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+
+	check, err := CheckNs(nsId)
+	if !check {
+		return emptyResult, fmt.Errorf("namespace '%s' does not exist", nsId)
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+
+	key := GenTemplateKey(nsId, model.StrK8sCluster, templateId)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+	if !exists {
+		return emptyResult, fmt.Errorf("template '%s' not found in namespace '%s'", templateId, nsId)
+	}
+
+	result := model.K8sClusterDynamicTemplateInfo{}
+	err = json.Unmarshal([]byte(keyValue.Value), &result)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to unmarshal template info")
+		return emptyResult, err
+	}
+
+	return result, nil
+}
+
+// ListK8sClusterDynamicTemplate lists all K8s Cluster Dynamic Templates in a namespace.
+// filterKeyword is optional; if non-empty, only templates whose Name or Description
+// contains the keyword (case-insensitive) are returned.
+func ListK8sClusterDynamicTemplate(nsId string, filterKeyword string) ([]model.K8sClusterDynamicTemplateInfo, error) {
+	err := CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	check, err := CheckNs(nsId)
+	if !check {
+		return nil, fmt.Errorf("namespace '%s' does not exist", nsId)
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	key := GenTemplateKey(nsId, model.StrK8sCluster, "")
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	var templates []model.K8sClusterDynamicTemplateInfo
+	keyword := strings.ToLower(strings.TrimSpace(filterKeyword))
+	for _, v := range keyValue {
+		tempObj := model.K8sClusterDynamicTemplateInfo{}
+		err = json.Unmarshal([]byte(v.Value), &tempObj)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to unmarshal template")
+			continue
+		}
+		if keyword != "" {
+			nameLower := strings.ToLower(tempObj.Name)
+			descLower := strings.ToLower(tempObj.Description)
+			if !strings.Contains(nameLower, keyword) && !strings.Contains(descLower, keyword) {
+				continue
+			}
+		}
+		templates = append(templates, tempObj)
+	}
+
+	return templates, nil
+}
+
+// UpdateK8sClusterDynamicTemplate updates an existing K8s Cluster Dynamic Template
+func UpdateK8sClusterDynamicTemplate(nsId string, templateId string, req *model.K8sClusterDynamicTemplateReq) (model.K8sClusterDynamicTemplateInfo, error) {
+	emptyResult := model.K8sClusterDynamicTemplateInfo{}
+
+	err := CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+
+	err = CheckString(templateId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+
+	existing, err := GetK8sClusterDynamicTemplate(nsId, templateId)
+	if err != nil {
+		return emptyResult, err
+	}
+
+	// Name is not changeable; it is tied to Id and ETCD key
+	if req.Name != "" && req.Name != templateId {
+		return emptyResult, fmt.Errorf("template name cannot be changed (name '%s' does not match template ID '%s')", req.Name, templateId)
+	}
+
+	now := time.Now().Format(time.RFC3339)
+	existing.Description = req.Description
+	existing.UpdatedAt = now
+	existing.K8sMultiClusterDynamicReq = req.K8sMultiClusterDynamicReq
+
+	key := GenTemplateKey(nsId, model.StrK8sCluster, templateId)
+	val, err := json.Marshal(existing)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal template info")
+		return emptyResult, err
+	}
+
+	err = kvstore.Put(key, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("failed to update template in ETCD")
+		return emptyResult, err
+	}
+
+	return existing, nil
+}
+
+// DeleteK8sClusterDynamicTemplate deletes a K8s Cluster Dynamic Template
+func DeleteK8sClusterDynamicTemplate(nsId string, templateId string) error {
+	err := CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = CheckString(templateId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	key := GenTemplateKey(nsId, model.StrK8sCluster, templateId)
+	_, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("template '%s' not found in namespace '%s'", templateId, nsId)
+	}
+
+	err = kvstore.Delete(key)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to delete K8s cluster template from ETCD")
+		return err
+	}
+
+	return nil
+}
+
+// DeleteAllK8sClusterDynamicTemplate deletes all K8s Cluster Dynamic Templates in a namespace
+func DeleteAllK8sClusterDynamicTemplate(nsId string) error {
+	err := CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	templates, err := ListK8sClusterDynamicTemplate(nsId, "")
+	if err != nil {
+		return err
+	}
+
+	for _, t := range templates {
+		err := DeleteK8sClusterDynamicTemplate(nsId, t.Id)
+		if err != nil {
+			log.Error().Err(err).Msgf("failed to delete K8s cluster template '%s'", t.Id)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CreateK8sClusterDynamicTemplateWithReq creates a template from a K8sMultiClusterDynamicReq
+// (used for extraction from an existing K8sCluster)
+func CreateK8sClusterDynamicTemplateWithReq(nsId string, templateName string, description string, source string, multiClusterReq *model.K8sMultiClusterDynamicReq) (model.K8sClusterDynamicTemplateInfo, error) {
+	emptyResult := model.K8sClusterDynamicTemplateInfo{}
+
+	err := CheckString(templateName)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid template name")
+		return emptyResult, err
+	}
+
+	check, err := CheckNs(nsId)
+	if !check {
+		return emptyResult, fmt.Errorf("namespace '%s' does not exist", nsId)
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+
+	key := GenTemplateKey(nsId, model.StrK8sCluster, templateName)
+	_, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyResult, err
+	}
+	if exists {
+		return emptyResult, fmt.Errorf("template '%s' already exists in namespace '%s'", templateName, nsId)
+	}
+
+	now := time.Now().Format(time.RFC3339)
+	templateInfo := model.K8sClusterDynamicTemplateInfo{
+		ResourceType:              model.StrK8sCluster,
+		Id:                        templateName,
+		Name:                      templateName,
+		Description:               description,
+		Source:                    source,
+		CreatedAt:                 now,
+		UpdatedAt:                 now,
+		K8sMultiClusterDynamicReq: *multiClusterReq,
+	}
+
+	val, err := json.Marshal(templateInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal template info")
+		return emptyResult, err
+	}
+
+	err = kvstore.Put(key, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("failed to store template in ETCD")
+		return emptyResult, err
+	}
+
+	return templateInfo, nil
 }

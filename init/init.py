@@ -936,12 +936,16 @@ if run_load_templates:
                         template_type = "vNet"
                     elif resource_type == "securityGroup":
                         template_type = "securityGroup"
+                    elif resource_type == "k8sCluster":
+                        template_type = "k8sCluster"
                     elif "infraDynamicReq" in template_data:
                         template_type = "infra"
                     elif "vNetReq" in template_data or "vNetPolicy" in template_data:
                         template_type = "vNet"
                     elif "securityGroupReq" in template_data:
                         template_type = "securityGroup"
+                    elif "k8sMultiClusterDynamicReq" in template_data:
+                        template_type = "k8sCluster"
                     else:
                         print(
                             Fore.RED + f"  ❌ Cannot detect template type for {os.path.basename(tf)}: "
