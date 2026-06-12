@@ -8223,6 +8223,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/extractTemplate:
+    post:
+      tags:
+      - "[K8s] K8s Cluster Template Management"
+      summary: Extract a K8s Cluster Dynamic Template from an existing K8s cluster
+      description: |-
+        Extract the configuration of an existing K8s cluster and save it as a
+        K8s Cluster Dynamic Template for reuse.
+      operationId: PostK8sClusterExtractTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8s Cluster ID to extract from
+        required: true
+        schema:
+          type: string
+      - name: templateName
+        in: query
+        description: Name for the new template
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully extracted template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterDynamicTemplateInfo'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: K8s cluster not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Template already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup:
     post:
       tags:
@@ -8715,6 +8780,73 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: upgradeK8sClusterReq
+  /ns/{nsId}/k8sCluster/template/{templateId}:
+    post:
+      tags:
+      - "[K8s] K8s Cluster Management"
+      summary: Provision K8s multi-cluster from a Template
+      description: |-
+        Provision a new set of K8s clusters by applying a K8s Cluster Dynamic Template.
+        The template provides the full K8sMultiClusterDynamicReq configuration, and the
+        apply request allows overriding the namePrefix and description.
+
+        **Override Behavior (Phase 1):**
+        - `namePrefix` (required): Overrides the namePrefix for all clusters
+        - `description` (optional): Propagated to each cluster's description
+        - All other configuration (specId, imageId, nodeGroupSize, etc.) comes from the template
+      operationId: PostK8sMultiClusterDynamicFromTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID to apply
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Template apply request with namePrefix and optional description
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sClusterTemplateApplyReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully provisioned K8s multi-cluster from template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sMultiClusterInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template or namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal provisioning error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: applyReq
   /ns/{nsId}/k8sClusterDynamic:
     post:
       tags:
@@ -14225,6 +14357,280 @@ paths:
         in: header
         description: "Credential holder ID for selecting which credentials to use\
           \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/k8sCluster:
+    get:
+      tags:
+      - "[K8s] K8s Cluster Template Management"
+      summary: List all K8s Cluster Dynamic Templates
+      description: |-
+        List all K8s Cluster Dynamic Templates in a namespace.
+        Optionally filter by keyword matching against template name or description (case-insensitive).
+      operationId: GetAllK8sClusterDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: filterKeyword
+        in: query
+        description: Keyword to filter templates by name or description
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterDynamicTemplateListResponse'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[K8s] K8s Cluster Template Management"
+      summary: Create a K8s Cluster Dynamic Template
+      description: |-
+        Create a reusable K8s Cluster Dynamic Template. Templates store K8sMultiClusterDynamic
+        request configurations that can be applied later to provision multi-cloud K8s clusters
+        with consistent settings.
+      operationId: PostK8sClusterDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: K8s Cluster Dynamic Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sClusterDynamicTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Successfully created template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterDynamicTemplateInfo'
+        "400":
+          description: Invalid request format or template name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Template already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[K8s] K8s Cluster Template Management"
+      summary: Delete all K8s Cluster Dynamic Templates
+      description: Delete all K8s Cluster Dynamic Templates in a namespace.
+      operationId: DeleteAllK8sClusterDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: All templates deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/template/k8sCluster/{templateId}:
+    get:
+      tags:
+      - "[K8s] K8s Cluster Template Management"
+      summary: Get a K8s Cluster Dynamic Template
+      description: Retrieve a specific K8s Cluster Dynamic Template by ID.
+      operationId: GetK8sClusterDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterDynamicTemplateInfo'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[K8s] K8s Cluster Template Management"
+      summary: Update a K8s Cluster Dynamic Template
+      description: Update an existing K8s Cluster Dynamic Template.
+      operationId: PutK8sClusterDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: K8s Cluster Dynamic Template request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sClusterDynamicTemplateReq'
+        required: true
+      responses:
+        "200":
+          description: Updated template information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterDynamicTemplateInfo'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: templateReq
+    delete:
+      tags:
+      - "[K8s] K8s Cluster Template Management"
+      summary: Delete a K8s Cluster Dynamic Template
+      description: Delete a specific K8s Cluster Dynamic Template.
+      operationId: DeleteK8sClusterDynamicTemplate
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: templateId
+        in: path
+        description: Template ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
         schema:
           type: string
       responses:
@@ -21757,6 +22163,73 @@ components:
           type: string
           description: K8s Clsuter version
           example: "1.29"
+    model.K8sClusterDynamicTemplateInfo:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: CreatedAt is the creation timestamp
+          example: 2024-01-01T00:00:00Z
+        description:
+          type: string
+          description: Description of the template
+          example: Multi-cloud K8s cluster template
+        id:
+          type: string
+          description: Id is unique identifier for the template
+          example: k8s-across-global
+        k8sMultiClusterDynamicReq:
+          type: object
+          description: K8sMultiClusterDynamicReq is the template body (K8s multi-cluster
+            dynamic request)
+          allOf:
+          - $ref: '#/components/schemas/model.K8sMultiClusterDynamicReq'
+        name:
+          type: string
+          description: Name is human-readable string to represent the template
+          example: k8s-across-global
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+          example: k8sCluster
+        source:
+          type: string
+          description: |-
+            Source indicates where this template was created from
+            - "user": manually created by user
+            - "k8sCluster:{nsId}/{k8sClusterId}": extracted from an existing K8sCluster
+          example: user
+        updatedAt:
+          type: string
+          description: UpdatedAt is the last update timestamp
+          example: 2024-01-01T00:00:00Z
+    model.K8sClusterDynamicTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sClusterDynamicTemplateInfo'
+    model.K8sClusterDynamicTemplateReq:
+      required:
+      - k8sMultiClusterDynamicReq
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+          description: Description of the template
+          example: Multi-cloud K8s cluster template
+        k8sMultiClusterDynamicReq:
+          type: object
+          description: K8sMultiClusterDynamicReq is the template body (K8s multi-cluster
+            dynamic request configuration)
+          allOf:
+          - $ref: '#/components/schemas/model.K8sMultiClusterDynamicReq'
+        name:
+          type: string
+          description: Name is the template ID and name
+          example: k8s-across-global
     model.K8sClusterFailedInfo:
       type: object
       properties:
@@ -22028,6 +22501,21 @@ components:
       - K8sClusterInactive
       - K8sClusterUpdating
       - K8sClusterDeleting
+    model.K8sClusterTemplateApplyReq:
+      required:
+      - namePrefix
+      type: object
+      properties:
+        description:
+          type: string
+          description: "Description for the new K8s clusters (optional, propagated\
+            \ to all clusters)"
+          example: K8s clusters created from template
+        namePrefix:
+          type: string
+          description: NamePrefix for the new K8s clusters to be created from the
+            template (maps to K8sMultiClusterDynamicReq.NamePrefix)
+          example: my-k8s
     model.K8sClusterTokenResponse:
       type: object
       properties:

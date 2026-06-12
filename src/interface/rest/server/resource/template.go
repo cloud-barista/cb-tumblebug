@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -275,10 +276,6 @@ func RestPostVNetFromTemplate(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-// ====================================================================
-// SecurityGroup Template Handlers
-// ====================================================================
-
 // RestPostSecurityGroupTemplate godoc
 // @ID PostSecurityGroupTemplate
 // @Summary Create a SecurityGroup Template
@@ -514,4 +511,323 @@ func RestPostSecurityGroupFromTemplate(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
+}
+
+// RestPostK8sClusterDynamicTemplate godoc
+// @ID PostK8sClusterDynamicTemplate
+// @Summary Create a K8s Cluster Dynamic Template
+// @Description Create a reusable K8s Cluster Dynamic Template. Templates store K8sMultiClusterDynamic
+// @Description request configurations that can be applied later to provision multi-cloud K8s clusters
+// @Description with consistent settings.
+// @Tags [K8s] K8s Cluster Template Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param templateReq body model.K8sClusterDynamicTemplateReq true "K8s Cluster Dynamic Template request"
+// @Success 200 {object} model.K8sClusterDynamicTemplateInfo "Successfully created template"
+// @Failure 400 {object} model.SimpleMsg "Invalid request format or template name"
+// @Failure 409 {object} model.SimpleMsg "Template already exists"
+// @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/template/k8sCluster [post]
+func RestPostK8sClusterDynamicTemplate(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	req := &model.K8sClusterDynamicTemplateReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result, err := common.CreateK8sClusterDynamicTemplate(nsId, req)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create K8s cluster dynamic template")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestGetK8sClusterDynamicTemplate godoc
+// @ID GetK8sClusterDynamicTemplate
+// @Summary Get a K8s Cluster Dynamic Template
+// @Description Retrieve a specific K8s Cluster Dynamic Template by ID.
+// @Tags [K8s] K8s Cluster Template Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param templateId path string true "Template ID"
+// @Success 200 {object} model.K8sClusterDynamicTemplateInfo "Template information"
+// @Failure 404 {object} model.SimpleMsg "Template not found"
+// @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/template/k8sCluster/{templateId} [get]
+func RestGetK8sClusterDynamicTemplate(c echo.Context) error {
+	nsId := c.Param("nsId")
+	templateId := c.Param("templateId")
+
+	result, err := common.GetK8sClusterDynamicTemplate(nsId, templateId)
+	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestGetAllK8sClusterDynamicTemplate godoc
+// @ID GetAllK8sClusterDynamicTemplate
+// @Summary List all K8s Cluster Dynamic Templates
+// @Description List all K8s Cluster Dynamic Templates in a namespace.
+// @Description Optionally filter by keyword matching against template name or description (case-insensitive).
+// @Tags [K8s] K8s Cluster Template Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param filterKeyword query string false "Keyword to filter templates by name or description"
+// @Success 200 {object} model.K8sClusterDynamicTemplateListResponse "List of templates"
+// @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/template/k8sCluster [get]
+func RestGetAllK8sClusterDynamicTemplate(c echo.Context) error {
+	nsId := c.Param("nsId")
+	filterKeyword := c.QueryParam("filterKeyword")
+
+	result, err := common.ListK8sClusterDynamicTemplate(nsId, filterKeyword)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	response := model.K8sClusterDynamicTemplateListResponse{Templates: result}
+	return clientManager.EndRequestWithLog(c, nil, response)
+}
+
+// RestPutK8sClusterDynamicTemplate godoc
+// @ID PutK8sClusterDynamicTemplate
+// @Summary Update a K8s Cluster Dynamic Template
+// @Description Update an existing K8s Cluster Dynamic Template.
+// @Tags [K8s] K8s Cluster Template Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param templateId path string true "Template ID"
+// @Param templateReq body model.K8sClusterDynamicTemplateReq true "K8s Cluster Dynamic Template request"
+// @Success 200 {object} model.K8sClusterDynamicTemplateInfo "Updated template information"
+// @Failure 400 {object} model.SimpleMsg "Invalid request format"
+// @Failure 404 {object} model.SimpleMsg "Template not found"
+// @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/template/k8sCluster/{templateId} [put]
+func RestPutK8sClusterDynamicTemplate(c echo.Context) error {
+	nsId := c.Param("nsId")
+	templateId := c.Param("templateId")
+
+	req := &model.K8sClusterDynamicTemplateReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result, err := common.UpdateK8sClusterDynamicTemplate(nsId, templateId, req)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to update K8s cluster dynamic template")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestDeleteK8sClusterDynamicTemplate godoc
+// @ID DeleteK8sClusterDynamicTemplate
+// @Summary Delete a K8s Cluster Dynamic Template
+// @Description Delete a specific K8s Cluster Dynamic Template.
+// @Tags [K8s] K8s Cluster Template Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param templateId path string true "Template ID"
+// @Success 200 {object} model.SimpleMsg "Template deleted successfully"
+// @Failure 404 {object} model.SimpleMsg "Template not found"
+// @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/template/k8sCluster/{templateId} [delete]
+func RestDeleteK8sClusterDynamicTemplate(c echo.Context) error {
+	nsId := c.Param("nsId")
+	templateId := c.Param("templateId")
+
+	err := common.DeleteK8sClusterDynamicTemplate(nsId, templateId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to delete K8s cluster dynamic template")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return clientManager.EndRequestWithLog(c, nil, model.SimpleMsg{Message: "K8s cluster dynamic template '" + templateId + "' has been deleted"})
+}
+
+// RestDeleteAllK8sClusterDynamicTemplate godoc
+// @ID DeleteAllK8sClusterDynamicTemplate
+// @Summary Delete all K8s Cluster Dynamic Templates
+// @Description Delete all K8s Cluster Dynamic Templates in a namespace.
+// @Tags [K8s] K8s Cluster Template Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Success 200 {object} model.SimpleMsg "All templates deleted successfully"
+// @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/template/k8sCluster [delete]
+func RestDeleteAllK8sClusterDynamicTemplate(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	err := common.DeleteAllK8sClusterDynamicTemplate(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to delete all K8s cluster dynamic templates")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return clientManager.EndRequestWithLog(c, nil, model.SimpleMsg{Message: "All K8s cluster dynamic templates have been deleted"})
+}
+
+// RestPostK8sMultiClusterDynamicFromTemplate godoc
+// @ID PostK8sMultiClusterDynamicFromTemplate
+// @Summary Provision K8s multi-cluster from a Template
+// @Description Provision a new set of K8s clusters by applying a K8s Cluster Dynamic Template.
+// @Description The template provides the full K8sMultiClusterDynamicReq configuration, and the
+// @Description apply request allows overriding the namePrefix and description.
+// @Description
+// @Description **Override Behavior (Phase 1):**
+// @Description - `namePrefix` (required): Overrides the namePrefix for all clusters
+// @Description - `description` (optional): Propagated to each cluster's description
+// @Description - All other configuration (specId, imageId, nodeGroupSize, etc.) comes from the template
+// @Tags [K8s] K8s Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param templateId path string true "Template ID to apply"
+// @Param applyReq body model.K8sClusterTemplateApplyReq true "Template apply request with namePrefix and optional description"
+// @Success 200 {object} model.K8sMultiClusterInfo "Successfully provisioned K8s multi-cluster from template"
+// @Failure 400 {object} model.SimpleMsg "Invalid request format"
+// @Failure 404 {object} model.SimpleMsg "Template or namespace not found"
+// @Failure 500 {object} model.SimpleMsg "Internal provisioning error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/k8sCluster/template/{templateId} [post]
+func RestPostK8sMultiClusterDynamicFromTemplate(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	nsId := c.Param("nsId")
+	templateId := c.Param("templateId")
+
+	req := &model.K8sClusterTemplateApplyReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Get the template
+	tmpl, err := common.GetK8sClusterDynamicTemplate(nsId, templateId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get K8s cluster dynamic template")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Build multi-cluster request from template with overrides (Phase 1: namePrefix and description)
+	multiReq := tmpl.K8sMultiClusterDynamicReq
+	multiReq.NamePrefix = req.NamePrefix
+	if req.NamePrefix != "" {
+		// Clear per-cluster names so namePrefix is used for name generation.
+		// Extracted templates carry the original cluster ID as Name; keeping it would
+		// silently ignore namePrefix and cause name collisions on re-apply.
+		for i := range multiReq.Clusters {
+			multiReq.Clusters[i].Name = ""
+		}
+	}
+	if req.Description != "" {
+		for i := range multiReq.Clusters {
+			multiReq.Clusters[i].Description = req.Description
+		}
+	}
+
+	// Provision using the existing K8s multi-cluster dynamic function
+	result, err := infra.CreateK8sMultiClusterDynamic(ctx, nsId, &multiReq, "", false)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to provision K8s multi-cluster from template")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestPostK8sClusterExtractTemplate godoc
+// @ID PostK8sClusterExtractTemplate
+// @Summary Extract a K8s Cluster Dynamic Template from an existing K8s cluster
+// @Description Extract the configuration of an existing K8s cluster and save it as a
+// @Description K8s Cluster Dynamic Template for reuse.
+// @Tags [K8s] K8s Cluster Template Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param k8sClusterId path string true "K8s Cluster ID to extract from"
+// @Param templateName query string true "Name for the new template"
+// @Success 200 {object} model.K8sClusterDynamicTemplateInfo "Successfully extracted template"
+// @Failure 400 {object} model.SimpleMsg "Invalid request"
+// @Failure 404 {object} model.SimpleMsg "K8s cluster not found"
+// @Failure 409 {object} model.SimpleMsg "Template already exists"
+// @Failure 500 {object} model.SimpleMsg "Internal error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/extractTemplate [post]
+func RestPostK8sClusterExtractTemplate(c echo.Context) error {
+	nsId := c.Param("nsId")
+	k8sClusterId := c.Param("k8sClusterId")
+	templateName := c.QueryParam("templateName")
+
+	if templateName == "" {
+		err := fmt.Errorf("templateName query parameter is required")
+		log.Warn().Err(err).Msg("missing required query parameter: templateName")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Get the existing K8s cluster
+	clusterInfo, err := resource.GetK8sCluster(nsId, k8sClusterId)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to get K8s cluster '%s'", k8sClusterId)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Build K8sMultiClusterDynamicReq from the cluster's current configuration
+	multiReq := buildK8sMultiClusterDynamicReqFromCluster(clusterInfo)
+
+	source := fmt.Sprintf("k8sCluster:%s/%s", nsId, k8sClusterId)
+	description := fmt.Sprintf("Template extracted from K8sCluster '%s' in namespace '%s'", k8sClusterId, nsId)
+
+	result, err := common.CreateK8sClusterDynamicTemplateWithReq(nsId, templateName, description, source, &multiReq)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create K8s cluster dynamic template from extraction")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// buildK8sMultiClusterDynamicReqFromCluster converts a K8sClusterInfo into a K8sMultiClusterDynamicReq
+// that can reproduce the cluster's configuration.
+func buildK8sMultiClusterDynamicReqFromCluster(clusterInfo *model.K8sClusterInfo) model.K8sMultiClusterDynamicReq {
+	clusterReq := model.K8sClusterDynamicReq{
+		Name:           clusterInfo.Id,
+		Version:        clusterInfo.Version,
+		Description:    clusterInfo.Description,
+		ConnectionName: clusterInfo.ConnectionName,
+	}
+
+	if len(clusterInfo.K8sNodeGroupList) > 1 {
+		log.Warn().Msgf("extractTemplate: cluster '%s' has %d node groups; only the first will be included (K8sClusterDynamicReq supports one node group per entry)", clusterInfo.Id, len(clusterInfo.K8sNodeGroupList))
+	}
+	if len(clusterInfo.K8sNodeGroupList) > 0 {
+		ng := clusterInfo.K8sNodeGroupList[0]
+		clusterReq.NodeGroupName = ng.Name
+		clusterReq.SpecId = ng.SpecId
+		clusterReq.ImageId = ng.ImageId
+		clusterReq.RootDiskType = ng.RootDiskType
+		clusterReq.RootDiskSize = ng.RootDiskSize
+		clusterReq.DesiredNodeSize = ng.DesiredNodeSize
+		clusterReq.MinNodeSize = ng.MinNodeSize
+		clusterReq.MaxNodeSize = ng.MaxNodeSize
+		if ng.OnAutoScaling {
+			clusterReq.OnAutoScaling = "true"
+		} else {
+			clusterReq.OnAutoScaling = "false"
+		}
+	}
+
+	return model.K8sMultiClusterDynamicReq{
+		NamePrefix: clusterInfo.Id,
+		Clusters:   []model.K8sClusterDynamicReq{clusterReq},
+	}
 }

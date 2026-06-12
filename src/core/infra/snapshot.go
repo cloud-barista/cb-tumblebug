@@ -47,14 +47,9 @@ func CreateNodeSnapshot(nsId string, infraId string, nodeId string, snapshotReq 
 
 	requestBody := model.SpiderMyImageReq{
 		ConnectionName: node.ConnectionName,
-		ReqInfo: struct {
-			Name       string
-			SourceNode string
-		}{
-			Name:       snapshotName,
-			SourceNode: node.CspResourceName,
-		},
 	}
+	requestBody.ReqInfo.Name = snapshotName
+	requestBody.ReqInfo.SourceNode = node.CspResourceName
 
 	// Inspect DataDisks before creating Node snapshot
 	// Disabled because: there is no difference in dataDisks before and after creating Node snapshot

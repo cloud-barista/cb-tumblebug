@@ -1,6 +1,6 @@
 {
   "resourceType": "infra",
-  "name": "infra-azure-aws-llm-bench",
+  "name": "infra-usecase-llm-bench",
   "description": "LLM benchmarking Infra with GPU VMs (NVIDIA L4, L40S, AMD Radeon PRO V710) and a CPU-based observability node",
   "infraDynamicReq": {
     "installMonAgent": "no",
