@@ -460,9 +460,19 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 			unavailableImages := []string{}
 
 			for _, imageId := range imageIds {
-				image, err := resource.GetImage(nsId, imageId)
+				// Use GetResource instead of GetImage: GetResource calls Spider for non-stable
+				// images and updates the DB, whereas GetImage reads from a process-level cache
+				// that never refreshes for custom images after initial population.
+				rawImage, err := resource.GetResource(nsId, model.StrCustomImage, imageId)
 				if err != nil {
 					log.Warn().Err(err).Msgf("Failed to get image status for %s", imageId)
+					unavailableImages = append(unavailableImages, imageId)
+					allAvailable = false
+					continue
+				}
+				image, ok := rawImage.(model.ImageInfo)
+				if !ok {
+					log.Warn().Msgf("Unexpected type for image %s", imageId)
 					unavailableImages = append(unavailableImages, imageId)
 					allAvailable = false
 					continue

@@ -639,6 +639,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Custom image deleted successfully from database")
+			imageInfoCache.Delete(strings.ToLower(nsId) + "/" + strings.ToLower(resourceId))
 		}
 	}
 
@@ -882,6 +883,7 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 			log.Error().Err(result.Error).Msg("")
 		} else {
 			log.Debug().Msg("Custom image deregistered successfully from database")
+			imageInfoCache.Delete(strings.ToLower(nsId) + "/" + strings.ToLower(resourceId))
 		}
 	} else {
 		// Delete from kvstore (for non-DB resources)
@@ -1358,6 +1360,13 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
+	}
+
+	// Image, CustomImage, and Spec are stored in PostgreSQL, not in kvstore.
+	// They do not maintain an associatedObjectList in ETCD, so return empty here.
+	switch resourceType {
+	case model.StrImage, model.StrCustomImage, model.StrSpec:
+		return []string{}, nil
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
