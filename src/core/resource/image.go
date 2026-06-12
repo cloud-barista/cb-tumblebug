@@ -2701,7 +2701,12 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 	}
 	img, err := getImageFromDB(nsId, cspImageName)
 	if err == nil {
-		imageInfoCache.Store(cacheKey, img)
+		// Custom images in non-stable states (Creating, etc.) must not be cached:
+		// their status transitions over time and GetImage does not refresh from Spider.
+		// Only stable states (Available, Failed, Deprecated) are safe to cache permanently.
+		if img.ResourceType != model.StrCustomImage || isStableImageStatus(img.ImageStatus) {
+			imageInfoCache.Store(cacheKey, img)
+		}
 	}
 	return img, err
 }
