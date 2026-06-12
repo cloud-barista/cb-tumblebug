@@ -639,6 +639,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Custom image deleted successfully from database")
+			imageInfoCache.Delete(strings.ToLower(nsId) + "/" + strings.ToLower(resourceId))
 		}
 	}
 
@@ -882,6 +883,7 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 			log.Error().Err(result.Error).Msg("")
 		} else {
 			log.Debug().Msg("Custom image deregistered successfully from database")
+			imageInfoCache.Delete(strings.ToLower(nsId) + "/" + strings.ToLower(resourceId))
 		}
 	} else {
 		// Delete from kvstore (for non-DB resources)
