@@ -26,7 +26,7 @@
         },
         "description": "CPU-based observability node (t3a.2xlarge, 8 vCPU, 32 GiB)",
         "specId": "aws+us-west-2+t3a.2xlarge",
-        "imageId": "ami-0503ed50b531cc445",
+        "imageId": "ami-0c99eb0be56f13a57",
         "rootDiskType": "gp2",
         "rootDiskSize": 200,
         "connectionName": "aws-us-west-2"
