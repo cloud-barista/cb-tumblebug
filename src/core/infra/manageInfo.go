@@ -1608,7 +1608,13 @@ var globalSpiderSem = make(chan struct{}, maxConcurrentSpiderCalls)
 // Key format: "nsId/infraId/nodeId"
 var terminatingFailStreak sync.Map
 
-const terminatingFailStreakMax = 3
+// terminatingFailStreakMax is set to 10 (≈ 2.5 min at 15 s poll interval).
+// A value of 3 was too small for CSPs with unstable APIs (e.g. Alibaba):
+// a single successful Spider response in between resets the streak to zero,
+// making it nearly impossible to ever reach the threshold when errors and
+// successes alternate. 10 gives enough headroom while still auto-resolving
+// within a few minutes once the VM is confirmed gone at the CSP side.
+const terminatingFailStreakMax = 10
 
 func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) ([]model.NodeStatusInfo, error) {
 	if len(nodeList) == 0 {
@@ -1832,6 +1838,16 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 
 	// Skip CSP API call if cspResourceName is empty (Node not properly created)
 	if nodeInfo.CspResourceName == "" && nodeInfo.TargetAction != model.ActionCreate {
+		// A Terminate action on a node that was never created at CSP (empty cspResourceName)
+		// has nothing to terminate — promote to Terminated immediately so the infra can proceed.
+		if nodeInfo.TargetAction == model.ActionTerminate {
+			nodeInfo.Status = model.StatusTerminated
+			nodeInfo.TargetAction = model.ActionComplete
+			nodeInfo.TargetStatus = model.StatusTerminated
+			nodeInfo.SystemMessage = "terminated (VM was never created at CSP)"
+			UpdateNodeInfo(nsId, infraId, nodeInfo)
+			log.Info().Str("nodeId", nodeId).Msg("[FetchNodeStatus] never-created node promoted to Terminated (no CSP resource to terminate)")
+		}
 		shouldSkipCSPCall = true
 	}
 
@@ -2709,9 +2725,16 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 			// of calling GetInfraStatus (which fans out to 1300 CSP SDK calls every 5 s
 			// and causes OOM at scale).
 			const terminateWaitInterval = 5 * time.Second
-			const terminateWaitTimeout = 10 * time.Minute
-			log.Info().Msgf("[DelInfra] Waiting for Infra %s termination to propagate (polling StatusStore every %s, timeout %s)",
-				infraId, terminateWaitInterval, terminateWaitTimeout)
+			// Scale the timeout with the number of nodes: allow ~6 s per node,
+			// with a floor of 10 min and a ceiling of 60 min.
+			// Example: 100 nodes → 10 min, 600 nodes → 60 min, 975 nodes → 60 min.
+			nodeCount := infraStatus.StatusCount.CountTotal
+			terminateWaitTimeout := time.Duration(max(10, nodeCount/10)) * time.Minute
+			if terminateWaitTimeout > 60*time.Minute {
+				terminateWaitTimeout = 60 * time.Minute
+			}
+			log.Info().Msgf("[DelInfra] Waiting for Infra %s termination to propagate (polling StatusStore every %s, timeout %s, nodes %d)",
+				infraId, terminateWaitInterval, terminateWaitTimeout, nodeCount)
 			deadline := time.Now().Add(terminateWaitTimeout)
 			for time.Now().Before(deadline) {
 				time.Sleep(terminateWaitInterval)

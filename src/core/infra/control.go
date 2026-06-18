@@ -288,12 +288,19 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 		}
 	}
 
-	// If Node is already terminated, treat terminate as a completed no-op
+	// If Node is already terminated or failed (never created at CSP), treat terminate as a no-op.
+	// Failed nodes have no CSP resource to delete; use refine to clean them up.
 	if strings.EqualFold(action, model.ActionTerminate) {
 		nodeStatus, statusErr := GetInfraNodeStatus(nsId, infraId, nodeId, false)
-		if statusErr == nil && strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
-			log.Info().Msgf("[VM %s] already terminated, skipping", nodeId)
-			return "Already terminated", nil
+		if statusErr == nil {
+			if strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
+				log.Info().Msgf("[VM %s] already terminated, skipping", nodeId)
+				return "Already terminated", nil
+			}
+			if strings.EqualFold(nodeStatus.Status, model.StatusFailed) {
+				log.Info().Msgf("[VM %s] is in Failed state (never created at CSP); skipping terminate — use refine to clean up", nodeId)
+				return "Node is in Failed state; use refine to clean up", nil
+			}
 		}
 	}
 
@@ -436,16 +443,17 @@ type bulkControlEntry struct {
 }
 
 // getNodeControlRateLimitsForCSP returns rate limits for non-create control operations
-// (terminate, reboot, suspend, resume). These operations are far less constrained by
-// CSP API limits than VM creation, so we allow much higher per-region concurrency.
+// (terminate, reboot, suspend, resume).
 func getNodeControlRateLimitsForCSP(cspName string) (maxRegions, maxNodesPerRegion int) {
 	config := csp.GetRateLimitConfig(cspName)
-	// Regions: same as create (all regions in parallel)
 	maxRegions = config.MaxConcurrentRegions
-	// Nodes: uncapped per region — TerminateInstances/StopInstances accept up to 1000 IDs
-	// per call and don't share the RunInstances throttle bucket. Use 1000 to signal
-	// "no effective limit" without changing the semaphore semantics.
-	maxNodesPerRegion = 1000
+	// Spider routes each VM control call individually (one REST call per VM).
+	// CSPs with batch APIs (e.g. AWS TerminateInstances) are handled by the
+	// bulk SDK fast-path in ControlNodesInParallel before reaching Spider, so
+	// the semaphore here only governs the per-VM Spider path.
+	// Use the same per-region concurrency as VM creation to stay within CSP
+	// API rate limits and prevent mass-delete from leaving VMs stuck Terminating.
+	maxNodesPerRegion = config.MaxNodesPerRegion
 	return
 }
 
@@ -974,8 +982,17 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 
 	// Prevent malformed cspResourceName
 	if cspResourceName == "" || common.CheckString(cspResourceName) != nil {
+		// For Terminate: a node with no CSP resource name was never created at the CSP.
+		// Nothing to delete — skip the Spider call and return success so ControlNodesInParallel
+		// does not count this as an error. The node keeps its current status (typically Failed);
+		// StatusAgent or reconcileInfraBackward will promote it via the refine path.
+		if strings.EqualFold(action, model.ActionTerminate) {
+			log.Info().Str("nodeId", nodeId).Str("status", temp.Status).Msg("[ControlNodeAsync] skipping terminate for never-created node (no cspResourceName); keeping current status")
+			callResult.Status = temp.Status
+			results <- callResult
+			return
+		}
 		callResult.Error = fmt.Errorf("Not valid requested CSPNativeNodeId: [%s]", cspResourceName)
-		// temp.Status = model.StatusFailed
 		temp.SystemMessage = callResult.Error.Error()
 		UpdateNodeInfo(nsId, infraId, temp)
 		results <- callResult
