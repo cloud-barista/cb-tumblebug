@@ -288,12 +288,19 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 		}
 	}
 
-	// If Node is already terminated, treat terminate as a completed no-op
+	// If Node is already terminated or failed (never created at CSP), treat terminate as a no-op.
+	// Failed nodes have no CSP resource to delete; use refine to clean them up.
 	if strings.EqualFold(action, model.ActionTerminate) {
 		nodeStatus, statusErr := GetInfraNodeStatus(nsId, infraId, nodeId, false)
-		if statusErr == nil && strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
-			log.Info().Msgf("[VM %s] already terminated, skipping", nodeId)
-			return "Already terminated", nil
+		if statusErr == nil {
+			if strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
+				log.Info().Msgf("[VM %s] already terminated, skipping", nodeId)
+				return "Already terminated", nil
+			}
+			if strings.EqualFold(nodeStatus.Status, model.StatusFailed) {
+				log.Info().Msgf("[VM %s] is in Failed state (never created at CSP); skipping terminate — use refine to clean up", nodeId)
+				return "Node is in Failed state; use refine to clean up", nil
+			}
 		}
 	}
 
