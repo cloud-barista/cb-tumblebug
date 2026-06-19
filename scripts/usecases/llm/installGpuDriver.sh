@@ -83,8 +83,8 @@ INSTALL_CONTAINER_TOOLKIT=true
 CUDA_VERSION=""    # empty = latest
 
 # AMD config
-ROCM_VERSION="7.0.1"
-ROCM_BUILD="7.0.1.70001-1"
+ROCM_VERSION="7.2.2"
+ROCM_BUILD="7.2.2.70202-1"
 
 # Common apt-get options
 APT_OPTS=(-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold")
@@ -146,15 +146,15 @@ while [[ $# -gt 0 ]]; do
             echo "  --cuda-version VER Specify CUDA version (e.g., 12-6). Default: latest"
             echo ""
             echo "AMD-specific options:"
-            echo "  --rocm-version VER ROCm version to install (default: 7.0.1)"
-            echo "  --rocm-build BUILD Full build string (default: 7.0.1.70001-1)"
+            echo "  --rocm-version VER ROCm version to install (default: 7.2.2)"
+            echo "  --rocm-build BUILD Full build string (default: 7.2.2.70202-1)"
             echo ""
             echo "Examples:"
             echo "  $0                          # Auto-detect GPU, recommended defaults"
             echo "  $0 --gpu nvidia             # Force NVIDIA path"
             echo "  $0 --gpu amd                # Force AMD path"
             echo "  $0 --gpu nvidia --with-toolkit  # NVIDIA + CUDA Toolkit"
-            echo "  $0 --gpu amd --rocm-version 6.2.4 --rocm-build 6.2.4.60204-1"
+            echo "  $0 --gpu amd --rocm-version 7.2.2 --rocm-build 7.2.2.70202-1"
             echo "  $0 --no-reboot              # For remote/automated execution"
             exit 0
             ;;
@@ -826,10 +826,13 @@ elif [ "$GPU_TYPE" = "amd" ]; then
     # ----------------------------------------------------------
     echo ""
     echo "========== Cleaning Previous AMD Installations =========="
+    # Remove repo files FIRST so apt-get doesn't fail fetching broken repo indices (e.g., 404 from a
+    # prior failed install), which would silently leave amdgpu-install installed and cause the
+    # subsequent dpkg -i to be a same-version reinstall that skips rocm.list recreation.
+    sudo rm -f /etc/apt/sources.list.d/amdgpu.list /etc/apt/sources.list.d/rocm.list
     sudo env DEBIAN_FRONTEND=noninteractive apt-get remove --purge $APT_OPTS_STR \
         amdgpu-install amdgpu-dkms amdgpu rocm-dev rocm-libs rocm-core > /dev/null 2>&1 || true
     sudo env DEBIAN_FRONTEND=noninteractive apt-get autoremove $APT_OPTS_STR > /dev/null 2>&1 || true
-    sudo rm -f /etc/apt/sources.list.d/amdgpu.list /etc/apt/sources.list.d/rocm.list
 
     # ----------------------------------------------------------
     # Install dependencies
@@ -865,20 +868,75 @@ elif [ "$GPU_TYPE" = "amd" ]; then
     echo "========== Downloading ROCm ${ROCM_VERSION} =========="
 
     AMDGPU_DEB="amdgpu-install_${ROCM_BUILD}_all.deb"
-    AMDGPU_URL="https://repo.radeon.com/amdgpu-install/${ROCM_VERSION}/ubuntu/jammy/${AMDGPU_DEB}"
 
+    # Detect Ubuntu codename for the correct repo URL (jammy=22.04, noble=24.04)
+    UBUNTU_CODENAME=$(. /etc/os-release 2>/dev/null && echo "${UBUNTU_CODENAME:-}" || true)
+    [ -z "$UBUNTU_CODENAME" ] && UBUNTU_CODENAME=$(lsb_release -cs 2>/dev/null || echo "jammy")
+    case "$UBUNTU_CODENAME" in
+        noble|jammy) ;;
+        *) echo "  WARNING: Unknown Ubuntu codename '$UBUNTU_CODENAME', defaulting to jammy."; UBUNTU_CODENAME="jammy" ;;
+    esac
+
+    AMDGPU_URL="https://repo.radeon.com/amdgpu-install/${ROCM_VERSION}/ubuntu/${UBUNTU_CODENAME}/${AMDGPU_DEB}"
+    AMDGPU_TMP="/tmp/${AMDGPU_DEB}"
+
+    echo "  Ubuntu codename: ${UBUNTU_CODENAME}"
     echo "  URL: $AMDGPU_URL"
-    cd /tmp
-    wget -q "$AMDGPU_URL"
+    set +e
+    wget -q -O "$AMDGPU_TMP" "$AMDGPU_URL"
+    WGET_EXIT=$?
+    set -e
 
-    if [ ! -f "$AMDGPU_DEB" ]; then
-        echo "ERROR: Download failed. Version ${ROCM_VERSION} not found."
+    if [ $WGET_EXIT -ne 0 ] || [ ! -s "$AMDGPU_TMP" ]; then
+        echo "ERROR: Download failed (wget exit: $WGET_EXIT). Version ${ROCM_VERSION} not found at the above URL."
+        rm -f "$AMDGPU_TMP"
         exit 1
     fi
     echo "  Download complete."
 
+    # Force-purge amdgpu-install via dpkg directly before reinstalling.
+    # apt-get remove --purge can silently fail (e.g., broken repo state from a prior run),
+    # leaving the package installed. dpkg -i then becomes a same-version reinstall whose
+    # postinst skips repo file creation. dpkg --purge --force-all bypasses apt entirely.
+    echo "  Force-removing any existing amdgpu-install..."
+    sudo dpkg --purge --force-all amdgpu-install 2>/dev/null || true
+    sudo dpkg --configure -a 2>/dev/null || true
+
     echo "  Installing amdgpu-install tool..."
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get install $APT_OPTS_STR "./${AMDGPU_DEB}" > /dev/null
+    set +e
+    sudo dpkg -i "$AMDGPU_TMP" 2>&1 | tail -5
+    DPKG_EXIT=${PIPESTATUS[0]}
+    set -e
+    rm -f "$AMDGPU_TMP"
+    if [ $DPKG_EXIT -ne 0 ]; then
+        echo "  dpkg exited $DPKG_EXIT — running apt-get -f install to resolve dependencies..."
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get install -f -y "${APT_OPTS[@]}" 2>&1 | tail -3 || {
+            echo "ERROR: amdgpu-install installation failed (dpkg: $DPKG_EXIT) and dependency repair also failed."
+            exit 1
+        }
+    fi
+
+    # Verify that the repo files were created by the post-install script
+    if [ ! -f /etc/apt/sources.list.d/rocm.list ]; then
+        echo "ERROR: rocm.list not found after amdgpu-install package installation."
+        echo "  The post-install script may have failed. Check dpkg logs."
+        exit 1
+    fi
+    echo "  ✓ AMD repo files created."
+
+    # Workaround: amdgpu-install sets up repo files including graphics/X.Y.Z which may not exist.
+    # Apply the fix BEFORE apt-get update to avoid a 404 error that aborts the script.
+    # (e.g., graphics/7.2.2 → graphics/7.2.1, as documented in the Azure ROCm install guide for V710)
+    ROCM_PATCH=$(echo "$ROCM_VERSION" | cut -d. -f3)
+    ROCM_BASE=$(echo "$ROCM_VERSION" | cut -d. -f1-2)
+    if [ "${ROCM_PATCH:-0}" -gt 0 ] 2>/dev/null; then
+        ROCM_PATCH_PREV=$((ROCM_PATCH - 1))
+        if grep -q "graphics/${ROCM_VERSION}" /etc/apt/sources.list.d/rocm.list 2>/dev/null; then
+            echo "  Applying rocm.list graphics repo fix: ${ROCM_VERSION} → ${ROCM_BASE}.${ROCM_PATCH_PREV}"
+            sudo sed -i "s|graphics/${ROCM_VERSION}|graphics/${ROCM_BASE}.${ROCM_PATCH_PREV}|g" /etc/apt/sources.list.d/rocm.list
+        fi
+    fi
+
     sudo env DEBIAN_FRONTEND=noninteractive apt-get update -q
 
     # ----------------------------------------------------------
