@@ -50,6 +50,9 @@ jobs:
     # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
     runs-on: ubuntu-22.04
 
+    permissions:
+      contents: read   # for actions/checkout
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v7
