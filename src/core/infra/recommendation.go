@@ -72,7 +72,14 @@ func setFieldCondition(field reflect.Value, condition model.Operation) error {
 		}
 		return applyRange(field, condition.Operator, float32(operand))
 	} else if field.Kind() == reflect.String {
-		field.SetString(condition.Operand)
+		// For string fields, accumulate multiple values comma-separated
+		// so FilterSpecsByRange can use an IN clause (e.g. multiple providerName conditions)
+		existing := field.String()
+		if existing == "" {
+			field.SetString(condition.Operand)
+		} else {
+			field.SetString(existing + "," + condition.Operand)
+		}
 	}
 	return nil
 }
