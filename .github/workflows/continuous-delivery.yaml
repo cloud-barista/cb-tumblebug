@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # About billing for GitHub Packages
       # https://docs.github.com/en/billing/managing-billing-for-github-packages/about-billing-for-github-packages
