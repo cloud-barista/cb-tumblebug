@@ -1121,6 +1121,18 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 		return emptyObj, err
 	}
 
+	// CspResourceName is assigned only after the spider cluster creation call returns.
+	// If it is still empty the cluster is being provisioned — return stored info as-is
+	// rather than calling spider with an empty name, which would hit the list endpoint.
+	if tbK8sCInfo.CspResourceName == "" {
+		log.Debug().Msgf("K8sCluster(%s) CspResourceName not yet assigned (still provisioning), returning stored info", k8sClusterId)
+		// Add label info when available (keeps response consistent with the normal GetK8sCluster path).
+		if labelInfo, labelErr := label.GetLabels(model.StrK8s, tbK8sCInfo.Uid); labelErr == nil && labelInfo.Labels != nil {
+			tbK8sCInfo.Label = labelInfo.Labels
+		}
+		return tbK8sCInfo, nil
+	}
+
 	// Update model.K8sClusterInfo from CB-Spider
 	client := clientManager.NewHttpClient()
 	client.SetTimeout(10 * time.Minute)
