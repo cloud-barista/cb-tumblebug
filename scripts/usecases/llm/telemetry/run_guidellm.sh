@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+# Reference: https://github.com/vllm-project/guidellm/tree/main/docs
+
 # ==========================================
 # 1. Default Configuration
 # ==========================================
@@ -8,6 +10,12 @@ declare -a TARGET_IPS
 PORT="8000"
 PROFILE="sweep"
 MAX_SECONDS=30
+MAX_REQUESTS=""
+RATE=""
+RAMPUP=""
+MODEL=""
+RANDOM_SEED=""
+OUTPUTS=""
 INPUT_LEN=256
 OUTPUT_LEN=128
 
@@ -24,36 +32,45 @@ PROCESSOR=""
 usage() {
   echo "Usage: $0 --ip <IP1> [IP2 IP3 ...] [OPTIONS]"
   echo ""
+  echo "For more information, visit:"
+  echo "https://github.com/vllm-project/guidellm/blob/main/docs/getting-started/benchmark.md"
+  echo ""
   echo "Required:"
   echo "  --ip <IP1> [IP2 ...]   Target GPU VM IP address(es) (space-separated)"
   echo ""
   echo "Options:"
-  echo "  --port <PORT>          (Default: $PORT)"
-  echo "  --profile <TYPE>       sweep, concurrent, constant etc. (Default: $PROFILE)"
-  echo "  --seconds <N>          Maximum duration in seconds per target (Default: $MAX_SECONDS)"
+  echo "  --port <PORT>                  Server port. Default: $PORT"
+  echo "  --profile <TYPE>               Benchmark profile (synchronous, constant, async, sweep, poisson, concurrent, throughput). Default: $PROFILE"
+  echo "  --rate <RATE>                  Request rate or number of sweep strategies"
+  echo "  --max-seconds <N>              Maximum duration per target in seconds. Default: $MAX_SECONDS"
+  echo "  --max-requests <N>             Maximum number of requests per benchmark"
+  echo "  --model <NAME>                 Model name to benchmark (e.g. Qwen/Qwen2.5-1.5B-Instruct)"
+  echo "  --rampup <N>                   Ramp-up duration in seconds"
+  echo "  --random-seed <N>              Random seed for reproducibility"
+  echo "  --outputs <FORMATS>            Comma-separated output formats (e.g. csv,json,html). Default: csv,json"
   echo ""
-  echo "Dataset Options (if not specified, uses synthetic data):"
-  echo "  --data <SOURCE>        Data source: HF dataset ID, file path, or 'prompt_tokens=N,output_tokens=M'"
-  echo "  --data-args <JSON>     Dataset loading arguments (e.g., '{\"name\":\"3.0.0\"}')"
-  echo "  --data-column-mapper <JSON>  Column mappings (e.g., '{\"text_column\":\"article\"}')"
-  echo "  --data-samples <N>     Number of samples, -1 for all (Default: $DATA_SAMPLES)"
-  echo "  --processor <NAME>     Tokenizer/processor name"
+  echo "Dataset Options (uses synthetic data if omitted):"
+  echo "  --data <SOURCE>                Dataset source (HF dataset ID or file path)"
+  echo "  --data-args <JSON>             Dataset loading arguments (e.g. {\"name\":\"3.0.0\"})"
+  echo "  --data-column-mapper <JSON>    Dataset column mappings (e.g. {\"text_column\":\"article\"})"
+  echo "  --data-samples <N>             Number of samples (-1 for all). Default: $DATA_SAMPLES"
+  echo "  --processor <NAME>             Tokenizer or processor name"
   echo ""
-  echo "Synthetic Data Options (used when --data not specified):"
-  echo "  --in-len <N>           Input prompt tokens (Default: $INPUT_LEN)"
-  echo "  --out-len <N>          Output generated tokens (Default: $OUTPUT_LEN)"
+  echo "Synthetic Data Options (used when --data is not specified):"
+  echo "  --in-len <N>                   Number of input tokens. Default: $INPUT_LEN"
+  echo "  --out-len <N>                  Number of output tokens. Default: $OUTPUT_LEN"
   echo ""
-  echo "  -h, --help             Show this help message"
+  echo "  -h, --help                     Show this help message"
   echo ""
   echo "Examples:"
   echo "  # Single target (synthetic data)"
-  echo "  $0 --ip 15.223.5.153"
+  echo "  $1 --ip 1.1.1.1"
   echo ""
   echo "  # Multiple targets"
-  echo "  $0 --ip 15.223.5.153 10.0.1.5 20.30.40.50 --seconds 120"
+  echo "  $1 --ip 1.1.1.1 2.2.2.2 --max-seconds 120"
   echo ""
   echo "  # HuggingFace dataset"
-  echo "  $0 --ip 15.223.5.153 \\"
+  echo "  $1 --ip 1.1.1.1 \\"
   echo "    --data 'abisee/cnn_dailymail' \\"
   echo "    --data-args '{\"name\":\"3.0.0\"}' \\"
   echo "    --data-column-mapper '{\"text_column\":\"article\"}'"
@@ -73,7 +90,13 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --port) PORT="$2"; shift ;;
         --profile) PROFILE="$2"; shift ;;
-        --seconds) MAX_SECONDS="$2"; shift ;;
+        --max-seconds) MAX_SECONDS="$2"; shift ;;
+        --max-requests) MAX_REQUESTS="$2"; shift ;;
+        --rate) RATE="$2"; shift ;;
+        --rampup) RAMPUP="$2"; shift ;;
+        --model) MODEL="$2"; shift ;;
+        --random-seed) RANDOM_SEED="$2"; shift ;;
+        --outputs) OUTPUTS="$2"; shift ;;
         --in-len) INPUT_LEN="$2"; shift ;;
         --out-len) OUTPUT_LEN="$2"; shift ;;
         --data) DATA="$2"; shift ;;
@@ -151,79 +174,95 @@ RUN_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 run_benchmark() {
   local TARGET_IP="$1"
   local TARGET_URL="http://${TARGET_IP}:${PORT}"
-  local FILE_PREFIX="bench_${RUN_TIMESTAMP}_${TARGET_IP}"
-  local TMP_DIR=$(mktemp -d "$WORK_DIR/.tmp_bench_XXXXXX")
+  # Create a unique directory for this specific run
+  local RESULT_DIR="$WORK_DIR/bench_${RUN_TIMESTAMP}_${TARGET_IP}"
+  mkdir -p "$RESULT_DIR"
 
+  # Build the data source argument dynamically
+  local DATA_SOURCE
   if [ -n "$DATA" ]; then
-    # Use custom dataset (HuggingFace, file, or custom synthetic)
+    # If --data is provided, use it directly
+    DATA_SOURCE="$DATA"
     echo "------------------------------------------"
     echo "Target:   $TARGET_URL"
     echo "Profile:  $PROFILE (Max $MAX_SECONDS seconds)"
-    echo "Data:     $DATA"
+    echo "Data:     $DATA_SOURCE"
     if [ -n "$DATA_ARGS" ]; then echo "  Args: $DATA_ARGS"; fi
     if [ -n "$DATA_COLUMN_MAPPER" ]; then echo "  Mapper: $DATA_COLUMN_MAPPER"; fi
     if [ "$DATA_SAMPLES" != "-1" ]; then echo "  Samples: $DATA_SAMPLES"; fi
     if [ -n "$PROCESSOR" ]; then echo "  Processor: $PROCESSOR"; fi
-    echo "Output:   $WORK_DIR/${FILE_PREFIX}.*"
+    echo "Output:   $RESULT_DIR/"
     echo "------------------------------------------"
-
-    # Build command safely using an array to avoid eval-based injection
-    local -a GUIDELLM_CMD_ARGS=(
-      guidellm
-      benchmark
-      --target "$TARGET_URL"
-      --profile "$PROFILE"
-      --max-seconds "$MAX_SECONDS"
-      --data "$DATA"
-      --output-dir "$TMP_DIR"
-    )
-
-    if [ -n "$DATA_ARGS" ]; then
-      GUIDELLM_CMD_ARGS+=(--data-args "$DATA_ARGS")
-    fi
-    if [ -n "$DATA_COLUMN_MAPPER" ]; then
-      GUIDELLM_CMD_ARGS+=(--data-column-mapper "$DATA_COLUMN_MAPPER")
-    fi
-    if [ "$DATA_SAMPLES" != "-1" ]; then
-      GUIDELLM_CMD_ARGS+=(--data-samples "$DATA_SAMPLES")
-    fi
-    if [ -n "$PROCESSOR" ]; then
-      GUIDELLM_CMD_ARGS+=(--processor "$PROCESSOR")
-    fi
-
-    "${GUIDELLM_CMD_ARGS[@]}"
   else
-    # Use synthetic data (default)
-    local DATA_SOURCE="prompt_tokens=${INPUT_LEN},output_tokens=${OUTPUT_LEN}"
-
+    # If --data is not provided, construct it from synthetic data options
+    DATA_SOURCE="kind=synthetic_text,prompt_tokens=${INPUT_LEN},output_tokens=${OUTPUT_LEN}"
     echo "------------------------------------------"
     echo "Target:  $TARGET_URL"
     echo "Profile: $PROFILE (Max $MAX_SECONDS seconds)"
     echo "Data:    $INPUT_LEN prompt tokens / $OUTPUT_LEN output tokens (synthetic)"
-    echo "Output:  $WORK_DIR/${FILE_PREFIX}.*"
+    echo "Output:  $RESULT_DIR/"
     echo "------------------------------------------"
-
-    guidellm benchmark \
-      --target "$TARGET_URL" \
-      --profile "$PROFILE" \
-      --max-seconds "$MAX_SECONDS" \
-      --data "$DATA_SOURCE" \
-      --output-dir "$TMP_DIR"
   fi
 
-  # Move results with descriptive filenames, then clean up temp dir
-  for ext in json csv html; do
-    if [ -f "$TMP_DIR/benchmarks.$ext" ]; then
-      mv "$TMP_DIR/benchmarks.$ext" "$WORK_DIR/${FILE_PREFIX}.$ext"
-    fi
-  done
-  rm -rf "$TMP_DIR"
+  # Build command safely using an array to avoid eval-based injection
+  local -a GUIDELLM_CMD_ARGS=(
+    guidellm
+    benchmark
+    --target "$TARGET_URL"
+    --profile "$PROFILE"
+    --data "$DATA_SOURCE"
+    # Output directly to the final destination directory
+    --output-dir "$RESULT_DIR"
+  )
+
+  # Add optional arguments only if they are set
+  if [ -n "$MAX_SECONDS" ]; then
+    GUIDELLM_CMD_ARGS+=(--max-seconds "$MAX_SECONDS")
+  fi
+  if [ -n "$MAX_REQUESTS" ]; then
+    GUIDELLM_CMD_ARGS+=(--max-requests "$MAX_REQUESTS")
+  fi
+  if [ -n "$RATE" ]; then
+    GUIDELLM_CMD_ARGS+=(--rate "$RATE")
+  fi
+  if [ -n "$RAMPUP" ]; then
+    GUIDELLM_CMD_ARGS+=(--rampup "$RAMPUP")
+  fi
+  if [ -n "$MODEL" ]; then
+    GUIDELLM_CMD_ARGS+=(--model "$MODEL")
+  fi
+  if [ -n "$RANDOM_SEED" ]; then
+    GUIDELLM_CMD_ARGS+=(--random-seed "$RANDOM_SEED")
+  fi
+  if [ -n "$OUTPUTS" ]; then
+    GUIDELLM_CMD_ARGS+=(--outputs "$OUTPUTS")
+  fi
+  if [ -n "$DATA_ARGS" ]; then
+    GUIDELLM_CMD_ARGS+=(--data-args "$DATA_ARGS")
+  fi
+  if [ -n "$DATA_COLUMN_MAPPER" ]; then
+    GUIDELLM_CMD_ARGS+=(--data-column-mapper "$DATA_COLUMN_MAPPER")
+  fi
+  if [ "$DATA_SAMPLES" != "-1" ]; then
+    GUIDELLM_CMD_ARGS+=(--data-samples "$DATA_SAMPLES")
+  fi
+  if [ -n "$PROCESSOR" ]; then
+    GUIDELLM_CMD_ARGS+=(--processor "$PROCESSOR")
+  fi
+
+  # Run the command and capture its exit code
+  if ! "${GUIDELLM_CMD_ARGS[@]}"; then
+    echo "Error: guidellm benchmark command failed." >&2
+    # Clean up the directory if the benchmark failed
+    rm -rf "$RESULT_DIR"
+    return 1 # Explicitly return a failure code
+  fi
 
   # Report only files that were actually generated
   local GENERATED_FILES=()
   for ext in json csv html; do
-    if [ -f "$WORK_DIR/${FILE_PREFIX}.$ext" ]; then
-      GENERATED_FILES+=("${FILE_PREFIX}.$ext")
+    if [ -f "$RESULT_DIR/benchmarks.$ext" ]; then
+      GENERATED_FILES+=("$(basename "$RESULT_DIR")/benchmarks.$ext")
     fi
   done
 
@@ -247,88 +286,73 @@ echo "=========================================="
 TOTAL=${#TARGET_IPS[@]}
 FAILED=0
 
-if [ "$TOTAL" -eq 1 ]; then
-  # Single target: run directly (no background overhead)
-  echo ""
-  echo "=========================================="
-  echo "[1/1] Benchmarking: ${TARGET_IPS[0]}"
-  echo "=========================================="
-  if run_benchmark "${TARGET_IPS[0]}"; then
-    echo "✓ ${TARGET_IPS[0]} completed"
-  else
-    echo "✗ ${TARGET_IPS[0]} failed"
-    FAILED=1
-  fi
-else
-  # Multiple targets: run in parallel
-  echo "Mode: parallel (all targets simultaneously)"
-  echo ""
-
-  declare -A PIDS          # PID -> IP mapping
-  declare -A LOG_FILES     # IP -> log file mapping
-
-  for ip in "${TARGET_IPS[@]}"; do
-    LOG_FILE="$WORK_DIR/.bench_log_${RUN_TIMESTAMP}_${ip}.log"
-    LOG_FILES["$ip"]="$LOG_FILE"
-
-    echo "  Starting benchmark for $ip (background)..."
-    run_benchmark "$ip" > "$LOG_FILE" 2>&1 &
-    PIDS[$!]="$ip"
-  done
-
-  echo ""
-  echo "Waiting for ${#PIDS[@]} benchmark(s) to complete..."
-  echo ""
-
-  # Wait for all background jobs and collect results
-  for pid in "${!PIDS[@]}"; do
-    ip="${PIDS[$pid]}"
-    if wait "$pid"; then
-      echo "✓ $ip completed (PID $pid)"
-    else
-      echo "✗ $ip failed (PID $pid)"
-      FAILED=$((FAILED + 1))
-    fi
-    # Print the benchmark log
-    if [ -f "${LOG_FILES[$ip]}" ]; then
-      echo "--- Output from $ip ---"
-      cat "${LOG_FILES[$ip]}"
-      echo "--- End of $ip ---"
-      echo ""
-      rm -f "${LOG_FILES[$ip]}"
-    fi
-  done
-fi
-
-# ==========================================
-# 5. Archive & Summary
-# ==========================================
-
-# Collect all result files from this run
-RESULT_FILES=($(ls -1 "$WORK_DIR"/bench_${RUN_TIMESTAMP}_*.{json,csv,html} 2>/dev/null || true))
-ARCHIVE_FILE="bench_${RUN_TIMESTAMP}.tar.gz"
+declare -A PIDS          # PID -> IP mapping
+declare -A LOG_FILES     # IP -> log file mapping
 
 echo ""
-echo "=========================================="
-echo "All benchmarks finished: $((TOTAL - FAILED))/$TOTAL succeeded"
-if [ $FAILED -gt 0 ]; then
-  echo "⚠ $FAILED target(s) failed"
-fi
-echo "=========================================="
+for ip in "${TARGET_IPS[@]}"; do
+  LOG_FILE="$WORK_DIR/.bench_log_${RUN_TIMESTAMP}_${ip}.log"
+  LOG_FILES["$ip"]="$LOG_FILE"
 
-if [ ${#RESULT_FILES[@]} -gt 0 ]; then
-  # Create tar.gz archive of all result files (store flat, no directory prefix)
-  tar czf "$WORK_DIR/$ARCHIVE_FILE" -C "$WORK_DIR" $(basename -a "${RESULT_FILES[@]}")
-  echo ""
-  echo "Result files (${#RESULT_FILES[@]}):"
-  for f in "${RESULT_FILES[@]}"; do
-    echo "  $(basename "$f")"
-  done
-  echo ""
-  echo "Archive: $WORK_DIR/$ARCHIVE_FILE"
-  echo "  ($(du -h "$WORK_DIR/$ARCHIVE_FILE" | cut -f1) compressed)"
+  echo "  Starting benchmark for $ip ..."
+  run_benchmark "$ip" > "$LOG_FILE" 2>&1 &
+  PIDS[$!]="$ip"
+done
+
+echo ""
+echo "Waiting for ${#PIDS[@]} benchmark(s) to complete..."
+echo ""
+
+# Wait for all background jobs and collect results
+for pid in "${!PIDS[@]}"; do
+  ip="${PIDS[$pid]}"
+  
+  if wait "$pid"; then
+    STATUS_MSG="\033[1;32m✓ COMPLETED\033[0m"
+  else
+    STATUS_MSG="\033[1;31m✗ FAILED\033[0m"
+    FAILED=$((FAILED + 1))
+  fi
+  
+  echo -e "\n\033[1;36m======================================================================\033[0m"
+  echo -e "  $STATUS_MSG : \033[1;37m$ip\033[0m "
+  echo -e "\033[1;36m======================================================================\033[0m"
+  
+  if [ -f "${LOG_FILES[$ip]}" ]; then
+    sed "s/^/[ $ip ] /" "${LOG_FILES[$ip]}"
+    rm -f "${LOG_FILES[$ip]}"
+  else
+    echo "[ $ip ] (No log output found)"
+  fi
+  
+  echo -e "\033[1;36m======================================================================\033[0m\n"
+done
+
+# ==========================================
+# 5. Summary
+# ==========================================
+
+# Collect all result directories from this run
+RESULT_DIRS=($(ls -1d "$WORK_DIR"/bench_${RUN_TIMESTAMP}_* 2>/dev/null || true))
+
+echo -e "\n\033[1;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+echo -e "\033[1;35m  🏆 [ FINAL SUMMARY ] Benchmark Execution Results\033[0m"
+echo -e "\033[1;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+echo -e "  Total Targets : $TOTAL VM(s)"
+echo -e "  Success       : \033[1;32m$((TOTAL - FAILED))\033[0m"
+if [ $FAILED -gt 0 ]; then
+  echo -e "  Failed        : \033[1;31m$FAILED\033[0m"
 else
-  echo ""
-  echo "No result files generated."
+  echo -e "  Failed        : 0"
 fi
-echo "=========================================="
+echo -e "\033[1;35m──────────────────────────────────────────────────────────────────────\033[0m"
+
+if [ ${#RESULT_DIRS[@]} -gt 0 ]; then
+  echo -e "  \033[1;36m📂 Saved Directories:\033[0m"
+  for d in "${RESULT_DIRS[@]}"; do
+    echo -e "   - $(basename "$d")"
+  done
+else
+  echo -e "  \033[1;33m⚠ No result files generated.\033[0m"
+fi
+echo -e "\033[1;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n"
