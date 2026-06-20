@@ -202,11 +202,12 @@ func azurePowerStateToTBStatus(props *armcompute.VirtualMachineProperties) strin
 			return model.StatusCreating
 		case "running":
 			return model.StatusRunning
-		case "stopping":
+		case "stopping", "deallocating":
 			return model.StatusSuspending
-		case "stopped", "deallocating":
-			return model.StatusSuspending
-		case "deallocated":
+		case "stopped", "deallocated":
+			// Spider's action=suspend calls Azure Stop (not Deallocate), so the VM
+			// reaches PowerState "stopped" as its final resting state — never "deallocated".
+			// Map both to Suspended to match Spider's own status reporting and AWS parity.
 			return model.StatusSuspended
 		default:
 			return model.StatusUndefined

@@ -1076,6 +1076,22 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 
 	UpdateNodeInfo(nsId, infraId, temp)
 
+	// Mirror the transitional state to StatusStore immediately.
+	// Without this, fetchNodeStatusWithCache can serve the previous CSP-polled status
+	// (e.g. "Running") for up to 5 minutes while the Spider control call is in flight,
+	// because the cached StatusStore entry still looks fresh.
+	// By updating Status/TargetAction/TargetStatus and clearing LastUpdated, we force
+	// status queries to fall through to FetchNodeStatus (live CSP/Spider status check)
+	// until the operation settles.
+	globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+		e.Status = temp.Status
+		e.TargetAction = temp.TargetAction
+		e.TargetStatus = temp.TargetStatus
+		e.LastUpdated = time.Time{} // zero → IsFresh() = false → always live until settled
+		e.Priority = priorityForStatus(temp.Status, temp.TargetAction)
+		e.NextPollAt = time.Now() // make PollHigh effective immediately
+	})
+
 	client := clientManager.NewHttpClient()
 	// NCP requires a slightly longer timeout due to its control plane characteristics
 	if csp.ResolveCloudPlatform(temp.ConnectionConfig.ProviderName) == csp.NCP {
