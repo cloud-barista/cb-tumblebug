@@ -20,7 +20,7 @@ VLLM_PORT="8000"
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --model)    MODEL_NAME="${2:?Error: --model requires a value}";    shift 2 ;;
-    --hf-token) HF_TOKEN="${2:?Error: --hf-token requires a value}";   shift 2 ;;
+    --hf-token) HF_TOKEN="${2?Error: --hf-token requires an argument}";   shift 2 ;;
     --port)     VLLM_PORT="${2:?Error: --port requires a value}";      shift 2 ;;
     -h|--help)
       echo "Usage: bash setupBenchmarkTarget.sh [--model MODEL] [--hf-token TOKEN] [--port PORT]"
