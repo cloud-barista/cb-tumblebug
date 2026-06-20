@@ -86,23 +86,19 @@ echo "Installing system dependencies..."
 export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update -qq
 
-# AMD ROCm pre-built vllm wheels are Python 3.12 only (cp312).
-# Install python3.12 for AMD; use system python3 for NVIDIA.
-if [ "$GPU_TYPE" = "amd" ]; then
-  sudo apt-get install -y python3-pip curl jq > /dev/null 2>&1
-  # python3.12 may not be in default repos on Ubuntu 22.04 — add deadsnakes PPA
-  if ! apt-cache show python3.12 > /dev/null 2>&1; then
-    echo "  Adding deadsnakes PPA for python3.12..."
-    sudo apt-get install -y software-properties-common > /dev/null 2>&1
-    sudo add-apt-repository -y ppa:deadsnakes/ppa > /dev/null 2>&1
-    sudo apt-get update -qq
-  fi
-  sudo apt-get install -y python3.12 python3.12-venv python3.12-dev > /dev/null 2>&1
-  PYTHON_BIN="python3.12"
-else
-  sudo apt-get install -y python3-pip python3-venv curl jq > /dev/null 2>&1
-  PYTHON_BIN="python3"
+# Use Python 3.12 for both NVIDIA and AMD:
+#   - AMD pre-built ROCm wheels are Python 3.12 only (cp312)
+#   - vLLM 0.23+ docs quickstart recommends Python 3.12 for NVIDIA too
+# Ubuntu 22.04 ships Python 3.10 by default; add deadsnakes PPA when needed.
+sudo apt-get install -y python3-pip curl jq > /dev/null 2>&1
+if ! apt-cache show python3.12 > /dev/null 2>&1; then
+  echo "  Adding deadsnakes PPA for python3.12..."
+  sudo apt-get install -y software-properties-common > /dev/null 2>&1
+  sudo add-apt-repository -y ppa:deadsnakes/ppa > /dev/null 2>&1
+  sudo apt-get update -qq
 fi
+sudo apt-get install -y python3.12 python3.12-venv python3.12-dev > /dev/null 2>&1
+PYTHON_BIN="python3.12"
 echo "Using $($PYTHON_BIN --version)"
 
 # Setup virtual environment
@@ -208,19 +204,18 @@ fi
 echo "Installing additional packages..."
 pip install -U openai transformers huggingface_hub > /dev/null 2>&1
 
-# Patch prometheus_fastapi_instrumentator routing.py for AMD/ROCm:
-# All known versions have an unfixed bug — '_IncludedRouter' has no .path attribute —
-# that crashes every HTTP request. Version upgrades do not fix this; patch the file directly.
-if [ "$GPU_TYPE" = "amd" ]; then
-  echo "Patching prometheus_fastapi_instrumentator routing.py..."
-  ROUTING_FILE="$(python -c "import os, prometheus_fastapi_instrumentator as p; print(os.path.join(os.path.dirname(p.__file__), 'routing.py'))" 2>/dev/null || echo "")"
-  if [ -f "$ROUTING_FILE" ]; then
-    sed -i 's/route_name = route\.path$/route_name = getattr(route, "path", None)/g' "$ROUTING_FILE" && \
-      echo "  Patched: route.path → getattr(route, 'path', None)" || \
-      echo "Warning: Could not patch routing.py (non-fatal)"
-  else
-    echo "Warning: routing.py not found, skipping patch (non-fatal)"
-  fi
+# Patch prometheus_fastapi_instrumentator routing.py:
+# All known versions have an unfixed bug — '_IncludedRouter' (Starlette ≥0.40,
+# bundled with vLLM 0.23+) has no .path attribute and crashes every HTTP request.
+# This affects both NVIDIA and AMD. Patch applies to all GPU types.
+echo "Patching prometheus_fastapi_instrumentator routing.py..."
+ROUTING_FILE="$(python -c "import os, prometheus_fastapi_instrumentator as p; print(os.path.join(os.path.dirname(p.__file__), 'routing.py'))" 2>/dev/null || echo "")"
+if [ -f "$ROUTING_FILE" ]; then
+  sed -i 's/route_name = route\.path$/route_name = getattr(route, "path", None)/g' "$ROUTING_FILE" && \
+    echo "  Patched: route.path → getattr(route, 'path', None)" || \
+    echo "Warning: Could not patch routing.py (non-fatal)"
+else
+  echo "Warning: routing.py not found, skipping patch (non-fatal)"
 fi
 
 # Display completion message

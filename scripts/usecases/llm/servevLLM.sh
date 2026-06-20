@@ -125,14 +125,13 @@ echo "Activating virtual environment..."
 # shellcheck disable=SC1091
 . "$VENV_PATH/bin/activate"
 
-# Patch prometheus_fastapi_instrumentator routing.py for AMD/ROCm:
-# All known versions have an unfixed bug — '_IncludedRouter' has no .path attribute —
-# that crashes every HTTP request. Patch the file directly as version upgrades do not fix this.
-if [ "$GPU_TYPE" = "amd" ]; then
-  ROUTING_FILE="$(python -c "import os, prometheus_fastapi_instrumentator as p; print(os.path.join(os.path.dirname(p.__file__), 'routing.py'))" 2>/dev/null || echo "")"
-  if [ -f "$ROUTING_FILE" ]; then
-    sed -i 's/route_name = route\.path$/route_name = getattr(route, "path", None)/g' "$ROUTING_FILE"
-  fi
+# Patch prometheus_fastapi_instrumentator routing.py — affects all GPU types.
+# '_IncludedRouter' (Starlette ≥0.40, bundled with vLLM 0.23+) has no .path
+# attribute and crashes every HTTP request.  Re-patching here is idempotent and
+# covers the case where deployvLLM.sh was run before the patch was added.
+ROUTING_FILE="$(python -c "import os, prometheus_fastapi_instrumentator as p; print(os.path.join(os.path.dirname(p.__file__), 'routing.py'))" 2>/dev/null || echo "")"
+if [ -f "$ROUTING_FILE" ]; then
+  sed -i 's/route_name = route\.path$/route_name = getattr(route, "path", None)/g' "$ROUTING_FILE"
 fi
 
 # Function to get the currently running model
@@ -180,6 +179,27 @@ stop_vllm_server() {
     echo "$vllm_pids" | xargs kill -9 2>/dev/null || true
   fi
 
+  # Kill vLLM/Python/Ray processes still holding the port — catches orphaned
+  # subprocesses not matched by the pgrep pattern above.  Only kills processes
+  # whose command line looks like vLLM-related; warns and skips unrelated ones
+  # (e.g. a different service the user runs on the same port).
+  local port_pids=""
+  if command -v fuser &>/dev/null; then
+    port_pids=$(fuser "${PORT}/tcp" 2>/dev/null | tr -s ' ' '\n' | grep -E '^[0-9]+$' || true)
+  elif command -v lsof &>/dev/null; then
+    port_pids=$(lsof -ti:"${PORT}" 2>/dev/null || true)
+  fi
+  local killed=0
+  for pid in $port_pids; do
+    if ps -p "$pid" -o args= 2>/dev/null | grep -qiE 'python|vllm|ray'; then
+      kill -9 "$pid" 2>/dev/null || true
+      killed=1
+    else
+      echo "Warning: port $PORT also used by unrelated process (PID $pid) — not killed."
+    fi
+  done
+  [ "$killed" = "1" ] && sleep 1 || true
+
   rm -f "$MODEL_FILE"
   echo "Server stopped."
 }
@@ -210,7 +230,8 @@ wait_for_server() {
       if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
         echo "Error: Server process died unexpectedly."
         echo "Check log file for details: $LOG_FILE"
-        tail -20 "$LOG_FILE" 2>/dev/null || true
+        echo "--- Full server log ---"
+        cat "$LOG_FILE" 2>/dev/null || true
         return 1
       fi
     fi
@@ -223,7 +244,8 @@ wait_for_server() {
   echo ""
   echo "Error: Server failed to start within ${HEALTH_CHECK_TIMEOUT}s timeout."
   echo "Check log file for details: $LOG_FILE"
-  tail -20 "$LOG_FILE" 2>/dev/null || true
+  echo "--- Full server log ---"
+  cat "$LOG_FILE" 2>/dev/null || true
   return 1
 }
 
@@ -261,12 +283,6 @@ echo "Log file: $LOG_FILE"
 # Clear old log file
 > "$LOG_FILE"
 
-# vLLM 0.23+ defaults to v1 engine architecture (multi-process). On some NVIDIA setups
-# the v1 engine core fails to initialize. Force v0 engine as a reliable fallback.
-if [ "$GPU_TYPE" = "nvidia" ]; then
-  export VLLM_USE_V1=0
-fi
-
 # Build vLLM command dynamically to support optional arguments
 VLLM_CMD_ARGS=(
   python -m vllm.entrypoints.openai.api_server
@@ -278,6 +294,30 @@ VLLM_CMD_ARGS=(
 [ -n "$GPU_UTIL" ] && VLLM_CMD_ARGS+=(--gpu-memory-utilization "$GPU_UTIL")
 [ -n "$CTX_LEN" ]  && VLLM_CMD_ARGS+=(--max-model-len "$CTX_LEN")
 [ -n "$API_KEY" ]  && VLLM_CMD_ARGS+=(--api-key "$API_KEY")
+
+if [ "$GPU_TYPE" = "nvidia" ]; then
+  # vLLM 0.23+ always uses the v1 engine (VLLM_USE_V1=0 is ignored).
+  # The v1 engine spawns engine-core processes that run Triton JIT compilation on
+  # first use; this can take several minutes, causing the engine-core startup
+  # timeout to expire.  --enforce-eager skips CUDA graph / Triton compilation so
+  # the server starts reliably.  Inference throughput is lower but correct.
+  # Guard with --help to stay compatible with older pinned vLLM versions.
+  if python -m vllm.entrypoints.openai.api_server --help 2>/dev/null | grep -q -- '--enforce-eager'; then
+    VLLM_CMD_ARGS+=(--enforce-eager)
+  fi
+fi
+
+# Last-resort port cleanup: handles orphaned vLLM/Python/Ray processes when
+# stop_vllm_server was never called (no PID file, no MODEL_FILE).
+# Only kills processes whose args look vLLM-related; warns and skips others.
+for pid in $(fuser "${PORT}/tcp" 2>/dev/null | tr -s ' ' '\n' | grep -E '^[0-9]+$' \
+             || lsof -ti:"${PORT}" 2>/dev/null || true); do
+  if ps -p "$pid" -o args= 2>/dev/null | grep -qiE 'python|vllm|ray'; then
+    kill -9 "$pid" 2>/dev/null || true
+  else
+    echo "Warning: port $PORT in use by unrelated process (PID $pid) — not killed."
+  fi
+done
 
 # Start server in background
 nohup "${VLLM_CMD_ARGS[@]}" >> "$LOG_FILE" 2>&1 &
