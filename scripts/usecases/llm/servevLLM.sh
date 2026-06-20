@@ -125,13 +125,27 @@ echo "Activating virtual environment..."
 # shellcheck disable=SC1091
 . "$VENV_PATH/bin/activate"
 
-# NVIDIA only: ensure CUDA_HOME is set for FlashInfer JIT (needs nvcc path).
-# cuda-nvcc installs to /usr/local/cuda; fall back to locating nvcc in PATH.
+# NVIDIA only: set CUDA_HOME and ensure nvcc is in PATH for FlashInfer JIT.
+# FlashInfer's get_cuda_path() requires BOTH a valid cuda_home path AND nvcc in PATH.
+# cuda-nvcc-12-X installs to /usr/local/cuda-12.X/ without updating PATH in the
+# current SSH session, so we must find the versioned directory and add it manually.
 if [ "$GPU_TYPE" = "nvidia" ] && [ -z "$CUDA_HOME" ]; then
   if [ -x /usr/local/cuda/bin/nvcc ]; then
     export CUDA_HOME=/usr/local/cuda
   elif command -v nvcc &>/dev/null; then
     export CUDA_HOME="$(dirname "$(dirname "$(command -v nvcc)")")"
+  else
+    # cuda-nvcc-12-X doesn't create /usr/local/cuda symlink or update PATH.
+    # Find the versioned directory directly.
+    _nvcc_bin=$(ls /usr/local/cuda-*/bin/nvcc 2>/dev/null | sort -V | tail -1)
+    if [ -x "$_nvcc_bin" ]; then
+      export CUDA_HOME="$(dirname "$(dirname "$_nvcc_bin")")"
+    fi
+  fi
+  # Always add CUDA_HOME/bin to PATH regardless of which branch set it.
+  # FlashInfer JIT requires both a valid CUDA_HOME path and nvcc findable via PATH.
+  if [ -n "$CUDA_HOME" ] && [[ ":$PATH:" != *":$CUDA_HOME/bin:"* ]]; then
+    export PATH="$CUDA_HOME/bin:$PATH"
   fi
   [ -n "$CUDA_HOME" ] && echo "CUDA_HOME: $CUDA_HOME"
 fi
