@@ -191,6 +191,34 @@ if [ $INSTALL_RESULT -ne 0 ]; then
   exit 1
 fi
 
+# FlashInfer (bundled with vLLM 0.23+) JIT-compiles CUDA sampling kernels at startup.
+# This requires 'nvcc' — NOT included in cuda-drivers-* (driver-only packages).
+# Without it the server crashes: "Could not find nvcc and cuda_home doesn't exist"
+# vLLM prerequisites explicitly require CUDA Toolkit (not just the driver).
+if [ "$GPU_TYPE" = "nvidia" ] && ! command -v nvcc &>/dev/null && ! [ -x /usr/local/cuda/bin/nvcc ]; then
+  echo "Installing cuda-nvcc (required for FlashInfer JIT compilation)..."
+  # The CUDA apt repo is normally already present when installGpuDriver.sh ran first.
+  # Add the keyring if missing so this script also works standalone.
+  if ! apt-cache show cuda-nvcc > /dev/null 2>&1; then
+    echo "  CUDA apt repo not found — adding keyring..."
+    _ubuntu_ver=$(. /etc/os-release 2>/dev/null && echo "${VERSION_ID//./}" || echo "2204")
+    [[ "$_ubuntu_ver" == "2404" ]] && _cuda_repo="ubuntu2404" || _cuda_repo="ubuntu2204"
+    _kring=$(mktemp)
+    curl -fsSL "https://developer.download.nvidia.com/compute/cuda/repos/${_cuda_repo}/x86_64/cuda-keyring_1.1-1_all.deb" \
+      -o "$_kring" 2>/dev/null && \
+      sudo dpkg -i --force-confdef --force-confold "$_kring" 2>/dev/null || true
+    rm -f "$_kring"
+    sudo apt-get update -qq
+  fi
+  set +e
+  sudo apt-get install -y --no-install-recommends cuda-nvcc 2>&1 | tail -5
+  _nvcc_exit=${PIPESTATUS[0]}
+  set -e
+  if [ $_nvcc_exit -ne 0 ]; then
+    echo "  Warning: cuda-nvcc install failed — FlashInfer JIT will fail at runtime."
+  fi
+fi
+
 # Verify installation
 echo "Verifying vLLM installation..."
 if python -c "import vllm; print(f'vLLM version: {vllm.__version__}')" 2>/dev/null; then
