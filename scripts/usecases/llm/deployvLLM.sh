@@ -141,13 +141,16 @@ echo "Logging vLLM installation details to $LOG_FILE"
 set +e  # Temporarily disable exit on error for pip install
 
 if [ "$GPU_TYPE" = "nvidia" ]; then
-  pip install -U "$VLLM_SPEC" > "$LOG_FILE" 2>&1
-  INSTALL_RESULT=$?
-  if [ $INSTALL_RESULT -ne 0 ]; then
-    echo "Failed with default wheels. Trying CUDA 12.1 wheels..."
-    pip install "$VLLM_SPEC" --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
-    INSTALL_RESULT=$?
+  # Install uv if not available — required for --torch-backend=auto (latest vLLM docs recommendation)
+  if ! command -v uv &>/dev/null; then
+    echo "Installing uv (fast Python package manager)..."
+    pip install uv >> "$LOG_FILE" 2>&1
   fi
+  # --torch-backend=auto: lets uv select the correct CUDA wheel for the installed driver.
+  # Required for vLLM 0.23+; the old bare pip install no longer reliably picks CUDA wheels.
+  echo "Installing vLLM with CUDA backend (uv --torch-backend=auto)..."
+  uv pip install "$VLLM_SPEC" --torch-backend=auto >> "$LOG_FILE" 2>&1
+  INSTALL_RESULT=$?
 else
   # === AMD ROCm: install pre-built ROCm vllm wheel via uv ===
   # Pre-built wheels available at wheels.vllm.ai/rocm/ (Python 3.12 / ROCm 7.0+).
@@ -205,12 +208,19 @@ fi
 echo "Installing additional packages..."
 pip install -U openai transformers huggingface_hub > /dev/null 2>&1
 
-# Patch prometheus-fastapi-instrumentator for AMD/ROCm: pre-built wheels bundle an older version
-# that crashes on every HTTP request (AttributeError: '_IncludedRouter' has no attribute 'path').
+# Patch prometheus_fastapi_instrumentator routing.py for AMD/ROCm:
+# All known versions have an unfixed bug — '_IncludedRouter' has no .path attribute —
+# that crashes every HTTP request. Version upgrades do not fix this; patch the file directly.
 if [ "$GPU_TYPE" = "amd" ]; then
-  echo "Patching prometheus-fastapi-instrumentator..."
-  pip install -q -U "prometheus-fastapi-instrumentator>=7.0.0" > /dev/null 2>&1 || \
-    echo "Warning: Could not upgrade prometheus-fastapi-instrumentator (non-fatal)"
+  echo "Patching prometheus_fastapi_instrumentator routing.py..."
+  ROUTING_FILE="$(python -c "import os, prometheus_fastapi_instrumentator as p; print(os.path.join(os.path.dirname(p.__file__), 'routing.py'))" 2>/dev/null || echo "")"
+  if [ -f "$ROUTING_FILE" ]; then
+    sed -i 's/route_name = route\.path$/route_name = getattr(route, "path", None)/g' "$ROUTING_FILE" && \
+      echo "  Patched: route.path → getattr(route, 'path', None)" || \
+      echo "Warning: Could not patch routing.py (non-fatal)"
+  else
+    echo "Warning: routing.py not found, skipping patch (non-fatal)"
+  fi
 fi
 
 # Display completion message

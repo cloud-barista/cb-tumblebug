@@ -125,12 +125,14 @@ echo "Activating virtual environment..."
 # shellcheck disable=SC1091
 . "$VENV_PATH/bin/activate"
 
-# Patch prometheus-fastapi-instrumentator for AMD/ROCm: pre-built wheels (vLLM 0.23.x+)
-# bundle an old version that crashes on every HTTP request with:
-#   AttributeError: '_IncludedRouter' object has no attribute 'path'
+# Patch prometheus_fastapi_instrumentator routing.py for AMD/ROCm:
+# All known versions have an unfixed bug — '_IncludedRouter' has no .path attribute —
+# that crashes every HTTP request. Patch the file directly as version upgrades do not fix this.
 if [ "$GPU_TYPE" = "amd" ]; then
-  pip install -q -U "prometheus-fastapi-instrumentator>=7.0.0" > /dev/null 2>&1 || \
-    echo "Warning: Could not upgrade prometheus-fastapi-instrumentator (non-fatal)"
+  ROUTING_FILE="$(python -c "import os, prometheus_fastapi_instrumentator as p; print(os.path.join(os.path.dirname(p.__file__), 'routing.py'))" 2>/dev/null || echo "")"
+  if [ -f "$ROUTING_FILE" ]; then
+    sed -i 's/route_name = route\.path$/route_name = getattr(route, "path", None)/g' "$ROUTING_FILE"
+  fi
 fi
 
 # Function to get the currently running model
@@ -258,6 +260,12 @@ echo "Log file: $LOG_FILE"
 
 # Clear old log file
 > "$LOG_FILE"
+
+# vLLM 0.23+ defaults to v1 engine architecture (multi-process). On some NVIDIA setups
+# the v1 engine core fails to initialize. Force v0 engine as a reliable fallback.
+if [ "$GPU_TYPE" = "nvidia" ]; then
+  export VLLM_USE_V1=0
+fi
 
 # Build vLLM command dynamically to support optional arguments
 VLLM_CMD_ARGS=(
