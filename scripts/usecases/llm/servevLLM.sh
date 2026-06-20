@@ -27,23 +27,62 @@ if [ -z "$BASH_VERSION" ]; then
   fi
 fi
 
-# Parse arguments
-MODEL_NAME="${1:-}"
-HOST="${2:-0.0.0.0}"
-PORT="${3:-8000}"
+# =========================================================
+# Argument Parsing (named parameters with backward compat)
+# =========================================================
+MODEL_NAME=""
+HOST="0.0.0.0"
+PORT="8000"
+HF_TOKEN="${HF_TOKEN:-}"  # inherit from env if already set (avoids CLI arg exposure)
+GPU_UTIL=""               # empty = vLLM default (~0.9)
+CTX_LEN=""                # empty = model default
+API_KEY=""
 
-# Validate model name
-if [ -z "$MODEL_NAME" ]; then
-  echo "Error: Model name is required."
+usage() {
+  echo "Usage: bash servevLLM.sh --model MODEL [OPTIONS]"
   echo ""
-  echo "Usage: bash servevLLM.sh <model_name> [host] [port]"
+  echo "Required:"
+  echo "  --model MODEL       HuggingFace model name"
+  echo ""
+  echo "Options:"
+  echo "  --host HOST         Bind address (default: 0.0.0.0)"
+  echo "  --port PORT         Server port (default: 8000)"
+  echo "  --hf-token TOKEN    HuggingFace token for gated models"
+  echo "  --gpu-util FLOAT    GPU memory utilization 0.0-1.0 (default: vLLM default)"
+  echo "  --ctx-len N         Max context length / max-model-len (default: model default)"
+  echo "  --api-key KEY       API key for the vLLM server (default: none)"
   echo ""
   echo "Recommended models:"
-  echo "  - Qwen/Qwen2.5-1.5B-Instruct (small, fast, ~3GB VRAM)"
-  echo "  - meta-llama/Llama-3.2-3B-Instruct (~7GB VRAM)"
-  echo "  - mistralai/Mistral-7B-Instruct-v0.3 (~15GB VRAM)"
-  echo "  - deepseek-ai/DeepSeek-R1-Distill-Qwen-7B (~15GB VRAM)"
-  exit 1
+  echo "  Qwen/Qwen2.5-1.5B-Instruct       (~3GB VRAM)"
+  echo "  meta-llama/Llama-3.2-3B-Instruct  (~7GB VRAM)"
+  echo "  mistralai/Mistral-7B-Instruct-v0.3 (~15GB VRAM)"
+  exit "${1:-1}"
+}
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --model)    MODEL_NAME="${2:?Error: --model requires a value}";    shift 2 ;;
+    --host)     HOST="${2:?Error: --host requires a value}";           shift 2 ;;
+    --port)     PORT="${2:?Error: --port requires a value}";           shift 2 ;;
+    --hf-token) HF_TOKEN="${2:?Error: --hf-token requires a value}";  shift 2 ;;
+    --gpu-util) GPU_UTIL="${2:?Error: --gpu-util requires a value}";  shift 2 ;;
+    --ctx-len)  CTX_LEN="${2:?Error: --ctx-len requires a value}";    shift 2 ;;
+    --api-key)  API_KEY="${2:?Error: --api-key requires a value}";    shift 2 ;;
+    -h|--help)  usage 0 ;;
+    *)
+      # Backward compatibility: treat first non-flag arg as model name
+      if [ -z "$MODEL_NAME" ] && [[ "$1" != --* ]]; then
+        MODEL_NAME="$1"; shift
+      else
+        echo "Error: Unknown parameter: $1"; usage
+      fi
+      ;;
+  esac
+done
+
+if [ -z "$MODEL_NAME" ]; then
+  echo "Error: --model is required."
+  usage
 fi
 
 echo "=========================================="
@@ -198,6 +237,13 @@ elif [ -n "$RUNNING_MODEL" ]; then
   stop_vllm_server
 fi
 
+# Export HuggingFace token for gated model downloads
+if [ -n "$HF_TOKEN" ]; then
+  export HF_TOKEN
+  export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
+  echo "HuggingFace token configured."
+fi
+
 # Start vLLM server
 echo "Starting vLLM server with model: $MODEL_NAME"
 echo "Log file: $LOG_FILE"
@@ -205,13 +251,20 @@ echo "Log file: $LOG_FILE"
 # Clear old log file
 > "$LOG_FILE"
 
+# Build vLLM command dynamically to support optional arguments
+VLLM_CMD_ARGS=(
+  python -m vllm.entrypoints.openai.api_server
+  --model "$MODEL_NAME"
+  --host "$HOST"
+  --port "$PORT"
+  --trust-remote-code
+)
+[ -n "$GPU_UTIL" ] && VLLM_CMD_ARGS+=(--gpu-memory-utilization "$GPU_UTIL")
+[ -n "$CTX_LEN" ]  && VLLM_CMD_ARGS+=(--max-model-len "$CTX_LEN")
+[ -n "$API_KEY" ]  && VLLM_CMD_ARGS+=(--api-key "$API_KEY")
+
 # Start server in background
-nohup python -m vllm.entrypoints.openai.api_server \
-  --model "$MODEL_NAME" \
-  --host "$HOST" \
-  --port "$PORT" \
-  --trust-remote-code \
-  >> "$LOG_FILE" 2>&1 &
+nohup "${VLLM_CMD_ARGS[@]}" >> "$LOG_FILE" 2>&1 &
 
 # Save PID and model name
 SERVER_PID=$!
