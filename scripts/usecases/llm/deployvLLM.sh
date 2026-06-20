@@ -141,13 +141,16 @@ echo "Logging vLLM installation details to $LOG_FILE"
 set +e  # Temporarily disable exit on error for pip install
 
 if [ "$GPU_TYPE" = "nvidia" ]; then
-  pip install -U "$VLLM_SPEC" > "$LOG_FILE" 2>&1
-  INSTALL_RESULT=$?
-  if [ $INSTALL_RESULT -ne 0 ]; then
-    echo "Failed with default wheels. Trying CUDA 12.1 wheels..."
-    pip install "$VLLM_SPEC" --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
-    INSTALL_RESULT=$?
+  # Install uv if not available — required for --torch-backend=auto (latest vLLM docs recommendation)
+  if ! command -v uv &>/dev/null; then
+    echo "Installing uv (fast Python package manager)..."
+    pip install uv >> "$LOG_FILE" 2>&1
   fi
+  # --torch-backend=auto: lets uv select the correct CUDA wheel for the installed driver.
+  # Required for vLLM 0.23+; the old bare pip install no longer reliably picks CUDA wheels.
+  echo "Installing vLLM with CUDA backend (uv --torch-backend=auto)..."
+  uv pip install "$VLLM_SPEC" --torch-backend=auto >> "$LOG_FILE" 2>&1
+  INSTALL_RESULT=$?
 else
   # === AMD ROCm: install pre-built ROCm vllm wheel via uv ===
   # Pre-built wheels available at wheels.vllm.ai/rocm/ (Python 3.12 / ROCm 7.0+).
