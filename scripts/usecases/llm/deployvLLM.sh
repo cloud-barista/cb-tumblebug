@@ -197,9 +197,9 @@ fi
 # vLLM prerequisites explicitly require CUDA Toolkit (not just the driver).
 if [ "$GPU_TYPE" = "nvidia" ] && ! command -v nvcc &>/dev/null && ! [ -x /usr/local/cuda/bin/nvcc ]; then
   echo "Installing cuda-nvcc (required for FlashInfer JIT compilation)..."
-  # The CUDA apt repo is normally already present when installGpuDriver.sh ran first.
-  # Add the keyring if missing so this script also works standalone.
-  if ! apt-cache show cuda-nvcc > /dev/null 2>&1; then
+  # Add the CUDA apt repo if no cuda-nvcc packages are visible yet.
+  # Use apt-cache search (not show) so versioned names like cuda-nvcc-12-9 are also matched.
+  if ! apt-cache search --names-only '^cuda-nvcc' 2>/dev/null | grep -q .; then
     echo "  CUDA apt repo not found — adding keyring..."
     _ubuntu_ver=$(. /etc/os-release 2>/dev/null && echo "${VERSION_ID//./}" || echo "2204")
     [[ "$_ubuntu_ver" == "2404" ]] && _cuda_repo="ubuntu2404" || _cuda_repo="ubuntu2204"
@@ -210,12 +210,29 @@ if [ "$GPU_TYPE" = "nvidia" ] && ! command -v nvcc &>/dev/null && ! [ -x /usr/lo
     rm -f "$_kring"
     sudo apt-get update -qq
   fi
+  # Pick the latest available cuda-nvcc package.
+  # NVIDIA repo uses versioned names (cuda-nvcc-12-9) not just "cuda-nvcc".
+  _nvcc_pkg=$(apt-cache search --names-only '^cuda-nvcc' 2>/dev/null \
+    | awk '{print $1}' | sort -t- -k3,3n -k4,4n | tail -1)
+  [ -z "$_nvcc_pkg" ] && _nvcc_pkg="cuda-nvcc"  # last-resort fallback
+  echo "  Installing $_nvcc_pkg..."
   set +e
-  sudo apt-get install -y --no-install-recommends cuda-nvcc 2>&1 | tail -5
+  sudo apt-get install -y --no-install-recommends "$_nvcc_pkg" 2>&1 | tail -5
   _nvcc_exit=${PIPESTATUS[0]}
   set -e
   if [ $_nvcc_exit -ne 0 ]; then
-    echo "  Warning: cuda-nvcc install failed — FlashInfer JIT will fail at runtime."
+    echo "  Warning: $_nvcc_pkg install failed — FlashInfer JIT will fail at runtime."
+  fi
+
+  # cuda-nvcc-12-X installs to /usr/local/cuda-12.X/ but does NOT create the
+  # /usr/local/cuda symlink that many tools (including FlashInfer) look for by default.
+  # Create it here so FlashInfer's default cuda_home lookup succeeds.
+  if ! [ -e /usr/local/cuda ]; then
+    _cuda_ver_dir=$(ls -d /usr/local/cuda-*/ 2>/dev/null | sort -V | tail -1 | sed 's|/$||')
+    if [ -n "$_cuda_ver_dir" ]; then
+      sudo ln -sf "$_cuda_ver_dir" /usr/local/cuda
+      echo "  Created /usr/local/cuda → $_cuda_ver_dir"
+    fi
   fi
 fi
 
