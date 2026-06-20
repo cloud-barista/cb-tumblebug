@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPU VM LLM Setup: vLLM + Model + Telemetry
 # Assumes GPU driver is already installed (use installGpuDriver.sh separately)
-# Usage: curl -fsSL <url> | bash -s -- [model_name]
+# Usage: bash setupBenchmarkTarget.sh --model MODEL [--hf-token TOKEN] [--port PORT]
 
 if [ -z "$BASH_VERSION" ]; then
   [ ! -t 0 ] && echo "Error: Use 'bash' not 'sh'" && exit 1
@@ -10,9 +10,33 @@ fi
 
 set -e
 
-# Config
-MODEL_NAME="${1:-Qwen/Qwen2.5-1.5B-Instruct}"
+# =========================================================
+# Argument Parsing
+# =========================================================
+MODEL_NAME=""
+HF_TOKEN="${HF_TOKEN:-}"  # inherit from env if already set (avoids CLI arg exposure)
 VLLM_PORT="8000"
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --model)    MODEL_NAME="${2:?Error: --model requires a value}";    shift 2 ;;
+    --hf-token) HF_TOKEN="${2:?Error: --hf-token requires a value}";   shift 2 ;;
+    --port)     VLLM_PORT="${2:?Error: --port requires a value}";      shift 2 ;;
+    -h|--help)
+      echo "Usage: bash setupBenchmarkTarget.sh [--model MODEL] [--hf-token TOKEN] [--port PORT]"
+      exit 0 ;;
+    *)
+      # Backward compatibility: treat first non-flag arg as model name
+      if [ -z "$MODEL_NAME" ] && [[ "$1" != --* ]]; then
+        MODEL_NAME="$1"; shift
+      else
+        echo "Unknown parameter: $1"; exit 1
+      fi
+      ;;
+  esac
+done
+
+MODEL_NAME="${MODEL_NAME:-Qwen/Qwen2.5-1.5B-Instruct}"
 
 GITHUB_BASE="https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm"
 VLLM_INSTALL_SCRIPT_URL="${GITHUB_BASE}/deployvLLM.sh"
@@ -24,14 +48,23 @@ echo "LLM Setup: $MODEL_NAME"
 echo "=========================================="
 echo ""
 
+# Pass HF token via env var (not CLI arg) so it doesn't appear in ps aux output
+[ -n "$HF_TOKEN" ] && export HF_TOKEN
+
 # Step 1: vLLM Installation
 echo "[1/3] Installing vLLM..."
-curl -fsSL "$VLLM_INSTALL_SCRIPT_URL" | bash || { echo "✗ vLLM install failed"; exit 1; }
+tmp_deploy="$(mktemp -t deployvLLM.XXXXXX.sh)"
+curl -fsSL "$VLLM_INSTALL_SCRIPT_URL" -o "$tmp_deploy"
+bash "$tmp_deploy" || { echo "✗ vLLM install failed"; rm -f "$tmp_deploy"; exit 1; }
+rm -f "$tmp_deploy"
 echo "✓ vLLM installed"
 
 # Step 2: Model Serving
 echo "[2/3] Starting model: $MODEL_NAME"
-curl -fsSL "$VLLM_SERVE_SCRIPT_URL" | bash -s -- "$MODEL_NAME" 0.0.0.0 "$VLLM_PORT" || { echo "✗ Model start failed"; exit 1; }
+tmp_serve="$(mktemp -t servevLLM.XXXXXX.sh)"
+curl -fsSL "$VLLM_SERVE_SCRIPT_URL" -o "$tmp_serve"
+bash "$tmp_serve" --model "$MODEL_NAME" --port "$VLLM_PORT" || { echo "✗ Model start failed"; rm -f "$tmp_serve"; exit 1; }
+rm -f "$tmp_serve"
 
 # Health check
 echo "Checking server health..."

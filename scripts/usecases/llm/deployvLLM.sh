@@ -24,6 +24,25 @@ fi
 # Set strict mode for better error handling
 set -e
 
+# =========================================================
+# Argument Parsing
+# =========================================================
+HF_TOKEN="${HF_TOKEN:-}"   # inherit from env if already set (avoids CLI arg exposure)
+VLLM_VERSION=""            # empty = install latest
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --hf-token) HF_TOKEN="${2:?Error: --hf-token requires a value}";     shift 2 ;;
+    --version)  VLLM_VERSION="${2:?Error: --version requires a value}"; shift 2 ;;
+    -h|--help)
+      echo "Usage: bash deployvLLM.sh [OPTIONS]"
+      echo "  --hf-token TOKEN   HuggingFace token for gated models"
+      echo "  --version VER      Pin vLLM version (e.g. 0.22.0). Default: latest"
+      exit 0 ;;
+    *) echo "Unknown parameter: $1"; exit 1 ;;
+  esac
+done
+
 echo "=========================================="
 echo "vLLM Installation and Setup"
 echo "=========================================="
@@ -59,11 +78,7 @@ free -h | awk '/Mem:/ {print "Memory - Total: "$2, "Available: "$7}'
 # Warn if disk space is low (vLLM + models can require 20GB+)
 if [ "$DISK_AVAIL" -lt 20 ] 2>/dev/null; then
   echo "Warning: Low disk space (${DISK_AVAIL}GB available). vLLM and models may require 20GB+."
-  read -r -t 10 -p "Continue anyway? [y/N]: " CONTINUE || CONTINUE="n"
-  if [[ ! "$CONTINUE" =~ ^[Yy]$ ]]; then
-    echo "Installation cancelled."
-    exit 1
-  fi
+  echo "Continuing installation (non-interactive mode)..."
 fi
 
 # Install system dependencies
@@ -109,19 +124,28 @@ fi
 echo "Upgrading pip..."
 pip install --upgrade pip > /dev/null 2>&1
 
+# Configure HuggingFace token (needed for gated models like meta-llama/*, mistralai/*)
+if [ -n "$HF_TOKEN" ]; then
+  export HF_TOKEN
+  export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
+  echo "HuggingFace token configured."
+fi
+
 # Install vLLM
-echo "Installing vLLM for $GPU_TYPE GPU(s) (this may take a few minutes)..."
+VLLM_SPEC="${VLLM_VERSION:+vllm==${VLLM_VERSION}}"
+VLLM_SPEC="${VLLM_SPEC:-vllm}"
+echo "Installing ${VLLM_SPEC} for $GPU_TYPE GPU(s) (this may take a few minutes)..."
 LOG_FILE="$HOME/vllm_install.log"
 echo "Logging vLLM installation details to $LOG_FILE"
 
 set +e  # Temporarily disable exit on error for pip install
 
 if [ "$GPU_TYPE" = "nvidia" ]; then
-  pip install -U vllm > "$LOG_FILE" 2>&1
+  pip install -U "$VLLM_SPEC" > "$LOG_FILE" 2>&1
   INSTALL_RESULT=$?
   if [ $INSTALL_RESULT -ne 0 ]; then
     echo "Failed with default wheels. Trying CUDA 12.1 wheels..."
-    pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
+    pip install "$VLLM_SPEC" --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
     INSTALL_RESULT=$?
   fi
 else
@@ -133,14 +157,14 @@ else
   ROCM_VERSION=${ROCM_VERSION:-$(rocm-smi --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)}
   echo "Installed ROCm version: ${ROCM_VERSION:-unknown}"
 
-  # Install uv if not already available
+  # Install uv if not already available (uv gives --extra-index-url higher priority than pip)
   if ! command -v uv &>/dev/null; then
     echo "Installing uv (fast Python package manager)..."
     pip install uv >> "$LOG_FILE" 2>&1
   fi
 
   echo "Installing pre-built ROCm vllm wheel from https://wheels.vllm.ai/rocm/ ..."
-  uv pip install vllm --extra-index-url "https://wheels.vllm.ai/rocm/" >> "$LOG_FILE" 2>&1
+  uv pip install "$VLLM_SPEC" --extra-index-url "https://wheels.vllm.ai/rocm/" >> "$LOG_FILE" 2>&1
   INSTALL_RESULT=$?
 
   if [ $INSTALL_RESULT -eq 0 ]; then
