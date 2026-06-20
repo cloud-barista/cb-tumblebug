@@ -125,6 +125,17 @@ echo "Activating virtual environment..."
 # shellcheck disable=SC1091
 . "$VENV_PATH/bin/activate"
 
+# NVIDIA only: ensure CUDA_HOME is set for FlashInfer JIT (needs nvcc path).
+# cuda-nvcc installs to /usr/local/cuda; fall back to locating nvcc in PATH.
+if [ "$GPU_TYPE" = "nvidia" ] && [ -z "$CUDA_HOME" ]; then
+  if [ -x /usr/local/cuda/bin/nvcc ]; then
+    export CUDA_HOME=/usr/local/cuda
+  elif command -v nvcc &>/dev/null; then
+    export CUDA_HOME="$(dirname "$(dirname "$(command -v nvcc)")")"
+  fi
+  [ -n "$CUDA_HOME" ] && echo "CUDA_HOME: $CUDA_HOME"
+fi
+
 # Patch prometheus_fastapi_instrumentator routing.py — affects all GPU types.
 # '_IncludedRouter' (Starlette ≥0.40, bundled with vLLM 0.23+) has no .path
 # attribute and crashes every HTTP request.  Re-patching here is idempotent and
