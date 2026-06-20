@@ -64,10 +64,10 @@ while [[ "$#" -gt 0 ]]; do
     --model)    MODEL_NAME="${2:?Error: --model requires a value}";    shift 2 ;;
     --host)     HOST="${2:?Error: --host requires a value}";           shift 2 ;;
     --port)     PORT="${2:?Error: --port requires a value}";           shift 2 ;;
-    --hf-token) HF_TOKEN="${2:?Error: --hf-token requires a value}";  shift 2 ;;
-    --gpu-util) GPU_UTIL="${2:?Error: --gpu-util requires a value}";  shift 2 ;;
-    --ctx-len)  CTX_LEN="${2:?Error: --ctx-len requires a value}";    shift 2 ;;
-    --api-key)  API_KEY="${2:?Error: --api-key requires a value}";    shift 2 ;;
+    --hf-token) HF_TOKEN="${2?Error: --hf-token requires an argument}";  shift 2 ;;
+    --gpu-util) GPU_UTIL="${2?Error: --gpu-util requires an argument}"; shift 2 ;;
+    --ctx-len)  CTX_LEN="${2?Error: --ctx-len requires an argument}";   shift 2 ;;
+    --api-key)  API_KEY="${2?Error: --api-key requires an argument}";   shift 2 ;;
     -h|--help)  usage 0 ;;
     *)
       # Backward compatibility: treat first non-flag arg as model name
@@ -124,6 +124,14 @@ fi
 echo "Activating virtual environment..."
 # shellcheck disable=SC1091
 . "$VENV_PATH/bin/activate"
+
+# Patch prometheus-fastapi-instrumentator for AMD/ROCm: pre-built wheels (vLLM 0.23.x+)
+# bundle an old version that crashes on every HTTP request with:
+#   AttributeError: '_IncludedRouter' object has no attribute 'path'
+if [ "$GPU_TYPE" = "amd" ]; then
+  pip install -q -U "prometheus-fastapi-instrumentator>=7.0.0" > /dev/null 2>&1 || \
+    echo "Warning: Could not upgrade prometheus-fastapi-instrumentator (non-fatal)"
+fi
 
 # Function to get the currently running model
 get_running_model() {

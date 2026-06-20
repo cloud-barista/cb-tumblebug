@@ -32,7 +32,7 @@ VLLM_VERSION=""            # empty = install latest
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    --hf-token) HF_TOKEN="${2:?Error: --hf-token requires a value}";     shift 2 ;;
+    --hf-token) HF_TOKEN="${2?Error: --hf-token requires an argument}";     shift 2 ;;
     --version)  VLLM_VERSION="${2:?Error: --version requires a value}"; shift 2 ;;
     -h|--help)
       echo "Usage: bash deployvLLM.sh [OPTIONS]"
@@ -204,6 +204,14 @@ fi
 # Install additional useful packages
 echo "Installing additional packages..."
 pip install -U openai transformers huggingface_hub > /dev/null 2>&1
+
+# Patch prometheus-fastapi-instrumentator for AMD/ROCm: pre-built wheels bundle an older version
+# that crashes on every HTTP request (AttributeError: '_IncludedRouter' has no attribute 'path').
+if [ "$GPU_TYPE" = "amd" ]; then
+  echo "Patching prometheus-fastapi-instrumentator..."
+  pip install -q -U "prometheus-fastapi-instrumentator>=7.0.0" > /dev/null 2>&1 || \
+    echo "Warning: Could not upgrade prometheus-fastapi-instrumentator (non-fatal)"
+fi
 
 # Display completion message
 echo "=========================================="
