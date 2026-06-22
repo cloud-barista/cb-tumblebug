@@ -49,3 +49,5 @@ TENCENT,all,centos8.0x86_64,CentOS 8.0,"TKE Node - CentOS 8.0, x86_64 (Beta)",,k
 TENCENT,all,ubuntu20.04x86_64,Ubuntu 20.04,"TKE Node - Ubuntu 20.04, x86_64 (Beta)",,k8s,x86_64,ubuntu20.04x86_64
 TENCENT,all,ubuntu22.04x86_64,Ubuntu 22.04,"TKE Node - Ubuntu 22.04, x86_64",,k8s,x86_64,ubuntu22.04x86_64
 TENCENT,all,redhat7.9x86_64,Red Hat Enterprise Linux 7.9,"TKE Node - Red Hat Enterprise Linux 7.9, x86_64",,k8s,x86_64,redhat7.9x86_64
+ALIBABA,all,AliyunLinux3ContainerOptimized,Alibaba Cloud Linux 3 (Container Optimized),"ACK Node - Alibaba Cloud Linux 3, Container Optimized, cgroup v2, x86_64 (default image type)",,k8s,x86_64,AliyunLinux3ContainerOptimized
+ALIBABA,all,Ubuntu,Ubuntu (Latest),"ACK Node - Ubuntu latest (ACK image_type alias, resolves dynamically), cgroup v2, x86_64",,k8s,x86_64,Ubuntu

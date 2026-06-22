@@ -275,6 +275,14 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 	}
 	fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(&tbK8sCInfo.K8sNodeGroupList, &req.K8sNodeGroupList)
 
+	// Mark the first node group as initial for CSPs where the initial node group
+	// is lifecycle-bound to the cluster and cannot be deleted independently.
+	if managed, _ := common.GetK8sInitialNodeGroupManagedByCluster(connConfig.ProviderName); managed {
+		if len(tbK8sCInfo.K8sNodeGroupList) > 0 {
+			tbK8sCInfo.K8sNodeGroupList[0].IsInitialNodeGroup = true
+		}
+	}
+
 	err = createK8sClusterInfo(nsId, *tbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
@@ -737,10 +745,11 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 			if err = validateK8sImageForProvider(nsId, connConfig.ProviderName, u.ImageId); err != nil {
 				return emptyObj, err
 			}
-			// Resolve provider-specific "latest image" (currently Alibaba-only)
-			// right before passing the CSP image name to cb-spider, so that
-			// VM creation does not break on deprecated/removed image IDs.
-			spImgName = ResolveLatestCspImageNameForVMCreation(ctx, nsId, tbK8sCInfo.ConnectionName, u.ImageId, spImgName)
+			// K8s node pools use CSP-specific image_type aliases (e.g. Alibaba "AliyunLinux3"),
+			// not ECS/VM image IDs. ResolveLatestCspImageNameForVMCreation converts the alias to
+			// an ECS ID that ACK rejects with "does not support cgroup v2". Pass the original
+			// user-specified ImageId directly so Spider can route it correctly via image_type.
+			spImgName = u.ImageId
 		}
 	}
 
@@ -868,6 +877,21 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 	if err != nil {
 		log.Err(err).Msgf("Failed to Remove K8sNodeGroup(k8scluster=%s)", k8sClusterId)
 		return false, err
+	}
+
+	// Protect initial node group from independent deletion for CSPs where it is
+	// lifecycle-bound to the cluster (e.g., Alibaba ACK, Tencent TKE).
+	if ngConnConfig, connErr := common.GetConnConfig(tbK8sCInfo.ConnectionName); connErr == nil {
+		if managed, _ := common.GetK8sInitialNodeGroupManagedByCluster(ngConnConfig.ProviderName); managed {
+			for _, ng := range tbK8sCInfo.K8sNodeGroupList {
+				if ng.Name == k8sNodeGroupName && ng.IsInitialNodeGroup {
+					return false, fmt.Errorf(
+						"node group '%s' is the initial node group of cluster '%s' and cannot be deleted independently for provider '%s'. Delete the cluster to remove it",
+						k8sNodeGroupName, k8sClusterId, ngConnConfig.ProviderName,
+					)
+				}
+			}
+		}
 	}
 
 	// Create Request body for RemoveK8sNodeGroup of CB-Spider
