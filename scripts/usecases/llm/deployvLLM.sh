@@ -224,6 +224,26 @@ if [ "$GPU_TYPE" = "nvidia" ] && ! command -v nvcc &>/dev/null && ! [ -x /usr/lo
     echo "  Warning: $_nvcc_pkg install failed — FlashInfer JIT will fail at runtime."
   fi
 
+  # FlashInfer sampling.cuh #includes curand.h which is NOT part of cuda-nvcc.
+  # Install the matching libcurand-dev for the same CUDA version.
+  _cuda_ver_suffix=$(echo "$_nvcc_pkg" | grep -oE '[0-9]+-[0-9]+$' 2>/dev/null || true)
+  _curand_pkg=""
+  if [ -n "$_cuda_ver_suffix" ] && apt-cache show "libcurand-dev-${_cuda_ver_suffix}" &>/dev/null 2>/dev/null; then
+    _curand_pkg="libcurand-dev-${_cuda_ver_suffix}"
+  else
+    _curand_pkg=$(apt-cache search --names-only '^libcurand-dev' 2>/dev/null \
+      | awk '{print $1}' | sort -t- -k4,4n -k5,5n | tail -1)
+    [ -z "$_curand_pkg" ] && _curand_pkg="libcurand-dev"
+  fi
+  echo "  Installing $_curand_pkg (curand.h required by FlashInfer sampling JIT)..."
+  set +e
+  sudo apt-get install -y --no-install-recommends "$_curand_pkg" 2>&1 | tail -3
+  _curand_exit=$?
+  set -e
+  if [ $_curand_exit -ne 0 ]; then
+    echo "  Warning: $_curand_pkg install failed — FlashInfer sampling JIT will fail at runtime."
+  fi
+
   # cuda-nvcc-12-X installs to /usr/local/cuda-12.X/ but does NOT create the
   # /usr/local/cuda symlink that many tools (including FlashInfer) look for by default.
   # Create it here so FlashInfer's default cuda_home lookup succeeds.
