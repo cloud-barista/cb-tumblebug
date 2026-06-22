@@ -1850,6 +1850,21 @@ func GetModelK8sRequiredSubnetCount(providerName string) (*model.K8sClusterRequi
 
 const DefaultNamingRule = "^.*$" // Wildcard Pattern
 
+// GetK8sInitialNodeGroupManagedByCluster returns whether the initial node group
+// created during cluster creation is lifecycle-bound to the cluster (i.e., cannot
+// be deleted independently via the node group API).
+// This applies to CSPs such as Alibaba ACK and Tencent TKE.
+func GetK8sInitialNodeGroupManagedByCluster(providerName string) (bool, error) {
+	providerName = strings.ToLower(providerName)
+
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return false, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	return k8sClusterDetail.InitialNodeGroupManagedByCluster, nil
+}
+
 // GetK8sNodeGroupNamingRule is func to get nodegroup's naming rule
 func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
 	//

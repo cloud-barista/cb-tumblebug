@@ -665,6 +665,8 @@ func convertTermToSpider(labelType string) string {
 		return model.StrKeypair
 	} else if strings.EqualFold(labelType, model.StrNode) {
 		return model.StrSpiderVM // CB-Spider uses "vm" for VM resources
+	} else if strings.EqualFold(labelType, model.StrK8s) {
+		return "cluster" // CB-Spider uses "cluster" for K8s cluster resources
 	} else {
 		return labelType
 	}

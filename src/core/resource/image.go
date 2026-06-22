@@ -70,7 +70,7 @@ func ImageReqStructLevelValidation(sl validator.StructLevel) {
 // must validate that the requested imageId resolves to a registered entry.
 func usesTypeIdentifierK8sImage(providerName string) bool {
 	switch csp.ResolveCloudPlatform(providerName) {
-	case csp.AWS, csp.GCP, csp.Tencent:
+	case csp.AWS, csp.GCP, csp.Tencent, csp.Alibaba:
 		return true
 	}
 	return false
@@ -793,28 +793,18 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 				dbImage.RegionList = make([]string, 0)
 			}
 
-			// Merge new region information
-			regionsAdded := false
-			for _, newRegion := range img.RegionList {
-				regionExists := slices.Contains(dbImage.RegionList, newRegion)
-
-				if !regionExists {
-					// log.Debug().Msgf("Adding region %s to DB image %s",
-					// 	newRegion, key)
-					dbImage.RegionList = append(dbImage.RegionList, newRegion)
-					regionsAdded = true
+			// Merge DB regions into incoming img (preserve all field updates from img).
+			// DB is used only to carry over regions not present in the incoming entry —
+			// all other fields (e.g. IsKubernetesImage, OSType) come from img so that
+			// policy updates from updateExistingImageFromCSV are not silently discarded.
+			for _, dbRegion := range dbImage.RegionList {
+				if !slices.Contains(img.RegionList, dbRegion) {
+					img.RegionList = append(img.RegionList, dbRegion)
 				}
 			}
+			sort.Strings(img.RegionList)
 
-			if regionsAdded {
-				// Sort regions
-				sort.Strings(dbImage.RegionList)
-
-				// log.Info().Msgf("Merged regions for image %s: %v",
-				// 	key, dbImage.RegionList)
-			}
-
-			dedupedImageList = append(dedupedImageList, dbImage)
+			dedupedImageList = append(dedupedImageList, img)
 		} else {
 			// Add new image if not found in DB
 			//log.Debug().Msgf("Image not found in DB, will insert new: %s", key)
@@ -2000,11 +1990,10 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 				tmpImageInfo := createBasicImageInfoFromCSV(nsId, providerName, regionName, imageReqTmp.CspImageName,
 					imageReqTmp.ConnectionName, osType, description, infraType, osArchitecture, osDistribution)
 
-				// AWS/GCP K8s image type identifiers (e.g., BOTTLEROCKET_x86_64, COS_CONTAINERD) registered
-				// in cloudimage.csv are not real CSP image IDs — they are EKS/GKE internal type keywords.
+				// K8s image type identifiers (EKS AMI types, GKE image families, TKE OS names,
+				// ACK image_type names) registered in cloudimage.csv are not real CSP image IDs.
 				// CSP lookup via CB-Spider will always fail for these, so skip enrichment.
-				skipCSPLookup := tmpImageInfo.IsKubernetesImage &&
-					(strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.AWS) || strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.GCP))
+				skipCSPLookup := tmpImageInfo.IsKubernetesImage && usesTypeIdentifierK8sImage(providerName)
 
 				if !skipCSPLookup {
 					// Try to enrich with CSP lookup (optional)

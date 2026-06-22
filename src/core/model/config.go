@@ -190,13 +190,17 @@ type K8sClusterRequiredSubnetCount struct {
 
 // K8sClusterDetail is structure for kubernetes cluster detail information
 type K8sClusterDetail struct {
-	NodeGroupsOnCreation bool                        `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
-	NodeImageDesignation bool                        `mapstructure:"nodeImageDesignation" json:"node_image_designation"`
-	RequiredSubnetCount  int                         `mapstructure:"requiredSubnetCount" json:"required_subnet_count"`
-	NodeGroupNamingRule  string                      `mapstructure:"nodeGroupNamingRule" json:"nodegroup_naming_rule"`
-	Version              []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
-	NodeImage            []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
-	RootDisk             []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
+	NodeGroupsOnCreation             bool                        `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
+	NodeImageDesignation             bool                        `mapstructure:"nodeImageDesignation" json:"node_image_designation"`
+	RequiredSubnetCount              int                         `mapstructure:"requiredSubnetCount" json:"required_subnet_count"`
+	NodeGroupNamingRule              string                      `mapstructure:"nodeGroupNamingRule" json:"nodegroup_naming_rule"`
+	// InitialNodeGroupManagedByCluster indicates that the initial node group created during
+	// cluster creation is lifecycle-bound to the cluster and cannot be deleted independently
+	// via the node group API (e.g., Alibaba ACK, Tencent TKE).
+	InitialNodeGroupManagedByCluster bool                        `mapstructure:"initialNodeGroupManagedByCluster" json:"initial_nodegroup_managed_by_cluster"`
+	Version                          []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
+	NodeImage                        []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
+	RootDisk                         []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
 }
 
 // K8sClusterVersionDetail is structure for kubernetes cluster version detail information

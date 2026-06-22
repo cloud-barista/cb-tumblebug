@@ -422,6 +422,11 @@ type K8sNodeGroupInfo struct {
 	K8sNodes        []K8sNodeInfo      `json:"k8sNodes"`
 	KeyValueList    []KeyValue         `json:"keyValueList"`
 
+	// IsInitialNodeGroup indicates whether this node group was created during cluster creation.
+	// For some CSPs (Alibaba ACK, Tencent TKE), this node group cannot be deleted independently;
+	// it is automatically removed when the cluster is deleted.
+	IsInitialNodeGroup bool `json:"isInitialNodeGroup,omitempty"`
+
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
 	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
 
