@@ -19654,6 +19654,12 @@ components:
           example: aws-ap-southeast-1
         imageId:
           type: string
+        isInitialNodeGroup:
+          type: boolean
+          description: |-
+            IsInitialNodeGroup indicates whether this node group was created during cluster creation.
+            For some CSPs (Alibaba ACK, Tencent TKE), this node group cannot be deleted independently;
+            it is automatically removed when the cluster is deleted.
         k8sNodes:
           type: array
           items:
@@ -22076,6 +22082,12 @@ components:
     model.K8sClusterDetail:
       type: object
       properties:
+        initial_nodegroup_managed_by_cluster:
+          type: boolean
+          description: |-
+            InitialNodeGroupManagedByCluster indicates that the initial node group created during
+            cluster creation is lifecycle-bound to the cluster and cannot be deleted independently
+            via the node group API (e.g., Alibaba ACK, Tencent TKE).
         node_image_designation:
           type: boolean
         node_images:
@@ -22637,6 +22649,12 @@ components:
           example: aws-ap-southeast-1
         imageId:
           type: string
+        isInitialNodeGroup:
+          type: boolean
+          description: |-
+            IsInitialNodeGroup indicates whether this node group was created during cluster creation.
+            For some CSPs (Alibaba ACK, Tencent TKE), this node group cannot be deleted independently;
+            it is automatically removed when the cluster is deleted.
         k8sNodes:
           type: array
           items:

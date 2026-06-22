@@ -23179,6 +23179,10 @@ const docTemplate = `{
                 "imageId": {
                     "type": "string"
                 },
+                "isInitialNodeGroup": {
+                    "description": "IsInitialNodeGroup indicates whether this node group was created during cluster creation.\nFor some CSPs (Alibaba ACK, Tencent TKE), this node group cannot be deleted independently;\nit is automatically removed when the cluster is deleted.",
+                    "type": "boolean"
+                },
                 "k8sNodes": {
                     "type": "array",
                     "items": {
@@ -26364,6 +26368,10 @@ const docTemplate = `{
         "model.K8sClusterDetail": {
             "type": "object",
             "properties": {
+                "initial_nodegroup_managed_by_cluster": {
+                    "description": "InitialNodeGroupManagedByCluster indicates that the initial node group created during\ncluster creation is lifecycle-bound to the cluster and cannot be deleted independently\nvia the node group API (e.g., Alibaba ACK, Tencent TKE).",
+                    "type": "boolean"
+                },
                 "node_image_designation": {
                     "type": "boolean"
                 },
@@ -27107,6 +27115,10 @@ const docTemplate = `{
                 },
                 "imageId": {
                     "type": "string"
+                },
+                "isInitialNodeGroup": {
+                    "description": "IsInitialNodeGroup indicates whether this node group was created during cluster creation.\nFor some CSPs (Alibaba ACK, Tencent TKE), this node group cannot be deleted independently;\nit is automatically removed when the cluster is deleted.",
+                    "type": "boolean"
                 },
                 "k8sNodes": {
                     "type": "array",
