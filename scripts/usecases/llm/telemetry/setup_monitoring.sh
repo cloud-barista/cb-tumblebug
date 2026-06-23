@@ -135,7 +135,7 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "query": "label_values(DCGM_FI_DEV_GPU_UTIL{instance=~\"$instance\"}, gpu)",
+        "query": "label_values(DCGM_FI_DEV_GPU_UTIL{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}, gpu)",
         "includeAll": true,
         "multi": true,
         "current": {
