@@ -25,6 +25,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
@@ -293,14 +294,25 @@ func CreateNLB(nsId string, infraId string, u *model.NLBReq, option string) (mod
 		Threshold: cloudSetting.Nlb.Threshold,
 	}
 
-	// Use 0 to indicate "use default from YAML config"
-	if u.HealthChecker.Interval == 0 {
+	// Use 0 to indicate "use default from YAML config".
+	// If the YAML value is -1, the cloud does not support a custom value, so force the YAML default
+	// regardless of what the user specified.
+	if u.HealthChecker.Interval == 0 || valuesFromYaml.Interval == -1 {
+		if valuesFromYaml.Interval == -1 && u.HealthChecker.Interval != 0 {
+			log.Warn().Msgf("Cloud (%s) does not support custom healthChecker.interval. Ignoring user value (%d) and using default (-1).", cloudType, u.HealthChecker.Interval)
+		}
 		requestBody.ReqInfo.HealthChecker.Interval = strconv.Itoa(valuesFromYaml.Interval)
 	}
-	if u.HealthChecker.Timeout == 0 {
+	if u.HealthChecker.Timeout == 0 || valuesFromYaml.Timeout == -1 {
+		if valuesFromYaml.Timeout == -1 && u.HealthChecker.Timeout != 0 {
+			log.Warn().Msgf("Cloud (%s) does not support custom healthChecker.timeout. Ignoring user value (%d) and using default (-1).", cloudType, u.HealthChecker.Timeout)
+		}
 		requestBody.ReqInfo.HealthChecker.Timeout = strconv.Itoa(valuesFromYaml.Timeout)
 	}
-	if u.HealthChecker.Threshold == 0 {
+	if u.HealthChecker.Threshold == 0 || valuesFromYaml.Threshold == -1 {
+		if valuesFromYaml.Threshold == -1 && u.HealthChecker.Threshold != 0 {
+			log.Warn().Msgf("Cloud (%s) does not support custom healthChecker.threshold. Ignoring user value (%d) and using default (-1).", cloudType, u.HealthChecker.Threshold)
+		}
 		requestBody.ReqInfo.HealthChecker.Threshold = strconv.Itoa(valuesFromYaml.Threshold)
 	}
 
@@ -1278,4 +1290,69 @@ func remove(l []string, item string) []string {
 		}
 	}
 	return l
+}
+
+// nlbCloudSetting returns the NlbSetting for the given CSP name from the runtime config.
+// It falls back to the Common setting when the CSP has no dedicated field (e.g., KT).
+func nlbCloudSetting(providerName string) model.NlbSetting {
+	lowercase := strings.ToLower(providerName)
+
+	// Convert "nhn" → "NHN", others → title-case (e.g., "aws" → "Aws")
+	var fieldName string
+	if lowercase == "nhn" {
+		fieldName = "NHN"
+	} else {
+		fieldName = strings.ToUpper(string(lowercase[0])) + lowercase[1:]
+	}
+
+	cloudVal := reflect.ValueOf(&common.RuntimeConf.Cloud).Elem()
+	field := cloudVal.FieldByName(fieldName)
+	if !field.IsValid() {
+		log.Warn().Msgf("No cloud config field for CSP '%s' (tried '%s'); falling back to Common.", providerName, fieldName)
+		field = cloudVal.FieldByName("Common")
+	}
+	return field.Interface().(model.CloudSetting).Nlb
+}
+
+// GetNLBSupport returns health checker feature support information per CSP.
+// When cspType is provided, only that CSP's information is returned.
+// When cspType is empty, information for all supported CSPs is returned.
+// A feature is considered unsupported when its YAML config value is -1,
+// meaning the cloud provider rejects custom values for that field.
+func GetNLBSupport(cspType string) (model.NLBSupportResponse, error) {
+	var response model.NLBSupportResponse
+	response.ResourceType = model.StrNLB
+
+	featureFrom := func(nlb model.NlbSetting) model.NLBFeatureSupport {
+		return model.NLBFeatureSupport{
+			CustomHealthCheckerInterval:  nlb.Interval != -1,
+			CustomHealthCheckerTimeout:   nlb.Timeout != -1,
+			CustomHealthCheckerThreshold: nlb.Threshold != -1,
+		}
+	}
+
+	if cspType != "" {
+		cspType = strings.ToLower(cspType)
+		found := false
+		for _, c := range csp.AllCSPs {
+			if c == cspType {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return response, fmt.Errorf("unknown CSP type: %s", cspType)
+		}
+		response.Supports = map[string]model.NLBFeatureSupport{
+			cspType: featureFrom(nlbCloudSetting(cspType)),
+		}
+		return response, nil
+	}
+
+	allSupports := make(map[string]model.NLBFeatureSupport)
+	for _, providerName := range csp.AllCSPs {
+		allSupports[providerName] = featureFrom(nlbCloudSetting(providerName))
+	}
+	response.Supports = allSupports
+	return response, nil
 }

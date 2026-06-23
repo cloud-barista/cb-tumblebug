@@ -746,6 +746,9 @@ func RunServer() {
 	// sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDB)
 	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDB)
 
+	// NLB support information
+	e.GET("/tumblebug/nlb/support", rest_infra.RestGetNLBSupport)
+
 	// Object Storage support information
 	e.GET("/tumblebug/objectStorage/support", rest_resource.RestGetObjectStorageSupport)
 
