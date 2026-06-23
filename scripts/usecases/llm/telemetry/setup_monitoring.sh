@@ -101,10 +101,10 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
   "uid": "llm-monitoring-overview",
   "title": "LLM Monitoring Overview",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "10s",
   "time": {
-    "from": "now-15m",
+    "from": "now-30m",
     "to": "now"
   },
   "tags": ["llm", "prometheus", "telegraf"],
@@ -126,6 +126,23 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
           "text": "All",
           "value": "$__all"
         }
+      },
+      {
+        "name": "gpu",
+        "type": "query",
+        "label": "GPU",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": "label_values(DCGM_FI_DEV_GPU_UTIL{instance=~\"$instance\"}, gpu)",
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
       }
     ]
   },
@@ -133,10 +150,10 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
     {
       "id": 1,
       "type": "stat",
-      "title": "Healthy Targets",
+      "title": "Active Instances",
       "gridPos": {
-        "h": 5,
-        "w": 6,
+        "h": 4,
+        "w": 4,
         "x": 0,
         "y": 0
       },
@@ -154,11 +171,11 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
     {
       "id": 2,
       "type": "stat",
-      "title": "Total Targets",
+      "title": "Avg CPU Usage (%)",
       "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 6,
+        "h": 4,
+        "w": 5,
+        "x": 4,
         "y": 0
       },
       "datasource": {
@@ -167,20 +184,303 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
       },
       "targets": [
         {
-          "expr": "count(up{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"})",
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{job=\"gpu_vm_telegraf_gateway\",mode=\"idle\",instance=~\"$instance\"}[2m])) * 100)",
           "refId": "A"
         }
       ]
     },
     {
       "id": 3,
+      "type": "stat",
+      "title": "Avg Memory Usage (%)",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 9,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "100 * (1 - avg(node_memory_MemAvailable_bytes{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"} / node_memory_MemTotal_bytes{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Avg GPU Utilization (%)",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "avg(DCGM_FI_DEV_GPU_UTIL{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Avg GPU Memory Usage (%)",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "100 * avg(DCGM_FI_DEV_FB_USED{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"} / DCGM_FI_DEV_FB_TOTAL{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "GPU Utilization by GPU (%)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "avg by (instance, gpu) (DCGM_FI_DEV_GPU_UTIL{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"})",
+          "legendFormat": "{{instance}} gpu{{gpu}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "GPU Memory Used (MiB)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_FB_USED{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"}",
+          "legendFormat": "{{instance}} gpu{{gpu}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "GPU Power Draw (W)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"}",
+          "legendFormat": "{{instance}} gpu{{gpu}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "CPU Usage by VM (%)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{job=\"gpu_vm_telegraf_gateway\",mode=\"idle\",instance=~\"$instance\"}[2m])) * 100)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Memory Usage by VM (%)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"} / node_memory_MemTotal_bytes{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Network Throughput by VM (B/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(node_network_receive_bytes_total{job=\"gpu_vm_telegraf_gateway\",device!~\"lo|docker.*|veth.*\",instance=~\"$instance\"}[1m]) + rate(node_network_transmit_bytes_total{job=\"gpu_vm_telegraf_gateway\",device!~\"lo|docker.*|veth.*\",instance=~\"$instance\"}[1m]))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "vLLM Running Requests",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 28
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) ((vllm:num_requests_running{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}) or (vllm_num_requests_running{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "vLLM Prompt Throughput (tokens/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 28
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) ((vllm:avg_prompt_throughput_toks_per_s{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}) or (vllm_avg_prompt_throughput_toks_per_s{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "vLLM Generation Throughput (tokens/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 28
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) ((vllm:avg_generation_throughput_toks_per_s{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}) or (vllm_avg_generation_throughput_toks_per_s{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "vLLM Request Latency p95 (s)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, instance) (rate((vllm:request_latency_seconds_bucket{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"} or vllm_request_latency_seconds_bucket{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"})[5m])))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 16,
       "type": "timeseries",
       "title": "Target Availability (%)",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 36
       },
       "datasource": {
         "type": "prometheus",
@@ -189,49 +489,6 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
       "targets": [
         {
           "expr": "100 * avg(up{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"})",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "type": "timeseries",
-      "title": "Scrape Samples (per target)",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "expr": "scrape_samples_post_metric_relabeling{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}",
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "type": "timeseries",
-      "title": "Scrape Duration (s)",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "expr": "scrape_duration_seconds{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
