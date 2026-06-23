@@ -147,12 +147,16 @@ if ray status > /dev/null 2>&1; then
     PRIVATE_IP=$(hostname -I | awk '{print $1}')    
     echo "[Add worker - Private IP] ray start --address='${PRIVATE_IP}:6379'"
     echo "[Dashboard] http://${PUBLIC_IP}:8265"
-    
+    echo "\$\$ENDPOINT[Ray Dashboard](http://0.0.0.0:8265)"
+    echo "\$\$CMD[Add Worker](ray start --address='${PRIVATE_IP}:6379')"
+
     if [ "$INSTALL_METRICS" = "yes" ]; then
         echo "[Prometheus] http://${PUBLIC_IP}:9090"
         echo "[Grafana] http://${PUBLIC_IP}:3000"
+        echo "\$\$ENDPOINT[Prometheus](http://0.0.0.0:9090)"
+        echo "\$\$ENDPOINT[Grafana](http://0.0.0.0:3000)"
     fi
-    
+
     echo "Ray logs available at: /tmp/ray/session_latest/logs/"
     echo "Setup completed successfully. Exiting..."
 

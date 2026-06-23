@@ -756,6 +756,8 @@ if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
         echo "  kubectl get pods -n gpu-operator      # GPU Operator pods"
     fi
     echo ""
+    echo "\$\$FILEPATH[Kubeconfig](~/kubeconfig-external.yaml)"
+    echo "\$\$CMD[Check Nodes](kubectl get nodes -o wide)"
     exit 0
 else
     echo "WARNING: Node is not ready yet. Please check with 'kubectl get nodes'"
