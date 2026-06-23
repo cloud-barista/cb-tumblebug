@@ -364,6 +364,7 @@ if [ ${#RESULT_DIRS[@]} -gt 0 ]; then
   ZIP_FILE="$WORK_DIR/$ZIP_NAME"
   if ! command -v zip >/dev/null 2>&1; then
     echo "  Installing zip..."
+    sudo apt-get update -qq
     sudo apt-get install -y zip -qq
   fi
   echo -e "  \033[1;36m📦 Compressing all results...\033[0m"
