@@ -64,6 +64,20 @@ type NLBHealthCheckerReq struct {
 	Threshold int `json:"threshold" example:"3"` // num, The number of continuous health checks to change the VM status. 0 = use default.
 }
 
+// NLBFeatureSupport indicates which health checker configuration fields are supported by a cloud provider.
+// A false value means the cloud ignores or rejects custom values for that field (e.g., AWS TCP NLB ignores timeout).
+type NLBFeatureSupport struct {
+	CustomHealthCheckerInterval  bool `json:"customHealthCheckerInterval" example:"true"`
+	CustomHealthCheckerTimeout   bool `json:"customHealthCheckerTimeout" example:"false"`
+	CustomHealthCheckerThreshold bool `json:"customHealthCheckerThreshold" example:"true"`
+}
+
+// NLBSupportResponse is the response body for the NLB support information API.
+type NLBSupportResponse struct {
+	ResourceType string                       `json:"resourceType" example:"nlb"`
+	Supports     map[string]NLBFeatureSupport `json:"supports,omitempty"`
+}
+
 type SpiderNLBNodeGroupReq struct {
 	Protocol string // TCP|HTTP|HTTPS
 	Port     string // Listener Port or 1-65535

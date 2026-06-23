@@ -15,11 +15,43 @@ limitations under the License.
 package infra
 
 import (
+	"net/http"
+
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
+
+// RestGetNLBSupport godoc
+// @ID GetNLBSupport
+// @Summary Get CSP support information for NLB health checker features
+// @Description Get CSP support information for NLB health checker configuration fields (customHealthCheckerInterval, customHealthCheckerTimeout, customHealthCheckerThreshold).
+// @Description A false value means the CSP does not support a custom value for that field (e.g., AWS TCP NLB does not support custom timeout).
+// @Description If cspType query parameter is provided, returns support information for that specific CSP.
+// @Description If cspType is not provided, returns support information for all CSPs.
+// @Tags [Infra Resource] NLB Management
+// @Accept json
+// @Produce json
+// @Param cspType query string false "CSP Type" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)
+// @Success 200 {object} model.NLBSupportResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /nlb/support [get]
+func RestGetNLBSupport(c echo.Context) error {
+
+	cspType := c.QueryParam("cspType")
+
+	result, err := infra.GetNLBSupport(cspType)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get NLB support information")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
 
 // RestPostNLB godoc
 // @ID PostNLB

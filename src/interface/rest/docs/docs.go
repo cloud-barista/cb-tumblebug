@@ -2439,6 +2439,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/nlb/support": {
+            "get": {
+                "description": "Get CSP support information for NLB health checker configuration fields (customHealthCheckerInterval, customHealthCheckerTimeout, customHealthCheckerThreshold).\nA false value means the CSP does not support a custom value for that field (e.g., AWS TCP NLB does not support custom timeout).\nIf cspType query parameter is provided, returns support information for that specific CSP.\nIf cspType is not provided, returns support information for all CSPs.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] NLB Management"
+                ],
+                "summary": "Get CSP support information for NLB health checker features",
+                "operationId": "GetNLBSupport",
+                "parameters": [
+                    {
+                        "enum": [
+                            "aws",
+                            "gcp",
+                            "azure",
+                            "alibaba",
+                            "tencent",
+                            "ibm",
+                            "openstack",
+                            "ncp",
+                            "nhn",
+                            "kt"
+                        ],
+                        "type": "string",
+                        "description": "CSP Type",
+                        "name": "cspType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.NLBSupportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns": {
             "get": {
                 "description": "List all namespaces or namespaces' ID",
@@ -27409,6 +27471,23 @@ const docTemplate = `{
                 }
             }
         },
+        "model.NLBFeatureSupport": {
+            "type": "object",
+            "properties": {
+                "customHealthCheckerInterval": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "customHealthCheckerThreshold": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "customHealthCheckerTimeout": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
         "model.NLBHealthCheckerInfo": {
             "type": "object",
             "properties": {
@@ -27658,6 +27737,21 @@ const docTemplate = `{
                         "INTERNAL"
                     ],
                     "example": "PUBLIC"
+                }
+            }
+        },
+        "model.NLBSupportResponse": {
+            "type": "object",
+            "properties": {
+                "resourceType": {
+                    "type": "string",
+                    "example": "nlb"
+                },
+                "supports": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.NLBFeatureSupport"
+                    }
                 }
             }
         },

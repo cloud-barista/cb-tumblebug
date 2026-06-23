@@ -2010,6 +2010,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /nlb/support:
+    get:
+      tags:
+      - "[Infra Resource] NLB Management"
+      summary: Get CSP support information for NLB health checker features
+      description: |-
+        Get CSP support information for NLB health checker configuration fields (customHealthCheckerInterval, customHealthCheckerTimeout, customHealthCheckerThreshold).
+        A false value means the CSP does not support a custom value for that field (e.g., AWS TCP NLB does not support custom timeout).
+        If cspType query parameter is provided, returns support information for that specific CSP.
+        If cspType is not provided, returns support information for all CSPs.
+      operationId: GetNLBSupport
+      parameters:
+      - name: cspType
+        in: query
+        description: CSP Type
+        schema:
+          type: string
+          enum:
+          - aws
+          - gcp
+          - azure
+          - alibaba
+          - tencent
+          - ibm
+          - openstack
+          - ncp
+          - nhn
+          - kt
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.NLBSupportResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns:
     get:
       tags:
@@ -22859,6 +22911,18 @@ components:
       properties:
         targetGroup:
           $ref: '#/components/schemas/model.NLBTargetGroupInfo'
+    model.NLBFeatureSupport:
+      type: object
+      properties:
+        customHealthCheckerInterval:
+          type: boolean
+          example: true
+        customHealthCheckerThreshold:
+          type: boolean
+          example: true
+        customHealthCheckerTimeout:
+          type: boolean
+          example: false
     model.NLBHealthCheckerInfo:
       type: object
       properties:
@@ -23048,6 +23112,16 @@ components:
           enum:
           - PUBLIC
           - INTERNAL
+    model.NLBSupportResponse:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          example: nlb
+        supports:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/model.NLBFeatureSupport'
     model.NLBTargetGroupInfo:
       type: object
       properties:
