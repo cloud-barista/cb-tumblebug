@@ -131,4 +131,5 @@ sudo docker ps -f name=open-webui --format "table {{.Names}}\t{{.Status}}\t{{.Po
 
 echo ""
 echo "Open WebUI is available at: http://<your-ip>:80"
+echo "\$\$ENDPOINT[Open WebUI](http://0.0.0.0:80)"
 echo ""

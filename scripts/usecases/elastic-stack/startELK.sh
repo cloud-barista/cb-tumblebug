@@ -172,6 +172,8 @@ echo "KIBANA_PID List: ${KIBANA_PID_LIST[@]}"
 echo "[Start ELK Stack: complete]"
 echo "Access to $IP:$KIBANA_PORT by using your Kibana"
 echo "Hostname: $serverName"
+echo "\$\$ENDPOINT[Kibana](http://0.0.0.0:${KIBANA_PORT})"
+echo "\$\$ENDPOINT[Elasticsearch](http://0.0.0.0:9200)"
 
 # Display notice
 echo ""

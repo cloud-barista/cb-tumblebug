@@ -90,3 +90,4 @@ update_html_file "$HTML_FILE" "$HOST_IP"
 # Print the access URL
 echo "WebServer is ready."
 echo "http://$HOST_IP"
+echo "\$\$ENDPOINT[Web Server](http://0.0.0.0:80)"

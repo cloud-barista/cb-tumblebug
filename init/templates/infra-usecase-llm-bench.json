@@ -24,12 +24,11 @@
         "label": {
           "role": "observability"
         },
-        "description": "CPU-based observability node (t3a.2xlarge, 8 vCPU, 32 GiB)",
-        "specId": "aws+us-west-2+t3a.2xlarge",
-        "imageId": "ami-0c99eb0be56f13a57",
-        "rootDiskType": "gp2",
-        "rootDiskSize": 200,
-        "connectionName": "aws-us-west-2"
+        "description": "CPU-based observability node (e2-standard-8, 8 vCPU, 32 GiB)",
+        "specId": "gcp+us-west3+e2-standard-8",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260530",
+        "rootDiskType": "default",
+        "rootDiskSize": 200
       },
       {
         "name": "nvidial4",

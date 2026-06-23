@@ -219,3 +219,4 @@ done
 
 echo "=========================================="
 echo "🎉 Export completed! Output directory: $EXPORT_DIR"
+echo "\$\$CMD[List Exported Files](ls -lh ${EXPORT_DIR})"

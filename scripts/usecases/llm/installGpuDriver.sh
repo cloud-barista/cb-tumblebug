@@ -791,6 +791,7 @@ CUDA_ENV
     [ "$NEED_FABRIC_MANAGER" = true ] && COMPONENTS="$COMPONENTS, Fabric-Manager"
     echo "  Installed: $COMPONENTS"
     echo "  Verify after reboot: nvidia-smi"
+    echo "\$\$CMD[Verify GPU](nvidia-smi)"
 
 # ============================================================
 # ============================================================
@@ -979,6 +980,7 @@ elif [ "$GPU_TYPE" = "amd" ]; then
     echo "========== Installation Complete =========="
     echo "  Installed: ROCm ${ROCM_VERSION} (amdgpu-dkms + rocm)"
     echo "  Verify after reboot: rocm-smi"
+    echo "\$\$CMD[Verify GPU](rocm-smi)"
 
 fi  # end GPU_TYPE
 

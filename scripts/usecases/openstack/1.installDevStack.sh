@@ -505,6 +505,8 @@ CLOUD_EOF
     echo "    make enc-cred && make init"
     echo ""
     echo " For detailed info, run: ./2.getRegistrationInfo.sh"
+    echo "\$\$ENDPOINT[Horizon Dashboard](http://0.0.0.0/dashboard)"
+    echo "\$\$CREDENTIAL[Admin Login](admin / ${ADMIN_PASSWORD})"
 else
     echo " DevStack installation FAILED (exit code: $STACK_EXIT)"
     echo " Check logs: /opt/stack/logs/stack.sh.log"

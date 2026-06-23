@@ -114,6 +114,7 @@ sudo docker run -d \
   telegraf > /dev/null
 
 echo "Setup completed successfully. Gateway is running on Port 9101."
+echo "\$\$ENDPOINT[GPU Metrics](http://0.0.0.0:9101/metrics)"
 echo "Active containers:"
 if [ "$GPU_TYPE" = "nvidia" ]; then
   sudo docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "node-exporter|dcgm-exporter|telegraf"

@@ -40,3 +40,4 @@ PID=$(ps -ef | grep scope | awk '{print $2}')
 
 echo "[Start Scope: complete] PID=$PID"
 echo "$IP:4040"
+echo "\$\$ENDPOINT[Weave Scope](http://0.0.0.0:4040)"

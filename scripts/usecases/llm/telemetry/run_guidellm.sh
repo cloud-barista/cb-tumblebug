@@ -273,6 +273,11 @@ run_benchmark() {
   else
     echo "  (no output files generated)"
   fi
+  for ext in json csv html; do
+    if [ -f "$RESULT_DIR/benchmarks.$ext" ]; then
+      echo "\$\$FILEPATH[Results ${ext^^}]($RESULT_DIR/benchmarks.$ext)"
+    fi
+  done
   echo "------------------------------------------"
 }
 

@@ -1218,6 +1218,12 @@ print_summary() {
   echo "curl -s http://127.0.0.1:${NGINX_DASHBOARD_PORT}/api/status | jq ."
   echo "curl -s http://127.0.0.1:${HERMES_API_PORT}/health | jq ."
   echo "============================================================"
+  echo "\$\$ENDPOINT[Hermes Dashboard](http://0.0.0.0:${NGINX_DASHBOARD_PORT}/chat)"
+  echo "\$\$ENDPOINT[Hermes API](http://0.0.0.0:${HERMES_API_PORT}/v1)"
+  if [ "$SKIP_VLLM" != "true" ]; then
+    echo "\$\$ENDPOINT[vLLM API](http://0.0.0.0:${VLLM_PORT}/v1)"
+  fi
+  echo "\$\$FILEPATH[Deploy Log](${LOG_FILE})"
 }
 
 # -----------------------------

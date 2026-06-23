@@ -33,3 +33,4 @@ sudo systemctl status ollama --no-pager
 # List models on Ollama
 echo "Listing models on Ollama"
 OLLAMA_HOST=0.0.0.0:3000 ollama list
+echo "\$\$ENDPOINT[Ollama API](http://0.0.0.0:3000)"
