@@ -357,6 +357,20 @@ if [ ${#RESULT_DIRS[@]} -gt 0 ]; then
   for d in "${RESULT_DIRS[@]}"; do
     echo -e "   - $(basename "$d")"
   done
+  echo -e "\033[1;35m──────────────────────────────────────────────────────────────────────\033[0m"
+
+  # Compress all result directories into a single zip for bulk download
+  ZIP_NAME="bench_${RUN_TIMESTAMP}_all.zip"
+  ZIP_FILE="$WORK_DIR/$ZIP_NAME"
+  if ! command -v zip >/dev/null 2>&1; then
+    echo "  Installing zip..."
+    sudo apt-get install -y zip -qq
+  fi
+  echo -e "  \033[1;36m📦 Compressing all results...\033[0m"
+  (cd "$WORK_DIR" && zip -r "$ZIP_NAME" bench_${RUN_TIMESTAMP}_*/ > /dev/null)
+  ZIP_SIZE=$(du -sh "$ZIP_FILE" | cut -f1)
+  echo -e "  Archive : $ZIP_NAME ($ZIP_SIZE)"
+  echo "\$\$FILEPATH[Download All Results (zip)]($ZIP_FILE)"
 else
   echo -e "  \033[1;33m⚠ No result files generated.\033[0m"
 fi
