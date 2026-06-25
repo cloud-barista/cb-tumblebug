@@ -3329,13 +3329,14 @@ const docTemplate = `{
                             "Queued",
                             "Handling",
                             "Completed",
+                            "CompletedWithError",
                             "Failed",
                             "Timeout",
                             "Cancelled",
                             "Interrupted"
                         ],
                         "type": "string",
-                        "description": "Filter by command status (Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses.",
+                        "description": "Filter by command status (Queued, Handling, Completed, CompletedWithError, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses.",
                         "name": "status",
                         "in": "query"
                     },
@@ -6617,6 +6618,7 @@ const docTemplate = `{
                                 "Queued",
                                 "Handling",
                                 "Completed",
+                                "CompletedWithError",
                                 "Failed",
                                 "Timeout"
                             ],
@@ -6756,6 +6758,7 @@ const docTemplate = `{
                                 "Queued",
                                 "Handling",
                                 "Completed",
+                                "CompletedWithError",
                                 "Failed",
                                 "Timeout"
                             ],
@@ -23430,6 +23433,7 @@ const docTemplate = `{
                 "Queued",
                 "Handling",
                 "Completed",
+                "CompletedWithError",
                 "Failed",
                 "Timeout",
                 "Cancelled",
@@ -23439,6 +23443,7 @@ const docTemplate = `{
                 "CommandStatusQueued",
                 "CommandStatusHandling",
                 "CommandStatusCompleted",
+                "CommandStatusCompletedWithError",
                 "CommandStatusFailed",
                 "CommandStatusTimeout",
                 "CommandStatusCancelled",
