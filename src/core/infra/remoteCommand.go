@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"os"
 	"reflect"
@@ -73,6 +74,181 @@ func acquireBastionSlot(bastionEndpoint string) {
 func releaseBastionSlot(bastionEndpoint string) {
 	if sem, ok := bastionSemaphores.Load(bastionEndpoint); ok {
 		<-sem.(chan struct{})
+	}
+}
+
+// sshDialJitterMaxMs is the upper bound for the per-connection randomized
+// pre-dial delay. When a fan-out command targets N VMs sharing one bastion
+// (e.g. 100 nodes in a single subnet), N parallel SSH dials from the same
+// source IP collide on OpenSSH's PerSourceMaxStartups limiter and a chunk
+// of them gets RST/dropped. A small randomized sleep before the actual dial
+// spreads the burst over time, dramatically improving success rate without
+// noticeably impacting small-N cases. Override with TB_SSH_DIAL_JITTER_MAX_MS.
+var sshDialJitterMaxMs = func() int {
+	if v := os.Getenv("TB_SSH_DIAL_JITTER_MAX_MS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			return n
+		}
+	}
+	return 750
+}()
+
+// applySSHDialJitter sleeps for a small random duration before an SSH dial,
+// respecting the parent context (returns early on cancellation). Safe to call
+// even when the cap is 0 (becomes a no-op).
+func applySSHDialJitter(ctx context.Context) {
+	if sshDialJitterMaxMs <= 0 {
+		return
+	}
+	d := time.Duration(rand.Intn(sshDialJitterMaxMs+1)) * time.Millisecond
+	if d == 0 {
+		return
+	}
+	select {
+	case <-ctx.Done():
+	case <-time.After(d):
+	}
+}
+
+// nonZeroExitError signals that the SSH transport succeeded end-to-end and
+// the remote command ran to completion, but returned a non-zero exit status
+// (e.g. user's script reported failure, kernel OOM-killer terminated a child,
+// `exit 1`). This is operationally very different from a transport failure
+// (bastion auth, dial timeout, mid-session EOF) — the user usually wants to
+// see stdout/stderr and treat it as the command's own problem, not retry.
+// Callers can detect it with errors.As / isNonZeroExitError.
+type nonZeroExitError struct {
+	inner error
+}
+
+func (e *nonZeroExitError) Error() string { return e.inner.Error() }
+func (e *nonZeroExitError) Unwrap() error { return e.inner }
+
+// isNonZeroExitError reports whether err (or anything it wraps) represents a
+// successfully-transported remote command that simply returned non-zero.
+func isNonZeroExitError(err error) bool {
+	var nz *nonZeroExitError
+	return errors.As(err, &nz)
+}
+
+// isTransientSSHError reports whether err looks like a *transport*-level
+// hiccup where a single immediate re-dial is likely to succeed: peer closed
+// the connection mid-stream, broken pipe, EOF before exit status, etc.
+//
+// It is intentionally narrow — these MUST NOT match:
+//   - command's own non-zero exit (nonZeroExitError above; e.g. apt-get fail)
+//   - context cancellation / deadline
+//   - auth failures ("no supported methods remain")
+//
+// because retrying those would either be wrong (re-running a side-effecting
+// command on success would change semantics) or pointless (auth won't suddenly
+// work on a redial).
+func isTransientSSHError(err error) bool {
+	if err == nil || isNonZeroExitError(err) {
+		return false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	// ExitMissingError: remote session closed without sending an exit status.
+	// Typically caused by the channel being torn down mid-execution (kernel
+	// reboot, network blip on the bastion, sshd restart) — worth one retry.
+	var missing *ssh.ExitMissingError
+	if errors.As(err, &missing) {
+		return true
+	}
+	if errors.Is(err, io.EOF) {
+		return true
+	}
+	msg := err.Error()
+	// Auth failures are NOT transient — retrying with the same key will fail
+	// the same way.
+	if strings.Contains(msg, "no supported methods remain") ||
+		strings.Contains(msg, "unable to authenticate") {
+		return false
+	}
+	transientPatterns := []string{
+		"EOF",
+		"connection reset by peer",
+		"broken pipe",
+		"use of closed network connection",
+		"unexpected packet",
+		"session closed",
+		"connection refused", // sshd briefly unavailable (restart / load)
+	}
+	for _, p := range transientPatterns {
+		if strings.Contains(msg, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// dialSSHWithContext is a context-aware replacement for ssh.Dial. The stdlib
+// ssh.Dial ignores caller context and waits up to ClientConfig.Timeout
+// (default 30s) before giving up — meaning when our retryCtx fires earlier
+// (e.g. at 20s on the first attempt), the abandoned ssh.Dial keeps trying
+// against the target for 10s+ more, in our case PILING extra parallel
+// connections onto an already-saturated bastion. During a 100-VM fan-out
+// this single oversight was producing the failure spiral observed in
+// production: 285 "Connection timeout. Attempt N/3" entries for what
+// should have been at most 99×3 = 297 attempts, with hundreds of
+// concurrent zombie dials hammering one bastion VM.
+//
+// We split ssh.Dial into a cancellable net.Dialer.DialContext + a watcher-
+// closed ssh.NewClientConn. When ctx fires, the underlying TCP connection
+// is force-closed which unblocks NewClientConn within milliseconds.
+func dialSSHWithContext(ctx context.Context, network, addr string, config *ssh.ClientConfig) (*ssh.Client, error) {
+	d := &net.Dialer{Timeout: config.Timeout}
+	conn, err := d.DialContext(ctx, network, addr)
+	if err != nil {
+		return nil, err
+	}
+	// Watcher: force-close the TCP connection if ctx is cancelled before
+	// the SSH handshake finishes, so NewClientConn unblocks immediately
+	// instead of waiting on its own internal timeout.
+	handshakeDone := make(chan struct{})
+	go func() {
+		select {
+		case <-ctx.Done():
+			conn.Close()
+		case <-handshakeDone:
+		}
+	}()
+	ncc, chans, reqs, err := ssh.NewClientConn(conn, addr, config)
+	close(handshakeDone)
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+	return ssh.NewClient(ncc, chans, reqs), nil
+}
+
+// dialTunnelWithContext is the same pattern for the bastion->target
+// tunnel step. *ssh.Client.Dial doesn't accept a context either, so we
+// race it against ctx.Done and force-close the parent SSH client to
+// unblock the tunnel-open if the caller has lost interest. Without this,
+// a slow bastion can hold our goroutines blocked in client.Dial well
+// past the parent retry window.
+func dialTunnelWithContext(ctx context.Context, client *ssh.Client, network, addr string) (net.Conn, error) {
+	type result struct {
+		conn net.Conn
+		err  error
+	}
+	resCh := make(chan result, 1)
+	go func() {
+		c, err := client.Dial(network, addr)
+		resCh <- result{c, err}
+	}()
+	select {
+	case r := <-resCh:
+		return r.conn, r.err
+	case <-ctx.Done():
+		// Force-close the bastion client to unblock the in-flight Dial.
+		// The goroutine will return an error shortly via resCh; we don't
+		// wait for it because the parent has already lost interest.
+		client.Close()
+		return nil, ctx.Err()
 	}
 }
 
@@ -340,38 +516,140 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 	var resultArray []model.SshCmdResult
 	var completedCount int32
 
-	// Preprocess commands for each Node and add command status info
-	nodeCommands := make(map[string][]string)
-	nodeCommandIndices := make(map[string]int) // Track command index for each VM
-
+	// Preprocess commands for each Node and add command status info.
+	//
+	// We parallelize this with a worker pool. Each iteration is a small CPU
+	// op (processCommand string substitution) plus one etcd KV round-trip in
+	// AddCommandStatusInfo. With 100+ targets the sequential loop spent up to
+	// a couple of seconds blocking BEFORE any SSH could even start, and
+	// flooded the log with one "Command status added" line per node. The
+	// per-Node etcd keys are independent so parallelization is race-free.
+	// We cap concurrency to keep etcd from being slammed by a 1000-VM batch.
+	const preprocessConcurrency = 20
+	type preResult struct {
+		nodeId   string
+		commands []string
+		cmdIndex int
+		err      error
+	}
+	preCh := make(chan preResult, len(nodeList))
+	preSem := make(chan struct{}, preprocessConcurrency)
+	var preWg sync.WaitGroup
 	for i, targetNodeId := range nodeList {
-		processedCommands := make([]string, len(req.Command))
-		for j, cmd := range req.Command {
-			processedCmd, err := processCommand(cmd, nsId, infraId, targetNodeId, i)
-			if err != nil {
-				return nil, err
+		preWg.Add(1)
+		go func(i int, targetNodeId string) {
+			defer preWg.Done()
+			preSem <- struct{}{}
+			defer func() { <-preSem }()
+
+			processedCommands := make([]string, len(req.Command))
+			for j, cmd := range req.Command {
+				processedCmd, err := processCommand(cmd, nsId, infraId, targetNodeId, i)
+				if err != nil {
+					preCh <- preResult{nodeId: targetNodeId, err: err}
+					return
+				}
+				processedCommands[j] = processedCmd
 			}
-			processedCommands[j] = processedCmd
+			combinedCommand := strings.Join(req.Command, " && ")
+			combinedProcessedCommand := strings.Join(processedCommands, " && ")
+			cmdIndex, err := AddCommandStatusInfo(nsId, infraId, targetNodeId, xRequestId, combinedCommand, combinedProcessedCommand)
+			if err != nil {
+				// AddCommandStatusInfo failure is non-fatal: we still run the
+				// command, just without tracking. Mirror the previous behavior.
+				log.Error().Err(err).Str("nodeId", targetNodeId).Msg("Failed to add command status info")
+				preCh <- preResult{nodeId: targetNodeId, commands: processedCommands}
+				return
+			}
+			preCh <- preResult{nodeId: targetNodeId, commands: processedCommands, cmdIndex: cmdIndex}
+		}(i, targetNodeId)
+	}
+	preWg.Wait()
+	close(preCh)
+
+	nodeCommands := make(map[string][]string, len(nodeList))
+	nodeCommandIndices := make(map[string]int, len(nodeList))
+	for r := range preCh {
+		if r.err != nil {
+			// processCommand error — preserves prior fail-fast semantics for
+			// $$Func token errors etc.
+			return nil, r.err
 		}
-		nodeCommands[targetNodeId] = processedCommands
-
-		// Add command status info for this Node
-		combinedCommand := strings.Join(req.Command, " && ")
-		combinedProcessedCommand := strings.Join(processedCommands, " && ")
-
-		cmdIndex, err := AddCommandStatusInfo(nsId, infraId, targetNodeId, xRequestId, combinedCommand, combinedProcessedCommand)
-		if err != nil {
-			log.Error().Err(err).Str("nodeId", targetNodeId).Msg("Failed to add command status info")
-			// Continue with execution even if status tracking fails
-		} else {
-			nodeCommandIndices[targetNodeId] = cmdIndex
+		nodeCommands[r.nodeId] = r.commands
+		if r.cmdIndex > 0 {
+			nodeCommandIndices[r.nodeId] = r.cmdIndex
 		}
 	}
 
-	// Execute commands in parallel using goroutines with per-Node context
-	for targetNodeId, commands := range nodeCommands {
+	// Execute commands in parallel using goroutines with per-Node context.
+	//
+	// PHASE-BASED SCHEDULING: when a target VM is *also* serving as the bastion
+	// for other targets in the same batch (the classic dense-subnet fan-out:
+	// 100 VMs in one subnet -> 1 auto-picked bastion -> 99 tunnels), running
+	// the bastion's own (potentially heavy) command in parallel with the 99
+	// tunnels HAMMERS that one VM into the ground. In production we have seen
+	// the bastion become unable to respond to TCP SYNs from the tunneling
+	// peers AND fail to finish its own command, even when the command would
+	// take ~60s on an idle VM. Defer such "active-bastion" targets to a
+	// second phase that runs only after every tunneling sibling has finished.
+	// This keeps the bastion VM dedicated to forwarding traffic while the
+	// fan-out is in progress, and removes the contention that was the single
+	// largest driver of failures in dense subnets.
+	//
+	// Nodes are split into:
+	//   phase 1 (parallel): targets whose bastion is *another* VM, or targets
+	//                       that are self-bastion / sole-VM-in-subnet (these
+	//                       don't burden anyone else).
+	//   phase 2 (parallel): targets that are an active bastion for >=1 OTHER
+	//                       target in this batch. Phase 2 starts only after
+	//                       phase 1 fully drains.
+	activeBastions := map[string]bool{}
+	{
+		// Cheap lookup: for each target, find its assigned bastion. If that
+		// bastion ID matches another target in this batch (and is a different
+		// VM), mark the bastion as "active for siblings". Errors during
+		// lookup are non-fatal — we conservatively treat such nodes as
+		// phase-1 so behavior degrades to the previous all-parallel mode.
+		nodeIdSet := make(map[string]bool, len(nodeList))
+		for _, n := range nodeList {
+			nodeIdSet[n] = true
+		}
+		for _, n := range nodeList {
+			bs, err := GetBastionNodes(nsId, infraId, n)
+			if err != nil || len(bs) == 0 {
+				continue
+			}
+			bastionId := bs[0].NodeId
+			if bastionId == "" || bastionId == n {
+				continue // self-bastion — no contention with siblings
+			}
+			if nodeIdSet[bastionId] {
+				activeBastions[bastionId] = true
+			}
+		}
+	}
+
+	var phase1Targets, phase2Targets []string
+	for targetNodeId := range nodeCommands {
+		if activeBastions[targetNodeId] {
+			phase2Targets = append(phase2Targets, targetNodeId)
+		} else {
+			phase1Targets = append(phase1Targets, targetNodeId)
+		}
+	}
+
+	if len(phase2Targets) > 0 {
+		log.Info().
+			Str("xRequestId", xRequestId).
+			Int("phase1Count", len(phase1Targets)).
+			Int("phase2Count", len(phase2Targets)).
+			Strs("deferredBastions", phase2Targets).
+			Msg("Phase-based execution: deferring active-bastion targets to phase 2")
+	}
+
+	launchOne := func(wg *sync.WaitGroup, nodeId string, cmds []string, cmdIndex int) {
 		wg.Add(1)
-		go func(nodeId string, cmds []string, cmdIndex int) {
+		go func() {
 			defer wg.Done()
 
 			// Create per-Node cancellable context (child of parent context)
@@ -396,9 +674,28 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			resultArray = append(resultArray, result)
 			completedCount++
 			resultMutex.Unlock()
-		}(targetNodeId, commands, nodeCommandIndices[targetNodeId])
+		}()
+	}
+
+	// Phase 1: non-active-bastion targets (the bulk of any fan-out).
+	for _, targetNodeId := range phase1Targets {
+		launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId])
 	}
 	wg.Wait() // goroutine sync wg
+
+	// Phase 2: active-bastion targets. They have just stopped serving tunnels
+	// for siblings; their sshd & CPU are free again, so their own command
+	// runs cleanly. Self-bastion direct path is used (bastion == target).
+	if len(phase2Targets) > 0 {
+		log.Info().
+			Str("xRequestId", xRequestId).
+			Int("count", len(phase2Targets)).
+			Msg("Phase 1 drained — launching phase 2 (active-bastion targets)")
+		for _, targetNodeId := range phase2Targets {
+			launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId])
+		}
+		wg.Wait()
+	}
 
 	// Publish CommandDone event to SSE subscribers
 	completedNodes := 0
@@ -523,6 +820,13 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, no
 				Int("cmdIndex", cmdIndex).
 				Msg("Command execution was cancelled")
 			return result
+		} else if isNonZeroExitError(err) {
+			// SSH transport worked end-to-end; the remote command ran and
+			// returned non-zero. Surface this as a distinct status so the UI
+			// can show "the command failed on the VM" (stdout/stderr is the
+			// useful diagnostic) instead of "we couldn't reach the VM".
+			status = model.CommandStatusCompletedWithError
+			summary = "Command ran with non-zero exit (SSH transport OK)"
 		} else {
 			status = model.CommandStatusFailed
 			summary = "Command execution failed"
@@ -713,10 +1017,34 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 		return map[int]string{}, map[int]string{}, err
 	}
 
-	bastionUserName, bastionSshKey, err := VerifySshUserName(bastionNsId, bastionNode.InfraId, bastionNode.NodeId, bastionIp, bastionSshPort, givenUserName)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return map[int]string{}, map[int]string{}, err
+	// SELF-BASTION SHORT-CIRCUIT: when the target VM IS its own bastion, dial
+	// it directly. Going through the SSH-jump-to-self path is wasteful, fragile
+	// (one transient host-key/auth/sshd-MaxStartups hiccup knocks out *both*
+	// the bastion and the target half of the same connection), and obscures
+	// real failures behind a "via bastion" error wrap. Compare by full identity
+	// (Ns + Infra + Node) — empty bastionNsId is normalised above.
+	isSelfBastion := bastionNsId == nsId && bastionNode.InfraId == infraId && bastionNode.NodeId == nodeId
+
+	// BASTION USERNAME RESOLUTION:
+	//   - Self-bastion: target == bastion, so reuse the target's resolved
+	//     userName/key directly. No separate bastion lookup needed.
+	//   - Different VM: the API's req.UserName is for the TARGET — it must NOT
+	//     be forwarded as the bastion's user, because the two VMs may have
+	//     different SSH users (e.g. bastion=cb-user, target=ubuntu). Passing
+	//     givenUserName="default" to a bastion whose stored user is "cb-user"
+	//     is exactly what produced "Bastion SSH connection failed … attempted
+	//     methods [none publickey]" in production. Pass "" so the bastion
+	//     falls back to its own stored userName via GetNodeSshKey.
+	var bastionUserName, bastionSshKey string
+	if isSelfBastion {
+		bastionUserName = targetUserName
+		bastionSshKey = targetPrivateKey
+	} else {
+		bastionUserName, bastionSshKey, err = VerifySshUserName(bastionNsId, bastionNode.InfraId, bastionNode.NodeId, bastionIp, bastionSshPort, "")
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return map[int]string{}, map[int]string{}, err
+		}
 	}
 
 	bastionEndpoint := fmt.Sprintf("%s:%d", bastionIp, bastionSshPort)
@@ -728,6 +1056,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 		Int("bastionPort", bastionSshPort).
 		Str("bastionEndpoint", bastionEndpoint).
 		Str("bastionUserName", bastionUserName).
+		Bool("selfBastion", isSelfBastion).
 		Msg("Bastion connection details")
 
 	bastionSshInfo := model.SshInfo{
@@ -761,10 +1090,34 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 		NodeId:  nodeId,
 	}
 
-	// Execute SSH with context-based timeout and cancellation
+	// Self-bastion: target VM's private IP is not reachable from this process,
+	// but bastionEndpoint IS the same VM's public endpoint. Point the target's
+	// SshInfo at the public endpoint so runSSHWithContext can dial it directly
+	// (it detects self-bastion via bastionTofuCtx == targetTofuCtx below).
+	if isSelfBastion {
+		targetSshInfo.EndPoint = bastionEndpoint
+		log.Info().
+			Str("nodeId", nodeId).
+			Str("endpoint", bastionEndpoint).
+			Msg("Self-bastion detected — will connect directly (no SSH jump)")
+	}
+
 	stdoutResults, stderrResults, err := runSSHWithContext(ctx, bastionSshInfo, targetSshInfo, cmds, bastionTofuCtx, targetTofuCtx)
 	if err != nil {
-		log.Err(err).Msg("Error executing commands")
+		// Enrich the error log so operators can immediately see WHO failed
+		// (bastion vs target identity, endpoints, usernames, mode) without
+		// having to grep the surrounding lines for context.
+		log.Err(err).
+			Str("nsId", nsId).
+			Str("infraId", infraId).
+			Str("targetNodeId", nodeId).
+			Str("targetEndpoint", targetEndpoint).
+			Str("targetUserName", targetUserName).
+			Str("bastionNodeId", bastionNode.NodeId).
+			Str("bastionEndpoint", bastionEndpoint).
+			Str("bastionUserName", bastionUserName).
+			Bool("selfBastion", isSelfBastion).
+			Msg("Error executing commands")
 		return stdoutResults, stderrResults, err
 	}
 	return stdoutResults, stderrResults, nil
@@ -1390,8 +1743,19 @@ func GetNodeSshHostKey(nsId string, infraId string, nodeId string) (model.SshHos
 	return *nodeInfo.SshHostKeyInfo, nil
 }
 
-// runSSHWithContext executes SSH commands with context-based timeout and cancellation support
-// This is the enhanced version of runSSH that properly handles context cancellation
+// runSSHWithContext executes SSH commands with context-based timeout and cancellation support.
+//
+// It transparently handles two connection modes based on the TOFU contexts:
+//   - bastion-tunneled: bastionCtx and targetCtx identify different VMs. We
+//     dial the bastion via SSH, then tunnel a TCP conn to the target, then
+//     run the second SSH handshake over that tunnel.
+//   - self-bastion (direct): bastionCtx == targetCtx, meaning the "bastion"
+//     IS the target VM. The jump-loopback is wasteful (one transient SSH or
+//     host-key hiccup would knock out *both* sides of an otherwise identical
+//     connection), so we skip the bastion SSH entirely and dial the target
+//     endpoint directly. Caller is responsible for setting targetInfo.EndPoint
+//     to a publicly reachable address in this case (private IPs aren't
+//     routable from cb-tumblebug).
 func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, bastionCtx tofuContext, targetCtx tofuContext) (map[int]string, map[int]string, error) {
 	stdoutMap := make(map[int]string)
 	stderrMap := make(map[int]string)
@@ -1403,28 +1767,34 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 	default:
 	}
 
+	// Self-bastion shortcut: when the bastion identifies the same VM as the
+	// target, there is no real jump host. Skip bastion key parsing & config
+	// entirely and dial the target endpoint directly in the loop below.
+	isSelfBastion := bastionCtx == targetCtx
+
 	// Log connection details for debugging
 	log.Debug().
 		Str("bastionEndpoint", bastionInfo.EndPoint).
 		Str("bastionUserName", bastionInfo.UserName).
 		Str("targetEndpoint", targetInfo.EndPoint).
 		Str("targetUserName", targetInfo.UserName).
+		Bool("selfBastion", isSelfBastion).
 		Msg("SSH connection attempt details (with context)")
 
-	// Parse the private key for the bastion host
-	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
-	if err != nil {
-		return stdoutMap, stderrMap, fmt.Errorf("failed to parse bastion private key: %v", err)
-	}
-
-	// Create an SSH client configuration for the bastion host with TOFU host key verification
-	bastionConfig := &ssh.ClientConfig{
-		User: bastionInfo.UserName,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(bastionSigner),
-		},
-		HostKeyCallback: createTOFUHostKeyCallback(bastionCtx),
-		Timeout:         30 * time.Second,
+	// Parse the private key for the bastion host — only needed when we will
+	// actually SSH into the bastion (i.e. not the self-bastion case).
+	var bastionConfig *ssh.ClientConfig
+	if !isSelfBastion {
+		bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
+		if err != nil {
+			return stdoutMap, stderrMap, fmt.Errorf("failed to parse bastion private key: %v", err)
+		}
+		bastionConfig = &ssh.ClientConfig{
+			User:            bastionInfo.UserName,
+			Auth:            []ssh.AuthMethod{ssh.PublicKeys(bastionSigner)},
+			HostKeyCallback: createTOFUHostKeyCallback(bastionCtx),
+			Timeout:         30 * time.Second,
+		}
 	}
 
 	// Parse the private key for the target host
@@ -1448,164 +1818,338 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 		return stdoutMap, stderrMap, fmt.Errorf("invalid target endpoint format: %v", err)
 	}
 
-	log.Info().Msgf("Attempting to connect to target host %s:%s via bastion", targetHost, targetPort)
+	if isSelfBastion {
+		log.Info().Msgf("Attempting direct connection to target host %s:%s (self-bastion)", targetHost, targetPort)
+	} else {
+		log.Info().Msgf("Attempting to connect to target host %s:%s via bastion", targetHost, targetPort)
+	}
 
 	acquireBastionSlot(bastionInfo.EndPoint)
 	defer releaseBastionSlot(bastionInfo.EndPoint)
 
-	retryCount := 3
-	initialTimeout := 20 * time.Second
-	maxTimeout := 60 * time.Second
-	var bastionClient *ssh.Client
-	var conn net.Conn
-	var lastErr error
+	// Anti-thundering-herd: when N targets fan out to the same bastion (e.g.
+	// 100 VMs in one subnet sharing one auto-assigned bastion), simultaneous
+	// dials from a single source IP trip OpenSSH's PerSourceMaxStartups and
+	// MaxStartups, causing a chunk of connections to be RST'd. A small,
+	// randomized pre-dial delay desynchronises the burst with negligible
+	// impact on small-N cases. See applySSHDialJitter for the bound.
+	applySSHDialJitter(ctx)
 
-	for i := range retryCount {
-		// Check if parent context is cancelled before each retry attempt
+	// connectAndRun does one full attempt: dial -> SSH handshake -> execute.
+	// It is wrapped by an outer transient-retry loop (post-handshake EOF /
+	// connection-reset / ExitMissingError get one immediate re-dial). On the
+	// retry path we re-enter this closure with a fresh dial; resources from
+	// the previous attempt have already been released via the deferred
+	// Close() calls inside the closure scope.
+	connectAndRun := func() (map[int]string, map[int]string, error) {
+		stdoutMap := make(map[int]string)
+		stderrMap := make(map[int]string)
+
+		retryCount := 3
+		initialTimeout := 20 * time.Second
+		maxTimeout := 60 * time.Second
+		var bastionClient *ssh.Client
+		var conn net.Conn
+		var lastErr error
+
+		for i := range retryCount {
+			// Check if parent context is cancelled before each retry attempt
+			select {
+			case <-ctx.Done():
+				return stdoutMap, stderrMap, fmt.Errorf("connection cancelled: %w", ctx.Err())
+			default:
+			}
+
+			// Fix timeout calculation: start with initialTimeout for first attempt (i=0)
+			// then progressively increase for subsequent attempts
+			timeout := min(time.Duration(float64(initialTimeout)*(1.0+0.5*float64(i))), maxTimeout)
+
+			log.Debug().Msgf("[Check Target via Bastion] %v:%v (Attempt %d/%d, Timeout: %v)",
+				targetHost, targetPort, i+1, retryCount, timeout)
+
+			// Use parent context as base for timeout context so cancellation propagates
+			retryCtx, retryCancel := context.WithTimeout(ctx, timeout)
+
+			connCh := make(chan net.Conn, 1)
+			errCh := make(chan error, 1)
+			sshClientCh := make(chan *ssh.Client, 1)
+
+			go func() {
+				if isSelfBastion {
+					// Direct TCP dial — no bastion SSH hop. We send a nil *ssh.Client
+					// down sshClientCh so the receiver's defer Close() stays safe.
+					log.Debug().
+						Str("targetEndpoint", targetInfo.EndPoint).
+						Str("targetNodeId", targetCtx.NodeId).
+						Msg("Attempting direct TCP dial to target host (self-bastion)")
+					dialer := &net.Dialer{Timeout: timeout}
+					targetConn, dErr := dialer.DialContext(retryCtx, "tcp", targetInfo.EndPoint)
+					if dErr != nil {
+						dErr = fmt.Errorf("[target-direct] failed to dial target %s (targetNodeId=%s, self-bastion): %v",
+							targetInfo.EndPoint, targetCtx.NodeId, dErr)
+						log.Error().
+							Str("targetEndpoint", targetInfo.EndPoint).
+							Str("targetNodeId", targetCtx.NodeId).
+							Err(dErr).
+							Msg("Direct TCP dial to target failed")
+						errCh <- dErr
+						return
+					}
+					sshClientCh <- nil
+					connCh <- targetConn
+					return
+				}
+
+				// Setup the bastion host connection. dialSSHWithContext is the
+				// context-aware replacement for ssh.Dial — when retryCtx fires
+				// it force-closes the underlying TCP socket and unblocks the
+				// handshake within ms, instead of the stdlib's blind 30s wait.
+				// This is critical during fan-out: without it, every retry
+				// burns an extra zombie goroutine still hammering the bastion.
+				log.Debug().
+					Str("bastionEndpoint", bastionInfo.EndPoint).
+					Str("bastionNodeId", bastionCtx.NodeId).
+					Str("bastionUserName", bastionInfo.UserName).
+					Msg("Attempting to dial bastion host")
+				client, err := dialSSHWithContext(retryCtx, "tcp", bastionInfo.EndPoint, bastionConfig)
+				if err != nil {
+					// Tag the error so the retry/final-wrap layer can call out which
+					// SIDE failed (bastion vs target) instead of presenting a single
+					// opaque "failed to connect to target host" message.
+					err = fmt.Errorf("[bastion] failed to establish SSH connection to bastion %s as user %q (bastionNodeId=%s): %v",
+						bastionInfo.EndPoint, bastionInfo.UserName, bastionCtx.NodeId, err)
+					log.Error().
+						Str("bastionEndpoint", bastionInfo.EndPoint).
+						Str("bastionUserName", bastionInfo.UserName).
+						Str("bastionNodeId", bastionCtx.NodeId).
+						Str("targetNodeId", targetCtx.NodeId).
+						Err(err).
+						Msg("Bastion SSH connection failed")
+					errCh <- err
+					return
+				}
+				log.Debug().Str("bastionEndpoint", bastionInfo.EndPoint).Msg("Successfully connected to bastion host")
+
+				sshClientCh <- client
+
+				// Tunnel dial via bastion. Also context-aware so a saturated
+				// bastion can't hang us past retryCtx — without this, even a
+				// successful bastion handshake could be wasted waiting for
+				// the inner channel open on an overloaded sshd.
+				log.Debug().Str("targetEndpoint", targetInfo.EndPoint).Msg("Attempting to dial target host via bastion")
+				targetConn, err := dialTunnelWithContext(retryCtx, client, "tcp", targetInfo.EndPoint)
+				if err != nil {
+					client.Close()
+					err = fmt.Errorf("[target-via-bastion] failed to dial target %s through bastion %s (bastionNodeId=%s, targetNodeId=%s): %v",
+						targetInfo.EndPoint, bastionInfo.EndPoint, bastionCtx.NodeId, targetCtx.NodeId, err)
+					log.Error().
+						Str("bastionEndpoint", bastionInfo.EndPoint).
+						Str("bastionNodeId", bastionCtx.NodeId).
+						Str("targetEndpoint", targetInfo.EndPoint).
+						Str("targetNodeId", targetCtx.NodeId).
+						Err(err).
+						Msg("Target connection via bastion failed")
+					errCh <- err
+					return
+				}
+				log.Debug().Str("targetEndpoint", targetInfo.EndPoint).Msg("Successfully connected to target host via bastion")
+
+				connCh <- targetConn
+			}()
+
+			select {
+			case conn = <-connCh:
+				bastionClient = <-sshClientCh
+				retryCancel()
+				log.Info().Msgf("Successfully connected to target host on attempt %d", i+1)
+				goto CONNECTION_ESTABLISHED
+			case err := <-errCh:
+				retryCancel()
+				lastErr = err
+				waitTime := time.Duration(3) * time.Second
+				log.Warn().Err(err).Msgf("Failed to connect to target host. Attempt %d/%d. Retrying in %v...",
+					i+1, retryCount, waitTime)
+				// Use select with timer to allow cancellation during wait
+				select {
+				case <-ctx.Done():
+					return stdoutMap, stderrMap, fmt.Errorf("connection cancelled during retry wait: %w", ctx.Err())
+				case <-time.After(waitTime):
+				}
+			case <-retryCtx.Done():
+				retryCancel()
+				// Check if it's parent context cancellation or just timeout
+				if ctx.Err() != nil {
+					// Parent context cancelled - exit immediately
+					return stdoutMap, stderrMap, fmt.Errorf("connection cancelled: %w", ctx.Err())
+				}
+				lastErr = retryCtx.Err()
+				waitTime := time.Duration(3) * time.Second
+				log.Warn().Err(lastErr).Msgf("Connection timeout. Attempt %d/%d. Retrying in %v...",
+					i+1, retryCount, waitTime)
+				// Use select with timer to allow cancellation during wait
+				select {
+				case <-ctx.Done():
+					return stdoutMap, stderrMap, fmt.Errorf("connection cancelled during retry wait: %w", ctx.Err())
+				case <-time.After(waitTime):
+				}
+			}
+		}
+
+		if isSelfBastion {
+			return stdoutMap, stderrMap, fmt.Errorf(
+				"failed to connect directly to target Node %q at %s (as %q) after %d attempts (self-bastion, no jump): %v",
+				targetCtx.NodeId, targetInfo.EndPoint, targetInfo.UserName, retryCount, lastErr)
+		}
+		return stdoutMap, stderrMap, fmt.Errorf(
+			"failed to connect to target Node %q at %s (as %q) via bastion Node %q at %s (as %q) after %d attempts: %v",
+			targetCtx.NodeId, targetInfo.EndPoint, targetInfo.UserName,
+			bastionCtx.NodeId, bastionInfo.EndPoint, bastionInfo.UserName,
+			retryCount, lastErr)
+
+	CONNECTION_ESTABLISHED:
+		// bastionClient is nil in the self-bastion path (we never opened a bastion
+		// SSH session). Guard the deferred Close to avoid a nil-pointer panic.
+		if bastionClient != nil {
+			defer bastionClient.Close()
+		}
+		defer conn.Close()
+
+		// Context-cancellation watcher for the post-dial phase.
+		//
+		// Up to this point dialing is already context-aware (dialSSHWithContext
+		// + dialTunnelWithContext). But the next steps — ssh.NewClientConn (the
+		// SSH handshake on the just-established TCP conn), session creation,
+		// and command execution inside executeCommandsOnSSHClient — all use
+		// stdlib APIs that do NOT accept a context. They only honor the
+		// ssh.ClientConfig.Timeout (default 30s) or block indefinitely on I/O.
+		//
+		// If parent ctx is cancelled (user cancel, infra-level timeout, VM
+		// termination) during this window, those calls would keep running
+		// until their own deadline fires, holding bastion slots and goroutines
+		// for tens of seconds longer than necessary. We close the underlying
+		// conn on ctx.Done so any blocked SSH I/O unblocks within milliseconds
+		// with a "use of closed network connection" — which the caller then
+		// treats as a transport error.
+		watchDone := make(chan struct{})
+		go func() {
+			select {
+			case <-ctx.Done():
+				_ = conn.Close()
+				if bastionClient != nil {
+					_ = bastionClient.Close()
+				}
+			case <-watchDone:
+			}
+		}()
+		defer close(watchDone)
+
+		log.Debug().Msgf("Establishing SSH connection to target host with user: %s", targetInfo.UserName)
+
+		if len(targetInfo.PrivateKey) == 0 {
+			return stdoutMap, stderrMap, fmt.Errorf("empty private key for target host")
+		}
+
+		var ncc ssh.Conn
+		var chans <-chan ssh.NewChannel
+		var reqs <-chan *ssh.Request
+		var sshErr error
+		sshRetryCount := 3
+		var lastSSHErr error
+
+		for i := range sshRetryCount {
+			ncc, chans, reqs, sshErr = ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
+			if sshErr == nil {
+				break
+			}
+
+			lastSSHErr = sshErr
+			log.Warn().Err(sshErr).Msgf("SSH authentication failed. Attempt %d/%d", i+1, sshRetryCount)
+
+			if strings.Contains(sshErr.Error(), "handshake failed") ||
+				strings.Contains(sshErr.Error(), "no supported methods remain") {
+				waitTime := time.Duration(3*(i+1)) * time.Second
+				log.Info().Msgf("Waiting for SSH daemon to initialize. Retrying in %v...", waitTime)
+				// Cancellation-aware sleep: user cancel / parent timeout fires
+				// during the back-off should unblock immediately instead of
+				// holding a bastion slot for the full back-off window.
+				select {
+				case <-ctx.Done():
+					return stdoutMap, stderrMap, fmt.Errorf("operation cancelled during SSH retry wait: %w", ctx.Err())
+				case <-time.After(waitTime):
+				}
+			} else {
+				break
+			}
+		}
+
+		if sshErr != nil {
+			log.Error().Str("user", targetInfo.UserName).
+				Str("endpoint", targetInfo.EndPoint).
+				Err(lastSSHErr).Msg("SSH authentication failed")
+
+			if strings.Contains(lastSSHErr.Error(), "no supported methods remain") {
+				return stdoutMap, stderrMap, fmt.Errorf("SSH authentication failed. Please check: 1) private key is valid 2) user '%s' exists on target 3) authorized_keys is properly configured", targetInfo.UserName)
+			}
+
+			return stdoutMap, stderrMap, fmt.Errorf("failed to establish SSH connection to target host: %v", lastSSHErr)
+		}
+
+		log.Info().Msgf("SSH connection established successfully to %s as user %s", targetInfo.EndPoint, targetInfo.UserName)
+		client := ssh.NewClient(ncc, chans, reqs)
+		defer client.Close()
+
+		return executeCommandsOnSSHClient(ctx, client, cmds)
+	}
+
+	// Outer transient-retry loop. The inner connectAndRun already retries
+	// dial/handshake 3× each, so this layer is specifically for *post-handshake*
+	// hiccups: e.g. the bastion RSTs an established session mid-execution, the
+	// remote sshd dies, or we get an ExitMissingError because the channel closed
+	// without an exit code. One full re-dial usually clears these. Non-transient
+	// errors (auth fail, context cancel, non-zero command exit) bypass the retry
+	// and surface to the caller immediately.
+	const maxOuterAttempts = 2
+	var finalStdout, finalStderr map[int]string
+	var attemptErr error
+	for attempt := 1; attempt <= maxOuterAttempts; attempt++ {
+		finalStdout, finalStderr, attemptErr = connectAndRun()
+		if attemptErr == nil {
+			break
+		}
+		if attempt >= maxOuterAttempts || !isTransientSSHError(attemptErr) {
+			break
+		}
+		log.Warn().
+			Err(attemptErr).
+			Str("targetNodeId", targetCtx.NodeId).
+			Str("bastionNodeId", bastionCtx.NodeId).
+			Bool("selfBastion", isSelfBastion).
+			Int("attempt", attempt).
+			Int("maxAttempts", maxOuterAttempts).
+			Msg("Transient SSH error — reconnecting once with a fresh session")
+		// Small settle delay before redial so we don't immediately re-collide
+		// with whatever caused the first drop. Cancellation-aware.
 		select {
 		case <-ctx.Done():
-			return stdoutMap, stderrMap, fmt.Errorf("connection cancelled: %w", ctx.Err())
-		default:
-		}
-
-		// Fix timeout calculation: start with initialTimeout for first attempt (i=0)
-		// then progressively increase for subsequent attempts
-		timeout := min(time.Duration(float64(initialTimeout)*(1.0+0.5*float64(i))), maxTimeout)
-
-		log.Debug().Msgf("[Check Target via Bastion] %v:%v (Attempt %d/%d, Timeout: %v)",
-			targetHost, targetPort, i+1, retryCount, timeout)
-
-		// Use parent context as base for timeout context so cancellation propagates
-		retryCtx, retryCancel := context.WithTimeout(ctx, timeout)
-
-		connCh := make(chan net.Conn, 1)
-		errCh := make(chan error, 1)
-		sshClientCh := make(chan *ssh.Client, 1)
-
-		go func() {
-			// Setup the bastion host connection
-			log.Debug().Str("bastionEndpoint", bastionInfo.EndPoint).Msg("Attempting to dial bastion host")
-			client, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
-			if err != nil {
-				err = fmt.Errorf("failed to establish SSH connection to bastion host: %v", err)
-				log.Error().
-					Str("bastionEndpoint", bastionInfo.EndPoint).
-					Str("bastionUserName", bastionInfo.UserName).
-					Err(err).
-					Msg("Bastion SSH connection failed")
-				errCh <- err
-				return
-			}
-			log.Debug().Str("bastionEndpoint", bastionInfo.EndPoint).Msg("Successfully connected to bastion host")
-
-			sshClientCh <- client
-
-			log.Debug().Str("targetEndpoint", targetInfo.EndPoint).Msg("Attempting to dial target host via bastion")
-			targetConn, err := client.Dial("tcp", targetInfo.EndPoint)
-			if err != nil {
-				client.Close()
-				log.Error().
-					Str("targetEndpoint", targetInfo.EndPoint).
-					Err(err).
-					Msg("Target connection via bastion failed")
-				errCh <- err
-				return
-			}
-			log.Debug().Str("targetEndpoint", targetInfo.EndPoint).Msg("Successfully connected to target host via bastion")
-
-			connCh <- targetConn
-		}()
-
-		select {
-		case conn = <-connCh:
-			bastionClient = <-sshClientCh
-			retryCancel()
-			log.Info().Msgf("Successfully connected to target host on attempt %d", i+1)
-			goto CONNECTION_ESTABLISHED
-		case err := <-errCh:
-			retryCancel()
-			lastErr = err
-			waitTime := time.Duration(3) * time.Second
-			log.Warn().Err(err).Msgf("Failed to connect to target host. Attempt %d/%d. Retrying in %v...",
-				i+1, retryCount, waitTime)
-			// Use select with timer to allow cancellation during wait
-			select {
-			case <-ctx.Done():
-				return stdoutMap, stderrMap, fmt.Errorf("connection cancelled during retry wait: %w", ctx.Err())
-			case <-time.After(waitTime):
-			}
-		case <-retryCtx.Done():
-			retryCancel()
-			// Check if it's parent context cancellation or just timeout
-			if ctx.Err() != nil {
-				// Parent context cancelled - exit immediately
-				return stdoutMap, stderrMap, fmt.Errorf("connection cancelled: %w", ctx.Err())
-			}
-			lastErr = retryCtx.Err()
-			waitTime := time.Duration(3) * time.Second
-			log.Warn().Err(lastErr).Msgf("Connection timeout. Attempt %d/%d. Retrying in %v...",
-				i+1, retryCount, waitTime)
-			// Use select with timer to allow cancellation during wait
-			select {
-			case <-ctx.Done():
-				return stdoutMap, stderrMap, fmt.Errorf("connection cancelled during retry wait: %w", ctx.Err())
-			case <-time.After(waitTime):
-			}
+			return finalStdout, finalStderr, fmt.Errorf("operation cancelled before transient retry: %w", ctx.Err())
+		case <-time.After(2 * time.Second):
 		}
 	}
+	return finalStdout, finalStderr, attemptErr
+}
 
-	return stdoutMap, stderrMap, fmt.Errorf("failed to connect to target host via bastion after %d attempts: %v", retryCount, lastErr)
-
-CONNECTION_ESTABLISHED:
-	defer bastionClient.Close()
-	defer conn.Close()
-
-	log.Debug().Msgf("Establishing SSH connection to target host with user: %s", targetInfo.UserName)
-
-	if len(targetInfo.PrivateKey) == 0 {
-		return stdoutMap, stderrMap, fmt.Errorf("empty private key for target host")
-	}
-
-	var ncc ssh.Conn
-	var chans <-chan ssh.NewChannel
-	var reqs <-chan *ssh.Request
-	sshRetryCount := 3
-	var lastSSHErr error
-
-	for i := range sshRetryCount {
-		ncc, chans, reqs, err = ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
-		if err == nil {
-			break
-		}
-
-		lastSSHErr = err
-		log.Warn().Err(err).Msgf("SSH authentication failed. Attempt %d/%d", i+1, sshRetryCount)
-
-		if strings.Contains(err.Error(), "handshake failed") ||
-			strings.Contains(err.Error(), "no supported methods remain") {
-			waitTime := time.Duration(3*(i+1)) * time.Second
-			log.Info().Msgf("Waiting for SSH daemon to initialize. Retrying in %v...", waitTime)
-			time.Sleep(waitTime)
-		} else {
-			break
-		}
-	}
-
-	if err != nil {
-		log.Error().Str("user", targetInfo.UserName).
-			Str("endpoint", targetInfo.EndPoint).
-			Err(lastSSHErr).Msg("SSH authentication failed")
-
-		if strings.Contains(lastSSHErr.Error(), "no supported methods remain") {
-			return stdoutMap, stderrMap, fmt.Errorf("SSH authentication failed. Please check: 1) private key is valid 2) user '%s' exists on target 3) authorized_keys is properly configured", targetInfo.UserName)
-		}
-
-		return stdoutMap, stderrMap, fmt.Errorf("failed to establish SSH connection to target host: %v", lastSSHErr)
-	}
-
-	log.Info().Msgf("SSH connection established successfully to %s as user %s", targetInfo.EndPoint, targetInfo.UserName)
-	client := ssh.NewClient(ncc, chans, reqs)
-	defer client.Close()
+// executeCommandsOnSSHClient runs the given commands sequentially on an already
+// established *ssh.Client and returns per-command stdout/stderr maps. It honors
+// context cancellation between commands and during execution, and — when the
+// context carries SSH log metadata (see withSSHLogMeta) — publishes line-level
+// events to the SSE log broker for live streaming to UI clients.
+//
+// Both connection modes inside runSSHWithContext (bastion-tunneled and
+// self-bastion direct) converge here once an *ssh.Client is established, so
+// the SSH session/IO/streaming logic lives in exactly one place.
+func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []string) (map[int]string, map[int]string, error) {
+	stdoutMap := make(map[int]string)
+	stderrMap := make(map[int]string)
 
 	// Run the commands with context support
 	for i, cmd := range cmds {
@@ -1767,6 +2311,16 @@ CONNECTION_ESTABLISHED:
 			stderrMap[i] = fmt.Sprintf("(%s)\nStderr: %s", waitErr, stderrBuf.String())
 			stdoutMap[i] = stdoutBuf.String()
 			log.Warn().Err(waitErr).Int("commandIndex", i).Msg("Command execution failed")
+			// Distinguish a clean non-zero exit (SSH transport OK, the command
+			// itself reported failure) from a transport-level failure (EOF,
+			// reset, dial timeout). Callers act on these very differently:
+			// non-zero exit is the user's program's problem and stdout/stderr
+			// is the real diagnostic; transport failure means a retry / a
+			// different bastion / a routing fix is needed.
+			var exitErr *ssh.ExitError
+			if errors.As(waitErr, &exitErr) {
+				return stdoutMap, stderrMap, &nonZeroExitError{inner: waitErr}
+			}
 			return stdoutMap, stderrMap, waitErr
 		}
 
@@ -3356,8 +3910,11 @@ func UpdateCommandStatusInfo(nsId, infraId, nodeId string, index int, status mod
 
 		(*commandStatus)[cmdIndex].Status = status
 
-		// Only set CompletedTime for final states (Completed, Failed, Timeout)
+		// Only set CompletedTime for final states (terminal). CompletedWithError
+		// is included so UI / accounting sees a real finish time even when the
+		// command exited non-zero — the SSH session DID complete.
 		if status == model.CommandStatusCompleted ||
+			status == model.CommandStatusCompletedWithError ||
 			status == model.CommandStatusFailed ||
 			status == model.CommandStatusTimeout {
 			(*commandStatus)[cmdIndex].CompletedTime = currentTime.Format(time.RFC3339)
@@ -3938,7 +4495,8 @@ func GetInfraActiveCommands(nsId, infraId string, statusFilter []model.CommandEx
 // isTerminalStatus returns true if the status represents a terminal (finished) state
 func isTerminalStatus(status model.CommandExecutionStatus) bool {
 	switch status {
-	case model.CommandStatusCompleted, model.CommandStatusFailed, model.CommandStatusTimeout,
+	case model.CommandStatusCompleted, model.CommandStatusCompletedWithError,
+		model.CommandStatusFailed, model.CommandStatusTimeout,
 		model.CommandStatusCancelled, model.CommandStatusInterrupted:
 		return true
 	default:
