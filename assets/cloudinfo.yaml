@@ -39,6 +39,8 @@ cloud:
         - ap-northeast-1a
         - ap-northeast-1b
         - ap-northeast-1c
+        - ap-northeast-1d
+        - ap-northeast-1e
       ap-northeast-2:
         description: South Korea (Seoul)
         location:
@@ -67,6 +69,7 @@ cloud:
         - ap-southeast-1a
         - ap-southeast-1b
         - ap-southeast-1c
+        - ap-southeast-1d
       # ap-southeast-2:
       #   description: Australia (Sydney)
       #   location:
@@ -124,6 +127,7 @@ cloud:
         zone:
         - cn-chengdu-a
         - cn-chengdu-b
+        - cn-chengdu-c
       cn-guangzhou:
         description: China (Guangzhou)
         location:
@@ -227,6 +231,7 @@ cloud:
         - cn-wulanchabu-a
         - cn-wulanchabu-b
         - cn-wulanchabu-c
+        - cn-wulanchabu-d
       cn-zhangjiakou:
         description: China (Zhangjiakou)
         location:
@@ -264,6 +269,7 @@ cloud:
           longitude: 55.2962
         zone:
         - me-east-1a
+        - me-east-1b
       us-east-1:
         description: US (Virginia)
         location:
@@ -324,6 +330,7 @@ cloud:
           longitude: 120.9799964
         zone:
         - ap-southeast-6a
+        - ap-southeast-6b
       cn-wuhan-lr:
         description: China (Wuhan - Local Region)
         location:
@@ -340,6 +347,33 @@ cloud:
           longitude: -99.1332
         zone:
         - na-south-1a
+      cn-zhongwei:
+        description: China (Zhongwei)
+        location:
+          display: China (Zhongwei)
+          latitude: 37.5167
+          longitude: 105.1893
+        zone:
+        - cn-zhongwei-a
+        - cn-zhongwei-b
+      ap-southeast-8:
+        description: Malaysia (Johor)
+        location:
+          display: Johor, Malaysia
+          latitude: 1.4927
+          longitude: 103.7414
+        zone:
+        - ap-southeast-8a
+        - ap-southeast-8b
+      eu-west-2:
+        description: France (Paris)
+        location:
+          display: Paris, France
+          latitude: 48.8566
+          longitude: 2.3522
+        zone:
+        - eu-west-2a
+        - eu-west-2b
   aws:
     description: Amazon Web Services
     driver: aws-driver-v1.0.so
@@ -498,16 +532,6 @@ cloud:
         - eu-west-3a
         - eu-west-3b
         - eu-west-3c
-      # me-south-1:
-      #   description: Middle East (Bahrain)
-      #   location:
-      #     display: Middle East (Bahrain)
-      #     latitude: 25.0
-      #     longitude: 49.6
-      #   zone:
-      #   - me-south-1a
-      #   - me-south-1b
-      #   - me-south-1c
       sa-east-1:
         description: South America (Sao Paulo)
         location:
@@ -641,6 +665,66 @@ cloud:
         - ca-west-1a
         - ca-west-1b
         - ca-west-1c
+      ap-east-2:
+        description: Asia Pacific (Taipei)
+        location:
+          display: Taipei, Taiwan
+          latitude: 25.0329694
+          longitude: 121.5654177
+        zone:
+        - ap-east-2a
+        - ap-east-2b
+        - ap-east-2c
+      ap-southeast-5:
+        description: Asia Pacific (Malaysia)
+        location:
+          display: Kuala Lumpur, Malaysia
+          latitude: 3.1390
+          longitude: 101.6869
+        zone:
+        - ap-southeast-5a
+        - ap-southeast-5b
+        - ap-southeast-5c
+      ap-southeast-6:
+        description: Asia Pacific (New Zealand)
+        location:
+          display: Auckland, New Zealand
+          latitude: -36.8485
+          longitude: 174.7633
+        zone:
+        - ap-southeast-6a
+        - ap-southeast-6b
+        - ap-southeast-6c
+      ap-southeast-7:
+        description: Asia Pacific (Thailand)
+        location:
+          display: Bangkok, Thailand
+          latitude: 13.7563
+          longitude: 100.5018
+        zone:
+        - ap-southeast-7a
+        - ap-southeast-7b
+        - ap-southeast-7c
+      mx-central-1:
+        description: Mexico (Central)
+        location:
+          display: Querétaro, Mexico
+          latitude: 20.5887932
+          longitude: -100.3898881
+        zone:
+        - mx-central-1a
+        - mx-central-1b
+        - mx-central-1c
+      me-south-1:
+        description: Middle East (Bahrain)
+        location:
+          display: Middle East (Bahrain)
+          latitude: 25.0
+          longitude: 49.6
+        zone:
+        - me-south-1a
+        - me-south-1b
+        - me-south-1c
   azure:
     description: Microsoft Azure
     driver: azure-driver-v1.0.so
@@ -1125,6 +1209,26 @@ cloud:
         - '1'
         - '2'
         - '3'
+      belgiumcentral:
+        desc: Belgium Central
+        location:
+          display: Brussels, Belgium
+          latitude: 50.8503
+          longitude: 4.3517
+        zone:
+        - '1'
+        - '2'
+        - '3'
+      denmarkeast:
+        desc: Denmark East
+        location:
+          display: Copenhagen, Denmark
+          latitude: 55.6761
+          longitude: 12.5683
+        zone:
+        - '1'
+        - '2'
+        - '3'
       # australiacentral2:
       #  desc: ''
       #  location:
@@ -1275,6 +1379,16 @@ cloud:
         - asia-southeast2-a
         - asia-southeast2-b
         - asia-southeast2-c
+      asia-southeast3:
+        description: Bangkok Thailand
+        location:
+          display: Bangkok, Thailand
+          latitude: 13.7563
+          longitude: 100.5018
+        zone:
+        - asia-southeast3-a
+        - asia-southeast3-b
+        - asia-southeast3-c
       australia-southeast1:
         description: Sydney Australia
         location:
@@ -1619,6 +1733,8 @@ cloud:
   ibm:
     description: IBM Cloud
     driver: ibm-driver-v1.0.so
+    link:
+    - https://cloud.ibm.com/docs/overview?topic=overview-locations
     region:
       au-syd:
         description: Sydney (Australia)
@@ -1730,9 +1846,31 @@ cloud:
         - ca-mon-1
         - ca-mon-2
         - ca-mon-3
+      in-che:
+        description: Chennai - Airtel (India)
+        location:
+          display: Chennai, India
+          latitude: 13.0827
+          longitude: 80.2707
+        zone:
+        - in-che-1
+        - in-che-2
+        - in-che-3
+      in-mum:
+        description: Mumbai - Airtel (India)
+        location:
+          display: Mumbai, India
+          latitude: 19.076
+          longitude: 72.8777
+        zone:
+        - in-mum-1
+        - in-mum-2
+        - in-mum-3
   kt:
     description: KT Cloud (VPC)
     driver: kt-driver-v1.0.so
+    link:
+    - https://manual.cloud.kt.com/kt/
     region:
       KR1:
         id: KR1
@@ -1743,9 +1881,38 @@ cloud:
           longitude: 126.874278
         zone:
         - DX-M1
+      KR-CN:
+        id: KR-CN
+        description: Cheonan (South Korea)
+        location:
+          display: Cheonan (South Korea)
+          latitude: 36.815
+          longitude: 127.1139
+        zone:
+        - DX-Central
+      KR-CJ:
+        id: KR-CJ
+        description: Cheongju (South Korea)
+        location:
+          display: Cheongju (South Korea)
+          latitude: 36.6424
+          longitude: 127.489
+        zone:
+        - DX-DCN-CJ
+      KR-YS:
+        id: KR-YS
+        description: Yongsan - Seoul (South Korea)
+        location:
+          display: Yongsan - Seoul (South Korea)
+          latitude: 37.5326
+          longitude: 126.9907
+        zone:
+        - DX-YS
   ncp:
     description: Naver Cloud Platform (VPC)
     driver: ncp-driver-v1.0.so
+    link:
+    - https://guide.ncloud-docs.com/docs/environment-environmentproducts
     region:
       KR:
         id: KR
@@ -1780,6 +1947,8 @@ cloud:
   nhn:
     description: NHN Cloud
     driver: nhn-driver-v1.0.so
+    link:
+    - https://docs.nhncloud.com/en/nhncloud/en/region-guide/
     region:
       KR1:
         id: KR1
@@ -1811,6 +1980,16 @@ cloud:
         zone:
         - jp-pub-a
         - jp-pub-b
+      KR3:
+        id: KR3
+        description: Gwangju (South Korea)
+        location:
+          display: Gwangju (South Korea)
+          latitude: 35.1595
+          longitude: 126.8526
+        zone:
+        - kr3-pub-a
+        - kr3-pub-b
       # US1:
       #   id: US1
       #   desc: US West (California)
@@ -1850,6 +2029,8 @@ cloud:
   tencent:
     description: Tencent Cloud
     driver: tencent-driver-v1.0.so
+    link:
+    - https://www.tencentcloud.com/document/product/213/6091
     region:
       ap-bangkok:
         description: Bangkok
@@ -1894,6 +2075,7 @@ cloud:
           latitude: 23.12911
           longitude: 113.264385
         zone:
+        - ap-guangzhou-5
         - ap-guangzhou-6
         - ap-guangzhou-7
       ap-hongkong:
@@ -2021,3 +2203,12 @@ cloud:
           longitude: -46.64681
         zone:
         - sa-saopaulo-1
+      me-saudi-arabia:
+        description: Saudi Arabia (Riyadh)
+        location:
+          display: Riyadh, Saudi Arabia
+          latitude: 24.7136
+          longitude: 46.6753
+        zone:
+        - me-saudi-arabia-1
+        - me-saudi-arabia-2
