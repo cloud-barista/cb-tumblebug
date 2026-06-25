@@ -1236,6 +1236,15 @@ const (
 	// CommandStatusCompleted indicates the command execution completed successfully
 	CommandStatusCompleted CommandExecutionStatus = "Completed"
 
+	// CommandStatusCompletedWithError indicates that the SSH transport
+	// succeeded and the remote command ran to completion, but the command
+	// itself exited with a non-zero status. Typical causes: the user's
+	// script reported an error, the remote process was killed by the kernel
+	// (e.g. OOM-killer), or any non-zero exit from the program. Distinct
+	// from CommandStatusFailed (which signals an SSH/transport-level
+	// failure — bastion auth, dial timeout, mid-session EOF, etc.).
+	CommandStatusCompletedWithError CommandExecutionStatus = "CompletedWithError"
+
 	// CommandStatusFailed indicates the command execution failed
 	CommandStatusFailed CommandExecutionStatus = "Failed"
 

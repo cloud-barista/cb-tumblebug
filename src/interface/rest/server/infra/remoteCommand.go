@@ -615,7 +615,7 @@ func RestGetNodeCommandStatus(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param nodeId path string true "Node ID" default(g1-1)
-// @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,Failed,Timeout)
+// @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,CompletedWithError,Failed,Timeout)
 // @Param xRequestId query string false "Filter by X-Request-ID"
 // @Param commandContains query string false "Filter commands containing this text"
 // @Param startTimeFrom query string false "Filter commands started from this time (RFC3339 format)"
@@ -730,7 +730,7 @@ func RestDeleteNodeCommandStatus(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param nodeId path string true "Node ID" default(g1-1)
-// @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,Failed,Timeout)
+// @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,CompletedWithError,Failed,Timeout)
 // @Param xRequestId query string false "Filter by X-Request-ID"
 // @Param commandContains query string false "Filter commands containing this text"
 // @Param startTimeFrom query string false "Filter commands started from this time (RFC3339 format)"
@@ -953,7 +953,7 @@ func RestDeleteNodeSshHostKey(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param status query string false "Filter by command status (Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses." Enums(Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted)
+// @Param status query string false "Filter by command status (Queued, Handling, Completed, CompletedWithError, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses." Enums(Queued, Handling, Completed, CompletedWithError, Failed, Timeout, Cancelled, Interrupted)
 // @Success 200 {object} model.ExecutionTaskListResponse
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
