@@ -2710,14 +2710,16 @@ paths:
           default: infra01
       - name: status
         in: query
-        description: "Filter by command status (Queued, Handling, Completed, Failed,\
-          \ Timeout, Cancelled, Interrupted). If not specified, returns all statuses."
+        description: "Filter by command status (Queued, Handling, Completed, CompletedWithError,\
+          \ Failed, Timeout, Cancelled, Interrupted). If not specified, returns all\
+          \ statuses."
         schema:
           type: string
           enum:
           - Queued
           - Handling
           - Completed
+          - CompletedWithError
           - Failed
           - Timeout
           - Cancelled
@@ -5413,6 +5415,7 @@ paths:
             - Queued
             - Handling
             - Completed
+            - CompletedWithError
             - Failed
             - Timeout
       - name: xRequestId
@@ -5529,6 +5532,7 @@ paths:
             - Queued
             - Handling
             - Completed
+            - CompletedWithError
             - Failed
             - Timeout
       - name: xRequestId
@@ -19842,6 +19846,7 @@ components:
       - Queued
       - Handling
       - Completed
+      - CompletedWithError
       - Failed
       - Timeout
       - Cancelled
@@ -19850,6 +19855,7 @@ components:
       - CommandStatusQueued
       - CommandStatusHandling
       - CommandStatusCompleted
+      - CommandStatusCompletedWithError
       - CommandStatusFailed
       - CommandStatusTimeout
       - CommandStatusCancelled
