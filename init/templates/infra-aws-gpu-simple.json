@@ -1,0 +1,33 @@
+{
+  "resourceType": "infra",
+  "name": "infra-aws-gpu-simple",
+  "description": "Simple Infra with GPU VMs (NVIDIA L4, L40S) on AWS",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "nvidial4",
+        "nodeGroupSize": 1,
+        "label": {
+          "accelerator": "gpu"
+        },
+        "specId": "aws+us-west-2+g6.8xlarge",
+        "imageId": "ami-071b54254e6f59477",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 100,
+        "connectionName": "aws-us-west-2"
+      },
+      {
+        "name": "nvidial40s",
+        "nodeGroupSize": 1,
+        "label": {
+          "accelerator": "gpu"
+        },
+        "specId": "aws+us-west-2+g6e.2xlarge",
+        "imageId": "ami-071b54254e6f59477",
+        "rootDiskType": "gp2",
+        "rootDiskSize": 100,
+        "connectionName": "aws-us-west-2"
+      }
+    ]
+  }
+}
