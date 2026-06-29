@@ -1842,3 +1842,206 @@ type OverallRiskInfo struct {
 	// PrimaryRiskFactor indicates what the main risk factor is: "spec", "image", "combination", "none"
 	PrimaryRiskFactor string `json:"primaryRiskFactor"`
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// infraAutopilot — declarative, resilient infra provisioning
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ImageRequirement specifies OS/GPU image requirements for autopilot provisioning.
+type ImageRequirement struct {
+	OSType     string `json:"osType" example:"ubuntu" validate:"required"`
+	OSVersion  string `json:"osVersion,omitempty" example:"22.04"`
+	IsGPUImage *bool  `json:"isGPUImage,omitempty" example:"false"`
+}
+
+// PlacementPolicy controls node distribution strategy across candidate locations.
+type PlacementPolicy struct {
+	// Strategy: "pack" fills one location before next,
+	// "spread" round-robins across distinct locations,
+	// "balanced" keeps counts within MaxSkew of each other.
+	Strategy     string `json:"strategy,omitempty" example:"pack" enums:"pack,spread,balanced"`
+	MinLocations int    `json:"minLocations,omitempty" example:"2"`
+	MaxSkew      int    `json:"maxSkew,omitempty" example:"5"`
+}
+
+// NodeSpec defines one category of nodes in an InfraAutopilotReq.
+type NodeSpec struct {
+	Name             string            `json:"name" validate:"required" example:"gpu-workers"`
+	DesiredCount     int               `json:"desiredCount" validate:"required,min=1" example:"4"`
+	MinCount         int               `json:"minCount,omitempty" example:"2"`
+	MaxPerLocation   int               `json:"maxPerLocation,omitempty" example:"2"`
+	PlacementPolicy  PlacementPolicy   `json:"placementPolicy,omitempty"`
+	SpecFilter       RecommendSpecReq `json:"specFilter" validate:"required"`
+	ImageRequirement ImageRequirement  `json:"imageRequirement" validate:"required"`
+	RootDiskType     string            `json:"rootDiskType,omitempty" example:"default"`
+	RootDiskSize     int               `json:"rootDiskSize,omitempty" example:"0"`
+	Label            map[string]string `json:"label,omitempty"`
+}
+
+// AutopilotPolicy controls retry and partial-failure behavior.
+type AutopilotPolicy struct {
+	Parallelism          int    `json:"parallelism,omitempty" example:"2"`
+	MaxAttemptsPerSpec   int    `json:"maxAttemptsPerSpec,omitempty" example:"10"`
+	ExtendCandidates     bool   `json:"extendCandidates,omitempty" example:"true"`
+	CrossCSPTolerancePct int    `json:"crossCSPTolerancePct,omitempty" example:"20"`
+	OnPartialFailure     string `json:"onPartialFailure,omitempty" example:"refine" enums:"continue,rollback,refine"`
+	TimeoutMinutes       int    `json:"timeoutMinutes,omitempty" example:"60"`
+}
+
+// InfraAutopilotReq is the request body for POST /:nsId/infraAutopilot.
+type InfraAutopilotReq struct {
+	Name            string            `json:"name" validate:"required" example:"my-infra"`
+	NodeSpecs       []NodeSpec        `json:"nodeSpecs" validate:"required,min=1"`
+	Policy          AutopilotPolicy   `json:"policy,omitempty"`
+	InstallMonAgent string            `json:"installMonAgent,omitempty" example:"no"`
+	PostCommand     *InfraCmdReq      `json:"postCommand,omitempty"`
+	Description     string            `json:"description,omitempty"`
+	Label           map[string]string `json:"label,omitempty"`
+}
+
+// ProvisioningAttempt records one pre-flight review pass for a candidate spec.
+type ProvisioningAttempt struct {
+	NodeSpecName        string  `json:"nodeSpecName"`
+	NodeGroupName       string  `json:"nodeGroupName"`
+	SpecId              string  `json:"specId"`
+	ConnectionName      string  `json:"connectionName,omitempty"`
+	Zone                string  `json:"zone,omitempty"`
+	ImageId             string  `json:"imageId,omitempty"`
+	RequestedCount      int     `json:"requestedCount"`
+	SucceededCount      int     `json:"succeededCount"`
+	TrimmedCount        int     `json:"trimmedCount"`
+	PoolIndex           int     `json:"poolIndex"`
+	Status              string  `json:"status"`
+	FailureReason       string  `json:"failureReason,omitempty"`
+	ReviewRejected      bool    `json:"reviewRejected,omitempty"`
+	ZoneOverridden      bool    `json:"zoneOverridden,omitempty"`
+	DiskOverridden      bool    `json:"diskOverridden,omitempty"`
+	RiskLevel           string  `json:"riskLevel,omitempty"`
+	CostPerHour         float64 `json:"costPerHour,omitempty"`
+	AcceleratorModel    string  `json:"acceleratorModel,omitempty"`
+	AcceleratorCount    int     `json:"acceleratorCount,omitempty"`
+	AcceleratorMemoryGB float32 `json:"acceleratorMemoryGB,omitempty"`
+	StartedAt           string  `json:"startedAt,omitempty"`
+	CompletedAt         string  `json:"completedAt,omitempty"`
+}
+
+// NodeSpecResult summarizes provisioning outcome for one NodeSpec.
+type NodeSpecResult struct {
+	NodeSpecName     string   `json:"nodeSpecName"`
+	DesiredCount     int      `json:"desiredCount"`
+	ProvisionedCount int      `json:"provisionedCount"`
+	Fulfilled        bool     `json:"fulfilled"`
+	MinFulfilled     bool     `json:"minFulfilled"`
+	NodeGroupIds     []string `json:"nodeGroupIds"`
+	LocationsUsed    []string `json:"locationsUsed"`
+}
+
+// AutopilotStats aggregates overall provisioning statistics.
+type AutopilotStats struct {
+	TotalAttempts     int      `json:"totalAttempts"`
+	Succeeded         int      `json:"succeeded"`
+	Failed            int      `json:"failed"`
+	TrimmedCount      int      `json:"trimmedCount"`
+	NodeGroupCount    int      `json:"nodeGroupCount"`
+	LocationsUsed     []string `json:"locationsUsed"`
+	ElapsedSeconds    int64    `json:"elapsedSeconds"`
+	WastedCostPerHour float64  `json:"wastedCostPerHour,omitempty"`
+}
+
+// InfraAutopilotResult embeds InfraInfo with autopilot-specific metadata.
+type InfraAutopilotResult struct {
+	InfraInfo
+	NodeSpecResults      []NodeSpecResult      `json:"nodeSpecResults"`
+	ProvisioningAttempts []ProvisioningAttempt `json:"provisioningAttempts"`
+	AutopilotStats       AutopilotStats        `json:"autopilotStats"`
+}
+
+// CandidateReview holds per-candidate pre-flight review result.
+type CandidateReview struct {
+	PoolIndex           int      `json:"poolIndex"`
+	SpecId              string   `json:"specId"`
+	ProviderName        string   `json:"providerName"`
+	RegionName          string   `json:"regionName"`
+	ConnectionName      string   `json:"connectionName"`
+	CspSpecName         string   `json:"cspSpecName,omitempty"`
+	VCPU                float32  `json:"vCPU"`
+	MemoryGiB           float32  `json:"memoryGiB"`
+	AcceleratorType     string   `json:"acceleratorType,omitempty"`
+	AcceleratorModel    string   `json:"acceleratorModel,omitempty"`
+	AcceleratorCount    int      `json:"acceleratorCount,omitempty"`
+	AcceleratorMemoryGB float32  `json:"acceleratorMemoryGB,omitempty"`
+	CostPerHour         float64  `json:"costPerHour"`
+	ResolvedImageId     string   `json:"resolvedImageId,omitempty"`
+	IsValid             bool     `json:"isValid"`
+	InvalidReasons      []string `json:"invalidReasons,omitempty"`
+	IsCapacityIssue     bool     `json:"isCapacityIssue,omitempty"`
+	SuggestedZone       string   `json:"suggestedZone,omitempty"`
+	SuggestedSystemDisk string   `json:"suggestedSystemDisk,omitempty"`
+	RiskLevel           string   `json:"riskLevel"`
+	RiskReasons         []string `json:"riskReasons,omitempty"`
+	// PlannedNodeGroupName is pre-assigned by the planning phase (review) so the
+	// execution phase can use the exact same node group name without re-deriving it.
+	PlannedNodeGroupName  string `json:"plannedNodeGroupName,omitempty"`
+	// PlannedRequestedCount is the node count this candidate should request during execution.
+	PlannedRequestedCount int    `json:"plannedRequestedCount,omitempty"`
+}
+
+// NodeSpecReview holds review results for one NodeSpec.
+type NodeSpecReview struct {
+	NodeSpecName       string            `json:"nodeSpecName"`
+	DesiredCount       int               `json:"desiredCount"`
+	Candidates         []CandidateReview `json:"candidates"`
+	ValidCandidates    int               `json:"validCandidates"`
+	Feasibility        string            `json:"feasibility"`
+	ExpectedNodeGroups int               `json:"expectedNodeGroups"`
+	CostPerHourMin     float64           `json:"costPerHourMin"`
+	CostPerHourMax     float64           `json:"costPerHourMax"`
+}
+
+// ReviewSummary aggregates review results across all NodeSpecs.
+type ReviewSummary struct {
+	Feasibility         string   `json:"feasibility"`
+	DesiredTotal        int      `json:"desiredTotal"`
+	ValidCandidates     int      `json:"validCandidates"`
+	HighRiskCandidates  int      `json:"highRiskCandidates"`
+	CostPerHourMin      float64  `json:"costPerHourMin"`
+	CostPerHourMax      float64  `json:"costPerHourMax"`
+	UnreachableSpecs    []string `json:"unreachableSpecs,omitempty"`
+	ConfirmedStockZones []string `json:"confirmedStockZones,omitempty"`
+}
+
+// InfraAutopilotReviewResult is the response for POST /:nsId/infraAutopilotReview.
+type InfraAutopilotReviewResult struct {
+	Name    string           `json:"name"`
+	Reviews []NodeSpecReview `json:"reviews"`
+	Summary ReviewSummary    `json:"summary"`
+}
+
+// ActiveAttempt describes a currently in-progress provisioning attempt.
+type ActiveAttempt struct {
+	AttemptIndex   int    `json:"attemptIndex"`
+	SpecId         string `json:"specId"`
+	Zone           string `json:"zone,omitempty"`
+	RequestedCount int    `json:"requestedCount"`
+	PoolIndex      int    `json:"poolIndex"`
+	StartedAt      string `json:"startedAt"`
+	ElapsedSeconds int64  `json:"elapsedSeconds"`
+}
+
+// NodeSpecStatus describes the autopilot progress for one NodeSpec.
+type NodeSpecStatus struct {
+	NodeSpecName     string                `json:"nodeSpecName"`
+	DesiredCount     int                   `json:"desiredCount"`
+	ProvisionedCount int                   `json:"provisionedCount"`
+	Status           string                `json:"status"`
+	ActiveAttempt    *ActiveAttempt        `json:"activeAttempt,omitempty"`
+	Attempts         []ProvisioningAttempt `json:"attempts,omitempty"`
+}
+
+// InfraAutopilotStatus is the response for GET /:nsId/infraAutopilot/:infraId/status.
+type InfraAutopilotStatus struct {
+	InfraId        string           `json:"infraId"`
+	InfraStatus    string           `json:"infraStatus"`
+	Specs          []NodeSpecStatus `json:"specs"`
+	ElapsedSeconds int64            `json:"elapsedSeconds"`
+}

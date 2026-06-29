@@ -22,6 +22,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -430,6 +431,52 @@ func RestDelAllSharedResources(c echo.Context) error {
 		}
 	}
 
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestRegisterSharedResourceDependenciesRequest is the request body for RestRegisterSharedResourceDependencies.
+type RestRegisterSharedResourceDependenciesRequest struct {
+	// ConnectionName limits the scan to a single connection. If empty, all connections
+	// with shared resources in the namespace are scanned automatically.
+	ConnectionName string `json:"connectionName" example:""`
+	// InfraNamePrefix is prepended to the registered infra names (default: "dep").
+	InfraNamePrefix string `json:"infraNamePrefix" example:"dep"`
+}
+
+// RestRegisterSharedResourceDependencies godoc
+// @ID RegisterSharedResourceDependencies
+// @Summary Register orphaned CSP resources blocking shared resource deletion
+// @Description Finds CSP resources (VMs, VNets, SGs, SSHKeys) that exist on the CSP but are
+// @Description no longer tracked in CB-TB, causing DependencyViolation errors when trying to
+// @Description delete shared resources (e.g. `DELETE /ns/{nsId}/sharedResources`).
+// @Description
+// @Description When `connectionName` is omitted, all connections that have shared resources
+// @Description in the namespace are scanned automatically.
+// @Description
+// @Description Discovered resources are registered with the given `infraNamePrefix` (default: "dep")
+// @Description so they can be inspected and cleanly deleted through CB-TB afterwards.
+// @Tags [Namespace] Namespace
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param Request body RestRegisterSharedResourceDependenciesRequest false "Optional: connectionName and infraNamePrefix"
+// @Param option query string false "CSV of resource types to scan (default: vNet,securityGroup,sshKey,node)" example("vNet,securityGroup,sshKey,node")
+// @Success 200 {object} model.RegisterResourceAllResult
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/sharedResources/recoverDependencies [post]
+func RestRegisterSharedResourceDependencies(c echo.Context) error {
+	ctx := c.Request().Context()
+	nsId := c.Param("nsId")
+	option := c.QueryParam("option")
+
+	u := &RestRegisterSharedResourceDependenciesRequest{}
+	if err := c.Bind(u); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content, err := infra.RegisterSharedResourceDependencies(ctx, nsId, u.ConnectionName, u.InfraNamePrefix, option)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

@@ -61,3 +61,18 @@ csps:
       - "*sles-12*"                  # SUSE Linux Enterprise 12 — EOL Oct 2024
       - "*sles12*"                   # SUSE Linux Enterprise 12 (no-dash variant)
     regions: {}
+
+  azure:
+    description: "Azure image ignore patterns"
+    # metadata_filters match against key-value pairs in the Azure image metadata.
+    # Unlike name patterns, these check CSP-reported fields directly.
+    metadata_filters:
+      # Hyper-V Generation 1 images are excluded because:
+      #   - Modern Azure VM families (NVads V710, DCas, ECas, etc.) require Gen2.
+      #   - Gen1-only VM specs (Av2 series) are retired from new RI sales Jul 2026,
+      #     with full retirement on Nov 15, 2028.
+      #   - Mixing Gen1 images with Gen2-only VMs causes boot failures at provision time.
+      - key: HyperVGeneration
+        value: V1
+        description: "Hyper-V Generation 1 images — excluded; modern Azure VMs require Gen2"
+    regions: {}

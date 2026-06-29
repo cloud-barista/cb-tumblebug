@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 )
 
@@ -38,11 +37,9 @@ func ResolveLatestUrn(ctx context.Context, region, publisher, offer, sku string)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get Azure credentials: %w", err)
 	}
-	credential, err := azidentity.NewClientSecretCredential(
-		creds.TenantID, creds.ClientID, creds.ClientSecret, nil,
-	)
+	credential, err := getOrCreateCredential(creds)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create Azure credential: %w", err)
+		return "", "", fmt.Errorf("failed to get Azure credential: %w", err)
 	}
 	client, err := armcompute.NewVirtualMachineImagesClient(creds.SubscriptionID, credential, nil)
 	if err != nil {

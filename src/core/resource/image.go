@@ -1329,7 +1329,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 
 		// Pre-filter: skip images matching cloudimage_ignore.yaml (e.g., ParallelCluster AMIs)
 		if fetchProviderName != "" {
-			if shouldSkipImage(spiderImage.IId.NameId, spiderImage.OSDistribution, fetchProviderName, fetchRegionName) {
+			if shouldSkipImage(spiderImage.IId.NameId, spiderImage.OSDistribution, fetchProviderName, fetchRegionName, spiderImage.KeyValueList) {
 				spiderImageList.Image[i] = model.SpiderImageInfo{}
 				continue
 			}
@@ -2838,15 +2838,86 @@ func applyCspSpecificImageFiltering(images []model.ImageInfo, specInfo model.Spe
 	switch csp.ResolveCloudPlatform(specInfo.ProviderName) {
 	case csp.NCP:
 		return filterImagesByCorrespondingIds(images, specInfo)
-	// Add more CSP-specific filtering logic here as needed
-	// case "aws":
-	//     return filterImagesByHypervisor(images, specInfo)
-	// case "azure":
-	//     return filterImagesByGeneration(images, specInfo)
+	case csp.Azure:
+		return filterImagesByHyperVGeneration(images, specInfo)
 	default:
 		// No specific filtering for other CSPs
 		return images
 	}
+}
+
+// filterImagesByHyperVGeneration filters Azure images to match the Hyper-V generation
+// required by the spec.
+//
+// Azure VM sizes declare which Hyper-V generations they support via the HyperVGenerations
+// field in their spec details:
+//
+//   - "V1"     — VM can only boot Generation 1 images (e.g., Standard_A1_v2)
+//   - "V2"     — VM can only boot Generation 2 images (e.g., Standard_NV4ads_V710_v5)
+//   - "V1,V2"  — VM supports both (majority of current Azure VM sizes)
+//   - absent   — unknown; no filtering applied (safe fallback)
+//
+// When the spec is generation-exclusive (V1-only or V2-only), images of the wrong
+// generation are excluded. If no images of the required generation are found, all
+// images are returned as a fallback so provisioning is not hard-blocked.
+func filterImagesByHyperVGeneration(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	// Read HyperVGenerations from spec details (e.g., "V2" or "V1,V2")
+	var specGen string
+	for _, kv := range specInfo.Details {
+		if kv.Key == "HyperVGenerations" {
+			specGen = strings.TrimSpace(kv.Value)
+			break
+		}
+	}
+
+	// If spec supports both generations or the field is absent, no restriction needed.
+	supportsV1 := strings.Contains(specGen, "V1")
+	supportsV2 := strings.Contains(specGen, "V2")
+	if specGen == "" || (supportsV1 && supportsV2) {
+		return images
+	}
+
+	// Determine required generation for exclusive specs.
+	var requiredGen string
+	switch {
+	case supportsV1 && !supportsV2:
+		requiredGen = "V1"
+	case supportsV2 && !supportsV1:
+		requiredGen = "V2"
+	default:
+		return images
+	}
+
+	// Keep images whose HyperVGeneration matches the required generation, or whose
+	// generation is unspecified (treated as compatible — older catalog entries may
+	// lack this metadata).
+	var filtered []model.ImageInfo
+	for _, img := range images {
+		imgGen := ""
+		for _, kv := range img.Details {
+			if kv.Key == "HyperVGeneration" {
+				imgGen = strings.TrimSpace(kv.Value)
+				break
+			}
+		}
+		if imgGen == "" || imgGen == requiredGen {
+			filtered = append(filtered, img)
+		}
+	}
+
+	if len(filtered) == 0 {
+		log.Warn().Msgf(
+			"Azure spec %s requires HyperVGeneration %s but no matching images found; using all images as fallback",
+			specInfo.Id, requiredGen,
+		)
+		return images
+	}
+
+	log.Info().Msgf(
+		"Azure HyperVGeneration filter: spec=%s requires %s-only, filtered from %d to %d images",
+		specInfo.Id, requiredGen, len(images), len(filtered),
+	)
+	return filtered
 }
 
 // filterImagesByCorrespondingIds filters images based on CorrespondingImageIds from spec details
@@ -2955,6 +3026,28 @@ func loadCloudImageIgnoreConfig() (*model.CloudImageIgnoreConfig, error) {
 							}
 						}
 
+						if metaRaw, exists := cspData["metadata_filters"]; exists && metaRaw != nil {
+							if metaList, ok := metaRaw.([]any); ok {
+								for _, mRaw := range metaList {
+									if mMap, ok := mRaw.(map[string]any); ok {
+										var mf model.MetadataFilter
+										if k, ok := mMap["key"].(string); ok {
+											mf.Key = k
+										}
+										if v, ok := mMap["value"].(string); ok {
+											mf.Value = v
+										}
+										if d, ok := mMap["description"].(string); ok {
+											mf.Description = d
+										}
+										if mf.Key != "" && mf.Value != "" {
+											cspConfig.MetadataFilters = append(cspConfig.MetadataFilters, mf)
+										}
+									}
+								}
+							}
+						}
+
 						if regionsRaw, exists := cspData["regions"]; exists && regionsRaw != nil {
 							if regionsMap, ok := regionsRaw.(map[string]any); ok {
 								cspConfig.Regions = make(map[string]model.RegionIgnorePatterns)
@@ -3054,9 +3147,10 @@ func matchIgnorePattern(text, pattern, source string) bool {
 	return re.MatchString(text)
 }
 
-// shouldSkipImage returns true if the image matches any pattern in cloudimage_ignore.yaml.
-// combinedInfo should be imageName + " " + osDistribution (case-insensitive matching applied internally).
-func shouldSkipImage(imageName, osDistribution, providerName, regionName string) bool {
+// shouldSkipImage returns true if the image matches any filter in cloudimage_ignore.yaml.
+// Name/OS patterns are checked against imageName + " " + osDistribution (case-insensitive).
+// Metadata filters are checked against the image's KeyValueList (exact case-insensitive match).
+func shouldSkipImage(imageName, osDistribution, providerName, regionName string, kvList []model.KeyValue) bool {
 	config, err := loadCloudImageIgnoreConfig()
 	if err != nil || config == nil {
 		return false
@@ -3087,6 +3181,15 @@ func shouldSkipImage(imageName, osDistribution, providerName, regionName string)
 	if regionPatterns, ok := cspConfig.Regions[regionName]; ok {
 		for _, pattern := range regionPatterns.Patterns {
 			if matchIgnorePattern(combined, pattern, "csps.*.regions") {
+				return true
+			}
+		}
+	}
+
+	// Check metadata filters (key-value pairs in the image's CSP metadata)
+	for _, mf := range cspConfig.MetadataFilters {
+		for _, kv := range kvList {
+			if kv.Key == mf.Key && strings.EqualFold(kv.Value, mf.Value) {
 				return true
 			}
 		}

@@ -488,6 +488,17 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 			continue
 		}
 
+		// For Terminate: skip VMs already in Terminated state.
+		// CheckAllowedTransition returns nil for Terminate+Terminated (idempotent),
+		// so without this guard the bulk path would overwrite their status back to
+		// Terminating, causing StatusAgent to poll a deleted CSP resource and flip
+		// the VM to Undefined.
+		if strings.EqualFold(action, model.ActionTerminate) &&
+			strings.EqualFold(nodeInfo.Status, model.StatusTerminated) {
+			log.Debug().Msgf("[ControlNodesInParallel] Skipping already-terminated VM %s", nodeId)
+			continue
+		}
+
 		providerName := nodeInfo.ConnectionConfig.ProviderName
 		regionName := nodeInfo.Region.Region
 
@@ -1259,7 +1270,9 @@ func isTransientNetworkError(err error) bool {
 		strings.Contains(s, "broken pipe") ||
 		strings.Contains(s, "i/o timeout") ||
 		strings.Contains(s, "context deadline exceeded") ||
-		strings.Contains(s, "Client.Timeout")
+		strings.Contains(s, "Client.Timeout") ||
+		strings.Contains(s, "TLS handshake timeout") ||
+		strings.Contains(s, "ClientError.NetworkError")
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable

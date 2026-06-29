@@ -9093,6 +9093,211 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/infraAutopilot": {
+            "post": {
+                "description": "Create a multi-cloud infra using the autopilot engine, which automatically resolves\ncandidate specs and images for each NodeSpec, reviews each pair for compatibility\nand availability, then provisions node groups until the DesiredCount is satisfied\nor all candidates are exhausted.\n\n**Key Features:**\n- Automatic spec and image resolution per NodeSpec\n- Pre-flight ReviewSpecImagePair validation before each provisioning attempt\n- Respects MaxPerLocation and PlacementPolicy for geographic distribution\n- Configurable retry limits via AutopilotPolicy.MaxAttemptsPerSpec\n- Returns detailed attempt history with success/failure reasons\n\n**Provisioning Strategy:**\n1. For each NodeSpec, call RecommendSpec with the provided SpecFilter\n2. For each candidate spec, search for a matching image using ImageRequirement\n3. Run ReviewSpecImagePair; skip invalid pairs\n4. Apply suggested zone/disk overrides from the review\n5. Provision a node group and subtract from remaining count\n6. Continue until DesiredCount fulfilled or candidates exhausted",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Create infra using declarative autopilot provisioning",
+                "operationId": "PostInfraAutopilot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Autopilot infra creation request",
+                        "name": "infraAutopilotReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraAutopilotReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Created infra with autopilot metadata including per-NodeSpec results and attempt history",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraAutopilotResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or missing required fields",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during provisioning",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infraAutopilot/{infraId}/status": {
+            "get": {
+                "description": "Returns a lightweight status snapshot of an infra created by autopilot,\nincluding overall infra status and per-NodeSpec provisioning progress.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Get autopilot provisioning status for an infra",
+                "operationId": "GetInfraAutopilotStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Autopilot provisioning status",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraAutopilotStatus"
+                        }
+                    },
+                    "404": {
+                        "description": "Namespace or infra not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infraAutopilotReview": {
+            "post": {
+                "description": "Review and validate an InfraAutopilotReq without creating any resources.\nFor each NodeSpec in the request, the endpoint resolves candidate specs (via RecommendSpec),\nfinds matching images, and runs ReviewSpecImagePair on each candidate.\nThe result contains per-NodeSpec candidate reviews, validity flags, risk levels, cost estimates,\nsuggested zones/disks, and an overall feasibility summary.\n\n**Use Cases:**\n- Validate autopilot requests before committing to provisioning\n- Estimate cost ranges for planned infra\n- Identify specs with no valid candidates early\n- Check availability zones and disk recommendations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "Pre-flight review for autopilot infra provisioning",
+                "operationId": "PostInfraAutopilotReview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Autopilot infra request to review",
+                        "name": "infraAutopilotReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraAutopilotReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pre-flight review result with per-NodeSpec candidate details and overall feasibility summary",
+                        "schema": {
+                            "$ref": "#/definitions/model.InfraAutopilotReviewResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or missing required fields",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during review",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/infraDynamic": {
             "post": {
                 "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for Infra creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal node specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates node provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static Infra:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use ` + "`" + `/recommendSpec` + "`" + ` to find suitable node specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use ` + "`" + `/infraDynamicCheckRequest` + "`" + ` to validate configuration before deployment\n4. **Optional Preview**: Use ` + "`" + `/infraDynamicReview` + "`" + ` to estimate costs and review configuration\n5. **Deployment**: Submit Infra dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **` + "`" + `continue` + "`" + `** (default): Create Infra with successful nodes, failed nodes remain for manual refinement\n- **` + "`" + `rollback` + "`" + `**: Delete entire Infra if any node fails (all-or-nothing deployment)\n- **` + "`" + `refine` + "`" + `**: Automatically clean up failed nodes, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **` + "`" + `hold` + "`" + `**: Create Infra object but hold node provisioning for manual approval\n- **Normal**: Proceed with immediate node provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"nodeGroups\": [\n{\n\"name\": \"aws-web-servers\",\n\"nodeGroupSize\": \"3\",\n\"specId\": \"aws+us-east-1+t3.medium\",\n\"imageId\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"nodeGroupSize\": \"2\",\n\"specId\": \"azure+eastus+Standard_B2s\",\n\"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**Performance Considerations:**\n- node provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 nodes) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
@@ -16724,6 +16929,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/sharedResources/recoverDependencies": {
+            "post": {
+                "description": "Finds CSP resources (VMs, VNets, SGs, SSHKeys) that exist on the CSP but are\nno longer tracked in CB-TB, causing DependencyViolation errors when trying to\ndelete shared resources (e.g. ` + "`" + `DELETE /ns/{nsId}/sharedResources` + "`" + `).\n\nWhen ` + "`" + `connectionName` + "`" + ` is omitted, all connections that have shared resources\nin the namespace are scanned automatically.\n\nDiscovered resources are registered with the given ` + "`" + `infraNamePrefix` + "`" + ` (default: \"dep\")\nso they can be inspected and cleanly deleted through CB-TB afterwards.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Namespace] Namespace"
+                ],
+                "summary": "Register orphaned CSP resources blocking shared resource deletion",
+                "operationId": "RegisterSharedResourceDependencies",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Optional: connectionName and infraNamePrefix",
+                        "name": "Request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/resource.RestRegisterSharedResourceDependenciesRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"vNet,securityGroup,sshKey,node\"",
+                        "description": "CSV of resource types to scan (default: vNet,securityGroup,sshKey,node)",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RegisterResourceAllResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/stream/cmd/infra/{infraId}": {
             "get": {
                 "description": "Subscribe to Server-Sent Events (SSE) for real-time command execution logs.\nUse the xRequestId returned from POST /ns/{nsId}/cmd/infra/{infraId}?async=true to connect.\nEvents: CommandStatus (status transitions), CommandLog (stdout/stderr lines), CommandDone (terminal).",
@@ -22578,6 +22850,32 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ActiveAttempt": {
+            "type": "object",
+            "properties": {
+                "attemptIndex": {
+                    "type": "integer"
+                },
+                "elapsedSeconds": {
+                    "type": "integer"
+                },
+                "poolIndex": {
+                    "type": "integer"
+                },
+                "requestedCount": {
+                    "type": "integer"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
         "model.AgentInstallContent": {
             "type": "object",
             "properties": {
@@ -22750,6 +23048,72 @@ const docTemplate = `{
                         "\u003e="
                     ],
                     "example": "\u003e="
+                }
+            }
+        },
+        "model.AutopilotPolicy": {
+            "type": "object",
+            "properties": {
+                "crossCSPTolerancePct": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "extendCandidates": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "maxAttemptsPerSpec": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "onPartialFailure": {
+                    "type": "string",
+                    "enum": [
+                        "continue",
+                        "rollback",
+                        "refine"
+                    ],
+                    "example": "refine"
+                },
+                "parallelism": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "timeoutMinutes": {
+                    "type": "integer",
+                    "example": 60
+                }
+            }
+        },
+        "model.AutopilotStats": {
+            "type": "object",
+            "properties": {
+                "elapsedSeconds": {
+                    "type": "integer"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "locationsUsed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nodeGroupCount": {
+                    "type": "integer"
+                },
+                "succeeded": {
+                    "type": "integer"
+                },
+                "totalAttempts": {
+                    "type": "integer"
+                },
+                "trimmedCount": {
+                    "type": "integer"
+                },
+                "wastedCostPerHour": {
+                    "type": "number"
                 }
             }
         },
@@ -23200,6 +23564,88 @@ const docTemplate = `{
                     "description": "TaskId is the cancelled task ID",
                     "type": "string",
                     "example": "cmd-g1-1-req123-1"
+                }
+            }
+        },
+        "model.CandidateReview": {
+            "type": "object",
+            "properties": {
+                "acceleratorCount": {
+                    "type": "integer"
+                },
+                "acceleratorMemoryGB": {
+                    "type": "number"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "costPerHour": {
+                    "type": "number"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "invalidReasons": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isCapacityIssue": {
+                    "type": "boolean"
+                },
+                "isValid": {
+                    "type": "boolean"
+                },
+                "memoryGiB": {
+                    "type": "number"
+                },
+                "plannedNodeGroupName": {
+                    "description": "PlannedNodeGroupName is pre-assigned by the planning phase (review) so the\nexecution phase can use the exact same node group name without re-deriving it.",
+                    "type": "string"
+                },
+                "plannedRequestedCount": {
+                    "description": "PlannedRequestedCount is the node count this candidate should request during execution.",
+                    "type": "integer"
+                },
+                "poolIndex": {
+                    "type": "integer"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "resolvedImageId": {
+                    "type": "string"
+                },
+                "riskLevel": {
+                    "type": "string"
+                },
+                "riskReasons": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "suggestedSystemDisk": {
+                    "type": "string"
+                },
+                "suggestedZone": {
+                    "type": "string"
+                },
+                "vCPU": {
+                    "type": "number"
                 }
             }
         },
@@ -25300,6 +25746,26 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ImageRequirement": {
+            "type": "object",
+            "required": [
+                "osType"
+            ],
+            "properties": {
+                "isGPUImage": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "osType": {
+                    "type": "string",
+                    "example": "ubuntu"
+                },
+                "osVersion": {
+                    "type": "string",
+                    "example": "22.04"
+                }
+            }
+        },
         "model.ImageRiskInfo": {
             "type": "object",
             "properties": {
@@ -25498,6 +25964,222 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                }
+            }
+        },
+        "model.InfraAutopilotReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "nodeSpecs"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "type": "string",
+                    "example": "no"
+                },
+                "label": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "my-infra"
+                },
+                "nodeSpecs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.NodeSpec"
+                    }
+                },
+                "policy": {
+                    "$ref": "#/definitions/model.AutopilotPolicy"
+                },
+                "postCommand": {
+                    "$ref": "#/definitions/model.InfraCmdReq"
+                }
+            }
+        },
+        "model.InfraAutopilotResult": {
+            "type": "object",
+            "properties": {
+                "autopilotStats": {
+                    "$ref": "#/definitions/model.AutopilotStats"
+                },
+                "cluster": {
+                    "description": "Cluster is the list of implicit clusters synthesized at query-time from Nodes.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.InfraClusterInfo"
+                    }
+                },
+                "configureCloudAdaptiveNetwork": {
+                    "description": "ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "no",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "yes"
+                },
+                "creationErrors": {
+                    "description": "CreationErrors contains information about Node creation failures (if any)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.InfraCreationErrors"
+                        }
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)",
+                    "type": "string",
+                    "default": "no",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "no"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "newNodeList": {
+                    "description": "List of IDs for new nodes. Return IDs if the nodes are newly added. This field should be used for return body only.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "node": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeInfo"
+                    }
+                },
+                "nodeSpecResults": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeSpecResult"
+                    }
+                },
+                "placementAlgo": {
+                    "type": "string"
+                },
+                "postCommand": {
+                    "description": "PostCommand is for the command to bootstrap the Nodes",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.InfraCmdReq"
+                        }
+                    ]
+                },
+                "postCommandResult": {
+                    "description": "PostCommandResult is the result of the command for bootstraping the Nodes",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.InfraSshCmdResult"
+                        }
+                    ]
+                },
+                "provisioningAttempts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ProvisioningAttempt"
+                    }
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "statusCount": {
+                    "$ref": "#/definitions/model.StatusCountInfo"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                }
+            }
+        },
+        "model.InfraAutopilotReviewResult": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "reviews": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeSpecReview"
+                    }
+                },
+                "summary": {
+                    "$ref": "#/definitions/model.ReviewSummary"
+                }
+            }
+        },
+        "model.InfraAutopilotStatus": {
+            "type": "object",
+            "properties": {
+                "elapsedSeconds": {
+                    "type": "integer"
+                },
+                "infraId": {
+                    "type": "string"
+                },
+                "infraStatus": {
+                    "type": "string"
+                },
+                "specs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeSpecStatus"
                     }
                 }
             }
@@ -28062,6 +28744,147 @@ const docTemplate = `{
                 }
             }
         },
+        "model.NodeSpec": {
+            "type": "object",
+            "required": [
+                "desiredCount",
+                "imageRequirement",
+                "name",
+                "specFilter"
+            ],
+            "properties": {
+                "desiredCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 4
+                },
+                "imageRequirement": {
+                    "$ref": "#/definitions/model.ImageRequirement"
+                },
+                "label": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "maxPerLocation": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "minCount": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "name": {
+                    "type": "string",
+                    "example": "gpu-workers"
+                },
+                "placementPolicy": {
+                    "$ref": "#/definitions/model.PlacementPolicy"
+                },
+                "rootDiskSize": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "rootDiskType": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "specFilter": {
+                    "$ref": "#/definitions/model.RecommendSpecReq"
+                }
+            }
+        },
+        "model.NodeSpecResult": {
+            "type": "object",
+            "properties": {
+                "desiredCount": {
+                    "type": "integer"
+                },
+                "fulfilled": {
+                    "type": "boolean"
+                },
+                "locationsUsed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "minFulfilled": {
+                    "type": "boolean"
+                },
+                "nodeGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nodeSpecName": {
+                    "type": "string"
+                },
+                "provisionedCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.NodeSpecReview": {
+            "type": "object",
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CandidateReview"
+                    }
+                },
+                "costPerHourMax": {
+                    "type": "number"
+                },
+                "costPerHourMin": {
+                    "type": "number"
+                },
+                "desiredCount": {
+                    "type": "integer"
+                },
+                "expectedNodeGroups": {
+                    "type": "integer"
+                },
+                "feasibility": {
+                    "type": "string"
+                },
+                "nodeSpecName": {
+                    "type": "string"
+                },
+                "validCandidates": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.NodeSpecStatus": {
+            "type": "object",
+            "properties": {
+                "activeAttempt": {
+                    "$ref": "#/definitions/model.ActiveAttempt"
+                },
+                "attempts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ProvisioningAttempt"
+                    }
+                },
+                "desiredCount": {
+                    "type": "integer"
+                },
+                "nodeSpecName": {
+                    "type": "string"
+                },
+                "provisionedCount": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "model.NodeStatusInfo": {
             "type": "object",
             "properties": {
@@ -28756,6 +29579,29 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PlacementPolicy": {
+            "type": "object",
+            "properties": {
+                "maxSkew": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "minLocations": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "strategy": {
+                    "description": "Strategy: \"pack\" fills one location before next,\n\"spread\" round-robins across distinct locations,\n\"balanced\" keeps counts within MaxSkew of each other.",
+                    "type": "string",
+                    "enum": [
+                        "pack",
+                        "spread",
+                        "balanced"
+                    ],
+                    "example": "pack"
+                }
+            }
+        },
         "model.Policy": {
             "type": "object",
             "properties": {
@@ -28886,6 +29732,77 @@ const docTemplate = `{
                 "unpricedSpecCount": {
                     "type": "integer",
                     "example": 234
+                }
+            }
+        },
+        "model.ProvisioningAttempt": {
+            "type": "object",
+            "properties": {
+                "acceleratorCount": {
+                    "type": "integer"
+                },
+                "acceleratorMemoryGB": {
+                    "type": "number"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "completedAt": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "costPerHour": {
+                    "type": "number"
+                },
+                "diskOverridden": {
+                    "type": "boolean"
+                },
+                "failureReason": {
+                    "type": "string"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "nodeGroupName": {
+                    "type": "string"
+                },
+                "nodeSpecName": {
+                    "type": "string"
+                },
+                "poolIndex": {
+                    "type": "integer"
+                },
+                "requestedCount": {
+                    "type": "integer"
+                },
+                "reviewRejected": {
+                    "type": "boolean"
+                },
+                "riskLevel": {
+                    "type": "string"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "succeededCount": {
+                    "type": "integer"
+                },
+                "trimmedCount": {
+                    "type": "integer"
+                },
+                "zone": {
+                    "type": "string"
+                },
+                "zoneOverridden": {
+                    "type": "boolean"
                 }
             }
         },
@@ -30035,6 +30952,41 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "Available/Unavailable/Unknown"
+                }
+            }
+        },
+        "model.ReviewSummary": {
+            "type": "object",
+            "properties": {
+                "confirmedStockZones": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "costPerHourMax": {
+                    "type": "number"
+                },
+                "costPerHourMin": {
+                    "type": "number"
+                },
+                "desiredTotal": {
+                    "type": "integer"
+                },
+                "feasibility": {
+                    "type": "string"
+                },
+                "highRiskCandidates": {
+                    "type": "integer"
+                },
+                "unreachableSpecs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "validCandidates": {
+                    "type": "integer"
                 }
             }
         },
@@ -33753,6 +34705,21 @@ const docTemplate = `{
                 },
                 "cspResourceId": {
                     "type": "string"
+                }
+            }
+        },
+        "resource.RestRegisterSharedResourceDependenciesRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "description": "ConnectionName limits the scan to a single connection. If empty, all connections\nwith shared resources in the namespace are scanned automatically.",
+                    "type": "string",
+                    "example": ""
+                },
+                "infraNamePrefix": {
+                    "description": "InfraNamePrefix is prepended to the registered infra names (default: \"dep\").",
+                    "type": "string",
+                    "example": "dep"
                 }
             }
         },

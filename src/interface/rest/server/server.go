@@ -370,6 +370,7 @@ func RunServer() {
 	e.GET("/tumblebug/loadAssets", rest_resource.RestLoadAssets)
 	e.POST("/tumblebug/ns/:nsId/sharedResource", rest_resource.RestCreateSharedResource)
 	e.DELETE("/tumblebug/ns/:nsId/sharedResources", rest_resource.RestDelAllSharedResources)
+	e.POST("/tumblebug/ns/:nsId/sharedResources/recoverDependencies", rest_resource.RestRegisterSharedResourceDependencies)
 
 	e.POST("/tumblebug/forward/*", rest_common.RestForwardAnyReqToAny)
 
@@ -410,6 +411,9 @@ func RunServer() {
 
 	g.POST("/:nsId/infraDynamic", rest_infra.RestPostInfraDynamic)
 	g.POST("/:nsId/infraDynamicReview", rest_infra.RestPostInfraDynamicReview)
+	g.POST("/:nsId/infraAutopilot", rest_infra.RestPostInfraAutopilot)
+	g.POST("/:nsId/infraAutopilotReview", rest_infra.RestPostInfraAutopilotReview)
+	g.GET("/:nsId/infraAutopilot/:infraId/status", rest_infra.RestGetInfraAutopilotStatus)
 	g.POST("/:nsId/infra/:infraId/nodeGroupDynamic", rest_infra.RestPostInfraNodeGroupDynamic)
 	g.POST("/:nsId/infra/:infraId/nodeGroupDynamicReview", rest_infra.RestPostInfraDynamicNodeGroupNodeReview)
 

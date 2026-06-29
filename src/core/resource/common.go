@@ -2746,6 +2746,45 @@ func DeleteSharedResources(nsId string) (model.ResourceDeleteResults, error) {
 	return output, nil
 }
 
+// FindConnectionsWithSharedResources returns deduplicated connection names that
+// have shared resources (VNet, SecurityGroup, SSHKey) in the given namespace.
+// Shared resources follow the naming pattern: {nsId}-shared-{connectionName}.
+func FindConnectionsWithSharedResources(nsId string) ([]string, error) {
+	matchedSubstring := nsId + model.StrSharedResourceName
+	connSet := make(map[string]bool)
+
+	if rawList, err := ListResource(nsId, model.StrVNet, "", ""); err == nil {
+		for _, item := range rawList.([]model.VNetInfo) {
+			if strings.Contains(item.Name, matchedSubstring) && item.ConnectionName != "" {
+				connSet[item.ConnectionName] = true
+			}
+		}
+	}
+
+	if rawList, err := ListResource(nsId, model.StrSecurityGroup, "", ""); err == nil {
+		for _, item := range rawList.([]model.SecurityGroupInfo) {
+			if strings.Contains(item.Name, matchedSubstring) && item.ConnectionName != "" {
+				connSet[item.ConnectionName] = true
+			}
+		}
+	}
+
+	if rawList, err := ListResource(nsId, model.StrSSHKey, "", ""); err == nil {
+		for _, item := range rawList.([]model.SshKeyInfo) {
+			if strings.Contains(item.Name, matchedSubstring) && item.ConnectionName != "" {
+				connSet[item.ConnectionName] = true
+			}
+		}
+	}
+
+	connections := make([]string, 0, len(connSet))
+	for conn := range connSet {
+		connections = append(connections, conn)
+	}
+	sort.Strings(connections)
+	return connections, nil
+}
+
 // ToNamingRuleCompatible function transforms a given string to match the regex pattern [a-z]([-a-z0-9]*[a-z0-9])?.
 func ToNamingRuleCompatible(rawName string) string {
 	// Convert all uppercase letters to lowercase

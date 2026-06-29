@@ -17,7 +17,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -38,16 +37,9 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 		return fmt.Errorf("failed to get Azure credentials: %w", err)
 	}
 
-	credential, err := azidentity.NewClientSecretCredential(
-		creds.TenantID, creds.ClientID, creds.ClientSecret, nil,
-	)
+	tagsClient, err := getOrCreateTagsClient(creds)
 	if err != nil {
-		return fmt.Errorf("failed to create Azure credential: %w", err)
-	}
-
-	tagsClient, err := armresources.NewTagsClient(creds.SubscriptionID, credential, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create Azure Tags client: %w", err)
+		return fmt.Errorf("failed to get Azure Tags client: %w", err)
 	}
 
 	// Convert map to *string map for ARM SDK

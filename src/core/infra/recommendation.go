@@ -126,15 +126,34 @@ func RecommendSpec(ctx context.Context, nsId string, plan model.RecommendSpecReq
 		return nil, err
 	}
 
-	// Auto-apply provider filter based on credential holder's available connections.
-	// Only if the caller hasn't already specified a providerName filter.
+	// Auto-apply provider filter based on registered connections (not just credential holder's
+	// Providers list, which may be incomplete). Only when no providerName filter was specified.
 	if u.ProviderName == "" {
 		credentialHolder := common.CredentialHolderFromContext(ctx)
 		holderInfo, err := common.GetCredentialHolder(credentialHolder)
-		if err == nil && len(holderInfo.Providers) > 0 && !holderInfo.IsDefault {
-			u.ProviderName = strings.Join(holderInfo.Providers, ",")
-			log.Info().Msgf("Auto-filtering specs by credential holder '%s' providers: %s",
-				credentialHolder, u.ProviderName)
+		if err == nil && !holderInfo.IsDefault {
+			// Prefer connection-derived provider list over holderInfo.Providers —
+			// connections reflect what the user has actually registered.
+			connList, connErr := common.GetConnConfigList(credentialHolder, false, false)
+			if connErr == nil && len(connList.Connectionconfig) > 0 {
+				seen := make(map[string]bool)
+				var providers []string
+				for _, conn := range connList.Connectionconfig {
+					p := strings.ToLower(conn.ProviderName)
+					if p != "" && !seen[p] {
+						seen[p] = true
+						providers = append(providers, p)
+					}
+				}
+				sort.Strings(providers)
+				u.ProviderName = strings.Join(providers, ",")
+			} else if len(holderInfo.Providers) > 0 {
+				u.ProviderName = strings.Join(holderInfo.Providers, ",")
+			}
+			if u.ProviderName != "" {
+				log.Info().Msgf("Auto-filtering specs by credential holder '%s' providers: %s",
+					credentialHolder, u.ProviderName)
+			}
 		}
 	}
 

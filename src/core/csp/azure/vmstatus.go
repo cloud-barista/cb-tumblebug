@@ -22,7 +22,6 @@ import (
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	armcompute "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
@@ -86,16 +85,9 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("Azure vmstatus: cannot get credentials: %w", err)
 	}
 
-	credential, err := azidentity.NewClientSecretCredential(
-		creds.TenantID, creds.ClientID, creds.ClientSecret, nil,
-	)
+	vmClient, err := getOrCreateVMClient(creds)
 	if err != nil {
-		return nil, fmt.Errorf("Azure vmstatus: failed to create credential: %w", err)
-	}
-
-	vmClient, err := armcompute.NewVirtualMachinesClient(creds.SubscriptionID, credential, nil)
-	if err != nil {
-		return nil, fmt.Errorf("Azure vmstatus: failed to create VM client: %w", err)
+		return nil, fmt.Errorf("Azure vmstatus: failed to get VM client: %w", err)
 	}
 
 	// Fetch VMs in parallel, bounded by azureStatusConcurrency.
