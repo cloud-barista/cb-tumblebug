@@ -1607,6 +1607,11 @@ var globalSpiderSem = make(chan struct{}, maxConcurrentSpiderCalls)
 // Key format: "nsId/infraId/nodeId"
 var terminatingFailStreak sync.Map
 
+// terminatingReTerminateSent tracks nodes for which a mid-streak re-terminate has
+// already been fired, preventing duplicate background re-terminate goroutines.
+// Key format: "nsId/infraId/nodeId"
+var terminatingReTerminateSent sync.Map
+
 // terminatingFailStreakMax is set to 10 (≈ 2.5 min at 15 s poll interval).
 // A value of 3 was too small for CSPs with unstable APIs (e.g. Alibaba):
 // a single successful Spider response in between resets the streak to zero,
@@ -1614,6 +1619,13 @@ var terminatingFailStreak sync.Map
 // successes alternate. 10 gives enough headroom while still auto-resolving
 // within a few minutes once the VM is confirmed gone at the CSP side.
 const terminatingFailStreakMax = 10
+
+// terminatingReTerminateAt is the streak count at which a background re-terminate
+// is fired before the final promotion. This guards against the rare case where
+// the original terminate request timed out before reaching the CSP.
+// The vmstatus circuit breaker and the terminate (DELETE) circuit breaker are
+// keyed separately, so re-terminate can succeed even when vmstatus is blocked.
+const terminatingReTerminateAt = terminatingFailStreakMax / 2
 
 func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) ([]model.NodeStatusInfo, error) {
 	if len(nodeList) == 0 {
@@ -1891,7 +1903,9 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 					callResult.Status = model.StatusUndefined
 				}
 				// Successful direct SDK call: reset any consecutive-failure streak for this node.
-				terminatingFailStreak.Delete(nsId + "/" + infraId + "/" + nodeId)
+				sdkStreakKey := nsId + "/" + infraId + "/" + nodeId
+				terminatingFailStreak.Delete(sdkStreakKey)
+				terminatingReTerminateSent.Delete(sdkStreakKey)
 				goto applyStatus
 			}
 
@@ -1986,8 +2000,29 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 					streakKey := nsId + "/" + infraId + "/" + nodeId
 					prev, _ := terminatingFailStreak.LoadOrStore(streakKey, 0)
 					streak := prev.(int) + 1
+
+					// Mid-streak: re-issue the terminate request to guard against the rare
+					// case where the original terminate timed out before reaching the CSP.
+					// The terminate (DELETE) endpoint has its own circuit-breaker key,
+					// independent of the vmstatus (GET) circuit-breaker, so this re-send
+					// can succeed even when vmstatus polling is blocked.
+					// Runs in a goroutine to avoid blocking the current status-poll cycle.
+					if streak == terminatingReTerminateAt {
+						if _, alreadySent := terminatingReTerminateSent.LoadOrStore(streakKey, true); !alreadySent {
+							log.Info().Msgf("[FetchNodeStatus] Node %s: streak=%d — re-issuing terminate to ensure CSP delivery (vmstatus unreachable)", nodeId, streak)
+							go func() {
+								if _, rtErr := HandleInfraNodeAction(nsId, infraId, nodeId, model.ActionTerminate, true); rtErr != nil {
+									log.Warn().Err(rtErr).Msgf("[FetchNodeStatus] Node %s: background re-terminate failed", nodeId)
+								} else {
+									log.Info().Msgf("[FetchNodeStatus] Node %s: background re-terminate sent successfully", nodeId)
+								}
+							}()
+						}
+					}
+
 					if streak >= terminatingFailStreakMax {
 						terminatingFailStreak.Delete(streakKey)
+						terminatingReTerminateSent.Delete(streakKey)
 						log.Info().Msgf("[FetchNodeStatus] Node %s: Spider error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
 						callResult.Status = model.StatusTerminated
 					} else {
@@ -1998,7 +2033,9 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 			}
 			if callResult.Status != "" {
 				// Successful Spider response: reset consecutive failure streak for this node.
-				terminatingFailStreak.Delete(nsId + "/" + infraId + "/" + nodeId)
+				streakKey := nsId + "/" + infraId + "/" + nodeId
+				terminatingFailStreak.Delete(streakKey)
+				terminatingReTerminateSent.Delete(streakKey)
 				break
 			}
 			time.Sleep(5 * time.Second)
