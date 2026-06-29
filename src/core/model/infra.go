@@ -1610,14 +1610,14 @@ type RecommendAlternativeNodeConfigReq struct {
 // SpecDiff captures the field-by-field delta between a candidate spec and the source spec.
 // Positive numeric values mean the candidate has more than the source.
 type SpecDiff struct {
-	VCPUDiff            int     `json:"vCPUDiff"`            // candidate.vCPU - source.vCPU
-	MemoryGiBDiff       float32 `json:"memoryGiBDiff"`       // candidate.memoryGiB - source.memoryGiB
-	CostPerHourDiff     float32 `json:"costPerHourDiff"`     // negative = cheaper in target CSP
-	ArchitectureMatch   bool    `json:"architectureMatch"`
-	AccelTypeMatch      bool    `json:"accelTypeMatch"`
-	AccelModelMatch     bool    `json:"accelModelMatch"`
-	AccelCountDiff      int     `json:"accelCountDiff"`      // candidate - source
-	AccelMemGBDiff      float32 `json:"accelMemGBDiff"`      // candidate - source
+	VCPUDiff          int     `json:"vCPUDiff"`        // candidate.vCPU - source.vCPU
+	MemoryGiBDiff     float32 `json:"memoryGiBDiff"`   // candidate.memoryGiB - source.memoryGiB
+	CostPerHourDiff   float32 `json:"costPerHourDiff"` // negative = cheaper in target CSP
+	ArchitectureMatch bool    `json:"architectureMatch"`
+	AccelTypeMatch    bool    `json:"accelTypeMatch"`
+	AccelModelMatch   bool    `json:"accelModelMatch"`
+	AccelCountDiff    int     `json:"accelCountDiff"` // candidate - source
+	AccelMemGBDiff    float32 `json:"accelMemGBDiff"` // candidate - source
 }
 
 // AlternativeNodeConfigCandidate is one ranked result in RecommendAlternativeNodeConfigResponse.
@@ -1642,8 +1642,8 @@ type AlternativeNodeConfigCandidate struct {
 
 // RecommendAlternativeNodeConfigResponse is the response of /recommendAlternativeNodeConfig.
 type RecommendAlternativeNodeConfigResponse struct {
-	SourceSpec  SpecInfo   `json:"sourceSpec"`
-	SourceImage *ImageInfo `json:"sourceImage,omitempty"`
+	SourceSpec  SpecInfo                         `json:"sourceSpec"`
+	SourceImage *ImageInfo                       `json:"sourceImage,omitempty"`
 	Candidates  []AlternativeNodeConfigCandidate `json:"candidates"`
 }
 
@@ -1871,7 +1871,7 @@ type NodeSpec struct {
 	MinCount         int               `json:"minCount,omitempty" example:"2"`
 	MaxPerLocation   int               `json:"maxPerLocation,omitempty" example:"2"`
 	PlacementPolicy  PlacementPolicy   `json:"placementPolicy,omitempty"`
-	SpecFilter       RecommendSpecReq `json:"specFilter" validate:"required"`
+	SpecFilter       RecommendSpecReq  `json:"specFilter" validate:"required"`
 	ImageRequirement ImageRequirement  `json:"imageRequirement" validate:"required"`
 	RootDiskType     string            `json:"rootDiskType,omitempty" example:"default"`
 	RootDiskSize     int               `json:"rootDiskSize,omitempty" example:"0"`
@@ -1901,28 +1901,28 @@ type InfraAutopilotReq struct {
 
 // ProvisioningAttempt records one pre-flight review pass for a candidate spec.
 type ProvisioningAttempt struct {
-	NodeSpecName        string  `json:"nodeSpecName"`
-	NodeGroupName       string  `json:"nodeGroupName"`
-	SpecId              string  `json:"specId"`
-	ConnectionName      string  `json:"connectionName,omitempty"`
-	Zone                string  `json:"zone,omitempty"`
-	ImageId             string  `json:"imageId,omitempty"`
-	RequestedCount      int     `json:"requestedCount"`
-	SucceededCount      int     `json:"succeededCount"`
-	TrimmedCount        int     `json:"trimmedCount"`
-	PoolIndex           int     `json:"poolIndex"`
-	Status              string  `json:"status"`
-	FailureReason       string  `json:"failureReason,omitempty"`
-	ReviewRejected      bool    `json:"reviewRejected,omitempty"`
-	ZoneOverridden      bool    `json:"zoneOverridden,omitempty"`
-	DiskOverridden      bool    `json:"diskOverridden,omitempty"`
+	NodeSpecName   string  `json:"nodeSpecName"`
+	NodeGroupName  string  `json:"nodeGroupName"`
+	SpecId         string  `json:"specId"`
+	ConnectionName string  `json:"connectionName,omitempty"`
+	Zone           string  `json:"zone,omitempty"`
+	ImageId        string  `json:"imageId,omitempty"`
+	RequestedCount int     `json:"requestedCount"`
+	SucceededCount int     `json:"succeededCount"`
+	TrimmedCount   int     `json:"trimmedCount"`
+	PoolIndex      int     `json:"poolIndex"`
+	Status         string  `json:"status"`
+	FailureReason  string  `json:"failureReason,omitempty"`
+	ReviewRejected bool    `json:"reviewRejected,omitempty"`
+	ZoneOverridden bool    `json:"zoneOverridden,omitempty"`
+	DiskOverridden bool    `json:"diskOverridden,omitempty"`
 	RiskLevel           string  `json:"riskLevel,omitempty"`
 	CostPerHour         float64 `json:"costPerHour,omitempty"`
-	AcceleratorModel    string  `json:"acceleratorModel,omitempty"`
-	AcceleratorCount    int     `json:"acceleratorCount,omitempty"`
-	AcceleratorMemoryGB float32 `json:"acceleratorMemoryGB,omitempty"`
 	StartedAt           string  `json:"startedAt,omitempty"`
 	CompletedAt         string  `json:"completedAt,omitempty"`
+	AcceleratorModel    string  `json:"acceleratorModel,omitempty"`
+	AcceleratorCount    int     `json:"acceleratorCount,omitempty"`
+	AcceleratorMemoryGB float32 `json:"acceleratorMemoryGb,omitempty"`
 }
 
 // NodeSpecResult summarizes provisioning outcome for one NodeSpec.
@@ -1981,9 +1981,9 @@ type CandidateReview struct {
 	RiskReasons         []string `json:"riskReasons,omitempty"`
 	// PlannedNodeGroupName is pre-assigned by the planning phase (review) so the
 	// execution phase can use the exact same node group name without re-deriving it.
-	PlannedNodeGroupName  string `json:"plannedNodeGroupName,omitempty"`
+	PlannedNodeGroupName string `json:"plannedNodeGroupName,omitempty"`
 	// PlannedRequestedCount is the node count this candidate should request during execution.
-	PlannedRequestedCount int    `json:"plannedRequestedCount,omitempty"`
+	PlannedRequestedCount int `json:"plannedRequestedCount,omitempty"`
 }
 
 // NodeSpecReview holds review results for one NodeSpec.

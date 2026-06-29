@@ -177,6 +177,17 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 		// Correct manufacturer when Spider reports incorrect info (e.g., IBM labels Gaudi/MI300X as NVIDIA)
 		tumblebugSpec.AcceleratorModel = normalizeAcceleratorModel(tumblebugSpec.AcceleratorModel)
 
+		// GCP fallback: Spider cannot determine memory for GPU types whose accelerator type name
+		// does not contain a "gb" suffix (e.g., "nvidia-l4", "nvidia-tesla-a100"). Extract the raw
+		// guestAcceleratorType from Details and look it up in a static table.
+		if tumblebugSpec.AcceleratorMemoryGB == 0 && csp.ResolveCloudPlatform(tumblebugSpec.ProviderName) == csp.GCP {
+			if accelType := extractGCPAcceleratorType(tumblebugSpec.Details); accelType != "" {
+				if memGB, ok := gcpAcceleratorMemoryGBByType[accelType]; ok {
+					tumblebugSpec.AcceleratorMemoryGB = memGB
+				}
+			}
+		}
+
 		// Log if there are multiple GPUs defined
 		if len(spiderSpec.Gpu) > 1 {
 			log.Warn().Msgf("Spec %s has multiple GPUs defined (%d GPUs). Only using the first GPU information.",
@@ -185,6 +196,43 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	}
 
 	return tumblebugSpec, nil
+}
+
+// gcpAcceleratorMemoryGBByType maps GCP guestAcceleratorType values (as returned by the GCP
+// Compute API) to the GPU memory size in GB per GPU unit. This is needed because the GCP API
+// only returns the type name string (e.g., "nvidia-l4"), not the memory size, and CB-Spider
+// cannot infer memory for types whose name lacks a "gb" suffix.
+var gcpAcceleratorMemoryGBByType = map[string]float32{
+	"nvidia-l4":           24,  // NVIDIA L4 - 24 GB GDDR6
+	"nvidia-l40s":         48,  // NVIDIA L40S - 48 GB GDDR6
+	"nvidia-tesla-t4":     16,  // NVIDIA T4 - 16 GB GDDR6
+	"nvidia-tesla-k80":    12,  // NVIDIA K80 - 12 GB GDDR5 per GPU unit
+	"nvidia-tesla-p4":     8,   // NVIDIA P4 - 8 GB GDDR5
+	"nvidia-tesla-p100":   16,  // NVIDIA P100 - 16 GB HBM2
+	"nvidia-tesla-v100":   16,  // NVIDIA V100 - 16 GB HBM2
+	"nvidia-tesla-a100":   40,  // NVIDIA A100 SXM4 40 GB HBM2 (a2-highgpu / a2-megagpu families)
+	"nvidia-b200":         192, // NVIDIA B200 - 192 GB HBM3e
+	"nvidia-rtx-pro-6000": 96,  // NVIDIA RTX PRO 6000 Blackwell - 96 GB GDDR7
+}
+
+// extractGCPAcceleratorType parses the "Accelerators" key from GCP spec Details and returns
+// the raw guestAcceleratorType string (e.g., "nvidia-l4"). GCP stores this as a comma-separated
+// key:value pair inside curly braces, e.g. "{guestAcceleratorCount:1,guestAcceleratorType:nvidia-l4}".
+func extractGCPAcceleratorType(details []model.KeyValue) string {
+	for _, kv := range details {
+		if kv.Key != "Accelerators" {
+			continue
+		}
+		// Strip surrounding braces and split on commas
+		val := strings.Trim(kv.Value, "{}")
+		for _, part := range strings.Split(val, ",") {
+			part = strings.TrimSpace(part)
+			if strings.HasPrefix(part, "guestAcceleratorType:") {
+				return strings.ToLower(strings.TrimPrefix(part, "guestAcceleratorType:"))
+			}
+		}
+	}
+	return ""
 }
 
 // normalizeAcceleratorModel corrects the manufacturer prefix based on known GPU model names.
