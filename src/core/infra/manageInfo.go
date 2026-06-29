@@ -2064,6 +2064,22 @@ applyStatus:
 			callResult.Status = model.StatusFailed
 		}
 	}
+
+	// Fallback: if the CSP (or Spider) returned Undefined but the node already has a
+	// PublicIP, the CSP committed to creating the VM — preserve Creating to avoid a
+	// false Undefined flip while the VM is still booting or the CSP API is slow.
+	// This covers two gaps the TargetAction correction above cannot handle:
+	//   1. TargetAction was already cleared to ActionComplete (e.g. IBM: VM briefly
+	//      reached Running, action completed, then vmstatus API began timing out).
+	//   2. TargetAction is empty due to a concurrent goroutine clearing it before
+	//      the correction above is evaluated.
+	if strings.EqualFold(callResult.Status, model.StatusUndefined) &&
+		strings.EqualFold(nodeInfo.Status, model.StatusCreating) &&
+		nodeInfo.PublicIP != "" {
+		log.Debug().Msgf("[FetchNodeStatus] Node %s: PublicIP already assigned (%s), preserving Creating despite Undefined from CSP/Spider", nodeId, nodeInfo.PublicIP)
+		callResult.Status = model.StatusCreating
+	}
+
 	if strings.EqualFold(nodeStatusTmp.TargetAction, model.ActionTerminate) {
 		switch {
 		case strings.EqualFold(callResult.Status, model.StatusTerminated):

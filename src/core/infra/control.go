@@ -185,8 +185,19 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 			// Remove Nodes in model.StatusFailed or model.StatusUndefined
 			log.Debug().Msgf("[nodeInfo.Status] %v", v.Status)
 			if strings.EqualFold(v.Status, model.StatusFailed) || strings.EqualFold(v.Status, model.StatusUndefined) {
-				// Delete Node sequentially for safety (for performance, need to use goroutine)
-				err := DelInfraNode(nsId, infraId, v.Id, "force")
+				// Decide deletion mode based on whether the node was actually created at CSP.
+				// A node with CspResourceName set has a live CSP resource — soft-delete it
+				// (termination attempted first) to avoid leaving orphaned CSP VMs that would
+				// block shared-resource (VNet/SG) cleanup with DependencyViolation errors.
+				// Nodes that were never created at CSP (empty CspResourceName) are safe to
+				// force-delete because there is nothing to terminate on the CSP side.
+				deleteOption := "force"
+				if nodeInfo, infoErr := GetNodeObject(nsId, infraId, v.Id); infoErr == nil && nodeInfo.CspResourceName != "" {
+					deleteOption = "" // soft: attempt CSP termination before removing CB-TB record
+					log.Debug().Msgf("[Refine] Node %s has CspResourceName=%s — using soft delete to avoid CSP orphan", v.Id, nodeInfo.CspResourceName)
+				}
+
+				err := DelInfraNode(nsId, infraId, v.Id, deleteOption)
 				if err != nil {
 					// A "does not exist" error means the node was already removed by a
 					// concurrent refine call — treat as already deleted and continue.
