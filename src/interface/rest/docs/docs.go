@@ -29741,7 +29741,7 @@ const docTemplate = `{
                 "acceleratorCount": {
                     "type": "integer"
                 },
-                "acceleratorMemoryGB": {
+                "acceleratorMemoryGb": {
                     "type": "number"
                 },
                 "acceleratorModel": {

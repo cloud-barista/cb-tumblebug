@@ -24625,7 +24625,7 @@ components:
       properties:
         acceleratorCount:
           type: integer
-        acceleratorMemoryGB:
+        acceleratorMemoryGb:
           type: number
         acceleratorModel:
           type: string
