@@ -446,24 +446,23 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 	infraObj.Status = infraStatus.Status
 	infraObj.StatusCount = infraStatus.StatusCount
 
-	nodeList, err := ListNodeId(nsId, infraId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
 	sort.Slice(infraObj.Node, func(i, j int) bool {
 		return infraObj.Node[i].Id < infraObj.Node[j].Id
 	})
 
-	for nodeInfoIndex := range nodeList {
-		for nodeStatusInfoIndex := range infraStatus.Node {
-			if infraObj.Node[nodeInfoIndex].Id == infraStatus.Node[nodeStatusInfoIndex].Id {
-				infraObj.Node[nodeInfoIndex].Status = infraStatus.Node[nodeStatusInfoIndex].Status
-				infraObj.Node[nodeInfoIndex].TargetStatus = infraStatus.Node[nodeStatusInfoIndex].TargetStatus
-				infraObj.Node[nodeInfoIndex].TargetAction = infraStatus.Node[nodeStatusInfoIndex].TargetAction
-				break
-			}
+	// Build a lookup map from node ID to status info.
+	// Avoids index-out-of-range when autopilot goroutines are concurrently appending
+	// nodes: a separate ListNodeId call could return N+k IDs while infraObj.Node still
+	// has only N entries, causing infraObj.Node[N] to panic.
+	nodeStatusById := make(map[string]model.NodeStatusInfo, len(infraStatus.Node))
+	for _, ns := range infraStatus.Node {
+		nodeStatusById[ns.Id] = ns
+	}
+	for i := range infraObj.Node {
+		if ns, ok := nodeStatusById[infraObj.Node[i].Id]; ok {
+			infraObj.Node[i].Status = ns.Status
+			infraObj.Node[i].TargetStatus = ns.TargetStatus
+			infraObj.Node[i].TargetAction = ns.TargetAction
 		}
 	}
 
