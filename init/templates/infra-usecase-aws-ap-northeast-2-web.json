@@ -10,7 +10,7 @@
         "name": "web",
         "nodeGroupSize": 1,
         "specId": "aws+ap-northeast-2+t3.small",
-        "imageId": "ami-01f71f215b23ba262",
+        "imageId": "ami-0fde5763b4c293a0b",
         "rootDiskType": "gp3",
         "rootDiskSize": 30
       }

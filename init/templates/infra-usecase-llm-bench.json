@@ -13,7 +13,7 @@
         },
         "description": "mapui",
         "specId": "azure+westus+standard_nv24ads_v710_v5",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202601310",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110",
         "rootDiskType": "PremiumSSD",
         "rootDiskSize": 200,
         "connectionName": "azure-westus"
@@ -26,7 +26,7 @@
         },
         "description": "CPU-based observability node (e2-standard-8, 8 vCPU, 32 GiB)",
         "specId": "gcp+us-west3+e2-standard-8",
-        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260530",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260623",
         "rootDiskType": "default",
         "rootDiskSize": 200
       },

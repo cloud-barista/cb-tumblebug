@@ -8,7 +8,7 @@
         "name": "g1-aws-af-south-1",
         "nodeGroupSize": 1,
         "specId": "aws+af-south-1+t3.nano",
-        "imageId": "ami-0571924e89eb0c38f"
+        "imageId": "ami-0fca1efd9f11f94e6"
       },
       {
         "name": "g2-aws-ap-east-1",
@@ -26,7 +26,7 @@
         "name": "g4-aws-ap-northeast-2",
         "nodeGroupSize": 1,
         "specId": "aws+ap-northeast-2+t3a.nano",
-        "imageId": "ami-0828e678be4b791cc"
+        "imageId": "ami-0fde5763b4c293a0b"
       },
       {
         "name": "g5-aws-ap-northeast-3",
@@ -74,7 +74,7 @@
         "name": "g12-aws-ca-central-1",
         "nodeGroupSize": 1,
         "specId": "aws+ca-central-1+t3a.nano",
-        "imageId": "ami-0b1810181317dc8de"
+        "imageId": "ami-0ff4fb44caafc54a6"
       },
       {
         "name": "g13-aws-ca-west-1",
@@ -104,7 +104,7 @@
         "name": "g17-aws-eu-south-1",
         "nodeGroupSize": 1,
         "specId": "aws+eu-south-1+t3a.nano",
-        "imageId": "ami-04667b4c6d765e36f"
+        "imageId": "ami-0ffaa14cc4d8967c3"
       },
       {
         "name": "g18-aws-eu-south-2",
@@ -116,7 +116,7 @@
         "name": "g19-aws-eu-west-1",
         "nodeGroupSize": 1,
         "specId": "aws+eu-west-1+t3a.nano",
-        "imageId": "ami-063de3f344649c32c"
+        "imageId": "ami-0ff6ee91812d27971"
       },
       {
         "name": "g20-aws-eu-west-2",
@@ -128,7 +128,7 @@
         "name": "g21-aws-eu-west-3",
         "nodeGroupSize": 1,
         "specId": "aws+eu-west-3+t3a.nano",
-        "imageId": "ami-0a68eb8e20f8d99f0"
+        "imageId": "ami-0feeb0f2f3b036ea9"
       },
       {
         "name": "g22-aws-il-central-1",
@@ -158,7 +158,7 @@
         "name": "g26-aws-us-east-2",
         "nodeGroupSize": 1,
         "specId": "aws+us-east-2+t3a.nano",
-        "imageId": "ami-07b1dc51b61742d9b"
+        "imageId": "ami-0fe440fddea4f2eae"
       },
       {
         "name": "g27-aws-us-west-1",
