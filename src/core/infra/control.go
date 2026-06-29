@@ -188,6 +188,13 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 				// Delete Node sequentially for safety (for performance, need to use goroutine)
 				err := DelInfraNode(nsId, infraId, v.Id, "force")
 				if err != nil {
+					// A "does not exist" error means the node was already removed by a
+					// concurrent refine call — treat as already deleted and continue.
+					if strings.Contains(err.Error(), "does not exist") {
+						log.Debug().Msgf("[Refine] Node %s already removed, skipping", v.Id)
+						deletedCount++
+						continue
+					}
 					log.Error().Err(err).Msg("")
 					return "", err
 				}
