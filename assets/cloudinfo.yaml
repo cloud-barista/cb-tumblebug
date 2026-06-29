@@ -1881,33 +1881,33 @@ cloud:
           longitude: 126.874278
         zone:
         - DX-M1
-      KR-CN:
-        id: KR-CN
-        description: Cheonan (South Korea)
-        location:
-          display: Cheonan (South Korea)
-          latitude: 36.815
-          longitude: 127.1139
-        zone:
-        - DX-Central
-      KR-CJ:
-        id: KR-CJ
-        description: Cheongju (South Korea)
-        location:
-          display: Cheongju (South Korea)
-          latitude: 36.6424
-          longitude: 127.489
-        zone:
-        - DX-DCN-CJ
-      KR-YS:
-        id: KR-YS
-        description: Yongsan - Seoul (South Korea)
-        location:
-          display: Yongsan - Seoul (South Korea)
-          latitude: 37.5326
-          longitude: 126.9907
-        zone:
-        - DX-YS
+      # KR-CN:
+      #   id: KR-CN
+      #   description: Cheonan (South Korea)
+      #   location:
+      #     display: Cheonan (South Korea)
+      #     latitude: 36.815
+      #     longitude: 127.1139
+      #   zone:
+      #   - DX-Central
+      # KR-CJ:
+      #   id: KR-CJ
+      #   description: Cheongju (South Korea)
+      #   location:
+      #     display: Cheongju (South Korea)
+      #     latitude: 36.6424
+      #     longitude: 127.489
+      #   zone:
+      #   - DX-DCN-CJ
+      # KR-YS:
+      #   id: KR-YS
+      #   description: Yongsan - Seoul (South Korea)
+      #   location:
+      #     display: Yongsan - Seoul (South Korea)
+      #     latitude: 37.5326
+      #     longitude: 126.9907
+      #   zone:
+      #   - DX-YS
   ncp:
     description: Naver Cloud Platform (VPC)
     driver: ncp-driver-v1.0.so

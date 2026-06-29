@@ -12,7 +12,7 @@
         },
         "description": "Dynamically added via CB-MapUI Scale Out Infra",
         "specId": "azure+australiaeast+standard_b8als_v2",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202602250",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110",
         "rootDiskType": "PremiumSSD",
         "rootDiskSize": 500,
         "connectionName": "azure-australiaeast"
@@ -26,7 +26,7 @@
         },
         "description": "mapui",
         "specId": "azure+australiaeast+standard_nc40ads_h100_v5",
-        "imageId": "microsoft-dsvm:ubuntu-hpc:2204:22.04.2026033001",
+        "imageId": "microsoft-dsvm:ubuntu-hpc:2204:22.04.2026052901",
         "rootDiskType": "PremiumSSD",
         "rootDiskSize": 500,
         "connectionName": "azure-australiaeast"

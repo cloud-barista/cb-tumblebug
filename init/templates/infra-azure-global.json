@@ -8,271 +8,223 @@
         "name": "g1-azure-australiacentral",
         "nodeGroupSize": 1,
         "specId": "azure+australiacentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g2-azure-australiaeast",
         "nodeGroupSize": 1,
         "specId": "azure+australiaeast+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g3-azure-australiasoutheast",
         "nodeGroupSize": 1,
         "specId": "azure+australiasoutheast+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g4-azure-austriaeast",
         "nodeGroupSize": 1,
         "specId": "azure+austriaeast+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g5-azure-brazilsouth",
         "nodeGroupSize": 1,
         "specId": "azure+brazilsouth+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g6-azure-canadacentral",
         "nodeGroupSize": 1,
         "specId": "azure+canadacentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g7-azure-canadaeast",
         "nodeGroupSize": 1,
         "specId": "azure+canadaeast+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g8-azure-centralindia",
         "nodeGroupSize": 1,
         "specId": "azure+centralindia+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g9-azure-centralus",
         "nodeGroupSize": 1,
         "specId": "azure+centralus+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g10-azure-chilecentral",
         "nodeGroupSize": 1,
         "specId": "azure+chilecentral+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server-gen1:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g11-azure-eastasia",
         "nodeGroupSize": 1,
         "specId": "azure+eastasia+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g12-azure-eastus",
         "nodeGroupSize": 1,
         "specId": "azure+eastus+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g13-azure-eastus2",
         "nodeGroupSize": 1,
         "specId": "azure+eastus2+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g14-azure-francecentral",
         "nodeGroupSize": 1,
         "specId": "azure+francecentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g15-azure-germanywestcentral",
         "nodeGroupSize": 1,
         "specId": "azure+germanywestcentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
-      },
-      {
-        "name": "g16-azure-indonesiacentral",
-        "nodeGroupSize": 1,
-        "specId": "azure+indonesiacentral+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g17-azure-israelcentral",
         "nodeGroupSize": 1,
         "specId": "azure+israelcentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g18-azure-italynorth",
         "nodeGroupSize": 1,
         "specId": "azure+italynorth+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
-      },
-      {
-        "name": "g19-azure-japaneast",
-        "nodeGroupSize": 1,
-        "specId": "azure+japaneast+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server-gen1:22.04.202605030"
-      },
-      {
-        "name": "g20-azure-japanwest",
-        "nodeGroupSize": 1,
-        "specId": "azure+japanwest+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
-      },
-      {
-        "name": "g21-azure-koreacentral",
-        "nodeGroupSize": 1,
-        "specId": "azure+koreacentral+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g22-azure-koreasouth",
         "nodeGroupSize": 1,
         "specId": "azure+koreasouth+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g23-azure-malaysiawest",
         "nodeGroupSize": 1,
         "specId": "azure+malaysiawest+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g24-azure-mexicocentral",
         "nodeGroupSize": 1,
         "specId": "azure+mexicocentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
-      },
-      {
-        "name": "g25-azure-newzealandnorth",
-        "nodeGroupSize": 1,
-        "specId": "azure+newzealandnorth+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g26-azure-northcentralus",
         "nodeGroupSize": 1,
         "specId": "azure+northcentralus+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g27-azure-northeurope",
         "nodeGroupSize": 1,
         "specId": "azure+northeurope+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g28-azure-norwayeast",
         "nodeGroupSize": 1,
         "specId": "azure+norwayeast+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g29-azure-polandcentral",
         "nodeGroupSize": 1,
         "specId": "azure+polandcentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g30-azure-qatarcentral",
         "nodeGroupSize": 1,
         "specId": "azure+qatarcentral+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g31-azure-southafricanorth",
         "nodeGroupSize": 1,
         "specId": "azure+southafricanorth+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server-gen1:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g32-azure-southcentralus",
         "nodeGroupSize": 1,
         "specId": "azure+southcentralus+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
-      },
-      {
-        "name": "g33-azure-southeastasia",
-        "nodeGroupSize": 1,
-        "specId": "azure+southeastasia+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g34-azure-southindia",
         "nodeGroupSize": 1,
         "specId": "azure+southindia+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server-gen1:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g35-azure-spaincentral",
         "nodeGroupSize": 1,
         "specId": "azure+spaincentral+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g36-azure-swedencentral",
         "nodeGroupSize": 1,
         "specId": "azure+swedencentral+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server-gen1:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g37-azure-switzerlandnorth",
         "nodeGroupSize": 1,
         "specId": "azure+switzerlandnorth+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g38-azure-uaenorth",
         "nodeGroupSize": 1,
         "specId": "azure+uaenorth+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
-      },
-      {
-        "name": "g39-azure-uksouth",
-        "nodeGroupSize": 1,
-        "specId": "azure+uksouth+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g40-azure-ukwest",
         "nodeGroupSize": 1,
         "specId": "azure+ukwest+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts:22.04.202605040"
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100"
       },
       {
         "name": "g41-azure-westcentralus",
         "nodeGroupSize": 1,
         "specId": "azure+westcentralus+standard_b1ls",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202605030"
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110"
       },
       {
         "name": "g42-azure-westeurope",
         "nodeGroupSize": 1,
         "specId": "azure+westeurope+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server-gen1:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g44-azure-westus",
         "nodeGroupSize": 1,
         "specId": "azure+westus+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
-      },
-      {
-        "name": "g45-azure-westus2",
-        "nodeGroupSize": 1,
-        "specId": "azure+westus2+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server-gen1:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       },
       {
         "name": "g46-azure-westus3",
         "nodeGroupSize": 1,
         "specId": "azure+westus3+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030"
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202606110"
       }
     ]
   }

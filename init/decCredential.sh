@@ -31,6 +31,19 @@ if [ -f "$FILE_PATH" ]; then
     exit 0
 fi
 
+# Guard: Docker bind-mount creates an empty directory at the host path when the file does not
+# exist yet (e.g., mc-admin-cli mounts ~/.cloud-barista/credentials.yaml into a container).
+# Remove that phantom directory so the decrypted file can be placed correctly.
+if [ -d "$FILE_PATH" ]; then
+    if [ -z "$(ls -A "$FILE_PATH" 2>/dev/null)" ]; then
+        echo -e "\n${YELLOW}Removing empty directory at ${CYAN}$FILE_PATH${YELLOW} (created by Docker volume mount).${NC}"
+        rmdir "$FILE_PATH"
+    else
+        echo -e "\n${RED}Cannot decrypt: ${CYAN}$FILE_PATH${RED} exists as a non-empty directory. Please resolve manually.${NC}\n"
+        exit 1
+    fi
+fi
+
 # Check if the encrypted file exists
 if [ ! -f "$ENCRYPTED_FILE" ]; then
     echo -e "\n${RED}The encrypted file does not exist: ${CYAN}$ENCRYPTED_FILE${NC}\n"

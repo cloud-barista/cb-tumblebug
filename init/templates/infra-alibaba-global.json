@@ -8,163 +8,73 @@
         "name": "g1-alibaba-ap-northeast-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+ap-northeast-1+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g2-alibaba-ap-northeast-2",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+ap-northeast-2+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g3-alibaba-ap-southeast-1",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+ap-southeast-1+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g4-alibaba-ap-southeast-3",
         "nodeGroupSize": 1,
         "specId": "alibaba+ap-southeast-3+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g5-alibaba-ap-southeast-5",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+ap-southeast-5+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g6-alibaba-ap-southeast-6",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+ap-southeast-6+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g7-alibaba-ap-southeast-7",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+ap-southeast-7+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g8-alibaba-cn-beijing",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-beijing+ecs.e-c1m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g9-alibaba-cn-chengdu",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-chengdu+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g10-alibaba-cn-fuzhou",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-fuzhou+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g11-alibaba-cn-guangzhou",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-guangzhou+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g12-alibaba-cn-hangzhou",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-hangzhou+ecs.e-c1m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g13-alibaba-cn-heyuan",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-heyuan+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g14-alibaba-cn-hongkong",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-hongkong+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g15-alibaba-cn-huhehaote",
         "nodeGroupSize": 1,
         "specId": "alibaba+cn-huhehaote+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g16-alibaba-cn-nanjing",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-nanjing+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g17-alibaba-cn-qingdao",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-qingdao+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
-      },
-      {
-        "name": "g18-alibaba-cn-shanghai",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-shanghai+ecs.ic5.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g19-alibaba-cn-wuhan-lr",
         "nodeGroupSize": 1,
         "specId": "alibaba+cn-wuhan-lr+ecs.c9i.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g20-alibaba-cn-wulanchabu",
         "nodeGroupSize": 1,
         "specId": "alibaba+cn-wulanchabu+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g21-alibaba-eu-central-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+eu-central-1+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g22-alibaba-eu-west-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+eu-west-1+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g23-alibaba-me-central-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+me-central-1+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g24-alibaba-me-east-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+me-east-1+ecs.mn4.small",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g25-alibaba-na-south-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+na-south-1+ecs.c9i.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g26-alibaba-us-east-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+us-east-1+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       },
       {
         "name": "g27-alibaba-us-west-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+us-west-1+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd"
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd"
       }
     ]
   }
