@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -309,8 +310,19 @@ func getGCPCreds(ctx context.Context) (*gcpCreds, error) {
 	}, nil
 }
 
-// newComputeService creates a GCP Compute Engine API service using service account credentials.
+// computeServiceCache stores *compute.Service objects keyed by clientEmail.
+// Reusing the same service object is critical: the underlying oauth2.Transport caches
+// the GCP access token internally. Creating a new service on every call discards that
+// cache, forcing a new token fetch from oauth2.googleapis.com on each API call.
+var computeServiceCache sync.Map // key: clientEmail → *compute.Service
+
+// newComputeService returns a cached GCP Compute Engine API service for the given
+// service account, creating one if it does not already exist.
 func newComputeService(ctx context.Context, creds *gcpCreds) (*compute.Service, error) {
+	if v, ok := computeServiceCache.Load(creds.ClientEmail); ok {
+		return v.(*compute.Service), nil
+	}
+
 	// OpenBao stores the private key with literal "\n" (two chars: backslash + n).
 	// Convert to actual newlines for PEM parsing.
 	privateKey := strings.ReplaceAll(creds.PrivateKey, `\n`, "\n")
@@ -335,5 +347,6 @@ func newComputeService(ctx context.Context, creds *gcpCreds) (*compute.Service, 
 		return nil, fmt.Errorf("failed to create GCP Compute service: %w", err)
 	}
 
-	return svc, nil
+	actual, _ := computeServiceCache.LoadOrStore(creds.ClientEmail, svc)
+	return actual.(*compute.Service), nil
 }

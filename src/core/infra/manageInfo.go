@@ -1878,7 +1878,10 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 
 	if nodeInfo.Status != model.StatusTerminated && cspResourceName != "" {
 		// Direct SDK fast path: bypass Spider for CSPs with a registered BatchVMStatusFunc.
-		// Benefits: connection pooling, proper retry/backoff, no extra Spider network hop.
+		// Benefits: connection pooling, cached OAuth tokens, no extra Spider network hop.
+		// On failure we do NOT fall back to Spider: Spider calls the same CSP API, so a
+		// transient CSP failure that breaks our SDK would break Spider too — adding only the
+		// Spider round-trip latency (up to 60 s) with no reliability gain.
 		if handler, ok := cspdirect.GetBatchVMStatusHandler(nodeInfo.ConnectionConfig.ProviderName); ok && nodeInfo.CspResourceId != "" {
 			sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, nodeInfo.ConnectionConfig.CredentialHolder)
 			statuses, sdkErr := handler(sdkCtx, nodeInfo.ConnectionConfig.RegionDetail.RegionName, []string{nodeInfo.CspResourceId})
@@ -1888,10 +1891,38 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 				} else {
 					callResult.Status = model.StatusUndefined
 				}
+				// Successful direct SDK call: reset any consecutive-failure streak for this node.
+				terminatingFailStreak.Delete(nsId + "/" + infraId + "/" + nodeId)
 				goto applyStatus
 			}
+
+			// Direct SDK failed — preserve stable status to avoid false flips, same logic
+			// as Spider error handling.
 			log.Warn().Err(sdkErr).Str("provider", nodeInfo.ConnectionConfig.ProviderName).
-				Msgf("[FetchNodeStatus] direct SDK failed for %s; falling back to Spider", nodeId)
+				Msgf("[FetchNodeStatus] direct SDK failed for %s; preserving current status (skipping Spider fallback)", nodeId)
+			switch nodeInfo.Status {
+			case model.StatusRunning, model.StatusSuspended, model.StatusTerminated,
+				model.StatusSuspending, model.StatusResuming, model.StatusRebooting,
+				model.StatusTerminating:
+				callResult.Status = nodeInfo.Status
+			default:
+				callResult.Status = model.StatusUndefined
+			}
+			// Track consecutive failures for Terminating nodes: if the VM is gone from the
+			// CSP, repeated SDK errors are the signal to promote it to Terminated.
+			if nodeInfo.Status == model.StatusTerminating {
+				streakKey := nsId + "/" + infraId + "/" + nodeId
+				prev, _ := terminatingFailStreak.LoadOrStore(streakKey, 0)
+				streak := prev.(int) + 1
+				if streak >= terminatingFailStreakMax {
+					terminatingFailStreak.Delete(streakKey)
+					log.Info().Msgf("[FetchNodeStatus] Node %s: direct SDK error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
+					callResult.Status = model.StatusTerminated
+				} else {
+					terminatingFailStreak.Store(streakKey, streak)
+				}
+			}
+			goto applyStatus
 		}
 
 		// Rate-limit all Spider HTTP calls process-wide regardless of call path

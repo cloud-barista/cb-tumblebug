@@ -53,6 +53,12 @@ type AvailabilityQuery struct {
 	SystemDiskCategory string // CSP-native disk category (optional, e.g., "cloud_essd")
 	PreferredZone      string // optional zone hint
 	ImageId            string // optional image id (some CSPs validate compatibility)
+	// AcceleratorModel is the CB-Tumblebug-level GPU accelerator name (e.g., "nvidia-a100-80gb").
+	// When non-empty and AcceleratorCount > 0, CSP checkers that support GPU quota
+	// (currently GCP) will verify regional quota in addition to zone availability.
+	AcceleratorModel string
+	// AcceleratorCount is the number of GPU accelerators per instance.
+	AcceleratorCount int
 }
 
 // ZoneAvailability describes per-zone availability for the queried

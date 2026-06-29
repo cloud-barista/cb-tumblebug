@@ -23,7 +23,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
@@ -248,11 +247,9 @@ func GetImage(ctx context.Context, region, urn string) (model.SpiderImageInfo, e
 		return model.SpiderImageInfo{}, fmt.Errorf("failed to get Azure credentials: %w", err)
 	}
 
-	credential, err := azidentity.NewClientSecretCredential(
-		creds.TenantID, creds.ClientID, creds.ClientSecret, nil,
-	)
+	credential, err := getOrCreateCredential(creds)
 	if err != nil {
-		return model.SpiderImageInfo{}, fmt.Errorf("failed to create Azure credential: %w", err)
+		return model.SpiderImageInfo{}, fmt.Errorf("failed to get Azure credential: %w", err)
 	}
 
 	client, err := armcompute.NewVirtualMachineImagesClient(creds.SubscriptionID, credential, nil)
@@ -298,11 +295,9 @@ func ListImages(ctx context.Context, region string) ([]model.SpiderImageInfo, er
 		log.Debug().Dur("duration", time.Since(credStartTime)).Msg("[AzureImage:DEBUG] getCreds completed")
 	}
 
-	credential, err := azidentity.NewClientSecretCredential(
-		creds.TenantID, creds.ClientID, creds.ClientSecret, nil,
-	)
+	credential, err := getOrCreateCredential(creds)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure credential: %w", err)
+		return nil, fmt.Errorf("failed to get Azure credential: %w", err)
 	}
 
 	client, err := armcompute.NewVirtualMachineImagesClient(creds.SubscriptionID, credential, nil)

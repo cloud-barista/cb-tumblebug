@@ -2017,9 +2017,11 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		cspSpecName := specInfo.CspSpecName
 
 		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
-			Provider:     csp.ResolveCloudPlatform(specInfo.ProviderName),
-			Region:       specInfo.RegionName,
-			InstanceType: specInfo.CspSpecName,
+			Provider:         csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:           specInfo.RegionName,
+			InstanceType:     specInfo.CspSpecName,
+			AcceleratorModel: specInfo.AcceleratorModel,
+			AcceleratorCount: int(specInfo.AcceleratorCount),
 		})
 
 		if availability.Source == "none" {
@@ -2359,6 +2361,8 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 			InstanceType:       specInfo.CspSpecName,
 			SystemDiskCategory: normalizedDisk,
 			PreferredZone:      normalizedZone,
+			AcceleratorModel:   specInfo.AcceleratorModel,
+			AcceleratorCount:   int(specInfo.AcceleratorCount),
 		})
 
 		switch availability.Source {

@@ -109,7 +109,7 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	// For Azure, filter out Gen1-only VM families
 	if csp.ResolveCloudPlatform(providerName) == csp.Azure {
 		// TODO: needs to be merged with a general ignore filtering method
-		if isAzureGen1OnlySpec(tumblebugSpec.CspSpecName) {
+		if isAzureGen1OnlySpec(tumblebugSpec.CspSpecName, spiderSpec.KeyValueList) {
 			err := fmt.Errorf("skipping Azure Gen1-only VM family spec: %s", tumblebugSpec.CspSpecName)
 			emptyTumblebugSpec := model.SpecInfo{}
 			return emptyTumblebugSpec, err
@@ -3112,71 +3112,59 @@ func BulkUpdateSpec(nsId string, updates map[string]float32) (int, error) {
 	return int(result.RowsAffected), nil
 }
 
-// isAzureGen1OnlySpec checks if the given Azure VM spec belongs to a Gen1-only family
-// Based on Microsoft documentation: https://learn.microsoft.com/en-us/azure/virtual-machines/generation-2
-// Gen2 supported families: B, D, E, F, L, M, NC, ND, NV, HB, HC, HX series
-// Gen1-only families: A-series (classic), and some older generations
-func isAzureGen1OnlySpec(specName string) bool {
+// isAzureGen1OnlySpec checks if the given Azure VM spec supports only Hyper-V Gen1.
+// It first consults the HyperVGenerations field from the Azure API (authoritative),
+// then falls back to name-based heuristics when that field is absent.
+func isAzureGen1OnlySpec(specName string, keyValueList []model.KeyValue) bool {
 	if specName == "" {
 		return false
 	}
 
-	// Convert to lowercase for consistent comparison
+	// Prefer the authoritative HyperVGenerations field returned by the Azure API.
+	for _, kv := range keyValueList {
+		if kv.Key == "HyperVGenerations" {
+			v := strings.TrimSpace(kv.Value)
+			supportsV1 := strings.Contains(v, "V1")
+			supportsV2 := strings.Contains(v, "V2")
+			return supportsV1 && !supportsV2
+		}
+	}
+
+	// Fallback: name-based heuristics for specs missing the HyperVGenerations field.
 	lowerSpecName := strings.ToLower(specName)
 
-	// Extract VM family prefix (e.g., "Standard_A1" -> "a", "Standard_D2s_v3" -> "d")
 	var family string
-
-	// Handle "Standard_" prefix
 	if strings.HasPrefix(lowerSpecName, "standard_") {
-		remaining := lowerSpecName[9:] // Remove "standard_" prefix
+		remaining := lowerSpecName[9:]
 		if len(remaining) > 0 {
-			// Extract the first letter as family
 			family = string(remaining[0])
 		}
 	} else if strings.HasPrefix(lowerSpecName, "basic_") {
-		remaining := lowerSpecName[6:] // Remove "basic_" prefix
+		remaining := lowerSpecName[6:]
 		if len(remaining) > 0 {
-			// Extract the first letter as family
 			family = string(remaining[0])
 		}
 	} else {
-		// For specs without "Standard_" or "Basic_" prefix, take first character
 		if len(lowerSpecName) > 0 {
 			family = string(lowerSpecName[0])
 		}
 	}
 
-	// Check if it's a Gen1-only family
 	switch family {
 	case "a":
-		// A-series: Only original A-series (without version) are Gen1-only
-		// Gen1-only: Standard_A1, Standard_A2, Basic_A1, etc.
-		// Gen2 supported: Standard_A1_v2, Standard_A2_v2, etc.
-		if strings.Contains(lowerSpecName, "_v2") {
-			return false // A-series v2 supports Gen2
-		}
-		return true // Original A-series are Gen1-only
+		// All A-series VMs are Gen1-only, including Av2 (Standard_A1_v2 etc.).
+		// The "_v2" suffix denotes a size revision, NOT Hyper-V Generation 2.
+		return true
 	case "d":
-		// D-family: Simple rule based on storage optimization indicator
-		// Pattern: Standard_D{number}s_{version} → Gen2 supported
-		// Pattern: Standard_D{number}_{version} → Gen1 only
-
-		// Check for digit+s pattern (e.g., "2s", "4s", "8s", "16s")
-		// This covers: Standard_D2s_v3, Standard_D4s_v3, Standard_D8s_v3, etc.
+		// D-family with digit+s pattern (e.g., Standard_D2s_v3) supports Gen2.
 		for i := 0; i < len(lowerSpecName)-1; i++ {
 			if lowerSpecName[i] >= '0' && lowerSpecName[i] <= '9' && lowerSpecName[i+1] == 's' {
-				return false // Found digit+s pattern = Gen2 supported
+				return false
 			}
 		}
-
-		// All other D-family specs without digit+s pattern are Gen1-only
-		// (includes all Dv2, Dv3, Dv4, Dv5, etc.)
 		return true
 	}
 
-	// All other families support Gen2 by default based on Microsoft documentation
-	// Gen2 supported families: B, E, F, L, M, NC, ND, NV, HB, HC, HX
 	return false
 }
 

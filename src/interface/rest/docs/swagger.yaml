@@ -7682,6 +7682,201 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: applyReq
+  /ns/{nsId}/infraAutopilot:
+    post:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Create infra using declarative autopilot provisioning
+      description: |-
+        Create a multi-cloud infra using the autopilot engine, which automatically resolves
+        candidate specs and images for each NodeSpec, reviews each pair for compatibility
+        and availability, then provisions node groups until the DesiredCount is satisfied
+        or all candidates are exhausted.
+
+        **Key Features:**
+        - Automatic spec and image resolution per NodeSpec
+        - Pre-flight ReviewSpecImagePair validation before each provisioning attempt
+        - Respects MaxPerLocation and PlacementPolicy for geographic distribution
+        - Configurable retry limits via AutopilotPolicy.MaxAttemptsPerSpec
+        - Returns detailed attempt history with success/failure reasons
+
+        **Provisioning Strategy:**
+        1. For each NodeSpec, call RecommendSpec with the provided SpecFilter
+        2. For each candidate spec, search for a matching image using ImageRequirement
+        3. Run ReviewSpecImagePair; skip invalid pairs
+        4. Apply suggested zone/disk overrides from the review
+        5. Provision a node group and subtract from remaining count
+        6. Continue until DesiredCount fulfilled or candidates exhausted
+      operationId: PostInfraAutopilot
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID for selecting which credentials to use
+        schema:
+          type: string
+      requestBody:
+        description: Autopilot infra creation request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.InfraAutopilotReq'
+        required: true
+      responses:
+        "200":
+          description: Created infra with autopilot metadata including per-NodeSpec
+            results and attempt history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraAutopilotResult'
+        "400":
+          description: Invalid request format or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error during provisioning
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: infraAutopilotReq
+  /ns/{nsId}/infraAutopilot/{infraId}/status:
+    get:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Get autopilot provisioning status for an infra
+      description: |-
+        Returns a lightweight status snapshot of an infra created by autopilot,
+        including overall infra status and per-NodeSpec provisioning progress.
+      operationId: GetInfraAutopilotStatus
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Autopilot provisioning status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraAutopilotStatus'
+        "404":
+          description: Namespace or infra not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/infraAutopilotReview:
+    post:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: Pre-flight review for autopilot infra provisioning
+      description: |-
+        Review and validate an InfraAutopilotReq without creating any resources.
+        For each NodeSpec in the request, the endpoint resolves candidate specs (via RecommendSpec),
+        finds matching images, and runs ReviewSpecImagePair on each candidate.
+        The result contains per-NodeSpec candidate reviews, validity flags, risk levels, cost estimates,
+        suggested zones/disks, and an overall feasibility summary.
+
+        **Use Cases:**
+        - Validate autopilot requests before committing to provisioning
+        - Estimate cost ranges for planned infra
+        - Identify specs with no valid candidates early
+        - Check availability zones and disk recommendations
+      operationId: PostInfraAutopilotReview
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: Credential holder ID for selecting which credentials to use
+        schema:
+          type: string
+      requestBody:
+        description: Autopilot infra request to review
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.InfraAutopilotReq'
+        required: true
+      responses:
+        "200":
+          description: Pre-flight review result with per-NodeSpec candidate details
+            and overall feasibility summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.InfraAutopilotReviewResult'
+        "400":
+          description: Invalid request format or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error during review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: infraAutopilotReq
   /ns/{nsId}/infraDynamic:
     post:
       tags:
@@ -14061,6 +14256,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/sharedResources/recoverDependencies:
+    post:
+      tags:
+      - "[Namespace] Namespace"
+      summary: Register orphaned CSP resources blocking shared resource deletion
+      description: |-
+        Finds CSP resources (VMs, VNets, SGs, SSHKeys) that exist on the CSP but are
+        no longer tracked in CB-TB, causing DependencyViolation errors when trying to
+        delete shared resources (e.g. `DELETE /ns/{nsId}/sharedResources`).
+
+        When `connectionName` is omitted, all connections that have shared resources
+        in the namespace are scanned automatically.
+
+        Discovered resources are registered with the given `infraNamePrefix` (default: "dep")
+        so they can be inspected and cleanly deleted through CB-TB afterwards.
+      operationId: RegisterSharedResourceDependencies
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: "CSV of resource types to scan (default: vNet,securityGroup,sshKey,node)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: "Optional: connectionName and infraNamePrefix"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/resource.RestRegisterSharedResourceDependenciesRequest'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RegisterResourceAllResult'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: Request
   /ns/{nsId}/stream/cmd/infra/{infraId}:
     get:
       tags:
@@ -19224,6 +19480,23 @@ components:
           type: array
           items:
             type: object
+    model.ActiveAttempt:
+      type: object
+      properties:
+        attemptIndex:
+          type: integer
+        elapsedSeconds:
+          type: integer
+        poolIndex:
+          type: integer
+        requestedCount:
+          type: integer
+        specId:
+          type: string
+        startedAt:
+          type: string
+        zone:
+          type: string
     model.AgentInstallContent:
       type: object
       properties:
@@ -19351,6 +19624,52 @@ components:
           - <=
           - '>'
           - '>='
+    model.AutopilotPolicy:
+      type: object
+      properties:
+        crossCSPTolerancePct:
+          type: integer
+          example: 20
+        extendCandidates:
+          type: boolean
+          example: true
+        maxAttemptsPerSpec:
+          type: integer
+          example: 10
+        onPartialFailure:
+          type: string
+          example: refine
+          enum:
+          - continue
+          - rollback
+          - refine
+        parallelism:
+          type: integer
+          example: 2
+        timeoutMinutes:
+          type: integer
+          example: 60
+    model.AutopilotStats:
+      type: object
+      properties:
+        elapsedSeconds:
+          type: integer
+        failed:
+          type: integer
+        locationsUsed:
+          type: array
+          items:
+            type: string
+        nodeGroupCount:
+          type: integer
+        succeeded:
+          type: integer
+        totalAttempts:
+          type: integer
+        trimmedCount:
+          type: integer
+        wastedCostPerHour:
+          type: number
     model.AvailabilityResult:
       type: object
       properties:
@@ -19678,6 +19997,64 @@ components:
           type: string
           description: TaskId is the cancelled task ID
           example: cmd-g1-1-req123-1
+    model.CandidateReview:
+      type: object
+      properties:
+        acceleratorCount:
+          type: integer
+        acceleratorMemoryGB:
+          type: number
+        acceleratorModel:
+          type: string
+        acceleratorType:
+          type: string
+        connectionName:
+          type: string
+        costPerHour:
+          type: number
+        cspSpecName:
+          type: string
+        invalidReasons:
+          type: array
+          items:
+            type: string
+        isCapacityIssue:
+          type: boolean
+        isValid:
+          type: boolean
+        memoryGiB:
+          type: number
+        plannedNodeGroupName:
+          type: string
+          description: |-
+            PlannedNodeGroupName is pre-assigned by the planning phase (review) so the
+            execution phase can use the exact same node group name without re-deriving it.
+        plannedRequestedCount:
+          type: integer
+          description: PlannedRequestedCount is the node count this candidate should
+            request during execution.
+        poolIndex:
+          type: integer
+        providerName:
+          type: string
+        regionName:
+          type: string
+        resolvedImageId:
+          type: string
+        riskLevel:
+          type: string
+        riskReasons:
+          type: array
+          items:
+            type: string
+        specId:
+          type: string
+        suggestedSystemDisk:
+          type: string
+        suggestedZone:
+          type: string
+        vCPU:
+          type: number
     model.ChangeK8sNodeGroupAutoscaleSizeReq:
       type: object
       properties:
@@ -21263,6 +21640,20 @@ components:
           type: string
         name:
           type: string
+    model.ImageRequirement:
+      required:
+      - osType
+      type: object
+      properties:
+        isGPUImage:
+          type: boolean
+          example: false
+        osType:
+          type: string
+          example: ubuntu
+        osVersion:
+          type: string
+          example: "22.04"
     model.ImageRiskInfo:
       type: object
       properties:
@@ -21409,6 +21800,164 @@ components:
           type: array
           items:
             type: string
+    model.InfraAutopilotReq:
+      required:
+      - name
+      - nodeSpecs
+      type: object
+      properties:
+        description:
+          type: string
+        installMonAgent:
+          type: string
+          example: "no"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+        name:
+          type: string
+          example: my-infra
+        nodeSpecs:
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeSpec'
+        policy:
+          $ref: '#/components/schemas/model.AutopilotPolicy'
+        postCommand:
+          $ref: '#/components/schemas/model.InfraCmdReq'
+    model.InfraAutopilotResult:
+      type: object
+      properties:
+        autopilotStats:
+          $ref: '#/components/schemas/model.AutopilotStats'
+        cluster:
+          type: array
+          description: Cluster is the list of implicit clusters synthesized at query-time
+            from Nodes.
+          items:
+            $ref: '#/components/schemas/model.InfraClusterInfo'
+        configureCloudAdaptiveNetwork:
+          type: string
+          description: "ConfigureCloudAdaptiveNetwork is an option to configure Cloud\
+            \ Adaptive Network (CLADNet) ([yes/no] default:yes)"
+          example: "yes"
+          default: "no"
+          enum:
+          - "yes"
+          - "no"
+        creationErrors:
+          type: object
+          description: CreationErrors contains information about Node creation failures
+            (if any)
+          allOf:
+          - $ref: '#/components/schemas/model.InfraCreationErrors'
+        description:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        installMonAgent:
+          type: string
+          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
+            \ ([yes/no] default:no)"
+          example: "no"
+          default: "no"
+          enum:
+          - "yes"
+          - "no"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        newNodeList:
+          type: array
+          description: List of IDs for new nodes. Return IDs if the nodes are newly
+            added. This field should be used for return body only.
+          items:
+            type: string
+        node:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeInfo'
+        nodeSpecResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeSpecResult'
+        placementAlgo:
+          type: string
+        postCommand:
+          type: object
+          description: PostCommand is for the command to bootstrap the Nodes
+          allOf:
+          - $ref: '#/components/schemas/model.InfraCmdReq'
+        postCommandResult:
+          type: object
+          description: PostCommandResult is the result of the command for bootstraping
+            the Nodes
+          allOf:
+          - $ref: '#/components/schemas/model.InfraSshCmdResult'
+        provisioningAttempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ProvisioningAttempt'
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        status:
+          type: string
+        statusCount:
+          $ref: '#/components/schemas/model.StatusCountInfo'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the infra in a keyword (any string
+            can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        systemMessage:
+          type: array
+          description: Latest system message such as error message
+          items:
+            type: string
+        targetAction:
+          type: string
+        targetStatus:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+    model.InfraAutopilotReviewResult:
+      type: object
+      properties:
+        name:
+          type: string
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeSpecReview'
+        summary:
+          $ref: '#/components/schemas/model.ReviewSummary'
+    model.InfraAutopilotStatus:
+      type: object
+      properties:
+        elapsedSeconds:
+          type: integer
+        infraId:
+          type: string
+        infraStatus:
+          type: string
+        specs:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeSpecStatus'
     model.InfraClusterInfo:
       type: object
       properties:
@@ -23345,6 +23894,102 @@ components:
           enum:
           - Success
           - Failed
+    model.NodeSpec:
+      required:
+      - desiredCount
+      - imageRequirement
+      - name
+      - specFilter
+      type: object
+      properties:
+        desiredCount:
+          minimum: 1
+          type: integer
+          example: 4
+        imageRequirement:
+          $ref: '#/components/schemas/model.ImageRequirement'
+        label:
+          type: object
+          additionalProperties:
+            type: string
+        maxPerLocation:
+          type: integer
+          example: 2
+        minCount:
+          type: integer
+          example: 2
+        name:
+          type: string
+          example: gpu-workers
+        placementPolicy:
+          $ref: '#/components/schemas/model.PlacementPolicy'
+        rootDiskSize:
+          type: integer
+          example: 0
+        rootDiskType:
+          type: string
+          example: default
+        specFilter:
+          $ref: '#/components/schemas/model.RecommendSpecReq'
+    model.NodeSpecResult:
+      type: object
+      properties:
+        desiredCount:
+          type: integer
+        fulfilled:
+          type: boolean
+        locationsUsed:
+          type: array
+          items:
+            type: string
+        minFulfilled:
+          type: boolean
+        nodeGroupIds:
+          type: array
+          items:
+            type: string
+        nodeSpecName:
+          type: string
+        provisionedCount:
+          type: integer
+    model.NodeSpecReview:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CandidateReview'
+        costPerHourMax:
+          type: number
+        costPerHourMin:
+          type: number
+        desiredCount:
+          type: integer
+        expectedNodeGroups:
+          type: integer
+        feasibility:
+          type: string
+        nodeSpecName:
+          type: string
+        validCandidates:
+          type: integer
+    model.NodeSpecStatus:
+      type: object
+      properties:
+        activeAttempt:
+          $ref: '#/components/schemas/model.ActiveAttempt'
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ProvisioningAttempt'
+        desiredCount:
+          type: integer
+        nodeSpecName:
+          type: string
+        provisionedCount:
+          type: integer
+        status:
+          type: string
     model.NodeStatusInfo:
       type: object
       properties:
@@ -23862,6 +24507,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.ParameterOptionDetail'
+    model.PlacementPolicy:
+      type: object
+      properties:
+        maxSkew:
+          type: integer
+          example: 5
+        minLocations:
+          type: integer
+          example: 2
+        strategy:
+          type: string
+          description: |-
+            Strategy: "pack" fills one location before next,
+            "spread" round-robins across distinct locations,
+            "balanced" keeps counts within MaxSkew of each other.
+          example: pack
+          enum:
+          - pack
+          - spread
+          - balanced
     model.Policy:
       type: object
       properties:
@@ -23955,6 +24620,53 @@ components:
         unpricedSpecCount:
           type: integer
           example: 234
+    model.ProvisioningAttempt:
+      type: object
+      properties:
+        acceleratorCount:
+          type: integer
+        acceleratorMemoryGB:
+          type: number
+        acceleratorModel:
+          type: string
+        completedAt:
+          type: string
+        connectionName:
+          type: string
+        costPerHour:
+          type: number
+        diskOverridden:
+          type: boolean
+        failureReason:
+          type: string
+        imageId:
+          type: string
+        nodeGroupName:
+          type: string
+        nodeSpecName:
+          type: string
+        poolIndex:
+          type: integer
+        requestedCount:
+          type: integer
+        reviewRejected:
+          type: boolean
+        riskLevel:
+          type: string
+        specId:
+          type: string
+        startedAt:
+          type: string
+        status:
+          type: string
+        succeededCount:
+          type: integer
+        trimmedCount:
+          type: integer
+        zone:
+          type: string
+        zoneOverridden:
+          type: boolean
     model.ProvisioningEvent:
       type: object
       properties:
@@ -24783,6 +25495,29 @@ components:
         status:
           type: string
           example: Available/Unavailable/Unknown
+    model.ReviewSummary:
+      type: object
+      properties:
+        confirmedStockZones:
+          type: array
+          items:
+            type: string
+        costPerHourMax:
+          type: number
+        costPerHourMin:
+          type: number
+        desiredTotal:
+          type: integer
+        feasibility:
+          type: string
+        highRiskCandidates:
+          type: integer
+        unreachableSpecs:
+          type: array
+          items:
+            type: string
+        validCandidates:
+          type: integer
     model.RiskAnalysis:
       type: object
       properties:
@@ -27516,6 +28251,20 @@ components:
           type: string
         cspResourceId:
           type: string
+    resource.RestRegisterSharedResourceDependenciesRequest:
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: |-
+            ConnectionName limits the scan to a single connection. If empty, all connections
+            with shared resources in the namespace are scanned automatically.
+          example: ""
+        infraNamePrefix:
+          type: string
+          description: "InfraNamePrefix is prepended to the registered infra names\
+            \ (default: \"dep\")."
+          example: dep
     resource.Version:
       type: object
       properties:

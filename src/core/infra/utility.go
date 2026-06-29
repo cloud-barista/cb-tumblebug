@@ -850,6 +850,123 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 	return output, nil
 }
 
+// RegisterSharedResourceDependencies finds and registers orphaned CSP resources
+// that are blocking deletion of shared resources due to DependencyViolation errors.
+// These are resources (VMs, SGs, VNets) that exist on the CSP but are no longer
+// tracked in CB-TB. They are registered with a "dep-" prefix to indicate they are
+// detected dependencies, so users can inspect and clean them up properly.
+//
+// If connectionName is empty, all connections with shared resources in the namespace
+// are checked. The default infraNamePrefix is "dep" and default option covers all
+// dependency-relevant resource types.
+func RegisterSharedResourceDependencies(ctx context.Context, nsId string, connectionName string, infraNamePrefix string, option string) (model.RegisterResourceAllResult, error) {
+	startTime := time.Now()
+
+	var connectionNames []string
+	if connectionName != "" {
+		connectionNames = []string{connectionName}
+	} else {
+		var err error
+		connectionNames, err = resource.FindConnectionsWithSharedResources(nsId)
+		if err != nil {
+			return model.RegisterResourceAllResult{}, fmt.Errorf("failed to find connections with shared resources: %w", err)
+		}
+	}
+
+	if len(connectionNames) == 0 {
+		return model.RegisterResourceAllResult{}, fmt.Errorf("no connections with shared resources found in namespace '%s'", nsId)
+	}
+
+	if option == "" {
+		option = strings.Join([]string{model.StrVNet, model.StrSecurityGroup, model.StrSSHKey, model.StrNode}, ",")
+	}
+	if infraNamePrefix == "" {
+		infraNamePrefix = "dep"
+	}
+
+	log.Info().Msgf("RegisterSharedResourceDependencies: checking %d connection(s) for orphaned resources: %v", len(connectionNames), connectionNames)
+
+	output := model.RegisterResourceAllResult{}
+	errorConnCount := 0
+
+	for _, connName := range connectionNames {
+		infraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, connName))
+		log.Info().Msgf("Scanning orphaned dependencies for connection '%s', infra prefix: '%s'", connName, infraName)
+
+		// Pass 1: register resources that are on CSP but not in Spider or TB (OnCspOnly)
+		result, err := RegisterCspNativeResources(ctx, nsId, connName, infraName, option, "n")
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to register dependencies for connection '%s'", connName)
+			result.ConnectionName = connName
+			result.SystemMessage = err.Error()
+			errorConnCount++
+		}
+
+		// Pass 2: register VMs that are in Spider's registry but missing from TB.
+		// These are VMs that were previously managed through Spider but got removed
+		// from CB-TB without deleting from CSP (common cause of DependencyViolation).
+		inspectResult, inspErr := InspectResources(connName, model.StrNode)
+		if inspErr != nil {
+			log.Warn().Err(inspErr).Msgf("Could not inspect nodes for Spider-only pass on connection '%s'", connName)
+		} else {
+			tbCspIds := make(map[string]bool)
+			for _, info := range inspectResult.Resources.OnTumblebug.Info {
+				tbCspIds[info.CspResourceId] = true
+			}
+
+			for _, spInfo := range inspectResult.Resources.OnSpider.Info {
+				if tbCspIds[spInfo.CspResourceId] {
+					continue // already tracked in TB
+				}
+				// VM is in Spider but missing from TB — register it.
+				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, spInfo.CspResourceId))
+				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, spInfo.CspResourceId))
+				infraReq := model.InfraReq{
+					Name:            perVmInfraName,
+					Description:     "Infra for Spider-registered orphaned dependency node",
+					InstallMonAgent: "no",
+					NodeGroups: []model.CreateNodeGroupReq{{
+						ConnectionName:   connName,
+						CspResourceId:    spInfo.CspResourceId,
+						Name:             nodeGroupName,
+						Description:      "Spider-registered VM recovered for cleanup (dep recovery)",
+						Label:            map[string]string{model.LabelRegistered: "true"},
+						ImageId:          "unknown",
+						SpecId:           "unknown",
+						SshKeyId:         "unknown",
+						SubnetId:         "unknown",
+						VNetId:           "unknown",
+						SecurityGroupIds: []string{"unknown"},
+					}},
+				}
+				log.Info().Msgf("Registering Spider-only node '%s' (%s) from connection '%s'", nodeGroupName, spInfo.CspResourceId, connName)
+				_, regErr := CreateInfra(ctx, nsId, &infraReq, "register", false)
+				appendResult(&result, model.StrNode, nodeGroupName, regErr, &result.RegistrationOverview.Node)
+			}
+		}
+
+		output.RegisterationResult = append(output.RegisterationResult, result)
+
+		output.RegistrationOverview.VNet += result.RegistrationOverview.VNet
+		output.RegistrationOverview.SecurityGroup += result.RegistrationOverview.SecurityGroup
+		output.RegistrationOverview.SshKey += result.RegistrationOverview.SshKey
+		output.RegistrationOverview.Node += result.RegistrationOverview.Node
+		output.RegistrationOverview.DataDisk += result.RegistrationOverview.DataDisk
+		output.RegistrationOverview.CustomImage += result.RegistrationOverview.CustomImage
+		output.RegistrationOverview.Failed += result.RegistrationOverview.Failed
+	}
+
+	output.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+	output.RegisteredConnection = len(connectionNames)
+	output.AvailableConnection = len(connectionNames) - errorConnCount
+
+	sort.SliceStable(output.RegisterationResult, func(i, j int) bool {
+		return output.RegisterationResult[i].ConnectionName < output.RegisterationResult[j].ConnectionName
+	})
+
+	return output, nil
+}
+
 // registerConnectionsParallel runs RegisterCspNativeResources in parallel for the given
 // connections, applying per-CSP rate limits (concurrency cap + random delay).
 // Results are collected via a channel to avoid data races.

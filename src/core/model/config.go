@@ -75,11 +75,20 @@ type CloudImageIgnoreConfig struct {
 	CSPs   map[string]CSPImageIgnorePatterns `yaml:"csps,omitempty"`
 }
 
+// MetadataFilter represents a key-value filter applied to CSP-specific image metadata fields.
+// Images whose KeyValueList contains an exact match for Key+Value are excluded at fetch time.
+type MetadataFilter struct {
+	Key         string `yaml:"key"`
+	Value       string `yaml:"value"`
+	Description string `yaml:"description,omitempty"`
+}
+
 // CSPImageIgnorePatterns represents ignore patterns for a specific CSP
 type CSPImageIgnorePatterns struct {
-	Description    string                          `yaml:"description,omitempty"`
-	GlobalPatterns []string                        `yaml:"global_patterns,omitempty"`
-	Regions        map[string]RegionIgnorePatterns `yaml:"regions,omitempty"`
+	Description     string                          `yaml:"description,omitempty"`
+	GlobalPatterns  []string                        `yaml:"global_patterns,omitempty"`
+	MetadataFilters []MetadataFilter                `yaml:"metadata_filters,omitempty"`
+	Regions         map[string]RegionIgnorePatterns `yaml:"regions,omitempty"`
 }
 
 // OSTypeDetail is structure for OS type detail information

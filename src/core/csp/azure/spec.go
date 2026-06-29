@@ -111,11 +111,9 @@ func CheckSpecAvailability(ctx context.Context, region, nodeSize string) (*SpecC
 		return nil, fmt.Errorf("failed to get Azure credentials: %w", err)
 	}
 
-	credential, err := azidentity.NewClientSecretCredential(
-		creds.TenantID, creds.ClientID, creds.ClientSecret, nil,
-	)
+	credential, err := getOrCreateCredential(creds)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure credential: %w", err)
+		return nil, fmt.Errorf("failed to get Azure credential: %w", err)
 	}
 
 	cacheKey := creds.SubscriptionID + "+" + region
