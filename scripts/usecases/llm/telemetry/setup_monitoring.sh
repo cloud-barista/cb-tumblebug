@@ -247,7 +247,7 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
       },
       "targets": [
         {
-          "expr": "100 * avg(DCGM_FI_DEV_FB_USED{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"} / DCGM_FI_DEV_FB_TOTAL{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"})",
+          "expr": "100 * avg(DCGM_FI_DEV_FB_USED{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"} / (DCGM_FI_DEV_FB_USED{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"} + DCGM_FI_DEV_FB_FREE{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\",gpu=~\"$gpu\"}))",
           "refId": "A"
         }
       ]
@@ -466,7 +466,7 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le, instance) (rate((vllm:request_latency_seconds_bucket{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"} or vllm_request_latency_seconds_bucket{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"})[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, instance) (rate(vllm:request_latency_seconds_bucket{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}[5m]) or rate(vllm_request_latency_seconds_bucket{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}[5m])))",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
