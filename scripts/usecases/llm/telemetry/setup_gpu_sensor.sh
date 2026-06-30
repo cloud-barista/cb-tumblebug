@@ -133,17 +133,13 @@ if [ "$OLLAMA_RUNNING" = "true" ]; then
   interval = "15s"
   data_format = "json_v2"
   [[inputs.http.json_v2]]
+    measurement_name = "ollama_model"
     [[inputs.http.json_v2.object]]
       path = "models"
-      measurement_name = "ollama_model"
-      [[inputs.http.json_v2.object.field]]
-        path = "size_vram"
-        type = "int"
-      [[inputs.http.json_v2.object.field]]
-        path = "size"
-        type = "int"
-      [[inputs.http.json_v2.object.tag]]
-        path = "name"
+      tags = ["name"]
+      [inputs.http.json_v2.object.fields]
+        size_vram = "int"
+        size = "int"
 EOF
   echo "✓ Ollama metrics configured (port ${OLLAMA_PORT}/api/ps)"
 fi
