@@ -493,6 +493,96 @@ cat <<'EOF' > grafana/dashboards/llm-monitoring-overview.json
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Loaded Ollama Models",
+      "description": "Number of models currently loaded in Ollama memory (requires TelemetrySensor with Ollama running)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "count(ollama_model_size_vram{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}) or vector(0)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Total Ollama VRAM Used (MiB)",
+      "description": "Sum of VRAM consumed by all loaded Ollama models across selected instances",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(ollama_model_size_vram{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"}) / 1048576 or vector(0)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Ollama VRAM per Loaded Model (MiB)",
+      "description": "VRAM used by each loaded Ollama model — label shows instance and model name",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "ollama_model_size_vram{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"} / 1048576",
+          "legendFormat": "{{instance}} · {{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Ollama Loaded Model Count",
+      "description": "Number of models simultaneously loaded in Ollama per instance over time",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "count by (instance) (ollama_model_size_vram{job=\"gpu_vm_telegraf_gateway\",instance=~\"$instance\"})",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
     }
   ]
 }

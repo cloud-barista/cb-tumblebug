@@ -34,6 +34,22 @@ else
   echo "⚠ No GPU detected - skipping GPU monitoring"
 fi
 
+# 2.6. Detect Ollama (cb-tumblebug default port: 3000; fallback: 11434)
+echo "Detecting Ollama..."
+OLLAMA_RUNNING=false
+OLLAMA_PORT=3000
+if curl -sf "http://localhost:3000/api/version" >/dev/null 2>&1; then
+  OLLAMA_RUNNING=true
+  OLLAMA_PORT=3000
+  echo "✓ Ollama detected on port 3000"
+elif curl -sf "http://localhost:11434/api/version" >/dev/null 2>&1; then
+  OLLAMA_RUNNING=true
+  OLLAMA_PORT=11434
+  echo "✓ Ollama detected on port 11434"
+else
+  echo "⚠ Ollama not detected - skipping Ollama monitoring"
+fi
+
 # 3. Start Node Exporter (System metrics)
 echo "Starting Node Exporter..."
 sudo docker run -d \
@@ -103,6 +119,34 @@ cat <<EOF > ~/telegraf_config/telegraf.conf
 $(echo -e "$SCRAPE_URLS")
   ]
 EOF
+
+# Append Ollama loaded-model inventory if Ollama is running
+if [ "$OLLAMA_RUNNING" = "true" ]; then
+  cat <<EOF >> ~/telegraf_config/telegraf.conf
+
+# Ollama loaded-model inventory — polls /api/ps every 15s
+# Emits: ollama_model_size_vram / ollama_model_size (bytes), tag: name
+[[inputs.http]]
+  urls = ["http://localhost:${OLLAMA_PORT}/api/ps"]
+  method = "GET"
+  timeout = "10s"
+  interval = "15s"
+  data_format = "json_v2"
+  [[inputs.http.json_v2]]
+    [[inputs.http.json_v2.object]]
+      path = "models"
+      measurement_name = "ollama_model"
+      [[inputs.http.json_v2.object.field]]
+        path = "size_vram"
+        type = "int"
+      [[inputs.http.json_v2.object.field]]
+        path = "size"
+        type = "int"
+      [[inputs.http.json_v2.object.tag]]
+        path = "name"
+EOF
+  echo "✓ Ollama metrics configured (port ${OLLAMA_PORT}/api/ps)"
+fi
 
 # 6. Start Telegraf Gateway (Docker)
 echo "Starting Telegraf Gateway..."
