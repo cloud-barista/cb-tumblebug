@@ -68,7 +68,7 @@ MAX_BATCHED_TOKENS="4096"
 TOOL_CALL_PARSER="hermes"
 VLLM_API_KEY="EMPTY"
 VLLM_BASE_URL=""
-VLLM_VERSION="0.22.0"
+VLLM_VERSION=""
 VLLM_HEALTH_TIMEOUT="1800"
 HF_TOKEN_VALUE=""
 HF_TOKEN_FILE=""
@@ -328,7 +328,7 @@ while [ $# -gt 0 ]; do
     --tool-call-parser) TOOL_CALL_PARSER="${2:?}"; shift 2 ;;
     --no-tool-call-parser) TOOL_CALL_PARSER=""; shift ;;
     --vllm-api-key) VLLM_API_KEY="${2:?}"; shift 2 ;;
-    --vllm-version) VLLM_VERSION="${2:?}"; shift 2 ;;
+    --vllm-version) VLLM_VERSION="${2:-}"; shift 2 ;;
     --vllm-health-timeout) VLLM_HEALTH_TIMEOUT="${2:?}"; shift 2 ;;
     --hf-token) HF_TOKEN_VALUE="${2:?}"; shift 2 ;;
     --hf-token-file) HF_TOKEN_FILE="${2:?}"; shift 2 ;;
@@ -430,7 +430,7 @@ vLLM skip:                $SKIP_VLLM
 vLLM model:               $VLLM_MODEL
 vLLM serve:               ${VLLM_HOST}:${VLLM_PORT}
 vLLM ctx len:             $CTX_LEN
-vLLM version:             $VLLM_VERSION
+vLLM version:             ${VLLM_VERSION:-latest}
 vLLM health timeout:      ${VLLM_HEALTH_TIMEOUT}s
 vLLM base URL for Hermes: $VLLM_BASE_URL
 HF token:                 $( [ -n "$HF_TOKEN_VALUE" ] && echo set || echo not-set )
@@ -468,43 +468,20 @@ install_system_deps() {
   as_root systemctl enable nginx >/dev/null 2>&1 || true
 }
 
-detect_gpu() {
-  if command -v nvidia-smi >/dev/null 2>&1; then
-    GPU_TYPE="nvidia"
-    log "Detected NVIDIA GPU:"
-    nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true
-  elif command -v rocm-smi >/dev/null 2>&1; then
-    GPU_TYPE="amd"
-    log "Detected AMD GPU:"
-    rocm-smi --showproductname || true
-  else
-    die "No supported GPU found. Use --skip-vllm if this is a Hermes-only VM."
-  fi
-}
-
 install_vllm() {
-  detect_gpu
+  local tmp_script
+  tmp_script=$(mktemp /tmp/deployvLLM.XXXXXX.sh)
+  log "Downloading deployvLLM.sh..."
+  curl -fsSL "https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployvLLM.sh" \
+    -o "$tmp_script"
+  chmod +x "$tmp_script"
 
-  local venv="$USER_HOME/venv_vllm"
-  run_as_user "python3 -m venv '$venv'"
+  local version_arg=""
+  [ -n "${VLLM_VERSION:-}" ] && version_arg="--version $VLLM_VERSION"
 
-  run_as_user "source '$venv/bin/activate' && python -m pip install -U pip 'setuptools<82' wheel packaging ninja"
-
-  if [ "$GPU_TYPE" = "nvidia" ]; then
-    run_as_user "source '$venv/bin/activate' && pip install -U 'vllm==${VLLM_VERSION}' 'transformers>=4.51.0' 'accelerate' 'openai' 'huggingface_hub' > '$USER_HOME/vllm_install.log' 2>&1"
-  else
-    run_as_user "source '$venv/bin/activate' && pip install -U 'uv' >> '$USER_HOME/vllm_install.log' 2>&1 && uv pip install 'vllm==${VLLM_VERSION}' --extra-index-url 'https://wheels.vllm.ai/rocm/' >> '$USER_HOME/vllm_install.log' 2>&1"
-  fi
-
-  run_as_user "source '$venv/bin/activate' && python - <<'PY'
-import shutil
-import vllm
-print('vLLM version:', vllm.__version__)
-print('venv ninja:', shutil.which('ninja'))
-if shutil.which('ninja') is None:
-    raise SystemExit('ninja is not available in the vLLM virtual environment')
-PY"
-  log "system ninja: $(command -v ninja || true)"
+  log "Running deployvLLM.sh as $RUN_AS_USER${version_arg:+ ($version_arg)}..."
+  sudo -u "$RUN_AS_USER" -H bash "$tmp_script" $version_arg
+  rm -f "$tmp_script"
 }
 
 pre_download_hf_model() {
@@ -525,10 +502,6 @@ pre_download_hf_model() {
     log "⚠ Consider expanding the disk or using a larger instance before proceeding."
   fi
 
-  # Install hf-transfer (Rust-based downloader): bypasses the Python Xet/LFS
-  # stack, avoids 'Background writer channel closed' errors on large shards.
-  run_as_user "source '$USER_HOME/venv_vllm/bin/activate' && pip install -q hf-transfer"
-
   local download_ok=false
   local attempt
   for attempt in 1 2 3; do
@@ -537,7 +510,7 @@ pre_download_hf_model() {
     if sudo -u "$RUN_AS_USER" -H env \
         HF_TOKEN="$HF_TOKEN_VALUE" \
         HUGGING_FACE_HUB_TOKEN="$HF_TOKEN_VALUE" \
-        HF_HUB_ENABLE_HF_TRANSFER="1" \
+        HF_XET_HIGH_PERFORMANCE="1" \
         MODEL_NAME="$VLLM_MODEL" \
         bash -lc "
           set -e
