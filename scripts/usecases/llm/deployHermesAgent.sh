@@ -515,24 +515,62 @@ pre_download_hf_model() {
 
   log "Pre-downloading Hugging Face model with temporary HF token. The token will not be written to systemd or shell profiles."
 
-  sudo -u "$RUN_AS_USER" -H env \
-    HF_TOKEN="$HF_TOKEN_VALUE" \
-    HUGGING_FACE_HUB_TOKEN="$HF_TOKEN_VALUE" \
-    MODEL_NAME="$VLLM_MODEL" \
-    bash -lc "
-      set -e
-      source '$USER_HOME/venv_vllm/bin/activate'
-      python - <<'PY'
-import os
+  # Check available disk space: large FP8 models (e.g. 30B ≈ 32 GB) plus Xet's
+  # reconstruction temp files can require 2× model size during download.
+  local free_gb
+  free_gb=$(df -BG "$USER_HOME" | awk 'NR==2 {gsub(/G/,""); print $4+0}')
+  log "Available disk on $USER_HOME: ${free_gb} GB"
+  if [ "$free_gb" -lt 80 ]; then
+    log "⚠ WARNING: Only ${free_gb} GB free. A 30B FP8 model needs ~64 GB during download (model + Xet temp files)."
+    log "⚠ Consider expanding the disk or using a larger instance before proceeding."
+  fi
+
+  # Install hf-transfer (Rust-based downloader): bypasses the Python Xet/LFS
+  # stack, avoids 'Background writer channel closed' errors on large shards.
+  run_as_user "source '$USER_HOME/venv_vllm/bin/activate' && pip install -q hf-transfer"
+
+  local download_ok=false
+  local attempt
+  for attempt in 1 2 3; do
+    [ "$attempt" -gt 1 ] && { log "Retrying in 15s... (attempt $attempt/3)"; sleep 15; }
+    log "Download attempt $attempt/3 for $VLLM_MODEL ..."
+    if sudo -u "$RUN_AS_USER" -H env \
+        HF_TOKEN="$HF_TOKEN_VALUE" \
+        HUGGING_FACE_HUB_TOKEN="$HF_TOKEN_VALUE" \
+        HF_HUB_ENABLE_HF_TRANSFER="1" \
+        MODEL_NAME="$VLLM_MODEL" \
+        bash -lc "
+          set -e
+          source '$USER_HOME/venv_vllm/bin/activate'
+          python - <<'PY'
+import os, sys
 from huggingface_hub import snapshot_download
 repo_id = os.environ['MODEL_NAME']
 snapshot_download(repo_id=repo_id)
 print('Downloaded or verified Hugging Face cache for:', repo_id)
 PY
-    "
+        "; then
+      download_ok=true
+      break
+    fi
+    log "Download attempt $attempt failed."
+  done
 
   HF_TOKEN_VALUE=""
-  unset HF_TOKEN HUGGING_FACE_HUB_TOKEN
+  unset HF_TOKEN HUGGING_FACE_HUB_TOKEN 2>/dev/null || true
+
+  if [ "$download_ok" = "false" ]; then
+    log ""
+    log "⚠ WARNING: Pre-download of '$VLLM_MODEL' failed after 3 attempts."
+    log "⚠ Common causes: insufficient disk space (need ~2× model size), network"
+    log "⚠ interruption, or a Xet storage backend issue in huggingface_hub."
+    log "⚠ vLLM will attempt to download the model on first startup."
+    log "⚠ For gated models, add the following to /etc/systemd/system/vllm.service"
+    log "⚠ under [Service] before starting: Environment=HUGGING_FACE_HUB_TOKEN=<token>"
+    log ""
+    return 0  # non-fatal: continue deployment
+  fi
+
   log "Hugging Face pre-download completed. HF token cleared from the deploy script environment."
 }
 
