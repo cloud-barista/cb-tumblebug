@@ -100,66 +100,66 @@ func HandleK8sClusterAction(nsId string, k8sClusterId string, action string) (st
 	}
 }
 
-func createK8sClusterInfo(nsId string, tbK8sCInfo model.K8sClusterInfo) error {
-	log.Debug().Msgf("[Create K8sClusterInfo] %s", tbK8sCInfo.Id)
+func createK8sClusterInfo(nsId string, tbK8sCInfo model.ClusterInfo) error {
+	log.Debug().Msgf("[Create ClusterInfo] %s", tbK8sCInfo.Id)
 
 	k8sClusterId := tbK8sCInfo.Id
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
 	_, exists, err := kvstore.GetKv(k)
 	if err != nil {
-		err := fmt.Errorf("failed to create K8sClusterInfo(%s): %v", k8sClusterId, err)
+		err := fmt.Errorf("failed to create ClusterInfo(%s): %v", k8sClusterId, err)
 		return err
 	}
 
 	if exists {
-		err := fmt.Errorf("failed to create K8sClusterInfo(%s): already exists", k8sClusterId)
+		err := fmt.Errorf("failed to create ClusterInfo(%s): already exists", k8sClusterId)
 		return err
 	}
 
 	val, err := json.Marshal(&tbK8sCInfo)
 	if err != nil {
-		err := fmt.Errorf("failed to create K8sClusterInfo(%s): %v", k8sClusterId, err)
+		err := fmt.Errorf("failed to create ClusterInfo(%s): %v", k8sClusterId, err)
 		return err
 	}
 
 	err = kvstore.Put(k, string(val))
 	if err != nil {
-		err := fmt.Errorf("failed to create K8sClusterInfo(%s): %v", k8sClusterId, err)
+		err := fmt.Errorf("failed to create ClusterInfo(%s): %v", k8sClusterId, err)
 		return err
 	}
 
 	return nil
 }
 
-func getK8sClusterInfo(nsId, k8sClusterId string) (*model.K8sClusterInfo, error) {
-	//log.Debug().Msg("[Get K8sClusterInfo] " + k8sClusterId)
+func getK8sClusterInfo(nsId, k8sClusterId string) (*model.ClusterInfo, error) {
+	//log.Debug().Msg("[Get ClusterInfo] " + k8sClusterId)
 
-	emptyObj := &model.K8sClusterInfo{}
+	emptyObj := &model.ClusterInfo{}
 
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
 	kv, exists, err := kvstore.GetKv(k)
 	if err != nil {
-		err := fmt.Errorf("failed to get K8sClusterInfo(%s): %v", k8sClusterId, err)
+		err := fmt.Errorf("failed to get ClusterInfo(%s): %v", k8sClusterId, err)
 		return emptyObj, err
 	}
 
-	tbK8sCInfo := &model.K8sClusterInfo{}
+	tbK8sCInfo := &model.ClusterInfo{}
 	if !exists {
-		err := fmt.Errorf("failed to get K8sClusterInfo(%s): empty keyvalue", k8sClusterId)
+		err := fmt.Errorf("failed to get ClusterInfo(%s): empty keyvalue", k8sClusterId)
 		return emptyObj, err
 	}
 
 	err = json.Unmarshal([]byte(kv.Value), tbK8sCInfo)
 	if err != nil {
-		err := fmt.Errorf("failed to get K8sClusterInfo(%s): %v", k8sClusterId, err)
+		err := fmt.Errorf("failed to get ClusterInfo(%s): %v", k8sClusterId, err)
 		return emptyObj, err
 	}
 
 	return tbK8sCInfo, nil
 }
 
-// storeK8sClusterInfo is func to update K8sClusterInfo
-func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
+// storeK8sClusterInfo is func to update ClusterInfo
+func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.ClusterInfo) {
 	k8sClusterId := newTbK8sCInfo.Id
 
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
@@ -170,34 +170,34 @@ func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 		return
 	}
 
-	oldTbK8sCInfo := &model.K8sClusterInfo{}
+	oldTbK8sCInfo := &model.ClusterInfo{}
 	json.Unmarshal([]byte(kv.Value), oldTbK8sCInfo)
 
 	if !reflect.DeepEqual(oldTbK8sCInfo, newTbK8sCInfo) {
 		val, _ := json.Marshal(newTbK8sCInfo)
 		err = kvstore.Put(k, string(val))
 		if err != nil {
-			err := fmt.Errorf("failed to update K8sClusterInfo(%s): %v", k8sClusterId, err)
+			err := fmt.Errorf("failed to update ClusterInfo(%s): %v", k8sClusterId, err)
 			log.Err(err).Msgf("nsId=%s", nsId)
 		}
 	}
 }
 
-// deleteK8sClusterInfo is func to delete K8sClusterInfo
+// deleteK8sClusterInfo is func to delete ClusterInfo
 func deleteK8sClusterInfo(nsId, k8sClusterId string) error {
-	log.Debug().Msg("[Delete K8sClusterInfo] " + k8sClusterId)
+	log.Debug().Msg("[Delete ClusterInfo] " + k8sClusterId)
 
 	// Get cluster info for UID (needed for label deletion)
 	k8sInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
-		log.Warn().Err(err).Msgf("K8sClusterInfo not found for %s, continuing with deletion", k8sClusterId)
+		log.Warn().Err(err).Msgf("ClusterInfo not found for %s, continuing with deletion", k8sClusterId)
 	}
 
 	// Delete cluster data from kvstore
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
 	err = kvstore.Delete(k)
 	if err != nil {
-		return fmt.Errorf("failed to delete K8sClusterInfo(%s): %v", k8sClusterId, err)
+		return fmt.Errorf("failed to delete ClusterInfo(%s): %v", k8sClusterId, err)
 	}
 
 	// Delete associated label
@@ -211,10 +211,10 @@ func deleteK8sClusterInfo(nsId, k8sClusterId string) error {
 }
 
 // CreateK8sCluster create a k8s cluster
-func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq, option string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
+func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq, option string, skipVersionCheck bool) (*model.ClusterInfo, error) {
 	log.Info().Msg("CreateK8sCluster")
 
-	emptyObj := &model.K8sClusterInfo{}
+	emptyObj := &model.ClusterInfo{}
 
 	k8sClusterId := req.Name
 
@@ -257,7 +257,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		return emptyObj, err
 	}
 
-	tbK8sCInfo := &model.K8sClusterInfo{
+	tbK8sCInfo := &model.ClusterInfo{
 		ResourceType:     model.StrK8s,
 		Id:               k8sClusterId,
 		Uid:              uid,
@@ -267,19 +267,19 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		Description:      req.Description,
 		Label:            req.Label,
 		SystemLabel:      req.SystemLabel,
-		Network: model.K8sClusterNetworkInfo{
+		Network: model.ClusterNetworkInfo{
 			VNetId:           req.VNetId,
 			SubnetIds:        req.SubnetIds,
 			SecurityGroupIds: req.SecurityGroupIds,
 		},
 	}
-	fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(&tbK8sCInfo.K8sNodeGroupList, &req.K8sNodeGroupList)
+	fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(&tbK8sCInfo.NodeGroups, &req.NodeGroups)
 
 	// Mark the first node group as initial for CSPs where the initial node group
 	// is lifecycle-bound to the cluster and cannot be deleted independently.
 	if managed, _ := common.GetK8sInitialNodeGroupManagedByCluster(connConfig.ProviderName); managed {
-		if len(tbK8sCInfo.K8sNodeGroupList) > 0 {
-			tbK8sCInfo.K8sNodeGroupList[0].IsInitialNodeGroup = true
+		if len(tbK8sCInfo.NodeGroups) > 0 {
+			tbK8sCInfo.NodeGroups[0].IsInitialNodeGroup = true
 		}
 	}
 
@@ -297,7 +297,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 			if tbK8sCInfo != nil {
 				err := deleteK8sClusterInfo(nsId, k8sClusterId)
 				if err != nil {
-					log.Err(err).Msgf("Failed to delete K8sClusterInfo: %s", k8sClusterId)
+					log.Err(err).Msgf("Failed to delete ClusterInfo: %s", k8sClusterId)
 				}
 			}
 		}
@@ -407,7 +407,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 	}
 
 	var spNodeGroupList []model.SpiderNodeGroupReqInfo
-	for _, v := range req.K8sNodeGroupList {
+	for _, v := range req.NodeGroups {
 		spName := v.Name
 		createErr = common.CheckString(spName)
 		if createErr != nil {
@@ -542,7 +542,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		return emptyObj, createErr
 	}
 
-	// Update model.K8sClusterInfo object
+	// Update model.ClusterInfo object
 	updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo, &spClusterRes.SpiderClusterInfo)
 	tbK8sCInfo.SpiderViewK8sClusterDetail = spClusterRes.SpiderClusterInfo
 
@@ -617,10 +617,10 @@ func CheckK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName string
 */
 
 // AddK8sNodeGroup adds a K8sNodeGroup
-func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *model.K8sNodeGroupReq) (*model.K8sClusterInfo, error) {
+func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *model.K8sNodeGroupReq) (*model.ClusterInfo, error) {
 	log.Info().Msg("AddK8sNodeGroup")
 
-	emptyObj := &model.K8sClusterInfo{}
+	emptyObj := &model.ClusterInfo{}
 
 	err := validate.Struct(u)
 	if err != nil {
@@ -644,7 +644,7 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 		return emptyObj, err
 	}
 
-	// Get model.K8sClusterInfo from kvstore
+	// Get model.ClusterInfo from kvstore
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Add K8sNodeGroup(k8scluster=%s)", k8sClusterId)
@@ -779,21 +779,21 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 		return emptyObj, err
 	}
 
-	// Update K8sClusterInfo.K8NodeGroupList - Add new nodegroup to existing list
+	// Update ClusterInfo.K8NodeGroupList - Add new nodegroup to existing list
 	var tbK8sNGReqList []model.K8sNodeGroupReq
 	tbK8sNGReqList = append(tbK8sNGReqList, *u)
 
 	// Create new nodegroup info and append to existing list
-	var newK8sNodeGroupInfoList []model.K8sNodeGroupInfo
-	newK8sNodeGroupInfoList = append(newK8sNodeGroupInfoList, tbK8sCInfo.K8sNodeGroupList...)
+	var newK8sNodeGroupInfoList []model.NodeGroupInfo
+	newK8sNodeGroupInfoList = append(newK8sNodeGroupInfoList, tbK8sCInfo.NodeGroups...)
 
 	// Add the new nodegroup
-	tbK8sNGInfo := model.K8sNodeGroupInfo{}
+	tbK8sNGInfo := model.NodeGroupInfo{}
 	fillK8sNodeGroupInfoFromK8sNodeGroupReq(&tbK8sNGInfo, u)
 	newK8sNodeGroupInfoList = append(newK8sNodeGroupInfoList, tbK8sNGInfo)
 
 	// Update the cluster's nodegroup list
-	tbK8sCInfo.K8sNodeGroupList = newK8sNodeGroupInfoList
+	tbK8sCInfo.NodeGroups = newK8sNodeGroupInfoList
 
 	spRootDiskSize := ""
 	if u.RootDiskSize > 0 {
@@ -841,7 +841,7 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 		return emptyObj, err
 	}
 
-	// Update/Get model.K8sClusterInfo object to/from kvstore
+	// Update/Get model.ClusterInfo object to/from kvstore
 	updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo, &spClusterRes.SpiderClusterInfo)
 	tbK8sCInfo.SpiderViewK8sClusterDetail = spClusterRes.SpiderClusterInfo
 	storeK8sClusterInfo(nsId, tbK8sCInfo)
@@ -872,7 +872,7 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 		return false, err
 	}
 
-	// Get model.K8sClusterInfo from kvstore
+	// Get model.ClusterInfo from kvstore
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Remove K8sNodeGroup(k8scluster=%s)", k8sClusterId)
@@ -883,7 +883,7 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 	// lifecycle-bound to the cluster (e.g., Alibaba ACK, Tencent TKE).
 	if ngConnConfig, connErr := common.GetConnConfig(tbK8sCInfo.ConnectionName); connErr == nil {
 		if managed, _ := common.GetK8sInitialNodeGroupManagedByCluster(ngConnConfig.ProviderName); managed {
-			for _, ng := range tbK8sCInfo.K8sNodeGroupList {
+			for _, ng := range tbK8sCInfo.NodeGroups {
 				if ng.Name == k8sNodeGroupName && ng.IsInitialNodeGroup {
 					return false, fmt.Errorf(
 						"node group '%s' is the initial node group of cluster '%s' and cannot be deleted independently for provider '%s'. Delete the cluster to remove it",
@@ -969,7 +969,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 		return emptyObj, err
 	}
 
-	// Get model.K8sClusterInfo from kvstore
+	// Get model.ClusterInfo from kvstore
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Set K8sNodeGroup Autoscaling(k8scluster=%s)", k8sClusterId)
@@ -978,10 +978,10 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	}
 
 	// Find the specific nodegroup
-	var tbK8sNGInfo *model.K8sNodeGroupInfo = nil
-	for i := range tbK8sCInfo.K8sNodeGroupList {
-		if tbK8sCInfo.K8sNodeGroupList[i].Name == k8sNodeGroupName {
-			tbK8sNGInfo = &tbK8sCInfo.K8sNodeGroupList[i]
+	var tbK8sNGInfo *model.NodeGroupInfo = nil
+	for i := range tbK8sCInfo.NodeGroups {
+		if tbK8sCInfo.NodeGroups[i].Name == k8sNodeGroupName {
+			tbK8sNGInfo = &tbK8sCInfo.NodeGroups[i]
 			break
 		}
 	}
@@ -1059,7 +1059,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 		return emptyObj, err
 	}
 
-	// Get model.K8sClusterInfo from kvstore
+	// Get model.ClusterInfo from kvstore
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Change K8sNodeGroup AutoscaleSize(k8scluster=%s)", k8sClusterId)
@@ -1067,10 +1067,10 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	}
 
 	// Find the specific nodegroup
-	var tbK8sNGInfo *model.K8sNodeGroupInfo = nil
-	for i := range tbK8sCInfo.K8sNodeGroupList {
-		if tbK8sCInfo.K8sNodeGroupList[i].Name == k8sNodeGroupName {
-			tbK8sNGInfo = &tbK8sCInfo.K8sNodeGroupList[i]
+	var tbK8sNGInfo *model.NodeGroupInfo = nil
+	for i := range tbK8sCInfo.NodeGroups {
+		if tbK8sCInfo.NodeGroups[i].Name == k8sNodeGroupName {
+			tbK8sNGInfo = &tbK8sCInfo.NodeGroups[i]
 			break
 		}
 	}
@@ -1114,17 +1114,17 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	storeK8sClusterInfo(nsId, tbK8sCInfo)
 
 	tbK8sCAutoscaleSizeRes := &model.ChangeK8sNodeGroupAutoscaleSizeRes{
-		K8sNodeGroupInfo: *tbK8sNGInfo,
+		NodeGroupInfo: *tbK8sNGInfo,
 	}
 
 	return tbK8sCAutoscaleSizeRes, nil
 }
 
 // GetK8sCluster retrives a k8s cluster information
-func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, error) {
+func GetK8sCluster(nsId string, k8sClusterId string) (*model.ClusterInfo, error) {
 	//log.Debug().Msg("[Get K8sCluster] " + k8sClusterId)
 
-	emptyObj := &model.K8sClusterInfo{}
+	emptyObj := &model.ClusterInfo{}
 
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
@@ -1138,7 +1138,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 		return emptyObj, err
 	}
 
-	// Get model.K8sClusterInfo from kvstore
+	// Get model.ClusterInfo from kvstore
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Get K8sCluster(%s)", k8sClusterId)
@@ -1157,7 +1157,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 		return tbK8sCInfo, nil
 	}
 
-	// Update model.K8sClusterInfo from CB-Spider
+	// Update model.ClusterInfo from CB-Spider
 	client := clientManager.NewHttpClient()
 	client.SetTimeout(10 * time.Minute)
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName
@@ -1188,7 +1188,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 		return emptyObj, err
 	}
 
-	// Update/Get model.K8sClusterInfo object to/from kvstore
+	// Update/Get model.ClusterInfo object to/from kvstore
 	updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo, &spClusterRes.SpiderClusterInfo)
 	tbK8sCInfo.SpiderViewK8sClusterDetail = spClusterRes.SpiderClusterInfo
 	storeK8sClusterInfo(nsId, tbK8sCInfo)
@@ -1408,7 +1408,7 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (any, error
 		return nil, err
 	}
 
-	tbK8sCInfoList := []model.K8sClusterInfo{}
+	tbK8sCInfoList := []model.ClusterInfo{}
 
 	for _, id := range k8sIdList {
 		k := common.GenK8sClusterKey(nsId, id)
@@ -1423,7 +1423,7 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (any, error
 			return nil, err
 		}
 
-		storedTbK8sCInfo := model.K8sClusterInfo{}
+		storedTbK8sCInfo := model.ClusterInfo{}
 		err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 		if err != nil {
 			log.Err(err).Msg("Failed to List K8sCluster")
@@ -1486,7 +1486,7 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 		return false, err
 	}
 
-	// Get model.K8sClusterInfo object from kvstore
+	// Get model.ClusterInfo object from kvstore
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Delete K8sCluster(%s)", k8sClusterId)
@@ -1592,10 +1592,10 @@ func DeleteAllK8sCluster(nsId, subString, option string) (*model.IdList, error) 
 }
 
 // UpgradeK8sCluster upgrades an existing k8s cluster to the specified version
-func UpgradeK8sCluster(ctx context.Context, nsId string, k8sClusterId string, u *model.UpgradeK8sClusterReq, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
+func UpgradeK8sCluster(ctx context.Context, nsId string, k8sClusterId string, u *model.UpgradeK8sClusterReq, skipVersionCheck bool) (*model.ClusterInfo, error) {
 	log.Info().Msg("UpgradeK8sCluster")
 
-	emptyObj := &model.K8sClusterInfo{}
+	emptyObj := &model.ClusterInfo{}
 
 	err := validate.Struct(u)
 	if err != nil {
@@ -1619,7 +1619,7 @@ func UpgradeK8sCluster(ctx context.Context, nsId string, k8sClusterId string, u 
 		return emptyObj, err
 	}
 
-	// Get model.K8sClusterInfo from kvstore
+	// Get model.ClusterInfo from kvstore
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Upgrade a K8sCluster(%s)", k8sClusterId)
@@ -1671,7 +1671,7 @@ func UpgradeK8sCluster(ctx context.Context, nsId string, k8sClusterId string, u 
 		return emptyObj, err
 	}
 
-	// Update/Get model.K8sClusterInfo object to/from kvstore
+	// Update/Get model.ClusterInfo object to/from kvstore
 	updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo, &spClusterRes.SpiderClusterInfo)
 	tbK8sCInfo.SpiderViewK8sClusterDetail = spClusterRes.SpiderClusterInfo
 	storeK8sClusterInfo(nsId, tbK8sCInfo)
@@ -1762,9 +1762,9 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersio
 	// Validate K8sNodeGroups On K8s Creation only if required by the CSP
 	if k8sNgOnCreation {
 		// CSP requires nodegroups at creation time (e.g., Azure, GCP, NHN, NCP)
-		if len(tbK8sClusterReq.K8sNodeGroupList) <= 0 {
+		if len(tbK8sClusterReq.NodeGroups) <= 0 {
 			err := fmt.Errorf("NodeGroups are required at K8sCluster creation for provider '%s'", connConfig.ProviderName)
-			log.Err(err).Msg("Need to Set One or more K8sNodeGroupList")
+			log.Err(err).Msg("Need to Set One or more NodeGroups")
 			return err
 		}
 
@@ -1778,7 +1778,7 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersio
 		// Validate naming rule only if a rule is defined
 		if k8sNgNamingRule != "" {
 			re := regexp.MustCompile(k8sNgNamingRule)
-			for i, ng := range tbK8sClusterReq.K8sNodeGroupList {
+			for i, ng := range tbK8sClusterReq.NodeGroups {
 				ngName := ng.Name
 
 				// Auto-fix common naming pattern: convert "ng-xxxxx" to "ngxxxxx" for CSPs that don't allow hyphens
@@ -1788,7 +1788,7 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersio
 					if re.MatchString(fixedName) {
 						log.Warn().Msgf("NodeGroup name(%s) contains hyphens not allowed by provider(%s). Auto-converting to: %s",
 							ngName, connConfig.ProviderName, fixedName)
-						tbK8sClusterReq.K8sNodeGroupList[i].Name = fixedName
+						tbK8sClusterReq.NodeGroups[i].Name = fixedName
 					} else {
 						err := fmt.Errorf("K8sNodeGroup's Name(%s) does not match naming rule(%s) for provider(%s)",
 							ngName, k8sNgNamingRule, connConfig.ProviderName)
@@ -1809,7 +1809,7 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersio
 		if !nodeImageDesignation {
 			// CSP does not support image designation (e.g., Azure, NCP)
 			// Check if user specified imageId when it's not allowed
-			for _, ng := range tbK8sClusterReq.K8sNodeGroupList {
+			for _, ng := range tbK8sClusterReq.NodeGroups {
 				if ng.ImageId != "" && ng.ImageId != "default" {
 					log.Warn().Msgf("Provider(%s) does not support image designation. ImageId(%s) will be ignored.",
 						connConfig.ProviderName, ng.ImageId)
@@ -1819,10 +1819,10 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersio
 		}
 	} else {
 		// CSP does not require nodegroups at creation time (e.g., AWS, Alibaba, Tencent)
-		if len(tbK8sClusterReq.K8sNodeGroupList) > 0 {
+		if len(tbK8sClusterReq.NodeGroups) > 0 {
 			err := fmt.Errorf("NodeGroups should not be specified at K8sCluster creation for provider '%s'. Use AddK8sNodeGroup API after cluster creation.",
 				connConfig.ProviderName)
-			log.Err(err).Msg("K8sNodeGroupList should be empty")
+			log.Err(err).Msg("NodeGroups should be empty")
 			return err
 		}
 	}
@@ -1936,24 +1936,24 @@ func TransferFileToK8sClusterContainer(nsId string, k8sClusterId string, k8sClus
 }
 
 func getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId string) (string, error) {
-	log.Debug().Msg("[Get Kubeconfig from K8sClusterInfo] " + k8sClusterId)
+	log.Debug().Msg("[Get Kubeconfig from ClusterInfo] " + k8sClusterId)
 
 	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
-		err = fmt.Errorf("failed to get kubeconfig from K8sClusterInfo(%s): %v", k8sClusterId, err)
+		err = fmt.Errorf("failed to get kubeconfig from ClusterInfo(%s): %v", k8sClusterId, err)
 		return "", err
 	}
 
-	if tbK8sCInfo.Status != model.K8sClusterActive {
+	if tbK8sCInfo.Status != string(model.K8sClusterActive) {
 		// Check K8sCluster's Status again
 		newTbK8sCInfo, err := GetK8sCluster(nsId, k8sClusterId)
 		if err != nil {
-			err = fmt.Errorf("failed to get kubeconfig from K8sClusterInfo(%s): %v", k8sClusterId, err)
+			err = fmt.Errorf("failed to get kubeconfig from ClusterInfo(%s): %v", k8sClusterId, err)
 			return "", err
 		}
 
-		if newTbK8sCInfo.Status != model.K8sClusterActive {
-			err = fmt.Errorf("failed to get kubeconfig from K8sClusterInfo(%s): K8sCluster is not active", k8sClusterId)
+		if newTbK8sCInfo.Status != string(model.K8sClusterActive) {
+			err = fmt.Errorf("failed to get kubeconfig from ClusterInfo(%s): K8sCluster is not active", k8sClusterId)
 			return "", err
 		}
 	}
@@ -2122,13 +2122,13 @@ func transferFileToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8
 	return result, nil
 }
 
-func updateK8sClusterNetworkInfoFromSpiderNetworkInfo(tbK8sCNInfo *model.K8sClusterNetworkInfo, spNetworkInfo *model.SpiderNetworkInfo) {
+func updateK8sClusterNetworkInfoFromSpiderNetworkInfo(tbK8sCNInfo *model.ClusterNetworkInfo, spNetworkInfo *model.SpiderNetworkInfo) {
 	tbKeyValueList := convertSpiderKeyValueListToTbKeyValueList(spNetworkInfo.KeyValueList)
 
 	tbK8sCNInfo.KeyValueList = tbKeyValueList
 }
 
-func updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(tbK8sNGInfo *model.K8sNodeGroupInfo, spNGInfo *model.SpiderNodeGroupInfo) {
+func updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(tbK8sNGInfo *model.NodeGroupInfo, spNGInfo *model.SpiderNodeGroupInfo) {
 	// Update basic identification info from Spider response
 	tbK8sNGInfo.Id = spNGInfo.IId.NameId
 	tbK8sNGInfo.Name = spNGInfo.IId.NameId
@@ -2150,7 +2150,7 @@ func updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(tbK8sNGInfo *model.K8sNodeGro
 	tbK8sNGInfo.DesiredNodeSize = spNGInfo.DesiredNodeSize
 	tbK8sNGInfo.MinNodeSize = spNGInfo.MinNodeSize
 	tbK8sNGInfo.MaxNodeSize = spNGInfo.MaxNodeSize
-	tbK8sNGInfo.Status = convertSpiderNodeGroupStatusToK8sNodeGroupStatus(spNGInfo.Status)
+	tbK8sNGInfo.Status = string(convertSpiderNodeGroupStatusToK8sNodeGroupStatus(spNGInfo.Status))
 
 	tbK8sNGInfo.K8sNodes = []model.K8sNodeInfo{}
 	for _, v := range spNGInfo.Nodes {
@@ -2186,9 +2186,9 @@ func removeNodeGroupFromLocalClusterInfo(nsId, k8sClusterId, k8sNodeGroupName st
 	}
 
 	// Find and remove the node group
-	var updatedNodeGroups []model.K8sNodeGroupInfo
+	var updatedNodeGroups []model.NodeGroupInfo
 	found := false
-	for _, ng := range tbK8sCInfo.K8sNodeGroupList {
+	for _, ng := range tbK8sCInfo.NodeGroups {
 		if ng.Name != k8sNodeGroupName {
 			updatedNodeGroups = append(updatedNodeGroups, ng)
 		} else {
@@ -2202,7 +2202,7 @@ func removeNodeGroupFromLocalClusterInfo(nsId, k8sClusterId, k8sNodeGroupName st
 	}
 
 	// Update the cluster info with the new node group list
-	tbK8sCInfo.K8sNodeGroupList = updatedNodeGroups
+	tbK8sCInfo.NodeGroups = updatedNodeGroups
 
 	// Store the updated cluster info
 	storeK8sClusterInfo(nsId, tbK8sCInfo)
@@ -2219,13 +2219,13 @@ func convertSpiderKeyValueListToTbKeyValueList(spKeyValueList []model.KeyValue) 
 	return tbKeyValueList
 }
 
-func updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo *model.K8sClusterInfo, spCInfo *model.SpiderClusterInfo) {
+func updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo *model.ClusterInfo, spCInfo *model.SpiderClusterInfo) {
 	tbK8sCInfo.Version = spCInfo.Version
 	updateK8sClusterNetworkInfoFromSpiderNetworkInfo(&tbK8sCInfo.Network, &spCInfo.Network)
-	updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(&tbK8sCInfo.K8sNodeGroupList, &spCInfo.NodeGroupList)
+	updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(&tbK8sCInfo.NodeGroups, &spCInfo.NodeGroupList)
 	updateK8sAccessInfoFromSpiderAccessInfo(&tbK8sCInfo.AccessInfo, &spCInfo.AccessInfo)
 	updateK8sAddonsInfoFromSpiderAddonsInfo(&tbK8sCInfo.Addons, &spCInfo.Addons)
-	tbK8sCInfo.Status = convertSpiderClusterStatusToK8sClusterStatus(spCInfo.Status)
+	tbK8sCInfo.Status = string(convertSpiderClusterStatusToK8sClusterStatus(spCInfo.Status))
 	tbK8sCInfo.CreatedTime = spCInfo.CreatedTime
 	tbK8sCInfo.KeyValueList = convertSpiderKeyValueListToTbKeyValueList(spCInfo.KeyValueList)
 
@@ -2233,7 +2233,7 @@ func updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo *model.K8sClusterInfo,
 	tbK8sCInfo.CspResourceId = spCInfo.IId.SystemId
 }
 
-func fillK8sNodeGroupInfoFromK8sNodeGroupReq(tbK8sNGInfo *model.K8sNodeGroupInfo, tbK8sNGReq *model.K8sNodeGroupReq) {
+func fillK8sNodeGroupInfoFromK8sNodeGroupReq(tbK8sNGInfo *model.NodeGroupInfo, tbK8sNGReq *model.K8sNodeGroupReq) {
 	tbK8sNGInfo.Id = tbK8sNGReq.Name
 	tbK8sNGInfo.Name = tbK8sNGReq.Name
 	tbK8sNGInfo.ImageId = tbK8sNGReq.ImageId
@@ -2255,7 +2255,7 @@ func fillK8sNodeGroupInfoFromK8sNodeGroupReq(tbK8sNGInfo *model.K8sNodeGroupInfo
 	tbK8sNGInfo.MaxNodeSize = tbK8sNGReq.MaxNodeSize
 }
 
-func fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(tbK8sNGInfoList *[]model.K8sNodeGroupInfo, tbK8sNGReqList *[]model.K8sNodeGroupReq) {
+func fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(tbK8sNGInfoList *[]model.NodeGroupInfo, tbK8sNGReqList *[]model.K8sNodeGroupReq) {
 	var err error
 	if tbK8sNGInfoList == nil {
 		err = fmt.Errorf("invalid K8sNodeGroupInfoList")
@@ -2269,13 +2269,13 @@ func fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(tbK8sNGInfoList *[]model.K8
 	}
 
 	for _, tbK8sNGReq := range *tbK8sNGReqList {
-		tbK8sNGInfo := model.K8sNodeGroupInfo{}
+		tbK8sNGInfo := model.NodeGroupInfo{}
 		fillK8sNodeGroupInfoFromK8sNodeGroupReq(&tbK8sNGInfo, &tbK8sNGReq)
 		*tbK8sNGInfoList = append(*tbK8sNGInfoList, tbK8sNGInfo)
 	}
 }
 
-func updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(tbK8sNGInfoList *[]model.K8sNodeGroupInfo, spNGInfoList *[]model.SpiderNodeGroupInfo) {
+func updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(tbK8sNGInfoList *[]model.NodeGroupInfo, spNGInfoList *[]model.SpiderNodeGroupInfo) {
 	var err error
 	if tbK8sNGInfoList == nil {
 		err = fmt.Errorf("invalid K8sNodeGroupInfoList")
@@ -2289,7 +2289,7 @@ func updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(tbK8sNGInfoList *[]mo
 	}
 
 	// Make tbK8sNGInfoListNew without deleted NodeGroupInfo from tbK8sNGInfoList
-	var newList []model.K8sNodeGroupInfo
+	var newList []model.NodeGroupInfo
 	for _, tbK8sNGInfo := range *tbK8sNGInfoList {
 		found := false
 		for _, spNGInfo := range *spNGInfoList {
@@ -2303,8 +2303,8 @@ func updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(tbK8sNGInfoList *[]mo
 		}
 	}
 
-	// Update recent SpiderNodeGroupInfo to K8sNodeGroupInfo
-	var absentList []model.K8sNodeGroupInfo
+	// Update recent SpiderNodeGroupInfo to NodeGroupInfo
+	var absentList []model.NodeGroupInfo
 	for _, spNGInfo := range *spNGInfoList {
 		found := false
 		for i := range newList {
@@ -2316,7 +2316,7 @@ func updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(tbK8sNGInfoList *[]mo
 		}
 		if found == false {
 			// In case of removing the nodegroup
-			absentInfo := model.K8sNodeGroupInfo{}
+			absentInfo := model.NodeGroupInfo{}
 			updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(&absentInfo, &spNGInfo)
 			absentList = append(absentList, absentInfo)
 		}

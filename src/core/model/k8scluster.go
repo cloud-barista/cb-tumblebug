@@ -91,7 +91,7 @@ type K8sClusterReq struct {
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required" example:"sg-01"`
 
 	// (3) NodeGroupInfo List
-	K8sNodeGroupList []K8sNodeGroupReq `json:"k8sNodeGroupList"`
+	NodeGroups []K8sNodeGroupReq `json:"k8sNodeGroupList"`
 
 	// Fields for "Register existing K8sCluster" feature
 	// @description CspResourceId is required to register a k8s cluster from CSP (option=register)
@@ -203,7 +203,7 @@ type SpiderChangeAutoscaleSizeRes struct {
 
 // ChangeK8sNodeGroupAutoscaleSizeRes is a struct to handle 'Change K8sNodeGroup's Autoscale Size' response from CB-Tumblebug.
 type ChangeK8sNodeGroupAutoscaleSizeRes struct {
-	K8sNodeGroupInfo
+	NodeGroupInfo
 }
 
 // SpiderUpgradeClusterReq is a wrapper struct to create JSON body of 'Upgrade Cluster' request
@@ -299,8 +299,8 @@ type SpiderClusterInfo struct {
 	KeyValueList []KeyValue
 }
 
-// K8sClusterInfo is a struct that represents TB K8sCluster object.
-type K8sClusterInfo struct {
+// ClusterInfo is a struct that represents TB Cluster object (VM-based implicit cluster or K8s-based explicit cluster).
+type ClusterInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -312,37 +312,54 @@ type K8sClusterInfo struct {
 
 	// Name is human-readable string to represent the object
 	Name           string `json:"name" example:"k8scluster01"`
-	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
+	ConnectionName string `json:"connectionName,omitempty" example:"alibaba-ap-northeast-2"`
 
 	// ConnectionConfig shows connection info to cloud service provider
-	ConnectionConfig ConnConfig `json:"connectionConfig"`
+	ConnectionConfig ConnConfig `json:"connectionConfig,omitempty"`
 
-	Description string `json:"description" example:"My K8sCluster"`
+	Description string `json:"description,omitempty" example:"My Cluster"`
 
 	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+	SystemMessage string `json:"systemMessage,omitempty" example:"Failed because ..." default:""` // system-given string message
 
 	// Label is for describing the object by keywords
-	Label map[string]string `json:"label"`
+	Label map[string]string `json:"label,omitempty"`
 
-	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
+	// SystemLabel is for describing the Resource in a keyword for special System purpose
+	SystemLabel string `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
 
 	// Version is for kubernetes version
-	Version string `json:"version" example:"1.30.1"` // Kubernetes Version, ex) 1.30.1
+	Version string `json:"version,omitempty" example:"1.30.1"` // Kubernetes Version, ex) 1.30.1
 
 	// Network is for describing network information about the cluster
-	Network K8sClusterNetworkInfo `json:"network"`
+	Network ClusterNetworkInfo `json:"network,omitempty"`
 
-	// K8sNodeGroupList is for describing network information about the cluster
-	K8sNodeGroupList []K8sNodeGroupInfo `json:"k8sNodeGroupList"`
-	AccessInfo       K8sAccessInfo      `json:"accessInfo"`
-	Addons           K8sAddonsInfo      `json:"addons"`
+	// NodeGroupIds is VM-specific reference
+	NodeGroupIds []string `json:"nodeGroupIds,omitempty"`
 
-	Status K8sClusterStatus `json:"status" example:"Active"` // Creating, Active, Inactive, Updating, Deleting
+	// NodeGroups is for describing NodeGroups in the cluster
+	NodeGroups []NodeGroupInfo `json:"nodeGroups,omitempty"`
+	AccessInfo K8sAccessInfo   `json:"accessInfo,omitempty"`
+	Addons     K8sAddonsInfo   `json:"addons,omitempty"`
 
-	CreatedTime  time.Time  `json:"createdTime" example:"1970-01-01T00:00:00.00Z"`
-	KeyValueList []KeyValue `json:"keyValueList"`
+	Status string `json:"status" example:"Active"` // VM: Running/Partial/Failed, K8s: Creating/Active/Inactive/Updating/Deleting
+
+	CreatedTime  time.Time  `json:"createdTime,omitempty" example:"1970-01-01T00:00:00.00Z"`
+	KeyValueList []KeyValue `json:"keyValueList,omitempty"`
+
+	// VM-specific implicit cluster fields
+	InfraId                   string   `json:"infraId,omitempty"`
+	ConnectionNames           []string `json:"connectionNames,omitempty"`
+	ProviderNames             []string `json:"providerNames,omitempty"`
+	RegionNames               []string `json:"regionNames,omitempty"`
+	NodeIds                   []string `json:"nodeIds,omitempty"`
+	RepresentativeNodeGroupId string   `json:"representativeNodeGroupId,omitempty"`
+	RepresentativeNodeId      string   `json:"representativeNodeId,omitempty"`
+
+	// Common summary fields (synthesized for VM clusters, native/configured for K8s clusters)
+	VNetId         string `json:"vNetId,omitempty"`
+	NodeGroupCount int    `json:"nodeGroupCount,omitempty"`
+	NodeCount      int    `json:"nodeCount,omitempty"`
 
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
 	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
@@ -350,7 +367,7 @@ type K8sClusterInfo struct {
 	// CspResourceId is resource identifier managed by CSP
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
-	SpiderViewK8sClusterDetail SpiderClusterInfo `json:"spiderViewK8sClusterDetail"`
+	SpiderViewK8sClusterDetail SpiderClusterInfo `json:"spiderViewK8sClusterDetail,omitempty"`
 }
 
 // SpiderNetworkInfo is a struct to handle Cluster Network information from the CB-Spider's REST API response
@@ -364,15 +381,12 @@ type SpiderNetworkInfo struct {
 	KeyValueList []KeyValue
 }
 
-// K8sClusterNetworkInfo is a struct to handle K8sCluster Network information from the CB-Tumblebug's REST API response
-type K8sClusterNetworkInfo struct {
-	VNetId           string   `json:"vNetId" example:"vpc-01"`
-	SubnetIds        []string `json:"subnetIds" example:"subnet-01"`
-	SecurityGroupIds []string `json:"securityGroupIds" example:"sg-01"`
-
-	// ---
-
-	KeyValueList []KeyValue `json:"keyValueList"`
+// ClusterNetworkInfo is a struct to handle Cluster Network information from the CB-Tumblebug's REST API response
+type ClusterNetworkInfo struct {
+	VNetId           string     `json:"vNetId,omitempty" example:"vpc-01"`
+	SubnetIds        []string   `json:"subnetIds,omitempty" example:"subnet-01"`
+	SecurityGroupIds []string   `json:"securityGroupIds,omitempty" example:"sg-01"`
+	KeyValueList     []KeyValue `json:"keyValueList,omitempty"`
 }
 
 // SpiderNodeGroupInfo is a struct to handle Cluster Node Group information from the CB-Spider's REST API response
@@ -401,39 +415,41 @@ type SpiderNodeGroupInfo struct {
 	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty"`
 }
 
-// K8sNodeGroupInfo is a struct to handle K8sCluster's Node Group information from the CB-Tumblebug's REST API response
-type K8sNodeGroupInfo struct {
+// NodeGroupInfo is a struct to handle Node Group information
+type NodeGroupInfo struct {
+	ResourceType string `json:"resourceType"` // "nodeGroup" | "k8sNodeGroup"
+
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws-ap-southeast-1"`
+
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
 
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	ImageId         string             `json:"imageId"`
-	SpecId          string             `json:"specId"`
-	RootDiskType    string             `json:"rootDiskType"`
-	RootDiskSize    int                `json:"rootDiskSize"`
-	SshKeyId        string             `json:"sshKeyId"`
-	OnAutoScaling   bool               `json:"onAutoScaling"`
-	DesiredNodeSize int                `json:"desiredNodeSize"`
-	MinNodeSize     int                `json:"minNodeSize"`
-	MaxNodeSize     int                `json:"maxNodeSize"`
-	Status          K8sNodeGroupStatus `json:"status" example:"Active"` // Creating, Active, Inactive, Updating, Deleting
-	K8sNodes        []K8sNodeInfo      `json:"k8sNodes"`
-	KeyValueList    []KeyValue         `json:"keyValueList"`
+	// VM specific fields
+	NodeId        []string `json:"nodeId,omitempty"`
+	NodeGroupSize int      `json:"nodeGroupSize,omitempty"`
 
-	// IsInitialNodeGroup indicates whether this node group was created during cluster creation.
-	// For some CSPs (Alibaba ACK, Tencent TKE), this node group cannot be deleted independently;
-	// it is automatically removed when the cluster is deleted.
-	IsInitialNodeGroup bool `json:"isInitialNodeGroup,omitempty"`
-
-	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
-	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
-
-	// CspResourceId is resource identifier managed by CSP
-	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
-
-	SpiderViewK8sNodeGroupDetail SpiderNodeGroupInfo `json:"spiderViewK8sNodeGroupDetail"`
+	// Shared / K8s specific fields
+	ImageId            string              `json:"imageId,omitempty"`
+	SpecId             string              `json:"specId,omitempty"`
+	RootDiskType       string              `json:"rootDiskType,omitempty"`
+	RootDiskSize       int                 `json:"rootDiskSize,omitempty"`
+	SshKeyId           string              `json:"sshKeyId,omitempty"`
+	ConnectionName     string              `json:"connectionName,omitempty"`
+	OnAutoScaling      bool                `json:"onAutoScaling,omitempty"`
+	DesiredNodeSize    int                 `json:"desiredNodeSize,omitempty"`
+	MinNodeSize        int                 `json:"minNodeSize,omitempty"`
+	MaxNodeSize        int                 `json:"maxNodeSize,omitempty"`
+	Status             string              `json:"status,omitempty" example:"Active"` // VM Status (string) or K8sNodeGroupStatus (string wrapper)
+	K8sNodes           []K8sNodeInfo       `json:"k8sNodes,omitempty"`
+	KeyValueList       []KeyValue          `json:"keyValueList,omitempty"`
+	IsInitialNodeGroup bool                `json:"isInitialNodeGroup,omitempty"`
+	CspResourceName    string              `json:"cspResourceName,omitempty"`
+	CspResourceId      string              `json:"cspResourceId,omitempty"`
+	SpiderViewK8sNodeGroupDetail SpiderNodeGroupInfo `json:"spiderViewK8sNodeGroupDetail,omitempty"`
 }
 
 // K8sNodeInfo is a struct to handle K8sCluster's Node information
@@ -519,64 +535,24 @@ type CheckNodeDynamicReqInfo struct {
 
 }
 
-// K8sClusterDynamicReq is struct for requirements to create K8sCluster dynamically (with default resource option)
-type K8sClusterDynamicReq struct {
-	// K8sCluster name if it is not empty. Optional when used with namePrefix in multi-cluster creation.
-	Name string `json:"name" example:"k8scluster01"`
-
-	// K8s Clsuter version
-	Version string `json:"version,omitempty" example:"1.29"`
+// ClusterDynamicReq is struct for requirements to create Cluster dynamically (with default resource option)
+type ClusterDynamicReq struct {
+	// Cluster name if it is not empty. Optional when used with namePrefix in multi-cluster creation.
+	Name string `json:"name" validate:"required" example:"cluster01"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label,omitempty"`
 
 	Description string `json:"description,omitempty" example:"Description"`
 
-	// NodeGroup name if it is not empty
-	NodeGroupName string `json:"nodeGroupName,omitempty" example:"k8sng01"`
+	NodeGroups []NodeGroupDynamicReq `json:"nodeGroups" validate:"required"`
 
-	// SpecId is field for id of a spec in common namespace
-	SpecId string `json:"specId" validate:"required" example:"tencent+ap-seoul+S2.MEDIUM4"`
+	// K8s cluster version
+	Version string `json:"version,omitempty" example:"1.31"`
 
-	// ImageId is field for id of a image in common namespace
-	ImageId string `json:"imageId" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
-
-	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"`                                    // Root disk size in GB. 0 = use CSP default.
-
-	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
-	DesiredNodeSize int    `json:"desiredNodeSize,omitempty" example:"1"`
-	MinNodeSize     int    `json:"minNodeSize,omitempty" example:"1"`
-	MaxNodeSize     int    `json:"maxNodeSize,omitempty" example:"3"`
-
-	// if ConnectionName is given, the VM tries to use associtated credential.
+	// if ConnectionName is given, the VM tries to use associated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
 	ConnectionName string `json:"connectionName,omitempty" default:"tencent-ap-seoul"`
-}
-
-// K8sNodeGroupDynamicReq is struct for requirements to create K8sNodeGroup dynamically (with default resource option)
-type K8sNodeGroupDynamicReq struct {
-	// K8sNodeGroup name if it is not empty.
-	Name string `json:"name" validate:"required" example:"k8sng01"`
-
-	// Label is for describing the object by keywords
-	Label map[string]string `json:"label,omitempty"`
-
-	Description string `json:"description,omitempty" example:"Description"`
-
-	// SpecId is field for id of a spec in common namespace
-	SpecId string `json:"specId" validate:"required" example:"tencent+ap-seoul+S2.MEDIUM4"`
-
-	// ImageId is field for id of a image in common namespace
-	ImageId string `json:"imageId" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
-
-	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"`                                    // Root disk size in GB. 0 = use CSP default.
-
-	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
-	DesiredNodeSize int    `json:"desiredNodeSize,omitempty" example:"1"`
-	MinNodeSize     int    `json:"minNodeSize,omitempty" example:"1"`
-	MaxNodeSize     int    `json:"maxNodeSize,omitempty" example:"3"`
 }
 
 // K8sClusterContainerCmdReq is struct for remote command
@@ -592,7 +568,7 @@ type K8sClusterContainerCmdResult struct {
 	Err     error  `json:"err"`
 }
 
-// K8sClusterContainerCmdResultMap is struct maps for K8sClusterContainerCmd Result
+// K8sClusterContainerCmdResults is struct maps for K8sClusterContainerCmd Result
 type K8sClusterContainerCmdResults struct {
 	Results []*K8sClusterContainerCmdResult `json:"results"`
 }
@@ -603,13 +579,13 @@ type K8sClusterContainerCmdResults struct {
 
 // K8sMultiClusterDynamicReq is a wrapper struct for creating multiple K8sClusters in parallel
 type K8sMultiClusterDynamicReq struct {
-	NamePrefix string                 `json:"namePrefix" example:"across"`
-	Clusters   []K8sClusterDynamicReq `json:"clusters" validate:"required,dive"`
+	NamePrefix string              `json:"namePrefix" example:"across"`
+	Clusters   []ClusterDynamicReq `json:"clusters" validate:"required,dive"`
 }
 
 // K8sMultiClusterInfo is a wrapper struct for multiple K8sCluster creation results
 type K8sMultiClusterInfo struct {
-	Clusters       []K8sClusterInfo       `json:"clusters"`
+	Clusters       []ClusterInfo          `json:"clusters"`
 	FailedClusters []K8sClusterFailedInfo `json:"failedClusters,omitempty"`
 }
 
