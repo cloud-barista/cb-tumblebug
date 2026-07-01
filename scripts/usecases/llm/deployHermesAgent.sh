@@ -121,6 +121,8 @@ Core options:
 
 vLLM options:
   --model MODEL                          Default: Qwen/Qwen3-30B-A3B-Instruct-2507-FP8
+  --vllm-version VERSION                 Pin vLLM version (e.g. 0.8.5). Omit flag for latest.
+  --hf-token TOKEN                       HuggingFace token for pre-downloading gated models
   --vllm-host HOST                       Default: 0.0.0.0
   --vllm-port PORT                       Default: 8000
   --ctx-len TOKENS                       Default: 65536
@@ -328,7 +330,7 @@ while [ $# -gt 0 ]; do
     --tool-call-parser) TOOL_CALL_PARSER="${2:?}"; shift 2 ;;
     --no-tool-call-parser) TOOL_CALL_PARSER=""; shift ;;
     --vllm-api-key) VLLM_API_KEY="${2:?}"; shift 2 ;;
-    --vllm-version) VLLM_VERSION="${2:-}"; shift 2 ;;
+    --vllm-version) VLLM_VERSION="${2:?Error: --vllm-version requires a value (omit flag for latest)}"; shift 2 ;;
     --vllm-health-timeout) VLLM_HEALTH_TIMEOUT="${2:?}"; shift 2 ;;
     --hf-token) HF_TOKEN_VALUE="${2:?}"; shift 2 ;;
     --hf-token-file) HF_TOKEN_FILE="${2:?}"; shift 2 ;;
@@ -476,11 +478,17 @@ install_vllm() {
     -o "$tmp_script"
   chmod +x "$tmp_script"
 
-  local version_arg=""
-  [ -n "${VLLM_VERSION:-}" ] && version_arg="--version $VLLM_VERSION"
+  # Build args array — safe against word-splitting and special characters.
+  local -a deploy_args=()
+  [ -n "${VLLM_VERSION:-}" ] && deploy_args+=(--version "$VLLM_VERSION")
 
-  log "Running deployvLLM.sh as $RUN_AS_USER${version_arg:+ ($version_arg)}..."
-  sudo -u "$RUN_AS_USER" -H bash "$tmp_script" $version_arg
+  # deployvLLM.sh calls sudo apt-get internally, so it must run as root.
+  # Set HOME to the target user's home so the venv lands in the right place,
+  # then transfer ownership of the result back to $RUN_AS_USER.
+  log "Running deployvLLM.sh as root (HOME=$USER_HOME)${deploy_args:+ (${deploy_args[*]})}..."
+  as_root env HOME="$USER_HOME" bash "$tmp_script" "${deploy_args[@]}"
+  as_root chown -R "$RUN_AS_USER":"$RUN_AS_USER" "$USER_HOME/venv_vllm" 2>/dev/null || true
+  as_root chown "$RUN_AS_USER":"$RUN_AS_USER" "$USER_HOME/vllm_install.log" 2>/dev/null || true
   rm -f "$tmp_script"
 }
 
