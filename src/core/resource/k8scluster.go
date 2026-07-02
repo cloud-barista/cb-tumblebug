@@ -892,6 +892,17 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 				}
 			}
 		}
+
+		// Enforce minimum node group count constraint for CSPs that require at least
+		// N node groups to remain in a cluster (e.g., Azure AKS, GCP GKE).
+		if minCount, _ := common.GetK8sMinNodeGroupCount(ngConnConfig.ProviderName); minCount > 0 {
+			if len(tbK8sCInfo.K8sNodeGroupList) <= minCount {
+				return false, fmt.Errorf(
+					"cannot delete node group '%s' from cluster '%s': provider '%s' requires at least %d node group(s) to remain",
+					k8sNodeGroupName, k8sClusterId, ngConnConfig.ProviderName, minCount,
+				)
+			}
+		}
 	}
 
 	// Create Request body for RemoveK8sNodeGroup of CB-Spider
