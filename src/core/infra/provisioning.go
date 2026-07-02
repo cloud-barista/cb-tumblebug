@@ -1558,7 +1558,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 
 	for i, k := range nodeGroupReqs {
 		wg.Add(1)
-		go func(index int, nodeGroupReq model.CreateNodeGroupDynamicReq) {
+		go func(index int, nodeGroupReq model.NodeGroupDynamicReq) {
 			defer wg.Done()
 
 			// Acquire semaphore
@@ -1627,7 +1627,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		resultChan := make(chan nodeResult, len(nodeGroupReqs))
 
 		// Group nodeGroupReqs by connectionName for sequential processing
-		connectionGroups := make(map[string][]model.CreateNodeGroupDynamicReq)
+		connectionGroups := make(map[string][]model.NodeGroupDynamicReq)
 
 		// First, determine the connection name for each nodeGroup
 		for _, nodeGroupReq := range nodeGroupReqs {
@@ -1678,7 +1678,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 		// Process each connection group in parallel, but VMs within each group sequentially
 		for connectionName, nodeGroupsInConnection := range connectionGroups {
 			wg.Add(1)
-			go func(connName string, nodeGroups []model.CreateNodeGroupDynamicReq) {
+			go func(connName string, nodeGroups []model.NodeGroupDynamicReq) {
 				defer wg.Done()
 
 				log.Info().Msgf("Processing %d NodeGroups for connection '%s' sequentially", len(nodeGroups), connName)
@@ -1938,7 +1938,7 @@ func ValidateInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraD
 }
 
 // reviewSingleNodeGroupDynamicReq reviews and validates a single VM dynamic request
-func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq model.CreateNodeGroupDynamicReq, deployOption string) (model.ReviewNodeGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
+func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq model.NodeGroupDynamicReq, deployOption string) (model.ReviewNodeGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
 
 	credentialHolder := common.CredentialHolderFromContext(ctx)
 	nodeReview := model.ReviewNodeGroupDynamicReqInfo{
@@ -2590,7 +2590,7 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 }
 
 // ReviewSingleNodeGroupDynamicReq reviews and validates a single VM dynamic request and returns comprehensive review information
-func ReviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, req *model.CreateNodeGroupDynamicReq) (*model.ReviewNodeGroupDynamicReqInfo, error) {
+func ReviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, req *model.NodeGroupDynamicReq) (*model.ReviewNodeGroupDynamicReqInfo, error) {
 	log.Debug().Msgf("Starting single VM dynamic request review for: %s", req.Name)
 
 	// Basic validation
@@ -2699,7 +2699,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 	// Validate each VM request in parallel
 	for i, nodeGroupReq := range req.NodeGroups {
 		wg.Add(1)
-		go func(index int, nodeGroupDynamicReq model.CreateNodeGroupDynamicReq) {
+		go func(index int, nodeGroupDynamicReq model.NodeGroupDynamicReq) {
 			defer wg.Done()
 
 			// Global cap (safety net across all CSPs).
@@ -2980,7 +2980,7 @@ func CreateSystemInfraDynamic(option string) (*model.InfraInfo, error) {
 		}
 		for _, v := range connections.Connectionconfig {
 
-			nodeGroupDynamicReq := &model.CreateNodeGroupDynamicReq{}
+			nodeGroupDynamicReq := &model.NodeGroupDynamicReq{}
 			nodeGroupDynamicReq.ImageId = "ubuntu22.04"                // temporal default value. will be changed
 			nodeGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
@@ -3025,7 +3025,7 @@ func CreateSystemInfraDynamic(option string) (*model.InfraInfo, error) {
 }
 
 // CreateInfraNodeGroupDynamic is func to create requested VM in a dynamic way and add it to Infra
-func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId string, req *model.CreateNodeGroupDynamicReq) (*model.InfraInfo, error) {
+func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId string, req *model.NodeGroupDynamicReq) (*model.InfraInfo, error) {
 
 	emptyInfra := &model.InfraInfo{}
 	nodeGroupId := req.Name
@@ -3055,7 +3055,7 @@ func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId strin
 }
 
 // checkCommonResAvailableForNodeGroupDynamicReq is func to check common resources availability for NodeGroupDynamicReq
-func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *model.CreateNodeGroupDynamicReq, nsId string) error {
+func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *model.NodeGroupDynamicReq, nsId string) error {
 
 	credentialHolder := common.CredentialHolderFromContext(ctx)
 
@@ -3210,7 +3210,7 @@ func waitForVNetReady(ctx context.Context, nsId string, vNetId string) error {
 }
 
 // getNodeGroupReqFromDynamicReq is func to getNodeGroupReqFromDynamicReq with created resource tracking
-func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.CreateNodeGroupDynamicReq) (*NodeReqWithCreatedResources, error) {
+func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.NodeGroupDynamicReq) (*NodeReqWithCreatedResources, error) {
 
 	reqID := common.RequestIDFromContext(ctx)
 	credentialHolder := common.CredentialHolderFromContext(ctx)
@@ -4468,66 +4468,87 @@ func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string
 	return recVersion, nil
 }
 
-// checkCommonResAvailableForK8sClusterDynamicReq is func to check common resources availability for K8sClusterDynamicReq
-func checkCommonResAvailableForK8sClusterDynamicReq(ctx context.Context, dReq *model.K8sClusterDynamicReq) error {
-	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
+// checkCommonResAvailableForK8sClusterDynamicReq is func to check common resources availability for ClusterDynamicReq
+func checkCommonResAvailableForK8sClusterDynamicReq(ctx context.Context, dReq *model.ClusterDynamicReq) error {
+	// If no NodeGroups, return error
+	if len(dReq.NodeGroups) == 0 {
+		return fmt.Errorf("K8sCluster requires at least one NodeGroup")
 	}
 
-	connName := specInfo.ConnectionName
-	// If ConnectionName is specified by the request, Use ConnectionName from the request
-	if dReq.ConnectionName != "" {
-		connName = dReq.ConnectionName
-	}
-
-	// validate the GetConnConfig for spec
-	connConfig, err := common.GetConnConfig(connName)
-	if err != nil {
-		err := fmt.Errorf("Failed to get ConnectionName (%s) for Spec (%s) is not found.", connName, dReq.SpecId)
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	niDesignation, err := common.GetK8sNodeImageDesignation(connConfig.ProviderName)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	}
-
-	if niDesignation == false {
-		// if node image designation is not supported by CSP, auto-correct ImageId to "default"
-		if !(strings.EqualFold(dReq.ImageId, "default") || strings.EqualFold(dReq.ImageId, "")) {
-			log.Warn().Msgf("NodeImageDesignation is not supported by CSP(%s). ImageId '%s' will be replaced with 'default'", connConfig.ProviderName, dReq.ImageId)
-			dReq.ImageId = "default"
-		}
-	}
-
-	// In K8sCluster, allows dReq.ImageId to be set to "default" or ""
-	if strings.EqualFold(dReq.ImageId, "default") ||
-		strings.EqualFold(dReq.ImageId, "") {
-		// do nothing
-	} else {
-		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, connName, dReq.ImageId)
+	// We can determine the ConnectionName from the first NodeGroup or root ConnectionName
+	connName := dReq.ConnectionName
+	if connName == "" {
+		// If root ConnectionName is empty, get from the first NodeGroup's spec
+		firstSpecId := dReq.NodeGroups[0].SpecId
+		specInfo, err := resource.GetSpec(model.SystemCommonNs, firstSpecId)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
+			log.Error().Err(err).Msg("")
 			return err
 		}
-		if isAutoRegistered {
-			log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sCluster", dReq.ImageId)
+		connName = specInfo.ConnectionName
+	}
+
+	// Loop and check each node group
+	for i := range dReq.NodeGroups {
+		ng := &dReq.NodeGroups[i]
+		_, err := resource.GetSpec(model.SystemCommonNs, ng.SpecId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+
+		ngConnName := connName
+		if ng.ConnectionName != "" {
+			ngConnName = ng.ConnectionName
+		} else {
+			ng.ConnectionName = connName
+		}
+
+		connConfig, err := common.GetConnConfig(ngConnName)
+		if err != nil {
+			err := fmt.Errorf("Failed to get ConnectionName (%s) for Spec (%s) is not found.", ngConnName, ng.SpecId)
+			log.Error().Err(err).Msg("")
+			return err
+		}
+
+		niDesignation, err := common.GetK8sNodeImageDesignation(connConfig.ProviderName)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+		}
+
+		if niDesignation == false {
+			// if node image designation is not supported by CSP, auto-correct ImageId to "default"
+			if !(strings.EqualFold(ng.ImageId, "default") || strings.EqualFold(ng.ImageId, "")) {
+				log.Warn().Msgf("NodeImageDesignation is not supported by CSP(%s). ImageId '%s' will be replaced with 'default'", connConfig.ProviderName, ng.ImageId)
+				ng.ImageId = "default"
+			}
+		}
+
+		// In K8sCluster, allows ng.ImageId to be set to "default" or ""
+		if strings.EqualFold(ng.ImageId, "default") ||
+			strings.EqualFold(ng.ImageId, "") {
+			// do nothing
+		} else {
+			// Check if the image is available (DB or CSP) and auto-register if needed
+			_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, model.SystemCommonNs, ngConnName, ng.ImageId)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get the Image from the CSP")
+				return err
+			}
+			if isAutoRegistered {
+				log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sCluster", ng.ImageId)
+			}
 		}
 	}
 
 	return nil
 }
 
-// checkCommonResAvailableForK8sNodeGroupDynamicReq is func to check common resources availability for K8sNodeGroupDynamicReq
-func checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx context.Context, connName string, dReq *model.K8sNodeGroupDynamicReq) error {
-	k8sClusterDReq := &model.K8sClusterDynamicReq{
-		SpecId:         dReq.SpecId,
-		ImageId:        dReq.ImageId,
+// checkCommonResAvailableForK8sNodeGroupDynamicReq is func to check common resources availability for NodeGroupDynamicReq
+func checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx context.Context, connName string, dReq *model.NodeGroupDynamicReq) error {
+	k8sClusterDReq := &model.ClusterDynamicReq{
 		ConnectionName: connName,
+		NodeGroups:     []model.NodeGroupDynamicReq{*dReq},
 	}
 
 	err := checkCommonResAvailableForK8sClusterDynamicReq(ctx, k8sClusterDReq)
@@ -4535,24 +4556,45 @@ func checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx context.Context, connN
 		return err
 	}
 
+	// Sync back any auto-corrected fields (like ImageId)
+	*dReq = k8sClusterDReq.NodeGroups[0]
+
 	return nil
 }
 
-// getK8sClusterReqFromDynamicReq is func to get K8sClusterReq from K8sClusterDynamicReq
-func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *model.K8sClusterDynamicReq, skipVersionCheck bool) (*model.K8sClusterReq, error) {
+// getK8sClusterReqFromDynamicReq is func to get K8sClusterReq from ClusterDynamicReq
+func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *model.ClusterDynamicReq, skipVersionCheck bool) (*model.K8sClusterReq, error) {
 	reqID := common.RequestIDFromContext(ctx)
 	onDemand := true
 
 	emptyK8sReq := &model.K8sClusterReq{}
 	k8sReq := &model.K8sClusterReq{}
-	k8sngReq := &model.K8sNodeGroupReq{}
 
-	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
+	if len(dReq.NodeGroups) == 0 {
+		return emptyK8sReq, fmt.Errorf("ClusterDynamicReq requires at least one NodeGroup")
+	}
+
+	// We use the first NodeGroup to resolve default ConnectionName and provider if root is empty
+	firstSpecId := dReq.NodeGroups[0].SpecId
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, firstSpecId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return emptyK8sReq, err
 	}
-	k8sngReq.SpecId = specInfo.Id
+
+	// If ConnectionName is specified by the request, Use ConnectionName from the request
+	k8sReq.ConnectionName = specInfo.ConnectionName
+	if dReq.ConnectionName != "" {
+		k8sReq.ConnectionName = dReq.ConnectionName
+	}
+
+	// validate the GetConnConfig for spec
+	connection, err := common.GetConnConfig(k8sReq.ConnectionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to Get ConnectionName (%s) for Spec (%s) is not found.", k8sReq.ConnectionName, firstSpecId)
+		log.Err(err).Msg("")
+		return emptyK8sReq, err
+	}
 
 	var k8sRecVersion string
 	if skipVersionCheck {
@@ -4567,47 +4609,17 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		log.Warn().Msgf("K8sCluster version validation skipped for version: %s (dynamic)", k8sRecVersion)
 	} else {
 		// Normal validation path
-		k8sRecVersion, err = getK8sRecommendVersion(specInfo.ProviderName, specInfo.RegionName, dReq.Version)
+		k8sRecVersion, err = getK8sRecommendVersion(connection.ProviderName, connection.RegionZoneInfoName, dReq.Version)
 		if err != nil {
 			log.Err(err).Msg("")
 			return emptyK8sReq, err
 		}
 	}
 
-	// If ConnectionName is specified by the request, Use ConnectionName from the request
-	k8sReq.ConnectionName = specInfo.ConnectionName
-	if dReq.ConnectionName != "" {
-		k8sReq.ConnectionName = dReq.ConnectionName
-	}
-
-	// validate the GetConnConfig for spec
-	connection, err := common.GetConnConfig(k8sReq.ConnectionName)
-	if err != nil {
-		err := fmt.Errorf("Failed to Get ConnectionName (%s) for Spec (%s) is not found.", k8sReq.ConnectionName, dReq.SpecId)
-		log.Err(err).Msg("")
-		return emptyK8sReq, err
-	}
-
 	k8sNgOnCreation, err := common.GetK8sNodeGroupsOnK8sCreation(connection.ProviderName)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Get Nodegroups on K8sCluster Creation")
 		return emptyK8sReq, err
-	}
-
-	// In K8sCluster, allows dReq.ImageId to be set to "default" or ""
-	if strings.EqualFold(dReq.ImageId, "default") ||
-		strings.EqualFold(dReq.ImageId, "") {
-		// do nothing
-	} else {
-		// Check if the image is available (DB or CSP) and auto-register if needed
-		_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, k8sReq.ConnectionName, dReq.ImageId)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
-			return emptyK8sReq, err
-		}
-		if isAutoRegistered {
-			log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sCluster", dReq.ImageId)
-		}
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + nodeReq.ConnectionName)
@@ -4641,11 +4653,11 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 
-	k8sngReq.SshKeyId = resourceName
-	_, err = resource.GetResource(nsId, model.StrSSHKey, k8sngReq.SshKeyId)
+	sshKeyId := resourceName
+	_, err = resource.GetResource(nsId, model.StrSSHKey, sshKeyId)
 	if err != nil {
 		if !onDemand {
-			err := fmt.Errorf("Failed to get the SSHKey %s from %s", k8sngReq.SshKeyId, k8sReq.ConnectionName)
+			err := fmt.Errorf("Failed to get the SSHKey %s from %s", sshKeyId, k8sReq.ConnectionName)
 			log.Err(err).Msg("Failed to get the SSHKey")
 			return emptyK8sReq, err
 		}
@@ -4654,13 +4666,13 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 		err2 := resource.CreateSharedResource(ctx, nsId, model.StrSSHKey, k8sReq.ConnectionName)
 		if err2 != nil {
-			log.Err(err2).Msg("Failed to create new default SSHKey " + k8sngReq.SshKeyId + " from " + k8sReq.ConnectionName)
+			log.Err(err2).Msg("Failed to create new default SSHKey " + sshKeyId + " from " + k8sReq.ConnectionName)
 			return emptyK8sReq, err2
 		} else {
-			log.Info().Msg("Created new default SSHKey: " + k8sngReq.SshKeyId)
+			log.Info().Msg("Created new default SSHKey: " + sshKeyId)
 		}
 	} else {
-		log.Info().Msg("Found and utilize default SSHKey: " + k8sngReq.SshKeyId)
+		log.Info().Msg("Found and utilize default SSHKey: " + sshKeyId)
 	}
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
@@ -4688,39 +4700,69 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		log.Info().Msg("Found and utilize default securityGroup: " + securityGroup)
 	}
 
-	k8sngReq.Name = dReq.NodeGroupName
-	if k8sngReq.Name == "" {
-		k8sngReq.Name = common.GenUid()
+	// Process all NodeGroups from dReq
+	for _, ng := range dReq.NodeGroups {
+		k8sngReq := model.K8sNodeGroupReq{}
+		k8sngReq.Name = ng.Name
+		if k8sngReq.Name == "" {
+			k8sngReq.Name = common.GenUid()
+		}
+
+		ngSpecInfo, err := resource.GetSpec(model.SystemCommonNs, ng.SpecId)
+		if err != nil {
+			log.Err(err).Msg("")
+			return emptyK8sReq, err
+		}
+		k8sngReq.SpecId = ngSpecInfo.Id
+		k8sngReq.ImageId = ng.ImageId
+		k8sngReq.RootDiskType = ng.RootDiskType
+		k8sngReq.RootDiskSize = ng.RootDiskSize
+
+		// Verify ImageId availability if not default/empty
+		if !(strings.EqualFold(ng.ImageId, "default") || strings.EqualFold(ng.ImageId, "")) {
+			_, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, k8sReq.ConnectionName, ng.ImageId)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get the Image from the CSP")
+				return emptyK8sReq, err
+			}
+			if isAutoRegistered {
+				log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sCluster", ng.ImageId)
+			}
+		}
+
+		k8sngReq.SshKeyId = sshKeyId
+		k8sngReq.OnAutoScaling = ng.OnAutoScaling
+		if k8sngReq.OnAutoScaling == "" {
+			k8sngReq.OnAutoScaling = "true"
+		}
+		k8sngReq.DesiredNodeSize = ng.DesiredNodeSize
+		if k8sngReq.DesiredNodeSize <= 0 {
+			k8sngReq.DesiredNodeSize = 1
+		}
+		k8sngReq.MinNodeSize = ng.MinNodeSize
+		if k8sngReq.MinNodeSize <= 0 {
+			k8sngReq.MinNodeSize = 1
+		}
+		k8sngReq.MaxNodeSize = ng.MaxNodeSize
+		if k8sngReq.MaxNodeSize <= 0 {
+			k8sngReq.MaxNodeSize = 2
+		}
+
+		if k8sNgOnCreation {
+			k8sReq.NodeGroups = append(k8sReq.NodeGroups, k8sngReq)
+		}
 	}
-	k8sngReq.RootDiskType = dReq.RootDiskType
-	k8sngReq.RootDiskSize = dReq.RootDiskSize
-	k8sngReq.OnAutoScaling = dReq.OnAutoScaling
-	if k8sngReq.OnAutoScaling == "" {
-		k8sngReq.OnAutoScaling = "true"
+
+	if !k8sNgOnCreation {
+		log.Info().Msg("Need to Add NodeGroups To Use This K8sCluster")
 	}
-	k8sngReq.DesiredNodeSize = dReq.DesiredNodeSize
-	if k8sngReq.DesiredNodeSize <= 0 {
-		k8sngReq.DesiredNodeSize = 1
-	}
-	k8sngReq.MinNodeSize = dReq.MinNodeSize
-	if k8sngReq.MinNodeSize <= 0 {
-		k8sngReq.MinNodeSize = 1
-	}
-	k8sngReq.MaxNodeSize = dReq.MaxNodeSize
-	if k8sngReq.MaxNodeSize <= 0 {
-		k8sngReq.MaxNodeSize = 2
-	}
+
 	k8sReq.Description = dReq.Description
 	k8sReq.Name = dReq.Name
 	if k8sReq.Name == "" {
 		k8sReq.Name = common.GenUid()
 	}
 	k8sReq.Version = k8sRecVersion
-	if k8sNgOnCreation {
-		k8sReq.K8sNodeGroupList = append(k8sReq.K8sNodeGroupList, *k8sngReq)
-	} else {
-		log.Info().Msg("Need to Add NodeGroups To Use This K8sCluster")
-	}
 	k8sReq.Label = dReq.Label
 
 	common.PrintJsonPretty(k8sReq)
@@ -4730,9 +4772,9 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 }
 
 // CreateK8sClusterDynamic is func to create K8sCluster obeject and deploy requested K8sCluster and NodeGroup in a dynamic way
-func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.K8sClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
+func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.ClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.ClusterInfo, error) {
 	reqID := common.RequestIDFromContext(ctx)
-	emptyK8sCluster := &model.K8sClusterInfo{}
+	emptyK8sCluster := &model.ClusterInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Err(err).Msg("")
@@ -4801,8 +4843,8 @@ func CreateK8sClusterDynamic(ctx context.Context, nsId string, dReq *model.K8sCl
 	return resource.CreateK8sCluster(ctx, nsId, k8sReq, option, skipVersionCheck)
 }
 
-// getK8sNodeGroupReqFromDynamicReq is func to get K8sNodeGroupReq from K8sNodeGroupDynamicReq
-func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClusterInfo *model.K8sClusterInfo, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sNodeGroupReq, error) {
+// getK8sNodeGroupReqFromDynamicReq is func to get K8sNodeGroupReq from NodeGroupDynamicReq
+func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClusterInfo *model.ClusterInfo, dReq *model.NodeGroupDynamicReq) (*model.K8sNodeGroupReq, error) {
 	reqID := common.RequestIDFromContext(ctx)
 	emptyK8sNgReq := &model.K8sNodeGroupReq{}
 	k8sNgReq := &model.K8sNodeGroupReq{}
@@ -4886,11 +4928,11 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 }
 
 // CreateK8sNodeGroupDynamic is func to create K8sNodeGroup obeject and deploy requested K8sNodeGroup in a dynamic way
-func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId string, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sClusterInfo, error) {
+func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId string, dReq *model.NodeGroupDynamicReq) (*model.ClusterInfo, error) {
 	reqID := common.RequestIDFromContext(ctx)
 	log.Debug().Msgf("reqID: %s, nsId: %s, k8sClusterId: %s, dReq: %v\n", reqID, nsId, k8sClusterId, dReq)
 
-	emptyK8sCluster := &model.K8sClusterInfo{}
+	emptyK8sCluster := &model.ClusterInfo{}
 
 	check, err := resource.CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
@@ -4909,13 +4951,13 @@ func CreateK8sNodeGroupDynamic(ctx context.Context, nsId string, k8sClusterId st
 		return emptyK8sCluster, err
 	}
 
-	if tbK8sCInfo.Status != model.K8sClusterActive {
+	if tbK8sCInfo.Status != string(model.K8sClusterActive) {
 		err := fmt.Errorf("K8sCluster(%s) is not active status", k8sClusterId)
 		log.Err(err).Msgf("Failed to Create K8sNodeGroup(%s) in K8sCluster(%s) Dynamically", dReq.Name, k8sClusterId)
 		return emptyK8sCluster, err
 	}
 
-	for _, ngi := range tbK8sCInfo.K8sNodeGroupList {
+	for _, ngi := range tbK8sCInfo.NodeGroups {
 		if ngi.Name == dReq.Name {
 			err := fmt.Errorf("K8sNodeGroup(%s) already exists", dReq.Name)
 			log.Err(err).Msgf("Failed to Create K8sNodeGroup(%s) in K8sCluster(%s) Dynamically", dReq.Name, k8sClusterId)
@@ -5667,7 +5709,7 @@ func CreateK8sMultiClusterDynamic(ctx context.Context, nsId string, multiReq *mo
 		name           string // Store actual cluster name for error reporting
 		connectionName string // Connection name for error reporting
 		specId         string // Spec ID for error reporting
-		cluster        *model.K8sClusterInfo
+		cluster        *model.ClusterInfo
 		err            error
 	}
 	resultChan := make(chan clusterResult, len(multiReq.Clusters))
@@ -5677,7 +5719,7 @@ func CreateK8sMultiClusterDynamic(ctx context.Context, nsId string, multiReq *mo
 
 	// Launch goroutines for parallel creation
 	for i, clusterReq := range multiReq.Clusters {
-		go func(index int, req model.K8sClusterDynamicReq) {
+		go func(index int, req model.ClusterDynamicReq) {
 			// Generate unique request ID for each cluster
 			clusterCtx := common.WithRequestID(ctx, fmt.Sprintf("%s-cluster-%d", reqID, index))
 
@@ -5687,8 +5729,12 @@ func CreateK8sMultiClusterDynamic(ctx context.Context, nsId string, multiReq *mo
 				if req.Name == "" {
 					// Extract CSP name from specId (format: "provider+region+spec")
 					cspName := "unknown"
-					if req.SpecId != "" {
-						parts := strings.Split(req.SpecId, "+")
+					firstSpecId := ""
+					if len(req.NodeGroups) > 0 {
+						firstSpecId = req.NodeGroups[0].SpecId
+					}
+					if firstSpecId != "" {
+						parts := strings.Split(firstSpecId, "+")
 						if len(parts) > 0 {
 							cspName = parts[0]
 						}
@@ -5719,7 +5765,12 @@ func CreateK8sMultiClusterDynamic(ctx context.Context, nsId string, multiReq *mo
 				index:          index,
 				name:           req.Name, // Store actual name for error reporting
 				connectionName: req.ConnectionName,
-				specId:         req.SpecId,
+				specId: func() string {
+					if len(req.NodeGroups) > 0 {
+						return req.NodeGroups[0].SpecId
+					}
+					return ""
+				}(),
 				cluster:        cluster,
 				err:            err,
 			}
@@ -5727,7 +5778,7 @@ func CreateK8sMultiClusterDynamic(ctx context.Context, nsId string, multiReq *mo
 	}
 
 	// Collect results
-	results := make([]*model.K8sClusterInfo, len(multiReq.Clusters))
+	results := make([]*model.ClusterInfo, len(multiReq.Clusters))
 	var errors []string
 	var failedClusters []model.K8sClusterFailedInfo
 
@@ -5749,7 +5800,7 @@ func CreateK8sMultiClusterDynamic(ctx context.Context, nsId string, multiReq *mo
 
 	// Prepare response
 	multiInfo := &model.K8sMultiClusterInfo{
-		Clusters:       make([]model.K8sClusterInfo, 0, len(results)),
+		Clusters:       make([]model.ClusterInfo, 0, len(results)),
 		FailedClusters: failedClusters,
 	}
 

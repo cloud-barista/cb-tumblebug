@@ -110,7 +110,7 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 		specId = recommendedSpec
 	}
 
-	nodeGroupDynamicReq := model.CreateNodeGroupDynamicReq{Name: nodeGroupName, SpecId: specId, ImageId: imageId, NodeGroupSize: nodeGroupSize}
+	nodeGroupDynamicReq := model.NodeGroupDynamicReq{Name: nodeGroupName, SpecId: specId, ImageId: imageId, NodeGroupSize: nodeGroupSize}
 	infraDynamicReq.NodeGroups = append(infraDynamicReq.NodeGroups, nodeGroupDynamicReq)
 
 	infraInfo, err := CreateInfraDynamic(common.NewDefaultContext(), nsId, &infraDynamicReq, "")

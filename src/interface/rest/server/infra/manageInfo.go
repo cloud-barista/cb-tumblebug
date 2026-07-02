@@ -485,7 +485,7 @@ func RestGetInfraGroupIds(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Success 200 {object} model.InfraClusterList
+// @Success 200 {object} model.ClusterList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -503,7 +503,7 @@ func RestGetInfraClusters(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content := model.InfraClusterList{Cluster: result}
+	content := model.ClusterList{Cluster: result}
 	return clientManager.EndRequestWithLog(c, nil, content)
 }
 
@@ -517,7 +517,7 @@ func RestGetInfraClusters(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param clusterId path string true "Cluster ID" default(vnet01)
-// @Success 200 {object} model.InfraClusterInfo
+// @Success 200 {object} model.ClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"

@@ -435,7 +435,7 @@ func RestPostInfraDynamicReview(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target Infra" default(default)
 // @Param infraId path string true "Infra ID to which new nodes will be added" default(infra01)
-// @Param nodeGroupReq body model.CreateNodeGroupDynamicReq true "NodeGroup dynamic request specifying specId, imageId, and scaling parameters"
+// @Param nodeGroupReq body model.NodeGroupDynamicReq true "NodeGroup dynamic request specifying specId, imageId, and scaling parameters"
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for provisioning (default: system default holder)"
 // @Success 200 {object} model.InfraInfo "Updated Infra information including newly added nodes and current status"
 // @Failure 400 {object} model.SimpleMsg "Invalid node request or incompatible configuration parameters"
@@ -450,7 +450,7 @@ func RestPostInfraNodeGroupDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 
-	req := &model.CreateNodeGroupDynamicReq{}
+	req := &model.NodeGroupDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -495,7 +495,7 @@ func RestPostInfraNodeGroupDynamic(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target Infra" default(default)
 // @Param infraId path string true "Infra ID to which the node will be added" default(infra01)
-// @Param nodeGroupReq body model.CreateNodeGroupDynamicReq true "Request body to review node dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})"
+// @Param nodeGroupReq body model.NodeGroupDynamicReq true "Request body to review node dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID to select which credentials to use for review (default: system default holder)"
 // @Success 200 {object} model.ReviewNodeGroupDynamicReqInfo "Comprehensive node addition review result with validation status, cost estimation, and recommendations"
@@ -509,7 +509,7 @@ func RestPostInfraDynamicNodeGroupNodeReview(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
 
-	req := &model.CreateNodeGroupDynamicReq{}
+	req := &model.NodeGroupDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request for Node dynamic addition review")
 		return clientManager.EndRequestWithLog(c, err, nil)

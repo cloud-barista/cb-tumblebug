@@ -311,7 +311,7 @@ func buildImplicitClusterId(node model.NodeInfo) string {
 	return fmt.Sprintf("nogroup--%s", nodeGroupId)
 }
 
-func normalizeImplicitClusterInfo(cluster *model.InfraClusterInfo) {
+func normalizeImplicitClusterInfo(cluster *model.ClusterInfo) {
 	cluster.ConnectionNames = sortAndCompactStrings(cluster.ConnectionNames)
 	cluster.ProviderNames = sortAndCompactStrings(cluster.ProviderNames)
 	cluster.RegionNames = sortAndCompactStrings(cluster.RegionNames)
@@ -328,18 +328,18 @@ func normalizeImplicitClusterInfo(cluster *model.InfraClusterInfo) {
 	}
 }
 
-func buildImplicitClusterInfoFromNodes(infraId string, nodeInfoList []model.NodeInfo) []model.InfraClusterInfo {
+func buildImplicitClusterInfoFromNodes(infraId string, nodeInfoList []model.NodeInfo) []model.ClusterInfo {
 	if len(nodeInfoList) == 0 {
-		return []model.InfraClusterInfo{}
+		return []model.ClusterInfo{}
 	}
 
-	clustersByKey := map[string]*model.InfraClusterInfo{}
+	clustersByKey := map[string]*model.ClusterInfo{}
 
 	for _, node := range nodeInfoList {
 		groupKey := buildImplicitClusterGroupKey(node)
 		cluster, exists := clustersByKey[groupKey]
 		if !exists {
-			cluster = &model.InfraClusterInfo{
+			cluster = &model.ClusterInfo{
 				Id:                        buildImplicitClusterId(node),
 				Name:                      buildImplicitClusterId(node),
 				InfraId:                   infraId,
@@ -362,7 +362,7 @@ func buildImplicitClusterInfoFromNodes(infraId string, nodeInfoList []model.Node
 		cluster.RegionNames = appendNonEmptyString(cluster.RegionNames, node.Region.Region)
 	}
 
-	clusterList := make([]model.InfraClusterInfo, 0, len(clustersByKey))
+	clusterList := make([]model.ClusterInfo, 0, len(clustersByKey))
 	for _, cluster := range clustersByKey {
 		normalizeImplicitClusterInfo(cluster)
 		clusterList = append(clusterList, *cluster)
@@ -377,7 +377,7 @@ func buildImplicitClusterInfoFromNodes(infraId string, nodeInfoList []model.Node
 
 // ListInfraClusterInfo returns implicit cluster views synthesized at query-time from Infra Nodes.
 // No persistent cluster object is created or maintained.
-func ListInfraClusterInfo(nsId string, infraId string) ([]model.InfraClusterInfo, error) {
+func ListInfraClusterInfo(nsId string, infraId string) ([]model.ClusterInfo, error) {
 	check, err := CheckInfra(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot check Infra existence")
@@ -397,7 +397,7 @@ func ListInfraClusterInfo(nsId string, infraId string) ([]model.InfraClusterInfo
 }
 
 // GetInfraClusterInfo returns a single implicit cluster view synthesized at query-time.
-func GetInfraClusterInfo(nsId string, infraId string, clusterId string) (*model.InfraClusterInfo, error) {
+func GetInfraClusterInfo(nsId string, infraId string, clusterId string) (*model.ClusterInfo, error) {
 	if err := common.CheckString(clusterId); err != nil {
 		log.Error().Err(err).Msg("invalid clusterId")
 		return nil, err
@@ -532,12 +532,12 @@ func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.In
 		nodeGroupMap[sgId] = append(nodeGroupMap[sgId], node)
 	}
 
-	var nodeGroups []model.CreateNodeGroupDynamicReq
+	var nodeGroups []model.NodeGroupDynamicReq
 	for _, sgId := range nodeGroupOrder {
 		nodes := nodeGroupMap[sgId]
 		// Use the first Node in each nodegroup as the representative spec
 		rep := nodes[0]
-		sg := model.CreateNodeGroupDynamicReq{
+		sg := model.NodeGroupDynamicReq{
 			Name:           sgId,
 			NodeGroupSize:  len(nodes),
 			Label:          filterOutSystemLabels(rep.Label),

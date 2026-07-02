@@ -185,7 +185,7 @@ type InfraInfo struct {
 	Node          []NodeInfo `json:"node"`
 
 	// Cluster is the list of implicit clusters synthesized at query-time from Nodes.
-	Cluster []InfraClusterInfo `json:"cluster,omitempty"`
+	Cluster []ClusterInfo `json:"cluster,omitempty"`
 
 	// List of IDs for new nodes. Return IDs if the nodes are newly added. This field should be used for return body only.
 	NewNodeList []string `json:"newNodeList"`
@@ -322,7 +322,7 @@ type InfraDynamicReq struct {
 	//     "label": {"role": "test", "csp": "gcp"}
 	//   }
 	// ]
-	NodeGroups []CreateNodeGroupDynamicReq `json:"nodeGroups" validate:"required"`
+	NodeGroups []NodeGroupDynamicReq `json:"nodeGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the Nodes
 	PostCommand InfraCmdReq `json:"postCommand"`
@@ -346,8 +346,8 @@ type InfraDynamicReq struct {
 	SgTemplateId string `json:"sgTemplateId,omitempty" example:"sg-default"`
 }
 
-// CreateNodeGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
-type CreateNodeGroupDynamicReq struct {
+// NodeGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
+type NodeGroupDynamicReq struct {
 	// NodeGroup name, actual Node name will be generated with -N postfix.
 	Name string `json:"name" example:"g1"`
 
@@ -383,6 +383,12 @@ type CreateNodeGroupDynamicReq struct {
 	// SgTemplateId overrides the Infra-level SgTemplateId for this NodeGroup.
 	// If empty, inherits the SgTemplateId from the parent InfraDynamicReq.
 	SgTemplateId string `json:"sgTemplateId,omitempty" example:""`
+
+	// K8s specific fields
+	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
+	DesiredNodeSize int    `json:"desiredNodeSize,omitempty" example:"1"`
+	MinNodeSize     int    `json:"minNodeSize,omitempty" example:"1"`
+	MaxNodeSize     int    `json:"maxNodeSize,omitempty" example:"3"`
 }
 
 // InfraConnectionConfigCandidatesReq is struct for a request to check requirements to create a new Infra instance dynamically (with default resource option)
@@ -643,68 +649,9 @@ type SpiderVMInfo struct {
 	KeyValueList      []KeyValue
 }
 
-// NodeGroupInfo is struct to define an object that includes homogeneous Nodes
-type NodeGroupInfo struct {
-	// ResourceType is the type of the resource
-	ResourceType string `json:"resourceType"`
-
-	// Id is unique identifier for the object
-	Id string `json:"id" example:"aws-ap-southeast-1"`
-	// Uid is universally unique identifier for the object, used for labelSelector
-	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
-	// Name is human-readable string to represent the object
-	Name string `json:"name" example:"aws-ap-southeast-1"`
-
-	NodeId        []string `json:"nodeId"`
-	NodeGroupSize int      `json:"nodeGroupSize"`
-}
-
-// InfraClusterInfo is a lightweight, on-demand cluster view synthesized from Infra NodeGroups and Nodes.
-// A cluster is implicitly formed by NodeGroups that share the same network boundary (currently VNet-centric grouping).
-type InfraClusterInfo struct {
-	// Id is a deterministic cluster identifier generated from grouping attributes.
-	Id string `json:"id"`
-
-	// Name is a human-readable cluster name. Currently same as Id.
-	Name string `json:"name"`
-
-	// InfraId is the parent Infra ID.
-	InfraId string `json:"infraId"`
-
-	// VNetId is the shared VNet boundary used for implicit clustering.
-	VNetId string `json:"vNetId,omitempty"`
-
-	// ConnectionNames are unique connection names included in this cluster.
-	ConnectionNames []string `json:"connectionNames"`
-
-	// ProviderNames are unique CSP providers included in this cluster.
-	ProviderNames []string `json:"providerNames"`
-
-	// RegionNames are unique regions included in this cluster.
-	RegionNames []string `json:"regionNames"`
-
-	// NodeGroupIds are NodeGroups that belong to this implicit cluster.
-	NodeGroupIds []string `json:"nodeGroupIds"`
-
-	// NodeIds are Nodes that belong to this implicit cluster.
-	NodeIds []string `json:"nodeIds"`
-
-	// NodeGroupCount is the number of NodeGroups in this cluster.
-	NodeGroupCount int `json:"nodeGroupCount"`
-
-	// NodeCount is the number of Nodes in this cluster.
-	NodeCount int `json:"nodeCount"`
-
-	// RepresentativeNodeGroupId is a representative NodeGroup ID for quick inspection.
-	RepresentativeNodeGroupId string `json:"representativeNodeGroupId,omitempty"`
-
-	// RepresentativeNodeId is a representative Node ID for quick inspection.
-	RepresentativeNodeId string `json:"representativeNodeId,omitempty"`
-}
-
-// InfraClusterList is a response wrapper for listing implicit clusters in an Infra.
-type InfraClusterList struct {
-	Cluster []InfraClusterInfo `json:"cluster"`
+// ClusterList is a response wrapper for listing clusters.
+type ClusterList struct {
+	Cluster []ClusterInfo `json:"cluster"`
 }
 
 // InfraAssociatedResourceList is struct for associated resource IDs of an Infra
@@ -1055,7 +1002,7 @@ type AutoCondition struct {
 // AutoAction is struct for Infra auto-control action.
 type AutoAction struct {
 	ActionType          string                    `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
-	NodeGroupDynamicReq CreateNodeGroupDynamicReq `json:"nodeGroupDynamicReq"`
+	NodeGroupDynamicReq NodeGroupDynamicReq `json:"nodeGroupDynamicReq"`
 
 	// PostCommand is field for providing command to Nodes after their creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
 	PostCommand   InfraCmdReq `json:"postCommand"`

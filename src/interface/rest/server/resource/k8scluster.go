@@ -159,7 +159,7 @@ func RestGetRequiredK8sSubnetCount(c echo.Context) error {
 // @Param option query string false "Option: [required params for register] connectionName, name, cspResourceId" Enums(register)
 // @Param skipVersionCheck query string false "Skip Kubernetes version validation (use for testing with unlisted versions)" default(false)
 // @Param k8sClusterReq body model.K8sClusterReq true "Details of the K8sCluster object"
-// @Success 200 {object} model.K8sClusterInfo
+// @Success 200 {object} model.ClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -204,8 +204,8 @@ func RestPostK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sClusterInfo body model.K8sClusterInfo true "Details of the K8sCluster object"
-// @Success 200 {object} model.K8sClusterInfo
+// @Param k8sClusterInfo body model.ClusterInfo true "Details of the K8sCluster object"
+// @Success 200 {object} model.ClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -229,7 +229,7 @@ func RestPutK8sCluster(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
 // @Param k8sNodeGroupReq body model.K8sNodeGroupReq true "Details of the K8sNodeGroup object"
-// @Success 200 {object} model.K8sClusterInfo
+// @Success 200 {object} model.ClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -394,7 +394,7 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Success 200 {object} model.K8sClusterInfo
+// @Success 200 {object} model.ClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -466,7 +466,7 @@ func RestGetK8sClusterKubeconfig(c echo.Context) error {
 
 // Response structure for RestGetAllK8sCluster
 type RestGetAllK8sClusterResponse struct {
-	K8sCluster []model.K8sClusterInfo `json:"K8sClusterInfo"`
+	K8sCluster []model.ClusterInfo `json:"ClusterInfo"`
 }
 
 // RestGetAllK8sCluster godoc
@@ -514,7 +514,7 @@ func RestGetAllK8sCluster(c echo.Context) error {
 
 		restGetAllK8sClusterResponse := RestGetAllK8sClusterResponse{}
 
-		restGetAllK8sClusterResponse.K8sCluster = resourceList.([]model.K8sClusterInfo) // type assertion (interface{} -> array)
+		restGetAllK8sClusterResponse.K8sCluster = resourceList.([]model.ClusterInfo) // type assertion (interface{} -> array)
 		return c.JSON(http.StatusOK, &restGetAllK8sClusterResponse)
 	}
 }
@@ -669,11 +669,11 @@ func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param k8sClusterDyanmicReq body model.K8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8scluster01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param k8sClusterDyanmicReq body model.ClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8scluster01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param option query string false "Option for K8sCluster creation" Enums(hold)
 // @Param skipVersionCheck query string false "Skip Kubernetes version validation (use for testing with unlisted versions)" default(false)
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.K8sClusterInfo
+// @Success 200 {object} model.ClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
@@ -686,7 +686,7 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 	skipVersionCheckStr := c.QueryParam("skipVersionCheck")
 	skipVersionCheck := skipVersionCheckStr == "true"
 
-	req := &model.K8sClusterDynamicReq{}
+	req := &model.ClusterDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -783,9 +783,9 @@ func RestPostK8sMultiClusterDynamic(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupDynamicReq body model.K8sNodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8sng01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param k8sNodeGroupDynamicReq body model.NodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8sng01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.K8sNodeGroupInfo
+// @Success 200 {object} model.NodeGroupInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
@@ -796,7 +796,7 @@ func RestPostK8sNodeGroupDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	req := &model.K8sNodeGroupDynamicReq{}
+	req := &model.NodeGroupDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
