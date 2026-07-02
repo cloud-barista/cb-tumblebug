@@ -7,6 +7,11 @@
 #     nodeGroupsOnCreation: [true/false]
 #     nodeImageDesignation: [true/false]
 #     requiredSubnetCount: [required number of subnets to create a kubernetes cluster, default value is 1]
+#     initialNodeGroupManagedByCluster: [true/false, default false] if true, the initial node group is
+#       lifecycle-bound to the cluster and cannot be deleted independently (e.g., Alibaba ACK, Tencent TKE)
+#     minNodeGroupCount: [minimum number of node groups that must remain in a cluster, default 0 (no constraint)]
+#       if > 0, deleting a node group when count is at or below this value is rejected before calling the CSP
+#       (e.g., Azure AKS and GCP GKE require at least 1 node pool at all times)
 #     version:
 #       - region: [region1, region2, common(special keyword: most of regions)]
 #         available:
@@ -49,6 +54,7 @@ k8scluster:
     nodeImageDesignation: false
     requiredSubnetCount: 1
     nodeGroupNamingRule: ^[a-z][a-z0-9]*$
+    minNodeGroupCount: 1
     version:
       - region: [westeurope,westus]
         available: # Updated: 2026-06-24 (verified with learn.microsoft.com/azure/aks/supported-kubernetes-versions + github.com/Azure/AKS/releases)
@@ -84,6 +90,7 @@ k8scluster:
     nodeGroupsOnCreation: true
     nodeImageDesignation: true
     requiredSubnetCount: 1
+    minNodeGroupCount: 1
     version:
       - region: [common]
         # ref: https://cloud.google.com/kubernetes-engine/docs/release-notes-stable

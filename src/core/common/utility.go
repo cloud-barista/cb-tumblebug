@@ -1865,6 +1865,19 @@ func GetK8sInitialNodeGroupManagedByCluster(providerName string) (bool, error) {
 	return k8sClusterDetail.InitialNodeGroupManagedByCluster, nil
 }
 
+// GetK8sMinNodeGroupCount returns the minimum number of node groups that must remain
+// in a cluster for the given provider. Returns 0 if there is no minimum constraint.
+func GetK8sMinNodeGroupCount(providerName string) (int, error) {
+	providerName = strings.ToLower(providerName)
+
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return 0, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	return k8sClusterDetail.MinNodeGroupCount, nil
+}
+
 // GetK8sNodeGroupNamingRule is func to get nodegroup's naming rule
 func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
 	//
