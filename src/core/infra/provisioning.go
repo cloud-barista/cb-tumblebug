@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"maps"
 	"net/url"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -5037,6 +5038,57 @@ func DeleteProvisioningLog(specId string) error {
 	return nil
 }
 
+// provisioningLogHistoryLimit caps the number of samples retained in each of
+// ProvisioningLog's FailureTimestamps/FailureMessages/SuccessTimestamps
+// slices. These are keyed per spec (e.g. "aws+eu-west-3+t3a.nano") and shared
+// across the whole system, so a spec/AMI combination that keeps failing the
+// same way can otherwise append forever and grow this etcd record without
+// bound (the same failure mode as unbounded per-VM CommandStatus history).
+// FailureCount/SuccessCount remain true lifetime totals; only the sample
+// slices are bounded. Override with TB_PROVISIONING_LOG_HISTORY_LIMIT.
+var provisioningLogHistoryLimit = func() int {
+	if v := os.Getenv("TB_PROVISIONING_LOG_HISTORY_LIMIT"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 30
+}()
+
+// trimTimeSliceHistory drops the oldest entries once s grows past limit,
+// keeping only the most recent ones.
+func trimTimeSliceHistory(s []time.Time, limit int) []time.Time {
+	if len(s) > limit {
+		return s[len(s)-limit:]
+	}
+	return s
+}
+
+// trimStringSliceHistory drops the oldest entries once s grows past limit,
+// keeping only the most recent ones.
+func trimStringSliceHistory(s []string, limit int) []string {
+	if len(s) > limit {
+		return s[len(s)-limit:]
+	}
+	return s
+}
+
+// recordFailureMessage appends newMessage (whitespace-trimmed) to messages
+// unless it is an exact repeat of the immediately preceding message, then
+// caps the result to the most recent limit entries. A spec that keeps
+// failing with the exact same error only grows ProvisioningLog.FailureCount,
+// not this sample slice. An empty/blank newMessage is a no-op.
+func recordFailureMessage(messages []string, newMessage string, limit int) []string {
+	trimmed := strings.TrimSpace(newMessage)
+	if trimmed == "" {
+		return messages
+	}
+	if len(messages) > 0 && messages[len(messages)-1] == trimmed {
+		return messages
+	}
+	return trimStringSliceHistory(append(messages, trimmed), limit)
+}
+
 // RecordProvisioningEvent records a provisioning event (success or failure) to the log
 func RecordProvisioningEvent(event *model.ProvisioningEvent) error {
 	log.Debug().Msgf("Recording provisioning event for spec: %s, success: %t", event.SpecId, event.IsSuccess)
@@ -5078,13 +5130,18 @@ func RecordProvisioningEvent(event *model.ProvisioningEvent) error {
 		provisioningLog = existingLog
 	}
 
-	// Record the event
+	// Record the event. FailureCount/SuccessCount are true lifetime totals and
+	// always increment; the sample slices below are bounded (trimmed to
+	// provisioningLogHistoryLimit) and, for failure messages, deduplicated
+	// against the immediately preceding entry so a spec that keeps failing
+	// with the exact same error does not grow this record without bound.
 	if event.IsSuccess {
 		// Only record success if there were previous failures
 		if provisioningLog.FailureCount > 0 {
 			log.Debug().Msgf("Recording success event for spec: %s (previous failures exist)", event.SpecId)
 			provisioningLog.SuccessCount++
-			provisioningLog.SuccessTimestamps = append(provisioningLog.SuccessTimestamps, event.Timestamp)
+			provisioningLog.SuccessTimestamps = trimTimeSliceHistory(
+				append(provisioningLog.SuccessTimestamps, event.Timestamp), provisioningLogHistoryLimit)
 			if event.CspImageName != "" && !contains(provisioningLog.SuccessImages, event.CspImageName) {
 				provisioningLog.SuccessImages = append(provisioningLog.SuccessImages, event.CspImageName)
 			}
@@ -5096,10 +5153,11 @@ func RecordProvisioningEvent(event *model.ProvisioningEvent) error {
 		// Always record failures
 		log.Debug().Msgf("Recording failure event for spec: %s", event.SpecId)
 		provisioningLog.FailureCount++
-		provisioningLog.FailureTimestamps = append(provisioningLog.FailureTimestamps, event.Timestamp)
-		if event.ErrorMessage != "" {
-			provisioningLog.FailureMessages = append(provisioningLog.FailureMessages, event.ErrorMessage)
-		}
+		provisioningLog.FailureTimestamps = trimTimeSliceHistory(
+			append(provisioningLog.FailureTimestamps, event.Timestamp), provisioningLogHistoryLimit)
+		provisioningLog.FailureMessages = recordFailureMessage(
+			provisioningLog.FailureMessages, event.ErrorMessage, provisioningLogHistoryLimit)
+
 		if event.CspImageName != "" && !contains(provisioningLog.FailureImages, event.CspImageName) {
 			provisioningLog.FailureImages = append(provisioningLog.FailureImages, event.CspImageName)
 		}
@@ -5587,10 +5645,15 @@ func ValidateProvisioningLogIntegrity(specId string) error {
 		return kvstore.Delete(key)
 	}
 
-	// Validate data consistency
-	totalAttempts := testLog.FailureCount + testLog.SuccessCount
-	if totalAttempts != len(testLog.FailureTimestamps)+len(testLog.SuccessTimestamps) {
-		log.Warn().Msgf("Inconsistent timestamp count for spec: %s, repairing", specId)
+	// Validate data consistency. FailureCount/SuccessCount are true lifetime
+	// totals while FailureTimestamps/SuccessTimestamps are bounded, most-recent
+	// samples (see provisioningLogHistoryLimit), so the timestamp slices are
+	// expected to be shorter than the counts once a spec has failed/succeeded
+	// more times than the retention limit — that is not corruption. Only a
+	// slice LONGER than its count is impossible under normal recording logic
+	// and indicates real corruption worth repairing.
+	if len(testLog.FailureTimestamps) > testLog.FailureCount || len(testLog.SuccessTimestamps) > testLog.SuccessCount {
+		log.Warn().Msgf("Timestamp count exceeds recorded total for spec: %s, repairing", specId)
 
 		// Repair by truncating arrays to match counts
 		if len(testLog.FailureTimestamps) > testLog.FailureCount {

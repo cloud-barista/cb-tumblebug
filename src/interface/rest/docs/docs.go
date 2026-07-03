@@ -23949,6 +23949,16 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "lastOccurredTime": {
+                    "description": "LastOccurredTime is when the most recent repeat of this outcome happened.\nOnly set once RepeatCount is greater than 0; StartedTime/CompletedTime keep\nreferring to the first occurrence.",
+                    "type": "string",
+                    "example": "2024-01-15T10:35:00Z"
+                },
+                "repeatCount": {
+                    "description": "RepeatCount is the number of times this exact command produced this exact\noutcome (same CommandRequested, Status, ResultSummary, and ErrorMessage) on\nconsecutive attempts. Absent/0 means it has not repeated. Repeats are merged\ninto a single record instead of appended, so retry storms (e.g. a failing\ninstall script retried repeatedly) do not grow this VM's history unbounded.",
+                    "type": "integer",
+                    "example": 3
+                },
                 "resultSummary": {
                     "description": "ResultSummary provides a brief summary of the execution result",
                     "type": "string",

@@ -115,6 +115,10 @@ func init() {
 	// Setup and wait for internal services (PostgreSQL, CB-Spider, etcd)
 	setupAndWaitForInternalServices()
 
+	// Periodically compact+defrag etcd so accumulated MVCC revision history
+	// doesn't grow the backend database file without bound.
+	common.StartEtcdMaintenanceLoop()
+
 	err := model.ORM.AutoMigrate(
 		&model.SpecInfo{},
 		&model.ImageInfo{},
