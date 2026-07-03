@@ -1295,6 +1295,18 @@ type CommandStatusInfo struct {
 
 	// Stderr contains the standard error from command execution (truncated for history)
 	Stderr string `json:"stderr,omitempty" example:""`
+
+	// RepeatCount is the number of times this exact command produced this exact
+	// outcome (same CommandRequested, Status, ResultSummary, and ErrorMessage) on
+	// consecutive attempts. Absent/0 means it has not repeated. Repeats are merged
+	// into a single record instead of appended, so retry storms (e.g. a failing
+	// install script retried repeatedly) do not grow this VM's history unbounded.
+	RepeatCount int `json:"repeatCount,omitempty" example:"3"`
+
+	// LastOccurredTime is when the most recent repeat of this outcome happened.
+	// Only set once RepeatCount is greater than 0; StartedTime/CompletedTime keep
+	// referring to the first occurrence.
+	LastOccurredTime string `json:"lastOccurredTime,omitempty" example:"2024-01-15T10:35:00Z"`
 }
 
 // CommandStatusFilter represents filtering criteria for command status queries

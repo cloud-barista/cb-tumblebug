@@ -77,6 +77,20 @@ func releaseBastionSlot(bastionEndpoint string) {
 	}
 }
 
+// commandStatusHistoryLimit caps the number of CommandStatusInfo records
+// retained per VM (Node). Each command status update rewrites the VM's
+// entire etcd record, so without a cap this history grows without bound
+// and can exhaust etcd's default 2GiB backend quota (see NOSPACE alarm /
+// "database space exceeded" errors). Override with TB_COMMAND_STATUS_HISTORY_LIMIT.
+var commandStatusHistoryLimit = func() int {
+	if v := os.Getenv("TB_COMMAND_STATUS_HISTORY_LIMIT"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 30
+}()
+
 // sshDialJitterMaxMs is the upper bound for the per-connection randomized
 // pre-dial delay. When a fan-out command targets N VMs sharing one bastion
 // (e.g. 100 nodes in a single subnet), N parallel SSH dials from the same
@@ -3724,6 +3738,73 @@ func findCommandByIndex(commandStatus []model.CommandStatusInfo, index int) (*mo
 	return nil, -1
 }
 
+// isTerminalCommandStatus reports whether a command execution status is a
+// final state (as opposed to Queued/Handling), i.e. the attempt is over and
+// its outcome (ResultSummary/ErrorMessage) will not change further.
+func isTerminalCommandStatus(status model.CommandExecutionStatus) bool {
+	switch status {
+	case model.CommandStatusCompleted,
+		model.CommandStatusCompletedWithError,
+		model.CommandStatusFailed,
+		model.CommandStatusTimeout,
+		model.CommandStatusCancelled,
+		model.CommandStatusInterrupted:
+		return true
+	default:
+		return false
+	}
+}
+
+// mergeCommandStatusRepeat checks whether the just-finalized record at
+// curIdx is an exact repeat of the immediately preceding record's terminal
+// outcome (same CommandRequested, Status, ResultSummary, and ErrorMessage;
+// Stdout/Stderr are intentionally excluded from the comparison since they
+// may embed timestamps or other per-run noise that would otherwise defeat
+// the match). If it is, curIdx is merged into the preceding record (bumping
+// RepeatCount, refreshing LastOccurredTime/Stdout/Stderr/XRequestId) and
+// removed from commandStatus, and the merged record is returned. If it is
+// not a repeat, commandStatus is left untouched and ok is false.
+func mergeCommandStatusRepeat(commandStatus *[]model.CommandStatusInfo, curIdx int, now time.Time) (merged *model.CommandStatusInfo, ok bool) {
+	cur := (*commandStatus)[curIdx]
+	if curIdx == 0 || !isTerminalCommandStatus(cur.Status) {
+		return nil, false
+	}
+
+	prev := &(*commandStatus)[curIdx-1]
+	if !isTerminalCommandStatus(prev.Status) ||
+		prev.CommandRequested != cur.CommandRequested ||
+		prev.Status != cur.Status ||
+		prev.ResultSummary != cur.ResultSummary ||
+		prev.ErrorMessage != cur.ErrorMessage {
+		return nil, false
+	}
+
+	if prev.RepeatCount == 0 {
+		prev.RepeatCount = 2 // the original occurrence plus this repeat
+	} else {
+		prev.RepeatCount++
+	}
+	prev.LastOccurredTime = now.Format(time.RFC3339)
+	prev.ElapsedTime = cur.ElapsedTime
+	prev.Stdout = cur.Stdout
+	prev.Stderr = cur.Stderr
+	prev.XRequestId = cur.XRequestId
+
+	mergedCopy := *prev
+	*commandStatus = append((*commandStatus)[:curIdx], (*commandStatus)[curIdx+1:]...)
+	return &mergedCopy, true
+}
+
+// trimCommandStatusHistory drops the oldest records once commandStatus grows
+// past limit, keeping only the most recent ones. This is a backstop for VMs
+// with genuinely varied command history; identical repeats are instead
+// merged (not appended) by mergeCommandStatusRepeat.
+func trimCommandStatusHistory(commandStatus *[]model.CommandStatusInfo, limit int) {
+	if len(*commandStatus) > limit {
+		*commandStatus = (*commandStatus)[len(*commandStatus)-limit:]
+	}
+}
+
 // Helper function to filter commands based on criteria
 func filterCommands(commandStatus []model.CommandStatusInfo, filter *model.CommandStatusFilter) []model.CommandStatusInfo {
 	if filter == nil {
@@ -3835,6 +3916,7 @@ func AddCommandStatusInfo(nsId, infraId, nodeId, xRequestId, commandRequested, c
 
 		// Add to command status list
 		*commandStatus = append(*commandStatus, newCommandStatus)
+		trimCommandStatusHistory(commandStatus, commandStatusHistoryLimit)
 		return nil
 	})
 
@@ -3893,6 +3975,7 @@ func UpdateCommandStatusInfo(nsId, infraId, nodeId string, index int, status mod
 	// Track the xRequestId and updated status for SSE publishing
 	var updatedXRequestId string
 	var updatedStatusInfo *model.CommandStatusInfo
+	publishIndex := index
 
 	err = updateNodeCommandStatusSafe(nsId, infraId, nodeId, func(commandStatus *[]model.CommandStatusInfo) error {
 		// Find the command status by index using helper function
@@ -3938,6 +4021,16 @@ func UpdateCommandStatusInfo(nsId, infraId, nodeId string, index int, status mod
 			(*commandStatus)[cmdIndex].Stderr = stderr
 		}
 
+		// Merge into the immediately preceding record when it is an exact
+		// repeat of the same terminal outcome, instead of appending a new
+		// record. This keeps retry storms (e.g. a failing install script
+		// retried repeatedly) from growing this VM's history unbounded.
+		if mergedInfo, ok := mergeCommandStatusRepeat(commandStatus, cmdIndex, currentTime); ok {
+			updatedStatusInfo = mergedInfo
+			publishIndex = mergedInfo.Index
+			return nil
+		}
+
 		// Capture a copy of the updated status for SSE publishing
 		statusCopy := (*commandStatus)[cmdIndex]
 		updatedStatusInfo = &statusCopy
@@ -3955,7 +4048,7 @@ func UpdateCommandStatusInfo(nsId, infraId, nodeId string, index int, status mod
 		PublishCommandEvent(updatedXRequestId, model.CommandStreamEvent{
 			Type:         model.EventCommandStatus,
 			NodeId:       nodeId,
-			CommandIndex: index,
+			CommandIndex: publishIndex,
 			Timestamp:    time.Now().Format(time.RFC3339Nano),
 			Status:       updatedStatusInfo,
 		})
@@ -3965,7 +4058,7 @@ func UpdateCommandStatusInfo(nsId, infraId, nodeId string, index int, status mod
 		Str("nsId", nsId).
 		Str("infraId", infraId).
 		Str("nodeId", nodeId).
-		Int("index", index).
+		Int("index", publishIndex).
 		Str("status", string(status)).
 		Msg("Command status updated")
 

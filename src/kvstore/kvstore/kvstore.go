@@ -42,6 +42,13 @@ type Store interface {
 	WatchKeyWith(ctx context.Context, key string) clientv3.WatchChan
 	WatchKeys(keyPrefix string) clientv3.WatchChan
 	WatchKeysWith(ctx context.Context, keyPrefix string) clientv3.WatchChan
+	// Compact discards MVCC history up to the current revision. It only marks
+	// space as reclaimable; call Defragment afterward to shrink the on-disk
+	// database file.
+	Compact(ctx context.Context) error
+	// Defragment rewrites the backend database file to reclaim space freed by
+	// Compact. Blocking and I/O-heavy on the server side.
+	Defragment(ctx context.Context) error
 	Close() error
 	// CloseSession(session *concurrency.Session) error
 	// Unlock(ctx context.Context, mutex *concurrency.Mutex) error
@@ -318,6 +325,24 @@ func WatchKeysWith(ctx context.Context, keyPrefix string) clientv3.WatchChan {
 		return nil
 	}
 	return store.WatchKeysWith(ctx, keyPrefix)
+}
+
+// Compact discards MVCC history up to the current revision
+func Compact(ctx context.Context) error {
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+	return store.Compact(ctx)
+}
+
+// Defragment reclaims disk space freed by Compact
+func Defragment(ctx context.Context) error {
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+	return store.Defragment(ctx)
 }
 
 // Close closes the store

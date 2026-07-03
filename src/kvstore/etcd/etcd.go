@@ -2,9 +2,11 @@ package etcd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/concurrency"
 
@@ -271,6 +273,45 @@ func (s *EtcdStore) WatchKeys(keyPrefix string) clientv3.WatchChan {
 // WatchKeysWith watches for changes on keys with the given keyPrefix using the provided context.
 func (s *EtcdStore) WatchKeysWith(ctx context.Context, keyPrefix string) clientv3.WatchChan {
 	return s.cli.Watch(ctx, keyPrefix, clientv3.WithPrefix())
+}
+
+// Compact discards all MVCC history up to the current revision, marking the
+// freed space as reusable. This does not shrink the on-disk database file —
+// call Defragment afterward to actually reclaim disk space. Without periodic
+// compaction, ordinary writes accumulate revision history forever and can
+// eventually exhaust etcd's default 2GiB backend quota.
+func (s *EtcdStore) Compact(ctx context.Context) error {
+	endpoints := s.cli.Endpoints()
+	if len(endpoints) == 0 {
+		return fmt.Errorf("no etcd endpoints configured")
+	}
+	status, err := s.cli.Status(ctx, endpoints[0])
+	if err != nil {
+		return fmt.Errorf("failed to get etcd status: %w", err)
+	}
+	if _, err := s.cli.Compact(ctx, status.Header.Revision); err != nil {
+		if errors.Is(err, rpctypes.ErrCompacted) {
+			// Nothing has been written since the last compaction reached this
+			// same revision — not an error, just nothing new to reclaim.
+			return nil
+		}
+		return fmt.Errorf("failed to compact etcd to revision %d: %w", status.Header.Revision, err)
+	}
+	return nil
+}
+
+// Defragment rewrites the backend database file on every configured
+// endpoint to reclaim space freed by Compact. It is a blocking, I/O-heavy
+// operation on the server side; endpoints are defragmented one at a time
+// (never concurrently), which is required to avoid losing quorum in a
+// multi-member cluster.
+func (s *EtcdStore) Defragment(ctx context.Context) error {
+	for _, ep := range s.cli.Endpoints() {
+		if _, err := s.cli.Defragment(ctx, ep); err != nil {
+			return fmt.Errorf("failed to defragment etcd endpoint %s: %w", ep, err)
+		}
+	}
+	return nil
 }
 
 // Close closes the etcd client.
