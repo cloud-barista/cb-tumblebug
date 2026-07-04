@@ -1403,25 +1403,42 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 				}
 			}
 
+			// Re-fetch the freshest Infra object right before writing. The
+			// per-node CSP status calls above (fetchNodeStatusesWithRateLimiting)
+			// can take a while on large Infras; without this, the infraTmp
+			// snapshot captured at the top of this function — before those
+			// calls ran — could clobber fields the primary completion path
+			// (control.go/provisioning.go), or any other concurrent writer,
+			// updated in the meantime (same TOCTOU concern as the TargetAction
+			// re-read above, extended to cover the actual write). Falls back
+			// to infraTmp if the re-read fails.
+			target := infraTmp
+			if freshKeyValue, freshExists, freshErr := kvstore.GetKv(key); freshErr == nil && freshExists {
+				var latest model.InfraInfo
+				if jsonErr := json.Unmarshal([]byte(freshKeyValue.Value), &latest); jsonErr == nil {
+					target = latest
+				}
+			}
+
 			if allNodesFailed && infraTargetAction == model.ActionCreate {
 				// All Nodes failed during creation - mark Infra as Failed
 				log.Error().Msgf("Infra %s: All Nodes failed during creation - setting Infra status to Failed", infraId)
 				infraStatus.TargetAction = model.ActionComplete
 				infraStatus.TargetStatus = model.StatusComplete // Target was to complete the creation process
 				infraStatus.Status = model.StatusFailed         // Actual status is Failed due to Node failures
-				infraTmp.TargetAction = model.ActionComplete
-				infraTmp.TargetStatus = model.StatusComplete // Target was to complete the creation process
-				infraTmp.Status = model.StatusFailed         // Actual status is Failed due to Node failures
+				target.TargetAction = model.ActionComplete
+				target.TargetStatus = model.StatusComplete // Target was to complete the creation process
+				target.Status = model.StatusFailed         // Actual status is Failed due to Node failures
 			} else {
 				// Normal completion
 				infraStatus.TargetAction = model.ActionComplete
 				infraStatus.TargetStatus = model.StatusComplete
-				infraTmp.TargetAction = model.ActionComplete
-				infraTmp.TargetStatus = model.StatusComplete
+				target.TargetAction = model.ActionComplete
+				target.TargetStatus = model.StatusComplete
 			}
 
-			infraTmp.StatusCount = infraStatus.StatusCount
-			UpdateInfraInfo(nsId, infraTmp)
+			target.StatusCount = infraStatus.StatusCount
+			UpdateInfraInfo(nsId, target)
 		}
 	}
 
@@ -1626,6 +1643,57 @@ const terminatingFailStreakMax = 10
 // The vmstatus circuit breaker and the terminate (DELETE) circuit breaker are
 // keyed separately, so re-terminate can succeed even when vmstatus is blocked.
 const terminatingReTerminateAt = terminatingFailStreakMax / 2
+
+// suspendResumeRebootFailStreak counts consecutive failed status polls for a
+// node while it is Suspending, Resuming, or Rebooting. Without this, a node
+// whose CSP/driver can never successfully report a recognized status (e.g. an
+// unmapped native status string, or a persistently erroring vmstatus call)
+// stays in the transitional status forever: the TargetAction-correction logic
+// further down in FetchNodeStatus forces any status that isn't the confirmed
+// target back to the transitional one on every single poll, with no way out.
+// Reaching suspendResumeRebootFailStreakMax forces the node to Undefined
+// instead of the requested target status — a poll failure alone can't confirm
+// the VM actually reached Suspended/Running, so this surfaces the node for
+// operator review (action=reconcile) rather than reporting an unverified
+// state. Kept separate from terminatingFailStreak above: Terminating's give-up
+// target (Terminated) and recovery nudge (re-issue terminate) don't apply here.
+// Key format: "nsId/infraId/nodeId".
+var suspendResumeRebootFailStreak sync.Map
+
+// suspendResumeRebootFailStreakMax mirrors terminatingFailStreakMax's reasoning
+// (~2.5 min at the 15s poll interval; a smaller value trips too easily on CSPs
+// with unstable APIs where an occasional successful poll resets the streak).
+const suspendResumeRebootFailStreakMax = 10
+
+// recordSuspendResumeRebootFailure tracks one failed status poll for nodeId
+// while currentStatus is Suspending, Resuming, or Rebooting. It returns
+// model.StatusUndefined once suspendResumeRebootFailStreakMax consecutive
+// failures have accumulated, or "" if the node should keep waiting (or
+// currentStatus isn't one of the three covered here).
+func recordSuspendResumeRebootFailure(nsId, infraId, nodeId, currentStatus string) string {
+	switch currentStatus {
+	case model.StatusSuspending, model.StatusResuming, model.StatusRebooting:
+	default:
+		return ""
+	}
+
+	streakKey := nsId + "/" + infraId + "/" + nodeId
+	prev, _ := suspendResumeRebootFailStreak.LoadOrStore(streakKey, 0)
+	streak := prev.(int) + 1
+	if streak >= suspendResumeRebootFailStreakMax {
+		suspendResumeRebootFailStreak.Delete(streakKey)
+		log.Info().Msgf("[FetchNodeStatus] Node %s: poll failed %d consecutive times while %s; forcing to Undefined for operator review", nodeId, streak, currentStatus)
+		return model.StatusUndefined
+	}
+	suspendResumeRebootFailStreak.Store(streakKey, streak)
+	return ""
+}
+
+// resetSuspendResumeRebootFailure clears nodeId's failure streak after a
+// successful status poll.
+func resetSuspendResumeRebootFailure(nsId, infraId, nodeId string) {
+	suspendResumeRebootFailStreak.Delete(nsId + "/" + infraId + "/" + nodeId)
+}
 
 func fetchNodeStatusesWithRateLimiting(nsId, infraId string, nodeList []string) ([]model.NodeStatusInfo, error) {
 	if len(nodeList) == 0 {
@@ -1886,6 +1954,11 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 	}
 	callResult := statusResponse{}
 	callResult.Status = ""
+	// pollFailed marks that this poll ended in an error (direct SDK or Spider),
+	// as opposed to a successful call that simply returned an unrecognized
+	// status. Checked after the TargetAction-correction blocks below to drive
+	// the Suspend/Resume/Reboot circuit breaker (see suspendResumeRebootFailStreak).
+	pollFailed := false
 
 	if nodeInfo.Status != model.StatusTerminated && cspResourceName != "" {
 		// Direct SDK fast path: bypass Spider for CSPs with a registered BatchVMStatusFunc.
@@ -1911,6 +1984,7 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 
 			// Direct SDK failed — preserve stable status to avoid false flips, same logic
 			// as Spider error handling.
+			pollFailed = true
 			log.Warn().Err(sdkErr).Str("provider", nodeInfo.ConnectionConfig.ProviderName).
 				Msgf("[FetchNodeStatus] direct SDK failed for %s; preserving current status (skipping Spider fallback)", nodeId)
 			switch nodeInfo.Status {
@@ -1976,6 +2050,7 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 			// 	nodeId, i+1, retrycheck, callResult.Status, err)
 
 			if err != nil {
+				pollFailed = true
 				statusInfo.SystemMessage = err.Error()
 				log.Warn().Err(err).Msgf("[FetchNodeStatus] Node %s: Spider error (current status: %s); preserving stable status to avoid false Undefined flip", nodeId, nodeInfo.Status)
 
@@ -2179,6 +2254,28 @@ applyStatus:
 
 	if strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminated) {
 		callResult.Status = model.StatusTerminated
+	}
+
+	// Circuit breaker for Suspend/Resume/Reboot: the TargetAction-correction
+	// blocks above force any non-target status back to the transitional one on
+	// every poll, so a node whose status can never be confirmed would otherwise
+	// stay Suspending/Resuming/Rebooting forever. This covers two distinct
+	// "can't confirm" cases: (1) the SDK/Spider call itself errored (pollFailed),
+	// and (2) the call succeeded but returned a native status this codebase
+	// doesn't recognize (not in validStatuses, e.g. a CSP-specific value or a
+	// legitimate "Failed" that validStatuses doesn't include) — that case does
+	// NOT set pollFailed, since the RPC succeeded, but is just as stuck-forever
+	// without this check. Applied last (after the correction blocks) so a
+	// give-up decision isn't immediately overwritten by them. Streak resets on
+	// any poll that isn't one of these two cases.
+	_, nativeStatusRecognized := validStatuses[nativeStatus]
+	pollUnconfirmed := pollFailed || !nativeStatusRecognized
+	if pollUnconfirmed {
+		if giveUp := recordSuspendResumeRebootFailure(nsId, infraId, nodeId, callResult.Status); giveUp != "" {
+			callResult.Status = giveUp
+		}
+	} else {
+		resetSuspendResumeRebootFailure(nsId, infraId, nodeId)
 	}
 
 	// Log status change if status actually changed
