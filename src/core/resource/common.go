@@ -596,12 +596,10 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			if onCsp, onSpider, checkErr := CheckAssociatedCspResourceExistence(nsId, resourceType, resourceId, requestBody.ConnectionName); checkErr == nil && !onCsp && !onSpider {
 				log.Warn().Str("resourceType", resourceType).Str("resourceId", resourceId).
 					Msg("Resource confirmed gone from both Spider and CSP; removing stale CB-TB record")
-				if kvErr := kvstore.Delete(key); kvErr != nil {
-					log.Error().Err(kvErr).Msg("Failed to remove stale CB-TB record")
-					return kvErr
-				}
-				if lblErr := label.DeleteLabelObject(resourceType, uid); lblErr != nil {
-					log.Error().Err(lblErr).Msg("")
+				if cleanupErr := cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources); cleanupErr != nil {
+					log.Error().Err(cleanupErr).Str("resourceType", resourceType).Str("resourceId", resourceId).
+						Msg("Failed to remove stale CB-TB record")
+					return cleanupErr
 				}
 				return nil
 			}
@@ -635,23 +633,26 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// since Spider's DELETE response was authoritative.
 	}
 
+	return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
+}
+
+// cleanupLocalResourceRecord removes CB-TB's own local record for a resource
+// (kvstore entry, or DB row for DB-backed types like CustomImage), plus its
+// label object and any child records (e.g. VNet's subnets). Used both after a
+// Spider-confirmed successful DELETE and when Spider/CSP have confirmed the
+// resource is already gone (see the "does not exist in connection" handling
+// above), so both paths clean up the exact same backing stores.
+func cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid string, childResources any) error {
 	if strings.EqualFold(resourceType, model.StrVNet) {
-		// var subnetKeys []string
 		subnets := childResources.([]model.SubnetInfo)
 		for _, v := range subnets {
 			subnetKey := common.GenChildResourceKey(nsId, model.StrSubnet, resourceId, v.Id)
-			// subnetKeys = append(subnetKeys, subnetKey)
-			err = kvstore.Delete(subnetKey)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				// return err
-			}
-
-			err = label.DeleteLabelObject(resourceType, v.Uid)
-			if err != nil {
+			if err := kvstore.Delete(subnetKey); err != nil {
 				log.Error().Err(err).Msg("")
 			}
-
+			if err := label.DeleteLabelObject(resourceType, v.Uid); err != nil {
+				log.Error().Err(err).Msg("")
+			}
 		}
 	} else if strings.EqualFold(resourceType, model.StrCustomImage) {
 		// Delete custom image from database
@@ -669,15 +670,13 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	if !strings.EqualFold(resourceType, model.StrImage) &&
 		!strings.EqualFold(resourceType, model.StrCustomImage) &&
 		!strings.EqualFold(resourceType, model.StrSpec) {
-		err = kvstore.Delete(key)
-		if err != nil {
+		if err := kvstore.Delete(key); err != nil {
 			log.Error().Err(err).Msg("")
 			return err
 		}
 	}
 
-	err = label.DeleteLabelObject(resourceType, uid)
-	if err != nil {
+	if err := label.DeleteLabelObject(resourceType, uid); err != nil {
 		log.Error().Err(err).Msg("")
 	}
 
