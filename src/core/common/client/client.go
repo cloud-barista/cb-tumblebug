@@ -79,8 +79,8 @@ const (
 	// AvailabilityCheckTimeout is the per-request HTTP timeout used when probing
 	// whether a connection config is reachable via Spider. Kept separate from the
 	// cache-duration constants above because it controls network I/O, not caching.
-	// 60 s is generous enough for slow CSPs while preventing indefinite hangs.
-	AvailabilityCheckTimeout = 60 * time.Second
+	// 20s is generous enough for slow CSPs while preventing indefinite hangs.
+	AvailabilityCheckTimeout = 20 * time.Second
 )
 
 // NoBody is a constant for empty body
