@@ -1970,15 +1970,27 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 			sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, nodeInfo.ConnectionConfig.CredentialHolder)
 			statuses, sdkErr := handler(sdkCtx, nodeInfo.ConnectionConfig.RegionDetail.RegionName, []string{nodeInfo.CspResourceId})
 			if sdkErr == nil {
+				sdkStreakKey := nsId + "/" + infraId + "/" + nodeId
 				if s, ok := statuses[nodeInfo.CspResourceId]; ok {
 					callResult.Status = s
-				} else {
-					callResult.Status = model.StatusUndefined
+					terminatingFailStreak.Delete(sdkStreakKey)
+					terminatingReTerminateSent.Delete(sdkStreakKey)
+					goto applyStatus
 				}
-				// Successful direct SDK call: reset any consecutive-failure streak for this node.
-				sdkStreakKey := nsId + "/" + infraId + "/" + nodeId
-				terminatingFailStreak.Delete(sdkStreakKey)
-				terminatingReTerminateSent.Delete(sdkStreakKey)
+				// Missing from a successful batch response: require the same consecutive-miss
+				// streak as SDK errors before promoting a Terminating node to Terminated.
+				callResult.Status = model.StatusUndefined
+				if nodeInfo.Status == model.StatusTerminating {
+					prev, _ := terminatingFailStreak.LoadOrStore(sdkStreakKey, 0)
+					streak := prev.(int) + 1
+					if streak >= terminatingFailStreakMax {
+						terminatingFailStreak.Delete(sdkStreakKey)
+						callResult.Status = model.StatusTerminated
+					} else {
+						terminatingFailStreak.Store(sdkStreakKey, streak)
+						callResult.Status = nodeInfo.Status
+					}
+				}
 				goto applyStatus
 			}
 
@@ -3186,10 +3198,34 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 			log.Info().Msg(err.Error())
 			return err
 		}
-		// for deletion, need to wait until termination is finished
-		log.Info().Msg("Wait for Node termination in 1 second")
-		time.Sleep(1 * time.Second)
 
+		// Re-verify the node actually reached a terminal state before removing its
+		// metadata, instead of assuming a fixed sleep is enough.
+		const maxDeleteWaitAttempts = 3
+		const deleteWaitInterval = 3 * time.Second
+		var status model.NodeStatusInfo
+		safeToDelete := false
+		for attempt := 0; attempt < maxDeleteWaitAttempts; attempt++ {
+			if attempt > 0 {
+				time.Sleep(deleteWaitInterval)
+			}
+			fetched, fetchErr := FetchNodeStatus(nsId, infraId, nodeId)
+			if fetchErr != nil {
+				if strings.Contains(fetchErr.Error(), "temporarily blocked") {
+					continue
+				}
+				safeToDelete = true
+				break
+			}
+			status = fetched
+			if status.Status == model.StatusTerminated || status.Status == model.StatusUndefined || status.Status == model.StatusFailed {
+				safeToDelete = true
+				break
+			}
+		}
+		if !safeToDelete {
+			return fmt.Errorf("node %s not yet confirmed terminated (status=%s); retry shortly", nodeId, status.Status)
+		}
 	}
 
 	// get node info

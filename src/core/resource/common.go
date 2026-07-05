@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"runtime"
 	"slices"
 	"sort"
@@ -1871,6 +1872,24 @@ func ResolveProviderRegionZoneResourceKey(key string) (providerName string, regi
 	}
 
 	return split[0], split[1], split[2], split[3], nil
+}
+
+// creationLockStripes is a fixed-size set of mutexes hashed by resource key, serializing
+// check-then-create sequences to avoid racing duplicate creates without growing unbounded
+// like a sync.Map keyed per resource would over a long-running server's lifetime.
+const creationLockStripes = 256
+
+var creationLocks [creationLockStripes]sync.Mutex
+
+// LockResourceCreation serializes creation of a given (nsId, resourceType, resourceId).
+// Call before the existence check in a Create* function; release via defer.
+func LockResourceCreation(nsId, resourceType, resourceId string) func() {
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	mu := &creationLocks[h.Sum32()%creationLockStripes]
+	mu.Lock()
+	return mu.Unlock
 }
 
 // CheckResource returns the existence of the TB Resource resource in bool form.

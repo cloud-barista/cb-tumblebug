@@ -508,6 +508,13 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 	result.Resources.OnSpider = model.ResourceOnSpider{}
 	result.Resources.OnCspTotal = model.ResourceOnCsp{}
 	result.Resources.OnCspOnly = model.ResourceOnCsp{}
+	result.Resources.OnSpiderNotTumblebug = model.ResourceOnCsp{}
+
+	// CspResourceIds already known to CB-TB, to spot Spider-mapped resources missing from CB-TB.
+	tbKnownCspIds := make(map[string]bool, len(TbResourceList.Info))
+	for _, r := range TbResourceList.Info {
+		tbKnownCspIds[r.CspResourceId] = true
+	}
 
 	tmpResourceOnSpider := model.ResourceOnSpiderInfo{}
 	tmpResourceOnCsp := model.ResourceOnCspInfo{}
@@ -520,6 +527,12 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 		tmpResourceOnCsp.CspResourceId = v.SystemId
 		tmpResourceOnCsp.RefNameOrId = v.NameId
 		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
+
+		// TB always stores Spider's SystemId as its own CspResourceId (see CreateVNet/
+		// CreateSecurityGroup/CreateSshKey), regardless of CSP, so match against SystemId.
+		if !tbKnownCspIds[v.SystemId] {
+			result.Resources.OnSpiderNotTumblebug.Info = append(result.Resources.OnSpiderNotTumblebug.Info, tmpResourceOnCsp)
+		}
 	}
 
 	for _, v := range cspResourceStatus.AllList.OnlySpiderList {
@@ -547,10 +560,12 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 	result.Resources.OnSpider.Count = len(result.Resources.OnSpider.Info)
 	result.Resources.OnCspTotal.Count = len(result.Resources.OnCspTotal.Info)
 	result.Resources.OnCspOnly.Count = len(result.Resources.OnCspOnly.Info)
+	result.Resources.OnSpiderNotTumblebug.Count = len(result.Resources.OnSpiderNotTumblebug.Info)
 	result.ResourceOverview.OnTumblebug = result.Resources.OnTumblebug.Count
 	result.ResourceOverview.OnSpider = result.Resources.OnSpider.Count
 	result.ResourceOverview.OnCspTotal = result.Resources.OnCspTotal.Count
 	result.ResourceOverview.OnCspOnly = result.Resources.OnCspOnly.Count
+	result.ResourceOverview.OnSpiderNotTumblebug = result.Resources.OnSpiderNotTumblebug.Count
 
 	return result, nil
 }
@@ -1139,6 +1154,17 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 				_, err = resource.CreateSecurityGroup(ctx, nsId, &req, optionFlag)
 				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegistrationOverview.SecurityGroup)
 			}
+			// Already mapped in CB-Spider (so not caught above) but missing from CB-TB's own
+			// KV — adopt the existing Spider registration by name instead of registering it
+			// again, which would create a second Spider-side mapping for the same CSP resource.
+			for _, r := range res.Resources.OnSpiderNotTumblebug.Info {
+				req := model.SecurityGroupReq{
+					ConnectionName: connConfig, Name: r.RefNameOrId, VNetId: "",
+					Description: "Recovered from CB-Spider mapping (missing in CB-TB)",
+				}
+				_, err = resource.CreateSecurityGroup(ctx, nsId, &req, optionFlag)
+				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegistrationOverview.SecurityGroup)
+			}
 		}
 	}
 
@@ -1152,6 +1178,15 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 					Username: "unknown", Fingerprint: "unknown", PublicKey: "unknown", PrivateKey: "unknown",
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed SSH Key (registered to CB-TB)",
+				}
+				_, err = resource.CreateSshKey(ctx, nsId, &req, optionFlag)
+				appendResult(&result, model.StrSSHKey, req.Name, err, &result.RegistrationOverview.SshKey)
+			}
+			for _, r := range res.Resources.OnSpiderNotTumblebug.Info {
+				req := model.SshKeyReq{
+					ConnectionName: connConfig, Name: r.RefNameOrId,
+					Username: "", Fingerprint: "", PublicKey: "", PrivateKey: "",
+					Description: "Recovered from CB-Spider mapping (missing in CB-TB)",
 				}
 				_, err = resource.CreateSshKey(ctx, nsId, &req, optionFlag)
 				appendResult(&result, model.StrSSHKey, req.Name, err, &result.RegistrationOverview.SshKey)
