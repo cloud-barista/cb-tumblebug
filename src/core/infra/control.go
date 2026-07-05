@@ -307,18 +307,35 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 		}
 	}
 
-	// If Node is already terminated or failed (never created at CSP), treat terminate as a no-op.
-	// Failed nodes have no CSP resource to delete; use refine to clean them up.
+	// If Node is already terminated, treat terminate as a no-op.
 	if strings.EqualFold(action, model.ActionTerminate) {
 		nodeStatus, statusErr := GetInfraNodeStatus(nsId, infraId, nodeId, false)
 		if statusErr == nil {
 			if strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
-				log.Info().Msgf("[VM %s] already terminated, skipping", nodeId)
+				log.Info().Msgf("[Node %s] already terminated, skipping", nodeId)
 				return "Already terminated", nil
 			}
 			if strings.EqualFold(nodeStatus.Status, model.StatusFailed) {
-				log.Info().Msgf("[VM %s] is in Failed state (never created at CSP); skipping terminate — use refine to clean up", nodeId)
-				return "Node is in Failed state; use refine to clean up", nil
+				// Failed doesn't always mean no CSP resource exists (e.g. a network
+				// error after the CSP accepted the request, or a failure at a later
+				// provisioning step). Check the Node's own record, then an orphan
+				// lookup by Uid (the same /allvm matching `reconcile` uses), before
+				// skipping — otherwise an orphan can only be recovered if the
+				// operator runs `reconcile` before deleting the Node.
+				hasCspResource := nodeStatus.CspResourceName != ""
+				if !hasCspResource {
+					if nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId); gerr == nil && nodeObj.Uid != "" {
+						rescued, _ := rescueOrphanNodes(nsId, infraId, []orphanCandidate{
+							{NodeId: nodeId, Uid: nodeObj.Uid, ConnectionName: nodeObj.ConnectionName},
+						})
+						hasCspResource = len(rescued) > 0
+					}
+				}
+				if !hasCspResource {
+					log.Info().Msgf("[Node %s] is Failed with no CSP resource found; skipping terminate — use refine to clean up", nodeId)
+					return "Node is in Failed state; use refine to clean up", nil
+				}
+				log.Info().Msgf("[Node %s] is Failed but a CSP resource was found; proceeding to terminate it", nodeId)
 			}
 		}
 	}
