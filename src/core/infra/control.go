@@ -308,35 +308,15 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 	}
 
 	// If Node is already terminated, treat terminate as a no-op.
+	// The Failed + no-cspResourceName case is handled inside ControlNodeAsync
+	// (which also runs the orphan-rescue lookup there — see the "Prevent
+	// malformed cspResourceName" branch), since that lookup can take minutes
+	// on large CSPs and must not block this synchronous request handler.
 	if strings.EqualFold(action, model.ActionTerminate) {
 		nodeStatus, statusErr := GetInfraNodeStatus(nsId, infraId, nodeId, false)
-		if statusErr == nil {
-			if strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
-				log.Info().Msgf("[Node %s] already terminated, skipping", nodeId)
-				return "Already terminated", nil
-			}
-			if strings.EqualFold(nodeStatus.Status, model.StatusFailed) {
-				// Failed doesn't always mean no CSP resource exists (e.g. a network
-				// error after the CSP accepted the request, or a failure at a later
-				// provisioning step). Check the Node's own record, then an orphan
-				// lookup by Uid (the same /allvm matching `reconcile` uses), before
-				// skipping — otherwise an orphan can only be recovered if the
-				// operator runs `reconcile` before deleting the Node.
-				hasCspResource := nodeStatus.CspResourceName != ""
-				if !hasCspResource {
-					if nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId); gerr == nil && nodeObj.Uid != "" {
-						rescued, _ := rescueOrphanNodes(nsId, infraId, []orphanCandidate{
-							{NodeId: nodeId, Uid: nodeObj.Uid, ConnectionName: nodeObj.ConnectionName},
-						})
-						hasCspResource = len(rescued) > 0
-					}
-				}
-				if !hasCspResource {
-					log.Info().Msgf("[Node %s] is Failed with no CSP resource found; skipping terminate — use refine to clean up", nodeId)
-					return "Node is in Failed state; use refine to clean up", nil
-				}
-				log.Info().Msgf("[Node %s] is Failed but a CSP resource was found; proceeding to terminate it", nodeId)
-			}
+		if statusErr == nil && strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
+			log.Info().Msgf("[Node %s] already terminated, skipping", nodeId)
+			return "Already terminated", nil
 		}
 	}
 
@@ -1026,10 +1006,33 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 
 	// Prevent malformed cspResourceName
 	if cspResourceName == "" || common.CheckString(cspResourceName) != nil {
-		// For Terminate: a node with no CSP resource name was never created at the CSP.
-		// Nothing to delete — skip the Spider call and return success so ControlNodesInParallel
-		// does not count this as an error. The node keeps its current status (typically Failed);
-		// StatusAgent or reconcileInfraBackward will promote it via the refine path.
+		// For Terminate: a malformed/empty cspResourceName usually means the node
+		// was never created at the CSP. But it can also mean the CSP accepted the
+		// create request and TB lost track of the response (crash, network error).
+		// Before giving up, check whether Spider/CSP actually has a matching VM by
+		// Uid (the same /allvm matching `reconcile` uses) — otherwise such an
+		// orphan could only be recovered if the operator runs `reconcile` first.
+		if strings.EqualFold(action, model.ActionTerminate) {
+			if temp.Uid != "" {
+				rescued, _ := rescueOrphanNodes(nsId, infraId, []orphanCandidate{
+					{NodeId: nodeId, Uid: temp.Uid, ConnectionName: temp.ConnectionName},
+				})
+				if len(rescued) > 0 {
+					if refreshed, gerr := GetNodeObject(nsId, infraId, nodeId); gerr == nil {
+						temp = refreshed
+						cspResourceName = temp.CspResourceName
+						log.Info().Str("nodeId", nodeId).Str("cspResourceName", cspResourceName).
+							Msg("[ControlNodeAsync] rescued orphan CSP resource for previously untracked node; proceeding to terminate it")
+					}
+				}
+			}
+		}
+	}
+	if cspResourceName == "" || common.CheckString(cspResourceName) != nil {
+		// Still nothing to delete — skip the Spider call and return success so
+		// ControlNodesInParallel does not count this as an error. The node keeps
+		// its current status (typically Failed); StatusAgent or
+		// reconcileInfraBackward will promote it via the refine path.
 		if strings.EqualFold(action, model.ActionTerminate) {
 			log.Info().Str("nodeId", nodeId).Str("status", temp.Status).Msg("[ControlNodeAsync] skipping terminate for never-created node (no cspResourceName); keeping current status")
 			callResult.Status = temp.Status
