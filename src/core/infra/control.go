@@ -278,7 +278,7 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 	check, _ := CheckNode(nsId, infraId, nodeId)
 
 	if !check {
-		err := fmt.Errorf("The vm %s does not exist.", nodeId)
+		err := fmt.Errorf("The node %s does not exist.", nodeId)
 		return err.Error(), err
 	}
 
@@ -1330,44 +1330,52 @@ func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalPa
 	}
 
 	if nodeId.Set {
-		vm, err := GetInfraNodeStatus(nsId, infraId, nodeId.Value, false)
+		node, err := GetInfraNodeStatus(nsId, infraId, nodeId.Value, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		// duplicated action
-		if strings.EqualFold(vm.Status, targetStatus) {
+		if strings.EqualFold(node.Status, targetStatus) {
 			if strings.EqualFold(action, model.ActionTerminate) {
 				// Terminate is idempotent: already terminated is considered success
 				return nil
 			}
 			if !strings.EqualFold(action, model.ActionReboot) {
-				return errors.New(action + " is not allowed for VM under " + vm.Status)
+				return errors.New(action + " is not allowed for VM under " + node.Status)
 			}
 		}
 		// redundant action
-		if strings.EqualFold(vm.Status, model.StatusTerminated) {
+		if strings.EqualFold(node.Status, model.StatusTerminated) {
 			if strings.EqualFold(action, model.ActionTerminate) {
 				return nil
 			}
-			return errors.New(action + " is not allowed for VM under " + vm.Status)
+			return errors.New(action + " is not allowed for VM under " + node.Status)
 		}
 		// under transitional status
-		if strings.EqualFold(vm.Status, model.StatusCreating) ||
-			strings.EqualFold(vm.Status, model.StatusTerminating) ||
-			strings.EqualFold(vm.Status, model.StatusResuming) ||
-			strings.EqualFold(vm.Status, model.StatusSuspending) ||
-			strings.EqualFold(vm.Status, model.StatusRebooting) {
+		if strings.EqualFold(node.Status, model.StatusCreating) {
+			return errors.New(action + " is not allowed for VM under " + node.Status)
+		}
+		if strings.EqualFold(node.Status, model.StatusTerminating) ||
+			strings.EqualFold(node.Status, model.StatusResuming) ||
+			strings.EqualFold(node.Status, model.StatusSuspending) ||
+			strings.EqualFold(node.Status, model.StatusRebooting) {
 
-			return errors.New(action + " is not allowed for VM under " + vm.Status)
+			// Allow re-requesting the same action already in progress: the CSP may
+			// never have actually received the original request, leaving the node
+			// stuck transitional indefinitely. This re-dispatches to the CSP.
+			if strings.EqualFold(node.TargetAction, action) {
+				return nil
+			}
+			return errors.New(action + " is not allowed for VM under " + node.Status)
 		}
 		// under conditional status
-		if strings.EqualFold(vm.Status, model.StatusSuspended) {
+		if strings.EqualFold(node.Status, model.StatusSuspended) {
 			if strings.EqualFold(action, model.ActionResume) || strings.EqualFold(action, model.ActionTerminate) {
 				return nil
 			} else {
-				return errors.New(action + " is not allowed for VM under " + vm.Status)
+				return errors.New(action + " is not allowed for VM under " + node.Status)
 			}
 		}
 	} else {
@@ -1392,11 +1400,18 @@ func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalPa
 			return errors.New(action + " is not allowed for Infra under " + infra.Status)
 		}
 		// under transitional status
-		if strings.Contains(infra.Status, model.StatusCreating) ||
-			strings.Contains(infra.Status, model.StatusResuming) ||
+		if strings.Contains(infra.Status, model.StatusCreating) {
+			return errors.New(action + " is not allowed for Infra under " + infra.Status)
+		}
+		if strings.Contains(infra.Status, model.StatusResuming) ||
 			strings.Contains(infra.Status, model.StatusSuspending) ||
 			strings.Contains(infra.Status, model.StatusRebooting) {
 
+			// Allow re-requesting the same action already in progress (see the
+			// equivalent node-level check above for why).
+			if strings.EqualFold(infra.TargetAction, action) {
+				return nil
+			}
 			return errors.New(action + " is not allowed for Infra under " + infra.Status)
 		}
 		// Terminating is allowed to proceed for Terminate (idempotent — nodes in flight

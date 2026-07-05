@@ -356,13 +356,18 @@ The system validates state transitions before executing actions. Below is the tr
 | Prepared       | ❌     | ❌    | ❌    | ❌        | ✅        | ✅    |
 | Creating       | ❌     | ❌    | ❌    | ❌        | ✅        | ✅    |
 | Running        | ✅     | ❌    | ✅    | ✅        | ✅ (no-op) | ✅    |
+| Suspending     | ✅ (same-action retry) | ❌ | ❌ | ❌ | ✅ | ✅ |
 | Suspended      | ❌     | ✅    | ❌    | ✅        | ✅ (no-op) | ✅    |
-| Terminating    | ❌     | ❌    | ❌    | ❌        | ✅        | ✅    |
-| Terminated     | ❌     | ❌    | ❌    | ❌        | ❌        | ❌ (no-op) |
+| Resuming       | ❌     | ✅ (same-action retry) | ❌ | ❌ | ✅ | ✅ |
+| Rebooting      | ❌     | ❌    | ✅ (same-action retry) | ❌ | ✅ | ✅ |
+| Terminating    | ❌     | ❌    | ❌    | ✅ (idempotent retry) | ✅ | ✅ |
+| Terminated     | ❌     | ❌    | ❌    | ✅ (no-op) | ❌       | ❌ (no-op) |
 | Failed         | ❌     | ❌    | ❌    | ✅ (Force) | ✅        | ✅    |
 | `Partial-*`    | ❌     | ❌    | ❌    | ✅ (Force) | ✅        | ✅    |
 
 > `Reconcile` and `Abort` are crash-recovery actions and are intentionally permitted from non-final states (including transitional states like `Preparing` / `Creating` / `Terminating`) so an operator can always recover a stuck Infra without resorting to `force` flags.
+>
+> **Same-action retry:** requesting the *same* action that is already the Node's/Infra's current `TargetAction` while it sits in the matching transitional status (e.g. calling `suspend` again while already `Suspending`) is allowed and re-dispatches the control call to the CSP. This exists because the CSP may never have actually received the original request, which would otherwise leave the Node stuck transitional indefinitely. Requesting a *different* action (e.g. `resume` while `Suspending`) is still blocked. `Creating` is excluded from this — retrying it risks provisioning a duplicate VM.
 
 ### Infra-Level Actions
 
@@ -491,7 +496,7 @@ flowchart TD
 
         QUEUE --> WORKER[worker goroutine pool]
         WORKER --> RATE[Per-CSP rate limiter]
-        RATE --> FETCH[FetchNodeStatus\nvía Spider vmstatus]
+        RATE --> FETCH[FetchNodeStatus\ndirect-SDK if registered, else Spider vmstatus]
         FETCH --> STORE[StatusStore update\n+ KV write-through]
     end
 
@@ -516,17 +521,17 @@ Each Node entry in the StatusStore carries a **poll priority** that controls how
 
 | Priority | Interval | When assigned |
 |---|---|---|
-| `PollUrgent` | ~5 s | Transitional states: Creating, Terminating, Resuming, Rebooting, Suspending |
-| `PollHigh` | ~15 s | Running Nodes with a pending TargetAction |
-| `PollNormal` | ~5 min | Stable Running or Undefined nodes (no pending action) |
-| `PollRecover` | ~10 min | Suspended nodes (stable, but can be resumed) |
-| `PollSkip` | never | Terminated, Failed nodes (final state — no further CSP calls) |
+| `PollUrgent` | ~5 s | Startup recovery only: a Node found with a pending `TargetAction` when the daemon starts (server restarted mid-operation), or an operation lock whose TTL (25 min) expired unexpectedly |
+| `PollHigh` | ~15 s | Transitional states: Creating, Suspending, Resuming, Rebooting, Terminating; also Suspended with a still-pending `TargetAction` |
+| `PollNormal` | ~5 min | Running Nodes (stable) |
+| `PollRecover` | ~10 min | Undefined Nodes |
+| `PollSkip` | never | Terminated, Failed (final states), or Suspended with `TargetAction` already `Complete` |
 
-> **Newly created Nodes start at `PollUrgent`** so their transition from Creating → Running is tracked at second-level granularity.
+> **Newly created Nodes start at `PollHigh`** once the create operation lock releases, so their transition from Creating → Running is tracked at ~15 s granularity.
 
 #### Operation Lock
 
-During active lifecycle operations (Create, Terminate, Reboot, etc.), the daemon must not overwrite the status set by the operation itself. An **operation lock** prevents this:
+`AcquireLock`/`ReleaseLock` are used **only for Create** (the Spider `POST /vm` call): while it's in flight, the daemon must not poll the Node — Spider hasn't assigned a CSP resource yet, and the transitional status is not yet meaningful to read back. An **operation lock** prevents this:
 
 ```mermaid
 sequenceDiagram
@@ -550,6 +555,8 @@ sequenceDiagram
 ```
 
 If the lock TTL expires while `TargetAction` is still set (e.g. the server crashed mid-operation), the daemon logs a warning, clears the lock, and promotes the Node to `PollUrgent` so the discrepancy is detected quickly. Running `action=reconcile` then corrects the state.
+
+Suspend/Resume/Reboot/Terminate do **not** acquire this lock — they rely on the transitional-status polling and streak-based confirmation described in "Failure Handling" below instead.
 
 #### Startup Scan
 
@@ -596,7 +603,7 @@ See [Crash Recovery](#crash-recovery-reconcile-and-abort) for the full flow.
 
 ### Rate Limiting for Control Operations
 
-Control operations (Suspend, Resume, Reboot, Terminate) use the same hierarchical rate limiting as provisioning:
+Nodes routed through CB-Spider (individual `ControlNodeAsync` dispatch) use the same hierarchical rate limiting as provisioning:
 
 | CSP | Max Concurrent Regions | Max Nodes per Region |
 |-----|------------------------|-------------------|
@@ -606,7 +613,41 @@ Control operations (Suspend, Resume, Reboot, Terminate) use the same hierarchica
 | NCP | 3 | 15 |
 | Alibaba | 6 | 20 |
 
+### Direct-SDK Bypass (CB-Spider Optional)
+
+For some CSPs, CB-Tumblebug can call the CSP's own SDK directly instead of going through CB-Spider, registered per provider in `src/core/csp`:
+
+- **Status checks** (`BatchVMStatusFunc`): AWS, GCP, Azure, Alibaba, Tencent. Used by both the background poller and the on-demand status endpoints — CB-Spider's `/vmstatus` is not called for these providers.
+- **Control actions** (`BatchVMControlFunc`, Suspend/Resume/Reboot/Terminate\*): AWS (true multi-instance-per-call batching) and Azure (per-VM calls, concurrency-limited, but each returns immediately after the CSP accepts the request instead of blocking until CSP-confirmed completion the way CB-Spider's Azure driver does).
+
+  \* Terminate is intentionally **not** bypassed for any provider yet — CB-Spider's driver also cleans up dependent resources (e.g. Azure's NIC/PublicIP, which aren't cascade-deleted with the VM) that a from-scratch reimplementation would have to duplicate.
+
+`ControlNodeAsync` checks for a registered control handler for the Node's (provider, action) before building the CB-Spider HTTP request; if one exists, it's used instead, inside the same retry/backoff and error-handling logic (`FetchNodeStatus` sync on failure, `TargetAction` clearing on CSP rejection, etc.) — there's no separate code path to keep in sync.
+
+For providers with a bulk control handler, `ControlNodesInParallel` groups eligible Nodes per (provider, region, credentialHolder) and issues one batch call via `runBulkControlForRegion` before falling back to individual dispatch. A Node lands in individual dispatch (`ControlNodeAsync`, still preferring the direct handler if one exists) when: no bulk handler is registered for that provider+action, the whole batch call errored, or the batch call succeeded but omitted that specific instance from its result map (treated as a per-instance failure, not silently assumed successful — see "Failure Handling" below).
+
 ## 🛡️ Failure Handling
+
+### Streak-Based Confirmation (Avoiding Single-Sample False Positives)
+
+A single ambiguous poll result should not flip a Node's status — a transient CSP read glitch during a state transition looks identical to genuine completion or genuine disappearance. Several `sync.Map`-based streak counters require a few consecutive matching polls before acting:
+
+| Streak | Where | Requires N consecutive... | ...before |
+|---|---|---|---|
+| `terminatingFailStreak` | `FetchNodeStatus` (direct-SDK path) | poll errors, **or** the instance being missing from an otherwise-successful batch status response | promoting a `Terminating` Node to `Terminated` |
+| `batchNotFoundStreak` | `runBatchSweep` | "not found" results for a `Running` Node in a batch status sweep | promoting it to `Undefined` |
+| `suspendResumeRebootFailStreak` | `FetchNodeStatus` | poll errors **or** an unrecognized native status | giving up on a `Suspending`/`Resuming`/`Rebooting` Node (demotes to `Undefined` rather than holding forever) |
+
+The `terminatingFailStreak` case is worth calling out: a direct-SDK batch call can succeed (no error) while simply omitting one instance from its result map — e.g. because the CSP's list API doesn't return instances mid-transition. Treating that omission as instant confirmation (rather than requiring the same streak as an outright error) previously let a single missed poll promote a still-alive Node to `Terminated`, which in turn let `DelInfra`'s termination-wait loop finish early and delete metadata for a Node the CSP hadn't actually finished terminating.
+
+### Delete Re-Verification
+
+Both `DelInfraNode` (single Node) and `DelInfra` (whole Infra, `option=terminate`) re-confirm the CSP-side state before removing KV metadata, rather than assuming a fixed wait is enough:
+
+- `DelInfra` polls `StatusStore` (via `GetInfraStatus`) until no Node reports `Terminating`, with a timeout that scales with Node count (10 min floor, 60 min ceiling).
+- `DelInfraNode` calls `FetchNodeStatus` up to 3 times (3 s apart) after issuing Terminate, and refuses deletion — returning `"node %s not yet confirmed terminated"` — unless the Node reaches `Terminated`, `Undefined`, or `Failed`.
+
+Both rely on the streak-based confirmation above to actually reach a terminal status; deleting metadata for a Node the CSP hasn't finished terminating orphans the underlying CSP resource (and anything that depends on it, like a shared SecurityGroup or SSH key that CB-Spider will then refuse to delete due to a dependency violation).
 
 ### Refine Action
 
