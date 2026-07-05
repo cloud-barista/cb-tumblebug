@@ -187,6 +187,9 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 		return temp, err
 	}
 
+	unlock := LockResourceCreation(nsId, resourceType, u.Name)
+	defer unlock()
+
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {

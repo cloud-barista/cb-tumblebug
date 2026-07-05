@@ -117,6 +117,9 @@ func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option s
 		return emptyObj, err
 	}
 
+	unlock := LockResourceCreation(nsId, resourceType, u.Name)
+	defer unlock()
+
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {

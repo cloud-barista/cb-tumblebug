@@ -525,10 +525,11 @@ type InspectResource struct {
 
 // ResourceCountOverview is struct for Resource Count Overview
 type ResourceCountOverview struct {
-	OnTumblebug int `json:"onTumblebug"`
-	OnSpider    int `json:"onSpider"`
-	OnCspTotal  int `json:"onCspTotal"`
-	OnCspOnly   int `json:"onCspOnly"`
+	OnTumblebug          int `json:"onTumblebug"`
+	OnSpider             int `json:"onSpider"`
+	OnCspTotal           int `json:"onCspTotal"`
+	OnCspOnly            int `json:"onCspOnly"`
+	OnSpiderNotTumblebug int `json:"onSpiderNotTumblebug"`
 }
 
 // ResourcesByManageType is struct for Resources by Manage Type
@@ -537,6 +538,10 @@ type ResourcesByManageType struct {
 	OnSpider    ResourceOnSpider    `json:"onSpider"`
 	OnCspTotal  ResourceOnCsp       `json:"onCspTotal"`
 	OnCspOnly   ResourceOnCsp       `json:"onCspOnly"`
+	// OnSpiderNotTumblebug holds resources CB-Spider already has mapped (so they exist
+	// on the CSP and are not caught by OnCspOnly) but that are missing from CB-TB's own
+	// KV store — e.g. orphaned by a race in shared-resource creation.
+	OnSpiderNotTumblebug ResourceOnCsp `json:"onSpiderNotTumblebug"`
 }
 
 // ResourceOnSpider is struct for Resource on Spider

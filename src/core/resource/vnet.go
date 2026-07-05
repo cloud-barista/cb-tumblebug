@@ -526,6 +526,10 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 
 	// Set a vNetKey for the vNet object
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetInfo.Id)
+
+	unlock := LockResourceCreation(nsId, resourceType, vNetInfo.Id)
+	defer unlock()
+
 	// Check if the vNet already exists or not
 	exists, err := CheckResource(nsId, resourceType, vNetInfo.Id)
 	if exists {
