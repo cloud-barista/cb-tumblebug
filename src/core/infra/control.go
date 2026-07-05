@@ -31,6 +31,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
+	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -534,7 +535,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 		}
 
 		// Register as bulk-eligible if the CSP has a bulk handler and the node has a CSP resource ID.
-		if action != model.ActionReboot && nodeInfo.CspResourceId != "" {
+		if nodeInfo.CspResourceId != "" {
 			if _, hasBulk := cspdirect.GetBatchVMControlHandler(providerName, action); hasBulk {
 				bulkEntries[nodeId] = bulkControlEntry{
 					nodeId:           nodeId,
@@ -592,34 +593,34 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					defer func() { <-regionSemaphore }()
 
 					// Bulk SDK fast-path
-					// For Suspend/Resume/Terminate on CSPs with a registered bulk handler,
+					// For Suspend/Resume/Terminate/Reboot on CSPs with a registered bulk handler,
 					// send all nodes in this region in one (or a few) SDK call(s) instead
-					// of N individual Spider HTTP requests. Reboot always uses Spider.
-					spiderNodeIds := runBulkControlForRegion(nsId, infraId, providerName, regionName, nodeIdList, action, bulkEntries)
-					regionBulkHandled := len(nodeIdList) - len(spiderNodeIds)
-					nodeIdList = spiderNodeIds
+					// of N individual ControlNodeAsync dispatches.
+					individualNodeIds := runBulkControlForRegion(nsId, infraId, providerName, regionName, nodeIdList, action, bulkEntries)
+					regionBulkHandled := len(nodeIdList) - len(individualNodeIds)
+					nodeIdList = individualNodeIds
 					// End bulk SDK fast-path
 
-					// Pre-set transitional status for all Spider-path nodes before the
-					// semaphore-limited goroutines start. Without this, nodes waiting behind
+					// Pre-set transitional status for all individually-dispatched nodes before
+					// the semaphore-limited goroutines start. Without this, nodes waiting behind
 					// the semaphore continue to show their old status (Running/None/None)
 					// until ControlNodeAsync actually runs for them — which can take minutes
 					// on large Infras. This mirrors what applyBulkTransitionalStatus does
 					// for bulk-SDK nodes.
-					if action != model.ActionReboot {
-						for _, nodeId := range nodeIdList {
-							nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId)
-							if gerr != nil {
-								continue
-							}
-							applyBulkTransitionalStatus(nsId, infraId, bulkControlEntry{
-								nodeId:   nodeId,
-								nodeInfo: nodeObj,
-							}, action)
+					for _, nodeId := range nodeIdList {
+						nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId)
+						if gerr != nil {
+							continue
 						}
+						applyBulkTransitionalStatus(nsId, infraId, bulkControlEntry{
+							nodeId:   nodeId,
+							nodeInfo: nodeObj,
+						}, action)
 					}
 
-					// Step 4: Process remaining VMs via Spider with rate limiting
+					// Step 4: Process remaining VMs individually (ControlNodeAsync uses a direct-SDK
+					// call when one is registered for this provider+action, falling back to Spider
+					// otherwise), with rate limiting
 					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
 					var nodeWg sync.WaitGroup
 					var nodeMutex sync.Mutex
@@ -715,14 +716,16 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 
 // runBulkControlForRegion sends a bulk SDK control action for all bulk-eligible nodes in one
 // region, grouped further by credentialHolder. Returns the node IDs that were NOT handled by
-// the bulk SDK (no handler registered, missing CspResourceId, or SDK call failed) so that
-// the caller can route them through the Spider per-node path.
+// the bulk SDK (no handler registered, missing CspResourceId, individual SDK call failed, or
+// whole SDK call failed) so that the caller can dispatch them individually via ControlNodeAsync
+// — which itself prefers the same direct-SDK handler when one exists, only actually falling
+// back to Spider for CSPs/actions with no direct handler registered.
 func runBulkControlForRegion(
 	nsId, infraId, providerName, regionName string,
 	nodeIdList []string,
 	action string,
 	bulkEntries map[string]bulkControlEntry,
-) (spiderFallback []string) {
+) (individualDispatch []string) {
 	handler, hasBulk := cspdirect.GetBatchVMControlHandler(providerName, action)
 	if !hasBulk {
 		return nodeIdList // no handler registered for this CSP+action
@@ -739,7 +742,7 @@ func runBulkControlForRegion(
 	for _, nodeId := range nodeIdList {
 		be, ok := bulkEntries[nodeId]
 		if !ok || be.cspResourceId == "" {
-			spiderFallback = append(spiderFallback, nodeId)
+			individualDispatch = append(individualDispatch, nodeId)
 			continue
 		}
 		k := groupKey{be.credentialHolder, be.cspRegion}
@@ -769,9 +772,9 @@ func runBulkControlForRegion(
 				Str("provider", providerName).
 				Str("region", hg.key.cspRegion).
 				Int("count", len(ids)).
-				Msgf("[BulkControl] %s SDK call failed; routing %d nodes to Spider fallback", action, len(ids))
+				Msgf("[BulkControl] %s SDK call failed; dispatching %d nodes individually", action, len(ids))
 			for _, be := range hg.entries {
-				spiderFallback = append(spiderFallback, be.nodeId)
+				individualDispatch = append(individualDispatch, be.nodeId)
 			}
 			continue
 		}
@@ -782,7 +785,13 @@ func runBulkControlForRegion(
 			idToEntry[be.cspResourceId] = be
 			newStatus, found := statuses[be.cspResourceId]
 			if !found {
-				newStatus = bulkTransitionalStatus(action)
+				// This VM's individual call within the batch was not accepted (the
+				// overall SDK call succeeded, but this instance was omitted from the
+				// result map). Dispatch it individually instead of assuming success —
+				// ControlNodeAsync retries via the same direct-SDK handler and correctly
+				// reports failure if it still doesn't succeed.
+				individualDispatch = append(individualDispatch, be.nodeId)
+				continue
 			}
 			globalStatusStore.Update(nsId, infraId, be.nodeId, func(e *StatusEntry) {
 				e.Status = newStatus
@@ -816,7 +825,7 @@ func runBulkControlForRegion(
 		}
 	}
 
-	return spiderFallback
+	return individualDispatch
 }
 
 // waitBulkTerminated polls the CSP until every instance in acceptedIds reports Terminated
@@ -892,6 +901,10 @@ func applyBulkTransitionalStatus(nsId, infraId string, be bulkControlEntry, acti
 		temp.TargetAction = model.ActionResume
 		temp.TargetStatus = model.StatusRunning
 		temp.Status = model.StatusResuming
+	case model.ActionReboot:
+		temp.TargetAction = model.ActionReboot
+		temp.TargetStatus = model.StatusRunning
+		temp.Status = model.StatusRebooting
 	}
 	UpdateNodeInfo(nsId, infraId, temp)
 	globalStatusStore.Update(nsId, infraId, be.nodeId, func(e *StatusEntry) {
@@ -901,21 +914,6 @@ func applyBulkTransitionalStatus(nsId, infraId string, be bulkControlEntry, acti
 		e.Priority = PollHigh
 		e.NextPollAt = time.Now()
 	})
-}
-
-// bulkTransitionalStatus returns the expected in-flight TB status for an action
-// when the CSP response does not include a per-instance status.
-func bulkTransitionalStatus(action string) string {
-	switch action {
-	case model.ActionSuspend:
-		return model.StatusSuspending
-	case model.ActionResume:
-		return model.StatusResuming
-	case model.ActionTerminate:
-		return model.StatusTerminating
-	default:
-		return model.StatusUndefined
-	}
 }
 
 // postBulkControlCleanup runs TB metadata cleanup after a successful bulk SDK control call.
@@ -1121,16 +1119,26 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 		e.NextPollAt = time.Now() // make PollHigh effective immediately
 	})
 
-	client := clientManager.NewHttpClient()
-	// NCP requires a slightly longer timeout due to its control plane characteristics
-	if csp.ResolveCloudPlatform(temp.ConnectionConfig.ProviderName) == csp.NCP {
-		client.SetTimeout(timeout + 10*time.Minute)
-	} else {
-		client.SetTimeout(timeout)
-	}
+	// Prefer a direct-SDK call over the Spider HTTP request when one is registered
+	// for this provider+action (e.g. Azure Suspend/Resume/Reboot) — this is also
+	// how nodes that fell through the bulk fast-path due to an individual failure
+	// (see runBulkControlForRegion's individualDispatch) get retried: they land
+	// here but still use the fast direct-SDK path rather than actually calling Spider.
+	directHandler, useDirect := cspdirect.GetBatchVMControlHandler(temp.ConnectionConfig.ProviderName, action)
+	useDirect = useDirect && temp.CspResourceId != ""
 
+	var client *resty.Client
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = temp.ConnectionName
+	if !useDirect {
+		client = clientManager.NewHttpClient()
+		// NCP requires a slightly longer timeout due to its control plane characteristics
+		if csp.ResolveCloudPlatform(temp.ConnectionConfig.ProviderName) == csp.NCP {
+			client.SetTimeout(timeout + 10*time.Minute)
+		} else {
+			client.SetTimeout(timeout)
+		}
+	}
 
 	// Rate-limit concurrent Spider control calls to prevent RST storms at scale.
 	// Released immediately after the Spider call (before polling / cleanup) so the
@@ -1148,16 +1156,27 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 				nodeId, action, attempt, maxControlRetries+1, backoff, err)
 			time.Sleep(backoff)
 		}
-		_, err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			clientManager.SetUseBody(requestBody),
-			&requestBody,
-			&callResult,
-			clientManager.MediumDuration,
-		)
+		if useDirect {
+			sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, temp.ConnectionConfig.CredentialHolder)
+			var statuses map[string]string
+			statuses, err = directHandler(sdkCtx, temp.ConnectionConfig.RegionDetail.RegionName, []string{temp.CspResourceId})
+			if err == nil {
+				if _, accepted := statuses[temp.CspResourceId]; !accepted {
+					err = fmt.Errorf("direct SDK call for %s did not accept VM %s", action, nodeId)
+				}
+			}
+		} else {
+			_, err = clientManager.ExecuteHttpRequest(
+				client,
+				method,
+				url,
+				nil,
+				clientManager.SetUseBody(requestBody),
+				&requestBody,
+				&callResult,
+				clientManager.MediumDuration,
+			)
+		}
 		if err == nil || !isTransientNetworkError(err) {
 			break
 		}
