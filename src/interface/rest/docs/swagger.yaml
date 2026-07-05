@@ -25064,6 +25064,8 @@ components:
           type: integer
         onSpider:
           type: integer
+        onSpiderNotTumblebug:
+          type: integer
         onTumblebug:
           type: integer
     model.ResourceDeleteResult:
@@ -25252,6 +25254,14 @@ components:
           $ref: '#/components/schemas/model.ResourceOnCsp'
         onSpider:
           $ref: '#/components/schemas/model.ResourceOnSpider'
+        onSpiderNotTumblebug:
+          type: object
+          description: |-
+            OnSpiderNotTumblebug holds resources CB-Spider already has mapped (so they exist
+            on the CSP and are not caught by OnCspOnly) but that are missing from CB-TB's own
+            KV store — e.g. orphaned by a race in shared-resource creation.
+          allOf:
+          - $ref: '#/components/schemas/model.ResourceOnCsp'
         onTumblebug:
           $ref: '#/components/schemas/model.ResourceOnTumblebug'
     model.Response:
