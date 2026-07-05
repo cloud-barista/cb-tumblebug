@@ -585,6 +585,27 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	)
 
 	if err != nil {
+		// Spider's own IID registry (not just the CSP) has forgotten this resource —
+		// e.g. an earlier DELETE was ambiguously interrupted mid-flight, Spider later
+		// confirmed not-found on the CSP and dropped its own record, but returned an
+		// error instead of success. Retrying this DELETE can never succeed. If the CSP
+		// also no longer has it, clean up CB-TB's own record instead of failing forever;
+		// if the CSP still has it (Spider unregistered without deleting), this is left
+		// for the operator — CheckAssociatedCspResourceExistence's onCsp=true case.
+		if strings.Contains(strings.ToLower(err.Error()), "does not exist in connection") {
+			if onCsp, onSpider, checkErr := CheckAssociatedCspResourceExistence(nsId, resourceType, resourceId, requestBody.ConnectionName); checkErr == nil && !onCsp && !onSpider {
+				log.Warn().Str("resourceType", resourceType).Str("resourceId", resourceId).
+					Msg("Resource confirmed gone from both Spider and CSP; removing stale CB-TB record")
+				if kvErr := kvstore.Delete(key); kvErr != nil {
+					log.Error().Err(kvErr).Msg("Failed to remove stale CB-TB record")
+					return kvErr
+				}
+				if lblErr := label.DeleteLabelObject(resourceType, uid); lblErr != nil {
+					log.Error().Err(lblErr).Msg("")
+				}
+				return nil
+			}
+		}
 		if resourceType == model.StrVNet && vNetInfoForMark != nil {
 			markVNetDeleteFailed(nsId, resourceId, key, vNetInfoForMark, err)
 		}
