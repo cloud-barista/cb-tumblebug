@@ -30341,6 +30341,9 @@ const docTemplate = `{
                 "onSpider": {
                     "type": "integer"
                 },
+                "onSpiderNotTumblebug": {
+                    "type": "integer"
+                },
                 "onTumblebug": {
                     "type": "integer"
                 }
@@ -30596,6 +30599,14 @@ const docTemplate = `{
                 },
                 "onSpider": {
                     "$ref": "#/definitions/model.ResourceOnSpider"
+                },
+                "onSpiderNotTumblebug": {
+                    "description": "OnSpiderNotTumblebug holds resources CB-Spider already has mapped (so they exist\non the CSP and are not caught by OnCspOnly) but that are missing from CB-TB's own\nKV store — e.g. orphaned by a race in shared-resource creation.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ResourceOnCsp"
+                        }
+                    ]
                 },
                 "onTumblebug": {
                     "$ref": "#/definitions/model.ResourceOnTumblebug"
