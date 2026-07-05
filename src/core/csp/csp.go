@@ -72,11 +72,11 @@ func GetBatchVMStatusHandler(provider string) (BatchVMStatusFunc, bool) {
 type BatchVMControlFunc func(ctx context.Context, region string, instanceIds []string) (map[string]string, error)
 
 // BatchVMControlHandlers groups bulk lifecycle control functions for a CSP.
-// Reboot is excluded — it is rare, order-sensitive, and not cost-effective to batch.
 type BatchVMControlHandlers struct {
 	Suspend   BatchVMControlFunc // e.g. AWS StopInstances
 	Resume    BatchVMControlFunc // e.g. AWS StartInstances
 	Terminate BatchVMControlFunc // e.g. AWS TerminateInstances
+	Reboot    BatchVMControlFunc // e.g. Azure BeginRestart
 }
 
 var (
@@ -93,7 +93,7 @@ func RegisterBatchVMControlHandlers(provider string, h BatchVMControlHandlers) {
 }
 
 // GetBatchVMControlHandler returns the bulk control function for the given provider and action.
-// action is case-insensitive: "suspend", "resume", or "terminate".
+// action is case-insensitive: "suspend", "resume", "terminate", or "reboot".
 func GetBatchVMControlHandler(provider, action string) (BatchVMControlFunc, bool) {
 	batchVMControlMu.RLock()
 	defer batchVMControlMu.RUnlock()
@@ -108,6 +108,8 @@ func GetBatchVMControlHandler(provider, action string) (BatchVMControlFunc, bool
 		return h.Resume, h.Resume != nil
 	case "terminate":
 		return h.Terminate, h.Terminate != nil
+	case "reboot":
+		return h.Reboot, h.Reboot != nil
 	default:
 		return nil, false
 	}
