@@ -425,16 +425,8 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		} else {
 			// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
 			if v.ImageId == "" || v.ImageId == "default" {
-				// Resolve default node image from k8sclusterinfo.yaml nodeImage section.
-				// Falls back to "" (Spider delegation) for CSPs without a static nodeImage entry (e.g. NHN).
-				defaultImg, imgErr := common.GetK8sDefaultNodeImage(connConfig.ProviderName, connConfig.RegionDetail.RegionName)
-				if imgErr == nil && defaultImg != "" {
-					spImgName = defaultImg
-					log.Info().Msgf("Using default K8s node image: %s (k8sclusterinfo.yaml)", spImgName)
-				} else {
-					spImgName = ""
-					log.Info().Msgf("nodeImage not defined for provider(%s), Spider will apply its own default", connConfig.ProviderName)
-				}
+				// Leave empty; the Spider driver will apply its own default for the given provider.
+				spImgName = ""
 			} else {
 				spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
 				if spImgName == "" || err != nil {
@@ -728,16 +720,8 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 	} else {
 		// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
 		if u.ImageId == "" || u.ImageId == "default" {
-			// Resolve default node image from k8sclusterinfo.yaml nodeImage section.
-			// Falls back to "" (Spider delegation) for CSPs without a static nodeImage entry (e.g. NHN).
-			defaultImg, imgErr := common.GetK8sDefaultNodeImage(connConfig.ProviderName, connConfig.RegionDetail.RegionName)
-			if imgErr == nil && defaultImg != "" {
-				spImgName = defaultImg
-				log.Info().Msgf("Using default K8s node image: %s (k8sclusterinfo.yaml)", spImgName)
-			} else {
-				spImgName = ""
-				log.Info().Msgf("nodeImage not defined for provider(%s), Spider will apply its own default", connConfig.ProviderName)
-			}
+			// Leave empty; the Spider driver will apply its own default for the given provider.
+			spImgName = ""
 		} else {
 			spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
 			if spImgName == "" || err != nil {
@@ -908,7 +892,6 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 				}
 			}
 		}
-
 	}
 
 	// Create Request body for RemoveK8sNodeGroup of CB-Spider
@@ -2404,3 +2387,4 @@ func validateK8sImageForProvider(nsId, providerName, imageId string) error {
 	}
 	return nil
 }
+
