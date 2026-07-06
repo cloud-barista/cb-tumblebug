@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -999,7 +1000,12 @@ func RestGetInfraExecutionTasks(c echo.Context) error {
 func RestGetExecutionTask(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	taskId := c.Param("taskId")
+	// Echo does not unescape path params: a client-side encodeURIComponent
+	// turns the taskId's colons into %3A, which would never match stored IDs.
+	taskId, err := url.PathUnescape(c.Param("taskId"))
+	if err != nil {
+		taskId = c.Param("taskId")
+	}
 
 	// Get all active commands and filter by taskId
 	// Empty nsId/infraId will scan all namespaces/Infras (for global route support)
@@ -1048,7 +1054,12 @@ func RestGetExecutionTask(c echo.Context) error {
 func RestCancelExecutionTask(c echo.Context) error {
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
-	taskId := c.Param("taskId")
+	// Echo does not unescape path params: a client-side encodeURIComponent
+	// turns the taskId's colons into %3A, which would never match stored IDs.
+	taskId, err := url.PathUnescape(c.Param("taskId"))
+	if err != nil {
+		taskId = c.Param("taskId")
+	}
 
 	// Parse optional cancel request body
 	req := &model.CancelTaskRequest{}

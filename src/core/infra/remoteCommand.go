@@ -597,33 +597,28 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 
 	// Execute commands in parallel using goroutines with per-Node context.
 	//
-	// PHASE-BASED SCHEDULING: when a target VM is *also* serving as the bastion
-	// for other targets in the same batch (the classic dense-subnet fan-out:
-	// 100 VMs in one subnet -> 1 auto-picked bastion -> 99 tunnels), running
-	// the bastion's own (potentially heavy) command in parallel with the 99
-	// tunnels HAMMERS that one VM into the ground. In production we have seen
-	// the bastion become unable to respond to TCP SYNs from the tunneling
-	// peers AND fail to finish its own command, even when the command would
-	// take ~60s on an idle VM. Defer such "active-bastion" targets to a
-	// second phase that runs only after every tunneling sibling has finished.
-	// This keeps the bastion VM dedicated to forwarding traffic while the
-	// fan-out is in progress, and removes the contention that was the single
-	// largest driver of failures in dense subnets.
+	// DEPENDENCY-BASED SCHEDULING: when a target VM is *also* serving as the
+	// bastion for other targets in the same batch (the classic dense-subnet
+	// fan-out: 100 VMs in one subnet -> 1 auto-picked bastion -> 99 tunnels),
+	// running the bastion's own (potentially heavy) command in parallel with
+	// the 99 tunnels HAMMERS that one VM into the ground. In production we
+	// have seen the bastion become unable to respond to TCP SYNs from the
+	// tunneling peers AND fail to finish its own command, even when the
+	// command would take ~60s on an idle VM. Defer such "active-bastion"
+	// targets until every target tunneling THROUGH THEM has finished.
 	//
-	// Nodes are split into:
-	//   phase 1 (parallel): targets whose bastion is *another* VM, or targets
-	//                       that are self-bastion / sole-VM-in-subnet (these
-	//                       don't burden anyone else).
-	//   phase 2 (parallel): targets that are an active bastion for >=1 OTHER
-	//                       target in this batch. Phase 2 starts only after
-	//                       phase 1 fully drains.
+	// The wait is per-bastion, not a global barrier: each deferred bastion
+	// launches the moment its own tunneling dependents drain. A global
+	// two-phase barrier (the previous design) let a single slow VM in one
+	// subnet block the deferred bastions of every other, unrelated subnet.
 	activeBastions := map[string]bool{}
+	targetBastionOf := map[string]string{} // target -> its bastion, when the bastion is a DIFFERENT VM in this batch
 	{
 		// Cheap lookup: for each target, find its assigned bastion. If that
 		// bastion ID matches another target in this batch (and is a different
 		// VM), mark the bastion as "active for siblings". Errors during
-		// lookup are non-fatal — we conservatively treat such nodes as
-		// phase-1 so behavior degrades to the previous all-parallel mode.
+		// lookup are non-fatal — we conservatively launch such nodes
+		// immediately so behavior degrades to the previous all-parallel mode.
 		nodeIdSet := make(map[string]bool, len(nodeList))
 		for _, n := range nodeList {
 			nodeIdSet[n] = true
@@ -639,29 +634,42 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			}
 			if nodeIdSet[bastionId] {
 				activeBastions[bastionId] = true
+				targetBastionOf[n] = bastionId
 			}
 		}
 	}
 
-	var phase1Targets, phase2Targets []string
+	var immediateTargets, deferredBastionTargets []string
 	for targetNodeId := range nodeCommands {
 		if activeBastions[targetNodeId] {
-			phase2Targets = append(phase2Targets, targetNodeId)
+			deferredBastionTargets = append(deferredBastionTargets, targetNodeId)
 		} else {
-			phase1Targets = append(phase1Targets, targetNodeId)
+			immediateTargets = append(immediateTargets, targetNodeId)
 		}
 	}
 
-	if len(phase2Targets) > 0 {
-		log.Info().
-			Str("xRequestId", xRequestId).
-			Int("phase1Count", len(phase1Targets)).
-			Int("phase2Count", len(phase2Targets)).
-			Strs("deferredBastions", phase2Targets).
-			Msg("Phase-based execution: deferring active-bastion targets to phase 2")
+	// Count, per deferred bastion, how many immediate targets tunnel through
+	// it. Only immediate targets are counted: two bastions using each other
+	// (a dependency cycle) would otherwise wait forever — such pairs get a
+	// zero count and launch right away, degrading to the previous parallel
+	// mode for that pair only.
+	pendingDependents := make(map[string]int, len(deferredBastionTargets))
+	for _, t := range immediateTargets {
+		if b, ok := targetBastionOf[t]; ok {
+			pendingDependents[b]++
+		}
 	}
 
-	launchOne := func(wg *sync.WaitGroup, nodeId string, cmds []string, cmdIndex int) {
+	if len(deferredBastionTargets) > 0 {
+		log.Info().
+			Str("xRequestId", xRequestId).
+			Int("immediateCount", len(immediateTargets)).
+			Int("deferredCount", len(deferredBastionTargets)).
+			Strs("deferredBastions", deferredBastionTargets).
+			Msg("Dependency-based execution: deferring each active-bastion target until its own tunneling dependents finish")
+	}
+
+	launchOne := func(wg *sync.WaitGroup, nodeId string, cmds []string, cmdIndex int, onDone func(nodeId string)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -688,28 +696,67 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			resultArray = append(resultArray, result)
 			completedCount++
 			resultMutex.Unlock()
+
+			// The hook runs in the goroutine body, before the deferred
+			// wg.Done above. Any wg.Add it performs for a newly-ready
+			// bastion therefore happens while this goroutine still holds
+			// the WaitGroup, so the final wg.Wait cannot pass early.
+			if onDone != nil {
+				onDone(nodeId)
+			}
 		}()
 	}
 
-	// Phase 1: non-active-bastion targets (the bulk of any fan-out).
-	for _, targetNodeId := range phase1Targets {
-		launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId])
-	}
-	wg.Wait() // goroutine sync wg
+	var depMutex sync.Mutex
+	launchedBastions := make(map[string]bool, len(deferredBastionTargets))
 
-	// Phase 2: active-bastion targets. They have just stopped serving tunnels
-	// for siblings; their sshd & CPU are free again, so their own command
-	// runs cleanly. Self-bastion direct path is used (bastion == target).
-	if len(phase2Targets) > 0 {
-		log.Info().
-			Str("xRequestId", xRequestId).
-			Int("count", len(phase2Targets)).
-			Msg("Phase 1 drained — launching phase 2 (active-bastion targets)")
-		for _, targetNodeId := range phase2Targets {
-			launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId])
+	// onImmediateDone releases the finished target's bastion once ALL of the
+	// bastion's tunneling dependents have completed (success or failure —
+	// runRemoteCommandWithContextAndStatus always returns a result).
+	onImmediateDone := func(nodeId string) {
+		b, ok := targetBastionOf[nodeId]
+		if !ok {
+			return
 		}
-		wg.Wait()
+		depMutex.Lock()
+		pendingDependents[b]--
+		ready := pendingDependents[b] <= 0 && !launchedBastions[b]
+		if ready {
+			launchedBastions[b] = true
+		}
+		depMutex.Unlock()
+		if ready {
+			log.Info().
+				Str("xRequestId", xRequestId).
+				Str("bastionNodeId", b).
+				Msg("All tunneling dependents finished — launching deferred bastion target")
+			launchOne(&wg, b, nodeCommands[b], nodeCommandIndices[b], nil)
+		}
 	}
+
+	for _, targetNodeId := range immediateTargets {
+		launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId], onImmediateDone)
+	}
+
+	// Deferred bastions with no immediate dependents (e.g., mutual-bastion
+	// pairs, or dependents filtered out of this batch) have nothing to wait
+	// for — launch them right away.
+	for _, targetNodeId := range deferredBastionTargets {
+		depMutex.Lock()
+		ready := pendingDependents[targetNodeId] == 0 && !launchedBastions[targetNodeId]
+		if ready {
+			launchedBastions[targetNodeId] = true
+		}
+		depMutex.Unlock()
+		if ready {
+			launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId], nil)
+		}
+	}
+
+	// Waits for every target: immediate ones and deferred bastions launched
+	// dynamically from onImmediateDone (their wg.Add always precedes the
+	// dependent goroutine's wg.Done — see the note in launchOne).
+	wg.Wait()
 
 	// Publish CommandDone event to SSE subscribers
 	completedNodes := 0
@@ -762,6 +809,16 @@ func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, infraId, no
 
 	// Update status to Handling
 	if cmdIndex > 0 {
+		// A user may cancel a Queued command before it launches (e.g., a
+		// deferred bastion target waiting on a hanging dependent). At that
+		// point there is no running context to cancel, so the cancel API can
+		// only flip the stored status — honor it here instead of silently
+		// overwriting Cancelled with Handling and executing anyway.
+		if existingStatus, getErr := GetCommandStatusInfo(nsId, infraId, nodeId, cmdIndex); getErr == nil && existingStatus != nil && existingStatus.Status == model.CommandStatusCancelled {
+			log.Info().Str("nodeId", nodeId).Int("cmdIndex", cmdIndex).Msg("Skipping execution: command was cancelled while queued")
+			result.Err = fmt.Errorf("command was cancelled before execution")
+			return result
+		}
 		if updateErr := UpdateCommandStatusInfo(nsId, infraId, nodeId, cmdIndex, model.CommandStatusHandling, "", "", "", ""); updateErr != nil {
 			log.Error().Err(updateErr).Int("cmdIndex", cmdIndex).Msg("Failed to update command status to Handling")
 		}
