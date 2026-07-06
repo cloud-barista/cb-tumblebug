@@ -1004,7 +1004,7 @@ func RestGetExecutionTask(c echo.Context) error {
 	// turns the taskId's colons into %3A, which would never match stored IDs.
 	taskId, err := url.PathUnescape(c.Param("taskId"))
 	if err != nil {
-		taskId = c.Param("taskId")
+		return clientManager.EndRequestWithLog(c, fmt.Errorf("invalid taskId encoding: %v", err), nil)
 	}
 
 	// Get all active commands and filter by taskId
@@ -1058,7 +1058,7 @@ func RestCancelExecutionTask(c echo.Context) error {
 	// turns the taskId's colons into %3A, which would never match stored IDs.
 	taskId, err := url.PathUnescape(c.Param("taskId"))
 	if err != nil {
-		taskId = c.Param("taskId")
+		return clientManager.EndRequestWithLog(c, fmt.Errorf("invalid taskId encoding: %v", err), nil)
 	}
 
 	// Parse optional cancel request body

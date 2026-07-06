@@ -669,8 +669,14 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			Msg("Dependency-based execution: deferring each active-bastion target until its own tunneling dependents finish")
 	}
 
-	launchOne := func(wg *sync.WaitGroup, nodeId string, cmds []string, cmdIndex int, onDone func(nodeId string)) {
-		wg.Add(1)
+	// Reserve one WaitGroup slot per target up front so every wg.Add happens
+	// strictly before wg.Wait — deferred bastion targets launched dynamically
+	// from onImmediateDone only consume a pre-reserved slot. Every target
+	// launches exactly once: a deferred bastion is released either right away
+	// (no pending dependents) or by its last finishing dependent.
+	wg.Add(len(nodeCommands))
+
+	launchOne := func(nodeId string, cmds []string, cmdIndex int, onDone func(nodeId string)) {
 		go func() {
 			defer wg.Done()
 
@@ -697,10 +703,6 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			completedCount++
 			resultMutex.Unlock()
 
-			// The hook runs in the goroutine body, before the deferred
-			// wg.Done above. Any wg.Add it performs for a newly-ready
-			// bastion therefore happens while this goroutine still holds
-			// the WaitGroup, so the final wg.Wait cannot pass early.
 			if onDone != nil {
 				onDone(nodeId)
 			}
@@ -730,12 +732,12 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 				Str("xRequestId", xRequestId).
 				Str("bastionNodeId", b).
 				Msg("All tunneling dependents finished — launching deferred bastion target")
-			launchOne(&wg, b, nodeCommands[b], nodeCommandIndices[b], nil)
+			launchOne(b, nodeCommands[b], nodeCommandIndices[b], nil)
 		}
 	}
 
 	for _, targetNodeId := range immediateTargets {
-		launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId], onImmediateDone)
+		launchOne(targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId], onImmediateDone)
 	}
 
 	// Deferred bastions with no immediate dependents (e.g., mutual-bastion
@@ -749,13 +751,13 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 		}
 		depMutex.Unlock()
 		if ready {
-			launchOne(&wg, targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId], nil)
+			launchOne(targetNodeId, nodeCommands[targetNodeId], nodeCommandIndices[targetNodeId], nil)
 		}
 	}
 
-	// Waits for every target: immediate ones and deferred bastions launched
-	// dynamically from onImmediateDone (their wg.Add always precedes the
-	// dependent goroutine's wg.Done — see the note in launchOne).
+	// Waits for every target. All WaitGroup slots were reserved before any
+	// goroutine started (wg.Add(len(nodeCommands)) above), so dynamically
+	// launched deferred bastions cannot race this Wait.
 	wg.Wait()
 
 	// Publish CommandDone event to SSE subscribers
