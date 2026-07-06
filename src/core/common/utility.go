@@ -1758,6 +1758,18 @@ func GetAvailableK8sNodeImage(providerName string, regionName string) (*[]model.
 	return nil, fmt.Errorf("no available kubernetes cluster node image for region(%s) of provider(%s)", regionName, providerName)
 }
 
+// GetK8sDefaultNodeImage returns the default K8s node image id for a given provider and region.
+// The default is defined as the first entry of the available list in the nodeImage section of
+// k8sclusterinfo.yaml. Returns ("", nil) when no nodeImage section is defined for the CSP/region
+// (e.g. NHN uses dynamic UUIDs) — callers should fall back to Spider delegation in that case.
+func GetK8sDefaultNodeImage(providerName, regionName string) (string, error) {
+	available, err := GetAvailableK8sNodeImage(providerName, regionName)
+	if err != nil || available == nil || len(*available) == 0 {
+		return "", nil // nodeImage not defined for this CSP/region → Spider fallback
+	}
+	return (*available)[0].Id, nil // first entry = default
+}
+
 // GetK8sNodeGroupsOnK8sCreation is func to get whether nodegroups are required during the k8scluster creation
 func GetK8sNodeGroupsOnK8sCreation(providerName string) (bool, error) {
 	//
@@ -1863,19 +1875,6 @@ func GetK8sInitialNodeGroupManagedByCluster(providerName string) (bool, error) {
 	}
 
 	return k8sClusterDetail.InitialNodeGroupManagedByCluster, nil
-}
-
-// GetK8sMinNodeGroupCount returns the minimum number of node groups that must remain
-// in a cluster for the given provider. Returns 0 if there is no minimum constraint.
-func GetK8sMinNodeGroupCount(providerName string) (int, error) {
-	providerName = strings.ToLower(providerName)
-
-	k8sClusterDetail := getK8sClusterDetail(providerName)
-	if k8sClusterDetail == nil {
-		return 0, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
-	}
-
-	return k8sClusterDetail.MinNodeGroupCount, nil
 }
 
 // GetK8sNodeGroupNamingRule is func to get nodegroup's naming rule
