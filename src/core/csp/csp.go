@@ -18,6 +18,7 @@ package csp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -269,7 +270,7 @@ func WriteOpenBaoSecretIfAbsent(ctx context.Context, path string, data map[strin
 		"options": map[string]any{"cas": 0},
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "check-and-set") {
+		if isCasConflict(err) {
 			return false, nil // secret already exists — leave it untouched
 		}
 		return false, fmt.Errorf("failed to write secret to OpenBao at %s: %w", path, err)
@@ -277,9 +278,33 @@ func WriteOpenBaoSecretIfAbsent(ctx context.Context, path string, data map[strin
 	return true, nil
 }
 
+// isCasConflict reports whether err is a KV v2 check-and-set version conflict
+// (the secret already has a version). Prefers the structured ResponseError
+// (HTTP 400 + error payload) over matching the flattened error string.
+func isCasConflict(err error) bool {
+	var respErr *api.ResponseError
+	if errors.As(err, &respErr) {
+		if respErr.StatusCode != 400 {
+			return false
+		}
+		for _, e := range respErr.Errors {
+			if strings.Contains(e, "check-and-set") {
+				return true
+			}
+		}
+		return false
+	}
+	return strings.Contains(err.Error(), "check-and-set")
+}
+
 // placeholderSweepDone latches once EnsurePlaceholderCredentialSecrets has fully
 // succeeded, so repeated credential registrations don't re-sweep every provider.
-var placeholderSweepDone atomic.Bool
+// placeholderSweepBusy single-flights the sweep: concurrent credential
+// registrations (init registers all CSPs in parallel) trigger only one sweep.
+var (
+	placeholderSweepDone atomic.Bool
+	placeholderSweepBusy atomic.Bool
+)
 
 // EnsurePlaceholderCredentialSecrets writes an all-empty placeholder secret for every
 // known CSP that has no secret yet under the default credential holder path.
@@ -288,9 +313,13 @@ var placeholderSweepDone atomic.Bool
 // credentials were never provided — they fail gracefully at auth time instead.
 // Existing secrets are never touched (CAS-protected), so real credentials always win.
 func EnsurePlaceholderCredentialSecrets(ctx context.Context) {
-	if placeholderSweepDone.Load() || model.VaultToken == "" {
+	if placeholderSweepDone.Load() || model.VaultToken == "" || model.VaultAddr == "" {
 		return
 	}
+	if !placeholderSweepBusy.CompareAndSwap(false, true) {
+		return // another registration is already sweeping
+	}
+	defer placeholderSweepBusy.Store(false)
 	allOK := true
 	for provider, keyMap := range credentialKeyMap {
 		placeholder := make(map[string]any, len(keyMap))

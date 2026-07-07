@@ -11,7 +11,7 @@ read -s -p "Enter the password for credentials.yaml.enc: " MULTI_INIT_PWD
 echo ""
 export MULTI_INIT_PWD
 
-# 1. Step 1 script excution code is deprecated (to be removed) for operational simplicity:
+# 1. Step 1 script execution code is deprecated (to be removed) for operational simplicity:
 #    CB-Tumblebug server registers credentials to OpenBao automatically during Step 2.
 #
 # if [ -f "$SCRIPT_DIR/openbao/openbao-register-creds.sh" ]; then

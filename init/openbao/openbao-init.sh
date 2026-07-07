@@ -112,7 +112,7 @@ if [ "$INIT_STATUS" = "true" ]; then
     # Restore VAULT_TOKEN into .env from the saved init output when possible —
     # covers the case where .env was recreated or its VAULT_TOKEN was emptied.
     if [ -f "$INIT_OUTPUT" ]; then
-        ROOT_TOKEN=$(python3 -c "import json; print(json.load(open('${INIT_OUTPUT}'))['root_token'])" 2>/dev/null || true)
+        ROOT_TOKEN=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["root_token"])' "$INIT_OUTPUT" 2>/dev/null || true)
         if [ -n "${ROOT_TOKEN:-}" ]; then
             if grep -q "^VAULT_TOKEN=" "${ENV_FILE}"; then
                 sed -i "s|^VAULT_TOKEN=.*|VAULT_TOKEN=${ROOT_TOKEN}|" "${ENV_FILE}"
