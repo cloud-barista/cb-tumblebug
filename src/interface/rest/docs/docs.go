@@ -987,6 +987,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/credential/openbaoStatus": {
+            "get": {
+                "description": "Verifies that CB-Tumblebug can store and read CSP credentials in OpenBao: endpoint reachable, initialized, unsealed, and VAULT_TOKEN accepted. Use before credential registration to detect misconfiguration (e.g., missing VAULT_TOKEN/VAULT_ADDR) that would otherwise fail silently and break direct CSP API features.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud Credential Management"
+                ],
+                "summary": "Check OpenBao (secret store) availability for credential storage",
+                "operationId": "GetOpenBaoStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.OpenBaoStatusInfo"
+                        }
+                    }
+                }
+            }
+        },
         "/credential/publicKey": {
             "get": {
                 "description": "Generates an RSA key pair using a 4096-bit key size with the RSA algorithm. The public key is generated using the RSA algorithm with OAEP padding and SHA-256 as the hash function. This key is used to encrypt an AES key that will be used for hybrid encryption of credentials.",
@@ -24496,6 +24528,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/model.KeyValue"
                     }
                 },
+                "openBaoStatus": {
+                    "description": "OpenBaoStatus reports whether this credential was also stored in OpenBao\n(used for direct CSP API calls). Values: \"registered at \u003cpath\u003e\",\n\"skipped: \u003creason\u003e\", or \"failed: \u003creason\u003e\".",
+                    "type": "string"
+                },
                 "providerName": {
                     "type": "string"
                 }
@@ -29422,6 +29458,52 @@ const docTemplate = `{
                 "versionId": {
                     "type": "string",
                     "example": "3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC"
+                }
+            }
+        },
+        "model.OpenBaoStatusInfo": {
+            "description": "OpenBao (secret store) connectivity and readiness status",
+            "type": "object",
+            "properties": {
+                "available": {
+                    "description": "Available is true only when credentials can actually be stored and read",
+                    "type": "boolean",
+                    "example": true
+                },
+                "initialized": {
+                    "description": "Initialized indicates whether OpenBao itself has been initialized",
+                    "type": "boolean",
+                    "example": true
+                },
+                "message": {
+                    "description": "Message describes the first detected problem, or confirms availability",
+                    "type": "string",
+                    "example": "OpenBao is available for credential storage"
+                },
+                "reachable": {
+                    "description": "Reachable indicates whether the OpenBao endpoint responded",
+                    "type": "boolean",
+                    "example": true
+                },
+                "sealed": {
+                    "description": "Sealed indicates whether OpenBao is sealed (secrets inaccessible until unsealed)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "tokenValid": {
+                    "description": "TokenValid indicates whether the configured VAULT_TOKEN was accepted by OpenBao",
+                    "type": "boolean",
+                    "example": true
+                },
+                "vaultAddr": {
+                    "description": "VaultAddr is the OpenBao endpoint CB-Tumblebug is configured with (VAULT_ADDR)",
+                    "type": "string",
+                    "example": "http://openbao:8200"
+                },
+                "vaultTokenSet": {
+                    "description": "VaultTokenSet indicates whether VAULT_TOKEN is set in the CB-Tumblebug environment",
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

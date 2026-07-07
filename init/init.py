@@ -400,6 +400,74 @@ for attempt in range(1, max_retries + 1):
             sys.exit(1)
 
 
+# Preflight: verify the OpenBao credential store is usable by CB-Tumblebug.
+# Credentials are also stored in OpenBao for direct CSP API calls; if OpenBao is
+# misconfigured (missing VAULT_TOKEN/VAULT_ADDR, sealed, unreachable), credential
+# registration would silently skip that step — surface it to the user up front.
+def check_openbao_status():
+    try:
+        resp = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/credential/openbaoStatus", headers=HEADERS, timeout=10)
+        if resp.status_code == 404:
+            # Older CB-Tumblebug without this endpoint — skip the preflight quietly.
+            return {"available": None}
+        resp.raise_for_status()
+        return resp.json()
+    except requests.RequestException as e:
+        return {"available": False, "message": f"could not query OpenBao status from CB-Tumblebug: {e}"}
+
+
+def print_openbao_warning(status):
+    print(Fore.RED + "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print(Fore.RED + "⚠ OpenBao credential store is NOT available to CB-Tumblebug")
+    print(Fore.RED + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print(Fore.YELLOW + f"  Reason: {status.get('message', 'unknown')}")
+    print(Fore.YELLOW + f"  VAULT_ADDR: {status.get('vaultAddr', '(unknown)')}")
+
+    # Show VAULT_TOKEN validity only when it was actually verifiable:
+    # "set" alone would read as "valid" and mislead (e.g., a wrong token is set).
+    reachable = status.get("reachable", False)
+    initialized = status.get("initialized", False)
+    sealed = status.get("sealed", True)
+    token_set = status.get("vaultTokenSet", False)
+    token_valid = status.get("tokenValid", False)
+    token_checkable = reachable and initialized and not sealed
+    if not token_set:
+        print(Fore.YELLOW + "  VAULT_TOKEN: not set")
+    elif token_checkable and not token_valid:
+        print(Fore.YELLOW + "  VAULT_TOKEN: set, but INVALID (rejected by OpenBao)")
+    elif not token_checkable:
+        print(Fore.YELLOW + "  VAULT_TOKEN: set (validity not verifiable until the above is fixed)")
+
+    print(Fore.YELLOW + "  Impact: CB-Tumblebug features will not fully work.")
+    print(Fore.YELLOW + "  How to fix:")
+    if not reachable:
+        print(Fore.YELLOW + "    - Start OpenBao and services: make up")
+    elif not initialized:
+        print(Fore.YELLOW + "    - Initialize OpenBao: make init-openbao, then restart services: make up")
+    elif sealed:
+        print(Fore.YELLOW + "    - Unseal OpenBao: make unseal")
+    else:
+        # Token missing or invalid — make up auto-restores the correct token
+        # from init/openbao/secrets/openbao-init.json into .env.
+        print(Fore.YELLOW + "    - Set VAULT_TOKEN= (empty) in .env, then run: make up")
+        print(Fore.YELLOW + "      (it restores the token from init/openbao/secrets/openbao-init.json,")
+        print(Fore.YELLOW + "       or newly initializes OpenBao, and restarts cb-tumblebug with it)")
+    print(Fore.YELLOW + "    - Then re-run: make init")
+    print(Fore.RED + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+
+
+if run_credentials:
+    openbao_status = check_openbao_status()
+    if openbao_status.get("available") is True:
+        print(Fore.GREEN + "OpenBao credential store is available.\n")
+    elif openbao_status.get("available") is False:
+        print_openbao_warning(openbao_status)
+        print(Fore.RED + "Initialization aborted. Fix the OpenBao configuration and re-run: make init")
+        sys.exit(1)
+    else:
+        print(Fore.YELLOW + "OpenBao status check not supported by this CB-Tumblebug version; skipping preflight.\n")
+
+
 # Function to encrypt credentials using AES and RSA public key
 def encrypt_credential_value_with_publickey(public_key_pem, credentials):
     public_key = RSA.import_key(public_key_pem)
@@ -468,10 +536,21 @@ def register_credential(holder_name, provider, credentials):
 
 
 # Function to print formatted credential information
+# Collects per-credential OpenBao registration failures for the final summary.
+openbao_issues = []
+
+
 def print_credential_info(response):
     if "credentialName" in response and "credentialHolder" in response:
         # Print credential name and holder in bold
         print(Fore.YELLOW + f"\n{response['credentialName'].upper()} (holder: {response['credentialHolder']})" + Style.RESET_ALL)
+
+    # Collect OpenBao registration failures for the final summary only.
+    # OpenBao problems are global (sealed, unreachable, bad token), so a per-CSP
+    # line would just repeat the same root cause once per provider.
+    openbao_status = response.get("openBaoStatus", "")
+    if openbao_status and not openbao_status.startswith("registered"):
+        openbao_issues.append(openbao_status)
 
     if "allConnections" in response and "connectionconfig" in response["allConnections"]:
         # Print the explanation line with icons
@@ -1009,4 +1088,21 @@ if run_all or (run_credentials and run_load_assets):
     except Exception as e:
         print(Fore.YELLOW + f"\n[Warning] Could not notify initialization completion: {e}")
 
-    print(Fore.YELLOW + f"\nThe system is ready to use.")
+    # Re-check OpenBao at the end so the final message reflects the actual state:
+    # declaring "ready to use" while the credential store is broken is misleading.
+    final_openbao = check_openbao_status() if run_credentials else {"available": None}
+    if final_openbao.get("available") is False or openbao_issues:
+        print(Fore.YELLOW + "\nThe system is ready to use, EXCEPT the OpenBao credential store:")
+        if final_openbao.get("available") is False:
+            print(Fore.RED + f"  - {final_openbao.get('message', 'unavailable')}")
+        if openbao_issues:
+            # OpenBao problems are global — show the count and deduplicated
+            # root cause(s), not one line per CSP.
+            print(Fore.RED + f"  - {len(openbao_issues)} credential(s) were NOT stored in OpenBao:")
+            unique_reasons = sorted(set(" ".join(issue.split()) for issue in openbao_issues))
+            for reason in unique_reasons[:3]:
+                print(Fore.RED + f"      {reason[:200]}")
+        print(Fore.YELLOW + "  Direct CSP API features of CB-Tumblebug will not work until this is resolved.")
+        print(Fore.YELLOW + "  Fix the configuration (see the OpenBao warning above) and re-run: make init")
+    else:
+        print(Fore.YELLOW + "\nThe system is ready to use.")

@@ -804,6 +804,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: CredentialReq
+  /credential/openbaoStatus:
+    get:
+      tags:
+      - "[Admin] Cloud Credential Management"
+      summary: Check OpenBao (secret store) availability for credential storage
+      description: "Verifies that CB-Tumblebug can store and read CSP credentials\
+        \ in OpenBao: endpoint reachable, initialized, unsealed, and VAULT_TOKEN accepted.\
+        \ Use before credential registration to detect misconfiguration (e.g., missing\
+        \ VAULT_TOKEN/VAULT_ADDR) that would otherwise fail silently and break direct\
+        \ CSP API features."
+      operationId: GetOpenBaoStatus
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.OpenBaoStatusInfo'
   /credential/publicKey:
     get:
       tags:
@@ -20727,6 +20751,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.KeyValue'
+        openBaoStatus:
+          type: string
+          description: |-
+            OpenBaoStatus reports whether this credential was also stored in OpenBao
+            (used for direct CSP API calls). Values: "registered at <path>",
+            "skipped: <reason>", or "failed: <reason>".
         providerName:
           type: string
     model.CredentialReq:
@@ -24407,6 +24437,48 @@ components:
         versionId:
           type: string
           example: 3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC
+    model.OpenBaoStatusInfo:
+      type: object
+      properties:
+        available:
+          type: boolean
+          description: Available is true only when credentials can actually be stored
+            and read
+          example: true
+        initialized:
+          type: boolean
+          description: Initialized indicates whether OpenBao itself has been initialized
+          example: true
+        message:
+          type: string
+          description: "Message describes the first detected problem, or confirms\
+            \ availability"
+          example: OpenBao is available for credential storage
+        reachable:
+          type: boolean
+          description: Reachable indicates whether the OpenBao endpoint responded
+          example: true
+        sealed:
+          type: boolean
+          description: Sealed indicates whether OpenBao is sealed (secrets inaccessible
+            until unsealed)
+          example: false
+        tokenValid:
+          type: boolean
+          description: TokenValid indicates whether the configured VAULT_TOKEN was
+            accepted by OpenBao
+          example: true
+        vaultAddr:
+          type: string
+          description: VaultAddr is the OpenBao endpoint CB-Tumblebug is configured
+            with (VAULT_ADDR)
+          example: http://openbao:8200
+        vaultTokenSet:
+          type: boolean
+          description: VaultTokenSet indicates whether VAULT_TOKEN is set in the CB-Tumblebug
+            environment
+          example: true
+      description: OpenBao (secret store) connectivity and readiness status
     model.OpenStackSpecificProperty:
       type: object
       properties:

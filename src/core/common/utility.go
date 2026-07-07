@@ -1018,15 +1018,27 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	}
 	//PrintJsonPretty(callResult)
 
-	// Register credentials in OpenBao for runtime CSP access (non-fatal: warn and continue if unavailable)
-	if model.VaultToken != "" {
+	// Register credentials in OpenBao for runtime CSP access (non-fatal: warn and
+	// continue if unavailable). The outcome is reported in the response via
+	// OpenBaoStatus so init tooling can surface silent failures to the user —
+	// without OpenBao, direct CSP API features cannot access this credential.
+	if model.VaultToken == "" {
+		callResult.OpenBaoStatus = "skipped: VAULT_TOKEN is not set in the cb-tumblebug environment; credential NOT stored in OpenBao"
+		log.Warn().Msgf("OpenBao registration skipped (VAULT_TOKEN not set): provider=%s holder=%s", req.ProviderName, req.CredentialHolder)
+	} else {
 		secretPath := csp.BuildSecretPathForHolder(req.CredentialHolder, req.ProviderName)
 		secretData := csp.ApplyCredentialKeyMap(req.ProviderName, decryptedKeyValueList)
 		if err := csp.WriteOpenBaoSecret(context.Background(), secretPath, secretData); err != nil {
+			callResult.OpenBaoStatus = fmt.Sprintf("failed: %v; credential NOT stored in OpenBao", err)
 			log.Warn().Err(err).Msgf("Failed to register credential in OpenBao (non-fatal): provider=%s holder=%s", req.ProviderName, req.CredentialHolder)
 		} else {
+			callResult.OpenBaoStatus = "registered at " + secretPath
 			log.Info().Msgf("Registered credential in OpenBao: path=%s", secretPath)
 		}
+		// Ensure every known CSP has at least a placeholder secret so consumers
+		// that read all CSP paths (e.g. mc-terrarium's tofu plan) don't hard-fail
+		// on providers without credentials. CAS-protected: never overwrites.
+		csp.EnsurePlaceholderCredentialSecrets(context.Background())
 	}
 
 	callResult.CredentialHolder = req.CredentialHolder

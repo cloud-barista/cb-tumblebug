@@ -11,22 +11,24 @@ read -s -p "Enter the password for credentials.yaml.enc: " MULTI_INIT_PWD
 echo ""
 export MULTI_INIT_PWD
 
-# 1. OpenBao
-if [ -f "$SCRIPT_DIR/openbao/openbao-register-creds.sh" ]; then
-    OPENBAO_SH="$SCRIPT_DIR/openbao/openbao-register-creds.sh"
-elif [ -f "$SCRIPT_DIR/../../openbao/openbao-register-creds.sh" ]; then
-    # When executed within cm-beetle
-    OPENBAO_SH="$SCRIPT_DIR/../../openbao/openbao-register-creds.sh"
-else
-    echo "Error: Cannot find openbao-register-creds.sh"
-    exit 1
-fi
-
-echo ""
-echo "Step 1. Registering credentials to OpenBao..."
-chmod +x "$OPENBAO_SH" 2>/dev/null || true
-bash "$OPENBAO_SH"
-if [ $? -ne 0 ]; then exit 1; fi
+# 1. Step 1 script excution code is deprecated (to be removed) for operational simplicity:
+#    CB-Tumblebug server registers credentials to OpenBao automatically during Step 2.
+#
+# if [ -f "$SCRIPT_DIR/openbao/openbao-register-creds.sh" ]; then
+#     OPENBAO_SH="$SCRIPT_DIR/openbao/openbao-register-creds.sh"
+# elif [ -f "$SCRIPT_DIR/../../openbao/openbao-register-creds.sh" ]; then
+#     # When executed within cm-beetle
+#     OPENBAO_SH="$SCRIPT_DIR/../../openbao/openbao-register-creds.sh"
+# else
+#     echo "Error: Cannot find openbao-register-creds.sh"
+#     exit 1
+# fi
+#
+# echo ""
+# echo "Step 1. Registering credentials to OpenBao..."
+# chmod +x "$OPENBAO_SH" 2>/dev/null || true
+# bash "$OPENBAO_SH"
+# if [ $? -ne 0 ]; then exit 1; fi
 
 # 2. Tumblebug
 if [ -f "$SCRIPT_DIR/init.sh" ]; then

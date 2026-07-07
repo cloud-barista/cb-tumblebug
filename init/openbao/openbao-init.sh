@@ -109,8 +109,23 @@ done
 INIT_STATUS=$(curl -sf "${VAULT_ADDR}/v1/sys/seal-status" | grep -o '"initialized":[a-z]*' | cut -d: -f2)
 if [ "$INIT_STATUS" = "true" ]; then
     echo -e "${YELLOW}[openbao-init]${NC} OpenBao is already initialized."
-    echo "  If you need to re-initialize, destroy the volume first:"
-    echo "    docker compose down -v"
+    # Restore VAULT_TOKEN into .env from the saved init output when possible —
+    # covers the case where .env was recreated or its VAULT_TOKEN was emptied.
+    if [ -f "$INIT_OUTPUT" ]; then
+        ROOT_TOKEN=$(python3 -c "import json; print(json.load(open('${INIT_OUTPUT}'))['root_token'])" 2>/dev/null || true)
+        if [ -n "${ROOT_TOKEN:-}" ]; then
+            if grep -q "^VAULT_TOKEN=" "${ENV_FILE}"; then
+                sed -i "s|^VAULT_TOKEN=.*|VAULT_TOKEN=${ROOT_TOKEN}|" "${ENV_FILE}"
+            else
+                echo "VAULT_TOKEN=${ROOT_TOKEN}" >> "${ENV_FILE}"
+            fi
+            echo -e "${GREEN}[openbao-init]${NC} Restored VAULT_TOKEN in ${ENV_FILE} from ${INIT_OUTPUT}"
+        fi
+    else
+        echo -e "${RED}[openbao-init]${NC} Cannot restore VAULT_TOKEN: ${INIT_OUTPUT} not found."
+        echo "  If the token is lost, reset OpenBao (destroys stored secrets):"
+        echo "    docker compose down -v"
+    fi
     exit 0
 fi
 

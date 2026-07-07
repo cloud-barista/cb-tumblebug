@@ -408,6 +408,31 @@ type CredentialInfo struct {
 	ProviderName     string         `json:"providerName"`
 	KeyValueInfoList []KeyValue     `json:"keyValueInfoList"`
 	AllConnections   ConnConfigList `json:"allConnections"`
+	// OpenBaoStatus reports whether this credential was also stored in OpenBao
+	// (used for direct CSP API calls). Values: "registered at <path>",
+	// "skipped: <reason>", or "failed: <reason>".
+	OpenBaoStatus string `json:"openBaoStatus,omitempty"`
+}
+
+// OpenBaoStatusInfo reports whether the OpenBao credential store is usable by CB-Tumblebug.
+// @Description OpenBao (secret store) connectivity and readiness status
+type OpenBaoStatusInfo struct {
+	// VaultAddr is the OpenBao endpoint CB-Tumblebug is configured with (VAULT_ADDR)
+	VaultAddr string `json:"vaultAddr" example:"http://openbao:8200"`
+	// VaultTokenSet indicates whether VAULT_TOKEN is set in the CB-Tumblebug environment
+	VaultTokenSet bool `json:"vaultTokenSet" example:"true"`
+	// Reachable indicates whether the OpenBao endpoint responded
+	Reachable bool `json:"reachable" example:"true"`
+	// Initialized indicates whether OpenBao itself has been initialized
+	Initialized bool `json:"initialized" example:"true"`
+	// Sealed indicates whether OpenBao is sealed (secrets inaccessible until unsealed)
+	Sealed bool `json:"sealed" example:"false"`
+	// TokenValid indicates whether the configured VAULT_TOKEN was accepted by OpenBao
+	TokenValid bool `json:"tokenValid" example:"true"`
+	// Available is true only when credentials can actually be stored and read
+	Available bool `json:"available" example:"true"`
+	// Message describes the first detected problem, or confirms availability
+	Message string `json:"message" example:"OpenBao is available for credential storage"`
 }
 
 // ConnConfigList is struct for containing a CB-Spider struct for connection config list
