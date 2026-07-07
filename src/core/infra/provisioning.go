@@ -4292,13 +4292,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		}
 	}
 
-	// Assign a Bastion if none (randomly)
 	UpdateNodeInfo(nsId, infraId, *nodeInfoData)
-	_, err = SetBastionNodes(nsId, infraId, nodeInfoData.Id, "", "", "")
-	if err != nil {
-		// just log error and continue
-		log.Debug().Msg(err.Error())
-	}
 
 	// set initial TargetAction, TargetStatus
 	nodeInfoData.TargetAction = model.ActionComplete
@@ -4330,6 +4324,14 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	log.Debug().Msg(nodeInfoData.CreatedTime)
 
 	UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+
+	// Assign a Bastion if none (randomly). Runs after the fetched status is
+	// persisted above: auto-selection only accepts Running candidates, so an
+	// earlier call would see this node (and siblings) as still Creating.
+	if _, bastionErr := SetBastionNodes(nsId, infraId, nodeInfoData.Id, "", "", ""); bastionErr != nil {
+		// just log and continue (e.g. a bastion already exists for the subnet)
+		log.Debug().Msg(bastionErr.Error())
+	}
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
