@@ -1018,33 +1018,13 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 	default:
 	}
 
-	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
-	bastionNodes, err := GetBastionNodes(nsId, infraId, nodeId)
+	// Set Bastion SSH config (bastionEndpoint, userName, Private Key).
+	// GetUsableBastionNodes drops a stale (non-Running) bastion and
+	// auto-selects a fresh one when needed.
+	bastionNodes, err := GetUsableBastionNodes(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
-	}
-
-	if len(bastionNodes) == 0 {
-		err = fmt.Errorf("no bastion nodes available for VM (ID: %s) in Infra (ID: %s)", nodeId, infraId)
-		log.Error().Err(err).Msg("")
-
-		// Assign a Bastion if none (randomly)
-		_, err = SetBastionNodes(nsId, infraId, nodeId, "", "", "")
-		if err != nil {
-			log.Error().Err(err).Msg("no bastion nodes available")
-			return map[int]string{}, map[int]string{}, err
-		}
-		bastionNodes, err = GetBastionNodes(nsId, infraId, nodeId)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return map[int]string{}, map[int]string{}, err
-		}
-		if len(bastionNodes) == 0 {
-			err = fmt.Errorf("still no bastion nodes available after attempted assignment")
-			log.Error().Err(err).Msg("")
-			return map[int]string{}, map[int]string{}, err
-		}
 	}
 
 	bastionNode := bastionNodes[0]
@@ -2589,8 +2569,8 @@ func TransferFileAndCmdToInfra(nsId string, infraId string, nodeGroupId string, 
 // transferFileToNodeViaBastion is a function to transfer a file to a specific Node via Bastion Host
 func transferFileToNodeViaBastion(nsId string, infraId string, nodeId string, targetSshInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
 
-	bastionNodes, err := GetBastionNodes(nsId, infraId, nodeId)
-	if err != nil || len(bastionNodes) == 0 {
+	bastionNodes, err := GetUsableBastionNodes(nsId, infraId, nodeId)
+	if err != nil {
 		return fmt.Errorf("failed to get bastion nodes: %v", err)
 	}
 
@@ -2835,12 +2815,9 @@ func DownloadFileFromInfraNode(nsId string, infraId string, nodeId string, sourc
 // downloadFileFromNodeViaBastion downloads a file from a specific VM via Bastion Host using SCP
 func downloadFileFromNodeViaBastion(nsId string, infraId string, nodeId string, targetSshInfo model.SshInfo, sourcePath string) ([]byte, string, error) {
 
-	bastionNodes, err := GetBastionNodes(nsId, infraId, nodeId)
+	bastionNodes, err := GetUsableBastionNodes(nsId, infraId, nodeId)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to get bastion nodes: %w", err)
-	}
-	if len(bastionNodes) == 0 {
-		return nil, "", fmt.Errorf("no bastion nodes configured for Infra %s VM %s", infraId, nodeId)
 	}
 
 	bastionNode := bastionNodes[0]
@@ -3137,8 +3114,13 @@ func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNs
 					return "", fmt.Errorf("failed to list VMs in Infra (ID: %s): %w", bastionInfraId, listErr)
 				}
 
-				// Find a VM with public IP to use as bastion
+				// Find a Running VM with public IP to use as bastion — a stopped
+				// VM cannot relay SSH even if it still holds a public IP.
 				for _, v := range candidateNodes {
+					candidateObj, err := GetNodeObject(bastionNsId, bastionInfraId, v)
+					if err != nil || !strings.EqualFold(candidateObj.Status, model.StatusRunning) {
+						continue
+					}
 					tmpPublicIp, _, _, err := GetNodeIp(bastionNsId, bastionInfraId, v)
 					if err != nil {
 						log.Error().Err(err).Msgf("failed to get IP for VM %s", v)
@@ -3153,7 +3135,7 @@ func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNs
 
 				// If no suitable bastion VM found, return error
 				if bastionNodeId == "" {
-					return "", fmt.Errorf("no VM with public IP found in NS (ID: %s) Infra (ID: %s) to use as bastion", bastionNsId, bastionInfraId)
+					return "", fmt.Errorf("no Running VM with public IP found in NS (ID: %s) Infra (ID: %s) to use as bastion", bastionNsId, bastionInfraId)
 				}
 			} else {
 				// Validate that the specified bastion VM exists in bastionNsId/bastionInfraId
@@ -3274,6 +3256,67 @@ func GetBastionNodes(nsId string, infraId string, targetNodeId string) ([]model.
 
 	return returnValue, fmt.Errorf("failed to get bastion in Subnet (ID: %s) of VNet (ID: %s) for VM (ID: %s)",
 		nodeObj.SubnetId, nodeObj.VNetId, targetNodeId)
+}
+
+// GetUsableBastionNodes returns only usable bastion nodes (existing and
+// Running) for the target VM, so callers can safely use the first entry.
+// Every registered bastion is validated — not just the first — and stale
+// ones (e.g. suspended after assignment; terminate already removes its
+// registration) are dropped. When none survives, a fresh bastion is
+// auto-selected; the re-read result is validated again, so an unusable
+// entry can never be returned (e.g. when removal failed and the stale
+// registration is still stored). Tolerates concurrent auto-assignment by
+// re-reading after an assignment error.
+func GetUsableBastionNodes(nsId string, infraId string, targetNodeId string) ([]model.BastionNode, error) {
+	// filterUsable keeps Running bastions and removes stale registrations (best-effort).
+	filterUsable := func(list []model.BastionNode) []model.BastionNode {
+		usable := []model.BastionNode{}
+		for _, b := range list {
+			effNsId := b.NsId
+			if effNsId == "" {
+				effNsId = nsId
+			}
+			bObj, bErr := GetNodeObject(effNsId, b.InfraId, b.NodeId)
+			if bErr == nil && strings.EqualFold(bObj.Status, model.StatusRunning) {
+				usable = append(usable, b)
+				continue
+			}
+			status := "not found"
+			if bErr == nil {
+				status = bObj.Status
+			}
+			log.Warn().Msgf("Bastion %s (NS: %s, Infra: %s) for VM %s is not usable (status: %s); dropping it",
+				b.NodeId, effNsId, b.InfraId, targetNodeId, status)
+			if _, rmErr := RemoveBastionNodes(nsId, infraId, b.NsId, b.InfraId, b.NodeId); rmErr != nil {
+				log.Warn().Err(rmErr).Msg("failed to remove stale bastion registration")
+			}
+		}
+		return usable
+	}
+
+	bastionNodes, err := GetBastionNodes(nsId, infraId, targetNodeId)
+	if err != nil {
+		return nil, err
+	}
+	usable := filterUsable(bastionNodes)
+	if len(usable) > 0 {
+		return usable, nil
+	}
+
+	// Auto-select a bastion. Concurrent callers may race here — one wins,
+	// the others get an "already exists" error; re-read instead of failing.
+	if _, asgErr := SetBastionNodes(nsId, infraId, targetNodeId, "", "", ""); asgErr != nil {
+		log.Info().Err(asgErr).Msgf("bastion auto-assignment for VM %s returned error; re-checking (may have been assigned concurrently)", targetNodeId)
+	}
+	bastionNodes, err = GetBastionNodes(nsId, infraId, targetNodeId)
+	if err != nil {
+		return nil, err
+	}
+	usable = filterUsable(bastionNodes)
+	if len(usable) == 0 {
+		return nil, fmt.Errorf("no usable bastion node available for VM (ID: %s) in Infra (ID: %s)", targetNodeId, infraId)
+	}
+	return usable, nil
 }
 
 // Helper function to extract function name and parameters from the string
