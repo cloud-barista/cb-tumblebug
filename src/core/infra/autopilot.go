@@ -16,6 +16,7 @@ package infra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -36,13 +37,32 @@ type activeAutopilotRun struct {
 	attemptsBySpec map[string][]model.ProvisioningAttempt
 }
 
-// activeAutopilotRuns tracks all in-flight autopilot provisioning jobs keyed by infraId.
+// activeAutopilotRuns tracks all in-flight autopilot provisioning jobs,
+// keyed by "{nsId}/{infraId}" (see autopilotRunKey).
 var activeAutopilotRuns sync.Map
+
+// cachedAutopilotPlan wraps a review result with the NodeSpecs it was computed
+// for and its creation time, so CreateInfraAutopilot can reject a plan whose
+// request has since changed or that has gone stale (CSP stock/pricing drift).
+type cachedAutopilotPlan struct {
+	result        *model.InfraAutopilotReviewResult
+	nodeSpecsJSON string
+	storedAt      time.Time
+}
+
+// autopilotPlanMaxAge bounds how long a cached review plan stays usable.
+const autopilotPlanMaxAge = 30 * time.Minute
 
 // autopilotPlans caches the execution plan produced by ReviewInfraAutopilot so that
 // CreateInfraAutopilot can execute the exact same plan without re-running ReviewSpecImagePair.
-// Key: infra name (string) → value: *model.InfraAutopilotReviewResult
+// Key: "{nsId}/{infraId}" (string) → value: *cachedAutopilotPlan
 var autopilotPlans sync.Map
+
+// autopilotRunKey builds the sync.Map key for plans and active runs.
+// Including nsId prevents collisions between same-named infras in different namespaces.
+func autopilotRunKey(nsId, infraName string) string {
+	return nsId + "/" + infraName
+}
 
 // ReviewInfraAutopilot performs a pre-flight review of an InfraAutopilotReq
 // without creating any resources. It resolves candidate specs and images for
@@ -131,8 +151,17 @@ func ReviewInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 
 	result.Summary = summary
 
-	// Cache the plan so CreateInfraAutopilot can execute it without re-running ReviewSpecImagePair.
-	autopilotPlans.Store(req.Name, result)
+	// Cache the plan so CreateInfraAutopilot can execute it without re-running
+	// ReviewSpecImagePair. NodeSpecs are recorded alongside so a later create
+	// call with modified NodeSpecs does not silently execute a mismatched plan.
+	nodeSpecsJSON, err := json.Marshal(req.NodeSpecs)
+	if err == nil {
+		autopilotPlans.Store(autopilotRunKey(nsId, req.Name), &cachedAutopilotPlan{
+			result:        result,
+			nodeSpecsJSON: string(nodeSpecsJSON),
+			storedAt:      time.Now(),
+		})
+	}
 
 	return result, nil
 }
@@ -441,13 +470,27 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	startTime := time.Now()
 	log.Info().Msgf("CreateInfraAutopilot: ns=%s, name=%s", nsId, req.Name)
 
+	runKey := autopilotRunKey(nsId, req.Name)
 	run := &activeAutopilotRun{
 		req:            req,
 		startTime:      startTime,
 		attemptsBySpec: make(map[string][]model.ProvisioningAttempt),
 	}
-	activeAutopilotRuns.Store(req.Name, run)
-	defer activeAutopilotRuns.Delete(req.Name)
+	// Reject a concurrent duplicate run for the same infra: a second submission
+	// would race on the same NodeGroups and clobber the first run's live status.
+	if _, exists := activeAutopilotRuns.LoadOrStore(runKey, run); exists {
+		return nil, fmt.Errorf("autopilot provisioning is already in progress for infra '%s'", req.Name)
+	}
+	defer activeAutopilotRuns.Delete(runKey)
+
+	// policy.TimeoutMinutes bounds the attempt budget in wall-clock time: once the
+	// deadline passes, no NEW candidate attempts are launched (in-flight CSP calls
+	// are allowed to finish so partially created NodeGroups are properly accounted).
+	if req.Policy.TimeoutMinutes > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(req.Policy.TimeoutMinutes)*time.Minute)
+		defer cancel()
+	}
 
 	// onAttempt is called after each provisioning attempt completes so that
 	// GetInfraAutopilotStatus can return live attempt data during polling.
@@ -459,11 +502,21 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 
 	// Load the execution plan produced by a prior ReviewInfraAutopilot call (if any).
 	// When a plan is available, provisionNodeSpec skips RecommendSpec and ReviewSpecImagePair
-	// and provisions directly from the pre-validated candidate list.
+	// and provisions directly from the pre-validated candidate list. The plan is
+	// discarded when the NodeSpecs changed since the review or the plan has aged out.
 	var cachedPlan *model.InfraAutopilotReviewResult
-	if raw, ok := autopilotPlans.Load(req.Name); ok {
-		cachedPlan = raw.(*model.InfraAutopilotReviewResult)
-		defer autopilotPlans.Delete(req.Name)
+	if raw, ok := autopilotPlans.Load(runKey); ok {
+		cached := raw.(*cachedAutopilotPlan)
+		defer autopilotPlans.Delete(runKey)
+		nodeSpecsJSON, jsonErr := json.Marshal(req.NodeSpecs)
+		switch {
+		case jsonErr != nil || string(nodeSpecsJSON) != cached.nodeSpecsJSON:
+			log.Warn().Msgf("cached review plan for '%s' ignored: NodeSpecs changed since review", req.Name)
+		case time.Since(cached.storedAt) > autopilotPlanMaxAge:
+			log.Warn().Msgf("cached review plan for '%s' ignored: older than %s", req.Name, autopilotPlanMaxAge)
+		default:
+			cachedPlan = cached.result
+		}
 	}
 
 	infraId := req.Name
@@ -476,15 +529,17 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	var infraInfo *model.InfraInfo
 
 	// Base infra configuration used when creating the infra with the first NodeGroup.
+	// InstallMonAgent and PostCommand are intentionally withheld here: CreateInfraDynamic
+	// runs them at the end of the FIRST NodeGroup only (while all other NodeGroups are
+	// still blocked on infra creation), so nodes added afterwards would never receive
+	// them. Autopilot instead runs both once, after every NodeGroup has completed and
+	// excess NodeGroups have been terminated — see the deferred post-processing below.
 	baseInfraReq := model.InfraDynamicReq{
 		Name:                   req.Name,
-		InstallMonAgent:        req.InstallMonAgent,
+		InstallMonAgent:        "no",
 		Description:            req.Description,
 		Label:                  req.Label,
 		PolicyOnPartialFailure: "continue",
-	}
-	if req.PostCommand != nil {
-		baseInfraReq.PostCommand = *req.PostCommand
 	}
 
 	// provision is the CSP provisioning callback passed to provisionNodeSpec.
@@ -539,7 +594,7 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 		})
 
 		if thisIsFirstCall {
-			actualRunning, failedCount := countNodeGroupVMs(nsId, infraId, ngReq.Name)
+			actualRunning, failedCount, countErr := countNodeGroupVMs(nsId, infraId, ngReq.Name)
 			if firstCallErr != nil {
 				refineFailed()
 				return actualRunning, firstCallErr
@@ -551,7 +606,12 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 				)
 				refineFailed()
 			}
-			if actualRunning == 0 {
+			// Only when the count is UNKNOWN (listing failed) assume the nominally
+			// successful creation delivered the full group. A confirmed zero count
+			// must be reported as zero — inflating it would satisfy the desired
+			// count with nodes that do not exist.
+			if countErr != nil && actualRunning == 0 {
+				log.Warn().Err(countErr).Msgf("NodeGroup '%s': node count unknown after successful creation; assuming full group", ngReq.Name)
 				actualRunning = ngReq.NodeGroupSize
 			}
 			return actualRunning, nil
@@ -574,12 +634,12 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 		infraMu.Unlock()
 
 		if err != nil {
-			actualRunning, _ := countNodeGroupVMs(nsId, infraId, ngReq.Name)
+			actualRunning, _, _ := countNodeGroupVMs(nsId, infraId, ngReq.Name)
 			refineFailed()
 			return actualRunning, err
 		}
 
-		actualRunning, failedCount := countNodeGroupVMs(nsId, infraId, ngReq.Name)
+		actualRunning, failedCount, countErr := countNodeGroupVMs(nsId, infraId, ngReq.Name)
 		if failedCount > 0 {
 			log.Warn().Msgf(
 				"NodeGroup '%s': %d/%d VMs running; %d failed — refining failed nodes",
@@ -587,7 +647,10 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 			)
 			refineFailed()
 		}
-		if actualRunning == 0 {
+		// Same rule as the first-call path: assume full group only when the count
+		// is unknown; a confirmed zero stays zero.
+		if countErr != nil && actualRunning == 0 {
+			log.Warn().Err(countErr).Msgf("NodeGroup '%s': node count unknown after successful creation; assuming full group", ngReq.Name)
 			actualRunning = ngReq.NodeGroupSize
 		}
 		return actualRunning, nil
@@ -665,16 +728,28 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	}
 	stats.ElapsedSeconds = int64(time.Since(startTime).Seconds())
 
-	// Check rollback policy: if any NodeSpec failed to meet minCount, abort.
+	// Check rollback policy: if any NodeSpec failed to meet minCount, terminate
+	// everything provisioned so far and delete the infra (option=terminate waits
+	// for CSP-side termination to propagate before deleting records — force would
+	// orphan the surviving VMs).
 	if req.Policy.OnPartialFailure == "rollback" {
 		for _, r := range nodeSpecResults {
 			if !r.MinFulfilled {
+				infraMu.Lock()
+				created := infraCreated
+				infraMu.Unlock()
+				if created {
+					log.Warn().Msgf("rollback: terminating and deleting infra '%s' (nodeSpec '%s' below minCount)", infraId, r.NodeSpecName)
+					if _, delErr := DelInfra(nsId, infraId, model.ActionTerminate); delErr != nil {
+						log.Error().Err(delErr).Msgf("rollback: failed to delete infra '%s'; manual cleanup may be required", infraId)
+					}
+				}
 				return &model.InfraAutopilotResult{
 					NodeSpecResults:      nodeSpecResults,
 					ProvisioningAttempts: allAttempts,
 					AutopilotStats:       stats,
 				}, fmt.Errorf(
-					"rollback: nodeSpec '%s' provisioned %d/%d (minCount not met)",
+					"rollback: nodeSpec '%s' provisioned %d/%d (minCount not met); provisioned resources were terminated",
 					r.NodeSpecName, r.ProvisionedCount, r.DesiredCount,
 				)
 			}
@@ -686,12 +761,54 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 		infraInfo = &model.InfraInfo{Name: req.Name}
 	}
 
+	// Deferred post-processing: monitoring agent installation and post-deployment
+	// commands, exactly once against the final node set (withheld from
+	// CreateInfraDynamic above). Skipped when nothing was provisioned.
+	infraMu.Lock()
+	created := infraCreated
+	infraMu.Unlock()
+	if created && stats.Succeeded > 0 {
+		if infraObj, _, getErr := GetInfraObject(nsId, infraId); getErr == nil {
+			infraObj.InstallMonAgent = req.InstallMonAgent
+			if req.PostCommand != nil {
+				infraObj.PostCommand = *req.PostCommand
+			}
+			UpdateInfraInfo(nsId, infraObj)
+
+			if err := handleMonitoringAgent(nsId, infraId, infraObj, ""); err != nil {
+				log.Error().Err(err).Msg("Failed to install monitoring agent, but continuing")
+				appendInfraSystemMessage(nsId, infraId, fmt.Sprintf("Monitoring agent installation failed: %s", err.Error()))
+			}
+			if err := handlePostCommands(nsId, infraId, infraObj); err != nil {
+				log.Error().Err(err).Msg("Failed to execute post-deployment commands, but continuing")
+				appendInfraSystemMessage(nsId, infraId, fmt.Sprintf("Post-deployment commands failed: %s", err.Error()))
+			}
+
+			// Refresh so the result carries PostCommandResult and final status.
+			if refreshed, refErr := GetInfraInfo(nsId, infraId); refErr == nil {
+				infraInfo = refreshed
+			}
+		} else {
+			log.Warn().Err(getErr).Msg("Cannot load infra for post-processing; skipping monitoring agent and post commands")
+		}
+	}
+
 	return &model.InfraAutopilotResult{
 		InfraInfo:            *infraInfo,
 		NodeSpecResults:      nodeSpecResults,
 		ProvisioningAttempts: allAttempts,
 		AutopilotStats:       stats,
 	}, nil
+}
+
+// appendInfraSystemMessage appends a message to the infra's SystemMessage list.
+func appendInfraSystemMessage(nsId, infraId, msg string) {
+	infraObj, _, err := GetInfraObject(nsId, infraId)
+	if err != nil {
+		return
+	}
+	infraObj.SystemMessage = append(infraObj.SystemMessage, msg)
+	UpdateInfraInfo(nsId, infraObj)
 }
 
 // provisionNodeSpec resolves candidates and provisions node groups for a single NodeSpec.
@@ -949,6 +1066,11 @@ func provisionNodeSpec(
 		failedFromPool := 0
 
 		for remaining > 0 && (len(zoneRetryQueue) > 0 || (cursor < len(poolToIterate) && cursor < maxAttempts+failedFromPool)) {
+			// Stop launching new waves once the run deadline (policy.TimeoutMinutes) passes.
+			if ctx.Err() != nil {
+				log.Warn().Msgf("nodeSpec '%s': stopping candidate waves — %v", ns.Name, ctx.Err())
+				break
+			}
 			// Build a wave: drain zone-retry queue first, then pull from main pool.
 			var wave []waveTask
 			for len(wave) < parallelism && (len(zoneRetryQueue) > 0 || (cursor < len(poolToIterate) && cursor < maxAttempts+failedFromPool)) {
@@ -1317,6 +1439,11 @@ func provisionNodeSpec(
 		if i >= maxAttempts+seqFailed {
 			break
 		}
+		// Stop launching new attempts once the run deadline (policy.TimeoutMinutes) passes.
+		if ctx.Err() != nil {
+			log.Warn().Msgf("nodeSpec '%s': stopping candidate attempts — %v", ns.Name, ctx.Err())
+			break
+		}
 
 		lk := locationKey(spec)
 
@@ -1527,6 +1654,15 @@ func provisionNodeSpec(
 				nodeGroupIdx++
 				retryName := fmt.Sprintf("%s-%s-%d", ns.Name, sanitizeForName(spec.ProviderName), nodeGroupIdx)
 				retryNodeCount := remaining
+				if ns.MaxPerLocation > 0 {
+					locRem := ns.MaxPerLocation - locationNodeCount[lk]
+					if locRem <= 0 {
+						break // this location is already at its cap
+					}
+					if retryNodeCount > locRem {
+						retryNodeCount = locRem
+					}
+				}
 				if strategy == "spread" && retryNodeCount > 1 {
 					retryNodeCount = 1
 				}
@@ -1630,14 +1766,15 @@ func provisionNodeSpec(
 // (Failed/Undefined) VMs in the named NodeGroup. Transitional states (Creating,
 // empty) are ignored — provision() waits for all VMs to reach a final state before
 // returning, so those should not appear in practice.
-func countNodeGroupVMs(nsId, infraId, nodeGroupId string) (running, failed int) {
+// A non-nil err means the count is unknown (listing failed), NOT that zero VMs exist.
+func countNodeGroupVMs(nsId, infraId, nodeGroupId string) (running, failed int, err error) {
 	nodeIds, err := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
-	if err != nil || len(nodeIds) == 0 {
-		return 0, 0
+	if err != nil {
+		return 0, 0, err
 	}
 	for _, nodeId := range nodeIds {
-		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
-		if err != nil {
+		nodeInfo, gerr := GetNodeObject(nsId, infraId, nodeId)
+		if gerr != nil {
 			continue
 		}
 		switch {
@@ -1648,7 +1785,7 @@ func countNodeGroupVMs(nsId, infraId, nodeGroupId string) (running, failed int) 
 			failed++
 		}
 	}
-	return running, failed
+	return running, failed, nil
 }
 
 // terminateNodeGroup terminates every node in a NodeGroup by calling HandleInfraNodeAction
@@ -1747,7 +1884,7 @@ func GetInfraAutopilotStatus(nsId string, infraId string) (*model.InfraAutopilot
 		Specs:       []model.NodeSpecStatus{},
 	}
 
-	runVal, active := activeAutopilotRuns.Load(infraId)
+	runVal, active := activeAutopilotRuns.Load(autopilotRunKey(nsId, infraId))
 	if !active {
 		return status, nil
 	}
@@ -1759,12 +1896,26 @@ func GetInfraAutopilotStatus(nsId string, infraId string) (*model.InfraAutopilot
 		ngIds = nil
 	}
 
+	// Assign each NodeGroup to the NodeSpec with the LONGEST matching name prefix.
+	// A plain prefix scan would double-count when one NodeSpec name is a prefix of
+	// another (e.g. "web" would absorb "web-gpu-aws-1", which belongs to "web-gpu").
+	ngOwner := make(map[string]string, len(ngIds))
+	for _, ngId := range ngIds {
+		bestLen := -1
+		for _, ns := range run.req.NodeSpecs {
+			prefix := ns.Name + "-"
+			if strings.HasPrefix(ngId, prefix) && len(prefix) > bestLen {
+				bestLen = len(prefix)
+				ngOwner[ngId] = ns.Name
+			}
+		}
+	}
+
 	for _, ns := range run.req.NodeSpecs {
 		running := 0
-		prefix := ns.Name + "-"
 		for _, ngId := range ngIds {
-			if strings.HasPrefix(ngId, prefix) {
-				r, _ := countNodeGroupVMs(nsId, infraId, ngId)
+			if ngOwner[ngId] == ns.Name {
+				r, _, _ := countNodeGroupVMs(nsId, infraId, ngId)
 				running += r
 			}
 		}
