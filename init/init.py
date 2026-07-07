@@ -417,9 +417,7 @@ def check_openbao_status():
 
 
 def print_openbao_warning(status):
-    print(Fore.RED + "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print(Fore.RED + "⚠ OpenBao credential store is NOT available to CB-Tumblebug")
-    print(Fore.RED + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print(Fore.RED + "\n⚠ OpenBao credential store is NOT available to CB-Tumblebug")
     print(Fore.YELLOW + f"  Reason: {status.get('message', 'unknown')}")
     print(Fore.YELLOW + f"  VAULT_ADDR: {status.get('vaultAddr', '(unknown)')}")
 
@@ -428,32 +426,22 @@ def print_openbao_warning(status):
     reachable = status.get("reachable", False)
     initialized = status.get("initialized", False)
     sealed = status.get("sealed", True)
-    token_set = status.get("vaultTokenSet", False)
-    token_valid = status.get("tokenValid", False)
     token_checkable = reachable and initialized and not sealed
-    if not token_set:
+    if not status.get("vaultTokenSet", False):
         print(Fore.YELLOW + "  VAULT_TOKEN: not set")
-    elif token_checkable and not token_valid:
+    elif token_checkable and not status.get("tokenValid", False):
         print(Fore.YELLOW + "  VAULT_TOKEN: set, but INVALID (rejected by OpenBao)")
-    elif not token_checkable:
-        print(Fore.YELLOW + "  VAULT_TOKEN: set (validity not verifiable until the above is fixed)")
 
     print(Fore.YELLOW + "  Impact: CB-Tumblebug features will not fully work.")
-    print(Fore.YELLOW + "  How to fix:")
     if not reachable:
-        print(Fore.YELLOW + "    - Start OpenBao and services: make up")
+        print(Fore.YELLOW + "  Fix: start OpenBao and services: make up")
     elif not initialized:
-        print(Fore.YELLOW + "    - Initialize OpenBao: make init-openbao, then restart services: make up")
+        print(Fore.YELLOW + "  Fix: initialize OpenBao: make init-openbao, then restart services: make up")
     elif sealed:
-        print(Fore.YELLOW + "    - Unseal OpenBao: make unseal")
+        print(Fore.YELLOW + "  Fix: unseal OpenBao: make unseal")
     else:
-        # Token missing or invalid — make up auto-restores the correct token
-        # from init/openbao/secrets/openbao-init.json into .env.
-        print(Fore.YELLOW + "    - Set VAULT_TOKEN= (empty) in .env, then run: make up")
-        print(Fore.YELLOW + "      (it restores the token from init/openbao/secrets/openbao-init.json,")
-        print(Fore.YELLOW + "       or newly initializes OpenBao, and restarts cb-tumblebug with it)")
-    print(Fore.YELLOW + "    - Then re-run: make init")
-    print(Fore.RED + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+        # Token missing or invalid — make up restores it from init/openbao/secrets/openbao-init.json.
+        print(Fore.YELLOW + "  Fix: set VAULT_TOKEN= (empty) in .env, then run: make up")
 
 
 if run_credentials:
