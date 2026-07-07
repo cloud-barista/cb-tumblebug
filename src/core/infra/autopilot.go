@@ -1766,15 +1766,25 @@ func provisionNodeSpec(
 // (Failed/Undefined) VMs in the named NodeGroup. Transitional states (Creating,
 // empty) are ignored — provision() waits for all VMs to reach a final state before
 // returning, so those should not appear in practice.
-// A non-nil err means the count is unknown (listing failed), NOT that zero VMs exist.
+// A non-nil err means the count is unknown (listing or a record read failed),
+// NOT that zero VMs exist. A node record that no longer exists (e.g. removed by
+// a concurrent refine) is skipped and does not make the count unknown.
 func countNodeGroupVMs(nsId, infraId, nodeGroupId string) (running, failed int, err error) {
 	nodeIds, err := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
 	if err != nil {
 		return 0, 0, err
 	}
+	var readErr error
 	for _, nodeId := range nodeIds {
 		nodeInfo, gerr := GetNodeObject(nsId, infraId, nodeId)
 		if gerr != nil {
+			if strings.Contains(gerr.Error(), "no Node found") {
+				continue // record legitimately gone; the remaining count stays reliable
+			}
+			// Store/unmarshal failure: the node may well exist — count is unknown.
+			if readErr == nil {
+				readErr = fmt.Errorf("cannot read node '%s' in nodeGroup '%s': %w", nodeId, nodeGroupId, gerr)
+			}
 			continue
 		}
 		switch {
@@ -1785,7 +1795,7 @@ func countNodeGroupVMs(nsId, infraId, nodeGroupId string) (running, failed int, 
 			failed++
 		}
 	}
-	return running, failed, nil
+	return running, failed, readErr
 }
 
 // terminateNodeGroup terminates every node in a NodeGroup by calling HandleInfraNodeAction
