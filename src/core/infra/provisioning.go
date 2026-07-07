@@ -290,12 +290,14 @@ func handleHoldOption(nsId, infraId string) error {
 	return nil
 }
 
-// cleanupPartialInfra cleans up partially created Infra resources
+// cleanupPartialInfra cleans up partially created Infra resources.
+// Uses option=terminate (refine → terminate all nodes → wait for CSP propagation →
+// delete records), NOT force: some VMs may have been created successfully on the CSP,
+// and force would delete only the CB-TB records, leaving those VMs as orphans.
 func cleanupPartialInfra(nsId, infraId string) error {
 	log.Warn().Msgf("Cleaning up partial Infra: %s/%s", nsId, infraId)
 
-	// Attempt to delete Infra - this will handle cleanup of Nodes and other resources
-	_, err := DelInfra(nsId, infraId, "force")
+	_, err := DelInfra(nsId, infraId, model.ActionTerminate)
 	if err != nil {
 		return fmt.Errorf("failed to cleanup partial Infra: %w", err)
 	}
