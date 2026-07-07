@@ -28,6 +28,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
@@ -195,6 +196,21 @@ func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 
 	result, err := common.GetPublicKeyForCredentialEncryption()
 	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestGetOpenBaoStatus godoc
+// @ID GetOpenBaoStatus
+// @Summary Check OpenBao (secret store) availability for credential storage
+// @Description Verifies that CB-Tumblebug can store and read CSP credentials in OpenBao: endpoint reachable, initialized, unsealed, and VAULT_TOKEN accepted. Use before credential registration to detect misconfiguration (e.g., missing VAULT_TOKEN/VAULT_ADDR) that would otherwise fail silently and break direct CSP API features.
+// @Tags [Admin] Cloud Credential Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.OpenBaoStatusInfo
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /credential/openbaoStatus [get]
+func RestGetOpenBaoStatus(c echo.Context) error {
+	status := csp.CheckOpenBaoStatus(c.Request().Context())
+	return clientManager.EndRequestWithLog(c, nil, status)
 }
 
 // RestRegisterCredential is a REST API handler for registering credentials.

@@ -323,6 +323,7 @@ func RunServer() {
 	e.GET("/tumblebug/k8sClusterInfo", rest_common.RestGetK8sClusterInfo)
 
 	e.GET("/tumblebug/credential/publicKey", rest_common.RestGetPublicKeyForCredentialEncryption)
+	e.GET("/tumblebug/credential/openbaoStatus", rest_common.RestGetOpenBaoStatus)
 	e.POST("/tumblebug/credential", rest_common.RestRegisterCredential)
 	e.GET("/tumblebug/credentialHolder", rest_common.RestGetCredentialHolderList)
 	e.GET("/tumblebug/credentialHolder/:holderId", rest_common.RestGetCredentialHolder)

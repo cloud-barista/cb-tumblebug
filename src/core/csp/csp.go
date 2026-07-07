@@ -18,9 +18,11 @@ package csp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/openbao/openbao/api/v2"
@@ -187,7 +189,10 @@ var credentialKeyMap = map[string]map[string]string{
 }
 
 // ApplyCredentialKeyMap transforms a credential key-value list using the CSP-specific
-// key mapping. Keys not present in the map are passed through unchanged.
+// key mapping. Keys not present in the map are passed through unchanged. Mapped keys
+// with no incoming value are filled with "" so consumers of the secret (e.g.
+// mc-terrarium's vault_kv_secret_v2 data sources) always find the full expected key
+// set — same behavior as init/openbao/openbao-register-creds.py.
 func ApplyCredentialKeyMap(provider string, kvList []model.KeyValue) map[string]any {
 	keyMap := credentialKeyMap[strings.ToLower(provider)]
 	result := make(map[string]any, len(kvList))
@@ -199,6 +204,11 @@ func ApplyCredentialKeyMap(provider string, kvList []model.KeyValue) map[string]
 			}
 		}
 		result[targetKey] = kv.Value
+	}
+	for _, terrariumKey := range keyMap {
+		if _, ok := result[terrariumKey]; !ok {
+			result[terrariumKey] = ""
+		}
 	}
 	return result
 }
@@ -238,6 +248,100 @@ func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]any) e
 	return nil
 }
 
+// WriteOpenBaoSecretIfAbsent writes key-value data to OpenBao only when no version of
+// the secret exists yet (KV v2 check-and-set with cas=0). This is atomic on the server
+// side, so it can never overwrite a real credential written concurrently.
+// Returns created=false with a nil error when the secret already exists.
+func WriteOpenBaoSecretIfAbsent(ctx context.Context, path string, data map[string]any) (created bool, err error) {
+	if model.VaultToken == "" {
+		return false, fmt.Errorf("VAULT_TOKEN is not set")
+	}
+
+	vaultConfig := api.DefaultConfig()
+	vaultConfig.Address = model.VaultAddr
+	client, err := api.NewClient(vaultConfig)
+	if err != nil {
+		return false, fmt.Errorf("failed to create OpenBao client: %w", err)
+	}
+	client.SetToken(model.VaultToken)
+
+	_, err = client.Logical().WriteWithContext(ctx, path, map[string]any{
+		"data":    data,
+		"options": map[string]any{"cas": 0},
+	})
+	if err != nil {
+		if isCasConflict(err) {
+			return false, nil // secret already exists — leave it untouched
+		}
+		return false, fmt.Errorf("failed to write secret to OpenBao at %s: %w", path, err)
+	}
+	return true, nil
+}
+
+// isCasConflict reports whether err is a KV v2 check-and-set version conflict
+// (the secret already has a version). Prefers the structured ResponseError
+// (HTTP 400 + error payload) over matching the flattened error string.
+func isCasConflict(err error) bool {
+	var respErr *api.ResponseError
+	if errors.As(err, &respErr) {
+		if respErr.StatusCode != 400 {
+			return false
+		}
+		for _, e := range respErr.Errors {
+			if strings.Contains(e, "check-and-set") {
+				return true
+			}
+		}
+		return false
+	}
+	return strings.Contains(err.Error(), "check-and-set")
+}
+
+// placeholderSweepDone latches once EnsurePlaceholderCredentialSecrets has fully
+// succeeded, so repeated credential registrations don't re-sweep every provider.
+// placeholderSweepBusy single-flights the sweep: concurrent credential
+// registrations (init registers all CSPs in parallel) trigger only one sweep.
+var (
+	placeholderSweepDone atomic.Bool
+	placeholderSweepBusy atomic.Bool
+)
+
+// EnsurePlaceholderCredentialSecrets writes an all-empty placeholder secret for every
+// known CSP that has no secret yet under the default credential holder path.
+// This keeps consumers that read all CSP secret paths (e.g. mc-terrarium's
+// vault_kv_secret_v2 data sources during `tofu plan`) from hard-failing on CSPs whose
+// credentials were never provided — they fail gracefully at auth time instead.
+// Existing secrets are never touched (CAS-protected), so real credentials always win.
+func EnsurePlaceholderCredentialSecrets(ctx context.Context) {
+	if placeholderSweepDone.Load() || model.VaultToken == "" || model.VaultAddr == "" {
+		return
+	}
+	if !placeholderSweepBusy.CompareAndSwap(false, true) {
+		return // another registration is already sweeping
+	}
+	defer placeholderSweepBusy.Store(false)
+	allOK := true
+	for provider, keyMap := range credentialKeyMap {
+		placeholder := make(map[string]any, len(keyMap))
+		for _, terrariumKey := range keyMap {
+			placeholder[terrariumKey] = ""
+		}
+		path := BuildSecretPathForHolder(model.DefaultCredentialHolder, provider)
+		created, err := WriteOpenBaoSecretIfAbsent(ctx, path, placeholder)
+		if err != nil {
+			allOK = false
+			log.Warn().Err(err).Str("provider", provider).Msg("[CSP] failed to ensure placeholder secret in OpenBao")
+			continue
+		}
+		if created {
+			log.Info().Msgf("[CSP] placeholder secret registered in OpenBao: %s (%d empty keys)", path, len(placeholder))
+		}
+	}
+	if allOK {
+		placeholderSweepDone.Store(true)
+	}
+}
+
 // ReadOpenBaoSecret reads a secret from OpenBao at the given path and returns the data map.
 // It validates that VaultToken is set and the secret exists.
 // A context is used for request-scoped cancellation and timeout.
@@ -268,6 +372,63 @@ func ReadOpenBaoSecret(ctx context.Context, path string) (map[string]any, error)
 	}
 
 	return data, nil
+}
+
+// CheckOpenBaoStatus verifies that the OpenBao secret store is usable by
+// CB-Tumblebug: endpoint reachable, initialized, unsealed, and the configured
+// VAULT_TOKEN accepted. It stops at the first failed step, so Message always
+// describes the most actionable problem.
+func CheckOpenBaoStatus(ctx context.Context) model.OpenBaoStatusInfo {
+	status := model.OpenBaoStatusInfo{
+		VaultAddr:     model.VaultAddr,
+		VaultTokenSet: model.VaultToken != "",
+	}
+
+	if model.VaultAddr == "" {
+		status.Message = "VAULT_ADDR is not set in the cb-tumblebug environment"
+		return status
+	}
+
+	vaultConfig := api.DefaultConfig()
+	vaultConfig.Address = model.VaultAddr
+	client, err := api.NewClient(vaultConfig)
+	if err != nil {
+		status.Message = fmt.Sprintf("failed to create OpenBao client: %v", err)
+		return status
+	}
+
+	// Seal status requires no token — distinguishes unreachable / uninitialized / sealed.
+	sealStatus, err := client.Sys().SealStatusWithContext(ctx)
+	if err != nil {
+		status.Message = fmt.Sprintf("cannot reach OpenBao at %s: %v", model.VaultAddr, err)
+		return status
+	}
+	status.Reachable = true
+	status.Initialized = sealStatus.Initialized
+	status.Sealed = sealStatus.Sealed
+	if !sealStatus.Initialized {
+		status.Message = "OpenBao is not initialized"
+		return status
+	}
+	if sealStatus.Sealed {
+		status.Message = "OpenBao is sealed; secrets are inaccessible until it is unsealed"
+		return status
+	}
+
+	if model.VaultToken == "" {
+		status.Message = "VAULT_TOKEN is not set in the cb-tumblebug environment"
+		return status
+	}
+
+	client.SetToken(model.VaultToken)
+	if _, err := client.Auth().Token().LookupSelfWithContext(ctx); err != nil {
+		status.Message = fmt.Sprintf("VAULT_TOKEN was rejected by OpenBao: %v", err)
+		return status
+	}
+	status.TokenValid = true
+	status.Available = true
+	status.Message = "OpenBao is available for credential storage"
+	return status
 }
 
 // BuildSecretPath builds the OpenBao secret path for a given CSP provider
