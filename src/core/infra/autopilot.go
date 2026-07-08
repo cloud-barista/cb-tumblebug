@@ -555,7 +555,7 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	//
 	// Cleanup: after every provision call, failed/undefined VMs are refined out of
 	// the infra so that subsequent attempts start with a clean slate.
-	provision := func(ngReq model.CreateNodeGroupDynamicReq) (int, error) {
+	provision := func(ngReq model.NodeGroupDynamicReq) (int, error) {
 		refineFailed := func() {
 			infraMu.Lock()
 			ok := infraCreated
@@ -576,7 +576,7 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 		infraOnce.Do(func() {
 			thisIsFirstCall = true
 			singleReq := baseInfraReq
-			singleReq.NodeGroups = []model.CreateNodeGroupDynamicReq{ngReq}
+			singleReq.NodeGroups = []model.NodeGroupDynamicReq{ngReq}
 			result, err := CreateInfraDynamic(ctx, nsId, &singleReq, "")
 			infraMu.Lock()
 			if err != nil {
@@ -845,7 +845,7 @@ func provisionNodeSpec(
 	policy model.AutopilotPolicy,
 	plan *model.NodeSpecReview, // pre-computed plan from ReviewInfraAutopilot; nil = derive on the fly
 	onAttempt func(model.ProvisioningAttempt), // called after each attempt; may be nil
-	provision func(model.CreateNodeGroupDynamicReq) (int, error),
+	provision func(model.NodeGroupDynamicReq) (int, error),
 ) (*model.NodeSpecResult, []model.ProvisioningAttempt, error) {
 
 	specResult := &model.NodeSpecResult{
@@ -1298,7 +1298,7 @@ func provisionNodeSpec(
 						}
 					}
 
-					actualRunning, provErr := provision(model.CreateNodeGroupDynamicReq{
+					actualRunning, provErr := provision(model.NodeGroupDynamicReq{
 						Name:          task.ngName,
 						NodeGroupSize: task.requested,
 						SpecId:        spec.Id,
@@ -1579,7 +1579,7 @@ func provisionNodeSpec(
 
 		attempt.NodeGroupName = nodeGroupName
 
-		ngReq := model.CreateNodeGroupDynamicReq{
+		ngReq := model.NodeGroupDynamicReq{
 			Name:          nodeGroupName,
 			NodeGroupSize: requested,
 			SpecId:        spec.Id,

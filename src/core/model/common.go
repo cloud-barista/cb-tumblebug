@@ -337,7 +337,7 @@ var ResourceTypeRegistry = map[string]func() any{
 	StrNLB:           func() any { return &NLBInfo{} },
 	StrNode:          func() any { return &NodeInfo{} },
 	StrInfra:         func() any { return &InfraInfo{} },
-	StrK8s:           func() any { return &K8sClusterInfo{} },
+	StrK8s:           func() any { return &ClusterInfo{} },
 	StrNamespace:     func() any { return &NsInfo{} },
 	StrVPN:           func() any { return &VpnInfo{} },
 	StrGlobalDns:     func() any { return &GlobalDnsRecordInfo{} },

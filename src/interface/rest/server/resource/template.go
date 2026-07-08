@@ -796,38 +796,37 @@ func RestPostK8sClusterExtractTemplate(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
-// buildK8sMultiClusterDynamicReqFromCluster converts a K8sClusterInfo into a K8sMultiClusterDynamicReq
+// buildK8sMultiClusterDynamicReqFromCluster converts a ClusterInfo into a K8sMultiClusterDynamicReq
 // that can reproduce the cluster's configuration.
-func buildK8sMultiClusterDynamicReqFromCluster(clusterInfo *model.K8sClusterInfo) model.K8sMultiClusterDynamicReq {
-	clusterReq := model.K8sClusterDynamicReq{
+func buildK8sMultiClusterDynamicReqFromCluster(clusterInfo *model.ClusterInfo) model.K8sMultiClusterDynamicReq {
+	clusterReq := model.ClusterDynamicReq{
 		Name:           clusterInfo.Id,
 		Version:        clusterInfo.Version,
 		Description:    clusterInfo.Description,
 		ConnectionName: clusterInfo.ConnectionName,
 	}
 
-	if len(clusterInfo.K8sNodeGroupList) > 1 {
-		log.Warn().Msgf("extractTemplate: cluster '%s' has %d node groups; only the first will be included (K8sClusterDynamicReq supports one node group per entry)", clusterInfo.Id, len(clusterInfo.K8sNodeGroupList))
-	}
-	if len(clusterInfo.K8sNodeGroupList) > 0 {
-		ng := clusterInfo.K8sNodeGroupList[0]
-		clusterReq.NodeGroupName = ng.Name
-		clusterReq.SpecId = ng.SpecId
-		clusterReq.ImageId = ng.ImageId
-		clusterReq.RootDiskType = ng.RootDiskType
-		clusterReq.RootDiskSize = ng.RootDiskSize
-		clusterReq.DesiredNodeSize = ng.DesiredNodeSize
-		clusterReq.MinNodeSize = ng.MinNodeSize
-		clusterReq.MaxNodeSize = ng.MaxNodeSize
-		if ng.OnAutoScaling {
-			clusterReq.OnAutoScaling = "true"
-		} else {
-			clusterReq.OnAutoScaling = "false"
+	for _, ng := range clusterInfo.NodeGroups {
+		ngReq := model.NodeGroupDynamicReq{
+			Name:            ng.Name,
+			SpecId:          ng.SpecId,
+			ImageId:         ng.ImageId,
+			RootDiskType:    ng.RootDiskType,
+			RootDiskSize:    ng.RootDiskSize,
+			DesiredNodeSize: ng.DesiredNodeSize,
+			MinNodeSize:     ng.MinNodeSize,
+			MaxNodeSize:     ng.MaxNodeSize,
 		}
+		if ng.OnAutoScaling {
+			ngReq.OnAutoScaling = "true"
+		} else {
+			ngReq.OnAutoScaling = "false"
+		}
+		clusterReq.NodeGroups = append(clusterReq.NodeGroups, ngReq)
 	}
 
 	return model.K8sMultiClusterDynamicReq{
 		NamePrefix: clusterInfo.Id,
-		Clusters:   []model.K8sClusterDynamicReq{clusterReq},
+		Clusters:   []model.ClusterDynamicReq{clusterReq},
 	}
 }
