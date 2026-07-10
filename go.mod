@@ -36,7 +36,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.3.78
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/api v0.274.0
@@ -176,7 +176,7 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	go.etcd.io/etcd/api/v3 v3.6.11 // indirect
+	go.etcd.io/etcd/api/v3 v3.6.11
 	go.etcd.io/etcd/client/pkg/v3 v3.6.11 // indirect
 	go.etcd.io/etcd/client/v3 v3.6.11
 	go.uber.org/multierr v1.11.0 // indirect
