@@ -2,7 +2,7 @@
   "nsId": "system",
   "resourceType": "vNet",
   "name": "vnet-default",
-  "description": "Default VNet template for Infra dynamic provisioning. Uses a CSP-agnostic policy (2 subnets, multi-zone). CSP-specific constraints are applied automatically at provisioning time: IBM is capped to 1 subnet, NCP subnets are placed in the same zone, GCP omits VPC-level CIDR. CIDR blocks are auto-assigned per connection index to avoid conflicts.",
+  "description": "Default VNet template for Infra dynamic provisioning (used automatically when no vNetTemplateId is specified). Uses a CSP-agnostic policy (2 subnets, multi-zone). CSP-specific constraints are applied automatically at provisioning time: IBM is capped to 1 subnet, NCP subnets are placed in the same zone, GCP omits the VPC-level CIDR (its subnets carry their own CIDRs). A /16 CIDR is auto-assigned per connection index to avoid conflicts. Verified: 2 subnets create successfully on aws, azure, gcp, alibaba, tencent, kt, nhn, openstack, ncp; IBM uses 1 subnet.",
   "vNetPolicy": {
     "cidrBlock": "auto",
     "subnetCount": 2,

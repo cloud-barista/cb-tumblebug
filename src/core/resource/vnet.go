@@ -162,44 +162,54 @@ func ValidateVNetReq(vNetReq *model.VNetReq) error {
 		}
 	}
 
+	// GCP has no VPC-level CIDR: its subnets carry their own CIDRs and CB-Spider rejects a VPC
+	// CIDR ("GCP VPC does not support IPv4_CIDR"), so the vNet CidrBlock is legitimately empty.
+	// The CIDR-based checks below (availability + parent/child network structure) assume a
+	// parseable vNet CIDR, so skip them in that case and let CB-Spider validate the subnets.
+	// Verified: CB-Spider creates a GCP VPC successfully with an empty vNet CIDR.
+	noVNetCidr := vNetReq.CidrBlock == "" && csp.ResolveCloudPlatform(provider) == csp.GCP
+
 	// * 4. Validates that the CIDR block of the vNet and subnets are available for use in the CSP.
 	// e.g., in available CIDR Blocks, not in the reserved CIDR Blocks, and etc.
-	ok, err := IsAvailableForUseInCSP(vNetReq, provider)
-	if !ok {
-		if err != nil {
-			err2 := fmt.Errorf("CIDR block is not available for use in the CSP (provider: %s): %w", provider, err)
-			log.Error().Err(err2).Msg("")
-			return err2
-		} else {
-			err := fmt.Errorf("CIDR block is not available for use in the CSP (provider: %s)", provider)
-			log.Error().Err(err).Msg("")
-			return err
+	if !noVNetCidr {
+		ok, err := IsAvailableForUseInCSP(vNetReq, provider)
+		if !ok {
+			if err != nil {
+				err2 := fmt.Errorf("CIDR block is not available for use in the CSP (provider: %s): %w", provider, err)
+				log.Error().Err(err2).Msg("")
+				return err2
+			} else {
+				err := fmt.Errorf("CIDR block is not available for use in the CSP (provider: %s)", provider)
+				log.Error().Err(err).Msg("")
+				return err
+			}
 		}
 	}
 
 	// * 5. Validates that the CIDR block of the vNet and subnets are valid
-	// A network object for validation
-	var network netutil.Network
-	var subnets []netutil.Network
+	if !noVNetCidr {
+		// A network object for validation
+		var network netutil.Network
+		var subnets []netutil.Network
 
-	network = netutil.Network{
-		CidrBlock: vNetReq.CidrBlock,
-	}
-
-	for _, subnetInfo := range vNetReq.SubnetInfoList {
-		subnet := netutil.Network{
-			CidrBlock: subnetInfo.IPv4_CIDR,
+		network = netutil.Network{
+			CidrBlock: vNetReq.CidrBlock,
 		}
-		subnets = append(subnets, subnet)
-	}
-	network.Subnets = subnets
-	log.Trace().Msgf("network: %+v", network)
 
-	// Validate the network object
-	err = netutil.ValidateNetwork(network)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
+		for _, subnetInfo := range vNetReq.SubnetInfoList {
+			subnet := netutil.Network{
+				CidrBlock: subnetInfo.IPv4_CIDR,
+			}
+			subnets = append(subnets, subnet)
+		}
+		network.Subnets = subnets
+		log.Trace().Msgf("network: %+v", network)
+
+		// Validate the network object
+		if err := netutil.ValidateNetwork(network); err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
 	}
 
 	return nil

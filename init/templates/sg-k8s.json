@@ -1,0 +1,27 @@
+{
+  "nsId": "system",
+  "resourceType": "securityGroup",
+  "name": "sg-k8s",
+  "description": "SecurityGroup template for managed Kubernetes (dynamic) node groups. Intentionally opens all TCP/UDP ports and ICMP inbound because the required ports vary by CSP and managed-K8s implementation (control-plane<->node, node<->node CNI/overlay, NodePort 30000-32767, etc.). This preserves the previous permissive behavior for K8s; tighten per-CSP (e.g. NodePort + the 'internal' keyword + SSH) once requirements are confirmed.",
+  "securityGroupReq": {
+    "firewallRules": [
+      {
+        "ports": "1-65535",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "1-65535",
+        "protocol": "UDP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "protocol": "ICMP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      }
+    ]
+  }
+}

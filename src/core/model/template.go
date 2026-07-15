@@ -80,7 +80,8 @@ type InfraDynamicTemplateListResponse struct {
 type VNetPolicy struct {
 	// CidrBlock for the VPC. Use "auto" to assign a unique /16 block automatically
 	// (based on connection index: 10.{i}.0.0/16), or specify an explicit CIDR.
-	// For CSPs that do not support VPC-level CIDR (e.g. GCP), this field is ignored.
+	// Ignored for CSPs that have no VPC-level CIDR (e.g. GCP, whose subnets carry their own
+	// CIDRs and whose VPC rejects a CIDR): no CIDR is assigned to the vNet for those CSPs.
 	CidrBlock string `json:"cidrBlock" example:"auto"`
 
 	// SubnetCount is the desired number of subnets.
@@ -94,6 +95,14 @@ type VNetPolicy struct {
 	// Set to false to place all subnets in the same zone (required for some workloads).
 	// NCP → always forced to false (all subnets must reside in the same zone).
 	MultiZone bool `json:"multiZone" example:"true"`
+
+	// Dedicated controls the VNet isolation model for dynamic provisioning.
+	//   false (default) → shared VNet per connection ("{ns}-shared-{conn}"), reused across
+	//                     Infras. Preferred because VPC/VNet is a scarce CSP resource.
+	//   true            → dedicated VNet per Infra ("{infraId}-{conn}"), isolating each
+	//                     Infra's network. Use only when isolation is required; dedicated
+	//                     VNets consume the (limited) per-region VPC quota faster.
+	Dedicated bool `json:"dedicated,omitempty" example:"false"`
 }
 
 // VNetTemplateInfo is struct for vNet Template information stored in ETCD

@@ -2,23 +2,12 @@
   "nsId": "system",
   "resourceType": "securityGroup",
   "name": "sg-default",
-  "description": "Default SecurityGroup template for Infra dynamic provisioning. Opens all TCP/UDP ports and ICMP inbound (development/testing use). For production, use a more restrictive template such as web-sg.",
+  "description": "Default SecurityGroup policy for Infra dynamic provisioning. Used automatically when no sgTemplateId is specified (single source of truth for the default firewall policy). Opens ONLY SSH (TCP 22) inbound so freshly provisioned nodes are reachable for management but not otherwise exposed. To open application/node-to-node ports, assign a separate application-specific SecurityGroup to the nodes rather than editing this shared default (keeps the shared default reusable). Edit here to change the default without recompiling.",
   "securityGroupReq": {
     "firewallRules": [
       {
-        "ports": "1-65535",
+        "ports": "22",
         "protocol": "TCP",
-        "direction": "inbound",
-        "cidr": "0.0.0.0/0"
-      },
-      {
-        "ports": "1-65535",
-        "protocol": "UDP",
-        "direction": "inbound",
-        "cidr": "0.0.0.0/0"
-      },
-      {
-        "protocol": "ICMP",
         "direction": "inbound",
         "cidr": "0.0.0.0/0"
       }

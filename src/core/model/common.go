@@ -296,6 +296,41 @@ const (
 	// SystemCommonNs is const for SystemCommon NameSpace ID
 	SystemCommonNs string = "system"
 
+	// DefaultSecurityGroupTemplateId is the SecurityGroup template ID (loaded into
+	// the system namespace from init/templates/) used to create the default shared
+	// SecurityGroup when no SgTemplateId is explicitly requested during dynamic
+	// provisioning. Keeping the default firewall policy in an editable template
+	// (rather than hard-coded in Go) makes it the single source of truth and lets
+	// it be changed without recompiling the server.
+	DefaultSecurityGroupTemplateId string = "sg-default"
+
+	// DefaultVNetTemplateId is the VNet template (loaded into the system namespace from
+	// init/templates/) used to create the default shared VNet when no VNetTemplateId is
+	// requested during dynamic provisioning. Keeping the default network policy in an
+	// editable template makes it the single source of truth (no hard-coded default path).
+	DefaultVNetTemplateId string = "vnet-default"
+
+	// K8sSecurityGroupTemplateId is the SecurityGroup template (loaded into the system
+	// namespace from init/templates/) used for the shared SecurityGroup of managed
+	// Kubernetes (dynamic) node groups. It is intentionally permissive by default because
+	// required ports vary by CSP; edit sg-k8s.json to change the K8s policy without
+	// recompiling.
+	K8sSecurityGroupTemplateId string = "sg-k8s"
+
+	// PurposeInfraDynamic is the value stored in the sys.purpose label of a resource
+	// (SecurityGroup or SSHKey) that was auto-generated for a specific Infra during
+	// dynamic provisioning. Such resources are dedicated to one Infra (named
+	// "{infraId}-{connection}") rather than shared across the connection, and are targeted
+	// (together with the "{ns}-shared-" named resources) by the unused-resource release
+	// operation once no VMs reference them.
+	PurposeInfraDynamic string = "infra-dynamic"
+
+	// FirewallCidrKeywordInternal is a placeholder CIDR keyword usable in a
+	// SecurityGroup template's firewallRules. At dynamic provisioning time it is
+	// replaced with the target VNet's own CIDR block, so a static template can
+	// express node-to-node (internal) access without hard-coding the address range.
+	FirewallCidrKeywordInternal string = "internal"
+
 	// CredentialHolderHeaderKey is the HTTP header key for specifying credential holder
 	CredentialHolderHeaderKey string = "x-credential-holder"
 )
