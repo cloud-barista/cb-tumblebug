@@ -1696,7 +1696,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 						time.Sleep(2 * time.Second)
 					}
 
-					result, err := getNodeGroupReqFromDynamicReq(ctx, nsId, &nodeGroupDynamicReq)
+					result, err := getNodeGroupReqFromDynamicReq(ctx, nsId, infraId, &nodeGroupDynamicReq)
 					resultChan <- nodeResult{result: result, err: err}
 				}
 
@@ -1941,7 +1941,7 @@ func ValidateInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraD
 }
 
 // reviewSingleNodeGroupDynamicReq reviews and validates a single VM dynamic request
-func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq model.CreateNodeGroupDynamicReq, deployOption string) (model.ReviewNodeGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
+func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTemplateId string, infraVNetTemplateId string, nodeGroupDynamicReq model.CreateNodeGroupDynamicReq, deployOption string) (model.ReviewNodeGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
 
 	credentialHolder := common.CredentialHolderFromContext(ctx)
 	nodeReview := model.ReviewNodeGroupDynamicReqInfo{
@@ -2244,6 +2244,67 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nodeGroupDynamicReq mo
 		// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", nodeGroupDynamicReq.Name)
 		// 	}
 		// }
+	}
+
+	// Validate the effective SecurityGroup template exists before provisioning.
+	// A missing template now aborts creation (no silent all-open fallback), so surface
+	// it here — including the default 'sg-default' — to let users load it first.
+	// Precedence: NodeGroup-level SgTemplateId > Infra-level > default template id.
+	effectiveSgTemplateId := nodeGroupDynamicReq.SgTemplateId
+	if effectiveSgTemplateId == "" {
+		effectiveSgTemplateId = infraSgTemplateId
+	}
+	if effectiveSgTemplateId == "" {
+		effectiveSgTemplateId = model.DefaultSecurityGroupTemplateId
+	}
+	sgTmplExists := false
+	if nsId != model.SystemCommonNs {
+		if _, err := common.GetSecurityGroupTemplate(nsId, effectiveSgTemplateId); err == nil {
+			sgTmplExists = true
+		}
+	}
+	if !sgTmplExists {
+		if _, err := common.GetSecurityGroupTemplate(model.SystemCommonNs, effectiveSgTemplateId); err == nil {
+			sgTmplExists = true
+		}
+	}
+	if !sgTmplExists {
+		nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf(
+			"SecurityGroup template '%s' not found in namespace '%s' or system namespace; "+
+				"load it before provisioning (e.g. run 'make init' to load init/templates, or register it via the template API)",
+			effectiveSgTemplateId, nsId))
+		nodeReview.CanCreate = false
+		viable = false
+	}
+
+	// Validate the effective VNet template exists before provisioning. A missing template now
+	// aborts creation (no silent hard-coded fallback), so surface it here — including the
+	// default 'vnet-default'. Precedence: NodeGroup-level VNetTemplateId > Infra-level > default.
+	effectiveVNetTemplateId := nodeGroupDynamicReq.VNetTemplateId
+	if effectiveVNetTemplateId == "" {
+		effectiveVNetTemplateId = infraVNetTemplateId
+	}
+	if effectiveVNetTemplateId == "" {
+		effectiveVNetTemplateId = model.DefaultVNetTemplateId
+	}
+	vNetTmplExists := false
+	if nsId != model.SystemCommonNs {
+		if _, err := common.GetVNetTemplate(nsId, effectiveVNetTemplateId); err == nil {
+			vNetTmplExists = true
+		}
+	}
+	if !vNetTmplExists {
+		if _, err := common.GetVNetTemplate(model.SystemCommonNs, effectiveVNetTemplateId); err == nil {
+			vNetTmplExists = true
+		}
+	}
+	if !vNetTmplExists {
+		nodeReview.Errors = append(nodeReview.Errors, fmt.Sprintf(
+			"VNet template '%s' not found in namespace '%s' or system namespace; "+
+				"load it before provisioning (e.g. run 'make init' to load init/templates, or register it via the template API)",
+			effectiveVNetTemplateId, nsId))
+		nodeReview.CanCreate = false
+		viable = false
 	}
 
 	// Set VM review status
@@ -2602,8 +2663,9 @@ func ReviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, req *mode
 		return nil, fmt.Errorf("invalid namespace: %w", err)
 	}
 
-	// Use the common VM review function with empty deployOption
-	nodeReview, _, _, _, _ := reviewSingleNodeGroupDynamicReq(ctx, *req, "")
+	// Use the common VM review function with empty deployOption.
+	// No infra-level SgTemplateId context here; the request's own SgTemplateId (if any) applies.
+	nodeReview, _, _, _, _ := reviewSingleNodeGroupDynamicReq(ctx, nsId, "", "", *req, "")
 
 	log.Debug().Msgf("Single VM review completed: %s - %s", nodeReview.Status, nodeReview.Message)
 	return &nodeReview, nil
@@ -2722,7 +2784,7 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 			defer func() { <-cspSem }()
 
 			// Use the common VM review function
-			nodeReview, specInfoPtr, viable, hasNodeWarning, nodeCost := reviewSingleNodeGroupDynamicReq(ctx, nodeGroupDynamicReq, deployOption)
+			nodeReview, specInfoPtr, viable, hasNodeWarning, nodeCost := reviewSingleNodeGroupDynamicReq(ctx, nsId, req.SgTemplateId, req.VNetTemplateId, nodeGroupDynamicReq, deployOption)
 
 			// Send result to channel
 			nodeReviewChan <- struct {
@@ -3048,7 +3110,7 @@ func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId strin
 		return emptyInfra, err
 	}
 
-	nodeReqResult, err := getNodeGroupReqFromDynamicReq(ctx, nsId, req)
+	nodeReqResult, err := getNodeGroupReqFromDynamicReq(ctx, nsId, infraId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfra, err
@@ -3213,7 +3275,7 @@ func waitForVNetReady(ctx context.Context, nsId string, vNetId string) error {
 }
 
 // getNodeGroupReqFromDynamicReq is func to getNodeGroupReqFromDynamicReq with created resource tracking
-func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.CreateNodeGroupDynamicReq) (*NodeReqWithCreatedResources, error) {
+func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId string, req *model.CreateNodeGroupDynamicReq) (*NodeReqWithCreatedResources, error) {
 
 	reqID := common.RequestIDFromContext(ctx)
 	credentialHolder := common.CredentialHolderFromContext(ctx)
@@ -3259,24 +3321,27 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s) for VM '%s'", baseResourceName, req.Zone, req.Name)
 	}
 
-	// VNet resource name: append templateId suffix when a specific template is requested,
-	// so that different templates result in independent VNets within the same connection.
-	vNetResourceName := baseResourceName
+	// VNet resource name: shared per-connection by default, or dedicated per-Infra when the
+	// resolved VNet template requests it (vNetPolicy.Dedicated). Centralized in
+	// GenVNetResourceName so this name and the one used when actually creating the VNet
+	// (and the SG's VNetId reference) always agree.
+	vNetResourceName := resource.GenVNetResourceName(nsId, infraId, nodeGroupReq.ConnectionName, req.Zone, req.VNetTemplateId)
 	if req.VNetTemplateId != "" {
-		vNetResourceName = baseResourceName + "-" + req.VNetTemplateId
 		log.Info().Msgf("Using template-specific VNet resource name: %s (template: %s) for VM '%s'", vNetResourceName, req.VNetTemplateId, req.Name)
 	}
 
-	// SG resource name: append templateId suffix so different NodeGroups on the same
-	// connection can independently use different SecurityGroup policies.
-	sgResourceName := baseResourceName
+	// SG resource name: dedicated per Infra ("{infraId}-{conn}[-zone][-tmpl]") so it can be
+	// freely updated for application ports without affecting other Infras, and reclaimed by
+	// the unused-resource release operation once no VMs reference it. VNet/SSHKey stay shared.
+	sgBaseName := infraId + "-" + nodeGroupReq.ConnectionName
+	if req.Zone != "" {
+		sgBaseName = sgBaseName + "-" + req.Zone
+	}
+	sgResourceName := sgBaseName
 	if req.SgTemplateId != "" {
-		sgResourceName = baseResourceName + "-" + req.SgTemplateId
+		sgResourceName = sgBaseName + "-" + req.SgTemplateId
 		log.Info().Msgf("Using template-specific SG resource name: %s (template: %s) for VM '%s'", sgResourceName, req.SgTemplateId, req.Name)
 	}
-
-	// SSHKey shares the base resource name (connection-scoped, no template support)
-	resourceName := baseResourceName
 
 	nodeGroupReq.SpecId = specInfo.Id
 	nodeGroupReq.ImageId = k.ImageId
@@ -3327,6 +3392,9 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 			sharedResourceOpts := &resource.SharedResourceOptions{
 				CredentialHolder: credentialHolder,
 				VNetTemplateId:   req.VNetTemplateId,
+				// InfraId enables per-Infra dedicated VNet naming/labeling when the resolved
+				// template sets vNetPolicy.Dedicated; ignored (VNet stays shared) otherwise.
+				InfraId: infraId,
 			}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
@@ -3420,8 +3488,14 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 		nodeGroupReq.SubnetId = vNetResourceName
 	}
 
-	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
-	nodeGroupReq.SshKeyId = resourceName
+	// SSHKey is dedicated per Infra ("{infraId}-{conn}[-zone]") for credential isolation, so a
+	// compromised key is scoped to a single Infra instead of every Infra on the connection.
+	sshKeyResourceName := infraId + "-" + nodeGroupReq.ConnectionName
+	if req.Zone != "" {
+		sshKeyResourceName = sshKeyResourceName + "-" + req.Zone
+	}
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + sshKeyResourceName, Time: time.Now()})
+	nodeGroupReq.SshKeyId = sshKeyResourceName
 	_, err = resource.GetResource(nsId, model.StrSSHKey, nodeGroupReq.SshKeyId)
 	if err != nil {
 		if !onDemand {
@@ -3431,16 +3505,20 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 				req.Name, nodeGroupReq.SshKeyId, nodeGroupReq.ConnectionName)
 			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SshKeyId: nodeGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 		}
-		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + sshKeyResourceName, Time: time.Now()})
 
-		// Check if the default SSHKey exists
-		_, err := resource.GetResource(nsId, model.StrSSHKey, nodeGroupReq.ConnectionName)
-		log.Debug().Msg("checked if the default SSHKey does NOT exist")
-		// Create a new default SSHKey if it does not exist
+		// Check if the dedicated SSHKey already exists (e.g. created by a concurrent
+		// NodeGroup of the same Infra+connection); create it only if it does not.
+		_, err := resource.GetResource(nsId, model.StrSSHKey, sshKeyResourceName)
+		log.Debug().Msg("checked if the dedicated SSHKey does NOT exist")
+		// Create a new dedicated SSHKey if it does not exist
 		if err != nil {
-			log.Debug().Msg("Not found default SSHKey: " + err.Error())
-			// Pass Zone and CredentialHolder options (SSHKey has no template support)
-			sharedResourceOpts := &resource.SharedResourceOptions{CredentialHolder: credentialHolder}
+			log.Debug().Msg("Not found dedicated SSHKey: " + err.Error())
+			// Pass Zone, CredentialHolder, and InfraId (dedicated per-Infra) options. No template support.
+			sharedResourceOpts := &resource.SharedResourceOptions{
+				CredentialHolder: credentialHolder,
+				InfraId:          infraId,
+			}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SSHKey with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
@@ -3489,6 +3567,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, req *model.
 				CredentialHolder: credentialHolder,
 				VNetTemplateId:   req.VNetTemplateId,
 				SgTemplateId:     req.SgTemplateId,
+				InfraId:          infraId,
 			}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
@@ -4670,7 +4749,10 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
 
-	securityGroup := resourceName
+	// K8s uses a shared SG per connection, but sourced from the dedicated "sg-k8s" template
+	// (intentionally permissive; required ports vary by CSP). The template suffix keeps this
+	// SG distinct from other shared SGs (e.g. an SSH-only "{ns}-shared-{conn}").
+	securityGroup := resourceName + "-" + model.K8sSecurityGroupTemplateId
 	k8sReq.SecurityGroupIds = append(k8sReq.SecurityGroupIds, securityGroup)
 	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
 	if err != nil {
@@ -4680,9 +4762,10 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 			return emptyK8sReq, err
 		}
 
-		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + securityGroup, Time: time.Now()})
 
-		err2 := resource.CreateSharedResource(ctx, nsId, model.StrSecurityGroup, k8sReq.ConnectionName)
+		err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSecurityGroup, k8sReq.ConnectionName,
+			&resource.SharedResourceOptions{SgTemplateId: model.K8sSecurityGroupTemplateId})
 		if err2 != nil {
 			log.Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + k8sReq.ConnectionName)
 			return emptyK8sReq, err2

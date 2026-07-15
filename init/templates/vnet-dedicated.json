@@ -1,0 +1,12 @@
+{
+  "nsId": "system",
+  "resourceType": "vNet",
+  "name": "vnet-dedicated",
+  "description": "Dedicated VNet template for Infra dynamic provisioning: same network policy as vnet-default (2 subnets, multi-zone, auto CIDR) but isolates the network per Infra (named '{infraId}-{connection}') instead of sharing across Infras. Use when network isolation between Infras is required. Note: dedicated VNets consume the limited per-region VPC quota faster; prefer vnet-default (shared) unless isolation is needed. Dedicated VNets are reclaimed by the unused-resource release operation once no VMs reference them.",
+  "vNetPolicy": {
+    "cidrBlock": "auto",
+    "subnetCount": 2,
+    "multiZone": true,
+    "dedicated": true
+  }
+}

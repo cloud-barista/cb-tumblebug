@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"net"
 	"runtime"
 	"slices"
 	"sort"
@@ -2239,6 +2240,13 @@ type SharedResourceOptions struct {
 	// instead of the default all-open firewall rules. If the template is not found, falls
 	// back to the default behavior.
 	SgTemplateId string
+
+	// InfraId, when set, makes the SecurityGroup dedicated to a specific Infra
+	// (named "{infraId}-{connection}[-zone][-sgTemplateId]") instead of shared across the
+	// connection, and labels it (sys.infraId, sys.purpose) so the unused-resource release
+	// operation can reclaim it once no VMs reference it. VNet and SSHKey remain shared
+	// regardless of this field.
+	InfraId string
 }
 
 // applyVNetPolicy converts a CSP-agnostic VNetPolicy into concrete VNetReq fields on reqTmp,
@@ -2272,9 +2280,13 @@ func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolic
 		log.Info().Msgf("Capping subnet count to 2 (requested %d)", policy.SubnetCount)
 	}
 
-	// GCP does not use a VPC-level CIDR block; subnets carry their own CIDRs
-	isGCP := resolvedProvider == csp.GCP
-	if !isGCP {
+	// GCP has no VPC-level CIDR: its subnets carry their own CIDRs, and CB-Spider rejects a
+	// VPC CIDR for GCP (it returns "GCP VPC does not support IPv4_CIDR"). Omit it for GCP so
+	// CB-Tumblebug does not store/display a CIDR that is never actually applied. Verified:
+	// CB-Spider creates a GCP VPC successfully with an empty vNet CIDR. (The dynamic
+	// provisioning path calls CreateVNet directly, which does not run the REST-only
+	// ValidateVNetReq CIDR check, so the empty GCP CIDR reaches CB-Spider and succeeds.)
+	if resolvedProvider != csp.GCP {
 		if policy.CidrBlock == "auto" || policy.CidrBlock == "" {
 			reqTmp.CidrBlock = "10." + strconv.Itoa(sliceIndex) + ".0.0/16"
 		} else {
@@ -2351,6 +2363,41 @@ func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolic
 	return nil
 }
 
+// GenVNetResourceName returns the VNet resource name used by dynamic provisioning, honoring the
+// resolved VNet template's isolation policy: dedicated per-Infra ("{infraId}-{conn}[-zone]") when
+// the template's vNetPolicy.Dedicated is set (and infraId is non-empty), otherwise shared
+// ("{ns}-shared-{conn}[-zone]"). A template-id suffix is appended when a non-default template is
+// explicitly requested so different templates yield independent VNets. This is the single source
+// of the VNet name so provisioning and shared-resource creation always agree (SG references the
+// VNet by this name). Falls back to the shared name if the template cannot be read (creation then
+// fails with a clear error).
+func GenVNetResourceName(nsId, infraId, connectionName, zone, vNetTemplateId string) string {
+	effectiveId := model.DefaultVNetTemplateId
+	if vNetTemplateId != "" {
+		effectiveId = vNetTemplateId
+	}
+	dedicated := false
+	tmpl, err := common.GetVNetTemplate(nsId, effectiveId)
+	if err != nil {
+		tmpl, err = common.GetVNetTemplate(model.SystemCommonNs, effectiveId)
+	}
+	if err == nil && tmpl.VNetPolicy != nil && tmpl.VNetPolicy.Dedicated {
+		dedicated = true
+	}
+
+	name := nsId + model.StrSharedResourceName + connectionName
+	if dedicated && infraId != "" {
+		name = infraId + "-" + connectionName
+	}
+	if zone != "" {
+		name = name + "-" + zone
+	}
+	if vNetTemplateId != "" {
+		name = name + "-" + vNetTemplateId
+	}
+	return name
+}
+
 // CreateSharedResource is to register default resource from asset files (../assets/*.csv)
 // This is a wrapper function that maintains backward compatibility
 func CreateSharedResource(ctx context.Context, nsId string, resType string, connectionName string) error {
@@ -2416,24 +2463,44 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s)", baseResourceName, options.Zone)
 	}
 
-	// VNet resource name: append templateId suffix when a specific template is requested
-	vNetResourceName := baseResourceName
-	if options != nil && options.VNetTemplateId != "" {
-		vNetResourceName = baseResourceName + "-" + options.VNetTemplateId
+	// VNet resource name: shared per-connection by default, or dedicated per-Infra when the
+	// resolved VNet template requests it. Centralized in GenVNetResourceName so the SG's VNetId
+	// reference (computed in the SG branch/another call) always matches the actual VNet name.
+	optInfraId, optVNetTemplateId, optZone := "", "", ""
+	if options != nil {
+		optInfraId = options.InfraId
+		optVNetTemplateId = options.VNetTemplateId
+		optZone = options.Zone
 	}
+	vNetResourceName := GenVNetResourceName(nsId, optInfraId, connectionName, optZone, optVNetTemplateId)
 
-	// SG resource name: append templateId suffix when a specific template is requested
-	sgResourceName := baseResourceName
+	// SG resource name: dedicated per-Infra when InfraId is set ("{infraId}-{conn}[-zone]"),
+	// otherwise shared per-connection ("{ns}-shared-{conn}[-zone]"). A template suffix is
+	// appended when a specific template is requested. VNet/SSHKey stay shared regardless.
+	sgBaseName := baseResourceName
+	if options != nil && options.InfraId != "" {
+		sgBaseName = options.InfraId + "-" + connectionName
+		if options.Zone != "" {
+			sgBaseName = sgBaseName + "-" + options.Zone
+		}
+	}
+	sgResourceName := sgBaseName
 	if options != nil && options.SgTemplateId != "" {
-		sgResourceName = baseResourceName + "-" + options.SgTemplateId
+		sgResourceName = sgBaseName + "-" + options.SgTemplateId
 	}
 
-	// SSHKey uses base resource name (connection-scoped, no template support)
+	// SSHKey resource name: dedicated per-Infra when InfraId is set ("{infraId}-{conn}[-zone]")
+	// for credential isolation, otherwise shared per-connection. No template support.
 	resourceName := baseResourceName
+	if options != nil && options.InfraId != "" {
+		resourceName = options.InfraId + "-" + connectionName
+		if options.Zone != "" {
+			resourceName = resourceName + "-" + options.Zone
+		}
+	}
 
 	description := "Generated Default Resource"
 
-resTypeLoop:
 	for _, resType := range resList {
 		if strings.EqualFold(resType, model.StrVNet) {
 			log.Debug().Msg(model.StrVNet)
@@ -2443,182 +2510,85 @@ resTypeLoop:
 			reqTmp.Name = vNetResourceName
 			reqTmp.Description = description
 
-			// Use vNet template if specified, otherwise apply default CIDR generation.
-			// Lookup order: user namespace (nsId) first, then system namespace.
-			// This lets users override system templates with their own.
+			// Resolve the VNet structure from a template (single source of the default policy).
+			// When no template is requested, fall back to the default template id. A missing
+			// template is a hard error (no silent hard-coded fallback); the InfraDynamic review
+			// stage checks this up front. Lookup order: user namespace first, then system.
+			effectiveVNetTemplateId := model.DefaultVNetTemplateId
 			if options != nil && options.VNetTemplateId != "" {
-				var tmplFound bool
-				var tmpl model.VNetTemplateInfo
-
-				// Try user namespace first
-				if nsId != model.SystemCommonNs {
-					t, err := common.GetVNetTemplate(nsId, options.VNetTemplateId)
-					if err == nil {
-						tmpl = t
-						tmplFound = true
-						log.Info().Msgf("VNet template '%s' found in user namespace '%s'", options.VNetTemplateId, nsId)
-					}
-				}
-				// Fallback to system namespace
-				if !tmplFound {
-					t, err := common.GetVNetTemplate(model.SystemCommonNs, options.VNetTemplateId)
-					if err != nil {
-						log.Warn().Err(err).Msgf("VNet template '%s' not found in namespace '%s' or system namespace; falling back to default CIDR generation",
-							options.VNetTemplateId, nsId)
-					} else {
-						tmpl = t
-						tmplFound = true
-						log.Info().Msgf("VNet template '%s' found in system namespace", options.VNetTemplateId)
-					}
-				}
-
-				if tmplFound {
-					if tmpl.VNetPolicy != nil {
-						// Policy mode: CSP-agnostic intent → auto-resolve CSP-specific details
-						log.Info().Msgf("Using VNet policy template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
-						if err := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, sliceIndex, options.Zone); err != nil {
-							log.Error().Err(err).Msgf("Failed to apply VNet policy from template '%s'", options.VNetTemplateId)
-							return err
-						}
-						common.PrintJsonPretty(reqTmp)
-						resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
-						if err != nil {
-							log.Error().Err(err).Msgf("Failed to create vNet from policy template '%s'", options.VNetTemplateId)
-							return err
-						}
-						common.PrintJsonPretty(resultInfo)
-						continue resTypeLoop
-					} else if tmpl.VNetReq != nil {
-						// Raw mode: use template's explicit network structure as-is
-						log.Info().Msgf("Using VNet raw template '%s' for connection '%s'", options.VNetTemplateId, connectionName)
-						reqTmp.CidrBlock = tmpl.VNetReq.CidrBlock
-						reqTmp.SubnetInfoList = tmpl.VNetReq.SubnetInfoList
-						// Apply explicit zone to subnets that don't already have a zone assigned
-						if options.Zone != "" {
-							for i := range reqTmp.SubnetInfoList {
-								if reqTmp.SubnetInfoList[i].Zone == "" {
-									reqTmp.SubnetInfoList[i].Zone = options.Zone
-								}
-							}
-						}
-						common.PrintJsonPretty(reqTmp)
-						resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
-						if err != nil {
-							log.Error().Err(err).Msgf("Failed to create vNet from raw template '%s'", options.VNetTemplateId)
-							return err
-						}
-						common.PrintJsonPretty(resultInfo)
-						continue resTypeLoop
-					} else {
-						// Template found but neither VNetPolicy nor VNetReq is set — guard against silent fallback
-						log.Warn().Msgf("VNet template '%s' has neither vNetPolicy nor vNetReq defined; falling back to default CIDR generation",
-							options.VNetTemplateId)
-					}
-				}
+				effectiveVNetTemplateId = options.VNetTemplateId
+			}
+			var explicitZone string
+			if options != nil {
+				explicitZone = options.Zone
 			}
 
-			{
-				// set isolated private address space for each cloud region (10.i.0.0/16)
-				reqTmp.CidrBlock = "10." + strconv.Itoa(sliceIndex) + ".0.0/16"
+			var tmplFound bool
+			var tmpl model.VNetTemplateInfo
+			if nsId != model.SystemCommonNs {
+				if t, err := common.GetVNetTemplate(nsId, effectiveVNetTemplateId); err == nil {
+					tmpl = t
+					tmplFound = true
+					log.Info().Msgf("VNet template '%s' found in user namespace '%s'", effectiveVNetTemplateId, nsId)
+				}
+			}
+			if !tmplFound {
+				if t, err := common.GetVNetTemplate(model.SystemCommonNs, effectiveVNetTemplateId); err != nil {
+					log.Warn().Err(err).Msgf("VNet template '%s' not found in namespace '%s' or system namespace", effectiveVNetTemplateId, nsId)
+				} else {
+					tmpl = t
+					tmplFound = true
+					log.Info().Msgf("VNet template '%s' found in system namespace", effectiveVNetTemplateId)
+				}
+			}
+			if !tmplFound {
+				return fmt.Errorf("VNet template '%s' not found in namespace '%s' or system namespace; "+
+					"load it before provisioning (e.g. run 'make init' to load init/templates, or register it via the template API)", effectiveVNetTemplateId, nsId)
+			}
 
-				// Create subnets based on provider limitations
-				// CSPs with single subnet requirement due to network architecture limitations
-				// IBM: Single subnet to avoid Address Prefix conflicts caused by CB-Spider implementation constraints
-				// ref IBM VPC Network structure: https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc&locale=en
-				// IBM VPC requires zone-specific Address Prefix setup, but CB-Spider uses same CIDR for all zones causing conflicts.
-				// This limitation exists in CB-Spider's IBM VPC driver implementation (VPCHandler.go line 108).
-				singleSubnetProviders := []string{csp.IBM}
-
-				// Check if the connection has an assigned zone
-				// If AssignedZone is empty, skip zone assignment to let CSP auto-select the best zone
-				// This is important for resources like GPU VMs that may only be available in specific zones
-				connConfig, err := common.GetConnConfig(connectionName)
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to get connection config")
+			// Build the VNet request from the template (policy = CSP-agnostic intent auto-resolved
+			// to CSP-specific details; raw = explicit structure as-is).
+			if tmpl.VNetPolicy != nil {
+				log.Info().Msgf("Using VNet policy template '%s' for connection '%s'", effectiveVNetTemplateId, connectionName)
+				if err := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, sliceIndex, explicitZone); err != nil {
+					log.Error().Err(err).Msgf("Failed to apply VNet policy from template '%s'", effectiveVNetTemplateId)
 					return err
 				}
-				assignedZone := connConfig.RegionZoneInfo.AssignedZone
-				shouldAssignZone := assignedZone != ""
-
-				// NCP special case: Always require zone assignment for K8s cluster subnet consistency
-				// ref: https://github.com/cloud-barista/cb-tumblebug/issues/2136
-				if csp.ResolveCloudPlatform(provider) == csp.NCP {
-					shouldAssignZone = true
-				}
-
-				// If Zone is explicitly specified in options, use that zone for subnet placement
-				// This is useful for GPU VMs or other resources only available in specific zones
-				var explicitZone string
-				if options != nil && options.Zone != "" {
-					explicitZone = options.Zone
-					shouldAssignZone = true
-					log.Info().Msgf("Using explicitly specified zone '%s' for subnet creation", explicitZone)
-				}
-
-				// Others: Create 2 subnets (10.i.0.0/18, 10.i.64.0/18) with tentative space for 2 more (10.i.128.0/18, 10.i.192.0/18)
-				zones, length, _ := GetFirstNZones(connectionName, 2)
-				subnetName := reqTmp.Name
-				subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
-				subnet := model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-				// Use explicit zone if specified, otherwise use first zone from connection
-				if shouldAssignZone {
-					if explicitZone != "" {
-						subnet.Zone = explicitZone
-					} else if length > 0 {
-						subnet.Zone = zones[0]
-					}
-				}
-				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
-
-				// Check if provider requires only single subnet
-				requiresSingleSubnet := slices.Contains(singleSubnetProviders, csp.ResolveCloudPlatform(provider))
-
-				// Create second subnet only if provider supports multiple subnets
-				// When explicit zone is specified, second subnet is placed in a different zone for redundancy
-				// Allow creation even with single zone (length=1) if explicit zone is specified,
-				// as fallback logic below handles placing both subnets in the same zone
-				if !requiresSingleSubnet && (length > 1 || explicitZone != "") {
-					subnetName = reqTmp.Name + "-01"
-					subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
-					subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-					if shouldAssignZone {
-						if explicitZone != "" {
-							// When user specifies a zone, place second subnet in a different zone for redundancy
-							// Find a zone different from the explicitly specified one
-							secondaryZone := ""
-							for _, z := range zones {
-								if z != explicitZone {
-									secondaryZone = z
-									break
-								}
-							}
-							if secondaryZone != "" {
-								subnet.Zone = secondaryZone
-								log.Info().Msgf("Second subnet will be placed in zone '%s' (different from explicit zone '%s')", secondaryZone, explicitZone)
-							} else {
-								// Fallback: if no different zone found, use the same explicit zone
-								subnet.Zone = explicitZone
-								log.Warn().Msgf("No different zone available, using same zone '%s' for second subnet", explicitZone)
-							}
-						} else if csp.ResolveCloudPlatform(provider) == csp.NCP {
-							// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
-							// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
-							subnet.Zone = zones[0]
-						} else {
-							subnet.Zone = zones[1]
+			} else if tmpl.VNetReq != nil {
+				log.Info().Msgf("Using VNet raw template '%s' for connection '%s'", effectiveVNetTemplateId, connectionName)
+				reqTmp.CidrBlock = tmpl.VNetReq.CidrBlock
+				reqTmp.SubnetInfoList = tmpl.VNetReq.SubnetInfoList
+				// Apply explicit zone to subnets that don't already have a zone assigned
+				if explicitZone != "" {
+					for i := range reqTmp.SubnetInfoList {
+						if reqTmp.SubnetInfoList[i].Zone == "" {
+							reqTmp.SubnetInfoList[i].Zone = explicitZone
 						}
 					}
-					reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 				}
+			} else {
+				return fmt.Errorf("VNet template '%s' has neither vNetPolicy nor vNetReq defined", effectiveVNetTemplateId)
+			}
 
-				common.PrintJsonPretty(reqTmp)
+			common.PrintJsonPretty(reqTmp)
+			resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to create vNet from template '%s'", effectiveVNetTemplateId)
+				return err
+			}
+			common.PrintJsonPretty(resultInfo)
 
-				resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to create vNet")
-					return err
+			// Tag a dedicated per-Infra VNet (sys.infraId, sys.purpose) so the unused-resource
+			// release operation can reclaim it once no VMs reference it.
+			if options != nil && options.InfraId != "" && tmpl.VNetPolicy != nil && tmpl.VNetPolicy.Dedicated {
+				vnetKey := common.GenResourceKey(nsId, model.StrVNet, resultInfo.Id)
+				extraLabels := map[string]string{
+					model.LabelInfraId: options.InfraId,
+					model.LabelPurpose: model.PurposeInfraDynamic,
 				}
-				common.PrintJsonPretty(resultInfo)
+				if lblErr := label.CreateOrUpdateLabel(ctx, model.StrVNet, resultInfo.Uid, vnetKey, extraLabels); lblErr != nil {
+					log.Warn().Err(lblErr).Msgf("Failed to label dedicated VNet '%s' with infraId/purpose", resultInfo.Id)
+				}
 			}
 		} else if strings.EqualFold(resType, model.StrSecurityGroup) {
 			log.Debug().Msg(model.StrSecurityGroup)
@@ -2629,71 +2599,99 @@ resTypeLoop:
 			reqTmp.Description = description
 			reqTmp.VNetId = vNetResourceName
 
-			// Use SG template if specified, otherwise apply default all-open firewall rules.
+			// Resolve the firewall policy from a SecurityGroup template so that the
+			// default policy lives in a single editable source (init/templates/*.json,
+			// loaded into the system namespace by `make init`) instead of being
+			// hard-coded here. When no template is explicitly requested, fall back to
+			// the default template id.
 			// Lookup order: user namespace (nsId) first, then system namespace.
+			effectiveSgTemplateId := model.DefaultSecurityGroupTemplateId
 			if options != nil && options.SgTemplateId != "" {
-				var sgTmplFound bool
-				var sgTmpl model.SecurityGroupTemplateInfo
+				effectiveSgTemplateId = options.SgTemplateId
+			}
 
-				// Try user namespace first
-				if nsId != model.SystemCommonNs {
-					t, err := common.GetSecurityGroupTemplate(nsId, options.SgTemplateId)
-					if err == nil {
-						sgTmpl = t
-						sgTmplFound = true
-						log.Info().Msgf("SecurityGroup template '%s' found in user namespace '%s'", options.SgTemplateId, nsId)
-					}
-				}
-				// Fallback to system namespace
-				if !sgTmplFound {
-					t, err := common.GetSecurityGroupTemplate(model.SystemCommonNs, options.SgTemplateId)
-					if err != nil {
-						log.Warn().Err(err).Msgf("SecurityGroup template '%s' not found in namespace '%s' or system namespace; falling back to default all-open rules",
-							options.SgTemplateId, nsId)
-					} else {
-						sgTmpl = t
-						sgTmplFound = true
-						log.Info().Msgf("SecurityGroup template '%s' found in system namespace", options.SgTemplateId)
-					}
-				}
+			var sgTmplFound bool
+			var sgTmpl model.SecurityGroupTemplateInfo
 
-				if sgTmplFound {
-					log.Info().Msgf("Using SecurityGroup template '%s' for connection '%s'", options.SgTemplateId, connectionName)
-					reqTmp.FirewallRules = sgTmpl.SecurityGroupReq.FirewallRules
-					common.PrintJsonPretty(reqTmp)
-					resultInfo, err := CreateSecurityGroup(ctx, nsId, &reqTmp, "")
-					if err != nil {
-						log.Error().Err(err).Msgf("Failed to create SecurityGroup from template '%s'", options.SgTemplateId)
-						return err
-					}
-					common.PrintJsonPretty(resultInfo)
-					continue resTypeLoop
+			// Try user namespace first
+			if nsId != model.SystemCommonNs {
+				t, err := common.GetSecurityGroupTemplate(nsId, effectiveSgTemplateId)
+				if err == nil {
+					sgTmpl = t
+					sgTmplFound = true
+					log.Info().Msgf("SecurityGroup template '%s' found in user namespace '%s'", effectiveSgTemplateId, nsId)
+				}
+			}
+			// Fallback to system namespace
+			if !sgTmplFound {
+				t, err := common.GetSecurityGroupTemplate(model.SystemCommonNs, effectiveSgTemplateId)
+				if err != nil {
+					log.Warn().Err(err).Msgf("SecurityGroup template '%s' not found in namespace '%s' or system namespace", effectiveSgTemplateId, nsId)
+				} else {
+					sgTmpl = t
+					sgTmplFound = true
+					log.Info().Msgf("SecurityGroup template '%s' found in system namespace", effectiveSgTemplateId)
 				}
 			}
 
-			// Default: open all firewall for default securityGroup
+			// A missing SecurityGroup template is a hard error: there is no silent
+			// all-open fallback. The InfraDynamic review stage checks this up front so
+			// users can load the template before provisioning.
+			if !sgTmplFound {
+				return fmt.Errorf("SecurityGroup template '%s' not found in namespace '%s' or system namespace; "+
+					"load it before provisioning (e.g. run 'make init' to load init/templates, or register it via the template API)", effectiveSgTemplateId, nsId)
+			}
+
+			log.Info().Msgf("Using SecurityGroup template '%s' for connection '%s'", effectiveSgTemplateId, connectionName)
+			// Copy rules into a fresh slice so we never mutate the cached template,
+			// resolving the "internal" CIDR keyword to the target VNet's own CIDR block
+			// (resolved lazily so templates without the keyword incur no lookup).
+			internalCidr := ""
 			var ruleList []model.FirewallRuleReq
-			rule := model.FirewallRuleReq{Ports: "1-65535", Protocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-			ruleList = append(ruleList, rule)
-			rule = model.FirewallRuleReq{Ports: "1-65535", Protocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-			ruleList = append(ruleList, rule)
-			// CloudIt only offers tcp, udp Protocols
-			if !strings.EqualFold(csp.ResolveCloudPlatform(provider), "cloudit") {
-				rule = model.FirewallRuleReq{Protocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-				ruleList = append(ruleList, rule)
+			if sgTmpl.SecurityGroupReq.FirewallRules != nil {
+				for _, r := range *sgTmpl.SecurityGroupReq.FirewallRules {
+					if strings.EqualFold(r.CIDR, model.FirewallCidrKeywordInternal) {
+						if internalCidr == "" {
+							// Prefer the actual VNet CIDR (covers vNet-template custom ranges), but
+							// only if it is a valid CIDR: some CSPs have no VPC-level CIDR (e.g. GCP,
+							// whose stored CidrBlock is a placeholder like "GCP VPC does not support
+							// IPv4_CIDR"), so fall back to the generated /16 range that covers the
+							// auto-assigned subnets in that case.
+							internalCidr = fmt.Sprintf("10.%d.0.0/16", sliceIndex)
+							if vNetInfo, err := GetVNet(nsId, vNetResourceName); err != nil {
+								log.Warn().Err(err).Msgf("Could not read VNet '%s' for 'internal' keyword; using generated range '%s'", vNetResourceName, internalCidr)
+							} else if _, _, perr := net.ParseCIDR(vNetInfo.CidrBlock); perr == nil {
+								internalCidr = vNetInfo.CidrBlock
+							}
+						}
+						r.CIDR = internalCidr
+					}
+					ruleList = append(ruleList, r)
+				}
 			}
-
-			common.PrintJsonPretty(ruleList)
 			reqTmp.FirewallRules = &ruleList
 
 			common.PrintJsonPretty(reqTmp)
-
 			resultInfo, err := CreateSecurityGroup(ctx, nsId, &reqTmp, "")
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to create SecurityGroup")
+				log.Error().Err(err).Msgf("Failed to create SecurityGroup (template: '%s')", effectiveSgTemplateId)
 				return err
 			}
 			common.PrintJsonPretty(resultInfo)
+
+			// Tag a dedicated per-Infra SG (sys.infraId, sys.purpose) so the unused-resource
+			// release operation can reclaim it once no VMs reference it. Labels merge with the
+			// base labels set by CreateSecurityGroup.
+			if options != nil && options.InfraId != "" {
+				sgKey := common.GenResourceKey(nsId, model.StrSecurityGroup, resultInfo.Id)
+				extraLabels := map[string]string{
+					model.LabelInfraId: options.InfraId,
+					model.LabelPurpose: model.PurposeInfraDynamic,
+				}
+				if lblErr := label.CreateOrUpdateLabel(ctx, model.StrSecurityGroup, resultInfo.Uid, sgKey, extraLabels); lblErr != nil {
+					log.Warn().Err(lblErr).Msgf("Failed to label dedicated SG '%s' with infraId/purpose", resultInfo.Id)
+				}
+			}
 
 		} else if strings.EqualFold(resType, model.StrSSHKey) {
 			log.Debug().Msg(model.StrSSHKey)
@@ -2706,12 +2704,25 @@ resTypeLoop:
 
 			common.PrintJsonPretty(reqTmp)
 
-			_, err := CreateSshKey(ctx, nsId, &reqTmp, "")
+			resultInfo, err := CreateSshKey(ctx, nsId, &reqTmp, "")
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to create SshKey")
 				return err
 			}
-			// common.PrintJsonPretty(resultInfo)
+
+			// Tag a dedicated per-Infra SSHKey (sys.infraId, sys.purpose) so the unused-resource
+			// release operation can reclaim it once no VMs reference it. Labels merge with the
+			// base labels set by CreateSshKey.
+			if options != nil && options.InfraId != "" {
+				keyKey := common.GenResourceKey(nsId, model.StrSSHKey, resultInfo.Id)
+				extraLabels := map[string]string{
+					model.LabelInfraId: options.InfraId,
+					model.LabelPurpose: model.PurposeInfraDynamic,
+				}
+				if lblErr := label.CreateOrUpdateLabel(ctx, model.StrSSHKey, resultInfo.Uid, keyKey, extraLabels); lblErr != nil {
+					log.Warn().Err(lblErr).Msgf("Failed to label dedicated SSHKey '%s' with infraId/purpose", resultInfo.Id)
+				}
+			}
 		} else {
 			return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
 		}
@@ -2720,8 +2731,18 @@ resTypeLoop:
 	return nil
 }
 
-// DeleteSharedResources deletes all Default securityGroup, sshKey, vNet objects
-func DeleteSharedResources(nsId string) (model.ResourceDeleteResults, error) {
+// DeleteSharedResources releases auto-generated resources that are no longer referenced:
+//   - shared resources named "{nsId}-shared-...": SecurityGroup, SSHKey, vNet
+//   - per-Infra dedicated SecurityGroups (label sys.purpose=infra-dynamic-sg), which become
+//     orphaned once their Infra is deleted
+//
+// Only resources with NO associated objects (per CB-TB records) are removed, so user-created
+// or still-in-use resources are preserved (forceFlag=false is used as an extra guard). When
+// dryRun is true nothing is deleted and the result lists what WOULD be removed.
+//
+// Deletion order is SecurityGroup -> SSHKey -> vNet so that a shared vNet is only removed
+// after the SGs referencing it are gone (avoids CSP DependencyViolation).
+func DeleteSharedResources(nsId string, dryRun bool) (model.ResourceDeleteResults, error) {
 
 	output := model.ResourceDeleteResults{}
 	err := common.CheckString(nsId)
@@ -2732,41 +2753,113 @@ func DeleteSharedResources(nsId string) (model.ResourceDeleteResults, error) {
 
 	matchedSubstring := nsId + model.StrSharedResourceName
 
-	list, err := DelAllResources(nsId, model.StrSecurityGroup, matchedSubstring, "false")
-	if err != nil {
-		log.Error().Err(err).Msg("")
+	// filterShared returns resource IDs of a type whose name marks them as shared/auto-generated.
+	filterShared := func(resourceType string) []string {
+		ids, err := ListResourceId(nsId, resourceType)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to list %s for shared-resource release", resourceType)
+			return nil
+		}
+		var matched []string
+		for _, id := range ids {
+			if strings.Contains(id, matchedSubstring) {
+				matched = append(matched, id)
+			}
+		}
+		return matched
 	}
-	output.Results = append(output.Results, list.Results...)
 
-	list, err = DelAllResources(nsId, model.StrSSHKey, matchedSubstring, "false")
-	if err != nil {
-		log.Error().Err(err).Msg("")
+	// dedicatedSelector matches per-Infra auto-generated resources (SG / SSHKey).
+	dedicatedSelector := model.LabelPurpose + "=" + model.PurposeInfraDynamic + "," + model.LabelNamespace + "=" + nsId
+
+	// SecurityGroup candidates: shared-named + per-Infra dedicated (identified by label).
+	sgIdSet := make(map[string]bool)
+	for _, id := range filterShared(model.StrSecurityGroup) {
+		sgIdSet[id] = true
 	}
-	output.Results = append(output.Results, list.Results...)
-
-	// Check if any SecurityGroup deletions failed before attempting VNet deletion
-	// Failed SGs on CSP will cause VNet deletion to fail with DependencyViolation
-	var sgFailures []model.ResourceDeleteResult
-	var failedSgIds []string
-	for _, item := range output.Results {
-		if item.ResourceType == model.StrSecurityGroup && !item.Success {
-			sgFailures = append(sgFailures, item)
-			failedSgIds = append(failedSgIds, item.ResourceId)
+	if resources, lblErr := label.GetResourcesByLabelSelector(model.StrSecurityGroup, dedicatedSelector); lblErr != nil {
+		log.Warn().Err(lblErr).Msg("Failed to list per-Infra dedicated SecurityGroups by label")
+	} else {
+		for _, r := range resources {
+			if sg, ok := r.(*model.SecurityGroupInfo); ok {
+				sgIdSet[sg.Id] = true
+			}
 		}
 	}
-	if len(sgFailures) > 0 {
-		log.Warn().Msgf("[Warning] %d SecurityGroup(s) failed to delete. VNet deletion may fail due to CSP dependency (e.g., DependencyViolation). Failed SGs: %v", len(sgFailures), failedSgIds)
+	sgIds := make([]string, 0, len(sgIdSet))
+	for id := range sgIdSet {
+		sgIds = append(sgIds, id)
 	}
 
-	list, err = DelAllResources(nsId, model.StrVNet, matchedSubstring, "false")
-	if err != nil {
-		if len(sgFailures) > 0 {
-			log.Error().Err(err).Msgf("VNet deletion failed, possibly due to %d unresolved SecurityGroup dependency(ies) on CSP. Failed SG IDs: %v", len(sgFailures), failedSgIds)
-		} else {
-			log.Error().Err(err).Msg("")
+	// SSHKey candidates: shared-named + per-Infra dedicated (identified by label).
+	keyIdSet := make(map[string]bool)
+	for _, id := range filterShared(model.StrSSHKey) {
+		keyIdSet[id] = true
+	}
+	if resources, lblErr := label.GetResourcesByLabelSelector(model.StrSSHKey, dedicatedSelector); lblErr != nil {
+		log.Warn().Err(lblErr).Msg("Failed to list per-Infra dedicated SSHKeys by label")
+	} else {
+		for _, r := range resources {
+			if k, ok := r.(*model.SshKeyInfo); ok {
+				keyIdSet[k.Id] = true
+			}
 		}
 	}
-	output.Results = append(output.Results, list.Results...)
+	keyIds := make([]string, 0, len(keyIdSet))
+	for id := range keyIdSet {
+		keyIds = append(keyIds, id)
+	}
+
+	// VNet candidates: shared-named + per-Infra dedicated (identified by label).
+	vnetIdSet := make(map[string]bool)
+	for _, id := range filterShared(model.StrVNet) {
+		vnetIdSet[id] = true
+	}
+	if resources, lblErr := label.GetResourcesByLabelSelector(model.StrVNet, dedicatedSelector); lblErr != nil {
+		log.Warn().Err(lblErr).Msg("Failed to list per-Infra dedicated VNets by label")
+	} else {
+		for _, r := range resources {
+			if v, ok := r.(*model.VNetInfo); ok {
+				vnetIdSet[v.Id] = true
+			}
+		}
+	}
+	vnetIds := make([]string, 0, len(vnetIdSet))
+	for id := range vnetIdSet {
+		vnetIds = append(vnetIds, id)
+	}
+
+	// release deletes (or, in dryRun, reports) only resources with no associated objects.
+	release := func(resourceType string, ids []string) {
+		for _, id := range ids {
+			assoc, assocErr := GetAssociatedObjectList(nsId, resourceType, id)
+			if assocErr != nil {
+				log.Warn().Err(assocErr).Msgf("Failed to check associations for %s '%s'; skipping", resourceType, id)
+				continue
+			}
+			if len(assoc) > 0 {
+				// Still referenced (in use) -> preserve.
+				continue
+			}
+			if dryRun {
+				output.Results = append(output.Results, model.ResourceDeleteResult{
+					ResourceType: resourceType, ResourceId: id, Success: true,
+					Message: "would be deleted (dry-run): no associated objects",
+				})
+				continue
+			}
+			delErr := DelResource(nsId, resourceType, id, "false")
+			res := model.ResourceDeleteResult{ResourceType: resourceType, ResourceId: id, Success: delErr == nil}
+			if delErr != nil {
+				res.Message = delErr.Error()
+			}
+			output.Results = append(output.Results, res)
+		}
+	}
+
+	release(model.StrSecurityGroup, sgIds)
+	release(model.StrSSHKey, keyIds)
+	release(model.StrVNet, vnetIds)
 
 	// Build summary counts
 	successCount := 0

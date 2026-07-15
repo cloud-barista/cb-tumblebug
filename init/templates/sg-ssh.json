@@ -1,0 +1,33 @@
+{
+  "nsId": "system",
+  "resourceType": "securityGroup",
+  "name": "sg-ssh",
+  "description": "Common SecurityGroup template: opens SSH (TCP 22) and ICMP inbound from anywhere for remote access and diagnostics, plus all traffic within the VNet (the 'internal' keyword resolves to the target VNet CIDR at provisioning time) for node-to-node communication. Use for SSH-reachable nodes without exposing all application ports to the internet. Note: cross-CSP traffic over public IPs is not covered by the internal rule.",
+  "securityGroupReq": {
+    "firewallRules": [
+      {
+        "ports": "22",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "protocol": "ICMP",
+        "direction": "inbound",
+        "cidr": "0.0.0.0/0"
+      },
+      {
+        "ports": "1-65535",
+        "protocol": "TCP",
+        "direction": "inbound",
+        "cidr": "internal"
+      },
+      {
+        "ports": "1-65535",
+        "protocol": "UDP",
+        "direction": "inbound",
+        "cidr": "internal"
+      }
+    ]
+  }
+}

@@ -403,12 +403,17 @@ func RestCreateSharedResource(c echo.Context) error {
 
 // RestDelAllSharedResources godoc
 // @ID DelAllSharedResources
-// @Summary Delete all Default Resource Objects in the given namespace
-// @Description Delete all Default Resource Objects in the given namespace
+// @Summary Release unused auto-generated resources in the given namespace
+// @Description Release auto-generated resources that are no longer referenced: shared resources
+// @Description named "{nsId}-shared-..." (SecurityGroup, SSHKey, vNet) and per-Infra dedicated
+// @Description SecurityGroups that became orphaned after their Infra was deleted. Only resources
+// @Description with no associated objects are removed; user-created or in-use resources are kept.
+// @Description Use dryRun=true to preview what would be released without deleting anything.
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
+// @Param dryRun query boolean false "Preview only: report what would be released without deleting"
 // @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -417,10 +422,15 @@ func RestCreateSharedResource(c echo.Context) error {
 func RestDelAllSharedResources(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	// dryRun=true reports what would be released without deleting anything.
+	dryRun := strings.EqualFold(c.QueryParam("dryRun"), "true")
 
-	content, err := resource.DeleteSharedResources(nsId)
+	content, err := resource.DeleteSharedResources(nsId, dryRun)
 
 	for _, result := range content.Results {
+		if dryRun {
+			break
+		}
 		if result.ResourceType == model.StrVNet && !result.Success {
 			// Trigger Self-healing upon deletion failure
 			log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", result.ResourceId)
