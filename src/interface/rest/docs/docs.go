@@ -16911,7 +16911,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/sharedResources": {
             "delete": {
-                "description": "Delete all Default Resource Objects in the given namespace",
+                "description": "Release auto-generated resources that are no longer referenced: shared resources\nnamed \"{nsId}-shared-...\" (SecurityGroup, SSHKey, vNet) and per-Infra dedicated\nSecurityGroups that became orphaned after their Infra was deleted. Only resources\nwith no associated objects are removed; user-created or in-use resources are kept.\nUse dryRun=true to preview what would be released without deleting anything.",
                 "consumes": [
                     "application/json"
                 ],
@@ -16921,7 +16921,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Common Utility"
                 ],
-                "summary": "Delete all Default Resource Objects in the given namespace",
+                "summary": "Release unused auto-generated resources in the given namespace",
                 "operationId": "DelAllSharedResources",
                 "parameters": [
                     {
@@ -16931,6 +16931,12 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Preview only: report what would be released without deleting",
+                        "name": "dryRun",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -33675,9 +33681,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cidrBlock": {
-                    "description": "CidrBlock for the VPC. Use \"auto\" to assign a unique /16 block automatically\n(based on connection index: 10.{i}.0.0/16), or specify an explicit CIDR.\nFor CSPs that do not support VPC-level CIDR (e.g. GCP), this field is ignored.",
+                    "description": "CidrBlock for the VPC. Use \"auto\" to assign a unique /16 block automatically\n(based on connection index: 10.{i}.0.0/16), or specify an explicit CIDR.\nIgnored for CSPs that have no VPC-level CIDR (e.g. GCP, whose subnets carry their own\nCIDRs and whose VPC rejects a CIDR): no CIDR is assigned to the vNet for those CSPs.",
                     "type": "string",
                     "example": "auto"
+                },
+                "dedicated": {
+                    "description": "Dedicated controls the VNet isolation model for dynamic provisioning.\n  false (default) → shared VNet per connection (\"{ns}-shared-{conn}\"), reused across\n                    Infras. Preferred because VPC/VNet is a scarce CSP resource.\n  true            → dedicated VNet per Infra (\"{infraId}-{conn}\"), isolating each\n                    Infra's network. Use only when isolation is required; dedicated\n                    VNets consume the (limited) per-region VPC quota faster.",
+                    "type": "boolean",
+                    "example": false
                 },
                 "multiZone": {
                     "description": "MultiZone requests that subnets be spread across different availability zones\nwhen the region has more than one zone.\nSet to false to place all subnets in the same zone (required for some workloads).\nNCP → always forced to false (all subnets must reside in the same zone).",
