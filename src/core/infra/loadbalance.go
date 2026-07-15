@@ -618,9 +618,9 @@ func ListNLB(nsId string, infraId string, filterKey string, filterVal string) (a
 		return nil, err
 	}
 
-	log.Debug().Msg("[Get] NLB list")
+	// log.Debug().Msg("[Get] NLB list")
 	key := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/%s/"+model.StrNLB, nsId, infraId)
-	fmt.Println(key)
+	// fmt.Println(key)
 
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)

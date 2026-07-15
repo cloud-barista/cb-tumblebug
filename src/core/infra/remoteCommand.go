@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -628,7 +629,10 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			if err != nil || len(bs) == 0 {
 				continue
 			}
-			bastionId := bs[0].NodeId
+			// Use the same selection as the execution path (pickBastion) so
+			// this dependency accounting names the bastion the target will
+			// actually tunnel through when several are registered.
+			bastionId := pickBastion(bs, n).NodeId
 			if bastionId == "" || bastionId == n {
 				continue // self-bastion — no contention with siblings
 			}
@@ -1027,7 +1031,9 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 		return map[int]string{}, map[int]string{}, err
 	}
 
-	bastionNode := bastionNodes[0]
+	// Spread load across the subnet's bastions when more than one is
+	// registered; deterministic per target so retries reuse the same hop.
+	bastionNode := pickBastion(bastionNodes, nodeId)
 
 	// Validate bastion node has valid Node ID
 	if bastionNode.NodeId == "" {
@@ -2574,7 +2580,7 @@ func transferFileToNodeViaBastion(nsId string, infraId string, nodeId string, ta
 		return fmt.Errorf("failed to get bastion nodes: %v", err)
 	}
 
-	bastionNode := bastionNodes[0]
+	bastionNode := pickBastion(bastionNodes, nodeId)
 	bastionNsId := bastionNode.NsId
 	if bastionNsId == "" {
 		bastionNsId = nsId
@@ -2820,7 +2826,7 @@ func downloadFileFromNodeViaBastion(nsId string, infraId string, nodeId string, 
 		return nil, "", fmt.Errorf("failed to get bastion nodes: %w", err)
 	}
 
-	bastionNode := bastionNodes[0]
+	bastionNode := pickBastion(bastionNodes, nodeId)
 	bastionNsId := bastionNode.NsId
 	if bastionNsId == "" {
 		bastionNsId = nsId
@@ -3317,6 +3323,41 @@ func GetUsableBastionNodes(nsId string, infraId string, targetNodeId string) ([]
 		return nil, fmt.Errorf("no usable bastion node available for VM (ID: %s) in Infra (ID: %s)", targetNodeId, infraId)
 	}
 	return usable, nil
+}
+
+// pickBastion selects one bastion for a given target from a subnet's list of
+// bastions, spreading load across bastions when an operator has registered
+// more than one for the same subnet (manually and/or auto-assigned).
+//
+// It uses Rendezvous (Highest-Random-Weight) hashing keyed on the STABLE
+// bastion NodeId — deliberately NOT `hash(target) % len(list)`. The bastion
+// set is volatile: GetUsableBastionNodes re-checks Running state and drops
+// stale registrations on every call, and operators add/remove bastions over
+// time. With index-modulo, removing a single bastion (or a change in storage
+// order) reshuffles almost every target's assignment. With HRW:
+//   - selection depends only on the SET of present NodeIds, not their order;
+//   - removing a bastion rehomes ONLY the targets that were on it (~1/K move
+//     when one is added), so churn under a changing set is minimal;
+//   - it is stateless/lock-free, so the concurrent fan-out needs no shared
+//     counter, and the same target maps to the same bastion across the
+//     command / upload / download call sites as long as that bastion stays
+//     usable.
+//
+// Any bastion in the target's subnet can reach the target's private network,
+// so if the chosen bastion later drops out, rehoming to the next-best one is
+// functionally safe.
+func pickBastion(bastions []model.BastionNode, targetNodeId string) model.BastionNode {
+	best := bastions[0]
+	var bestScore uint64
+	for i, b := range bastions {
+		sum := sha256.Sum256([]byte(targetNodeId + "|" + b.NodeId))
+		score := binary.BigEndian.Uint64(sum[:8])
+		if i == 0 || score > bestScore {
+			bestScore = score
+			best = b
+		}
+	}
+	return best
 }
 
 // Helper function to extract function name and parameters from the string

@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
@@ -736,7 +737,13 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		nodeInfoData.ImageId = nodeRequest.ImageId
 		nodeInfoData.CspImageName = nodeRequest.CspImageName // pre-resolved at nodegroup level; empty for custom images
 		nodeInfoData.VNetId = nodeRequest.VNetId
+		// Distribute VMs across subnets when a subnet list is provided (round-robin by VM index),
+		// otherwise all VMs use the single SubnetId. The index-based mapping is deterministic, so
+		// nodes added later to the same NodeGroup keep a consistent VM-to-subnet assignment.
 		nodeInfoData.SubnetId = nodeRequest.SubnetId
+		if len(nodeRequest.SubnetIds) > 0 {
+			nodeInfoData.SubnetId = nodeRequest.SubnetIds[i%len(nodeRequest.SubnetIds)]
+		}
 		nodeInfoData.SecurityGroupIds = nodeRequest.SecurityGroupIds
 		nodeInfoData.DataDiskIds = nodeRequest.DataDiskIds
 		nodeInfoData.SshKeyId = nodeRequest.SshKeyId
@@ -1100,6 +1107,13 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				}
 			}
 			nodeInfo.Id = nodeInfo.Name
+
+			// Distribute VMs across subnets when a subnet list is provided (round-robin by VM
+			// index), otherwise all VMs use the single SubnetId. Deterministic per VM index so
+			// nodes added later keep a consistent VM-to-subnet assignment.
+			if len(nodeGroupReq.SubnetIds) > 0 {
+				nodeInfo.SubnetId = nodeGroupReq.SubnetIds[i%len(nodeGroupReq.SubnetIds)]
+			}
 
 			nodeConfigs = append(nodeConfigs, nodeConfig{
 				nodeInfo:      nodeInfo,
@@ -3275,6 +3289,147 @@ func waitForVNetReady(ctx context.Context, nsId string, vNetId string) error {
 }
 
 // getNodeGroupReqFromDynamicReq is func to getNodeGroupReqFromDynamicReq with created resource tracking
+// vnetSubnetEnsureMu serializes on-demand subnet creation per VNet so concurrent NodeGroups
+// (same Infra, same connection) don't race on subnet CIDR allocation / naming.
+var vnetSubnetEnsureMu sync.Map // key: "{nsId}/{vNetId}" -> *sync.Mutex
+
+// nextSubnetCidr derives the next non-overlapping subnet CIDR inside the VNet's CIDR block,
+// based on the last existing subnet. Returns an error when the VNet is out of address space.
+func nextSubnetCidr(vNetInfo model.VNetInfo) (string, error) {
+	if vNetInfo.CidrBlock == "" {
+		return "", fmt.Errorf("VNet '%s' has no CIDR block", vNetInfo.Id)
+	}
+	if len(vNetInfo.SubnetInfoList) == 0 {
+		return "", fmt.Errorf("VNet '%s' has no existing subnet to derive the next CIDR from", vNetInfo.Id)
+	}
+	last := vNetInfo.SubnetInfoList[len(vNetInfo.SubnetInfoList)-1].IPv4_CIDR
+	return netutil.NextSubnet(last, vNetInfo.CidrBlock)
+}
+
+// specAvailableZonesOrdered returns the zones (in checker order) where the spec is offered, via the
+// CSP per-zone availability checker (e.g. AWS DescribeInstanceTypeOfferings). Empty when there is
+// no checker or no per-zone data — callers then keep default (first-N) zone behavior.
+func specAvailableZonesOrdered(ctx context.Context, specInfo model.SpecInfo) []string {
+	avail := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+		Provider:         csp.ResolveCloudPlatform(specInfo.ProviderName),
+		Region:           specInfo.RegionName,
+		InstanceType:     specInfo.CspSpecName,
+		AcceleratorModel: specInfo.AcceleratorModel,
+		AcceleratorCount: int(specInfo.AcceleratorCount),
+	})
+	if avail.Source == "none" || len(avail.Zones) == 0 {
+		return nil
+	}
+	zones := make([]string, 0, len(avail.Zones))
+	for _, z := range avail.Zones {
+		if z.Available {
+			zones = append(zones, z.ZoneId)
+		}
+	}
+	return zones
+}
+
+// ensureSpecAvailableSubnets makes sure the (shared) VNet has subnets in zones where the spec is
+// actually offered, creating them on demand (up to desiredCount spec-available subnets). This lets
+// both a freshly created and a reused shared VNet cover the zones a given spec needs — instead of
+// only the first-N zones picked at VNet creation, which may not offer the spec (observed failure:
+// t2.nano has no subnet in an offering zone).
+//
+// It returns the set of zones where the spec is offered (empty when unknown). Callers use it to
+// select spec-available subnets. It is a safe no-op for:
+//   - CSPs without a per-zone availability checker (Source "none") — nothing to base decisions on,
+//   - CSPs whose subnets are regional, not zonal (e.g. GCP/Azure) — per-zone subnets don't apply,
+//   - IBM/NCP-like CSPs where extra/other-zone subnets aren't supported — CreateSubnet just fails
+//     and is skipped (best-effort).
+func ensureSpecAvailableSubnets(ctx context.Context, nsId, vNetId string, specInfo model.SpecInfo, desiredCount int) map[string]bool {
+	avail := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
+		Provider:         csp.ResolveCloudPlatform(specInfo.ProviderName),
+		Region:           specInfo.RegionName,
+		InstanceType:     specInfo.CspSpecName,
+		AcceleratorModel: specInfo.AcceleratorModel,
+		AcceleratorCount: int(specInfo.AcceleratorCount),
+	})
+	if avail.Source == "none" || len(avail.Zones) == 0 {
+		return nil // no per-zone data; best-effort, nothing to ensure
+	}
+	availSet := make(map[string]bool, len(avail.Zones))
+	availOrder := make([]string, 0, len(avail.Zones))
+	for _, z := range avail.Zones {
+		if z.Available {
+			availSet[z.ZoneId] = true
+			availOrder = append(availOrder, z.ZoneId)
+		}
+	}
+	if len(availSet) == 0 {
+		return availSet // spec offered in no zone; caller falls back
+	}
+	if desiredCount < 1 {
+		desiredCount = 1
+	}
+
+	// Serialize subnet mutations for this VNet.
+	lk, _ := vnetSubnetEnsureMu.LoadOrStore(nsId+"/"+vNetId, &sync.Mutex{})
+	mu := lk.(*sync.Mutex)
+	mu.Lock()
+	defer mu.Unlock()
+
+	vNetInfo, err := resource.GetVNet(nsId, vNetId)
+	if err != nil {
+		log.Warn().Err(err).Msgf("ensureSpecAvailableSubnets: cannot read VNet '%s'", vNetId)
+		return availSet
+	}
+
+	covered := make(map[string]bool)
+	zonedSubnets := 0
+	for _, s := range vNetInfo.SubnetInfoList {
+		if s.Zone != "" {
+			covered[s.Zone] = true
+			zonedSubnets++
+		}
+	}
+	// Regional-subnet CSP (subnets carry no zone): per-zone subnet coverage doesn't apply.
+	if zonedSubnets == 0 && len(vNetInfo.SubnetInfoList) > 0 {
+		return availSet
+	}
+
+	availCovered := 0
+	for z := range covered {
+		if availSet[z] {
+			availCovered++
+		}
+	}
+
+	for _, z := range availOrder {
+		if availCovered >= desiredCount {
+			break
+		}
+		if covered[z] {
+			continue
+		}
+		newCidr, cErr := nextSubnetCidr(vNetInfo)
+		if cErr != nil {
+			log.Warn().Err(cErr).Msgf("ensureSpecAvailableSubnets: no CIDR space in VNet '%s' to add subnet for zone '%s'", vNetId, z)
+			break
+		}
+		subReq := &model.SubnetReq{
+			Name:      fmt.Sprintf("%s-%02d", vNetId, len(vNetInfo.SubnetInfoList)),
+			IPv4_CIDR: newCidr,
+			Zone:      z,
+		}
+		if _, sErr := resource.CreateSubnet(ctx, nsId, vNetId, subReq); sErr != nil {
+			log.Warn().Err(sErr).Msgf("ensureSpecAvailableSubnets: could not add subnet in zone '%s' to VNet '%s' (CSP may not support it)", z, vNetId)
+			continue
+		}
+		log.Info().Msgf("ensureSpecAvailableSubnets: added subnet '%s' (zone %s, cidr %s) to VNet '%s' for spec '%s'", subReq.Name, z, newCidr, vNetId, specInfo.Id)
+		covered[z] = true
+		availCovered++
+		if vi, e := resource.GetVNet(nsId, vNetId); e == nil {
+			vNetInfo = vi
+		}
+	}
+	return availSet
+}
+
 func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId string, req *model.CreateNodeGroupDynamicReq) (*NodeReqWithCreatedResources, error) {
 
 	reqID := common.RequestIDFromContext(ctx)
@@ -3330,18 +3485,13 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 		log.Info().Msgf("Using template-specific VNet resource name: %s (template: %s) for VM '%s'", vNetResourceName, req.VNetTemplateId, req.Name)
 	}
 
-	// SG resource name: dedicated per Infra ("{infraId}-{conn}[-zone][-tmpl]") so it can be
-	// freely updated for application ports without affecting other Infras, and reclaimed by
-	// the unused-resource release operation once no VMs reference it. VNet/SSHKey stay shared.
-	sgBaseName := infraId + "-" + nodeGroupReq.ConnectionName
-	if req.Zone != "" {
-		sgBaseName = sgBaseName + "-" + req.Zone
-	}
-	sgResourceName := sgBaseName
-	if req.SgTemplateId != "" {
-		sgResourceName = sgBaseName + "-" + req.SgTemplateId
-		log.Info().Msgf("Using template-specific SG resource name: %s (template: %s) for VM '%s'", sgResourceName, req.SgTemplateId, req.Name)
-	}
+	// SG resource name: dedicated per NodeGroup ("{infraId}-{nodeGroupName}"). Applications are
+	// deployed per NodeGroup, so their firewall ports can be opened per NodeGroup without affecting
+	// sibling NodeGroups on the same connection. The NodeGroup name is unique within an Infra, so no
+	// connection/zone/template suffix is needed. Reclaimed by the unused-resource release operation
+	// via its sys.infraId/sys.purpose labels once no VMs reference it. VNet/SSHKey stay per-Infra.
+	// NOTE: must match the name computed in resource.CreateSharedResourceWithOptions (NodeGroupName).
+	sgResourceName := infraId + "-" + req.Name
 
 	nodeGroupReq.SpecId = specInfo.Id
 	nodeGroupReq.ImageId = k.ImageId
@@ -3399,6 +3549,12 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating VNet with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
+			} else if p := csp.ResolveCloudPlatform(specInfo.ProviderName); p != csp.GCP && p != csp.Azure {
+				// Place the initial subnets in the spec's offering zones (layer 1) so we don't create
+				// subnets in zones the spec can't use — avoids leaving unused subnets. Restricted to
+				// zonal-subnet CSPs; GCP/Azure subnets are regional (no per-zone placement), and CSPs
+				// without a per-zone checker return no zones and keep default placement.
+				sharedResourceOpts.PreferredZones = specAvailableZonesOrdered(ctx, specInfo)
 			}
 			err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrVNet, nodeGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
@@ -3458,6 +3614,41 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 			log.Info().Msgf("Selected subnet '%s' (zone: '%s') for VM '%s' based on requested zone '%s'",
 				subnetId, subnetZone, req.Name, req.Zone)
 		}
+	} else if req.DistributeSubnets {
+		// Distribute this NodeGroup's VMs across subnets in zones where the spec is offered.
+		// Step 1: ensure such subnets exist — creating them on demand so a fresh or reused shared
+		// VNet covers the spec's offering zones (not just the first-N zones chosen at VNet creation).
+		// Step 2: round-robin VMs across the spec-available subnets. availSet is the CSP's per-AZ
+		// offering set (empty when unknown → best-effort: use all subnets).
+		availSet := ensureSpecAvailableSubnets(ctx, nsId, nodeGroupReq.VNetId, specInfo, 2)
+		vNetInfo, vnetErr := resource.GetVNet(nsId, nodeGroupReq.VNetId)
+		if vnetErr != nil || len(vNetInfo.SubnetInfoList) == 0 {
+			log.Warn().Err(vnetErr).Msgf("DistributeSubnets: could not read subnets of VNet '%s'; using VNet name as SubnetId", nodeGroupReq.VNetId)
+			nodeGroupReq.SubnetId = vNetResourceName
+		} else {
+			candidates := vNetInfo.SubnetInfoList
+			if len(availSet) > 0 {
+				var filtered []model.SubnetInfo
+				for _, s := range vNetInfo.SubnetInfoList {
+					if s.Zone == "" || availSet[s.Zone] {
+						filtered = append(filtered, s)
+					}
+				}
+				if len(filtered) > 0 {
+					candidates = filtered
+				}
+			}
+			subnetIds := make([]string, 0, len(candidates))
+			zonesForLog := make([]string, 0, len(candidates))
+			for _, s := range candidates {
+				subnetIds = append(subnetIds, s.Id)
+				zonesForLog = append(zonesForLog, s.Zone)
+			}
+			nodeGroupReq.SubnetIds = subnetIds
+			nodeGroupReq.SubnetId = subnetIds[0]
+			log.Info().Msgf("DistributeSubnets: NodeGroup '%s' VMs will spread across %d subnet(s) %v (zones %v) of VNet '%s'",
+				req.Name, len(subnetIds), subnetIds, zonesForLog, nodeGroupReq.VNetId)
+		}
 	} else if req.VNetTemplateId != "" {
 		// Template-based VNet: subnets have custom names defined in the template.
 		// Look up the VNet to find a subnet. When multiple subnets exist (e.g. multiZone),
@@ -3484,8 +3675,32 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 			nodeGroupReq.SubnetId = vNetResourceName
 		}
 	} else {
-		// Default (hard-coded) path: first subnet is named identically to the VNet
+		// Default: place all Nodes in a subnet whose zone offers the spec. Ensure at least one such
+		// subnet exists (creating it on demand for a fresh/reused shared VNet), then pick it —
+		// keeping the base subnet when it already offers the spec (the common case). Falls back to
+		// the base subnet when per-zone data is unknown.
 		nodeGroupReq.SubnetId = vNetResourceName
+		if availSet := ensureSpecAvailableSubnets(ctx, nsId, nodeGroupReq.VNetId, specInfo, 1); len(availSet) > 0 {
+			if vNetInfo, err := resource.GetVNet(nsId, nodeGroupReq.VNetId); err == nil {
+				baseOk := false
+				firstAvail := ""
+				for _, s := range vNetInfo.SubnetInfoList {
+					if s.Zone != "" && !availSet[s.Zone] {
+						continue // subnet's zone does not offer the spec
+					}
+					if firstAvail == "" {
+						firstAvail = s.Id
+					}
+					if s.Id == vNetResourceName {
+						baseOk = true
+					}
+				}
+				if !baseOk && firstAvail != "" {
+					nodeGroupReq.SubnetId = firstAvail
+					log.Info().Msgf("Default placement: base subnet not in a spec-available zone; using '%s' for NodeGroup '%s'", firstAvail, req.Name)
+				}
+			}
+		}
 	}
 
 	// SSHKey is dedicated per Infra ("{infraId}-{conn}[-zone]") for credential isolation, so a
@@ -3568,6 +3783,9 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 				VNetTemplateId:   req.VNetTemplateId,
 				SgTemplateId:     req.SgTemplateId,
 				InfraId:          infraId,
+				// Per-NodeGroup SG naming ("{infraId}-{nodeGroupName}"): must agree with
+				// sgResourceName computed above so the created resource matches the referenced ID.
+				NodeGroupName: req.Name,
 			}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
