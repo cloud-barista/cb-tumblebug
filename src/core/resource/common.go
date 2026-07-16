@@ -2241,12 +2241,24 @@ type SharedResourceOptions struct {
 	// back to the default behavior.
 	SgTemplateId string
 
+	// PreferredZones, when set, tells VNet creation to place the initial subnets in these zones
+	// (typically the zones where the requested spec is offered) instead of the first-N zones of
+	// the region. Ignored when a zone is explicitly requested, or for CSPs without zonal subnets.
+	PreferredZones []string
+
 	// InfraId, when set, makes the SecurityGroup dedicated to a specific Infra
 	// (named "{infraId}-{connection}[-zone][-sgTemplateId]") instead of shared across the
 	// connection, and labels it (sys.infraId, sys.purpose) so the unused-resource release
 	// operation can reclaim it once no VMs reference it. VNet and SSHKey remain shared
 	// regardless of this field.
 	InfraId string
+
+	// NodeGroupName, when set (together with InfraId), scopes the SecurityGroup to a single
+	// NodeGroup and names it "{infraId}-{nodeGroupName}" (unique within the Infra). Applications
+	// are deployed per NodeGroup, so their firewall rules can then be opened per NodeGroup without
+	// affecting sibling NodeGroups on the same connection. It also labels the SG with
+	// sys.nodeGroupId for traceability. Only affects SecurityGroup naming; SSHKey stays per-Infra.
+	NodeGroupName string
 }
 
 // applyVNetPolicy converts a CSP-agnostic VNetPolicy into concrete VNetReq fields on reqTmp,
@@ -2262,7 +2274,7 @@ type SharedResourceOptions struct {
 //   - explicit CIDR              → used as-is
 //
 // explicitZone overrides zone selection for all subnets (e.g. when a GPU VM requires a specific zone).
-func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolicy, provider, connectionName string, sliceIndex int, explicitZone string) error {
+func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolicy, provider, connectionName string, sliceIndex int, explicitZone string, preferredZones []string) error {
 	resolvedProvider := csp.ResolveCloudPlatform(provider)
 
 	// Determine effective subnet count respecting CSP limits
@@ -2301,8 +2313,21 @@ func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolic
 		log.Info().Msg("NCP: disabling multi-zone (all subnets must be in the same zone)")
 	}
 
-	// Resolve zone(s) for subnet placement
+	// Resolve zone(s) for subnet placement.
 	zones, zoneCount, _ := GetFirstNZones(connectionName, 2)
+
+	// When the spec's offering zones are known (preferredZones) and no explicit zone is requested,
+	// place subnets in those zones so we don't create subnets in zones the spec can't use. One
+	// subnet per offering zone, capped by subnetCount. preferredZones is empty for CSPs without a
+	// per-zone availability checker or with regional subnets, so those keep the default behavior.
+	usePreferred := len(preferredZones) > 0 && explicitZone == ""
+	if usePreferred {
+		zones = preferredZones
+		zoneCount = len(preferredZones)
+		if subnetCount > zoneCount {
+			subnetCount = zoneCount
+		}
+	}
 
 	connConfig, err := common.GetConnConfig(connectionName)
 	if err != nil {
@@ -2331,7 +2356,10 @@ func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolic
 			IPv4_CIDR: subnetCidrs[i],
 		}
 		// Zone assignment
-		if explicitZone != "" {
+		if usePreferred {
+			// One subnet per spec-available zone (authoritative when known).
+			subnet.Zone = zones[i]
+		} else if explicitZone != "" {
 			if i == 0 || !multiZone {
 				subnet.Zone = explicitZone
 			} else {
@@ -2474,19 +2502,27 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 	}
 	vNetResourceName := GenVNetResourceName(nsId, optInfraId, connectionName, optZone, optVNetTemplateId)
 
-	// SG resource name: dedicated per-Infra when InfraId is set ("{infraId}-{conn}[-zone]"),
-	// otherwise shared per-connection ("{ns}-shared-{conn}[-zone]"). A template suffix is
-	// appended when a specific template is requested. VNet/SSHKey stay shared regardless.
-	sgBaseName := baseResourceName
-	if options != nil && options.InfraId != "" {
-		sgBaseName = options.InfraId + "-" + connectionName
-		if options.Zone != "" {
-			sgBaseName = sgBaseName + "-" + options.Zone
+	// SG resource name, most-specific first:
+	//   - per-NodeGroup ("{infraId}-{nodeGroupName}") when NodeGroupName is set, so app-specific
+	//     firewall rules stay scoped to the NodeGroup deploying the app. NodeGroup names are unique
+	//     within an Infra, so no connection/zone/template suffix is needed for uniqueness.
+	//   - per-Infra ("{infraId}-{conn}[-zone][-sgTemplateId]") when only InfraId is set.
+	//   - shared per-connection ("{ns}-shared-{conn}[-zone][-sgTemplateId]") otherwise.
+	sgResourceName := baseResourceName
+	if options != nil && options.InfraId != "" && options.NodeGroupName != "" {
+		sgResourceName = options.InfraId + "-" + options.NodeGroupName
+	} else {
+		sgBaseName := baseResourceName
+		if options != nil && options.InfraId != "" {
+			sgBaseName = options.InfraId + "-" + connectionName
+			if options.Zone != "" {
+				sgBaseName = sgBaseName + "-" + options.Zone
+			}
 		}
-	}
-	sgResourceName := sgBaseName
-	if options != nil && options.SgTemplateId != "" {
-		sgResourceName = sgBaseName + "-" + options.SgTemplateId
+		sgResourceName = sgBaseName
+		if options != nil && options.SgTemplateId != "" {
+			sgResourceName = sgBaseName + "-" + options.SgTemplateId
+		}
 	}
 
 	// SSHKey resource name: dedicated per-Infra when InfraId is set ("{infraId}-{conn}[-zone]")
@@ -2550,7 +2586,11 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 			// to CSP-specific details; raw = explicit structure as-is).
 			if tmpl.VNetPolicy != nil {
 				log.Info().Msgf("Using VNet policy template '%s' for connection '%s'", effectiveVNetTemplateId, connectionName)
-				if err := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, sliceIndex, explicitZone); err != nil {
+				var preferredZones []string
+				if options != nil {
+					preferredZones = options.PreferredZones
+				}
+				if err := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, sliceIndex, explicitZone, preferredZones); err != nil {
 					log.Error().Err(err).Msgf("Failed to apply VNet policy from template '%s'", effectiveVNetTemplateId)
 					return err
 				}
@@ -2687,6 +2727,10 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 				extraLabels := map[string]string{
 					model.LabelInfraId: options.InfraId,
 					model.LabelPurpose: model.PurposeInfraDynamic,
+				}
+				// Tag the owning NodeGroup for per-NodeGroup SGs (traceability / label queries).
+				if options.NodeGroupName != "" {
+					extraLabels[model.LabelNodeGroupId] = options.NodeGroupName
 				}
 				if lblErr := label.CreateOrUpdateLabel(ctx, model.StrSecurityGroup, resultInfo.Uid, sgKey, extraLabels); lblErr != nil {
 					log.Warn().Err(lblErr).Msgf("Failed to label dedicated SG '%s' with infraId/purpose", resultInfo.Id)

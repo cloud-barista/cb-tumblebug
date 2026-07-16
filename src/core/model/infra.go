@@ -264,6 +264,11 @@ type CreateNodeGroupReq struct {
 	CspImageName     string   `json:"cspImageName,omitempty"`
 	VNetId           string   `json:"vNetId" validate:"required"`
 	SubnetId         string   `json:"subnetId" validate:"required"`
+	// SubnetIds, when non-empty, spreads this NodeGroup's VMs across these subnets
+	// (round-robin by VM index). SubnetId above is the primary/fallback (first subnet).
+	// Populated by dynamic provisioning when DistributeSubnets is requested; empty means
+	// all VMs use the single SubnetId (default behavior).
+	SubnetIds        []string `json:"subnetIds,omitempty"`
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
 	SshKeyId         string   `json:"sshKeyId" validate:"required"`
 	NodeUserName     string   `json:"nodeUserName,omitempty"`
@@ -383,6 +388,13 @@ type CreateNodeGroupDynamicReq struct {
 	// SgTemplateId overrides the Infra-level SgTemplateId for this NodeGroup.
 	// If empty, inherits the SgTemplateId from the parent InfraDynamicReq.
 	SgTemplateId string `json:"sgTemplateId,omitempty" example:""`
+
+	// DistributeSubnets, when true, spreads this NodeGroup's VMs across the VNet's subnets
+	// (round-robin), which spreads them across availability zones for multi-zone VNets.
+	// Best-effort: subnets whose zone lacks the requested spec are excluded so VMs consolidate
+	// to zones that have it. Ignored when Zone is set (that pins a single subnet) or when the
+	// VNet has a single subnet. Default false (all VMs land in the first subnet).
+	DistributeSubnets bool `json:"distributeSubnets,omitempty" example:"false"`
 }
 
 // InfraConnectionConfigCandidatesReq is struct for a request to check requirements to create a new Infra instance dynamically (with default resource option)

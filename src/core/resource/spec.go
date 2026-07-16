@@ -3698,30 +3698,31 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 		HasZoneConcept:   true,
 	}
 
-	// Step 6: For Alibaba Cloud, apply additional CSP API filtering
-	if strings.EqualFold(specInfo.ProviderName, csp.Alibaba) {
-		availableZones, unavailableZones, err := filterAlibabaZonesBySpecAvailability(ctx, specInfo.CspSpecName, specInfo.RegionName, verifiedZones)
-		if err != nil {
-			// Log warning but don't fail - return all verified zones
-			log.Warn().Err(err).
-				Str("specId", specId).
-				Str("provider", specInfo.ProviderName).
-				Msg("Alibaba zone filtering failed, returning all verified zones")
-			result.AvailableZones = verifiedZones
-		} else if len(availableZones) == 0 {
-			return nil, makeError(
-				ZoneErrorCodeNoZonesAfterFiltering,
-				fmt.Sprintf("Spec '%s' is not available in any verified zone for region '%s'", specInfo.CspSpecName, specInfo.RegionName),
-				"This spec may not be available in the specified region. Try a different spec or region.",
-				nil,
-			)
-		} else {
-			result.AvailableZones = availableZones
-			result.UnavailableZones = unavailableZones
-		}
-	} else {
-		// For other providers, all verified zones are available
+	// Step 6: Narrow verified zones to those where the CSP actually offers the spec, using the
+	// per-CSP availability checker (AWS DescribeInstanceTypeOfferings, Alibaba
+	// DescribeAvailableResource, Azure/GCP/Tencent, ...). Applies to every provider — the helper
+	// falls back to all verified zones when there is no checker or no per-zone data, so providers
+	// without a checker keep the previous behavior. This makes the region zone list from
+	// cloudinfo.yaml accurate (previously only Alibaba was filtered, so e.g. AWS listed zones that
+	// do not actually offer the instance type).
+	availableZones, unavailableZones, filterErr := filterZonesBySpecAvailability(ctx, specInfo.ProviderName, specInfo.CspSpecName, specInfo.RegionName, verifiedZones)
+	if filterErr != nil {
+		// Log warning but don't fail - return all verified zones
+		log.Warn().Err(filterErr).
+			Str("specId", specId).
+			Str("provider", specInfo.ProviderName).
+			Msg("Zone availability filtering failed, returning all verified zones")
 		result.AvailableZones = verifiedZones
+	} else if len(availableZones) == 0 {
+		return nil, makeError(
+			ZoneErrorCodeNoZonesAfterFiltering,
+			fmt.Sprintf("Spec '%s' is not available in any verified zone for region '%s'", specInfo.CspSpecName, specInfo.RegionName),
+			"This spec may not be available in the specified region. Try a different spec or region.",
+			nil,
+		)
+	} else {
+		result.AvailableZones = availableZones
+		result.UnavailableZones = unavailableZones
 	}
 
 	result.QueryDurationMs = time.Since(startTime).Milliseconds()
@@ -3737,35 +3738,42 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 	return result, nil
 }
 
-// filterAlibabaZonesBySpecAvailability filters zones based on Alibaba Cloud API response.
-// Returns zones where the spec is actually available.
+// filterZonesBySpecAvailability narrows verifiedZones to those where the CSP actually offers the
+// spec, using the provider-agnostic availability dispatcher (csp.CheckAvailability), which routes
+// to the per-CSP checker (AWS DescribeInstanceTypeOfferings, Alibaba DescribeAvailableResource,
+// Azure/GCP/Tencent, ...). This is the single accurate source of per-AZ instance availability.
 //
-// This uses the region-scoped, cached availability dispatcher
-// (csp.CheckAvailability → DescribeAvailableResource for ONE region) instead of
-// the legacy AnyCall GetInstanceTypeAvailableAllZones which queries availability
-// across ALL regions for the instance type. The dispatcher path is:
+// The dispatcher path is:
 //   - Faster: single-region API call vs. global sweep
 //   - Cached: 5-min TTL + singleflight, so a prior ReviewSpecImagePair call
 //     for the same (region, instanceType) is reused at zero cost
-//   - Consistent: same data source as the popup's pair-review section
-func filterAlibabaZonesBySpecAvailability(ctx context.Context, cspSpecName string, regionName string, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
+//   - Consistent: same data source as provisioning/review and the popup's pair-review section
+//
+// When there is no checker for the provider, the checker errored, or it returned no per-zone
+// breakdown, this falls back to "all verified zones available" (best-effort) so we never hide
+// zones the user might actually be able to use.
+func filterZonesBySpecAvailability(ctx context.Context, provider string, cspSpecName string, regionName string, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
 	availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
-		Provider:     csp.Alibaba,
+		Provider:     csp.ResolveCloudPlatform(provider),
 		Region:       regionName,
 		InstanceType: cspSpecName,
 	})
 
-	// The dispatcher is non-fatal: on checker error or missing checker it
-	// returns Available=true with a Reason. In those cases we cannot trust
-	// per-zone results, so fall back to "all verified zones available" to
-	// avoid hiding zones the user might actually be able to use.
-	if availability.Source == "none" || strings.HasSuffix(availability.Source, ":error") {
+	// No trustworthy per-zone data: missing/errored checker, or a checker that reports the spec
+	// as available without a per-zone breakdown. Fall back to all verified zones (best-effort).
+	// (When the spec is genuinely not offered anywhere, Available is false with empty Zones, and
+	// we intentionally do NOT fall back — the caller then reports "not available in any zone".)
+	noPerZoneData := availability.Source == "none" ||
+		strings.HasSuffix(availability.Source, ":error") ||
+		(availability.Available && len(availability.Zones) == 0)
+	if noPerZoneData {
 		log.Warn().
 			Str("source", availability.Source).
 			Str("reason", availability.Reason).
+			Str("provider", provider).
 			Str("instanceType", cspSpecName).
 			Str("region", regionName).
-			Msg("alibaba availability dispatcher returned no per-zone data; treating all verified zones as available")
+			Msg("availability dispatcher returned no per-zone data; treating all verified zones as available")
 		return verifiedZones, nil, nil
 	}
 

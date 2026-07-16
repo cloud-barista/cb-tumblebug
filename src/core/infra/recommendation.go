@@ -894,12 +894,16 @@ func BuildLatencyOrderByClause(param *[]model.ParameterKeyVal) (string, error) {
 			for _, targetRegion := range v.Val {
 				// Create a subquery that joins with LatencyInfo table
 				// The source region is constructed as "provider_name+region_name"
+				// latency_infos regions are stored as "provider-region" (dash) — see
+				// cloudlatencymap.csv / migrateLatencyDataFromCSV. Must join with '-'
+				// (not '+'), otherwise nothing matches and every spec collapses to the
+				// 999999 penalty, defeating the latency ordering.
 				latencySubquery := fmt.Sprintf(`
 					COALESCE((
-						SELECT latency_ms 
-						FROM latency_infos 
-						WHERE source_region = '%s' 
-						AND target_region = spec_infos.provider_name || '+' || spec_infos.region_name
+						SELECT latency_ms
+						FROM latency_infos
+						WHERE source_region = '%s'
+						AND target_region = spec_infos.provider_name || '-' || spec_infos.region_name
 						LIMIT 1
 					), 999999)`, targetRegion)
 

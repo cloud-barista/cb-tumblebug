@@ -47,6 +47,48 @@ func NLBReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// nlbNormalizeOs turns a compact OS string like "ubuntu18.04" into the
+// space-separated form SearchImage expects ("ubuntu 18.04"). Returns "" when the
+// input does not look like an OS name+version (e.g. it is an image id).
+func nlbNormalizeOs(raw string) string {
+	raw = strings.ToLower(strings.TrimSpace(raw))
+	if raw == "" {
+		return ""
+	}
+	idx := strings.IndexFunc(raw, func(r rune) bool { return r >= '0' && r <= '9' })
+	if idx <= 0 {
+		return ""
+	}
+	name := strings.TrimSpace(raw[:idx])
+	ver := strings.TrimSpace(raw[idx:])
+	if name == "" || !strings.Contains(ver, ".") {
+		return ""
+	}
+	return name + " " + ver
+}
+
+// nlbOsCandidates lists OS keywords to try for the NLB host image: the
+// (normalized) configured OS first, then modern Ubuntu LTS fallbacks.
+func nlbOsCandidates(cfg string) []string {
+	out := []string{}
+	if n := nlbNormalizeOs(cfg); n != "" {
+		out = append(out, n)
+	}
+	for _, d := range []string{"ubuntu 22.04", "ubuntu 24.04", "ubuntu 20.04"} {
+		dup := false
+		for _, o := range out {
+			if strings.EqualFold(o, d) {
+				dup = true
+				break
+			}
+		}
+		if !dup {
+			out = append(out, d)
+		}
+	}
+	return out
+}
+
 // CreateMcSwNlb func create a special purpose Infra for NLB and depoly and setting SW NLB
 func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string) (model.McNlbInfo, error) {
 	log.Info().Msg("CreateMcSwNlb")
@@ -75,20 +117,34 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 
 	// get node requst from cloud_conf.yaml
 	nodeGroupName := model.StrNLB
-	// default specId
+	// spec/image hints from cloud_conf.yaml (nlbsw). specId is a fallback; imageId
+	// is legacy and no longer resolvable as-is, so it is treated as an OS hint.
 	specId := common.RuntimeConf.Nlbsw.NlbInfraSpecId
-	imageId := common.RuntimeConf.Nlbsw.NlbInfraImageId
+	cfgImg := strings.TrimSpace(common.RuntimeConf.Nlbsw.NlbInfraImageId)
 	nodeGroupSize := common.RuntimeConf.Nlbsw.NlbInfraNodeGroupSize
 	if nodeGroupSize <= 0 {
 		log.Warn().Msgf("NlbInfraNodeGroupSize not set or invalid, using default 1")
 		nodeGroupSize = 1
 	}
 
-	// Option can be applied
-	// get recommended location and spec for the NLB host based on existing Infra
+	// Recommend a spec for the NLB host.
 	recommendSpecReq := model.RecommendSpecReq{}
+
+	// Constrain to a small, sane size — HAProxy is lightweight. Without a size
+	// filter the candidate pool is every spec of every size; and because latency
+	// is per-region, all sizes in the winning region tie on the ordering, so an
+	// oversized/expensive instance could be selected arbitrarily.
+	recommendSpecReq.Filter.Policy = append(recommendSpecReq.Filter.Policy,
+		model.FilterCondition{Metric: "vCPU", Condition: []model.Operation{{Operator: ">=", Operand: "2"}, {Operator: "<=", Operand: "8"}}},
+		model.FilterCondition{Metric: "memoryGiB", Condition: []model.Operation{{Operator: ">=", Operand: "2"}, {Operator: "<=", Operand: "16"}}},
+	)
+
+	// Priority: minimal latency to the target Infra's node regions first, then
+	// cost — so the cheapest (typically smallest) same-latency (same-region) spec
+	// wins, giving a deterministic, right-sized choice.
 	recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "latency"})
 	recommendSpecReq.Priority.Policy[0].Parameter = append(recommendSpecReq.Priority.Policy[0].Parameter, model.ParameterKeyVal{Key: "latencyMinimal"})
+	recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "cost"})
 
 	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
@@ -96,8 +152,18 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 		return emptyObj, err
 	}
 	for _, node := range infra.Node {
-		regionOfNode := node.ConnectionConfig.RegionZoneInfoName
-		recommendSpecReq.Priority.Policy[0].Parameter[0].Val = append(recommendSpecReq.Priority.Policy[0].Parameter[0].Val, regionOfNode)
+		// The latency table (loaded from cloudlatencymap.csv) keys regions as
+		// "provider-region" (e.g. "aws-ap-northeast-2"). RegionZoneInfoName is the
+		// CSP region name only, so it never matched — every spec fell back to the
+		// 999999 penalty, making the latency ORDER BY a no-op and placing the host
+		// arbitrarily (far away). Build the "provider-region" key explicitly.
+		cc := node.ConnectionConfig
+		regionName := cc.RegionDetail.RegionName
+		if regionName == "" {
+			regionName = cc.RegionZoneInfoName // best-effort fallback
+		}
+		regionKey := cc.ProviderName + "-" + regionName
+		recommendSpecReq.Priority.Policy[0].Parameter[0].Val = append(recommendSpecReq.Priority.Policy[0].Parameter[0].Val, regionKey)
 	}
 
 	specList, err := RecommendSpec(common.NewDefaultContext(), model.SystemCommonNs, recommendSpecReq)
@@ -106,8 +172,43 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 		return emptyObj, err
 	}
 	if len(specList) != 0 {
-		recommendedSpec := specList[0].Id
-		specId = recommendedSpec
+		specId = specList[0].Id
+	}
+	if specId == "" {
+		return emptyObj, fmt.Errorf("no spec available for the NLB host (recommendation returned none and no fallback configured)")
+	}
+
+	// Resolve an OS image that MATCHES the (dynamically selected) spec's
+	// connection/region/architecture. The legacy fixed config value (e.g.
+	// "ubuntu18.04") does not resolve in the current image system and would not
+	// match an arbitrary recommended spec. So: (a) if the config value happens to
+	// be a concrete image resolvable for the spec's connection, use it; otherwise
+	// (b) search by spec + OS keyword (configured OS normalized, then modern LTS).
+	imageId := ""
+	if selSpec, sErr := resource.GetSpec(model.SystemCommonNs, specId); sErr == nil && selSpec.ConnectionName != "" && cfgImg != "" {
+		if img, _, eErr := resource.EnsureImageAvailable(common.NewDefaultContext(), nsId, selSpec.ConnectionName, cfgImg); eErr == nil && img.Id != "" {
+			imageId = img.Id
+		}
+	}
+	if imageId == "" {
+		trueVal := true
+		one := 1
+		for _, osType := range nlbOsCandidates(cfgImg) {
+			imgs, _, sErr := resource.SearchImage(model.SystemCommonNs, model.SearchImageRequest{
+				MatchedSpecId:         specId,
+				OSType:                osType,
+				IncludeBasicImageOnly: &trueVal,
+				MaxResults:            &one,
+			}, false)
+			if sErr == nil && len(imgs) > 0 {
+				imageId = imgs[0].Id
+				log.Info().Msgf("[MC-NLB] resolved image '%s' (OS '%s') for spec '%s'", imageId, osType, specId)
+				break
+			}
+		}
+	}
+	if imageId == "" {
+		return emptyObj, fmt.Errorf("failed to resolve an OS image for the NLB host (spec '%s'); adjust nlbsw config or ensure Ubuntu images are available for that connection", specId)
 	}
 
 	nodeGroupDynamicReq := model.CreateNodeGroupDynamicReq{Name: nodeGroupName, SpecId: specId, ImageId: imageId, NodeGroupSize: nodeGroupSize}
@@ -117,6 +218,16 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
+	}
+
+	// The NLB host Infra now exists; if any later step fails, roll it back so a
+	// failed attempt does not leave an orphaned "{infraId}-nlb" Infra behind.
+	rollbackNlbHost := func(cause error) (model.McNlbInfo, error) {
+		log.Error().Err(cause).Msgf("[MC-NLB] failed after creating host Infra '%s'; rolling back", nlbInfraId)
+		if _, delErr := DelInfra(nsId, nlbInfraId, "force"); delErr != nil {
+			log.Warn().Err(delErr).Msgf("[MC-NLB] rollback delete of host Infra '%s' failed; may need manual cleanup", nlbInfraId)
+		}
+		return emptyObj, cause
 	}
 
 	// Sleep for 60 seconds for a safe NLB installation.
@@ -136,7 +247,7 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 	accessList, err := GetInfraAccessInfo(nsId, infraId, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyObj, err
+		return rollbackNlbHost(err)
 	}
 	for _, v := range accessList.InfraNodeGroupAccessInfo {
 		for _, k := range v.NodeAccessInfo {
@@ -150,7 +261,7 @@ func CreateMcSwNlb(nsId string, infraId string, req *model.NLBReq, option string
 	output, err := RemoteCommandToInfra(nsId, nlbInfraId, "", "", "", &model.InfraCmdReq{Command: cmds}, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyObj, err
+		return rollbackNlbHost(err)
 	}
 	result := model.InfraSshCmdResult{Results: output}
 	mcNlbInfo := model.McNlbInfo{InfraAccessInfo: accessList, McNlbHostInfo: infraInfo, DeploymentLog: result}
@@ -618,9 +729,9 @@ func ListNLB(nsId string, infraId string, filterKey string, filterVal string) (a
 		return nil, err
 	}
 
-	log.Debug().Msg("[Get] NLB list")
+	// log.Debug().Msg("[Get] NLB list")
 	key := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/%s/"+model.StrNLB, nsId, infraId)
-	fmt.Println(key)
+	// fmt.Println(key)
 
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)

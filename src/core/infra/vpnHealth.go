@@ -66,9 +66,18 @@ func runPingCheck(nsId, infraId, direction string, sourceNode, targetNode *model
 		},
 	}
 
+	// Minimal cloud images may not ship `ping` (iputils), which makes the check
+	// fail with "ping: command not found" (exit 127). Best-effort ensure it is
+	// installed (Debian/Ubuntu, then RHEL family), discarding installer output so
+	// it does not pollute the ping stats, then run the ping. `command -v` short-
+	// circuits on later attempts once it is present.
+	ensurePing := "command -v ping >/dev/null 2>&1 || " +
+		"{ sudo apt-get update -qq >/dev/null 2>&1; sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq iputils-ping >/dev/null 2>&1; } || " +
+		"sudo yum install -y -q iputils >/dev/null 2>&1 || sudo dnf install -y -q iputils >/dev/null 2>&1"
+	pingCmd := fmt.Sprintf("%s; ping %s -c %d", ensurePing, targetNode.PrivateIP, pingCount)
 	cmdReq := &model.InfraCmdReq{
 		UserName:       userName,
-		Command:        []string{fmt.Sprintf("ping %s -c %d", targetNode.PrivateIP, pingCount)},
+		Command:        []string{pingCmd},
 		TimeoutMinutes: 5,
 	}
 
