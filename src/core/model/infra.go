@@ -38,6 +38,15 @@ const (
 	// ActionRefine is const for Refine
 	ActionRefine string = "Refine"
 
+	// ActionRegister is const for Register (onboarding an existing CSP resource).
+	// A discovery-type action: the target state is the resource's actual CSP state
+	// (may be Running, Suspended, ...), not a fixed Running like ActionCreate.
+	ActionRegister string = "Register"
+
+	// ActionReconcile is const for Reconcile (re-syncing a Node with CSP truth).
+	// Also a discovery-type action, sharing ActionRegister's completion semantics.
+	ActionReconcile string = "Reconcile"
+
 	// ActionComplete is const for Complete
 	ActionComplete string = "None"
 )
@@ -78,6 +87,9 @@ const (
 
 	// StatusRegistering is const for Registering (when registering existing CSP Node)
 	StatusRegistering string = "Registering"
+
+	// StatusReconciling is const for Reconciling (when re-syncing a Node with CSP truth)
+	StatusReconciling string = "Reconciling"
 
 	// StatusUndefined is const for Undefined
 	StatusUndefined string = "Undefined"
@@ -902,6 +914,9 @@ type StatusCountInfo struct {
 
 	// CountRegistering is for counting Registering
 	CountRegistering int `json:"countRegistering"`
+
+	// CountReconciling is for counting Reconciling
+	CountReconciling int `json:"countReconciling"`
 
 	// CountUndefined is for counting Undefined
 	CountUndefined int `json:"countUndefined"`

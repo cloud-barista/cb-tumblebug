@@ -223,9 +223,18 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 }
 
 // createInfraObject creates the Infra object with proper error handling
-func createInfraObject(ctx context.Context, nsId, infraId string, req *model.InfraReq, uid string) error {
+func createInfraObject(ctx context.Context, nsId, infraId string, req *model.InfraReq, uid string, option string) error {
 	log.Info().Msg("Creating Infra object")
 	key := common.GenInfraKey(nsId, infraId, "")
+
+	// Register is a discovery-type action: keep the Infra-level TargetAction consistent
+	// with its Nodes (which use ActionRegister) so discovery-aware Infra logic triggers.
+	initStatus := model.StatusCreating
+	initTargetAction := model.ActionCreate
+	if option == "register" {
+		initStatus = model.StatusRegistering
+		initTargetAction = model.ActionRegister
+	}
 
 	infraInfo := model.InfraInfo{
 		ResourceType:    model.StrInfra,
@@ -233,8 +242,8 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 		Name:            req.Name,
 		Uid:             uid,
 		Description:     req.Description,
-		Status:          model.StatusCreating,
-		TargetAction:    model.ActionCreate,
+		Status:          initStatus,
+		TargetAction:    initTargetAction,
 		TargetStatus:    model.StatusRunning,
 		InstallMonAgent: req.InstallMonAgent,
 		SystemLabel:     req.SystemLabel,
@@ -717,13 +726,16 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		nodeInfoData.PublicIP = ""
 		nodeInfoData.PublicDNS = ""
 
-		// Set initial status based on whether this is a registration (CspResourceId is set)
+		// Set initial status based on whether this is a registration (CspResourceId is set).
+		// Register is a discovery-type action (ActionRegister): its target is the resource's
+		// actual CSP state, resolved via late-binding in FetchNodeStatus.
 		if nodeRequest.CspResourceId != "" {
 			nodeInfoData.Status = model.StatusRegistering
+			nodeInfoData.TargetAction = model.ActionRegister
 		} else {
 			nodeInfoData.Status = model.StatusCreating
+			nodeInfoData.TargetAction = targetAction
 		}
-		nodeInfoData.TargetAction = targetAction
 		nodeInfoData.TargetStatus = targetStatus
 
 		nodeInfoData.ConnectionName = nodeRequest.ConnectionName
@@ -817,9 +829,11 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 
 	infraTmp.Status = infraStatusTmp.Status
 
-	// More robust completion check for Create action
+	// More robust completion check for Create/Register action.
+	// Register (discovery-type) shares this path: it also completes when every Node
+	// reaches a final state — but that final state may be Running, Suspended, etc.
 	isCreateCompleted := false
-	if infraTmp.TargetAction == model.ActionCreate {
+	if infraTmp.TargetAction == model.ActionCreate || infraTmp.TargetAction == model.ActionRegister {
 		// For Create action, check if all VMs are in final states (including Failed)
 		// Final states: Running, Failed, Terminated, Suspended
 		// Transitional states: Creating, Undefined, empty string
@@ -834,7 +848,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 			// StatusUndefined is NOT treated as pending here — it means the creation
 			// attempt is done (Spider returned 500 with no VM identity). The node is
 			// an orphan candidate; run action=reconcile to rescue or action=refine to remove.
-			if node.Status == model.StatusCreating || node.Status == model.StatusRegistering || node.Status == "" {
+			if node.Status == model.StatusCreating || node.Status == model.StatusRegistering || node.Status == model.StatusReconciling || node.Status == "" {
 				allNodesInFinalState = false
 				pendingCount++
 			} else {
@@ -1002,6 +1016,10 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			infraTmp.Status = model.StatusCreating
 			infraTmp.TargetAction = model.ActionCreate
 			infraTmp.TargetStatus = model.StatusRunning
+			if option == "register" {
+				infraTmp.Status = model.StatusRegistering
+				infraTmp.TargetAction = model.ActionRegister
+			}
 			UpdateInfraInfo(nsId, infraTmp)
 		}
 	} else {
@@ -1009,7 +1027,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		if !exists {
 			log.Debug().Msgf("Infra '%s' does not exist, creating new one", infraId)
 			// Create Infra object first
-			if err := createInfraObject(ctx, nsId, infraId, req, uid); err != nil {
+			if err := createInfraObject(ctx, nsId, infraId, req, uid, option); err != nil {
 				return nil, fmt.Errorf("failed to create Infra object: %w", err)
 			}
 		} else {
@@ -1061,10 +1079,14 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				break
 			}
 
-			// Set initial status based on option (create vs register)
+			// Set initial status and action based on option (create vs register).
+			// Register is a discovery-type action (ActionRegister): its target is the
+			// resource's actual CSP state, resolved via late-binding in FetchNodeStatus.
 			initialStatus := model.StatusCreating
+			initialTargetAction := model.ActionCreate
 			if option == "register" {
 				initialStatus = model.StatusRegistering
+				initialTargetAction = model.ActionRegister
 			}
 
 			nodeInfo := model.NodeInfo{
@@ -1073,7 +1095,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				PublicIP:         "",
 				PublicDNS:        "",
 				Status:           initialStatus,
-				TargetAction:     model.ActionCreate,
+				TargetAction:     initialTargetAction,
 				TargetStatus:     model.StatusRunning,
 				ConnectionName:   nodeGroupReq.ConnectionName,
 				ConnectionConfig: connectionConfig,
@@ -1538,7 +1560,7 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 	uid := common.GenUid()
 	infraId := req.Name
 
-	if err := createInfraObject(ctx, nsId, infraId, &infraReq, uid); err != nil {
+	if err := createInfraObject(ctx, nsId, infraId, &infraReq, uid, ""); err != nil {
 		addErrorToHistory("Infra Object Creation", err.Error())
 		return emptyInfra, err
 	}

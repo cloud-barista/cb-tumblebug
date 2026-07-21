@@ -1158,8 +1158,8 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		return infraStatus.Node[i].Id < infraStatus.Node[j].Id
 	})
 
-	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	statusFlagStr := []string{model.StatusFailed, model.StatusSuspended, model.StatusRunning, model.StatusTerminated, model.StatusCreating, model.StatusSuspending, model.StatusResuming, model.StatusRebooting, model.StatusTerminating, model.StatusRegistering, model.StatusUndefined}
+	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	statusFlagStr := []string{model.StatusFailed, model.StatusSuspended, model.StatusRunning, model.StatusTerminated, model.StatusCreating, model.StatusSuspending, model.StatusResuming, model.StatusRebooting, model.StatusTerminating, model.StatusRegistering, model.StatusUndefined, model.StatusReconciling}
 	for _, v := range infraStatus.Node {
 
 		switch v.Status {
@@ -1183,6 +1183,8 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 			statusFlag[8]++
 		case model.StatusRegistering:
 			statusFlag[9]++
+		case model.StatusReconciling:
+			statusFlag[11]++
 		case model.StatusUndefined:
 			statusFlag[10]++
 			log.Debug().Msgf("Node %s in Infra %s has Undefined status (orphan candidate; run action=reconcile to rescue or action=refine to remove)", v.Id, infraId)
@@ -1212,6 +1214,8 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	// server crash) and is not authoritative here; rely on TargetAction/TargetStatus, which are
 	// kept current by control actions (Create/Continue/Withdraw/Refine/etc.).
 	isCreating := strings.Contains(infraTmp.TargetAction, model.ActionCreate) ||
+		strings.Contains(infraTmp.TargetAction, model.ActionRegister) ||
+		strings.Contains(infraTmp.TargetAction, model.ActionReconcile) ||
 		strings.Contains(infraTmp.TargetStatus, model.StatusRunning)
 
 	// Check if Infra is in a stable state (all Nodes have same stable status)
@@ -1291,6 +1295,7 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 	infraStatus.StatusCount.CountTerminating = statusFlag[8]
 	infraStatus.StatusCount.CountRegistering = statusFlag[9]
 	infraStatus.StatusCount.CountUndefined = statusFlag[10]
+	infraStatus.StatusCount.CountReconciling = statusFlag[11]
 
 	// Recovery/fallback handling for TargetAction completion
 	// Primary completion should happen in actual control actions (control.go, provisioning.go)
@@ -1319,11 +1324,14 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		for _, v := range infraStatus.Node {
 			// Check completion based on action type
 			switch infraTargetAction {
-			case model.ActionCreate:
+			case model.ActionCreate, model.ActionRegister, model.ActionReconcile:
 				// Final states: Running, Failed, Terminated, Suspended, Undefined.
 				// Undefined means the creation attempt ended without VM identity (Spider 500);
 				// it is an orphan candidate handled by action=reconcile, not a pending state.
-				if v.Status == model.StatusCreating || v.Status == model.StatusRegistering || v.Status == "" {
+				// Register/Reconcile (discovery-type) share this shape: done once a node
+				// leaves its operational transient state, whatever the observed end state.
+				if v.Status == model.StatusCreating || v.Status == model.StatusRegistering ||
+					v.Status == model.StatusReconciling || v.Status == "" {
 					isDone = false
 					pendingNodesCount++
 				}
@@ -1420,7 +1428,7 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 				}
 			}
 
-			if allNodesFailed && infraTargetAction == model.ActionCreate {
+			if allNodesFailed && (infraTargetAction == model.ActionCreate || isDiscoveryAction(infraTargetAction)) {
 				// All Nodes failed during creation - mark Infra as Failed
 				log.Error().Msgf("Infra %s: All Nodes failed during creation - setting Infra status to Failed", infraId)
 				infraStatus.TargetAction = model.ActionComplete
@@ -1915,8 +1923,11 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 		shouldSkipCSPCall = true
 	}
 
-	// Skip CSP API call if cspResourceName is empty (Node not properly created)
-	if nodeInfo.CspResourceName == "" && nodeInfo.TargetAction != model.ActionCreate {
+	// Skip CSP API call if cspResourceName is empty (Node not properly created).
+	// Create and discovery-type actions (Register/Reconcile) are exempt: their nodes
+	// may legitimately have an empty cspResourceName while still resolving.
+	if nodeInfo.CspResourceName == "" && nodeInfo.TargetAction != model.ActionCreate &&
+		!isDiscoveryAction(nodeInfo.TargetAction) {
 		// A Terminate action on a node that was never created at CSP (empty cspResourceName)
 		// has nothing to terminate — promote to Terminated immediately so the infra can proceed.
 		if nodeInfo.TargetAction == model.ActionTerminate {
@@ -1943,7 +1954,8 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 
 	cspResourceName := nodeInfo.CspResourceName
 
-	if (nodeInfo.TargetAction != model.ActionCreate && nodeInfo.TargetAction != model.ActionTerminate) && cspResourceName == "" {
+	if (nodeInfo.TargetAction != model.ActionCreate && nodeInfo.TargetAction != model.ActionTerminate &&
+		!isDiscoveryAction(nodeInfo.TargetAction)) && cspResourceName == "" {
 		err = fmt.Errorf("cspResourceName is empty (NodeId: %s)", nodeId)
 		log.Error().Err(err).Msg("")
 		return statusInfo, err
@@ -2189,6 +2201,15 @@ applyStatus:
 		}
 	}
 
+	// Discovery-type actions (Register/Reconcile): while the CSP state is not yet
+	// resolved (Undefined), hold the operational status (Registering/Reconciling)
+	// instead of flipping to Creating. The actual state is late-bound below once a
+	// recognized status is observed.
+	if isDiscoveryAction(nodeStatusTmp.TargetAction) &&
+		strings.EqualFold(callResult.Status, model.StatusUndefined) {
+		callResult.Status = discoveryTransientStatus(nodeStatusTmp.TargetAction)
+	}
+
 	// Fallback: if the CSP (or Spider) returned Undefined but the node already has a
 	// PublicIP, the CSP committed to creating the VM — preserve Creating to avoid a
 	// false Undefined flip while the VM is still booting or the CSP API is slow.
@@ -2300,6 +2321,24 @@ applyStatus:
 
 	// TODO: Alibaba Undefined status error is not resolved yet.
 	// (After Terminate action. "status": "Undefined", "targetStatus": "None", "targetAction": "None")
+
+	// Discovery-type actions (Register/Reconcile) have no fixed target. They complete
+	// once the resource resolves to a real end state:
+	//   - live (Running/Suspended): late-bind TargetStatus to it so the standard
+	//     finalization below (TargetStatus==Status) records the actual state.
+	//   - terminated/terminating: not a manageable target (and about to be purged by
+	//     the CSP) — settle directly as Failed so refine removes it, avoiding a ghost.
+	if isDiscoveryAction(nodeStatusTmp.TargetAction) {
+		if isStableObservedStatus(nodeStatusTmp.Status) {
+			nodeStatusTmp.TargetStatus = nodeStatusTmp.Status
+		} else if strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminated) ||
+			strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminating) {
+			nodeStatusTmp.Status = model.StatusFailed
+			nodeStatusTmp.TargetStatus = model.StatusComplete
+			nodeStatusTmp.TargetAction = model.ActionComplete
+			nodeStatusTmp.SystemMessage = "target CSP resource is terminated; cannot be managed (run refine to remove)"
+		}
+	}
 
 	//if TargetStatus == CurrentStatus, record to finialize the control operation
 	if nodeStatusTmp.TargetStatus == nodeStatusTmp.Status {
