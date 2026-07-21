@@ -83,13 +83,13 @@ echo ""
 # Get database statistics
 echo -e "${YELLOW}Database Statistics:${NC}"
 docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "
-SELECT 
+SELECT
     schemaname,
-    tablename,
-    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
+    relname AS tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||relname)) AS size,
     n_tup_ins AS inserts
 FROM pg_stat_user_tables
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+ORDER BY pg_total_relation_size(schemaname||'.'||relname) DESC;
 " 2>/dev/null || true
 
 echo ""
