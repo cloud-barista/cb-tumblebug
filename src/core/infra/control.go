@@ -1459,12 +1459,40 @@ func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalPa
 // crashed/restarted server typically leaves behind.
 func transientNodeStatus(status string) bool {
 	return strings.EqualFold(status, model.StatusCreating) ||
+		strings.EqualFold(status, model.StatusRegistering) ||
+		strings.EqualFold(status, model.StatusReconciling) ||
 		strings.EqualFold(status, model.StatusTerminating) ||
 		strings.EqualFold(status, model.StatusSuspending) ||
 		strings.EqualFold(status, model.StatusResuming) ||
 		strings.EqualFold(status, model.StatusRebooting) ||
 		strings.EqualFold(status, model.StatusUndefined) ||
 		status == ""
+}
+
+// isDiscoveryAction reports whether a TargetAction is discovery-type (Register /
+// Reconcile): its target is the resource's actual CSP state, not a fixed Running.
+// Completion is therefore observation-based (see FetchNodeStatus late-binding).
+func isDiscoveryAction(action string) bool {
+	return strings.EqualFold(action, model.ActionRegister) ||
+		strings.EqualFold(action, model.ActionReconcile)
+}
+
+// discoveryTransientStatus maps a discovery-type action to the operational status
+// held while the CSP state is still unresolved.
+func discoveryTransientStatus(action string) string {
+	if strings.EqualFold(action, model.ActionReconcile) {
+		return model.StatusReconciling
+	}
+	return model.StatusRegistering
+}
+
+// isStableObservedStatus reports whether status is a live, manageable CSP state that
+// a discovery-type action can successfully complete on. Terminated/Terminating are
+// deliberately excluded: a dying/soon-purged resource is not a valid onboarding target
+// and is settled as Failed instead (see FetchNodeStatus discovery handling).
+func isStableObservedStatus(status string) bool {
+	return strings.EqualFold(status, model.StatusRunning) ||
+		strings.EqualFold(status, model.StatusSuspended)
 }
 
 // settleInfraTargetAction clears Infra-level TargetAction/TargetStatus once
@@ -1781,6 +1809,17 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 
 		postCh := make(chan fetchResult, len(rescuedIds))
 		for _, id := range rescuedIds {
+			// Move the rescued node into the Reconciling operational state before the
+			// follow-up status fetch. Without this the node is still Failed (a stable
+			// state) and FetchNodeStatus would short-circuit the CSP call, leaving the
+			// status stale. ActionReconcile is discovery-type, so the fetch late-binds
+			// TargetStatus to the actual CSP state (Running, Suspended, ...).
+			if nodeObj, gerr := GetNodeObject(nsId, infraId, id); gerr == nil {
+				nodeObj.Status = model.StatusReconciling
+				nodeObj.TargetAction = model.ActionReconcile
+				nodeObj.TargetStatus = model.StatusRunning
+				UpdateNodeInfo(nsId, infraId, nodeObj)
+			}
 			go func(nid string) {
 				fetched, ferr := FetchNodeStatus(nsId, infraId, nid)
 				postCh <- fetchResult{nodeId: nid, status: fetched.Status, err: ferr}
