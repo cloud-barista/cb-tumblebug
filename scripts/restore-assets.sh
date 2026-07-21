@@ -136,13 +136,13 @@ echo ""
 # Get restored database statistics
 echo -e "${YELLOW}Restored Database Statistics:${NC}"
 docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "
-SELECT 
-    schemaname,
-    tablename,
-    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
-    (SELECT COUNT(*) FROM pg_catalog.pg_class WHERE relname = tablename) AS exists
-FROM pg_stat_user_tables
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+SELECT
+    t.schemaname,
+    t.relname AS tablename,
+    pg_size_pretty(pg_total_relation_size(t.schemaname||'.'||t.relname)) AS size,
+    (SELECT COUNT(*) FROM pg_catalog.pg_class c WHERE c.relname = t.relname) AS exists
+FROM pg_stat_user_tables t
+ORDER BY pg_total_relation_size(t.schemaname||'.'||t.relname) DESC;
 " 2>/dev/null || true
 
 echo ""

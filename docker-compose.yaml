@@ -140,7 +140,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tumblebug}
       - POSTGRES_DB=${POSTGRES_DB:-tumblebug}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -148,7 +148,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.12.35
+    image: cloudbaristaorg/cb-spider:0.12.37
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -158,13 +158,16 @@ services:
     # Uncomment below if you want to access CB-Spider for remote
     # ports:
     #   - 1024:1024
+    depends_on:
+      cb-spider-postgres:
+        condition: service_healthy
     volumes:
-      - ./container-volume/cb-spider-container/meta_db/:/root/go/src/github.com/cloud-barista/cb-spider/meta_db/
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
     environment:
       - SERVER_ADDRESS=0.0.0.0:1024
       - SPIDER_USERNAME=${SP_API_USERNAME:?Please set SP_API_USERNAME}
       - SPIDER_PASSWORD=${SP_API_PASSWORD:?Please set SP_API_PASSWORD}
+      - SPIDER_METADB_URL=postgresql://${SP_POSTGRES_USER:-spider}:${SP_POSTGRES_PASSWORD:-spider}@cb-spider-postgres:5432/${SP_POSTGRES_DB:-cb_spider}
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
@@ -176,14 +179,37 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:1024/spider/readyz"]
       <<: *default-healthcheck
 
+  # CB-Spider PostgreSQL
+  # This is used for storing CB-Spider metadata (replaces the legacy SQLite-based meta_db).
+  cb-spider-postgres:
+    image: postgres:16-alpine
+    container_name: cb-spider-postgres
+    restart: always
+    networks:
+      - cloud-barista
+    # ports:
+    #   - 5433:5432  # Uncomment for direct DB access (pgAdmin, debugging). Not recommended in production.
+    volumes:
+      - ./container-volume/cb-spider-container/meta_db/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${SP_POSTGRES_USER:-spider}
+      - POSTGRES_PASSWORD=${SP_POSTGRES_PASSWORD:-spider}
+      - POSTGRES_DB=${SP_POSTGRES_DB:-cb_spider}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
     image: cloudbaristaorg/cb-mapui:0.12.51
     container_name: cb-mapui
-    # build:
-    #   context: ../cb-mapui
-    #   dockerfile: Dockerfile
+    build:
+      context: ../cb-mapui
+      dockerfile: Dockerfile
     networks:
       - cloud-barista
     ports:
