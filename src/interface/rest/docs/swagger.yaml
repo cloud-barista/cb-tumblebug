@@ -27313,6 +27313,9 @@ components:
         countRebooting:
           type: integer
           description: CountRebooting is for counting Rebooting
+        countReconciling:
+          type: integer
+          description: CountReconciling is for counting Reconciling
         countRegistering:
           type: integer
           description: CountRegistering is for counting Registering
