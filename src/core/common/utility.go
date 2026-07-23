@@ -906,6 +906,19 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 		return model.CredentialInfo{}, fmt.Errorf("private key not found for token ID: %s", req.PublicKeyTokenId)
 	}
 
+	// Validate credential key formats before any decryption work. Keys are plaintext
+	// (only values are encrypted), so unknown/misspelled keys can be rejected up front
+	// with a message listing the accepted keys for the provider. Only the provided keys
+	// are checked — a subset is allowed, so optional keys (e.g. S3AccessKey/S3SecretKey)
+	// need not be present.
+	providedKeys := make([]string, len(req.CredentialKeyValueList))
+	for i, keyValue := range req.CredentialKeyValueList {
+		providedKeys[i] = keyValue.Key
+	}
+	if err := csp.ValidateCredentialKeys(req.ProviderName, providedKeys); err != nil {
+		return model.CredentialInfo{}, err
+	}
+
 	// PrintJsonPretty(req)
 
 	// Decrypt the AES key

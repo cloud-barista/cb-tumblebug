@@ -20,11 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/openbao/openbao/api/v2"
 	"github.com/rs/zerolog/log"
 )
@@ -211,6 +213,65 @@ func ApplyCredentialKeyMap(provider string, kvList []model.KeyValue) map[string]
 		}
 	}
 	return result
+}
+
+// ValidCredentialKeys returns the sorted list of credential keys accepted for the
+// given provider. The provider is platform-resolved first (e.g. "openstack-new01"
+// -> "openstack") so derived CSPs share their base platform's key set. Returns nil
+// when no key set is defined for the provider, in which case keys cannot be validated.
+func ValidCredentialKeys(provider string) []string {
+	keyMap := credentialKeyMap[csptypes.ResolveCloudPlatform(provider)]
+	if keyMap == nil {
+		return nil
+	}
+	keys := make([]string, 0, len(keyMap))
+	for k := range keyMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// ValidateCredentialKeys checks that every provided credential key is a recognized
+// key for the given provider. It validates the *format* (spelling) of keys, not their
+// presence: any subset of the accepted keys is valid, so optional keys (e.g.
+// S3AccessKey / S3SecretKey) may be omitted. Keys are case-sensitive. Unknown or empty
+// keys are rejected with an error that lists the accepted keys so the caller can fix
+// the request.
+//
+// Validation is skipped (returns nil) for providers that have no defined key set,
+// since the accepted format is unknown for them.
+func ValidateCredentialKeys(provider string, keys []string) error {
+	validKeys := ValidCredentialKeys(provider)
+	if validKeys == nil {
+		return nil
+	}
+
+	allowed := make(map[string]bool, len(validKeys))
+	for _, k := range validKeys {
+		allowed[k] = true
+	}
+
+	var invalid []string
+	for _, k := range keys {
+		if k == "" {
+			invalid = append(invalid, "(empty)")
+			continue
+		}
+		if !allowed[k] {
+			invalid = append(invalid, k)
+		}
+	}
+
+	if len(invalid) > 0 {
+		return fmt.Errorf(
+			"invalid credential key(s) %v for provider '%s'; accepted keys are %v "+
+				"(keys are case-sensitive; a subset is allowed — optional keys such as "+
+				"S3AccessKey/S3SecretKey may be omitted)",
+			invalid, csptypes.ResolveCloudPlatform(provider), validKeys,
+		)
+	}
+	return nil
 }
 
 // BuildSecretPathForHolder builds the OpenBao secret path using holder and provider directly.
