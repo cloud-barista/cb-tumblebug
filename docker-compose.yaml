@@ -167,7 +167,20 @@ services:
       - SERVER_ADDRESS=0.0.0.0:1024
       - SPIDER_USERNAME=${SP_API_USERNAME:?Please set SP_API_USERNAME}
       - SPIDER_PASSWORD=${SP_API_PASSWORD:?Please set SP_API_PASSWORD}
-      - SPIDER_METADB_URL=postgresql://${SP_POSTGRES_USER:-spider}:${SP_POSTGRES_PASSWORD:-spider}@cb-spider-postgres:5432/${SP_POSTGRES_DB:-cb_spider}
+      # CB-Tumblebug project uses PostgreSQL for better performance and data management.
+      # Note: CB-Spider officially supports SQLite (default) and PostgreSQL (optional).
+      # Without SPIDER_METADB_* env vars, CB-Spider uses embedded SQLite.
+      # Shared by cb-spider-postgres and cb-spider (SPIDER_METADB_* env vars).
+      # ref) https://github.com/cloud-barista/cb-spider/wiki/CB%E2%80%90Spider-Server-Configuration
+      #
+      # Option B) Key-value mode
+      - SPIDER_METADB_ENDPOINT=cb-spider-postgres:5432
+      - SPIDER_METADB_USER=${SP_POSTGRES_USER}
+      - SPIDER_METADB_PASSWORD=${SP_POSTGRES_PASSWORD}
+      - SPIDER_METADB_DATABASE=${SP_POSTGRES_DB}
+      # Optional for key-value mode
+      # - SPIDER_METADB_SSLMODE=disable
+      # - SPIDER_METADB_CONNECT_TIMEOUT=10
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
@@ -179,8 +192,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:1024/spider/readyz"]
       <<: *default-healthcheck
 
-  # CB-Spider PostgreSQL
-  # This is used for storing CB-Spider metadata (replaces the legacy SQLite-based meta_db).
+  # CB-Spider PostgreSQL (Optional)
+  # Used when SPIDER_METADB_* env vars are configured in cb-spider service.
   cb-spider-postgres:
     image: postgres:16-alpine
     container_name: cb-spider-postgres
