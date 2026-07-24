@@ -264,6 +264,15 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     kubelet kubeadm kubectl > /dev/null
 sudo apt-mark hold kubelet kubeadm kubectl > /dev/null
 
+# Ensure standard CNI plugins exist (missing on some images, e.g. Azure ubuntu-hpc;
+# without them every pod sandbox fails with: failed to find plugin "loopback")
+if [ ! -x /opt/cni/bin/loopback ]; then
+    echo "Installing CNI plugins (missing on this image)..."
+    CNI_PLUGINS_VERSION="v1.6.2"
+    sudo mkdir -p /opt/cni/bin
+    curl -fsSL "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-amd64-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -xz -C /opt/cni/bin
+fi
+
 # Join the Kubernetes cluster
 echo "Joining Kubernetes cluster..."
 
