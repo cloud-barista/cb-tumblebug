@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -65,6 +66,44 @@ const (
 )
 
 const (
+	// Total attempts (initial + retries) for idempotent requests on transient errors.
+	transientErrorMaxAttempts = 3
+	// Backoff before the first retry, doubled on each subsequent retry (plus jitter).
+	transientErrorRetryBaseWait = 5 * time.Second
+)
+
+// transientErrorPatterns match momentary failures (network errors, CSP rate
+// limiting) worth retrying, from this client's transport or relayed in a 5xx
+// body by CB-Spider. The client's own response timeout is excluded: retrying
+// it costs the full timeout again. Matched case-insensitively; keep lowercase.
+var transientErrorPatterns = []string{
+	"connection reset by peer",
+	"connection refused",
+	"network is unreachable",
+	"server misbehaving", // DNS SERVFAIL
+	"i/o timeout",
+	"tls handshake timeout",
+	"sdk.timeouterror", // Alibaba SDK connect timeout
+	"unexpected eof",
+	"requestlimitexceeded",
+	"toomanyrequests",
+	"throttl",
+	"ratelimit",
+}
+
+// isTransientNetworkError reports whether the given error message (transport
+// error or upstream 5xx response body) indicates a retryable failure.
+func isTransientNetworkError(msg string) bool {
+	lowered := strings.ToLower(msg)
+	for _, pattern := range transientErrorPatterns {
+		if strings.Contains(lowered, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+const (
 	// VeryShortDuration is a duration for very short-term cache
 	VeryShortDuration = 1 * time.Second
 	// ShortDuration is a duration for short-term cache
@@ -76,11 +115,10 @@ const (
 	// VeryLongDuration is a duration for very long-term cache
 	VeryLongDuration = 300 * time.Second
 
-	// AvailabilityCheckTimeout is the per-request HTTP timeout used when probing
-	// whether a connection config is reachable via Spider. Kept separate from the
-	// cache-duration constants above because it controls network I/O, not caching.
-	// 20s is generous enough for slow CSPs while preventing indefinite hangs.
-	AvailabilityCheckTimeout = 20 * time.Second
+	// AvailabilityCheckTimeout is the per-request HTTP timeout for probing
+	// whether a connection config is reachable via Spider. Sized for the
+	// slowest CSPs (e.g., IBM key listing can take tens of seconds).
+	AvailabilityCheckTimeout = 60 * time.Second
 )
 
 // NoBody is a constant for empty body
@@ -427,20 +465,53 @@ func ExecuteHttpRequest[B any, T any](
 	var resp *resty.Response
 	var err error
 
-	// Execute HTTP method based on the given type
 	switch method {
-	case "GET":
-		resp, err = req.Get(url)
-	case "POST":
-		resp, err = req.Post(url)
-	case "PUT":
-		resp, err = req.Put(url)
-	case "DELETE":
-		resp, err = req.Delete(url)
-	case "HEAD":
-		resp, err = req.Head(url)
+	case "GET", "POST", "PUT", "DELETE", "HEAD":
 	default:
 		return nil, fmt.Errorf("unsupported rest method: %s", method)
+	}
+
+	// Execute HTTP method based on the given type
+	executeRequest := func() (*resty.Response, error) {
+		switch method {
+		case "GET":
+			return req.Get(url)
+		case "POST":
+			return req.Post(url)
+		case "PUT":
+			return req.Put(url)
+		case "DELETE":
+			return req.Delete(url)
+		default:
+			return req.Head(url)
+		}
+	}
+
+	// Retry idempotent (GET/HEAD) requests with backoff on transient failures.
+	// Non-idempotent methods are not retried: the upstream may have processed them.
+	maxAttempts := 1
+	if method == "GET" || method == "HEAD" {
+		maxAttempts = transientErrorMaxAttempts
+	}
+	for attempt := 1; ; attempt++ {
+		resp, err = executeRequest()
+
+		failureMsg := ""
+		if err != nil {
+			failureMsg = err.Error()
+		} else if resp.IsError() && resp.StatusCode() >= http.StatusInternalServerError {
+			failureMsg = string(resp.Body())
+		} else {
+			break
+		}
+		if attempt >= maxAttempts || !isTransientNetworkError(failureMsg) {
+			break
+		}
+		wait := transientErrorRetryBaseWait*time.Duration(1<<(attempt-1)) +
+			time.Duration(rand.Intn(2000))*time.Millisecond
+		log.Warn().Msgf("Transient network error on %s %s (attempt %d/%d), retrying in %v: %s",
+			method, cleanURL(url), attempt, maxAttempts, wait.Round(time.Millisecond), cleanErrorMessage(failureMsg))
+		time.Sleep(wait)
 	}
 
 	if err != nil {

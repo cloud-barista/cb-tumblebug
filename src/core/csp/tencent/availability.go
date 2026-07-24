@@ -45,7 +45,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	tcerrors "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
-	tcprofile "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 
 	tccommon "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -77,9 +76,7 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		return model.AvailabilityResult{}, fmt.Errorf("failed to get Tencent credentials: %w", err)
 	}
 
-	credential := tccommon.NewCredential(secretID, secretKey)
-	cpf := tcprofile.NewClientProfile()
-	client, err := cvm.NewClient(credential, region, cpf)
+	client, err := newCVMClient(region, secretID, secretKey)
 	if err != nil {
 		return model.AvailabilityResult{}, fmt.Errorf("failed to create Tencent CVM client for region %s: %w", region, err)
 	}

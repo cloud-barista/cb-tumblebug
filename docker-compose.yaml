@@ -18,6 +18,8 @@ services:
       dockerfile: Dockerfile
     networks:
       - cloud-barista
+    # Uncomment below if CSP API calls fail with DNS errors (e.g., unreliable host DNS on WSL2 + VPN)
+    # dns: [8.8.8.8, 1.1.1.1]
     ports:
       - target: 1323
         published: 1323
@@ -155,6 +157,8 @@ services:
     #   dockerfile: Dockerfile
     networks:
       - cloud-barista
+    # Uncomment below if CSP API calls fail with DNS errors (e.g., unreliable host DNS on WSL2 + VPN)
+    # dns: [8.8.8.8, 1.1.1.1]
     # Uncomment below if you want to access CB-Spider for remote
     # ports:
     #   - 1024:1024
@@ -263,6 +267,8 @@ services:
     #   dockerfile: Dockerfile
     networks:
       - cloud-barista
+    # Uncomment below if CSP API calls fail with DNS errors (e.g., unreliable host DNS on WSL2 + VPN)
+    # dns: [8.8.8.8, 1.1.1.1]
     ports:
       - target: 8055
         published: 8055

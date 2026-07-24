@@ -17,8 +17,6 @@ import (
 	"context"
 	"fmt"
 
-	awssdk "github.com/aws/aws-sdk-go-v2/aws"
-	awscreds "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -45,11 +43,7 @@ func newEC2Client(ctx context.Context, region string) (*ec2.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("AWS vmcontrol: cannot get credentials: %w", err)
 	}
-	cfg := awssdk.Config{
-		Region:      region,
-		Credentials: awscreds.NewStaticCredentialsProvider(accessKey, secretKey, ""),
-	}
-	return ec2.NewFromConfig(cfg), nil
+	return ec2.NewFromConfig(newConfig(region, accessKey, secretKey)), nil
 }
 
 // BatchStopInstances issues StopInstances for the given instance IDs and returns

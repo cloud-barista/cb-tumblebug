@@ -45,7 +45,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("Alibaba vmstatus: cannot get credentials: %w", err)
 	}
 
-	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	client, err := newECSClient(region, accessKeyID, accessKeySecret)
 	if err != nil {
 		return nil, fmt.Errorf("Alibaba vmstatus: failed to create ECS client (region=%s): %w", region, err)
 	}

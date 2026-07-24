@@ -17,8 +17,6 @@ import (
 	"context"
 	"fmt"
 
-	awssdk "github.com/aws/aws-sdk-go-v2/aws"
-	awscreds "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -53,11 +51,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("AWS vmstatus: cannot get credentials: %w", err)
 	}
 
-	cfg := awssdk.Config{
-		Region:      region,
-		Credentials: awscreds.NewStaticCredentialsProvider(accessKey, secretKey, ""),
-	}
-	client := ec2.NewFromConfig(cfg)
+	client := ec2.NewFromConfig(newConfig(region, accessKey, secretKey))
 
 	result := make(map[string]string, len(instanceIds))
 

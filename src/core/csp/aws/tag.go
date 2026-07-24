@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
@@ -56,11 +55,7 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 		return fmt.Errorf("failed to get AWS credentials: %w", err)
 	}
 
-	cfg := aws.Config{
-		Region:      region,
-		Credentials: credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
-	}
-	client := ec2.NewFromConfig(cfg)
+	client := ec2.NewFromConfig(newConfig(region, accessKey, secretKey))
 
 	// CB-Spider returns the key pair name as SystemId for sshKey resources.
 	// EC2 CreateTags requires the key-xxx resource ID, so resolve it first.
