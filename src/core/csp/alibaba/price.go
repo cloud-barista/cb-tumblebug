@@ -63,7 +63,7 @@ func FetchNodePricesByRegionFiltered(ctx context.Context, region string, targetI
 		return model.SpiderCloudPrice{}, fmt.Errorf("failed to get Alibaba credentials: %w", err)
 	}
 
-	ecsClient, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	ecsClient, err := newECSClient(region, accessKeyID, accessKeySecret)
 	if err != nil {
 		return model.SpiderCloudPrice{}, fmt.Errorf("failed to create Alibaba ECS client for region %s: %w", region, err)
 	}
@@ -368,7 +368,7 @@ func FetchAvailableSpecListByRegion(ctx context.Context, region string, zoneID s
 		return model.SpiderSpecList{}, fmt.Errorf("failed to get Alibaba credentials: %w", err)
 	}
 
-	ecsClient, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	ecsClient, err := newECSClient(region, accessKeyID, accessKeySecret)
 	if err != nil {
 		return model.SpiderSpecList{}, fmt.Errorf("failed to create Alibaba ECS client for region %s: %w", region, err)
 	}

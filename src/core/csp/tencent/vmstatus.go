@@ -17,8 +17,6 @@ import (
 	"context"
 	"fmt"
 
-	tccommon "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
@@ -47,8 +45,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("Tencent vmstatus: cannot get credentials: %w", err)
 	}
 
-	credential := tccommon.NewCredential(secretID, secretKey)
-	client, err := cvm.NewClient(credential, region, profile.NewClientProfile())
+	client, err := newCVMClient(region, secretID, secretKey)
 	if err != nil {
 		return nil, fmt.Errorf("Tencent vmstatus: failed to create CVM client (region=%s): %w", region, err)
 	}

@@ -67,7 +67,7 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		return model.AvailabilityResult{}, fmt.Errorf("failed to get Alibaba credentials: %w", err)
 	}
 
-	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	client, err := newECSClient(region, accessKeyID, accessKeySecret)
 	if err != nil {
 		return model.AvailabilityResult{}, fmt.Errorf("failed to create Alibaba ECS client for region %s: %w", region, err)
 	}

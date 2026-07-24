@@ -36,8 +36,6 @@ import (
 	"time"
 
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	awscreds "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
@@ -72,17 +70,7 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		return model.AvailabilityResult{}, fmt.Errorf("failed to get AWS credentials: %w", err)
 	}
 
-	cfg, err := awsconfig.LoadDefaultConfig(ctx,
-		awsconfig.WithRegion(region),
-		awsconfig.WithCredentialsProvider(
-			awscreds.NewStaticCredentialsProvider(accessKey, secretKey, ""),
-		),
-	)
-	if err != nil {
-		return model.AvailabilityResult{}, fmt.Errorf("failed to create AWS config: %w", err)
-	}
-
-	client := ec2.NewFromConfig(cfg)
+	client := ec2.NewFromConfig(newConfig(region, accessKey, secretKey))
 
 	input := &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2types.LocationTypeAvailabilityZone,

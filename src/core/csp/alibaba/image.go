@@ -137,7 +137,7 @@ func describeImageFromFamily(ctx context.Context, region, family string) (imageI
 		return "", "", fmt.Errorf("failed to get Alibaba credentials: %w", err)
 	}
 
-	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	client, err := newECSClient(region, accessKeyID, accessKeySecret)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create Alibaba ECS client for region %s: %w", region, err)
 	}

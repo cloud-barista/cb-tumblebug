@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"
-	awscreds "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/pricing"
 	pricetypes "github.com/aws/aws-sdk-go-v2/service/pricing/types"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -86,11 +85,7 @@ func FetchAllNodePrices(ctx context.Context) (map[string]model.SpiderCloudPrice,
 
 	// AWS Pricing API is only available at these 3 endpoints;
 	// "us-east-1" works for all AWS regions' pricing data.
-	cfg := awssdk.Config{
-		Region:      "us-east-1",
-		Credentials: awscreds.NewStaticCredentialsProvider(accessKey, secretKey, ""),
-	}
-	client := pricing.NewFromConfig(cfg)
+	client := pricing.NewFromConfig(newConfig("us-east-1", accessKey, secretKey))
 
 	// Filters mirror what Spider's AwsPriceInfoHandler applies, except we deliberately
 	// omit the regionCode filter to retrieve all regions in a single pass.
