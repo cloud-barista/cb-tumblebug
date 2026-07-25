@@ -26,7 +26,10 @@ Serve LLMs with an OpenAI-compatible API on a CB-Tumblebug-provisioned K8s clust
 # 3. Chat UI on NodePort (open the port in the Security Group)
 ./deploy-open-webui-kserve.sh --nodeport 30080
 
-# 4. (optional) Hermes Agent on the KServe endpoint
+# 4. (optional) Monitoring: Prometheus + Grafana with GPU(DCGM)/vLLM dashboards
+./deploy-monitoring.sh          # Grafana on NodePort 30300 (admin/admin)
+
+# 5. (optional) Hermes Agent on the KServe endpoint
 ../llm/deployHermesAgent.sh --mode hermes-only --skip-vllm \
   --vllm-base-url http://localhost:30800/openai/v1 --model llm
 ```
