@@ -18,11 +18,13 @@ MEMORY_LIMIT="24Gi"
 HF_TOKEN="${HF_TOKEN:-}"
 NODE_PORT=""        # empty = ClusterIP only; set (e.g. 30800) to expose the API externally
 TOOL_PARSER="auto"  # auto-detect from model family; needed for clients sending tool_choice:"auto"
+SERVED_NAME=""      # model id shown to API clients (default: basename of --model)
 
 usage() {
     echo "Usage: bash serve-vllm-model.sh [OPTIONS]"
     echo "  -m, --model MODEL   HuggingFace model name (default: ${MODEL_ID})"
     echo "  -n, --name NAME     InferenceService name (default: ${ISVC_NAME})"
+    echo "  --served-name NAME  Model name shown to API clients (default: basename of --model)"
     echo "  --hf-token TOKEN    HuggingFace token for gated models (Llama, Mistral, ...)"
     echo "  --ctx-len N         Max context length / --max-model-len (default: model default)"
     echo "  --tool-parser P     auto|hermes|llama3_json|mistral (default: auto)"
@@ -36,6 +38,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -m|--model) MODEL_ID="$2"; shift 2 ;;
         -n|--name) ISVC_NAME="$2"; shift 2 ;;
+        --served-name) SERVED_NAME="$2"; shift 2 ;;
         --hf-token) HF_TOKEN="$2"; shift 2 ;;
         --ctx-len|--max-len) CTX_LEN="$2"; shift 2 ;;
         --tool-parser) TOOL_PARSER="$2"; shift 2 ;;
@@ -46,6 +49,9 @@ while [[ $# -gt 0 ]]; do
         *) echo "Unknown option: $1"; usage ;;
     esac
 done
+
+# API clients (e.g., Open WebUI model selector) see this name
+[ -z "$SERVED_NAME" ] && SERVED_NAME="${MODEL_ID##*/}"
 
 # Tool parser auto-detection by model family
 if [ "$TOOL_PARSER" = "auto" ]; then
@@ -59,6 +65,7 @@ fi
 echo "==== vLLM Model Serving (KServe) ===="
 echo "  Model: ${MODEL_ID}"
 echo "  InferenceService: ${ISVC_NAME}"
+echo "  Served model name: ${SERVED_NAME}"
 echo "  Context length: ${CTX_LEN:-model default}"
 echo "  Tool parser: ${TOOL_PARSER}"
 
@@ -74,18 +81,22 @@ if [ -n "$CTX_LEN" ]; then
         - --max-model-len=${CTX_LEN}"
 fi
 
+# VLLM_USE_DEEP_GEMM=0: DeepGEMM JIT needs nvcc, absent from the runtime image
+ENV_BLOCK='
+      env:
+        - name: VLLM_USE_DEEP_GEMM
+          value: "0"'
+
 # HF token secret for gated models
-HF_ENV=""
 if [ -n "$HF_TOKEN" ]; then
     kubectl create secret generic hf-token --from-literal=HF_TOKEN="$HF_TOKEN" \
         --dry-run=client -o yaml | kubectl apply -f - > /dev/null
-    HF_ENV='
-      env:
+    ENV_BLOCK="${ENV_BLOCK}
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef:
               name: hf-token
-              key: HF_TOKEN'
+              key: HF_TOKEN"
 fi
 
 # deploymentStrategy Recreate: with a single GPU, RollingUpdate deadlocks
@@ -103,11 +114,11 @@ spec:
       modelFormat:
         name: huggingface
       args:
-        - --model_name=${ISVC_NAME}
+        - --model_name=${SERVED_NAME}
         - --model_id=${MODEL_ID}
         - --backend=vllm
         - --enable-auto-tool-choice
-        - --tool-call-parser=${TOOL_PARSER}${EXTRA_ARGS}${HF_ENV}
+        - --tool-call-parser=${TOOL_PARSER}${EXTRA_ARGS}${ENV_BLOCK}
       resources:
         requests:
           cpu: "2"
@@ -140,7 +151,28 @@ fi
 
 echo ""
 echo "Waiting for model to be ready (image pull + model download; typically 5-15 min)..."
-if kubectl wait --for=condition=Ready inferenceservice/${ISVC_NAME} --timeout=30m > /dev/null 2>&1; then
+# Poll instead of a blind wait: fail fast with logs when the model crashes
+# (e.g., unsupported architecture or model too large for the GPU)
+READY=false
+for i in $(seq 1 180); do
+    if [ "$(kubectl get isvc ${ISVC_NAME} -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)" = "True" ]; then
+        READY=true; break
+    fi
+    RESTARTS=$(kubectl get pods -l serving.kserve.io/inferenceservice=${ISVC_NAME} -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}' 2>/dev/null || echo 0)
+    WAITING=$(kubectl get pods -l serving.kserve.io/inferenceservice=${ISVC_NAME} -o jsonpath='{.items[0].status.containerStatuses[0].state.waiting.reason}' 2>/dev/null || echo "")
+    if [ "${RESTARTS:-0}" -ge 5 ] && [ "$WAITING" = "CrashLoopBackOff" ]; then
+        echo ""
+        echo "ERROR: model server keeps crashing (${RESTARTS} restarts). Recent logs:"
+        kubectl logs -l serving.kserve.io/inferenceservice=${ISVC_NAME} --previous --tail=15 2>/dev/null | tail -8 || \
+        kubectl logs -l serving.kserve.io/inferenceservice=${ISVC_NAME} --tail=15 2>/dev/null | tail -8
+        echo ""
+        echo "Common causes: model architecture newer than the runtime supports,"
+        echo "or model too large for GPU VRAM. Try a smaller/older model."
+        exit 1
+    fi
+    sleep 10
+done
+if [ "$READY" = true ]; then
     echo "  ✓ InferenceService is ready"
 else
     echo "  ⚠ Not ready within 30m. Check: kubectl logs -l serving.kserve.io/inferenceservice=${ISVC_NAME}"
@@ -151,7 +183,7 @@ fi
 CLUSTER_IP=$(kubectl get svc ${ISVC_NAME}-predictor -o jsonpath='{.spec.clusterIP}')
 RESP=$(curl -s --max-time 60 "http://${CLUSTER_IP}/openai/v1/chat/completions" \
     -H "Content-Type: application/json" \
-    -d "{\"model\":\"${ISVC_NAME}\",\"messages\":[{\"role\":\"user\",\"content\":\"Say OK\"}],\"max_tokens\":10}" || true)
+    -d "{\"model\":\"${SERVED_NAME}\",\"messages\":[{\"role\":\"user\",\"content\":\"Say OK\"}],\"max_tokens\":10}" || true)
 
 echo ""
 echo "========================================"

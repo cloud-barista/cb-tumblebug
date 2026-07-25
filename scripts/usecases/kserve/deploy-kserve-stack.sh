@@ -10,7 +10,7 @@
 set -e
 
 CERT_MANAGER_VERSION="v1.16.2"
-KSERVE_VERSION="v0.15.0"
+KSERVE_VERSION="v0.19.0"
 LOCAL_PATH_VERSION="v0.0.30"
 
 echo "==== KServe Stack Setup ===="

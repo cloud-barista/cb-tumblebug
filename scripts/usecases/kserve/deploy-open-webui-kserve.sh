@@ -113,7 +113,7 @@ echo ""
 echo "Access: http://<node-public-ip>:${NODE_PORT}"
 echo "  (1) Allow inbound ${NODE_PORT}/tcp in the Security Group"
 echo "  (2) First signup becomes the admin account"
-echo "  (3) Select model '${ISVC_NAME}' in the model selector and chat"
+echo "  (3) Select the served model in the model selector and chat"
 echo ""
 echo "\$\$CMD[Check Open WebUI](kubectl get pods -l app=open-webui)"
 exit 0
