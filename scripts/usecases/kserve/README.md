@@ -31,7 +31,18 @@ Serve LLMs with an OpenAI-compatible API on a CB-Tumblebug-provisioned K8s clust
   --vllm-base-url http://localhost:30800/openai/v1 --model llm
 ```
 
+## Serving your own (non-LLM) models
+
+See [examples/](examples/) for the three serving paths with runnable demos:
+standard-format model via KServe runtime (no image build), custom container on
+KServe (kserve SDK), and a plain Deployment without KServe.
+
 ## Notes (lessons baked into these scripts)
+
+- Model support window: KServe v0.19 bundles vLLM 0.20 — model architectures
+  newer than the bundled vLLM may fail with "does not recognize
+  this architecture". Pick models from established families (Qwen2.5, Llama-3.x,
+  Mistral) and size them to GPU VRAM (BF16 ≈ 2 GB per B params).
 
 - `--enable-auto-tool-choice --tool-call-parser` is required: OpenAI clients like
   Open WebUI send `tool_choice:"auto"`, which vLLM otherwise rejects with 400.
