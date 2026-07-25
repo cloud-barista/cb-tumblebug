@@ -1,26 +1,29 @@
-# Model Serving Examples: three ways to serve a model on K8s
+# One ML task, three serving methods
 
-How to serve a user-trained ML model, from lightest to most manual.
-All examples run on the cluster built by `../deploy-kserve-stack.sh` (CPU only, no GPU needed).
+All three examples serve the **same handwritten-digit recognition model**
+(sklearn digits, 8x8 images) — so the only difference you see is the serving
+method itself. All run on the cluster built by `../deploy-kserve-stack.sh`
+(CPU only, no GPU needed).
 
-| | A. KServe + standard runtime | B. KServe + custom container | C. Plain Deployment |
+| | A. KServe standard runtime | B. KServe custom container | C. Plain Deployment |
 |---|---|---|---|
-| When | Model in a standard format (sklearn, xgboost, torch, onnx, ...) | Custom pre/post-processing code needed | Model is already an API-serving container |
-| Containerize? | **No** — upload artifact, write 8-line yaml | Yes (kserve SDK wrapper) | Yes (any web framework) |
-| You get | Runtime provided, canary, autoscaling, `kubectl get isvc` | Same as A, with your code inside | Full control; scaling/rollout is DIY |
-| Files | `a-sklearn-isvc.sh` | `b-custom-model/` | `c-plain-deployment.sh` |
+| Serving code you write | **none** | predict() ~20 lines | full API server |
+| Image build | **no** | yes (registry needed) | yes (or inline hack) |
+| Scaling / rollout / canary | KServe | KServe | **manual (kubectl)** |
+| When to choose | model in a standard format | custom pre/post-processing | already have an API container |
+| Demo highlight | train Job → PVC → 8-line YAML | image from in-cluster private registry, digit + confidence | scale 1→3, load-balancing bar chart |
 
 ```bash
-# A: standard-format model, no image build (public iris model; PVC recipe included for your own)
+# A: train in-cluster, serve the artifact with zero code
 ./a-sklearn-isvc.sh
 
-# B: custom logic wrapped with the kserve SDK — fully automated with the in-cluster registry:
+# B: custom predict() → build → push to in-cluster registry → serve
 ../deploy-private-registry.sh                  # on control plane
 ../config-registry-access.sh                   # on ALL nodes
-./build-serve-custom-model.sh                  # build + push + serve + test
+./build-serve-custom-model.sh
 # (manual path with your own registry: see b-custom-model/README.md)
 
-# C: the same model as a plain Deployment + Service, no KServe involved
+# C: the same model behind a hand-written FastAPI + manual scaling
 ./c-plain-deployment.sh
 ```
 

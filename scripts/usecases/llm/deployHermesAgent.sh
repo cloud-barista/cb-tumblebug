@@ -408,6 +408,10 @@ if [ -z "$HERMES_API_KEY" ]; then
   # /proc/sys/kernel/random/uuid is always available on Linux, produces a finite
   # value (no SIGPIPE risk), and requires no external tools beyond tr.
   HERMES_API_KEY="hermes-$(tr -d '-\n' < /proc/sys/kernel/random/uuid)"
+elif [ "${#HERMES_API_KEY}" -lt 16 ]; then
+  # Hermes (2026-06 hardening) refuses keys shorter than 16 chars or placeholders
+  echo "WARNING: --hermes-api-key too short (<16 chars); generating a strong key instead"
+  HERMES_API_KEY="hermes-$(tr -d '-\n' < /proc/sys/kernel/random/uuid)"
 fi
 
 if [ -z "$VLLM_BASE_URL" ]; then
@@ -841,6 +845,18 @@ cfg["API_SERVER_ENABLED"] = True
 cfg["API_SERVER_HOST"] = os.environ["HERMES_API_HOST"]
 cfg["API_SERVER_PORT"] = int(os.environ["HERMES_API_PORT"])
 cfg["API_SERVER_KEY"] = os.environ["HERMES_API_KEY"]
+
+# Newer Hermes reads the API server settings from platforms.api_server instead
+# of the legacy top-level keys above (kept for older versions)
+plats = cfg.setdefault("platforms", {})
+plats["api_server"] = {
+    "enabled": True,
+    "extra": {
+        "host": os.environ["HERMES_API_HOST"],
+        "port": int(os.environ["HERMES_API_PORT"]),
+        "key": os.environ["HERMES_API_KEY"],
+    },
+}
 
 providers = cfg.setdefault("providers", {})
 custom = providers.setdefault("custom", {})
