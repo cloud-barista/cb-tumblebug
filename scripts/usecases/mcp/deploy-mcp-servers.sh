@@ -1,33 +1,33 @@
 #!/bin/bash
 
-# Two demo MCP servers (run on K8s control plane), both streamable HTTP on :8000/mcp
-#   mcp-api : wraps the Demo Shop REST API as curated MCP tools (the write path)
-#   mcp-db  : exposes read-only SQL access to the demo PostgreSQL (the analysis path)
-# Prerequisites: deploy-demo-db.sh and deploy-demo-api.sh completed
+# Two MCP adapters for the model registry (run on K8s control plane), streamable HTTP on :8000/mcp
+#   mcp-model-registry-backend : curated registry tools over the REST API (the write path)
+#   mcp-model-registry-db      : read-only SQL access to the registry DB (the analysis path)
+# Prerequisites: deploy-registry-db.sh and deploy-registry-backend.sh completed
 
 set -e
 
 NS="mcp-demo"
 
-echo "==== Demo MCP Servers Setup (namespace: ${NS}) ===="
+echo "==== MCP Adapters Setup (namespace: ${NS}) ===="
 
-kubectl -n ${NS} get svc demo-api > /dev/null 2>&1 || {
-    echo "ERROR: demo-api service not found in ${NS}. Run deploy-demo-api.sh first."; exit 1; }
+kubectl -n ${NS} get svc model-registry-backend > /dev/null 2>&1 || {
+    echo "ERROR: model-registry-backend service not found in ${NS}. Run deploy-registry-backend.sh first."; exit 1; }
 
-# MCP server (API): curated tools that call the REST API — the governed write path
+# MCP adapter (backend): curated tools that call the registry REST API
 cat <<'EOF' | kubectl -n mcp-demo apply -f - > /dev/null
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mcp-api-app
+  name: mcp-model-registry-backend-app
 data:
   server.py: |
     import os
     import httpx
     from fastmcp import FastMCP
 
-    API = os.environ.get("API_BASE", "http://demo-api:8000")
-    mcp = FastMCP("demo-shop-api")
+    API = os.environ.get("API_BASE", "http://model-registry-backend:8000")
+    mcp = FastMCP("model-registry")
 
     def get(path, **params):
         r = httpx.get(f"{API}{path}", params=params or None, timeout=10)
@@ -35,48 +35,51 @@ data:
         return r.json()
 
     @mcp.tool
-    def list_products() -> list:
-        """List all shop products with category, price, and current stock."""
-        return get("/products")
+    def search_models(query: str = "", task: str = "") -> list:
+        """Search the model catalog by keyword and/or task (empty = all models)."""
+        return get("/models", query=query, task=task)
 
     @mcp.tool
-    def get_product(product_id: int) -> dict:
-        """Get one product by id."""
-        return get(f"/products/{product_id}")
+    def get_model(model_id: int) -> dict:
+        """Get one model's full metadata by id."""
+        return get(f"/models/{model_id}")
 
     @mcp.tool
-    def list_customers() -> list:
-        """List all customers."""
-        return get("/customers")
+    def list_tasks() -> list:
+        """List ML task categories with model counts."""
+        return get("/tasks")
 
     @mcp.tool
-    def list_orders(customer_id: int | None = None) -> list:
-        """List orders with totals, optionally filtered by customer id."""
-        return get("/orders", **({"customer_id": customer_id} if customer_id else {}))
-
-    @mcp.tool
-    def get_order(order_id: int) -> dict:
-        """Get one order including its line items."""
-        return get(f"/orders/{order_id}")
-
-    @mcp.tool
-    def create_order(customer_id: int, product_id: int, quantity: int = 1) -> dict:
-        """Create an order (checks and decrements stock). The only write path in this demo."""
-        r = httpx.post(f"{API}/orders", timeout=10, json={
-            "customer_id": customer_id, "product_id": product_id, "quantity": quantity})
+    def register_model(name: str, task: str, format: str, params_m: float = 0,
+                       size_mb: int = 0, license: str = "apache-2.0",
+                       gpu_required: bool = False, description: str = "") -> dict:
+        """Register a new model in the catalog (metadata only). Format examples: sklearn, xgboost, onnx, pytorch, tensorflow, huggingface."""
+        r = httpx.post(f"{API}/models", timeout=10, json={
+            "name": name, "task": task, "format": format, "params_m": params_m,
+            "size_mb": size_mb, "license": license, "gpu_required": gpu_required,
+            "description": description})
         if r.status_code >= 400:
             return {"error": r.status_code, "detail": r.json().get("detail", r.text)}
         return r.json()
 
-    mcp.run(transport="http", host="0.0.0.0", port=8000, path="/mcp")
+    @mcp.tool
+    def delete_model(model_id: int) -> dict:
+        """Delete a model from the catalog by id."""
+        r = httpx.delete(f"{API}/models/{model_id}", timeout=10)
+        if r.status_code >= 400:
+            return {"error": r.status_code, "detail": r.json().get("detail", r.text)}
+        return r.json()
+
+    # stateless: any replica can serve any request (no per-pod session state)
+    mcp.run(transport="http", host="0.0.0.0", port=8000, path="/mcp", stateless_http=True)
 EOF
 
-# MCP server (DB): read-only SQL tools straight to Postgres — the analysis path
+# MCP adapter (db): read-only SQL tools straight to Postgres
 cat <<'EOF' | kubectl -n mcp-demo apply -f - > /dev/null
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mcp-db-app
+  name: mcp-model-registry-db-app
 data:
   server.py: |
     import os
@@ -85,10 +88,11 @@ data:
     from psycopg.rows import dict_row
     from fastmcp import FastMCP
 
-    DB = os.environ.get("DATABASE_URI", "postgresql://demo:demo1234@postgres:5432/demo")
+    DB = os.environ.get("DATABASE_URI",
+                        "postgresql://demo:demo1234@model-registry-db:5432/registry")
     # read-only transactions + 5s statement timeout enforced at the connection level
     OPTS = "-c default_transaction_read_only=on -c statement_timeout=5000"
-    mcp = FastMCP("demo-postgres")
+    mcp = FastMCP("model-registry-sql")
 
     def run(sql, params=()):
         with psycopg.connect(DB, row_factory=dict_row, options=OPTS) as c:
@@ -98,7 +102,7 @@ data:
 
     @mcp.tool
     def list_tables() -> list:
-        """List tables in the demo database."""
+        """List tables in the registry database."""
         return run("""SELECT table_name FROM information_schema.tables
                       WHERE table_schema='public' ORDER BY table_name""")
 
@@ -118,10 +122,11 @@ data:
         except Exception as e:
             return [{"error": str(e).strip()}]
 
-    mcp.run(transport="http", host="0.0.0.0", port=8000, path="/mcp")
+    # stateless: any replica can serve any request (no per-pod session state)
+    mcp.run(transport="http", host="0.0.0.0", port=8000, path="/mcp", stateless_http=True)
 EOF
 
-for APP in mcp-api mcp-db; do
+for APP in mcp-model-registry-backend mcp-model-registry-db; do
 cat <<EOF | kubectl -n ${NS} apply -f -
 apiVersion: apps/v1
 kind: Deployment
@@ -146,9 +151,9 @@ spec:
               python3 server.py
           env:
             - name: API_BASE
-              value: http://demo-api:8000
+              value: http://model-registry-backend:8000
             - name: DATABASE_URI
-              value: postgresql://demo:demo1234@postgres:5432/demo
+              value: postgresql://demo:demo1234@model-registry-db:5432/registry
           ports:
             - containerPort: 8000
           readinessProbe:
@@ -162,7 +167,8 @@ spec:
         - name: app
           configMap:
             name: ${APP}-app
----
+EOF
+cat <<EOF | kubectl -n ${NS} apply -f -
 apiVersion: v1
 kind: Service
 metadata:
@@ -176,9 +182,9 @@ EOF
 done
 
 echo ""
-echo "Waiting for MCP servers to start (pip install at boot; typically 1-2 min)..."
-kubectl -n ${NS} rollout status deployment/mcp-api --timeout=5m > /dev/null
-kubectl -n ${NS} rollout status deployment/mcp-db --timeout=5m > /dev/null
+echo "Waiting for MCP adapters to start (pip install at boot; typically 1-2 min)..."
+kubectl -n ${NS} rollout status deployment/mcp-model-registry-backend --timeout=5m > /dev/null
+kubectl -n ${NS} rollout status deployment/mcp-model-registry-db --timeout=5m > /dev/null
 
 # JSON-RPC helper for streamable HTTP (unwraps SSE-framed responses)
 mcp_rpc() {
@@ -190,32 +196,32 @@ mcp_rpc() {
 
 mcp_check() {
     local NAME="$1"
-    local URL="http://$(kubectl -n ${NS} get svc ${NAME} -o jsonpath='{.spec.clusterIP}'):8000/mcp"
-    local SID
-    SID=$(curl -si --max-time 15 "$URL" \
-        -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
-        -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"probe","version":"1.0"}}}' \
-        | grep -i '^mcp-session-id:' | tr -d '\r' | awk '{print $2}')
-    [ -n "$SID" ] || { echo "ERROR: ${NAME} initialize failed"; exit 1; }
-    mcp_rpc "$URL" "$SID" '{"jsonrpc":"2.0","method":"notifications/initialized"}' > /dev/null
-    mcp_rpc "$URL" "$SID" '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | python3 -c "
+    kubectl -n ${NS} port-forward svc/${NAME} 18000:8000 > /dev/null 2>&1 &
+    local PF_PID=$!
+    sleep 3
+    local URL="http://127.0.0.1:18000/mcp"
+    mcp_rpc "$URL" "" '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"probe","version":"1.0"}}}' \
+        | grep -q '"serverInfo"' || { kill ${PF_PID} 2>/dev/null; echo "ERROR: ${NAME} initialize failed"; exit 1; }
+    mcp_rpc "$URL" "" '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | python3 -c "
 import sys, json
 tools = json.load(sys.stdin)['result']['tools']
 print(f'  ${NAME}: {len(tools)} tools -> ' + ', '.join(t['name'] for t in tools))"
+    kill ${PF_PID} 2>/dev/null
+    wait ${PF_PID} 2>/dev/null || true
 }
 
 echo ""
-echo "=== Verifying MCP handshake (initialize + tools/list) ==="
-mcp_check mcp-api
-mcp_check mcp-db
+echo "=== Verifying MCP handshake (initialize + tools/list, stateless) ==="
+mcp_check mcp-model-registry-backend
+mcp_check mcp-model-registry-db
 
 echo ""
 echo "========================================"
-echo "SUCCESS: Both MCP servers are serving (streamable HTTP)"
+echo "SUCCESS: Both MCP adapters are serving (streamable HTTP, stateless)"
 echo "========================================"
-echo "  mcp-api: http://mcp-api.${NS}.svc.cluster.local:8000/mcp"
-echo "  mcp-db:  http://mcp-db.${NS}.svc.cluster.local:8000/mcp"
+echo "  backend adapter: http://mcp-model-registry-backend.${NS}.svc.cluster.local:8000/mcp"
+echo "  db adapter:      http://mcp-model-registry-db.${NS}.svc.cluster.local:8000/mcp"
 echo "  Next: deploy-agentgateway.sh federates both behind one external endpoint"
 echo ""
-echo "\$\$CMD[Check MCP Servers](kubectl -n mcp-demo get pods -l 'app in (mcp-api,mcp-db)')"
+echo "\$\$CMD[Check MCP Adapters](kubectl -n mcp-demo get pods | grep mcp-)"
 exit 0
