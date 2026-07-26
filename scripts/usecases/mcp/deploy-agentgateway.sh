@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# agentgateway (standalone) federating the demo MCP servers behind one endpoint
+# agentgateway (standalone) federating the model-registry MCP adapters behind one endpoint
 # External clients connect to NodePort 30900 (/mcp); admin UI on NodePort 30901
 # Prerequisites: deploy-mcp-servers.sh completed
 # Run on K8s control plane
@@ -29,12 +29,12 @@ done
 
 echo "==== agentgateway Setup (${AGW_VERSION}, namespace: ${NS}) ===="
 
-for SVC in mcp-api mcp-db; do
+for SVC in mcp-model-registry-backend mcp-model-registry-db; do
     kubectl -n ${NS} get svc ${SVC} > /dev/null 2>&1 || {
         echo "ERROR: ${SVC} service not found in ${NS}. Run deploy-mcp-servers.sh first."; exit 1; }
 done
 
-# Federation config: two remote MCP targets, tools exposed as api_* and db_*
+# Federation config: two remote MCP targets, tools exposed as registry_* and db_*
 cat <<EOF | kubectl -n ${NS} apply -f - > /dev/null
 apiVersion: v1
 kind: ConfigMap
@@ -55,12 +55,12 @@ data:
           backends:
           - mcp:
               targets:
-              - name: api
+              - name: registry
                 mcp:
-                  host: http://mcp-api.${NS}.svc.cluster.local:8000/mcp
+                  host: http://mcp-model-registry-backend.${NS}.svc.cluster.local:8000/mcp
               - name: db
                 mcp:
-                  host: http://mcp-db.${NS}.svc.cluster.local:8000/mcp
+                  host: http://mcp-model-registry-db.${NS}.svc.cluster.local:8000/mcp
 EOF
 
 echo ""
@@ -154,13 +154,13 @@ names = [t['name'] for t in tools]
 print(f'  {len(tools)} federated tools:')
 for n in names:
     print(f'    {n}')
-assert any(n.startswith('api_') for n in names), 'api_* tools missing'
+assert any(n.startswith('registry_') for n in names), 'registry_* tools missing'
 assert any(n.startswith('db_') for n in names), 'db_* tools missing'
-print('  OK: both api_* and db_* tool groups are federated')"
+print('  OK: both registry_* and db_* tool groups are federated')"
 
 echo ""
 echo "========================================"
-echo "SUCCESS: agentgateway is federating mcp-api + mcp-db"
+echo "SUCCESS: agentgateway is federating the registry + db MCP adapters"
 echo "========================================"
 echo ""
 echo "[MCP_ENDPOINT]"
@@ -171,7 +171,7 @@ echo "http://<node-public-ip>:${UI_NODEPORT}/ui/"
 echo ""
 echo "External access checklist:"
 echo "  (1) Allow inbound ${MCP_NODEPORT}/tcp (and ${UI_NODEPORT}/tcp for the UI) in the Security Group"
-echo "  (2) Register in Claude Code:  claude mcp add --transport http shop-demo http://<node-public-ip>:${MCP_NODEPORT}/mcp"
+echo "  (2) Register in Claude Code:  claude mcp add --transport http model-registry http://<node-public-ip>:${MCP_NODEPORT}/mcp"
 echo "  (3) Or inspect with:          npx @modelcontextprotocol/inspector  (Streamable HTTP)"
 echo "  (4) Demo endpoint has NO auth — delete the infra (or close the SG port) after the demo"
 echo ""

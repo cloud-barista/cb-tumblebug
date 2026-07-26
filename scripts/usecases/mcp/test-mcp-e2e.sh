@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # End-to-end MCP demo through agentgateway (run on K8s control plane)
-# Shows the two access paths to the same data: curated API tools vs read-only SQL
+# Story: browse the registry web page, then let an AI manage the catalog via MCP tools.
 # Prerequisites: deploy-agentgateway.sh completed
 
 set -e
 
 NS="mcp-demo"
 MCP_NODEPORT="30900"
+WEB_NODEPORT="30902"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -21,11 +22,11 @@ GW_URL="http://${NODE_IP}:${MCP_NODEPORT}/mcp"
 
 cat <<'BANNER'
 ┌────────────────────────────────────────────────────────────┐
-│ MCP E2E DEMO · one gateway, two paths to the same data     │
-│  api_* tools : curated REST wrappers — the governed        │
-│                write path (create_order checks stock)      │
-│  db_*  tools : raw SQL — powerful ad-hoc analysis,         │
-│                but READ-ONLY by policy                     │
+│ MCP E2E DEMO · AI-operated model registry                  │
+│  registry_* : curated catalog tools — the governed         │
+│               write path (register / delete models)        │
+│  db_*       : raw SQL — ad-hoc catalog analytics,          │
+│               but READ-ONLY by policy                      │
 └────────────────────────────────────────────────────────────┘
 BANNER
 
@@ -53,11 +54,24 @@ if isinstance(obj, dict) and set(obj) == {'result'}:
 rows = obj if isinstance(obj, list) else [obj]
 for row in rows[:12]:
     if isinstance(row, dict):
-        print('  ' + ' | '.join(f'{k}: {v}' for k, v in row.items()))
+        print('  ' + ' | '.join(f'{k}: {v}' for k, v in row.items() if k not in ('description',)))
     else:
         print('  ' + str(row))
 if isinstance(obj, list) and len(obj) > 12:
     print(f'  ... ({len(obj)} rows total)')"
+}
+
+extract_id() {  # pulls .id out of a tools/call result (or empty)
+    python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)['result']
+    obj = d.get('structuredContent') or json.loads(d['content'][0]['text'])
+    if isinstance(obj, dict) and set(obj) == {'result'}: obj = obj['result']
+    if isinstance(obj, list): obj = obj[0] if obj else {}
+    print(obj.get('id', ''))
+except Exception:
+    print('')"
 }
 
 call_tool() {  # $1=tool name, $2=arguments json
@@ -65,7 +79,7 @@ call_tool() {  # $1=tool name, $2=arguments json
 }
 
 echo ""
-echo "[1/5] Connecting to the federated endpoint: ${GW_URL}"
+echo "[1/6] Connecting to the federated endpoint: ${GW_URL}"
 SID=$(curl -si --max-time 15 "$GW_URL" \
     -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"e2e-demo","version":"1.0"}}}' \
@@ -78,37 +92,44 @@ import sys, json
 tools = json.load(sys.stdin)['result']['tools']
 print(f'  {len(tools)} tools federated behind ONE endpoint:')
 for t in tools:
-    print(f\"    {t['name']:24s} {(t.get('description') or '').strip().splitlines()[0][:58]}\")"
+    print(f\"    {t['name']:28s} {(t.get('description') or '').strip().splitlines()[0][:56]}\")"
 
 echo ""
-echo "[2/5] API path — api_list_products (curated tool):"
-call_tool api_list_products '{}' | show_result
+echo "[2/6] Catalog path — registry_search_models (query: disease):"
+call_tool registry_search_models '{"query": "disease"}' | show_result
 
 echo ""
-echo "[3/5] SQL path — db_query: ad-hoc revenue analysis the API never anticipated:"
-SQL="SELECT p.name, SUM(oi.quantity) AS units, SUM(oi.quantity*oi.unit_price) AS revenue FROM order_items oi JOIN products p ON p.id=oi.product_id GROUP BY p.name ORDER BY revenue DESC LIMIT 5"
+echo "[3/6] SQL path — db_query: analytics the REST API never anticipated:"
+SQL="SELECT format, count(*) AS models, sum(downloads) AS downloads, bool_or(gpu_required) AS any_gpu FROM models GROUP BY format ORDER BY downloads DESC"
 echo "  > ${SQL}"
 call_tool db_query "{\"sql\": \"${SQL}\"}" | show_result
 
 echo ""
-echo "[4/5] SQL path is READ-ONLY — a write via db_query gets rejected:"
-echo "  > UPDATE products SET stock = 0"
-call_tool db_query '{"sql": "UPDATE products SET stock = 0"}' | show_result
+echo "[4/6] SQL path is READ-ONLY — a write via db_query gets rejected:"
+echo "  > DELETE FROM models"
+call_tool db_query '{"sql": "DELETE FROM models"}' | show_result
 
 echo ""
-echo "[5/5] Writes go through the governed API path — api_create_order:"
-BEFORE=$(call_tool db_query '{"sql": "SELECT stock FROM products WHERE id=5"}')
-echo "  stock of product #5 before:"; echo "$BEFORE" | show_result
-call_tool api_create_order '{"customer_id": 5, "product_id": 5, "quantity": 2}' | show_result
-echo "  stock of product #5 after (verified via the SQL path):"
-call_tool db_query '{"sql": "SELECT stock FROM products WHERE id=5"}' | show_result
+echo "[5/6] Writes go through the governed catalog path — registry_register_model:"
+OLD_ID=$(call_tool registry_search_models '{"query": "e2e-strawberry-disease-cnn"}' | extract_id)
+[ -n "$OLD_ID" ] && call_tool registry_delete_model "{\"model_id\": ${OLD_ID}}" > /dev/null
+NEW=$(call_tool registry_register_model '{"name": "e2e-strawberry-disease-cnn", "task": "image-classification", "format": "onnx", "params_m": 4.2, "size_mb": 17, "gpu_required": false, "description": "Strawberry leaf disease classifier registered live by the E2E demo"}')
+echo "$NEW" | show_result
+NEW_ID=$(echo "$NEW" | extract_id)
+echo "  verified via the SQL path:"
+call_tool db_query '{"sql": "SELECT id, name, task, format FROM models ORDER BY id DESC LIMIT 1"}' | show_result
+echo "  (watch the web page on :${WEB_NODEPORT} — the new model card appears on the next auto-refresh)"
+
+echo ""
+echo "[6/6] Cleanup — registry_delete_model removes the demo entry:"
+[ -n "$NEW_ID" ] && call_tool registry_delete_model "{\"model_id\": ${NEW_ID}}" | show_result
 
 echo ""
 echo "========================================"
 echo "E2E DEMO COMPLETE"
 echo "========================================"
-echo "  Same data, two governed paths, one MCP endpoint — that is agentgateway federation."
-echo "  Connect your own client:  claude mcp add --transport http shop-demo http://<node-public-ip>:${MCP_NODEPORT}/mcp"
+echo "  One MCP endpoint, two governed paths (catalog tools vs read-only SQL), live web view."
+echo "  Connect your own client:  claude mcp add --transport http model-registry http://<node-public-ip>:${MCP_NODEPORT}/mcp"
 echo ""
 echo "\$\$CMD[Check MCP stack](kubectl -n mcp-demo get pods)"
 exit 0
