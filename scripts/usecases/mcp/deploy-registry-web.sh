@@ -192,6 +192,7 @@ EOF
 
 echo ""
 echo "Waiting for the web page to start..."
+kubectl -n ${NS} rollout restart deployment/model-registry-web > /dev/null
 kubectl -n ${NS} rollout status deployment/model-registry-web --timeout=3m > /dev/null
 
 NODE_IP=$(hostname -I | awk '{print $1}')

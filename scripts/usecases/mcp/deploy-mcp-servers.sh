@@ -53,7 +53,18 @@ data:
     def register_model(name: str, task: str, format: str, params_m: float = 0,
                        size_mb: int = 0, license: str = "apache-2.0",
                        gpu_required: bool = False, description: str = "") -> dict:
-        """Register a new model in the catalog (metadata only). Format examples: sklearn, xgboost, onnx, pytorch, tensorflow, huggingface."""
+        """Register a new model in the catalog (metadata only).
+
+        Before calling, collect the required fields from the user and confirm:
+        - name: unique, kebab-case (e.g. tomato-ripeness-cnn)
+        - task: e.g. image-classification, object-detection, text-generation,
+          text-classification, tabular-regression, tabular-classification,
+          time-series-forecasting, image-to-image
+        - format: one of sklearn, xgboost, lightgbm, onnx, tensorflow, pytorch,
+          huggingface, custom (KServe-servable formats)
+        Optional: params_m (millions of parameters), size_mb, license
+        (default apache-2.0), gpu_required (default false), description.
+        Ask the user for any required value they have not provided yet."""
         r = httpx.post(f"{API}/models", timeout=10, json={
             "name": name, "task": task, "format": format, "params_m": params_m,
             "size_mb": size_mb, "license": license, "gpu_required": gpu_required,
@@ -183,6 +194,7 @@ done
 
 echo ""
 echo "Waiting for MCP adapters to start (pip install at boot; typically 1-2 min)..."
+kubectl -n ${NS} rollout restart deployment/mcp-model-registry-backend deployment/mcp-model-registry-db > /dev/null
 kubectl -n ${NS} rollout status deployment/mcp-model-registry-backend --timeout=5m > /dev/null
 kubectl -n ${NS} rollout status deployment/mcp-model-registry-db --timeout=5m > /dev/null
 

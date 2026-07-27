@@ -63,6 +63,9 @@ data:
         return q("""SELECT task, count(*) AS models FROM models
                     GROUP BY task ORDER BY models DESC""")
 
+    FORMATS = ["sklearn", "xgboost", "lightgbm", "onnx", "tensorflow",
+               "pytorch", "huggingface", "custom"]
+
     class ModelIn(BaseModel):
         name: str
         task: str
@@ -75,6 +78,10 @@ data:
 
     @app.post("/models", status_code=201)
     def register_model(m: ModelIn):
+        if m.format not in FORMATS:
+            raise HTTPException(422, f"unknown format '{m.format}'; use one of: {', '.join(FORMATS)}")
+        if not m.name.replace("-", "").replace(".", "").isalnum() or m.name != m.name.lower():
+            raise HTTPException(422, f"invalid name '{m.name}'; use lowercase kebab-case (e.g. tomato-ripeness-cnn)")
         if q("SELECT 1 FROM models WHERE name=%s", (m.name,), one=True):
             raise HTTPException(409, f"model '{m.name}' already exists")
         return q("""INSERT INTO models
@@ -143,6 +150,7 @@ EOF
 
 echo ""
 echo "Waiting for the backend to start (pip install at boot; typically 1-2 min)..."
+kubectl -n ${NS} rollout restart deployment/model-registry-backend > /dev/null
 kubectl -n ${NS} rollout status deployment/model-registry-backend --timeout=5m > /dev/null
 
 echo ""
