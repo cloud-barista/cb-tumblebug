@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Open WebUI for KServe (run on K8s control plane)
-# Deploys Open WebUI connected to a KServe OpenAI-compatible endpoint via NodePort.
+# Deploys Open WebUI connected to KServe OpenAI-compatible endpoints via NodePort.
+# By default it auto-discovers ALL vLLM InferenceServices, so every served LLM
+# appears in the model selector; re-run after adding a model to reconnect.
 # Prerequisites: serve-vllm-model.sh completed (or any OpenAI-compatible backend URL)
 # Designed for unattended execution via SSH or pipe (curl | bash)
 
@@ -12,8 +14,9 @@ BACKEND_URL=""
 NODE_PORT="30080"
 
 usage() {
-    echo "Usage: $0 [-n|--name <isvc-name>] [--backend-url <openai-base-url>] [--nodeport <port>]"
-    echo "Example: $0 --name llm --nodeport 30080"
+    echo "Usage: $0 [-n|--name <isvc-name>] [--backend-url <url[;url2;...]>] [--nodeport <port>]"
+    echo "Default: auto-discovers every vLLM InferenceService and connects them all"
+    echo "Example: $0 --nodeport 30080"
     exit 1
 }
 
@@ -27,12 +30,17 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Default: connect every vLLM (huggingface-format) InferenceService
 if [ -z "$BACKEND_URL" ]; then
-    BACKEND_URL="http://${ISVC_NAME}-predictor.default.svc.cluster.local/openai/v1"
+    BACKEND_URL=$(kubectl get isvc -o jsonpath='{range .items[?(@.spec.predictor.model.modelFormat.name=="huggingface")]}{.metadata.name}{"\n"}{end}' 2>/dev/null \
+        | awk 'NF {printf "%s%s", sep, "http://"$1"-predictor.default.svc.cluster.local/openai/v1"; sep=";"}')
+    [ -z "$BACKEND_URL" ] && BACKEND_URL="http://${ISVC_NAME}-predictor.default.svc.cluster.local/openai/v1"
 fi
+# One "none" API key per backend URL
+API_KEYS=$(echo "$BACKEND_URL" | sed 's/[^;][^;]*/none/g')
 
 echo "==== Open WebUI Setup (KServe) ===="
-echo "  Backend: ${BACKEND_URL}"
+echo "  Backends: ${BACKEND_URL}"
 echo "  NodePort: ${NODE_PORT}"
 
 # The PVC below needs a default StorageClass; fail early with a clear message
@@ -71,10 +79,10 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: OPENAI_API_BASE_URL
-              value: ${BACKEND_URL}
-            - name: OPENAI_API_KEY
-              value: none
+            - name: OPENAI_API_BASE_URLS
+              value: "${BACKEND_URL}"
+            - name: OPENAI_API_KEYS
+              value: "${API_KEYS}"
             - name: ENABLE_OLLAMA_API
               value: "false"
           volumeMounts:

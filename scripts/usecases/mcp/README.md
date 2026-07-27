@@ -36,13 +36,21 @@ agriculture models plus GPU LLM entries.
 ## Quickstart (on the K8s control plane)
 
 ```bash
-./deploy-registry-db.sh        # PostgreSQL + seeded model catalog (namespace mcp-demo)
-./deploy-registry-backend.sh   # FastAPI catalog API (search/get/register/delete)
-./deploy-registry-web.sh       # web catalog browser on NodePort 30902
-./deploy-mcp-servers.sh        # 2 MCP adapters (catalog tools + read-only SQL), stateless
-./deploy-agentgateway.sh       # federation gateway on NodePort 30900 (+UI 30901)
-./test-mcp-e2e.sh              # scripted demo: search, SQL analytics, register/delete
+./deploy-registry-db.sh          # PostgreSQL + seeded model catalog (namespace mcp-demo)
+./deploy-registry-backend.sh     # FastAPI catalog API (search/get/register/delete)
+./deploy-registry-web.sh         # web catalog browser on NodePort 30902
+./deploy-mcp-servers.sh          # 2 MCP adapters (catalog tools + read-only SQL), stateless
+./deploy-mcp-serving-adapter.sh  # optional 3rd adapter: live KServe InferenceService list
+./deploy-agentgateway.sh         # federation gateway on NodePort 30900 (+UI 30901)
+./test-mcp-e2e.sh                # scripted demo: search, SQL analytics, register/delete
 ```
+
+If KServe runs in the same cluster (e.g. built with the KServe usecase), the
+optional `serving` target adds `serving_list_served_models` /
+`serving_get_served_model`, so an AI can answer questions like *"which catalog
+models are not being served right now?"* by joining `registry_*` and
+`serving_*` results. Deploy it any time and re-run `deploy-agentgateway.sh` —
+the gateway auto-detects it.
 
 No GPU needed; CPU nodes are enough. All steps are available as the
 **"MCP (agentgateway)"** category in CB-MapUI's remote command popup
@@ -65,6 +73,19 @@ claude mcp add --transport http model-registry http://<node-public-ip>:30900/mcp
 # MCP Inspector (browser UI; use the token URL printed at startup)
 npx @modelcontextprotocol/inspector   # transport: Streamable HTTP, URL as above
 ```
+
+The gateway exposes **per-consumer route views** from the same backends — the
+answer to "won't federating many MCP servers flood the LLM with tools?":
+
+| Route | Tools | Intended consumer |
+|---|---|---|
+| `/mcp` | all (10) | admin / full-capability agent |
+| `/mcp-registry` | `registry_*` + `db_*` (8) | catalog-operations agent |
+| `/mcp-serving` | serving view (2, unprefixed) | read-only monitoring agent |
+
+Register different routes in different clients (e.g. `/mcp` in Claude Code,
+`/mcp-serving` in VS Code Copilot) and compare their tool lists. Note: a route
+with a single target exposes original tool names without the target prefix.
 
 ## Notes
 

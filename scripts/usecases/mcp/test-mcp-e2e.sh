@@ -87,7 +87,8 @@ SID=$(curl -si --max-time 15 "$GW_URL" \
 [ -n "$SID" ] || { echo "ERROR: initialize failed. Run deploy-agentgateway.sh first."; exit 1; }
 mcp_rpc "$SID" '{"jsonrpc":"2.0","method":"notifications/initialized"}' > /dev/null
 
-mcp_rpc "$SID" '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | python3 -c "
+TOOLS_JSON=$(mcp_rpc "$SID" '{"jsonrpc":"2.0","id":2,"method":"tools/list"}')
+echo "$TOOLS_JSON" | python3 -c "
 import sys, json
 tools = json.load(sys.stdin)['result']['tools']
 print(f'  {len(tools)} tools federated behind ONE endpoint:')
@@ -103,6 +104,13 @@ echo "[3/6] SQL path — db_query: analytics the REST API never anticipated:"
 SQL="SELECT format, count(*) AS models, sum(downloads) AS downloads, bool_or(gpu_required) AS any_gpu FROM models GROUP BY format ORDER BY downloads DESC"
 echo "  > ${SQL}"
 call_tool db_query "{\"sql\": \"${SQL}\"}" | show_result
+
+if echo "$TOOLS_JSON" | grep -q '"serving_list_served_models"'; then
+    echo ""
+    echo "[bonus] Serving path — models currently live on KServe:"
+    call_tool serving_list_served_models '{}' | show_result
+    echo "  (ask an AI: which catalog models are NOT being served right now?)"
+fi
 
 echo ""
 echo "[4/6] SQL path is READ-ONLY — a write via db_query gets rejected:"
