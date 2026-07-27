@@ -184,7 +184,7 @@ services:
       <<: *default-healthcheck
 
   # CB-Spider PostgreSQL (Optional)
-  # Used when SPIDER_METADB_* env vars are configured in cb-spider service.
+  # This is used for storing CB-Spider metadata (replaces the legacy SQLite-based meta_db).
   cb-spider-postgres:
     image: postgres:16-alpine
     container_name: cb-spider-postgres
