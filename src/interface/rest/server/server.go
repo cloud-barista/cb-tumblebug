@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	// "log"
 	"os/signal"
@@ -909,7 +910,11 @@ func RunServer() {
 		defer cancel()
 
 		if err := e.Shutdown(ctx); err != nil {
-			log.Error().Err(err).Msg("Graceful shutdown timed out; forcing close")
+			if errors.Is(err, context.DeadlineExceeded) {
+				log.Error().Err(err).Msg("Graceful shutdown timed out; forcing close")
+			} else {
+				log.Error().Err(err).Msg("Graceful shutdown failed; forcing close")
+			}
 			if err := e.Close(); err != nil {
 				log.Error().Err(err).Msg("Error in force-closing CB-Tumblebug API Server")
 			}

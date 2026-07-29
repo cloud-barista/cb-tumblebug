@@ -736,9 +736,12 @@ func main() {
 				log.Error().Err(err).Msg("main: failed to reload config file (keeping previous config)")
 				return
 			}
-			if err := viper.Unmarshal(&common.RuntimeConf); err != nil {
+			var reloaded model.RuntimeConfig
+			if err := viper.Unmarshal(&reloaded); err != nil {
 				log.Error().Err(err).Msg("main: failed to unmarshal reloaded config (keeping previous config)")
+				return
 			}
+			common.RuntimeConf = reloaded
 		})
 	}()
 
