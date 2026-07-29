@@ -71,7 +71,9 @@ services:
       # - TB_LOGFILE_COMPRESS=false
       # - TB_LOGLEVEL=debug
       # - TB_LOGWRITER=both
+      # - TB_LOGFORMAT=console  # 'json' for log collectors (stdout format)
       # - TB_REQUEST_DUMP_ENABLED=false
+      # - TB_READYZ_CHECK_DEPS=true  # readyz also verifies etcd/PostgreSQL connectivity
       # - TB_NODE_ENV=development
       # Graceful shutdown timeout (raise stop_grace_period together when increasing)
       # - TB_SHUTDOWN_TIMEOUT_MS=10000

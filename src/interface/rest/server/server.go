@@ -206,6 +206,7 @@ func RunServer() {
 	e.GET("/tumblebug/api/", swaggerRedirect)
 	e.GET("/tumblebug/api/*", echoSwagger.WrapHandler)
 
+	e.GET("/tumblebug/livez", rest_common.RestGetLivez)
 	e.GET("/tumblebug/readyz", rest_common.RestGetReadyz)
 	e.PUT("/tumblebug/readyz/init", rest_common.RestSetSystemInitialized)
 	e.DELETE("/tumblebug/readyz/init", rest_common.RestUnsetSystemInitialized)
@@ -244,7 +245,8 @@ func RunServer() {
 			// Setup Basic Auth Middleware
 			basicAuthMw = middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 				Skipper: func(c echo.Context) bool {
-					if c.Path() == "/tumblebug/readyz" ||
+					if c.Path() == "/tumblebug/livez" ||
+						c.Path() == "/tumblebug/readyz" ||
 						c.Path() == "/tumblebug/readyz/init" ||
 						c.Path() == "/tumblebug/httpVersion" {
 						return true
@@ -279,6 +281,7 @@ func RunServer() {
 				log.Fatal().Err(err).Msg("Failed to initialize JWT Auth Middleware")
 			} else {
 				authSkipPatterns := [][]string{
+					{"/tumblebug/livez"},
 					{"/tumblebug/readyz"},
 					{"/tumblebug/readyz/init"},
 					{"/tumblebug/httpVersion"},

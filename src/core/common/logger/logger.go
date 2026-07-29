@@ -47,6 +47,7 @@ var (
 type Config struct {
 	LogLevel    string
 	LogWriter   string
+	LogFormat   string // stdout format: "console" (default, human-readable) or "json"
 	LogFilePath string
 	MaxSize     int
 	MaxBackups  int
@@ -140,7 +141,7 @@ func NewLogger(config Config) *zerolog.Logger {
 	})
 
 	level := getLogLevel(config.LogLevel)
-	logger := configureWriter(config.LogWriter, level)
+	logger := configureWriter(config.LogWriter, config.LogFormat, level)
 
 	// Add tracing hook to the logger
 	logger.Hook(TracingHook{})
@@ -181,8 +182,8 @@ func getLogLevel(logLevel string) zerolog.Level {
 	}
 }
 
-// configureWriter sets up the logger based on the writer type
-func configureWriter(logWriter string, level zerolog.Level) *zerolog.Logger {
+// configureWriter sets up the logger based on the writer type and stdout format
+func configureWriter(logWriter string, logFormat string, level zerolog.Level) *zerolog.Logger {
 	var logger zerolog.Logger
 
 	// File writer unavailable (initialized in stdout-only mode)
@@ -191,7 +192,13 @@ func configureWriter(logWriter string, level zerolog.Level) *zerolog.Logger {
 		logWriter = "stdout"
 	}
 
-	multi := zerolog.MultiLevelWriter(sharedLogFile, zerolog.ConsoleWriter{Out: os.Stdout})
+	// Stdout format: raw JSON for log collectors, console for humans (default)
+	var stdoutWriter io.Writer = zerolog.ConsoleWriter{Out: os.Stdout}
+	if logFormat == "json" {
+		stdoutWriter = os.Stdout
+	}
+
+	multi := zerolog.MultiLevelWriter(sharedLogFile, stdoutWriter)
 
 	switch logWriter {
 	case "both":
@@ -199,7 +206,7 @@ func configureWriter(logWriter string, level zerolog.Level) *zerolog.Logger {
 	case "file":
 		logger = zerolog.New(sharedLogFile).Level(level).With().Timestamp().Caller().Logger()
 	case "stdout":
-		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).Level(level).With().Timestamp().Caller().Logger()
+		logger = zerolog.New(stdoutWriter).Level(level).With().Timestamp().Caller().Logger()
 	default:
 		log.Warn().Msgf("Invalid log writer: %s. Using default value: both", logWriter)
 		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()

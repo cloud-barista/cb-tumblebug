@@ -86,6 +86,7 @@ func init() {
 	// Initialize the logger
 	logLevel := common.NVL(os.Getenv("TB_LOGLEVEL"), "debug")
 	logWriter := common.NVL(os.Getenv("TB_LOGWRITER"), "both")
+	logFormat := common.NVL(os.Getenv("TB_LOGFORMAT"), "console")
 	logFilePath := common.NVL(os.Getenv("TB_LOGFILE_PATH"), "./log/tumblebug.log")
 	logMaxSizeStr := common.NVL(os.Getenv("TB_LOGFILE_MAXSIZE"), "10")
 	logMaxSize, _ := strconv.Atoi(logMaxSizeStr)
@@ -99,6 +100,7 @@ func init() {
 	logger := logger.NewLogger(logger.Config{
 		LogLevel:    logLevel,
 		LogWriter:   logWriter,
+		LogFormat:   logFormat,
 		LogFilePath: logFilePath,
 		MaxSize:     logMaxSize,
 		MaxBackups:  logMaxBackups,
@@ -119,26 +121,28 @@ func init() {
 	// doesn't grow the backend database file without bound.
 	common.StartEtcdMaintenanceLoop()
 
-	err := model.ORM.AutoMigrate(
-		&model.SpecInfo{},
-		&model.ImageInfo{},
-		&model.LatencyInfo{},
-	)
+	runWithMigrationLock(func() {
+		err := model.ORM.AutoMigrate(
+			&model.SpecInfo{},
+			&model.ImageInfo{},
+			&model.LatencyInfo{},
+		)
 
-	if err != nil {
-		log.Error().Err(err).Msg("init: failed to migrate database schemas")
-	} else {
-		log.Info().Msg("init: database schemas migrated successfully")
-	}
+		if err != nil {
+			log.Error().Err(err).Msg("init: failed to migrate database schemas")
+		} else {
+			log.Info().Msg("init: database schemas migrated successfully")
+		}
 
-	err = addIndexes()
-	if err != nil {
-		log.Error().Err(err).Msg("init: failed to add indexes to tables")
-	}
+		err = addIndexes()
+		if err != nil {
+			log.Error().Err(err).Msg("init: failed to add indexes to tables")
+		}
+	})
 
 	setConfig()
 
-	_, err = common.GetNs(model.DefaultNamespace)
+	_, err := common.GetNs(model.DefaultNamespace)
 	if err != nil {
 		if model.DefaultNamespace != "" {
 			defaultNS := model.NsReq{Name: model.DefaultNamespace, Description: "Default Namespace"}
@@ -532,6 +536,60 @@ func migrateLatencyDataFromCSV() error {
 	}
 
 	return nil
+}
+
+// migrationLockKey is an arbitrary app-wide key for the PostgreSQL advisory lock
+const migrationLockKey = 727327001
+
+// runWithMigrationLock serializes schema migration across instances via a
+// PostgreSQL advisory lock; falls back to running unlocked on lock failure
+func runWithMigrationLock(fn func()) {
+	sqlDB, err := model.ORM.DB()
+	if err != nil {
+		log.Warn().Err(err).Msg("init: cannot get DB handle for migration lock; migrating without lock")
+		fn()
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	// Advisory locks are session-scoped, so lock/unlock must use the same connection
+	conn, err := sqlDB.Conn(ctx)
+	if err != nil {
+		log.Warn().Err(err).Msg("init: cannot get DB connection for migration lock; migrating without lock")
+		fn()
+		return
+	}
+	defer conn.Close()
+
+	acquired := false
+	deadline := time.Now().Add(2 * time.Minute)
+	for {
+		var got bool
+		if err := conn.QueryRowContext(ctx, "SELECT pg_try_advisory_lock($1)", migrationLockKey).Scan(&got); err != nil {
+			log.Warn().Err(err).Msg("init: migration lock query failed; migrating without lock")
+			break
+		}
+		if got {
+			acquired = true
+			break
+		}
+		if time.Now().After(deadline) {
+			log.Warn().Msg("init: timed out waiting for migration lock; migrating without lock")
+			break
+		}
+		log.Info().Msg("init: waiting for migration lock held by another instance...")
+		time.Sleep(2 * time.Second)
+	}
+
+	fn()
+
+	if acquired {
+		if _, err := conn.ExecContext(context.Background(), "SELECT pg_advisory_unlock($1)", migrationLockKey); err != nil {
+			log.Warn().Err(err).Msg("init: failed to release migration lock (auto-released on disconnect)")
+		}
+	}
 }
 
 // addIndexes adds indexes to the tables for faster search

@@ -2107,6 +2107,30 @@ const docTemplate = `{
                 }
             }
         },
+        "/livez": {
+            "get": {
+                "description": "Check Tumblebug server process is alive (liveness probe). Always returns 200 while the process is running.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System Management"
+                ],
+                "summary": "Check Tumblebug is alive",
+                "operationId": "GetLivez",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/loadAssets": {
             "get": {
                 "description": "Load Common Resources from internal asset files (Spec, Image). By default, Azure images are excluded for faster initialization. Use includeAzure=true to fetch Azure images (may take 40+ minutes).",
@@ -19617,7 +19641,7 @@ const docTemplate = `{
         },
         "/readyz": {
             "get": {
-                "description": "Check Tumblebug is ready. Returns ready status and initialization status.",
+                "description": "Check Tumblebug is ready. Returns ready status and initialization status. With TB_READYZ_CHECK_DEPS=true, also verifies etcd/PostgreSQL connectivity.",
                 "consumes": [
                     "application/json"
                 ],
