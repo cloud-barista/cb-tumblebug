@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -93,7 +94,13 @@ func NewLogger(config Config) *zerolog.Logger {
 	}
 
 	// Initialize shared log file for log rotation once
+	// Skip file setup entirely in stdout-only mode (e.g., containers without a writable log dir)
 	once.Do(func() {
+		if config.LogWriter == "stdout" {
+			traceLogger = zerolog.New(io.Discard).Level(zerolog.TraceLevel).With().Timestamp().Logger()
+			return
+		}
+
 		sharedLogFile = &lumberjack.Logger{
 			Filename:   config.LogFilePath,
 			MaxSize:    config.MaxSize,
@@ -177,6 +184,13 @@ func getLogLevel(logLevel string) zerolog.Level {
 // configureWriter sets up the logger based on the writer type
 func configureWriter(logWriter string, level zerolog.Level) *zerolog.Logger {
 	var logger zerolog.Logger
+
+	// File writer unavailable (initialized in stdout-only mode)
+	if sharedLogFile == nil && logWriter != "stdout" {
+		log.Warn().Msgf("Log file is not initialized (stdout-only mode). Falling back to stdout for writer: %s", logWriter)
+		logWriter = "stdout"
+	}
+
 	multi := zerolog.MultiLevelWriter(sharedLogFile, zerolog.ConsoleWriter{Out: os.Stdout})
 
 	switch logWriter {

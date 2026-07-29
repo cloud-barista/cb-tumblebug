@@ -13,9 +13,9 @@ swag swagger: ## Generate Swagger documentation
 # ===== Initialization =====
 SHELL := /bin/bash
 
-init: ## Run initialization sequence (credential registration for OpenBao and Tumblebug)
+init: ## Run initialization sequence (`make init ARGS="-y"` for headless; needs MULTI_INIT_PWD or ~/.cloud-barista/.tmp_enc_key)
 	@chmod +x ./init/multi-init.sh 2>/dev/null || true
-	@./init/multi-init.sh
+	@./init/multi-init.sh $(ARGS)
 
 init-profile: ## Maintainer-only: run make init with elapsed/memory profiling outputs under tmp/init-profile/
 	@chmod +x ./scripts/misc/init-profile.sh 2>/dev/null || true
@@ -96,6 +96,7 @@ clean-all: compose-down clean-db ## Full reset including OpenBao (requires re-in
 	@echo "Cleaning OpenBao data..."
 	@sudo rm -rf container-volume/openbao-data
 	@rm -f init/openbao/secrets/openbao-init.json
+	@rm -f secrets/openbao-init.json  # legacy location (old openbao-init.sh)
 	@sed -i 's/^VAULT_TOKEN=.*/VAULT_TOKEN=/' .env 2>/dev/null || true
 	@echo "Cleaned! Run 'make up' then 'make init' to re-initialize."
 
@@ -184,7 +185,7 @@ help: ## Display this help screen
 	@echo ""
 	@echo "🧹 Cleanup:"
 	@echo "  \033[36mclean-db\033[0m               Clean database metadata (./init/cleanDB.sh)"
-	@echo "  \033[36mclean-all\033[0m              Clean build + containers + databases + OpenBao (requires re-init)"
+	@echo "  \033[36mclean-all\033[0m              Stop containers + clean databases + OpenBao (requires re-init)"
 	@echo ""
 	@echo "💾 Database Backup & Restore:"
 	@grep -E '^(backup-assets|restore-assets):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
