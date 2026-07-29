@@ -16,9 +16,11 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	// "log"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -880,8 +882,15 @@ func RunServer() {
 	// Use syscall.SIGINT for Terminal interrupt (ANSI)
 	// Use syscall.SIGQUIT for Terminal quit (POSIX)
 	gracefulShutdownContext, stop := signal.NotifyContext(context.TODO(),
-		os.Interrupt, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+		os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	defer stop()
+
+	// Shutdown timeout for in-flight requests (long-running provisioning/command handlers)
+	shutdownTimeoutMs, err := strconv.Atoi(common.NVL(os.Getenv("TB_SHUTDOWN_TIMEOUT_MS"), "10000"))
+	if err != nil || shutdownTimeoutMs <= 0 {
+		shutdownTimeoutMs = 10000
+	}
+	shutdownTimeout := time.Duration(shutdownTimeoutMs) * time.Millisecond
 
 	// Wait graceful shutdown (and then main thread will be finished)
 	var wg sync.WaitGroup
@@ -893,13 +902,22 @@ func RunServer() {
 		// Block until a signal is triggered
 		<-gracefulShutdownContext.Done()
 
-		log.Info().Msg("Stopping CB-Tumblebug API Server gracefully... (within 10s)")
-		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+		// Mark not-ready first so health checks (/readyz) stop routing traffic to this instance
+		model.SystemReady = false
+
+		log.Info().Msgf("Stopping CB-Tumblebug API Server gracefully... (within %s)", shutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.TODO(), shutdownTimeout)
 		defer cancel()
 
 		if err := e.Shutdown(ctx); err != nil {
-			log.Error().Err(err).Msg("Error in Gracefully Stopping CB-Tumblebug API Server")
-			e.Logger.Panic(err)
+			if errors.Is(err, context.DeadlineExceeded) {
+				log.Error().Err(err).Msg("Graceful shutdown timed out; forcing close")
+			} else {
+				log.Error().Err(err).Msg("Graceful shutdown failed; forcing close")
+			}
+			if err := e.Close(); err != nil {
+				log.Error().Err(err).Msg("Error in force-closing CB-Tumblebug API Server")
+			}
 		}
 	}(&wg)
 

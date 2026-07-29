@@ -3,6 +3,9 @@
 # CB-Tumblebug Assets Database Restore Script
 # Usage: ./scripts/restore-assets.sh [backup-file]
 # Default: ./assets/assets.dump.gz
+#
+# Backend selection (docker | kubectl | direct): see scripts/lib/pg-backend.sh
+# Non-interactive: RESTORE_SKIP_CONFIRM=yes
 
 set -e
 
@@ -12,37 +15,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Configuration
-# Container name: use env var override, or auto-detect from known names
-if [ -n "$TB_POSTGRES_CONTAINER" ]; then
-    CONTAINER_NAME="$TB_POSTGRES_CONTAINER"
-elif docker ps --format "{{.Names}}" | grep -Fxq "cb-tumblebug-postgres"; then
-    CONTAINER_NAME="cb-tumblebug-postgres"
-elif docker ps --format "{{.Names}}" | grep -Fxq "mc-infra-manager-postgres"; then
-    CONTAINER_NAME="mc-infra-manager-postgres"
-else
-    CONTAINER_NAME=""
-fi
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/lib/pg-backend.sh"
 
-if [ -z "$CONTAINER_NAME" ]; then
-    echo -e "${RED}Error: No running PostgreSQL container found.${NC}"
-    echo "Set TB_POSTGRES_CONTAINER to the container name and retry:"
-    echo "  TB_POSTGRES_CONTAINER=my-postgres $0"
-    exit 1
-fi
-
-DB_USER="${TB_POSTGRES_USER:-tumblebug}"
-DB_NAME="${TB_POSTGRES_DATABASE:-tumblebug}"
-
-# Validate DB_USER and DB_NAME: allow only safe identifier characters
-_validate_identifier() {
-    if ! echo "$1" | grep -Eq '^[a-zA-Z_][a-zA-Z0-9_]*$'; then
-        echo -e "${RED}Error: Invalid identifier '$1' — only letters, digits, and underscores are allowed.${NC}"
-        exit 1
-    fi
-}
-_validate_identifier "$DB_USER"
-_validate_identifier "$DB_NAME"
 DEFAULT_BACKUP="./assets/assets.dump.gz"
 BACKUP_FILE="${1:-$DEFAULT_BACKUP}"
 
@@ -64,12 +39,8 @@ if [ ! -f "$BACKUP_FILE" ]; then
     exit 1
 fi
 
-# Check if container is running (exact name match)
-if ! docker ps --format "{{.Names}}" | grep -Fxq "$CONTAINER_NAME"; then
-    echo -e "${RED}Error: PostgreSQL container '$CONTAINER_NAME' is not running${NC}"
-    echo "Please start the container with: make up"
-    exit 1
-fi
+pg_backend_init
+echo "Target: $(pg_backend_describe), database: $PG_DB"
 
 # Warning (skip if RESTORE_SKIP_CONFIRM=yes)
 if [ "$RESTORE_SKIP_CONFIRM" != "yes" ]; then
@@ -90,40 +61,31 @@ echo ""
 # Decompress if needed
 TEMP_FILE="/tmp/tumblebug_restore_$$.dump"
 if [[ "$BACKUP_FILE" == *.gz ]]; then
-    echo -e "${YELLOW}Step 1/5: Decompressing backup...${NC}"
+    echo -e "${YELLOW}Step 1/4: Decompressing backup...${NC}"
     gunzip -c "$BACKUP_FILE" > "$TEMP_FILE"
 else
     TEMP_FILE="$BACKUP_FILE"
 fi
 
-# Copy backup to container
-echo -e "${YELLOW}Step 2/5: Copying backup to container...${NC}"
-docker cp "$TEMP_FILE" "$CONTAINER_NAME:/var/lib/postgresql/data/restore.dump"
-
 # Drop existing connections
-echo -e "${YELLOW}Step 3/5: Terminating existing connections...${NC}"
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "
+echo -e "${YELLOW}Step 2/4: Terminating existing connections...${NC}"
+pg_psql postgres "
 SELECT pg_terminate_backend(pg_stat_activity.pid)
 FROM pg_stat_activity
-WHERE pg_stat_activity.datname = '$DB_NAME'
+WHERE pg_stat_activity.datname = '$PG_DB'
   AND pid <> pg_backend_pid();
 " 2>/dev/null || true
 
 # Drop and recreate database
-echo -e "${YELLOW}Step 4/5: Recreating database...${NC}"
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS \"$DB_NAME\";" 2>/dev/null || true
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d postgres -c "CREATE DATABASE \"$DB_NAME\";"
+echo -e "${YELLOW}Step 3/4: Recreating database...${NC}"
+pg_psql postgres "DROP DATABASE IF EXISTS \"$PG_DB\";" 2>/dev/null || true
+pg_psql postgres "CREATE DATABASE \"$PG_DB\";"
 
 # Restore backup
-echo -e "${YELLOW}Step 5/5: Restoring database...${NC}"
-docker exec "$CONTAINER_NAME" pg_restore \
-    -U "$DB_USER" \
-    -d "$DB_NAME" \
-    -v \
-    /var/lib/postgresql/data/restore.dump
+echo -e "${YELLOW}Step 4/4: Restoring database...${NC}"
+pg_restore_file "$TEMP_FILE" "$PG_DB"
 
 # Cleanup
-docker exec "$CONTAINER_NAME" rm -f /var/lib/postgresql/data/restore.dump
 if [[ "$BACKUP_FILE" == *.gz ]]; then
     rm -f "$TEMP_FILE"
 fi
@@ -135,7 +97,7 @@ echo ""
 
 # Get restored database statistics
 echo -e "${YELLOW}Restored Database Statistics:${NC}"
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "
+pg_psql "$PG_DB" "
 SELECT
     t.schemaname,
     t.relname AS tablename,

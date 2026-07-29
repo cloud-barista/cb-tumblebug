@@ -25,9 +25,12 @@ echo "(MetaData from both CB-Tumblebug and CB-Spider container)"
 echo
 echo -e "Will remove following directories and files"
 echo
-echo -e "Path:${RED}${TBMETAPATH} ${NC}"
-ls $TBMETAPATH
-echo
+# Legacy path from old binary runs; may not exist
+if [ -d "$TBMETAPATH" ]; then
+    echo -e "Path:${RED}${TBMETAPATH} ${NC}"
+    ls $TBMETAPATH
+    echo
+fi
 echo -e "Path:${RED}${VOL_TB_META_PATH} ${NC}"
 ls $VOL_TB_META_PATH
 echo 
@@ -41,26 +44,31 @@ echo -e "Path:${RED}${VOL_TERRARIUM_PATH} ${NC}"
 ls $VOL_TERRARIUM_PATH 2>/dev/null
 echo
 
-while true; do
-    read -p 'Do you want to proceed ? (y/n) : ' CHECKPROCEED
-    case $CHECKPROCEED in
-    [Yy]*)
-        break
-        ;;
-    [Nn]*)
-        echo
-        echo "Stop $0 See you soon :)"
-        exit 1
-        ;;
-    *)
-        echo "Please answer yes or no."
-        ;;
-    esac
-done
+# Non-interactive: CLEAN_SKIP_CONFIRM=yes
+if [ "$CLEAN_SKIP_CONFIRM" != "yes" ]; then
+    while true; do
+        read -p 'Do you want to proceed ? (y/n) : ' CHECKPROCEED
+        case $CHECKPROCEED in
+        [Yy]*)
+            break
+            ;;
+        [Nn]*)
+            echo
+            echo "Stop $0 See you soon :)"
+            exit 1
+            ;;
+        *)
+            echo "Please answer yes or no."
+            ;;
+        esac
+    done
+else
+    echo "Auto-confirm mode: Proceeding with cleanup..."
+fi
 
 echo
 
-ls $TBMETAPATH
+ls $TBMETAPATH 2>/dev/null
 ls $VOL_TB_META_PATH
 ls $VOL_SP_META_PATH
 ls $VOL_ETC_DATA_PATH

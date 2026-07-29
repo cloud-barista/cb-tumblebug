@@ -865,10 +865,13 @@ func autoSaveRequestMap() {
 	log.Debug().Int("entryCount", len(allEntries)).Msg("RequestMap auto-snapshot saved")
 }
 
+// requestDumpEnabled gates request-history file dumps (set TB_REQUEST_DUMP_ENABLED=false to disable)
+var requestDumpEnabled = os.Getenv("TB_REQUEST_DUMP_ENABLED") != "false"
+
 // saveRequestEntriesToFile writes request entries to a JSON file in the log directory.
 // The filename includes the reason (e.g., "ttl_cleanup", "max_entries_evict", "auto_snapshot").
 func saveRequestEntriesToFile(entries []RequestDetails, reason string) {
-	if len(entries) == 0 {
+	if !requestDumpEnabled || len(entries) == 0 {
 		return
 	}
 

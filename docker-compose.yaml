@@ -34,7 +34,6 @@ services:
     volumes:
       - ./conf/:/app/conf/
       - ./assets/:/app/assets/
-      - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
       - ./container-volume/cb-tumblebug-container/log/:/app/log/
     environment:
       # - TB_ROOT_PATH=/app
@@ -52,6 +51,7 @@ services:
       - TB_POSTGRES_DATABASE=${POSTGRES_DB:-tumblebug}
       - TB_POSTGRES_USER=${POSTGRES_USER:-tumblebug}
       - TB_POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tumblebug}
+      # - TB_POSTGRES_SSLMODE=disable
       - TB_SPIDER_USERNAME=${SP_API_USERNAME:?Please set SP_API_USERNAME}
       - TB_SPIDER_PASSWORD=${SP_API_PASSWORD:?Please set SP_API_PASSWORD}
       - TB_TERRARIUM_API_USERNAME=${TERRARIUM_API_USERNAME:?Please set TERRARIUM_API_USERNAME}
@@ -71,10 +71,14 @@ services:
       # - TB_LOGFILE_COMPRESS=false
       # - TB_LOGLEVEL=debug
       # - TB_LOGWRITER=both
+      # - TB_REQUEST_DUMP_ENABLED=false
       # - TB_NODE_ENV=development
+      # Graceful shutdown timeout (raise stop_grace_period together when increasing)
+      # - TB_SHUTDOWN_TIMEOUT_MS=10000
       - VAULT_ADDR=http://openbao:8200
       - VAULT_TOKEN=${VAULT_TOKEN:-}
     restart: unless-stopped
+    # stop_grace_period: 10s
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz"]
       <<: *default-healthcheck

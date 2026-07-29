@@ -166,19 +166,14 @@ func init() {
 func setupAndWaitForInternalServices() {
 	log.Info().Msg("setup: waiting for internal services (PostgreSQL, CB-Spider, etcd)")
 
-	// Create necessary directories for metadata storage (fail fast if creation fails)
-	if err := os.MkdirAll("../meta_db/dat/", os.ModePerm); err != nil {
-		log.Error().Err(err).Msg("setup: failed to create meta_db directory")
-		panic("setup: meta_db directory creation failed; cannot continue")
-	}
-
 	// Build PostgreSQL DSN
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		strings.Split(model.DBUrl, ":")[0],
 		model.DBUser,
 		model.DBPassword,
 		model.DBDatabase,
 		strings.Split(model.DBUrl, ":")[1],
+		common.NVL(os.Getenv("TB_POSTGRES_SSLMODE"), "disable"),
 	)
 
 	// Use error channels to collect failures from all goroutines
@@ -732,20 +727,21 @@ func main() {
 	go infra.GlobalAgent.StartupScan()
 	go infra.GlobalAgent.Start(agentCtx)
 
+	// Reload cloud_conf.yaml on change; keep the last good config on reload errors
 	go func() {
 		viper.WatchConfig()
 		viper.OnConfigChange(func(e fsnotify.Event) {
 			log.Info().Msgf("main: config file changed: %s", e.Name)
-			err := viper.ReadInConfig()
-			if err != nil { // Handle errors reading the config file
-				log.Error().Err(err).Msg("main: failed to reload config file")
-				panic(fmt.Errorf("fatal error config file: %w", err))
+			if err := viper.ReadInConfig(); err != nil {
+				log.Error().Err(err).Msg("main: failed to reload config file (keeping previous config)")
+				return
 			}
-			err = viper.Unmarshal(&common.RuntimeConf)
-			if err != nil {
-				log.Error().Err(err).Msg("main: failed to unmarshal reloaded config")
-				panic(err)
+			var reloaded model.RuntimeConfig
+			if err := viper.Unmarshal(&reloaded); err != nil {
+				log.Error().Err(err).Msg("main: failed to unmarshal reloaded config (keeping previous config)")
+				return
 			}
+			common.RuntimeConf = reloaded
 		})
 	}()
 

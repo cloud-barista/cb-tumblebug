@@ -3,6 +3,9 @@
 # CB-Tumblebug Assets Database Backup Script
 # Usage: ./scripts/backup-assets.sh [output-file]
 # Default output: ./assets/assets.dump.gz
+#
+# Backend selection (docker | kubectl | direct): see scripts/lib/pg-backend.sh
+# Non-interactive: BACKUP_SKIP_CONFIRM=yes
 
 set -e
 
@@ -12,33 +15,29 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Configuration
-CONTAINER_NAME="cb-tumblebug-postgres"
-DB_USER="tumblebug"
-DB_NAME="tumblebug"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/lib/pg-backend.sh"
+
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Default output: ./assets/assets.dump.gz
 # Can be overridden with first argument for manual backups
 OUTPUT_FILE="${1:-./assets/assets.dump.gz}"
 OUTPUT_DIR=$(dirname "$OUTPUT_FILE")
-TEMP_BACKUP_FILE="backup_${TIMESTAMP}.dump"
+TEMP_BACKUP_FILE="/tmp/tumblebug_backup_${TIMESTAMP}.dump"
 
 echo -e "${GREEN}=== CB-Tumblebug Assets Database Backup ===${NC}"
 echo ""
 
-# Check if container is running
-if ! docker ps | grep -q "$CONTAINER_NAME"; then
-    echo -e "${RED}Error: PostgreSQL container '$CONTAINER_NAME' is not running${NC}"
-    echo "Please start the container with: make up"
-    exit 1
-fi
+pg_backend_init
+echo "Target: $(pg_backend_describe), database: $PG_DB"
+echo ""
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
 # Check if output file already exists and ask for confirmation
-if [ -f "$OUTPUT_FILE" ]; then
+if [ -f "$OUTPUT_FILE" ] && [ "$BACKUP_SKIP_CONFIRM" != "yes" ]; then
     echo -e "${YELLOW}⚠️  Warning: Existing backup file found!${NC}"
     ls -lh "$OUTPUT_FILE"
     echo ""
@@ -50,26 +49,17 @@ if [ -f "$OUTPUT_FILE" ]; then
     echo ""
 fi
 
-# Create database backup
-echo -e "${YELLOW}Step 1/4: Creating database dump...${NC}"
-docker exec "$CONTAINER_NAME" pg_dump \
-    -U "$DB_USER" \
-    -d "$DB_NAME" \
-    -F c \
-    -f "/var/lib/postgresql/data/$TEMP_BACKUP_FILE"
-
-# Copy backup from container to host (temporary location)
-echo -e "${YELLOW}Step 2/4: Copying backup to host...${NC}"
-docker cp "$CONTAINER_NAME:/var/lib/postgresql/data/$TEMP_BACKUP_FILE" "/tmp/$TEMP_BACKUP_FILE"
+# Create database dump
+echo -e "${YELLOW}Step 1/3: Creating database dump...${NC}"
+pg_dump_file "$PG_DB" "$TEMP_BACKUP_FILE"
 
 # Compress and move to final location
-echo -e "${YELLOW}Step 3/4: Compressing backup...${NC}"
-gzip -c "/tmp/$TEMP_BACKUP_FILE" > "$OUTPUT_FILE"
+echo -e "${YELLOW}Step 2/3: Compressing backup...${NC}"
+gzip -c "$TEMP_BACKUP_FILE" > "$OUTPUT_FILE"
 
 # Cleanup temporary files
-echo -e "${YELLOW}Step 4/4: Cleaning up temporary files...${NC}"
-docker exec "$CONTAINER_NAME" rm -f "/var/lib/postgresql/data/$TEMP_BACKUP_FILE"
-rm -f "/tmp/$TEMP_BACKUP_FILE"
+echo -e "${YELLOW}Step 3/3: Cleaning up temporary files...${NC}"
+rm -f "$TEMP_BACKUP_FILE"
 
 # Display results
 BACKUP_SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)
@@ -82,7 +72,7 @@ echo ""
 
 # Get database statistics
 echo -e "${YELLOW}Database Statistics:${NC}"
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "
+pg_psql "$PG_DB" "
 SELECT
     schemaname,
     relname AS tablename,
