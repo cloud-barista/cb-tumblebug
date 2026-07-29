@@ -15,12 +15,16 @@ limitations under the License.
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -31,6 +35,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 )
 
@@ -75,11 +80,82 @@ func Validate(c echo.Context, params []string) error {
 	return nil
 }
 
+// RestGetLivez func is for checking CB-Tumblebug server process is alive.
+// @ID GetLivez
+// RestGetLivez godoc
+// @Summary Check Tumblebug is alive
+// @Description Check Tumblebug server process is alive (liveness probe). Always returns 200 while the process is running.
+// @Tags [Admin] System Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.SimpleMsg
+// @Router /livez [get]
+func RestGetLivez(c echo.Context) error {
+	return c.JSON(http.StatusOK, &model.SimpleMsg{Message: "CB-Tumblebug is alive"})
+}
+
+// Dependency-aware readiness check (opt-in via TB_READYZ_CHECK_DEPS=true).
+// Results are cached and readiness flips only after consecutive failures.
+var (
+	readyzCheckDeps = os.Getenv("TB_READYZ_CHECK_DEPS") == "true"
+	depsCheckMu     sync.Mutex
+	depsLastCheck   time.Time
+	depsLastOK      = true
+	depsFailStreak  int
+	depsLastMessage string
+)
+
+const (
+	depsCacheTTL      = 5 * time.Second
+	depsFailThreshold = 3
+	depsCheckTimeout  = 3 * time.Second
+)
+
+// checkDependencies pings etcd and PostgreSQL
+func checkDependencies() (bool, string) {
+	depsCheckMu.Lock()
+	defer depsCheckMu.Unlock()
+
+	if time.Since(depsLastCheck) < depsCacheTTL {
+		return depsLastOK, depsLastMessage
+	}
+	depsLastCheck = time.Now()
+
+	ctx, cancel := context.WithTimeout(context.Background(), depsCheckTimeout)
+	defer cancel()
+
+	var failures []string
+	if _, _, err := kvstore.GetKvWith(ctx, "/ns"); err != nil {
+		failures = append(failures, "etcd: "+err.Error())
+	}
+	if model.ORM != nil {
+		if sqlDB, err := model.ORM.DB(); err != nil {
+			failures = append(failures, "postgres: "+err.Error())
+		} else if err := sqlDB.PingContext(ctx); err != nil {
+			failures = append(failures, "postgres: "+err.Error())
+		}
+	}
+
+	if len(failures) == 0 {
+		depsFailStreak = 0
+		depsLastOK = true
+		depsLastMessage = ""
+	} else {
+		depsFailStreak++
+		depsLastMessage = strings.Join(failures, "; ")
+		log.Warn().Int("failStreak", depsFailStreak).Msgf("readyz dependency check failed: %s", depsLastMessage)
+		if depsFailStreak >= depsFailThreshold {
+			depsLastOK = false
+		}
+	}
+	return depsLastOK, depsLastMessage
+}
+
 // RestGetReadyz func is for checking CB-Tumblebug server is ready.
 // @ID GetReadyz
 // RestGetReadyz godoc
 // @Summary Check Tumblebug is ready
-// @Description Check Tumblebug is ready. Returns ready status and initialization status.
+// @Description Check Tumblebug is ready. Returns ready status and initialization status. With TB_READYZ_CHECK_DEPS=true, also verifies etcd/PostgreSQL connectivity.
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
@@ -96,6 +172,15 @@ func RestGetReadyz(c echo.Context) error {
 	if !model.SystemReady {
 		response.Message = "CB-Tumblebug is NOT ready"
 		return c.JSON(http.StatusServiceUnavailable, &response)
+	}
+
+	if readyzCheckDeps {
+		// Details stay in server logs; this endpoint is unauthenticated
+		if ok, _ := checkDependencies(); !ok {
+			response.Ready = false
+			response.Message = "CB-Tumblebug dependencies unhealthy (see server logs)"
+			return c.JSON(http.StatusServiceUnavailable, &response)
+		}
 	}
 
 	if !model.SystemInitialized {

@@ -1749,6 +1749,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /livez:
+    get:
+      tags:
+      - "[Admin] System Management"
+      summary: Check Tumblebug is alive
+      description: Check Tumblebug server process is alive (liveness probe). Always
+        returns 200 while the process is running.
+      operationId: GetLivez
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /loadAssets:
     get:
       tags:
@@ -16545,8 +16560,8 @@ paths:
       tags:
       - "[Admin] System Management"
       summary: Check Tumblebug is ready
-      description: Check Tumblebug is ready. Returns ready status and initialization
-        status.
+      description: "Check Tumblebug is ready. Returns ready status and initialization\
+        \ status. With TB_READYZ_CHECK_DEPS=true, also verifies etcd/PostgreSQL connectivity."
       operationId: GetReadyz
       parameters:
       - name: x-request-id
