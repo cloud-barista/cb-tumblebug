@@ -15450,310 +15450,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/sqlDb": {
-            "get": {
-                "description": "Get all SQL Databases (TBD)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] SQL Database Management (under development)"
-                ],
-                "summary": "Get all SQL Databases (TBD)",
-                "operationId": "GetAllSqlDb",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "InfoList",
-                            "IdList"
-                        ],
-                        "type": "string",
-                        "default": "IdList",
-                        "description": "Option",
-                        "name": "option",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK\" /////////////",
-                        "schema": {
-                            "$ref": "#/definitions/model.VpnIdList"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a SQL Databases\n\nSupported CSPs: AWS, Azure, GCP, NCP\n- Note - ` + "`" + `connectionName` + "`" + ` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncp-kr\n\n- Note - Please check the ` + "`" + `requiredCSPResource` + "`" + ` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110\n",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] SQL Database Management (under development)"
-                ],
-                "summary": "Create a SQL Databases",
-                "operationId": "PostSqlDb",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Request body to create a SQL database",
-                        "name": "sqlDbReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RestPostSqlDBRequest"
-                        }
-                    },
-                    {
-                        "enum": [
-                            "retry"
-                        ],
-                        "type": "string",
-                        "description": "Action",
-                        "name": "action",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SqlDBInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/resources/sqlDb/{sqlDbId}": {
-            "get": {
-                "description": "Get resource info of a SQL datatbase",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] SQL Database Management (under development)"
-                ],
-                "summary": "Get resource info of a SQL datatbase",
-                "operationId": "GetSqlDb",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "sqldb01",
-                        "description": "SQL DB ID",
-                        "name": "sqlDbId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "refined",
-                        "description": "Resource info by detail (refined, raw)",
-                        "name": "detail",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SqlDBInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a SQL datatbase",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] SQL Database Management (under development)"
-                ],
-                "summary": "Delete a SQL datatbase",
-                "operationId": "DeleteSqlDb",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "sqldb01",
-                        "description": "SQL DB ID",
-                        "name": "sqlDbId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/resources/sshKey": {
             "get": {
                 "description": "List all SSH Keys or SSH Keys' ID",
@@ -19950,6 +19646,88 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error during risk analysis",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/rdbms/support": {
+            "get": {
+                "description": "Get CSP support metadata and capabilities for RDBMS engines (e.g., mysql, mariadb, postgresql)\nQuery parameters can be filtered by providerName, regionName, or dbEngine.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Get CSP RDBMS capability support information",
+                "operationId": "GetRDBMSSupport",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "example": "aws",
+                        "description": "Provider Name (e.g., aws, gcp, azure, ncp)",
+                        "name": "providerName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "example": "ap-northeast-2",
+                        "description": "Region Name (e.g., ap-northeast-2)",
+                        "name": "regionName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "mysql",
+                            "mariadb",
+                            "postgresql"
+                        ],
+                        "type": "string",
+                        "default": "mysql",
+                        "example": "mysql",
+                        "description": "DB Engine Name (e.g., mysql, mariadb, postgresql)",
+                        "name": "dbEngine",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSSupportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -29350,6 +29128,114 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RDBMSMetaInfo": {
+            "type": "object",
+            "properties": {
+                "backupRetentionRange": {
+                    "type": "string",
+                    "example": "1-35"
+                },
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2-config"
+                },
+                "dbEngine": {
+                    "type": "string",
+                    "example": "mysql"
+                },
+                "dbInstanceSpecOptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "db.t3.medium"
+                    ]
+                },
+                "providerName": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "regionName": {
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "requiresSecurityGroup": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "requiresSubnet": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "storageSizeRange": {
+                    "$ref": "#/definitions/model.StorageSizeRange"
+                },
+                "storageTypeOptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "gp2",
+                        "gp3"
+                    ]
+                },
+                "supportedVersions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "8.0",
+                        "8.4"
+                    ]
+                },
+                "supportsBackup": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supportsDeletionProtection": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supportsEncryption": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supportsHighAvailability": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supportsPublicAccess": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supportsStorageSizeConfiguration": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supportsStorageTypeSelection": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.RDBMSSupportResponse": {
+            "type": "object",
+            "properties": {
+                "resourceType": {
+                    "type": "string",
+                    "example": "rdbms"
+                },
+                "supports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RDBMSMetaInfo"
+                    }
+                }
+            }
+        },
         "model.Range": {
             "type": "object",
             "properties": {
@@ -29692,55 +29578,6 @@ const docTemplate = `{
                 },
                 "vNet": {
                     "type": "integer"
-                }
-            }
-        },
-        "model.RequiredAWSResourceForSqlDB": {
-            "type": "object",
-            "properties": {
-                "subnet1ID": {
-                    "type": "string",
-                    "example": "subnet-xxxx"
-                },
-                "subnet2ID": {
-                    "type": "string",
-                    "example": "subnet-xxxx in different AZ"
-                },
-                "vNetID": {
-                    "type": "string",
-                    "example": "vpc-xxxxx"
-                }
-            }
-        },
-        "model.RequiredAzureResourceForSqlDB": {
-            "type": "object",
-            "properties": {
-                "resourceGroup": {
-                    "type": "string",
-                    "example": "koreacentral"
-                }
-            }
-        },
-        "model.RequiredCSPResourceForSqlDB": {
-            "type": "object",
-            "properties": {
-                "aws": {
-                    "$ref": "#/definitions/model.RequiredAWSResourceForSqlDB"
-                },
-                "azure": {
-                    "$ref": "#/definitions/model.RequiredAzureResourceForSqlDB"
-                },
-                "ncp": {
-                    "$ref": "#/definitions/model.RequiredNCPResourceForSqlDB"
-                }
-            }
-        },
-        "model.RequiredNCPResourceForSqlDB": {
-            "type": "object",
-            "properties": {
-                "subnetID": {
-                    "type": "string",
-                    "example": "123456"
                 }
             }
         },
@@ -30138,61 +29975,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.HostedZoneInfo"
                     }
-                }
-            }
-        },
-        "model.RestPostSqlDBRequest": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "csp",
-                "dbAdminPassword",
-                "dbAdminUsername",
-                "dbEnginePort",
-                "dbEngineVersion",
-                "dbInstanceSpec",
-                "name",
-                "region"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-northeast-2"
-                },
-                "csp": {
-                    "type": "string",
-                    "example": "aws"
-                },
-                "dbAdminPassword": {
-                    "type": "string",
-                    "example": "Password1234!"
-                },
-                "dbAdminUsername": {
-                    "type": "string",
-                    "example": "mydbadmin"
-                },
-                "dbEnginePort": {
-                    "type": "integer",
-                    "example": 3306
-                },
-                "dbEngineVersion": {
-                    "type": "string",
-                    "example": "8.0.39"
-                },
-                "dbInstanceSpec": {
-                    "type": "string",
-                    "example": "db.t3.micro"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "sqldb01"
-                },
-                "region": {
-                    "type": "string",
-                    "example": "ap-northeast-2"
-                },
-                "requiredCSPResource": {
-                    "$ref": "#/definitions/model.RequiredCSPResourceForSqlDB"
                 }
             }
         },
@@ -32431,53 +32213,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.SqlDBInfo": {
-            "type": "object",
-            "properties": {
-                "connectionConfig": {
-                    "$ref": "#/definitions/model.ConnConfig"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
-                    "type": "string",
-                    "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "details": {},
-                "id": {
-                    "description": "Id is unique identifier for the object",
-                    "type": "string",
-                    "example": "sqldb01"
-                },
-                "name": {
-                    "description": "Name is human-readable string to represent the object",
-                    "type": "string",
-                    "example": "sqldb01"
-                },
-                "resourceType": {
-                    "description": "ResourceType is the type of the resource",
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
-                    "type": "string",
-                    "example": "wef12awefadf1221edcf"
-                }
-            }
-        },
         "model.SshCmdResult": {
             "type": "object",
             "properties": {
@@ -32774,6 +32509,19 @@ const docTemplate = `{
                 "countUndefined": {
                     "description": "CountUndefined is for counting Undefined",
                     "type": "integer"
+                }
+            }
+        },
+        "model.StorageSizeRange": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "min": {
+                    "type": "integer",
+                    "example": 10
                 }
             }
         },

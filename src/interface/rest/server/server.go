@@ -747,22 +747,15 @@ func RunServer() {
 	g.POST("/:nsId/registerCspResource/vNet/:vNetId/subnet", rest_resource.RestPostRegisterSubnet)
 	g.DELETE("/:nsId/deregisterResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
 
-	// SQL database management
-	// g.GET("/:nsId/resources/sqlDb", rest_resource.)
-	sqlDbGroup := g.Group("/:nsId/resources/sqlDb")
-	terrariumURL = model.TerrariumRestUrl + "/readyz"
-	sqlDbGroup.Use(middlewares.CheckReadiness(terrariumURL, trApiUser, trApiPass))
-	sqlDbGroup.POST("", rest_resource.RestPostSqlDB)
-	sqlDbGroup.GET("/:sqlDbId", rest_resource.RestGetSqlDB)
-	sqlDbGroup.DELETE("/:sqlDbId", rest_resource.RestDeleteSqlDB)
-	// sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDB)
-	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDB)
 
 	// NLB support information
 	e.GET("/tumblebug/nlb/support", rest_infra.RestGetNLBSupport)
 
 	// Object Storage support information
 	e.GET("/tumblebug/objectStorage/support", rest_resource.RestGetObjectStorageSupport)
+
+	// RDBMS support information
+	e.GET("/tumblebug/rdbms/support", rest_resource.RestGetRDBMSSupport)
 
 	// Object Storage management
 	g.PUT("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)
