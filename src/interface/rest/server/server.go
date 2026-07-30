@@ -799,34 +799,6 @@ func RunServer() {
 	e.DELETE("/tumblebug/resources/globalDns/records", rest_resource.RestBulkDeleteGlobalDnsRecord)
 	e.GET("/tumblebug/resources/globalDns/hostedZone", rest_resource.RestGetHostedZones)
 
-	// #### To be deprecated #### Route for Object Storage
-	objectStorageGroup := e.Group("/tumblebug")
-	// Object Storage (bucket) Operations
-	objectStorageGroup.GET("/resources/objectStorage", rest_resource.ListObjectStoragesLagacy)
-	objectStorageGroup.PUT("/resources/objectStorage/:objectStorageName", rest_resource.CreateObjectStorageLagacy)
-	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName", rest_resource.GetObjectStorageLagacy)
-	objectStorageGroup.HEAD("/resources/objectStorage/:objectStorageName", rest_resource.ExistObjectStorageLagacy)
-	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/location", rest_resource.GetObjectStorageLocationLagacy)
-	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName", rest_resource.DeleteObjectStorageLagacy)
-
-	// Object Storage (bucket) Operations - Verioning
-	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/versioning", rest_resource.GetObjectStorageVersioningLagacy)
-	objectStorageGroup.PUT("/resources/objectStorage/:objectStorageName/versioning", rest_resource.SetObjectStorageVersioningLagacy)
-	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/versions", rest_resource.ListObjectVersionsLagacy)
-	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName/versions/:objectKey", rest_resource.DeleteVersionedObjectLagacy)
-
-	// Object Storage (bucket) Operations - CORS
-	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/cors", rest_resource.GetObjectStorageCORSLagacy)
-	objectStorageGroup.PUT("/resources/objectStorage/:objectStorageName/cors", rest_resource.SetObjectStorageCORSLagacy)
-	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName/cors", rest_resource.DeleteObjectStorageCORSLagacy)
-
-	// Object (file) Operations
-	objectStorageGroup.HEAD("/resources/objectStorage/:objectStorageName/:objectKey", rest_resource.GetDataObjectInfoLagacy)
-	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName/:objectKey", rest_resource.DeleteDataObjectLagacy)
-	objectStorageGroup.POST("/resources/objectStorage/:objectStorageName", rest_resource.DeleteMultipleDataObjectsLagacy)
-	objectStorageGroup.GET("/resources/objectStorage/presigned/download/:objectStorageName/:objectKey", rest_resource.GeneratePresignedDownloadURLLagacy)
-	objectStorageGroup.GET("/resources/objectStorage/presigned/upload/:objectStorageName/:objectKey", rest_resource.GeneratePresignedUploadURLLagacy)
-
 	/*
 		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)
 		g.GET("/:nsId/resources/publicIp/:publicIpId", resource.RestGetPublicIp)
