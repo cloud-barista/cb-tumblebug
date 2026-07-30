@@ -299,7 +299,7 @@ const (
 	StrSubnet                string = "subnet"
 	StrVPC                   string = "vpc"
 	StrVPN                   string = "vpn"
-	StrSqlDB                 string = "sqlDb"
+	StrRDBMS                 string = "rdbms"
 	StrObjectStorage         string = "objectStorage"
 	StrDataDisk              string = "dataDisk"
 	StrDisk                  string = "disk"

@@ -13039,260 +13039,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/sqlDb:
-    get:
-      tags:
-      - "[Infra Resource] SQL Database Management (under development)"
-      summary: Get all SQL Databases (TBD)
-      description: Get all SQL Databases (TBD)
-      operationId: GetAllSqlDb
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: option
-        in: query
-        description: Option
-        schema:
-          type: string
-          default: IdList
-          enum:
-          - InfoList
-          - IdList
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK" /////////////
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.VpnIdList'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-    post:
-      tags:
-      - "[Infra Resource] SQL Database Management (under development)"
-      summary: Create a SQL Databases
-      description: |
-        Create a SQL Databases
-
-        Supported CSPs: AWS, Azure, GCP, NCP
-        - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncp-kr
-
-        - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
-
-        - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110
-      operationId: PostSqlDb
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: action
-        in: query
-        description: Action
-        schema:
-          type: string
-          enum:
-          - retry
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      requestBody:
-        description: Request body to create a SQL database
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.RestPostSqlDBRequest'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SqlDBInfo'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: sqlDbReq
-  /ns/{nsId}/resources/sqlDb/{sqlDbId}:
-    get:
-      tags:
-      - "[Infra Resource] SQL Database Management (under development)"
-      summary: Get resource info of a SQL datatbase
-      description: Get resource info of a SQL datatbase
-      operationId: GetSqlDb
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: sqlDbId
-        in: path
-        description: SQL DB ID
-        required: true
-        schema:
-          type: string
-          default: sqldb01
-      - name: detail
-        in: query
-        description: "Resource info by detail (refined, raw)"
-        schema:
-          type: string
-          default: refined
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SqlDBInfo'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-    delete:
-      tags:
-      - "[Infra Resource] SQL Database Management (under development)"
-      summary: Delete a SQL datatbase
-      description: Delete a SQL datatbase
-      operationId: DeleteSqlDb
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: sqlDbId
-        in: path
-        description: SQL DB ID
-        required: true
-        schema:
-          type: string
-          default: sqldb01
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/sshKey:
     get:
       tags:
@@ -16809,6 +16555,71 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal server error during risk analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /rdbms/support:
+    get:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Get CSP RDBMS capability support information
+      description: |-
+        Get CSP support metadata and capabilities for RDBMS engines (e.g., mysql, mariadb, postgresql)
+        Query parameters can be filtered by providerName, regionName, or dbEngine.
+      operationId: GetRDBMSSupport
+      parameters:
+      - name: providerName
+        in: query
+        description: "Provider Name (e.g., aws, gcp, azure, ncp)"
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: regionName
+        in: query
+        description: "Region Name (e.g., ap-northeast-2)"
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      - name: dbEngine
+        in: query
+        description: "DB Engine Name (e.g., mysql, mariadb, postgresql)"
+        required: true
+        schema:
+          type: string
+          default: mysql
+          enum:
+          - mysql
+          - mariadb
+          - postgresql
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RDBMSSupportResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -24116,6 +23927,83 @@ components:
           type: string
         publicKeyTokenId:
           type: string
+    model.RDBMSMetaInfo:
+      type: object
+      properties:
+        backupRetentionRange:
+          type: string
+          example: 1-35
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2-config
+        dbEngine:
+          type: string
+          example: mysql
+        dbInstanceSpecOptions:
+          type: array
+          example:
+          - db.t3.medium
+          items:
+            type: string
+        providerName:
+          type: string
+          example: aws
+        regionName:
+          type: string
+          example: ap-northeast-2
+        requiresSecurityGroup:
+          type: boolean
+          example: true
+        requiresSubnet:
+          type: boolean
+          example: true
+        storageSizeRange:
+          $ref: '#/components/schemas/model.StorageSizeRange'
+        storageTypeOptions:
+          type: array
+          example:
+          - gp2
+          - gp3
+          items:
+            type: string
+        supportedVersions:
+          type: array
+          example:
+          - "8.0"
+          - "8.4"
+          items:
+            type: string
+        supportsBackup:
+          type: boolean
+          example: true
+        supportsDeletionProtection:
+          type: boolean
+          example: true
+        supportsEncryption:
+          type: boolean
+          example: true
+        supportsHighAvailability:
+          type: boolean
+          example: true
+        supportsPublicAccess:
+          type: boolean
+          example: true
+        supportsStorageSizeConfiguration:
+          type: boolean
+          example: true
+        supportsStorageTypeSelection:
+          type: boolean
+          example: true
+    model.RDBMSSupportResponse:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          example: rdbms
+        supports:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.RDBMSMetaInfo'
     model.Range:
       type: object
       properties:
@@ -24364,39 +24252,6 @@ components:
           type: integer
         vNet:
           type: integer
-    model.RequiredAWSResourceForSqlDB:
-      type: object
-      properties:
-        subnet1ID:
-          type: string
-          example: subnet-xxxx
-        subnet2ID:
-          type: string
-          example: subnet-xxxx in different AZ
-        vNetID:
-          type: string
-          example: vpc-xxxxx
-    model.RequiredAzureResourceForSqlDB:
-      type: object
-      properties:
-        resourceGroup:
-          type: string
-          example: koreacentral
-    model.RequiredCSPResourceForSqlDB:
-      type: object
-      properties:
-        aws:
-          $ref: '#/components/schemas/model.RequiredAWSResourceForSqlDB'
-        azure:
-          $ref: '#/components/schemas/model.RequiredAzureResourceForSqlDB'
-        ncp:
-          $ref: '#/components/schemas/model.RequiredNCPResourceForSqlDB'
-    model.RequiredNCPResourceForSqlDB:
-      type: object
-      properties:
-        subnetID:
-          type: string
-          example: "123456"
     model.ResourceCountOverview:
       type: object
       properties:
@@ -24690,48 +24545,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.HostedZoneInfo'
-    model.RestPostSqlDBRequest:
-      required:
-      - connectionName
-      - csp
-      - dbAdminPassword
-      - dbAdminUsername
-      - dbEnginePort
-      - dbEngineVersion
-      - dbInstanceSpec
-      - name
-      - region
-      type: object
-      properties:
-        connectionName:
-          type: string
-          example: aws-ap-northeast-2
-        csp:
-          type: string
-          example: aws
-        dbAdminPassword:
-          type: string
-          example: Password1234!
-        dbAdminUsername:
-          type: string
-          example: mydbadmin
-        dbEnginePort:
-          type: integer
-          example: 3306
-        dbEngineVersion:
-          type: string
-          example: 8.0.39
-        dbInstanceSpec:
-          type: string
-          example: db.t3.micro
-        name:
-          type: string
-          example: sqldb01
-        region:
-          type: string
-          example: ap-northeast-2
-        requiredCSPResource:
-          $ref: '#/components/schemas/model.RequiredCSPResourceForSqlDB'
     model.RestPostVpnRequest:
       required:
       - name
@@ -26377,44 +26190,6 @@ components:
           type: string
           description: "Number of VCpu, \"-1\" when not applicable"
           example: "2"
-    model.SqlDBInfo:
-      type: object
-      properties:
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-        details:
-          type: object
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: sqldb01
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: sqldb01
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        status:
-          type: string
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
     model.SshCmdResult:
       type: object
       properties:
@@ -26632,6 +26407,15 @@ components:
         countUndefined:
           type: integer
           description: CountUndefined is for counting Undefined
+    model.StorageSizeRange:
+      type: object
+      properties:
+        max:
+          type: integer
+          example: 1000
+        min:
+          type: integer
+          example: 10
     model.SubnetInfo:
       type: object
       properties:

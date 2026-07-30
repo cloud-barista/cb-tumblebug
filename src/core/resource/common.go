@@ -1935,7 +1935,7 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		strings.EqualFold(resourceType, model.StrSpec) ||
 		strings.EqualFold(resourceType, model.StrVNet) ||
 		strings.EqualFold(resourceType, model.StrVPN) ||
-		strings.EqualFold(resourceType, model.StrSqlDB) ||
+		strings.EqualFold(resourceType, model.StrRDBMS) ||
 		strings.EqualFold(resourceType, model.StrObjectStorage) ||
 		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
 		strings.EqualFold(resourceType, model.StrDataDisk) {
