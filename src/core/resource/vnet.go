@@ -1195,7 +1195,7 @@ func SyncVNetState(nsId string, vNetInfo *model.VNetInfo, optPreloadedVNetStatus
 			optPreloadedSubnetStatus = &subnetStatus
 		}
 
-		subnetSummary, sErr := syncSubnetsForVNet(nsId, subnetKvList, vNetInfo, optPreloadedSubnetStatus)
+		subnetSummary, sErr := SyncSubnetsForVNet(nsId, subnetKvList, vNetInfo, optPreloadedSubnetStatus)
 		if sErr != nil {
 			log.Warn().Err(sErr).Msg("")
 		}
@@ -1975,4 +1975,77 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 
 	log.Info().Msgf("Designed %d vNets with supernetting enabled: %s", len(vNetReqList), vNetDesignResp.RootNetworkCIDR)
 	return vNetDesignResp, nil
+}
+
+// PruneVNets purges Tumblebug metadata for all VNets in a namespace
+// that were diagnosed as missing on CSP (SyncStateCspResourceMissing).
+func PruneVNets(nsId string) (model.ResourcePruneResults, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		return model.ResourcePruneResults{}, err
+	}
+
+	resList, err := ListResource(nsId, model.StrVNet, "", "")
+	if err != nil {
+		return model.ResourcePruneResults{}, err
+	}
+
+	vnetList, ok := resList.([]model.VNetInfo)
+	if !ok {
+		return model.ResourcePruneResults{}, fmt.Errorf("unexpected type from ListResource")
+	}
+
+	pruneResults := model.ResourcePruneResults{
+		Results: []model.ResourcePruneResult{},
+	}
+
+	for _, vNetInfo := range vnetList {
+		condSynced := model.GetCondition(vNetInfo.Conditions, model.ConditionSynced)
+		isMissing := (condSynced != nil && condSynced.Reason == model.ReasonCspResourceMissing) ||
+			(vNetInfo.Status == model.NetworkStatusFailed && condSynced != nil && condSynced.Status == model.ConditionFalse)
+
+		if !isMissing {
+			continue
+		}
+
+		vNetKey := common.GenResourceKey(nsId, model.StrVNet, vNetInfo.Id)
+
+		// 1. Purge child subnets
+		subnetKvList, _ := kvstore.GetKvList(vNetKey + "/subnet")
+		for _, sKv := range subnetKvList {
+			var sInfo model.SubnetInfo
+			if json.Unmarshal([]byte(sKv.Value), &sInfo) == nil {
+				subnetKey := common.GenChildResourceKey(nsId, model.StrSubnet, vNetInfo.Id, sInfo.Id)
+				_ = kvstore.Delete(subnetKey)
+				_ = label.DeleteLabelObject(model.StrSubnet, sInfo.Uid)
+			}
+		}
+
+		// 2. Remove VNet label
+		if lErr := label.DeleteLabelObject(model.StrVNet, vNetInfo.Uid); lErr != nil {
+			log.Warn().Err(lErr).Msgf("failed to delete label during prune for vNet %s", vNetInfo.Id)
+		}
+
+		// 3. Delete VNet KV metadata
+		delErr := kvstore.Delete(vNetKey)
+		res := model.ResourcePruneResult{
+			ResourceType:   model.StrVNet,
+			ResourceId:     vNetInfo.Id,
+			ConnectionName: vNetInfo.ConnectionName,
+		}
+
+		if delErr != nil {
+			res.Success = false
+			res.Error = delErr.Error()
+			pruneResults.FailedCount++
+		} else {
+			res.Success = true
+			res.Message = fmt.Sprintf("Orphaned metadata for vNet (%s) and its subnets pruned successfully", vNetInfo.Id)
+			pruneResults.SuccessCount++
+		}
+		pruneResults.TotalPruned++
+		pruneResults.Results = append(pruneResults.Results, res)
+	}
+
+	return pruneResults, nil
 }

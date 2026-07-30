@@ -177,19 +177,19 @@ func RestGetAllVNet(c echo.Context) error {
 
 // RestDelVNet godoc
 // @ID DelVNet
-// @Summary Delete VNet (supporting actions: withsubnet, reconcile, force)
+// @Summary Delete VNet (supporting actions: withsubnet, reconcile [deprecated], force)
 // @Description Delete VNet
 // @Description ---
 // @Description **action options:**
 // @Description
 // @Description **withsubnets** – Delete the VNet together with all its subnets in a single call.
 // @Description
-// @Description **reconcile** – Synchronize Tumblebug metadata with the actual CSP state.
+// @Description **reconcile** – (To be deprecated: Use PUT /ns/{nsId}/resources/vNet/{vNetId}/reconcile instead) Synchronize Tumblebug metadata with the actual CSP state.
 // @Description Checks whether the VNet/Subnet resource still exists on CSP (via Spider).
 // @Description If the CSP resource is gone, removes the orphaned Tumblebug metadata.
 // @Description If the CSP resource still exists, keeps the metadata intact.
 // @Description Use this to clean up stale metadata after system errors or partial failures.
-// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=reconcile`)
+// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=reconcile` - To be deprecated)
 // @Description
 // @Description **force** – Force-delete the VNet and its subnets on CSP (passes `?force=true` to Spider).
 // @Description Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
@@ -199,7 +199,7 @@ func RestGetAllVNet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Param action query string false "Action" Enums(withsubnets,reconcile,force)
+// @Param action query string false "Action (reconcile action is to be deprecated)" Enums(withsubnets,reconcile,force)
 // @Success 200 {object} model.SimpleMsg "OK"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -450,4 +450,75 @@ func RestReconcileAllVNets(c echo.Context) error {
 		nsId, results.Total, results.SuccessCount, results.FailedCount)
 
 	return c.JSON(http.StatusOK, results)
+}
+
+// RestPruneVNets godoc
+// @ID PruneVNets
+// @Summary Prune orphaned vNet metadata in a namespace
+// @Description Purges Tumblebug metadata for vNet resources diagnosed as missing on CSP.
+// @Tags [Infra Resource] Network Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Success 200 {object} model.ResourcePruneResults "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/vNet/prune [post]
+func RestPruneVNets(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := resource.PruneVNets(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to prune VNets")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestReconcileVNet godoc
+// @ID ReconcileVNet
+// @Summary Reconcile a single vNet resource
+// @Description Compares Tumblebug metadata for a specific vNet resource with actual CSP status via Spider.
+// @Tags [Infra Resource] Network Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param vNetId path string true "vNet ID" default(vnet01)
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/vNet/{vNetId}/reconcile [put]
+func RestReconcileVNet(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	vNetId := c.Param("vNetId")
+	if vNetId == "" {
+		err := fmt.Errorf("vNetId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := reconcile.GetManager().RunReconcile(c.Request().Context(), nsId, model.StrVNet, vNetId, nil)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to reconcile vNet (%s)", vNetId)
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
 }

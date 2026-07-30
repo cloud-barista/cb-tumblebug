@@ -857,8 +857,8 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	return ret, nil
 }
 
-// subnetSyncSummary holds counts of outcomes from a single syncSubnetsForVNet call.
-type subnetSyncSummary struct {
+// SubnetSyncSummary holds counts of outcomes from a single SyncSubnetsForVNet call.
+type SubnetSyncSummary struct {
 	Total    int // total TB-registered subnets examined
 	NoAction int // exist and consistent; no change needed
 	Restored int // restored from a terminal-failure state (e.g., DeletionFailed)
@@ -867,14 +867,14 @@ type subnetSyncSummary struct {
 	Errors   int // subnets that could not be processed
 }
 
-// syncSubnetsForVNet iterates TB-registered subnets under a VPC and reconciles each one.
+// SyncSubnetsForVNet iterates TB-registered subnets under a VPC and reconciles each one.
 // TB metadata is the source of truth; resources that exist in CSP/Spider but are not
 // registered in TB are not in scope for this reconciliation pass.
 // subnetKvList: raw KV entries from kvstore.GetKvList(vNetKey + "/subnet").
 // status: optional pre-fetched subnet status; passed through to syncSubnetState.
-func syncSubnetsForVNet(nsId string, subnetKvList []kvstore.KeyValue, vNetInfo *model.VNetInfo, status *model.CspResourceStatusResponse) (subnetSyncSummary, error) {
-	log.Info().Msg("syncSubnetsForVNet")
-	var summary subnetSyncSummary
+func SyncSubnetsForVNet(nsId string, subnetKvList []kvstore.KeyValue, vNetInfo *model.VNetInfo, status *model.CspResourceStatusResponse) (SubnetSyncSummary, error) {
+	log.Info().Msg("SyncSubnetsForVNet")
+	var summary SubnetSyncSummary
 
 	for _, subnetKv := range subnetKvList {
 		summary.Total++
@@ -966,14 +966,11 @@ func syncSubnetState(nsId string, subnetInfo *model.SubnetInfo, vNetInfo *model.
 		}
 	}
 
-	subnetState := getResourceState(subnetInfo.CspResourceName, subnetInfo.CspResourceId, subnetStatusResp)
-	log.Debug().Msgf("Subnet '%s' state in Spider: %q", subnetInfo.CspResourceName, subnetState)
+	subnetSyncState := GetResourceSyncState(subnetInfo.CspResourceName, subnetInfo.CspResourceId, subnetStatusResp)
+	log.Debug().Msgf("Subnet '%s' sync state: %q", subnetInfo.CspResourceName, subnetSyncState)
 
-	switch subnetState {
-	case "exists":
-		// Subnet exists on CSP. Restore status only when metadata is stuck in
-		// a terminal-failure state (e.g., DeletionFailed) — typically caused
-		// by a dependency that has since been resolved.
+	switch subnetSyncState {
+	case model.SyncStateInSync, model.SyncStateSpMetaMissing:
 		if model.ShouldRestoreToAvailable(subnetInfo.Conditions) {
 			prevReason := ""
 			if r := model.GetCondition(subnetInfo.Conditions, model.ConditionReady); r != nil {
@@ -984,137 +981,52 @@ func syncSubnetState(nsId string, subnetInfo *model.SubnetInfo, vNetInfo *model.
 			model.SetCondition(&subnetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
 			subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
 			subnetInfo.SystemMessage = ""
-
-			sVal, mErr := json.Marshal(subnetInfo)
-			if mErr != nil {
-				log.Error().Err(mErr).Msg("")
-				return emptyRet, mErr
-			}
-			if pErr := kvstore.Put(subnetKey, string(sVal)); pErr != nil {
-				log.Error().Err(pErr).Msg("")
-				return emptyRet, pErr
-			}
-
-			// Reflect the restored subnet status into the parent vNet's
-			// SubnetInfoList and recompute ChildrenReady.
-			for i, s := range vNetInfo.SubnetInfoList {
-				if s.Id == subnetInfo.Id {
-					vNetInfo.SubnetInfoList[i] = *subnetInfo
-					break
-				}
-			}
-			if len(vNetInfo.SubnetInfoList) > 0 {
-				model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonAllReady, "")
-			} else {
-				model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
-			}
-			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
-			if vVal, vmErr := json.Marshal(vNetInfo); vmErr == nil {
-				if vpErr := kvstore.Put(vNetKey, string(vVal)); vpErr != nil {
-					log.Warn().Err(vpErr).Msg("failed to persist updated vNet info after subnet restore")
-				}
-			}
-
 			ret.Message = fmt.Sprintf("subnet (%s) status restored to Available from %s; CSP resource exists", subnetInfo.Id, prevReason)
-			log.Info().Msg(ret.Message)
-			return ret, nil
-		}
-
-		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetInfo.Id)
-		log.Info().Msg(ret.Message)
-		return ret, nil
-
-	case "cspOnly":
-		// TB-registered subnet whose Spider IID was lost.
-		// Preserve TB metadata — deleting it would orphan the CSP resource.
-		// TODO: consider re-registering the CSP-only subnet into Spider.
-		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP but has no Spider IID (cspOnly); TB metadata preserved", subnetInfo.Id)
-		log.Warn().Msg(ret.Message)
-		return ret, nil
-
-	case "spiderOnly":
-		/*
-		 *	Subnet is gone from CSP (or was never registered in Spider).
-		 *	Purge the Spider IID only when Spider still tracks it, then remove TB metadata.
-		 */
-
-		// Spider still has the IID but the CSP resource is gone: force-delete to purge the IID.
-		spForceDelReqt := spiderSubnetRemoveReq{ConnectionName: subnetInfo.ConnectionName}
-		forceDelURL := fmt.Sprintf("%s/vpc/%s/subnet/%s?force=true",
-			model.SpiderRestUrl, subnetInfo.CspVNetName, subnetInfo.CspResourceName)
-		log.Debug().Msgf("[Request to Spider] Purge Spider subnet metadata by force delete: %s", forceDelURL)
-		var spForceDelResp spiderBooleanInfoResp
-		restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
-			clientManager.NewHttpClient(),
-			"DELETE",
-			forceDelURL,
-			nil,
-			clientManager.SetUseBody(spForceDelReqt),
-			&spForceDelReqt,
-			&spForceDelResp,
-			clientManager.MediumDuration,
-		)
-		forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
-		if forceDelErr != nil {
-			log.Warn().Err(forceDelErr).Msgf("Purge Spider subnet metadata by force delete failed for %s (continuing reconcile)", subnetInfo.CspResourceName)
 		} else {
-			log.Info().Msgf("Purge Spider subnet metadata by force delete succeeded for %s", subnetInfo.CspResourceName)
+			ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, model.SyncStateInSync)
+			ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetInfo.Id)
 		}
 
-	case "absent":
-		// No Spider IID to purge; the resource is gone from both Spider and CSP.
+	case model.SyncStateCspResourceMissing, model.SyncStateTbMetaOnly:
+		ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, subnetSyncState)
+		ret.Message = fmt.Sprintf("subnet (%s) missing on CSP; marked as Failed", subnetInfo.Id)
 	}
 
-	// TB metadata cleanup (spiderOnly / absent).
-	var err error
-	err = kvstore.Delete(subnetKey)
-	if err != nil {
-		log.Warn().Err(err).Msg("")
+	// Persist updated subnet info in KV store
+	if subnetKey != "" {
+		if sVal, mErr := json.Marshal(subnetInfo); mErr == nil {
+			if pErr := kvstore.Put(subnetKey, string(sVal)); pErr != nil {
+				log.Warn().Err(pErr).Msg("failed to persist updated subnet info")
+			}
+		}
 	}
 
-	// Update the vNet info
+	// Update SubnetInfoList in parent vNetInfo and recompute ChildrenReady
+	hasSubnetFailures := false
 	for i, s := range vNetInfo.SubnetInfoList {
 		if s.Id == subnetInfo.Id {
-			vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList[:i], vNetInfo.SubnetInfoList[i+1:]...)
-			break
+			vNetInfo.SubnetInfoList[i] = *subnetInfo
+		}
+		if vNetInfo.SubnetInfoList[i].Status == model.ResourceStatusFailed {
+			hasSubnetFailures = true
 		}
 	}
-	// [Conditions] Update VNet children status after subnet reconciled away
-	hasSubnets := len(vNetInfo.SubnetInfoList) > 0
-	if hasSubnets {
+
+	if hasSubnetFailures {
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionFalse, model.ReasonSubnetFailed, "One or more child subnets missing or failed")
+	} else if len(vNetInfo.SubnetInfoList) > 0 {
 		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonAllReady, "")
 	} else {
 		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
 	}
 	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
 
-	// Save the updated vNet info
-	val, err := json.Marshal(vNetInfo)
-	if err != nil {
-		log.Warn().Err(err).Msg("")
-	}
-	err = kvstore.Put(vNetKey, string(val))
-	if err != nil {
-		log.Warn().Err(err).Msg("")
+	if vVal, vmErr := json.Marshal(vNetInfo); vmErr == nil {
+		if vpErr := kvstore.Put(vNetKey, string(vVal)); vpErr != nil {
+			log.Warn().Err(vpErr).Msg("failed to persist updated vNet info after subnet reconcile")
+		}
 	}
 
-	err = label.DeleteLabelObject(model.StrSubnet, subnetInfo.Uid)
-	if err != nil {
-		log.Warn().Err(err).Msg("")
-	}
-
-	// Get and check the subnet info still exists or not
-	_, exists, err := kvstore.GetKv(subnetKey)
-	if err != nil {
-		log.Warn().Err(err).Msg("")
-	}
-	if exists {
-		err := fmt.Errorf("fail to reconcile the subnet info (id: %s)", subnetInfo.Id)
-		ret.Message = err.Error()
-		return ret, err
-	}
-
-	ret.Message = fmt.Sprintf("the subnet info (%s) has been reconciled", subnetInfo.Id)
 	return ret, nil
 }
 

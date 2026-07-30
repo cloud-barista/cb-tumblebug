@@ -3257,6 +3257,8 @@ func GetCspResourceStatus(connConfig string, resourceType string, filter ...Reso
 		spiderRequestURL = model.SpiderRestUrl + "/alldisk"
 	case model.StrCustomImage:
 		spiderRequestURL = model.SpiderRestUrl + "/allmyimage"
+	case model.StrObjectStorage:
+		spiderRequestURL = model.SpiderRestUrl + "/alls3"
 	default:
 		err := fmt.Errorf("unsupported resource type: %s", resourceType)
 		response.Error = err.Error()
@@ -3498,6 +3500,54 @@ func getResourceState(resourceName string, resourceSystemId string, statusResp m
 		}
 	}
 	return "absent"
+}
+
+// GetResourceSyncState returns the observed ResourceSyncState across 3 layers (TB, Spider, CSP).
+// Assumes Tumblebug metadata exists for the resource (TB: O).
+func GetResourceSyncState(resourceName string, resourceSystemId string, statusResp model.CspResourceStatusResponse) model.ResourceSyncState {
+	allList := statusResp.AllList
+	for _, item := range allList.MappedList {
+		if item.NameId == resourceName || (resourceSystemId != "" && item.SystemId == resourceSystemId) {
+			return model.SyncStateInSync // Mapped (TB: O, SP: O, CSP: O)
+		}
+	}
+	for _, item := range allList.OnlySpiderList {
+		if item.NameId == resourceName {
+			return model.SyncStateCspResourceMissing // OnlySpider (TB: O, SP: O, CSP: X)
+		}
+	}
+	for _, item := range allList.OnlyCSPList {
+		if item.NameId == resourceName || (resourceSystemId != "" && item.SystemId == resourceSystemId) {
+			return model.SyncStateSpMetaMissing // OnlyCSP (TB: O, SP: X, CSP: O)
+		}
+	}
+	return model.SyncStateTbMetaOnly // Absent (TB: O, SP: X, CSP: X)
+}
+
+// ApplySyncState updates resource Conditions, Status, and SystemMessage in place based on ResourceSyncState.
+func ApplySyncState(conditions *[]model.Condition, status *string, sysMsg *string, syncState model.ResourceSyncState) {
+	reason := string(syncState)
+
+	switch syncState {
+	case model.SyncStateInSync:
+		model.SetCondition(conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+		*status = model.ResourceStatusAvailable
+		*sysMsg = ""
+
+	case model.SyncStateCspResourceMissing:
+		model.SetCondition(conditions, model.ConditionSynced, model.ConditionFalse, reason, "Resource missing on CSP provider")
+		*status = model.ResourceStatusFailed
+		*sysMsg = "Reconcile Diagnostic: CSP resource missing."
+
+	case model.SyncStateSpMetaMissing:
+		model.SetCondition(conditions, model.ConditionSynced, model.ConditionFalse, reason, "Spider metadata missing; TB metadata preserved")
+		*sysMsg = "Reconcile Diagnostic: Spider metadata missing."
+
+	case model.SyncStateTbMetaOnly:
+		model.SetCondition(conditions, model.ConditionSynced, model.ConditionFalse, reason, "Ghost metadata: resource absent on Spider and CSP")
+		*status = model.ResourceStatusFailed
+		*sysMsg = "Reconcile Diagnostic: Ghost metadata detected."
+	}
 }
 
 // GetCspResourceStatusBatch retrieves resource status for multiple resource types in a single connection

@@ -719,6 +719,8 @@ func RunServer() {
 	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet)
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
 	g.PUT("/:nsId/resources/vNet/reconcile", rest_resource.RestReconcileAllVNets)
+	g.PUT("/:nsId/resources/vNet/:vNetId/reconcile", rest_resource.RestReconcileVNet)
+	g.POST("/:nsId/resources/vNet/prune", rest_resource.RestPruneVNets)
 
 	// Template-based vNet provisioning
 	g.POST("/:nsId/resources/vNet/template/:templateId", rest_resource.RestPostVNetFromTemplate)
@@ -769,6 +771,9 @@ func RunServer() {
 	g.DELETE("/:nsId/resources/objectStorage/:osId", rest_resource.RestDeleteObjectStorage)
 	g.HEAD("/:nsId/resources/objectStorage/:osId", rest_resource.RestCheckObjectStorageExistance)
 	g.GET("/:nsId/resources/objectStorage/:osId/location", rest_resource.RestGetObjectStorageLocation)
+	g.PUT("/:nsId/resources/objectStorage/reconcile", rest_resource.RestReconcileAllObjectStorages)
+	g.PUT("/:nsId/resources/objectStorage/:osId/reconcile", rest_resource.RestReconcileObjectStorage)
+	g.POST("/:nsId/resources/objectStorage/prune", rest_resource.RestPruneObjectStorages)
 
 	// Object Storage management - CORS
 	g.PUT("/:nsId/resources/objectStorage/:osId/cors", rest_resource.RestSetObjectStorageCORS)

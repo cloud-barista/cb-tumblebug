@@ -2199,3 +2199,65 @@ func DeleteDataObject(nsId, osId, objectKey string) error {
 
 	return nil
 }
+
+// PruneObjectStorages purges Tumblebug metadata for all ObjectStorage resources in a namespace
+// that were diagnosed as missing on CSP (SyncStateCspResourceMissing).
+func PruneObjectStorages(nsId string) (model.ResourcePruneResults, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		return model.ResourcePruneResults{}, err
+	}
+
+	resList, err := ListResource(nsId, model.StrObjectStorage, "", "")
+	if err != nil {
+		return model.ResourcePruneResults{}, err
+	}
+
+	osList, ok := resList.([]model.ObjectStorageInfo)
+	if !ok {
+		return model.ResourcePruneResults{}, fmt.Errorf("unexpected type from ListResource")
+	}
+
+	pruneResults := model.ResourcePruneResults{
+		Results: []model.ResourcePruneResult{},
+	}
+
+	for _, osItem := range osList {
+		condSynced := model.GetCondition(osItem.Conditions, model.ConditionSynced)
+		isMissing := (condSynced != nil && condSynced.Reason == model.ReasonCspResourceMissing) ||
+			(osItem.Status == model.StorageStatusFailed && condSynced != nil && condSynced.Status == model.ConditionFalse)
+
+		if !isMissing {
+			continue
+		}
+
+		osKey := common.GenResourceKey(nsId, model.StrObjectStorage, osItem.Id)
+
+		// Remove label
+		if lErr := label.DeleteLabelObject(model.StrObjectStorage, osItem.Uid); lErr != nil {
+			log.Warn().Err(lErr).Msgf("failed to delete label during prune for ObjectStorage %s", osItem.Id)
+		}
+
+		// Delete KV metadata
+		delErr := kvstore.Delete(osKey)
+		res := model.ResourcePruneResult{
+			ResourceType:   model.StrObjectStorage,
+			ResourceId:     osItem.Id,
+			ConnectionName: osItem.ConnectionName,
+		}
+
+		if delErr != nil {
+			res.Success = false
+			res.Error = delErr.Error()
+			pruneResults.FailedCount++
+		} else {
+			res.Success = true
+			res.Message = fmt.Sprintf("Orphaned metadata for ObjectStorage (%s) pruned successfully", osItem.Id)
+			pruneResults.SuccessCount++
+		}
+		pruneResults.TotalPruned++
+		pruneResults.Results = append(pruneResults.Results, res)
+	}
+
+	return pruneResults, nil
+}

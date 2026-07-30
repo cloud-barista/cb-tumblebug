@@ -82,57 +82,132 @@ func (r *VNetReconciler) Reconcile(ctx context.Context, nsId string, resourceId 
 		}
 	}
 
-	// 3. State Machine Handling based on Current DB Status
+	// 3. State Machine Handling based on Current 	// 3. State Machine Handling based on Current DB Status
 	switch vNetInfo.Status {
+	case model.NetworkStatusAvailable:
+		return r.reconcileAvailable(nsId, &vNetInfo, &vpcStatusResp)
+
 	case model.NetworkStatusFailed:
-		// Check condition if it's DeletionFailed
-		cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady)
-		if cond != nil && cond.Reason == model.ReasonDeletionFailed {
-			log.Info().Msgf("vNet (%s) failed during deletion. Checking CSP status for self-healing...", resourceId)
-			// Delegate the actual diffing to the lower-level Sync function
-			return resource.SyncVNetState(nsId, &vNetInfo, &vpcStatusResp)
-		}
-		// TODO: Handle creation failures
-		return resource.SyncVNetState(nsId, &vNetInfo, &vpcStatusResp)
+		return r.reconcileFailed(nsId, &vNetInfo, &vpcStatusResp)
 
 	case model.NetworkStatusCreating:
-		// Handle stuck creation
 		log.Warn().Msgf("vNet (%s) is stuck in Creating. Verifying CSP status...", resourceId)
-		return r.handleCreation(nsId, resourceId, &vNetInfo, &vpcStatusResp)
+		return r.reconcileCreating(nsId, &vNetInfo, &vpcStatusResp)
 
 	case model.NetworkStatusDeleting:
-		// Handle stuck deletion
 		log.Warn().Msgf("vNet (%s) is stuck in Deleting. Re-triggering deletion logic...", resourceId)
-		return r.handleDeletion(nsId, resourceId, &vNetInfo, &vpcStatusResp)
-
-	case model.NetworkStatusAvailable:
-		// Periodic sync: even in a normal state, detect differences between DB and CSP.
-		return resource.SyncVNetState(nsId, &vNetInfo, &vpcStatusResp)
+		return r.reconcileDeleting(nsId, &vNetInfo, &vpcStatusResp)
 
 	default:
-		// Unknown state
 		return model.SimpleMsg{}, fmt.Errorf("invalid resource status: %s", vNetInfo.Status)
 	}
 }
 
-func (r *VNetReconciler) handleCreation(nsId string, resourceId string, vNetInfo *model.VNetInfo, optPreloadedVNetStatus *model.CspResourceStatusResponse) (interface{}, error) {
-	// TODO: Implement dedicated creation recovery logic here.
-	// optPreloadedVNetStatus is already resolved by the caller (Reconcile).
-	// Future Implementation Steps:
-	// 1. If the resource exists and is fully provisioned on CSP → Update DB status to Available.
-	// 2. If the resource does not exist → Mark DB status as Failed(CreationFailed).
-	// 3. If the resource is still provisioning → Keep Creating state and wait for the next Reconcile cycle.
-	return model.SimpleMsg{Message: "Creation recovery logic is under construction (skeleton)"}, nil
+// reconcileAvailable reconciles a VNet in Available status by syncing child subnets and checking CSP state.
+func (r *VNetReconciler) reconcileAvailable(nsId string, vNetInfo *model.VNetInfo, vpcStatusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
+	vNetKey := common.GenResourceKey(nsId, model.StrVNet, vNetInfo.Id)
+
+	// Always reconcile child subnets first so child drift is diagnosed
+	r.reconcileChildSubnets(nsId, vNetInfo, vpcStatusResp)
+
+	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
+
+	if syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing {
+		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, model.SyncStateInSync)
+	} else {
+		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
+	}
+
+	val, err := json.Marshal(vNetInfo)
+	if err != nil {
+		return model.SimpleMsg{}, err
+	}
+	if putErr := kvstore.Put(vNetKey, string(val)); putErr != nil {
+		return model.SimpleMsg{}, putErr
+	}
+	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) reconciled", vNetInfo.Id)}, nil
 }
 
-func (r *VNetReconciler) handleDeletion(nsId string, resourceId string, vNetInfo *model.VNetInfo, optPreloadedVNetStatus *model.CspResourceStatusResponse) (interface{}, error) {
-	// TODO: Implement dedicated deletion recovery logic here.
-	// optPreloadedVNetStatus is already resolved by the caller (Reconcile).
-	// Future Implementation Steps:
-	// 1. If the resource no longer exists on CSP → Clean up DB metadata (deletion complete).
-	// 2. If the resource still exists on CSP → Attempt deletion again via CSP API (retry).
-	// 3. If deletion fails permanently (e.g., due to dependencies) → Mark DB status as Failed(DeletionFailed).
-	return model.SimpleMsg{Message: "Deletion recovery logic is under construction (skeleton)"}, nil
+// reconcileFailed handles self-healing for resources in Failed status if CSP resource still exists.
+func (r *VNetReconciler) reconcileFailed(nsId string, vNetInfo *model.VNetInfo, vpcStatusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
+	vNetKey := common.GenResourceKey(nsId, model.StrVNet, vNetInfo.Id)
+
+	// Always reconcile child subnets first so child drift is diagnosed
+	r.reconcileChildSubnets(nsId, vNetInfo, vpcStatusResp)
+
+	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
+
+	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(vNetInfo.Conditions) {
+		prevReason := ""
+		if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil {
+			prevReason = cond.Reason
+		}
+		log.Info().Msgf("vNet (%s) restored from %s to Available; CSP resource exists", vNetInfo.Id, prevReason)
+
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, fmt.Sprintf("Restored from %s; CSP resource exists", prevReason))
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Synchronized with CSP")
+		vNetInfo.Status = model.NetworkStatusAvailable
+		vNetInfo.SystemMessage = ""
+	} else {
+		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
+	}
+
+	val, err := json.Marshal(vNetInfo)
+	if err != nil {
+		return model.SimpleMsg{}, err
+	}
+	if putErr := kvstore.Put(vNetKey, string(val)); putErr != nil {
+		return model.SimpleMsg{}, putErr
+	}
+	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) reconciled", vNetInfo.Id)}, nil
+}
+
+// reconcileCreating handles stuck creation status (skeleton for future implementation).
+// TODO: Implement creation recovery after detailed verification:
+// 1. If resource exists on CSP -> promote status to Available.
+// 2. If resource missing on CSP -> mark status as Failed (Reason: CreationFailed).
+func (r *VNetReconciler) reconcileCreating(nsId string, vNetInfo *model.VNetInfo, vpcStatusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
+	log.Info().Msgf("reconcileCreating called for vNet (%s); logic is under construction", vNetInfo.Id)
+	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) creation recovery logic is under construction (skeleton)", vNetInfo.Id)}, nil
+}
+
+// reconcileDeleting handles stuck deletion status (skeleton for future implementation).
+// TODO: Implement deletion recovery after detailed verification:
+// 1. If resource missing on CSP -> purge metadata and complete deletion.
+// 2. If resource still exists on CSP -> retry deletion or mark Failed (Reason: DeletionFailed / HasDependency).
+func (r *VNetReconciler) reconcileDeleting(nsId string, vNetInfo *model.VNetInfo, vpcStatusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
+	log.Info().Msgf("reconcileDeleting called for vNet (%s); logic is under construction", vNetInfo.Id)
+	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) deletion recovery logic is under construction (skeleton)", vNetInfo.Id)}, nil
+}
+
+// reconcileChildSubnets reconciles child subnets for a parent VNet.
+func (r *VNetReconciler) reconcileChildSubnets(nsId string, vNetInfo *model.VNetInfo, vpcStatusResp *model.CspResourceStatusResponse) {
+	vNetKey := common.GenResourceKey(nsId, model.StrVNet, vNetInfo.Id)
+	subnetKvList, err := kvstore.GetKvList(vNetKey + "/subnet")
+	if err != nil || len(subnetKvList) == 0 {
+		return
+	}
+
+	subnetStatus, subnetErr := resource.GetCspResourceStatus(
+		vNetInfo.ConnectionName,
+		model.StrSubnet,
+		resource.ResourceStatusFilter{ParentResourceId: vNetInfo.CspResourceName},
+	)
+	var optPreloadedSubnetStatus *model.CspResourceStatusResponse
+	if subnetErr == nil {
+		optPreloadedSubnetStatus = &subnetStatus
+	}
+
+	if summary, sErr := resource.SyncSubnetsForVNet(nsId, subnetKvList, vNetInfo, optPreloadedSubnetStatus); sErr == nil {
+		log.Debug().Msgf("Subnet sync for vNet (%s): total %d, restored %d, cleaned %d", vNetInfo.Id, summary.Total, summary.Restored, summary.Cleaned)
+	}
+
+	latestKv, latestExists, latestErr := kvstore.GetKv(vNetKey)
+	if latestErr == nil && latestExists {
+		if uErr := json.Unmarshal([]byte(latestKv.Value), vNetInfo); uErr != nil {
+			log.Warn().Err(uErr).Msg("failed to unmarshal latest vNet info; using in-memory copy")
+		}
+	}
 }
 
 // ReconcileAll reconciles all VNets in the namespace by comparing TB metadata with CSP state.

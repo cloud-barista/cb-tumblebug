@@ -22,6 +22,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -946,4 +947,107 @@ func RestDeleteDataObject(c echo.Context) error {
 
 	// [Output]
 	return c.NoContent(http.StatusNoContent)
+}
+
+// RestReconcileAllObjectStorages godoc
+// @ID ReconcileAllObjectStorages
+// @Summary Reconcile all object storages in a namespace
+// @Description Compares Tumblebug metadata with actual CSP object storage status via Spider.
+// @Description Restores status for alive resources and flags discrepancies.
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Success 200 {object} model.ResourceReconcileResults "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/objectStorage/reconcile [put]
+func RestReconcileAllObjectStorages(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := reconcile.GetManager().RunReconcileAll(c.Request().Context(), nsId, model.StrObjectStorage, 5)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to reconcile ObjectStorages")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestReconcileObjectStorage godoc
+// @ID ReconcileObjectStorage
+// @Summary Reconcile a single object storage resource
+// @Description Compares Tumblebug metadata for a specific Object Storage resource with actual CSP status via Spider.
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/reconcile [put]
+func RestReconcileObjectStorage(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := reconcile.GetManager().RunReconcile(c.Request().Context(), nsId, model.StrObjectStorage, osId, nil)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to reconcile ObjectStorage (%s)", osId)
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestPruneObjectStorages godoc
+// @ID PruneObjectStorages
+// @Summary Prune orphaned Object Storage metadata in a namespace
+// @Description Purges Tumblebug metadata for Object Storage resources diagnosed as missing on CSP.
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Success 200 {object} model.ResourcePruneResults "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/objectStorage/prune [post]
+func RestPruneObjectStorages(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := resource.PruneObjectStorages(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to prune ObjectStorages")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
