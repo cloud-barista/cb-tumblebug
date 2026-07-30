@@ -199,6 +199,34 @@ type ResourceReconcileResults struct {
 	Results []ResourceReconcileResult `json:"results"`
 }
 
+// ResourcePruneResult represents the outcome of pruning a single resource's orphaned metadata.
+type ResourcePruneResult struct {
+	// Resource type
+	ResourceType string `json:"resourceType" example:"objectStorage"`
+	// Resource ID
+	ResourceId string `json:"resourceId" example:"os01"`
+	// Connection name
+	ConnectionName string `json:"connectionName" example:"aws-ap-northeast-2"`
+	// Whether the prune operation was successful
+	Success bool `json:"success" example:"true"`
+	// Descriptive message about the prune outcome
+	Message string `json:"message,omitempty" example:"Orphaned metadata for ObjectStorage (os01) pruned successfully"`
+	// Error detail if prune failed
+	Error string `json:"error,omitempty" example:""`
+}
+
+// ResourcePruneResults represents the aggregated results of a batch resource prune operation.
+type ResourcePruneResults struct {
+	// Total number of pruned resources
+	TotalPruned int `json:"totalPruned" example:"2"`
+	// Number of successfully pruned resources
+	SuccessCount int `json:"successCount" example:"2"`
+	// Number of failed prune attempts
+	FailedCount int `json:"failedCount" example:"0"`
+	// Individual prune results per resource
+	Results []ResourcePruneResult `json:"results"`
+}
+
 // OptionalParameter is struct for optional parameter for function (ex. NodeId)
 type OptionalParameter struct {
 	Value string

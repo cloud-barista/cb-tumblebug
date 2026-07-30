@@ -211,17 +211,17 @@ type RestGetAllSubnetResponse struct {
 
 // RestDelSubnet godoc
 // @ID DelSubnet
-// @Summary Delete Subnet (supporting actions: reconcile, force)
+// @Summary Delete Subnet (supporting actions: reconcile [deprecated], force)
 // @Description Delete Subnet
 // @Description ---
 // @Description **action options:**
 // @Description
-// @Description **reconcile** – Synchronize Tumblebug metadata with the actual CSP state.
+// @Description **reconcile** – (To be deprecated: Use PUT /ns/{nsId}/resources/vNet/{vNetId}/reconcile instead) Synchronize Tumblebug metadata with the actual CSP state.
 // @Description Checks whether the Subnet resource still exists on CSP (via Spider).
 // @Description If the CSP resource is gone, removes the orphaned Tumblebug metadata.
 // @Description If the CSP resource still exists, keeps the metadata intact.
 // @Description Use this to clean up stale metadata after system errors or partial failures.
-// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile`)
+// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile` - To be deprecated)
 // @Description
 // @Description **force** – Force-delete the Subnet on CSP (passes `?force=true` to Spider).
 // @Description Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
@@ -232,7 +232,7 @@ type RestGetAllSubnetResponse struct {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
-// @Param action query string false "Action" Enums(reconcile, force)
+// @Param action query string false "Action (reconcile action is to be deprecated)" Enums(reconcile, force)
 // @Success 200 {object} model.SimpleMsg "OK"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"

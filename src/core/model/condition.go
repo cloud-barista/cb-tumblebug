@@ -57,8 +57,12 @@ const (
 	ReasonAvailable        = "Available"
 
 	// Reasons for Synced condition
-	ReasonResourceNotFound = "ResourceNotFound"
-	ReasonSyncCheckFailed  = "SyncCheckFailed"
+	ReasonResourceNotFound   = "ResourceNotFound"
+	ReasonSyncCheckFailed    = "SyncCheckFailed"
+	ReasonCspResourceMissing = "CspResourceMissing" // TB: O, SP: O, CSP: X
+	ReasonSpMetaMissing      = "SpMetaMissing"      // TB: O, SP: X, CSP: O
+	ReasonTbMetaOnly         = "TbMetaOnly"         // TB: O, SP: X, CSP: X
+	ReasonHasDependency      = "HasDependency"      // Active child or attached dependencies exist
 
 	// ReasonRestored indicates the resource status was restored to Available
 	// by Reconcile after a previously failed terminal operation
@@ -70,6 +74,20 @@ const (
 	ReasonAllReady         = "AllReady"
 	ReasonSubnetFailed     = "SubnetFailed"
 	ReasonSubnetInProgress = "SubnetInProgress"
+)
+
+// ResourceSyncState represents the observed synchronization state across 3 layers (TB, Spider, CSP).
+type ResourceSyncState string
+
+const (
+	// SyncStateInSync indicates resource is in sync across all 3 layers (TB: O, SP: O, CSP: O).
+	SyncStateInSync ResourceSyncState = "InSync"
+	// SyncStateCspResourceMissing indicates resource exists in TB and Spider, but missing on CSP (TB: O, SP: O, CSP: X).
+	SyncStateCspResourceMissing ResourceSyncState = "CspResourceMissing"
+	// SyncStateSpMetaMissing indicates resource exists in TB and CSP, but Spider metadata is missing (TB: O, SP: X, CSP: O).
+	SyncStateSpMetaMissing ResourceSyncState = "SpMetaMissing"
+	// SyncStateTbMetaOnly indicates ghost metadata present only in Tumblebug (TB: O, SP: X, CSP: X).
+	SyncStateTbMetaOnly ResourceSyncState = "TbMetaOnly"
 )
 
 // ---------------------------------------------------------------------------
