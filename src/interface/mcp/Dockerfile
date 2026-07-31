@@ -7,8 +7,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 # working directory
 WORKDIR /app
 
-# install system dependencies by uv
-RUN uv pip install --system fastmcp requests uvicorn
+# install system dependencies by uv (pinned for reproducible builds)
+RUN uv pip install --system "fastmcp==3.4.5" "requests==2.34.2" "uvicorn==0.51.0"
 
 COPY tb-mcp.py .
 
