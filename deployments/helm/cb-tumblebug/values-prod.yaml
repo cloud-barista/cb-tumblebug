@@ -1,0 +1,35 @@
+# Production overlay example:
+#   helm upgrade --install cb-tumblebug ./deployments/helm/cb-tumblebug \
+#     -n cb-tumblebug --create-namespace -f values-prod.yaml
+#
+# Replace every CHANGE_ME. Consider external managed PostgreSQL/etcd
+# (point TB_*/SPIDER_METADB_* at them and disable the bundled statefulsets
+# by setting storage-less variants in a future chart revision).
+
+auth:
+  tbApiUsername: admin
+  tbApiPassword: CHANGE_ME
+  spApiUsername: admin
+  spApiPassword: CHANGE_ME
+  terrariumApiUsername: admin
+  terrariumApiPassword: CHANGE_ME
+
+tumblebugPostgres:
+  password: CHANGE_ME
+  storage: 20Gi
+
+spiderPostgres:
+  password: CHANGE_ME
+  storage: 10Gi
+
+tumblebug:
+  logLevel: info
+  logFormat: json
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits: { memory: 2Gi }
+
+spider:
+  resources:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits: { memory: 1Gi }

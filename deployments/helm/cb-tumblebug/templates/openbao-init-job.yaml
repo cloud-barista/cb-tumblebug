@@ -1,0 +1,127 @@
+{{- if .Values.openbao.enabled }}
+# One-shot OpenBao bootstrap: sys/init -> store keys in Secret -> unseal -> KV v2 mount.
+# Post-install/upgrade hook; idempotent (skips init when already initialized).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openbao-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openbao-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+  # Restart token consumers after a fresh init (their VAULT_TOKEN env is frozen at container start)
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openbao-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: openbao-init
+subjects:
+  - kind: ServiceAccount
+    name: openbao-init
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openbao-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: openbao-init
+    spec:
+      serviceAccountName: openbao-init
+      restartPolicy: OnFailure
+      containers:
+        - name: init
+          image: {{ .Values.images.kubectl }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command:
+            - bash
+            - -ec
+            - |
+              BAO=http://openbao:8200
+
+              echo "Waiting for OpenBao API..."
+              until code=$(curl -s -o /dev/null -w '%{http_code}' -m 3 $BAO/v1/sys/health) && [ "$code" != "000" ]; do
+                sleep 2
+              done
+
+              fresh_init=false
+              initialized=$(curl -s $BAO/v1/sys/init | jq -r .initialized)
+              if [ "$initialized" = "false" ]; then
+                echo "Initializing OpenBao (shares=1, threshold=1)..."
+                resp=$(curl -s -X POST -d '{"secret_shares":1,"secret_threshold":1}' $BAO/v1/sys/init)
+                key=$(echo "$resp" | jq -r '.keys_base64[0]')
+                token=$(echo "$resp" | jq -r '.root_token')
+                [ -n "$key" ] && [ "$key" != "null" ] || { echo "init failed: $resp"; exit 1; }
+                kubectl create secret generic openbao-keys \
+                  --from-literal=unseal-key="$key" \
+                  --from-literal=root-token="$token" \
+                  --dry-run=client -o yaml | kubectl apply -f -
+                echo "Stored unseal key + root token in Secret/openbao-keys"
+                fresh_init=true
+              else
+                echo "OpenBao already initialized."
+                kubectl get secret openbao-keys >/dev/null || {
+                  echo "ERROR: initialized but Secret/openbao-keys is missing (restore it or reset the openbao PVC)"; exit 1; }
+              fi
+
+              key=$(kubectl get secret openbao-keys -o jsonpath='{.data.unseal-key}' | base64 -d)
+              token=$(kubectl get secret openbao-keys -o jsonpath='{.data.root-token}' | base64 -d)
+
+              sealed=$(curl -s $BAO/v1/sys/seal-status | jq -r .sealed)
+              if [ "$sealed" = "true" ]; then
+                echo "Unsealing..."
+                curl -s -X POST -d "{\"key\":\"$key\"}" $BAO/v1/sys/unseal | jq -r '"sealed=" + (.sealed|tostring)'
+              fi
+
+              if ! curl -s -H "X-Vault-Token: $token" $BAO/v1/sys/mounts | jq -e '."secret/"' >/dev/null; then
+                echo "Enabling KV v2 at secret/..."
+                curl -s -X POST -H "X-Vault-Token: $token" \
+                  -d '{"type":"kv","options":{"version":"2"}}' $BAO/v1/sys/mounts/secret
+              fi
+
+              # Fresh init issued a new token; consumers hold VAULT_TOKEN frozen
+              # from container start, so restart them to pick it up
+              if [ "$fresh_init" = "true" ]; then
+                for d in cb-tumblebug mc-terrarium; do
+                  if kubectl get deploy "$d" >/dev/null 2>&1; then
+                    echo "Restarting deploy/$d to pick up the new token..."
+                    kubectl rollout restart "deploy/$d"
+                  fi
+                done
+              fi
+              echo "OpenBao bootstrap complete."
+{{- end }}

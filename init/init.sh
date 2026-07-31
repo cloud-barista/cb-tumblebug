@@ -170,6 +170,7 @@ fi
 echo
 echo "Running the application..."
 uv run init.py "$@"
+INIT_RC=$?
 
 # Stop monitoring if it was started
 if [[ ! -z "$MONITOR_PID" ]]; then
@@ -191,6 +192,9 @@ rm -rf uv.lock # Make it commented out if you want to keep the lock file
 
 echo
 echo "Environment cleanup complete."
+
+# Propagate init.py result so callers (multi-init.sh) don't report false success
+exit $INIT_RC
 
 # Return to the original directory
 popd > /dev/null

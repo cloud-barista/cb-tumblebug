@@ -1,0 +1,85 @@
+# Default values = dev profile (kind/minikube parity with docker-compose).
+# For production overrides see values-prod.yaml.
+#
+# Service names intentionally match docker-compose container names
+# (cb-spider, cb-tumblebug-etcd, ...) so inter-service URLs are identical.
+# Install ONE release per namespace.
+
+images:
+  tumblebug: cloudbaristaorg/cb-tumblebug:0.12.27
+  spider: cloudbaristaorg/cb-spider:0.12.39
+  terrarium: cloudbaristaorg/mc-terrarium:0.1.4
+  mapui: cloudbaristaorg/cb-mapui:0.12.52
+  mcp: cloudbaristaorg/cb-tumblebug-mcp-server:0.12.26
+  etcd: gcr.io/etcd-development/etcd:v3.6.11
+  postgres: postgres:16-alpine
+  openbao: openbao/openbao:2.5.1
+  # Used by init/unseal jobs and wait-for-db initContainers
+  kubectl: alpine/k8s:1.31.13
+  curl: curlimages/curl:8.10.1
+
+imagePullPolicy: IfNotPresent
+
+# API credentials (same keys as compose .env). Override in production.
+auth:
+  tbApiUsername: default
+  tbApiPassword: default
+  spApiUsername: default
+  spApiPassword: default
+  terrariumApiUsername: default
+  terrariumApiPassword: default
+
+tumblebugPostgres:
+  user: tumblebug
+  password: tumblebug
+  database: tumblebug
+  storage: 5Gi
+  storageClassName: ""
+
+spiderPostgres:
+  user: spider
+  password: spider
+  database: cb_spider
+  storage: 2Gi
+  storageClassName: ""
+
+etcd:
+  storage: 2Gi
+  storageClassName: ""
+
+openbao:
+  enabled: true
+  storage: 1Gi
+  storageClassName: ""
+
+tumblebug:
+  # K8s-recommended settings (compose keeps its own defaults)
+  logWriter: stdout
+  logFormat: console
+  logLevel: debug
+  readyzCheckDeps: "true"
+  shutdownTimeoutMs: "300000"
+  terminationGracePeriodSeconds: 330
+  selfEndpoint: ""
+  allowOrigins: "*"
+  resources: {}
+
+spider:
+  logLevel: error
+  hiscallLogLevel: error
+  resources: {}
+
+terrarium:
+  enabled: true
+  storage: 1Gi
+  storageClassName: ""
+  resources: {}
+
+mapui:
+  enabled: true
+  resources: {}
+
+mcp:
+  # Requires a published cb-tumblebug-mcp-server image (compose builds it locally)
+  enabled: false
+  resources: {}

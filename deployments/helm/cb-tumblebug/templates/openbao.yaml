@@ -1,0 +1,129 @@
+{{- if .Values.openbao.enabled }}
+# OpenBao with automated init (Job -> openbao-keys Secret) and auto-unseal
+# (sidecar re-unseals on every pod restart using the stored key).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openbao-config
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+data:
+  openbao-config.hcl: |
+    storage "file" {
+      path = "/openbao/data"
+    }
+    listener "tcp" {
+      address     = "0.0.0.0:8200"
+      tls_disable = true
+    }
+    disable_mlock = true
+    ui = true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: openbao
+  ports:
+    - name: http
+      port: 8200
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openbao
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  serviceName: openbao
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openbao
+  template:
+    metadata:
+      labels:
+        app: openbao
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      securityContext:
+        # openbao image user uid/gid (fix PVC ownership without chown)
+        fsGroup: 1000
+      containers:
+        - name: openbao
+          image: {{ .Values.images.openbao }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          args: ["server", "-config=/openbao/config/openbao-config.hcl"]
+          env:
+            - { name: BAO_ADDR, value: "http://0.0.0.0:8200" }
+            - { name: SKIP_SETCAP, value: "true" }
+          ports:
+            - { name: http, containerPort: 8200 }
+          volumeMounts:
+            - { name: data, mountPath: /openbao/data }
+            - { name: config, mountPath: /openbao/config, readOnly: true }
+          readinessProbe:
+            # Treat uninitialized/sealed as ready too — the init Job and the
+            # unsealer reach the API through the Service (avoids a bootstrap
+            # deadlock); clients tolerate the brief sealed window
+            httpGet: { path: "/v1/sys/health?uninitcode=204&sealedcode=204", port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            # any API answer (incl. 501 uninitialized / 503 sealed) = process alive
+            tcpSocket: { port: http }
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+        - name: unsealer
+          # Re-unseals after every restart using the key stored by the init Job
+          image: {{ .Values.images.curl }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              # trap + interruptible sleep so SIGTERM stops the pod promptly
+              trap 'exit 0' TERM INT
+              while true; do
+                if [ -f /openbao-keys/unseal-key ]; then
+                  st=$(curl -s -m 3 http://127.0.0.1:8200/v1/sys/seal-status || true)
+                  case "$st" in
+                    *'"sealed":true'*)
+                      echo "unsealer: sealed, unsealing..."
+                      curl -s -m 5 -X POST \
+                        -d "{\"key\":\"$(cat /openbao-keys/unseal-key)\"}" \
+                        http://127.0.0.1:8200/v1/sys/unseal > /dev/null || true
+                      ;;
+                  esac
+                fi
+                sleep 10 &
+                wait $!
+              done
+          volumeMounts:
+            - { name: keys, mountPath: /openbao-keys, readOnly: true }
+      volumes:
+        - name: config
+          configMap:
+            name: openbao-config
+        - name: keys
+          secret:
+            secretName: openbao-keys
+            optional: true
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.openbao.storageClassName }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.openbao.storage }}
+{{- end }}

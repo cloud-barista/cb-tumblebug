@@ -1,0 +1,59 @@
+# Smoke-test the Helm chart on a kind cluster:
+# lint/template -> install -> all pods Ready -> readyz/livez respond.
+name: K8s Helm Chart Smoke Test
+
+on:
+  pull_request:
+    paths:
+      - "deployments/helm/**"
+      - ".github/workflows/k8s-smoke.yaml"
+  workflow_dispatch:
+
+jobs:
+  helm-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint and render chart
+        run: |
+          helm lint deployments/helm/cb-tumblebug
+          helm template cb-tumblebug deployments/helm/cb-tumblebug -n cb-tumblebug > /dev/null
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: cb-tumblebug
+
+      - name: Install chart
+        run: |
+          helm upgrade --install cb-tumblebug deployments/helm/cb-tumblebug \
+            --namespace cb-tumblebug --create-namespace --timeout 15m
+
+      - name: Wait for workloads
+        run: |
+          kubectl wait pods -l app.kubernetes.io/part-of=cb-tumblebug \
+            --for=condition=Ready -n cb-tumblebug --timeout=900s || {
+              kubectl get pods -n cb-tumblebug
+              kubectl describe pods -n cb-tumblebug | tail -100
+              exit 1
+            }
+
+      - name: Check health endpoints
+        run: |
+          kubectl port-forward -n cb-tumblebug svc/cb-tumblebug 11323:1323 &
+          sleep 3
+          curl -sf http://localhost:11323/tumblebug/livez
+          curl -sf http://localhost:11323/tumblebug/readyz
+          echo "readyz/livez OK"
+
+      - name: Show status on failure
+        if: failure()
+        run: |
+          kubectl get pods,svc,jobs -n cb-tumblebug
+          kubectl logs -n cb-tumblebug -l app=cb-tumblebug --tail=50 || true
+          kubectl logs -n cb-tumblebug job/openbao-init --tail=50 || true

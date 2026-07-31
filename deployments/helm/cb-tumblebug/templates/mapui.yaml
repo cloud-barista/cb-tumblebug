@@ -1,0 +1,58 @@
+{{- if .Values.mapui.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-mapui
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: cb-mapui
+  ports:
+    - name: http
+      port: 1324
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-mapui
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cb-mapui
+  template:
+    metadata:
+      labels:
+        app: cb-mapui
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: cb-mapui
+          image: {{ .Values.images.mapui }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - { name: http, containerPort: 1324 }
+          # Parcel dev server builds the bundle on start — allow several minutes
+          startupProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 10
+          {{- with .Values.mapui.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

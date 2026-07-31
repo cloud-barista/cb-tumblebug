@@ -95,3 +95,4 @@ src/testclient/test-clis/**/test-results/*
 
 # Object Storage test (local only)
 # (no additional exceptions)
+deployments/helm/cb-tumblebug/values-mcp.yaml

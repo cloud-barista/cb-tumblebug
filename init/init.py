@@ -166,7 +166,11 @@ def get_decryption_key():
 
     # 4. Prompt for password (up to 3 attempts)
     for attempt in range(3):
-        password = getpass(f"Enter the password of the encrypted credential to continue (attempt {attempt + 1}/3): ")
+        try:
+            password = getpass(f"Enter the password of the encrypted credential to continue (attempt {attempt + 1}/3): ")
+        except (KeyboardInterrupt, EOFError):
+            print(Fore.RED + "\nCancelled. Tip: save the key to ~/.cloud-barista/.tmp_enc_key (make enc-cred) for automatic decryption.")
+            sys.exit(1)
         decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, password)
         if error is None:
             return decrypted_content
@@ -433,7 +437,15 @@ def print_openbao_warning(status):
         print(Fore.YELLOW + "  VAULT_TOKEN: set, but INVALID (rejected by OpenBao)")
 
     print(Fore.YELLOW + "  Impact: CB-Tumblebug features will not fully work.")
-    if not reachable:
+    # k-init (Kubernetes) sets TB_K8S_NAMESPACE; guidance differs from compose
+    k8s_ns = os.environ.get("TB_K8S_NAMESPACE")
+    if k8s_ns:
+        if not reachable or not initialized or sealed:
+            print(Fore.YELLOW + f"  Fix (k8s): check OpenBao bootstrap: kubectl logs -n {k8s_ns} job/openbao-init, then re-run: make k-up")
+        else:
+            # Token invalid — server env is stale vs Secret/openbao-keys
+            print(Fore.YELLOW + f"  Fix (k8s): kubectl rollout restart deploy/cb-tumblebug deploy/mc-terrarium -n {k8s_ns}")
+    elif not reachable:
         print(Fore.YELLOW + "  Fix: start OpenBao and services: make up")
     elif not initialized:
         print(Fore.YELLOW + "  Fix: initialize OpenBao: make init-openbao, then restart services: make up")
