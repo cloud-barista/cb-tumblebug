@@ -1,0 +1,71 @@
+# The "app: cb-tumblebug-postgres" label is relied on by
+# scripts/lib/pg-backend.sh (ASSETS_PG_BACKEND=kubectl auto-detection).
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-tumblebug-postgres
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: cb-tumblebug-postgres
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cb-tumblebug-postgres
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  serviceName: cb-tumblebug-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cb-tumblebug-postgres
+  template:
+    metadata:
+      labels:
+        app: cb-tumblebug-postgres
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.images.postgres }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          args: ["-c", "max_connections=500"]
+          env:
+            - name: POSTGRES_USER
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_PASSWORD } }
+            - name: POSTGRES_DB
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_DATABASE } }
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - { name: postgres, containerPort: 5432 }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            periodSeconds: 10
+            failureThreshold: 5
+          livenessProbe:
+            tcpSocket: { port: 5432 }
+            periodSeconds: 15
+            failureThreshold: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.tumblebugPostgres.storageClassName }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.tumblebugPostgres.storage }}

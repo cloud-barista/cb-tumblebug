@@ -1,0 +1,57 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-tumblebug-mcp-server
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: cb-tumblebug-mcp-server
+  ports:
+    - name: http
+      port: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-tumblebug-mcp-server
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cb-tumblebug-mcp-server
+  template:
+    metadata:
+      labels:
+        app: cb-tumblebug-mcp-server
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mcp
+          image: {{ .Values.images.mcp }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - { name: http, containerPort: 8000 }
+          env:
+            - { name: TUMBLEBUG_API_BASE_URL, value: "http://cb-tumblebug:1323/tumblebug" }
+            - name: TUMBLEBUG_USERNAME
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_API_USERNAME } }
+            - name: TUMBLEBUG_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_API_PASSWORD } }
+            - { name: PYTHONUNBUFFERED, value: "1" }
+            - { name: MCP_SERVER_HOST, value: "0.0.0.0" }
+            - { name: MCP_SERVER_PORT, value: "8000" }
+            - { name: MCP_LOG_LEVEL, value: "INFO" }
+          readinessProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          {{- with .Values.mcp.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

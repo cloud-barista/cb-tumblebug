@@ -1,0 +1,78 @@
+# Single-member etcd (parity with docker-compose)
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-tumblebug-etcd
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: cb-tumblebug-etcd
+  ports:
+    - name: client
+      port: 2379
+    - name: peer
+      port: 2380
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cb-tumblebug-etcd
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  serviceName: cb-tumblebug-etcd
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cb-tumblebug-etcd
+  template:
+    metadata:
+      labels:
+        app: cb-tumblebug-etcd
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: etcd
+          image: {{ .Values.images.etcd }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command:
+            - /usr/local/bin/etcd
+            - --name=s1
+            - --data-dir=/etcd-data
+            - --listen-client-urls=http://0.0.0.0:2379
+            - --advertise-client-urls=http://0.0.0.0:2379
+            - --listen-peer-urls=http://0.0.0.0:2380
+            - --initial-advertise-peer-urls=http://0.0.0.0:2380
+            - --initial-cluster=s1=http://0.0.0.0:2380
+            - --initial-cluster-token=tkn
+            - --initial-cluster-state=new
+            - --log-level=info
+            - --logger=zap
+            - --log-outputs=stderr
+            - --auth-token=simple
+          ports:
+            - { name: client, containerPort: 2379 }
+            - { name: peer, containerPort: 2380 }
+          volumeMounts:
+            - { name: data, mountPath: /etcd-data }
+          readinessProbe:
+            exec:
+              command: ["/usr/local/bin/etcdctl", "endpoint", "health", "--endpoints=http://localhost:2379"]
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket: { port: 2379 }
+            periodSeconds: 15
+            failureThreshold: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.etcd.storageClassName }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.etcd.storage }}

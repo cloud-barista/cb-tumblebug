@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-tumblebug
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: cb-tumblebug
+  ports:
+    - name: http
+      port: 1323
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-tumblebug
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  # Multi-replica is not supported yet (in-memory coordination state);
+  # Recreate also prevents old/new pods from overlapping during updates.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cb-tumblebug
+  template:
+    metadata:
+      labels:
+        app: cb-tumblebug
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.tumblebug.terminationGracePeriodSeconds }}
+      containers:
+        - name: cb-tumblebug
+          image: {{ .Values.images.tumblebug }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - { name: http, containerPort: 1323 }
+          env:
+            - { name: TB_ROOT_PATH, value: "/app" }
+            - { name: TB_SPIDER_REST_URL, value: "http://cb-spider:1024/spider" }
+            - { name: TB_ETCD_ENDPOINTS, value: "http://cb-tumblebug-etcd:2379" }
+            - { name: TB_TERRARIUM_REST_URL, value: "http://mc-terrarium:8055/terrarium" }
+            - { name: TB_POSTGRES_ENDPOINT, value: "cb-tumblebug-postgres:5432" }
+            - name: TB_POSTGRES_DATABASE
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_DATABASE } }
+            - name: TB_POSTGRES_USER
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_USER } }
+            - name: TB_POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_PASSWORD } }
+            - name: TB_API_USERNAME
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_API_USERNAME } }
+            - name: TB_API_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_API_PASSWORD } }
+            - name: TB_SPIDER_USERNAME
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_API_USERNAME } }
+            - name: TB_SPIDER_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_API_PASSWORD } }
+            - name: TB_TERRARIUM_API_USERNAME
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TERRARIUM_API_USERNAME } }
+            - name: TB_TERRARIUM_API_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TERRARIUM_API_PASSWORD } }
+            - { name: TB_ALLOW_ORIGINS, value: {{ .Values.tumblebug.allowOrigins | quote }} }
+            {{- with .Values.tumblebug.selfEndpoint }}
+            - { name: TB_SELF_ENDPOINT, value: {{ . | quote }} }
+            {{- end }}
+            - { name: TB_LOGWRITER, value: {{ .Values.tumblebug.logWriter | quote }} }
+            - { name: TB_LOGFORMAT, value: {{ .Values.tumblebug.logFormat | quote }} }
+            - { name: TB_LOGLEVEL, value: {{ .Values.tumblebug.logLevel | quote }} }
+            - { name: TB_READYZ_CHECK_DEPS, value: {{ .Values.tumblebug.readyzCheckDeps | quote }} }
+            - { name: TB_SHUTDOWN_TIMEOUT_MS, value: {{ .Values.tumblebug.shutdownTimeoutMs | quote }} }
+            {{- if .Values.openbao.enabled }}
+            - { name: VAULT_ADDR, value: "http://openbao:8200" }
+            # Non-optional: the pod intentionally waits until the openbao-init
+            # Job has created Secret/openbao-keys (startup ordering).
+            - name: VAULT_TOKEN
+              valueFrom: { secretKeyRef: { name: openbao-keys, key: root-token } }
+            {{- end }}
+          volumeMounts:
+            - { name: log, mountPath: /app/log }
+          startupProbe:
+            httpGet: { path: /tumblebug/readyz, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: { path: /tumblebug/readyz, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /tumblebug/livez, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          {{- with .Values.tumblebug.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: log
+          emptyDir: {}

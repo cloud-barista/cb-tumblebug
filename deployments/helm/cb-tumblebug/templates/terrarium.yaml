@@ -1,0 +1,91 @@
+{{- if .Values.terrarium.enabled }}
+# OpenTofu state lives under /app/.terrarium -> PVC required
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mc-terrarium-state
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with .Values.terrarium.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.terrarium.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-terrarium
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: mc-terrarium
+  ports:
+    - name: http
+      port: 8055
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mc-terrarium
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mc-terrarium
+  template:
+    metadata:
+      labels:
+        app: mc-terrarium
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      securityContext:
+        # terrarium image runs as appuser (uid 1000); make the PVC writable
+        fsGroup: 1000
+      containers:
+        - name: mc-terrarium
+          image: {{ .Values.images.terrarium }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - { name: http, containerPort: 8055 }
+          env:
+            - { name: TERRARIUM_ROOT, value: "/app" }
+            - { name: TERRARIUM_LOGLEVEL, value: "info" }
+            - name: TERRARIUM_API_USERNAME
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TERRARIUM_API_USERNAME } }
+            - name: TERRARIUM_API_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TERRARIUM_API_PASSWORD } }
+            {{- if .Values.openbao.enabled }}
+            - { name: VAULT_ADDR, value: "http://openbao:8200" }
+            - name: VAULT_TOKEN
+              valueFrom: { secretKeyRef: { name: openbao-keys, key: root-token } }
+            {{- end }}
+          volumeMounts:
+            - { name: state, mountPath: /app/.terrarium }
+          readinessProbe:
+            httpGet: { path: /terrarium/readyz, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          {{- with .Values.terrarium.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: mc-terrarium-state
+{{- end }}

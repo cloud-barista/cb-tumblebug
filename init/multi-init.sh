@@ -15,12 +15,17 @@ if [ -n "$MULTI_INIT_PWD" ]; then
 elif [ -f "$HOME/.cloud-barista/.tmp_enc_key" ]; then
     echo "Using decryption key file: ~/.cloud-barista/.tmp_enc_key"
 elif [ -t 0 ]; then
+    echo "(Tip: save the key to ~/.cloud-barista/.tmp_enc_key via 'make enc-cred' to skip this prompt)"
     read -s -p "Enter the password for credentials.yaml.enc: " MULTI_INIT_PWD
     echo ""
+    if [ -z "$MULTI_INIT_PWD" ]; then
+        echo "No password entered — you will be prompted again during credential registration."
+    fi
 else
     echo "Warning: no password source available in non-interactive mode (set MULTI_INIT_PWD or ~/.cloud-barista/.tmp_enc_key)."
 fi
-export MULTI_INIT_PWD
+# Export only when non-empty (an empty value would trigger a doomed decrypt attempt)
+[ -n "$MULTI_INIT_PWD" ] && export MULTI_INIT_PWD || true
 
 # 1. Step 1 script execution code is deprecated (to be removed) for operational simplicity:
 #    CB-Tumblebug server registers credentials to OpenBao automatically during Step 2.

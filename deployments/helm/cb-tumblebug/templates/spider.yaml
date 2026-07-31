@@ -1,0 +1,103 @@
+# Volume/probe design follows the cb-spider filesystem audit
+# (docs/design/k8s-deployment.md §5.4):
+#  - emptyDir log/   : HTTP access log goes only to file (not stdout)
+#  - emptyDir cache/ : adminweb package init() fatals if uncreatable
+#  - emptyDir /tmp   : multipart >32MB spill
+#  - liveness on /spider/readyz: a failed first DB open is cached forever
+#    (sync.Once), so restart is the only recovery
+apiVersion: v1
+kind: Service
+metadata:
+  name: cb-spider
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: cb-spider
+  ports:
+    - name: http
+      port: 1024
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cb-spider
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cb-spider
+  template:
+    metadata:
+      labels:
+        app: cb-spider
+        {{- include "cb.labels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 30
+      initContainers:
+        # Four cb-spider packages panic in init() if the metadb is down at start
+        - name: wait-for-metadb
+          image: {{ .Values.images.postgres }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command: ["sh", "-c", "until pg_isready -h cb-spider-postgres -p 5432 -U $PGUSER; do sleep 2; done"]
+          env:
+            - name: PGUSER
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_POSTGRES_USER } }
+      containers:
+        - name: cb-spider
+          image: {{ .Values.images.spider }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - { name: http, containerPort: 1024 }
+          env:
+            - { name: SERVER_ADDRESS, value: "0.0.0.0:1024" }
+            - { name: ADMINWEB, value: "OFF" }
+            - { name: ID_TRANSFORM_MODE, value: "OFF" }
+            - { name: SPIDER_LOG_LEVEL, value: {{ .Values.spider.logLevel | quote }} }
+            - { name: SPIDER_HISCALL_LOG_LEVEL, value: {{ .Values.spider.hiscallLogLevel | quote }} }
+            - name: SPIDER_USERNAME
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_API_USERNAME } }
+            - name: SPIDER_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_API_PASSWORD } }
+            - { name: SPIDER_METADB_ENDPOINT, value: "cb-spider-postgres:5432" }
+            - name: SPIDER_METADB_USER
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_POSTGRES_USER } }
+            - name: SPIDER_METADB_PASSWORD
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_POSTGRES_PASSWORD } }
+            - name: SPIDER_METADB_DATABASE
+              valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_POSTGRES_DATABASE } }
+            # DO NOT set CBSPIDER_ROOT / CBLOG_ROOT (baked in image; overriding breaks config paths)
+          volumeMounts:
+            - { name: log, mountPath: /root/go/src/github.com/cloud-barista/cb-spider/log }
+            - { name: cache, mountPath: /root/go/src/github.com/cloud-barista/cb-spider/cache }
+            - { name: tmp, mountPath: /tmp }
+          startupProbe:
+            httpGet: { path: /spider/readyz, port: http }
+            periodSeconds: 3
+            timeoutSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /spider/readyz, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /spider/readyz, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 12
+          {{- with .Values.spider.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: log
+          emptyDir: { sizeLimit: 512Mi }
+        - name: cache
+          emptyDir: { sizeLimit: 128Mi }
+        - name: tmp
+          emptyDir: { sizeLimit: 1Gi }

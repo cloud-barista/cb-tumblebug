@@ -144,6 +144,23 @@ make init
 
 > 💡 **New to CB-Tumblebug?** Follow the [detailed setup guide](#installation--setup-) below for comprehensive instructions.
 
+### Kubernetes Deployment (Beta) ☸️
+
+CB-Tumblebug can also run on Kubernetes via a Helm chart, using `k-` prefixed
+commands that mirror the compose verbs:
+
+```bash
+make k-up      # install the stack (auto-creates a kind cluster if none is reachable)
+make k-init    # register credentials & load assets (same flow as compose)
+make k-port-forward   # access API (1323) and MapUI (1324) on localhost
+```
+
+> ⚠️ **Beta feature**: the Kubernetes deployment and `make k-*` commands are
+> under active development — behavior and command names may change without
+> notice. Use with caution (docker compose remains the stable default).
+> See [deployments/helm/cb-tumblebug/README.md](deployments/helm/cb-tumblebug/README.md)
+> for prerequisites, operations, and troubleshooting.
+
 ---
 
 ## Prerequisites 🔧
