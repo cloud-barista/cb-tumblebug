@@ -9,6 +9,9 @@ on:
       - ".github/workflows/k8s-smoke.yaml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   helm-smoke:
     runs-on: ubuntu-24.04

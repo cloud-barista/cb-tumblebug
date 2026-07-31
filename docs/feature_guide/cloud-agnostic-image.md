@@ -266,8 +266,7 @@ Simply use the `imageId` returned from the build process in your standard Infra 
         "nodeGroupSize": "1",
         "name": "base-group",
         "imageId": "ubuntu-22.04",
-        "specId": "aws-t3-small",
-        "vmUserPassword": "mypassword"
+        "specId": "aws-t3-small"
       }
     ],
     "postCommand": {

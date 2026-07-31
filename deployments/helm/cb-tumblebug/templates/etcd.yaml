@@ -56,6 +56,10 @@ spec:
             - { name: peer, containerPort: 2380 }
           volumeMounts:
             - { name: data, mountPath: /etcd-data }
+          {{- with .Values.etcd.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           readinessProbe:
             exec:
               command: ["/usr/local/bin/etcdctl", "endpoint", "health", "--endpoints=http://localhost:2379"]

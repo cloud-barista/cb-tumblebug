@@ -1,0 +1,149 @@
+{{- if .Values.gateway.enabled }}
+# Single external entrypoint via Gateway API (implementation-neutral):
+#   /           -> cb-mapui
+#   /tumblebug  -> cb-tumblebug API
+#   /mcp        -> agentgateway (or TB-MCP directly when agentgateway is off)
+# Requires a Gateway API implementation (e.g., Envoy Gateway) in the cluster.
+{{- if .Values.gateway.createClass }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: {{ .Values.gateway.className }}
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  controllerName: {{ .Values.gateway.controllerName }}
+---
+{{- end }}
+{{- if .Values.gateway.tls.enabled }}
+{{- if not .Values.gateway.tls.secretName }}
+{{- /* Self-signed cert, generated once and reused across upgrades (lookup) */}}
+{{- $secretName := "cb-tumblebug-gateway-tls" }}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+{{- if $existing }}
+  tls.crt: {{ index $existing.data "tls.crt" }}
+  tls.key: {{ index $existing.data "tls.key" }}
+{{- else }}
+{{- $cn := default "cb-tumblebug" (first .Values.gateway.hostnames) }}
+{{- $dns := concat (.Values.gateway.hostnames | default list) (list "localhost") }}
+{{- $cert := genSelfSignedCert $cn (list "127.0.0.1") $dns 3650 }}
+  tls.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}
+{{- end }}
+---
+{{- end }}
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cb-tumblebug-gateway
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className }}
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- if .Values.gateway.tls.enabled }}
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ default "cb-tumblebug-gateway-tls" .Values.gateway.tls.secretName }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cb-tumblebug-api
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: cb-tumblebug-gateway
+  {{- with .Values.gateway.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /tumblebug
+      backendRefs:
+        - name: cb-tumblebug
+          port: 1323
+{{- if .Values.mapui.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cb-mapui
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: cb-tumblebug-gateway
+  {{- with .Values.gateway.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: cb-mapui
+          port: 1324
+{{- end }}
+{{- if .Values.mcp.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cb-mcp
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: cb-tumblebug-gateway
+  {{- with .Values.gateway.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /mcp
+      # MCP streamable HTTP holds long-lived streams — disable the request timeout
+      timeouts:
+        request: 0s
+      backendRefs:
+        {{- if .Values.agentgateway.enabled }}
+        - name: agentgateway
+          port: 3000
+        {{- else }}
+        - name: cb-tumblebug-mcp-server
+          port: 8000
+        {{- end }}
+{{- end }}
+{{- end }}

@@ -21,6 +21,5 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV MCP_SERVER_HOST=0.0.0.0
 ENV MCP_SERVER_PORT=8000
 
-# Run the MCP server python by fastmcp
-# SSE transport is used
+# Run the MCP server (fastmcp, Streamable HTTP transport in stateless mode)
 CMD ["uv", "run", "./tb-mcp.py"]

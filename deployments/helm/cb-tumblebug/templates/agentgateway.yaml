@@ -1,0 +1,130 @@
+{{- if .Values.agentgateway.enabled }}
+{{- if not .Values.mcp.enabled }}
+{{- fail "agentgateway.enabled requires mcp.enabled=true (it proxies the TB-MCP server)" }}
+{{- end }}
+# agentgateway (standalone, static config): governed entrypoint for MCP traffic.
+# v1 proxies the single TB-MCP backend; more MCP backends can be federated later.
+# Route-match schema note: lowercase keys ({exact|pathPrefix|regex}) — the
+# Gateway-API style (type/value) does NOT parse in standalone config.
+{{- if and .Values.agentgateway.auth.enabled (not .Values.agentgateway.auth.jwks) }}
+{{- fail "agentgateway.auth.enabled requires agentgateway.auth.jwks (run: make k-mcp-auth-on)" }}
+{{- end }}
+{{- if .Values.agentgateway.auth.enabled }}
+# Public JWKS for JWT verification (public-key material only)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentgateway-jwks
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+data:
+  jwks.json: {{ .Values.agentgateway.auth.jwks | quote }}
+---
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentgateway-config
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    config:
+      adminAddr: "0.0.0.0:15000"
+    binds:
+    - port: 3000
+      listeners:
+      - routes:
+        - matches:
+          - path:
+              exact: /mcp
+          policies:
+            cors:
+              allowOrigins: ["*"]
+              allowHeaders: ["*"]
+            {{- if .Values.agentgateway.auth.enabled }}
+            jwtAuth:
+              # strict: reject requests without a valid token (default 'optional' only validates when present)
+              mode: strict
+              issuer: {{ .Values.agentgateway.auth.issuer }}
+              audiences: [{{ .Values.agentgateway.auth.audience }}]
+              jwks:
+                file: /jwks/jwks.json
+            {{- end }}
+          backends:
+          - mcp:
+              targets:
+              - name: tumblebug
+                mcp:
+                  host: http://cb-tumblebug-mcp-server.{{ .Release.Namespace }}.svc.cluster.local:8000/mcp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentgateway
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: agentgateway
+  ports:
+    - name: mcp
+      port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentgateway
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agentgateway
+  template:
+    metadata:
+      labels:
+        app: agentgateway
+        {{- include "cb.labels" . | nindent 8 }}
+      annotations:
+        {{- /* cfg-v2: bump this marker when the static config template (not values) changes */}}
+        checksum/config: {{ printf "cfg-v2/%s/%s" .Release.Namespace (toYaml .Values.agentgateway) | sha256sum | trunc 16 }}
+    spec:
+      containers:
+        - name: agentgateway
+          image: {{ .Values.agentgateway.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          args: ["-f", "/config/config.yaml"]
+          ports:
+            - { name: mcp, containerPort: 3000 }
+            - { name: admin, containerPort: 15000 }
+          readinessProbe:
+            tcpSocket: { port: mcp }
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: mcp }
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - { name: config, mountPath: /config, readOnly: true }
+            {{- if .Values.agentgateway.auth.enabled }}
+            - { name: jwks, mountPath: /jwks, readOnly: true }
+            {{- end }}
+          {{- with .Values.agentgateway.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: agentgateway-config
+        {{- if .Values.agentgateway.auth.enabled }}
+        - name: jwks
+          configMap:
+            name: agentgateway-jwks
+        {{- end }}
+{{- end }}

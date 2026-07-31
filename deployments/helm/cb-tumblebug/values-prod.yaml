@@ -2,9 +2,7 @@
 #   helm upgrade --install cb-tumblebug ./deployments/helm/cb-tumblebug \
 #     -n cb-tumblebug --create-namespace -f values-prod.yaml
 #
-# Replace every CHANGE_ME. Consider external managed PostgreSQL/etcd
-# (point TB_*/SPIDER_METADB_* at them and disable the bundled statefulsets
-# by setting storage-less variants in a future chart revision).
+# Replace every CHANGE_ME.
 
 auth:
   tbApiUsername: admin
@@ -14,22 +12,81 @@ auth:
   terrariumApiUsername: admin
   terrariumApiPassword: CHANGE_ME
 
-tumblebugPostgres:
-  password: CHANGE_ME
-  storage: 20Gi
+# ==============================================================================
+# Resource policy for spiky workloads
+# ==============================================================================
+# cb-tumblebug/cb-spider bursts hard on CSP-wide operations (image fetch across
+# all CSPs, 1000+ VM provisioning). Policy:
+#  - requests: modest baseline (scheduling reservation + eviction protection);
+#    the sum below fits a 4 vCPU / 8 GB node with headroom
+#  - NO memory limit on cb-tumblebug/cb-spider: an OOMKill mid-provisioning
+#    severs in-flight CSP mutations and leaves orphaned cloud resources
+#  - NO cpu limits anywhere (throttling hurts more than it helps)
+# The real spike controls are the concurrency knobs, not resource limits:
+#  TB-side Spider-call throttle (20 req/s), global control semaphore (50),
+#  bastion semaphores, TB_ALIBABA_REGION_CONCURRENCY, etc.
 
-spiderPostgres:
-  password: CHANGE_ME
-  storage: 10Gi
+# Single entrypoint + TLS (uncomment to expose via Gateway API)
+# gateway:
+#   enabled: true
+#   hostnames: ["tumblebug.example.com"]   # omit for IP-based access
+#   tls:
+#     enabled: true
+#     secretName: ""     # "" = self-signed (auto, reused); or a cert-manager-issued Secret
+
+# Ingress lockdown (requires a NetworkPolicy-enforcing CNI: Calico/Cilium/...)
+# networkPolicy:
+#   enabled: true
 
 tumblebug:
   logLevel: info
   logFormat: json
+  # postgresSslMode: require   # for managed/TLS-enabled PostgreSQL
   resources:
-    requests: { cpu: 500m, memory: 512Mi }
-    limits: { memory: 2Gi }
+    requests: { cpu: 500m, memory: 1Gi }
+    # no limits (see policy above)
 
 spider:
   resources:
-    requests: { cpu: 250m, memory: 256Mi }
+    requests: { cpu: 500m, memory: 512Mi }
+    # no limits (see policy above)
+
+tumblebugPostgres:
+  password: CHANGE_ME
+  storage: 20Gi
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { memory: 2Gi }
+
+spiderPostgres:
+  password: CHANGE_ME
+  storage: 10Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
     limits: { memory: 1Gi }
+
+etcd:
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+openbao:
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+terrarium:
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+mapui:
+  resources:
+    # Parcel builds the bundle at startup (short memory spike)
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { memory: 2Gi }
+
+mcp:
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 512Mi }

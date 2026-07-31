@@ -384,7 +384,10 @@ type CreateNodeGroupDynamicReq struct {
 	RootDiskType string `json:"rootDiskType,omitempty" example:"gp3" default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"50"`                    // Root disk size in GB. 0 = use CSP default.
 
-	NodeUserPassword string `json:"nodeUserPassword,omitempty" example:"" default:""`
+	// NOTE: A node user password is intentionally NOT accepted here. Linux nodes are
+	// accessed via SSH key pairs, and a random password is generated internally for the
+	// CSP-side requirement (Windows). See CreateNode in core/infra/provisioning.go.
+
 	// if ConnectionName is given, the Node tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
 	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2" default:""`

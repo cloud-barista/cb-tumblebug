@@ -46,6 +46,10 @@ spec:
             - { name: postgres, containerPort: 5432 }
           volumeMounts:
             - { name: data, mountPath: /var/lib/postgresql/data }
+          {{- with .Values.spiderPostgres.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           readinessProbe:
             exec:
               command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]

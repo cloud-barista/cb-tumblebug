@@ -66,6 +66,10 @@ spec:
           volumeMounts:
             - { name: data, mountPath: /openbao/data }
             - { name: config, mountPath: /openbao/config, readOnly: true }
+          {{- with .Values.openbao.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           readinessProbe:
             # Treat uninitialized/sealed as ready too — the init Job and the
             # unsealer reach the API through the Service (avoids a bootstrap
