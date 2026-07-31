@@ -23434,10 +23434,6 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3
                 },
-                "nodeUserPassword": {
-                    "type": "string",
-                    "example": ""
-                },
                 "rootDiskSize": {
                     "description": "Root disk size in GB. 0 = use CSP default.",
                     "type": "integer",

@@ -3839,7 +3839,8 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 	nodeGroupReq.Description = k.Description
 	nodeGroupReq.RootDiskType = k.RootDiskType
 	nodeGroupReq.RootDiskSize = k.RootDiskSize
-	nodeGroupReq.NodeUserPassword = k.NodeUserPassword
+	// NodeUserPassword is not taken from the request; CreateNode generates a random
+	// password internally for the CSP-side requirement (Windows).
 
 	common.PrintJsonPretty(nodeGroupReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for VM:" + nodeGroupReq.Name, Info: nodeGroupReq, Time: time.Now()})

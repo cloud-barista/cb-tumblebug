@@ -51,6 +51,9 @@ spec:
               valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_USER } }
             - name: TB_POSTGRES_PASSWORD
               valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_POSTGRES_PASSWORD } }
+            {{- with .Values.tumblebug.postgresSslMode }}
+            - { name: TB_POSTGRES_SSLMODE, value: {{ . | quote }} }
+            {{- end }}
             - name: TB_API_USERNAME
               valueFrom: { secretKeyRef: { name: cb-stack-secret, key: TB_API_USERNAME } }
             - name: TB_API_PASSWORD

@@ -60,6 +60,9 @@ tumblebug:
   readyzCheckDeps: "true"
   shutdownTimeoutMs: "300000"
   terminationGracePeriodSeconds: 330
+  # sslmode for the metadata PostgreSQL connection ("" = server default: disable).
+  # Set e.g. "require" for managed/TLS-enabled PostgreSQL.
+  postgresSslMode: ""
   selfEndpoint: ""
   allowOrigins: "*"
   resources: {}
@@ -83,3 +86,42 @@ mcp:
   # Requires a published cb-tumblebug-mcp-server image (compose builds it locally)
   enabled: false
   resources: {}
+
+agentgateway:
+  # Governed MCP entrypoint (standalone static-config mode; requires mcp.enabled)
+  enabled: false
+  image: ghcr.io/agentgateway/agentgateway:v1.3.1
+  resources: {}
+  auth:
+    # JWT authentication on the /mcp route (enable via `make k-mcp-auth-on`,
+    # which also generates the local keypair and fills jwks below).
+    # Tokens are minted host-side with `make k-mcp-token` — no IdP required.
+    enabled: false
+    issuer: cb-tumblebug-dev
+    audience: cb-tumblebug-mcp
+    # Public JWKS JSON (single line). Public-key material only — safe to persist.
+    jwks: ""
+
+gateway:
+  # Single external entrypoint via Gateway API (/ -> mapui, /tumblebug -> API, /mcp -> MCP).
+  # Requires a Gateway API implementation in the cluster (e.g., Envoy Gateway).
+  enabled: false
+  className: eg
+  # Create the GatewayClass as part of this release (set false if the cluster
+  # already provides one; then point className at it)
+  createClass: true
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  # Optional host-based routing, e.g. ["tumblebug.example.com"]; empty = match any host
+  hostnames: []
+  tls:
+    # HTTPS listener (:443). Without secretName a self-signed cert is generated
+    # once and reused across upgrades. For trusted certs, point secretName at a
+    # kubernetes.io/tls Secret (e.g., issued by cert-manager).
+    enabled: false
+    secretName: ""
+
+networkPolicy:
+  # Ingress lockdown (default-deny + intra-namespace + gateway data plane).
+  # Requires a NetworkPolicy-enforcing CNI — no-op on default kind (kindnet).
+  enabled: false
+  gatewayNamespace: envoy-gateway-system

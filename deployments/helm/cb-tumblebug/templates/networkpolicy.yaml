@@ -1,0 +1,49 @@
+{{- if .Values.networkPolicy.enabled }}
+# Ingress lockdown for the stack namespace.
+# Model: default-deny ingress -> allow intra-namespace -> allow the Gateway API
+# data plane namespace to reach exposed services.
+# Egress is intentionally unrestricted: outbound CSP API traffic is the product.
+# NOTE: requires a CNI that enforces NetworkPolicy (Calico, Cilium, ...);
+# the default kind CNI (kindnet) does NOT enforce these (silent no-op).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-dataplane
+  labels:
+    {{- include "cb.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["cb-mapui", "cb-tumblebug", "cb-tumblebug-mcp-server", "agentgateway"]
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.gatewayNamespace }}
+{{- end }}

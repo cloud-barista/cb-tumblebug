@@ -19648,9 +19648,6 @@ components:
           description: "NodeGroupSize is the number of Nodes to create in this NodeGroup.\
             \ If > 0, nodeGroup will be generated. Default is 1."
           example: 3
-        nodeUserPassword:
-          type: string
-          example: ""
         rootDiskSize:
           type: integer
           description: Root disk size in GB. 0 = use CSP default.

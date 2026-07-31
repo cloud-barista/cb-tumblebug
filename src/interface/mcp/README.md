@@ -28,7 +28,9 @@ TB-MCP Server (Streamable HTTP) ←→ AI Assistants
 ```
 
 **Key Points:**
-- **Primary Transport**: Streamable HTTP (`http://127.0.0.1:8000/mcp`)
+- **Primary Transport**: Streamable HTTP (`http://127.0.0.1:8000/mcp`), running in
+  **stateless mode** (no session continuity required — load-balancer/gateway
+  friendly, aligned with the stateless MCP specification 2026-07-28)
 - **VS Code**: Direct connection supported
 - **Claude Desktop**: Requires proxy bridge (`mcp-simple-proxy.py`) due to remote server limitations
 - **Protocol Standard**: MCP specification compliant

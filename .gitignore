@@ -96,3 +96,7 @@ src/testclient/test-clis/**/test-results/*
 # Object Storage test (local only)
 # (no additional exceptions)
 deployments/helm/cb-tumblebug/values-mcp.yaml
+deployments/helm/cb-tumblebug/values-agentgateway.yaml
+deployments/helm/cb-tumblebug/values-gateway.yaml
+deployments/helm/cb-tumblebug/values-dev-image-*.yaml
+deployments/helm/cb-tumblebug/values-agentgateway-auth.yaml

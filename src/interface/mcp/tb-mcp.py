@@ -2001,7 +2001,7 @@ def recommend_vm_spec(
     if priority_policy and priority_policy != "none":
         priority_config = {
             "metric": priority_policy,
-            "weight": "1.0"
+            "weight": 1.0
         }
         
         # Add location parameters if specified
@@ -2017,7 +2017,7 @@ def recommend_vm_spec(
         "filter": {
             "policy": policies
         },
-        "limit": str(limit),
+        "limit": int(limit),
         "priority": {
             "policy": priority_policies
         }
@@ -2456,7 +2456,6 @@ def review_infra_dynamic_request(
             - connectionName: Specific connection name (optional)
             - rootDiskSize: Root disk size in GB (int, 0 for CSP default) (optional)
             - rootDiskType: Root disk type (optional)
-            - vmUserPassword: VM user password (optional)
             - zone: Availability zone (optional, e.g., "ap-northeast-2a")
             - vNetTemplateId: VNet template ID for nodegroup (optional)
             - sgTemplateId: Security group template ID for nodegroup (optional)
@@ -2796,7 +2795,6 @@ def create_infra_dynamic(
             - connectionName: Specific connection name to use (optional)
             - rootDiskSize: Root disk size in GB (int, 0 for CSP default) (optional)
             - rootDiskType: Root disk type, default "default" (optional)
-            - vmUserPassword: VM user password (optional)
             - zone: Availability zone (optional, e.g., "ap-northeast-2a")
             - vNetTemplateId: VNet template ID for nodegroup-level override (optional)
             - sgTemplateId: Security group template ID for nodegroup-level override (optional)
@@ -3227,7 +3225,6 @@ def add_nodegroup_dynamic(
     description: str = "",
     root_disk_type: str = "",
     root_disk_size: int = 0,
-    vm_user_password: str = "",
     connection_name: str = "",
     zone: str = "",
     vnet_template_id: str = "",
@@ -3264,7 +3261,6 @@ def add_nodegroup_dynamic(
         description: NodeGroup description (optional)
         root_disk_type: Root disk type (optional)
         root_disk_size: Root disk size in GB (int, 0 for CSP default)
-        vm_user_password: VM user password (optional)
         connection_name: Specific connection name (optional)
         zone: Availability zone (optional, e.g., "ap-northeast-2a")
         vnet_template_id: VNet template ID (optional)
@@ -3287,8 +3283,6 @@ def add_nodegroup_dynamic(
         data["rootDiskType"] = root_disk_type
     if root_disk_size:
         data["rootDiskSize"] = root_disk_size
-    if vm_user_password:
-        data["vmUserPassword"] = vm_user_password
     if connection_name:
         data["connectionName"] = connection_name
     if zone:
@@ -3806,6 +3800,15 @@ def _summarize_vm_specs(specs_response: Any, include_details: bool = False) -> D
     elif isinstance(specs_response, dict):
         if "result" in specs_response:
             specs_list = specs_response["result"] or []
+        elif "message" in specs_response and "id" not in specs_response:
+            # API error response — surface it instead of an empty spec
+            return {
+                "error": specs_response["message"],
+                "summarized_specs": [],
+                "total_count": 0,
+                "details_included": include_details,
+                "summary_applied": True,
+            }
         else:
             specs_list = [specs_response]
     
@@ -13122,7 +13125,7 @@ priority_policy = {
     "policy": [
         {
             "metric": "cost",  # ✅ From priority.availableMetrics
-            "weight": "1.0"
+            "weight": 1.0
         }
     ]
 }
@@ -13138,7 +13141,7 @@ priority_policy = {
                     "val": ["37.5665/126.9780"]  # Seoul coordinates
                 }
             ],
-            "weight": "1.0"
+            "weight": 1.0
         }
     ]
 }
@@ -13176,7 +13179,7 @@ filter_policies = {
 }
 
 # 3. Set cost priority
-priority_policy = {"policy": [{"metric": "cost", "weight": "1.0"}]}
+priority_policy = {"policy": [{"metric": "cost", "weight": 1.0}]}
 
 # 4. Get recommendations
 specs = recommend_vm_spec(
@@ -13215,7 +13218,7 @@ priority_policy = {
                     "val": ["35.6762/139.6503"]  # Tokyo coordinates
                 }
             ],
-            "weight": "1.0"
+            "weight": 1.0
         }
     ]
 }
@@ -13248,7 +13251,7 @@ filter_policies = {
 }
 
 # 3. Set performance priority
-priority_policy = {"policy": [{"metric": "performance", "weight": "1.0"}]}
+priority_policy = {"policy": [{"metric": "performance", "weight": 1.0}]}
 
 # 4. Get recommendations
 specs = recommend_vm_spec(
@@ -13428,4 +13431,6 @@ if __name__ == "__main__":
         port=port,
         path="/mcp",
         log_level=fastmcp_log_level,
+        # LB/gateway-friendly (aligned with the stateless MCP spec 2026-07-28)
+        stateless_http=True,
     )
