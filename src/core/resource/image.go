@@ -2231,6 +2231,24 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 		}
 	}
 
+	// Apply IncludeBasicImageOnly filter (documented request field)
+	if req.IncludeBasicImageOnly != nil && *req.IncludeBasicImageOnly {
+		basicOnly := make([]model.ImageInfo, 0, len(images))
+		for _, img := range images {
+			if img.IsBasicImage {
+				basicOnly = append(basicOnly, img)
+			}
+		}
+		images = basicOnly
+		cnt = len(images)
+	}
+
+	// Apply MaxResults limit (documented request field)
+	if req.MaxResults != nil && *req.MaxResults > 0 && len(images) > *req.MaxResults {
+		images = images[:*req.MaxResults]
+		cnt = len(images)
+	}
+
 	return images, cnt, nil
 }
 

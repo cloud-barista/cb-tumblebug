@@ -62,7 +62,7 @@ from fastmcp import FastMCP
 
 # Configure logging - Reduce noise from HTTP connections and MCP protocol details
 # Set logging level via environment variable (default: INFO)
-log_level = os.environ.get("MCP_LOG_LEVEL", "DEBUG").upper()
+log_level = os.environ.get("MCP_LOG_LEVEL", "INFO").upper()
 log_level_value = getattr(logging, log_level, logging.INFO)
 
 logging.basicConfig(
@@ -142,6 +142,14 @@ mcp = FastMCP("cb-tumblebug", mask_error_details=True)
 
 # mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
 
+# Shared HTTP session: connection pooling + retry on transient connection errors
+_session = requests.Session()
+_session.mount("http://", requests.adapters.HTTPAdapter(
+    pool_maxsize=20,
+    max_retries=requests.adapters.Retry(total=2, connect=2, read=0, backoff_factor=0.5,
+                                        allowed_methods=["GET"], status_forcelist=[502, 503, 504])))
+_session.mount("https://", requests.adapters.HTTPAdapter(pool_maxsize=20))
+
 # Helper function: API request wrapper
 def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None, timeout_override=None, credential_holder=None):
     url = f"{TUMBLEBUG_API_BASE_URL}{endpoint}"
@@ -167,8 +175,9 @@ def api_request(method, endpoint, json_data=None, params=None, files=None, heade
     # Add parameters according to method
     if params:
         request_config["params"] = params
-    if json_data and method.lower() in ["post", "put"]:
-        request_config["json"] = json_data
+    if json_data and method.lower() in ["post", "put", "delete"]:
+        # With files, send fields as multipart form data (json= would be discarded)
+        request_config["data" if files else "json"] = json_data
     if files:
         request_config["files"] = files
     
@@ -190,16 +199,9 @@ def api_request(method, endpoint, json_data=None, params=None, files=None, heade
         logger.debug(f"Request data: {json.dumps(json_data, indent=2, ensure_ascii=False)[:200]}...")
     
     try:
-        if method.lower() == "get":
-            response = requests.get(url, **request_config)
-        elif method.lower() == "post":
-            response = requests.post(url, **request_config)
-        elif method.lower() == "put":
-            response = requests.put(url, **request_config)
-        elif method.lower() == "delete":
-            response = requests.delete(url, **request_config)
-        else:
+        if method.lower() not in ("get", "post", "put", "delete"):
             return {"error": f"Unsupported method: {method}"}
+        response = _session.request(method.upper(), url, **request_config)
         
         logger.debug(f"Response status: {response.status_code}")
         
@@ -289,8 +291,8 @@ if os.environ.get("MCP_ENV") == "development":
 def _internal_get_namespaces() -> Dict:
     """Internal helper function to get namespaces"""
     result = api_request("GET", "/ns")
-    if "output" in result:
-        return {"namespaces": result["output"]}
+    if "ns" in result:
+        return {"namespaces": result["ns"]}
     return result
 
 # Tool: Get all namespaces
@@ -372,6 +374,10 @@ def delete_namespace(ns_id: str) -> Dict:
 #####################################
 
 # Helper function: Select best image for specific VM spec
+# Helper: combined lowercase OS descriptor from current ImageInfo fields (guestOS was removed from the API)
+def _image_os_text(img: Dict) -> str:
+    return " ".join(str(img.get(k, "")) for k in ("osType", "osDistribution", "osPlatform")).lower()
+
 def select_best_image_for_spec(
     image_list: List[Dict],
     vm_spec: Dict,
@@ -464,7 +470,7 @@ def select_best_image_for_spec(
         # Additional scoring based on image metadata
         name = img.get("name", "").lower()
         description = img.get("description", "").lower()
-        guest_os = img.get("guestOS", "").lower()
+        guest_os = _image_os_text(img)
         combined_text = f"{name} {description} {guest_os}"
         
         metadata_score = 0
@@ -579,7 +585,7 @@ def _analyze_image_spec_compatibility(image: Dict, vm_spec: Dict, requirements: 
     
     image_name = image.get("name", "").lower()
     image_desc = image.get("description", "").lower()
-    guest_os = image.get("guestOS", "").lower()
+    guest_os = _image_os_text(image)
     combined_text = f"{image_name} {image_desc} {guest_os}"
     
     # Provider compatibility (critical)
@@ -676,7 +682,7 @@ def select_best_image(image_list: List[Dict]) -> Dict:
             "index": i,
             "name": img.get("name", ""),
             "description": img.get("description", ""),
-            "guestOS": img.get("guestOS", ""),
+            "osInfo": _image_os_text(img),
             "cspImageName": img.get("cspImageName", "")
         }
         image_analysis_data.append(analysis_item)
@@ -689,7 +695,7 @@ def select_best_image(image_list: List[Dict]) -> Dict:
         """
         name = image.get("name", "").lower()
         description = image.get("description", "").lower()
-        guest_os = image.get("guestOS", "").lower()
+        guest_os = _image_os_text(image)
         
         # Combine all text for analysis
         combined_text = f"{name} {description} {guest_os}"
@@ -809,7 +815,7 @@ def select_best_image_with_context(
     for img in image_list:
         name = img.get("name", "").lower()
         description = img.get("description", "").lower()
-        guest_os = img.get("guestOS", "").lower()
+        guest_os = _image_os_text(img)
         combined_text = f"{name} {description} {guest_os}"
         
         score = 0
@@ -1021,6 +1027,15 @@ def _internal_validate_namespace(ns_id: str) -> Dict:
     try:
         ns_info = _internal_get_namespace(ns_id)
         if "error" in ns_info:
+            # Distinguish transport/server failures from a genuinely missing namespace
+            if ns_info.get("error_type") in ("connection_error", "timeout"):
+                return {
+                    "valid": False,
+                    "namespace_id": ns_id,
+                    "error": "Could not reach CB-Tumblebug to validate the namespace",
+                    "details": ns_info,
+                    "suggestion": "Check server availability and retry — do NOT create the namespace based on this result"
+                }
             return {
                 "valid": False,
                 "namespace_id": ns_id,
@@ -1146,23 +1161,26 @@ def get_connections() -> Dict:
 
 # Tool: Get connections with options
 @mcp.tool()
-def get_connections_with_options(filter_verified: bool = True, filter_region_representative: bool = True) -> Dict:
+def get_connections_with_options(filter_verified: bool = True, filter_region_representative: bool = True, credential_holder: Optional[str] = None) -> Dict:
     """
     Get all registered cloud connections with filtering options
     
     Args:
         filter_verified: Whether to filter by verified connections
         filter_region_representative: Whether to filter by representative regions
-    
+        credential_holder: Only list connections of this credential holder (optional)
+
     Returns:
         List of cloud connections
     """
-    params = {}
-    if filter_verified:
-        params["filterVerified"] = "true"
-    if filter_region_representative:
-        params["filterRegionRepresentative"] = "true"
-    
+    # Send both flags explicitly — the server defaults filterVerified to true when omitted
+    params = {
+        "filterVerified": "true" if filter_verified else "false",
+        "filterRegionRepresentative": "true" if filter_region_representative else "false",
+    }
+    if credential_holder:
+        params["filterCredentialHolder"] = credential_holder
+
     return api_request("GET", "/connConfig", params=params)
 
 # Tool: Get specific cloud connection
@@ -1343,9 +1361,9 @@ def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> D
         ns_id: Namespace ID
         resource_type: Type of resource (e.g., "vNet", "securityGroup", "sshKey", "image", "spec")
         resource_id: Resource ID to check
-    
+
     Returns:
-        Resource existence information
+        {"exists": true|false}
     """
     return api_request("GET", f"/ns/{ns_id}/checkResource/{resource_type}/{resource_id}")
 
@@ -1397,12 +1415,12 @@ def get_infra_list_with_options(ns_id: str, option: str = "status") -> Dict:
     
     Args:
         ns_id: Namespace ID
-        option: Query option (id or status)
-    
+        option: Query option (id, simple, or status)
+
     Returns:
         List of Infras
     """
-    if option not in ["id", "status"]:
+    if option not in ["id", "simple", "status"]:
         option = "status"
     return api_request("GET", f"/ns/{ns_id}/infra?option={option}")
 
@@ -1435,10 +1453,12 @@ def get_infra_access_info(ns_id: str, infra_id: str, show_ssh_key: bool = False)
         show_ssh_key: Whether to show SSH key
     
     Returns:
-        Infra access information
+        Infra access information (InfraNodeGroupAccessInfo[].NodeAccessInfo[] with publicIP/privateIP/sshPort)
     """
-    option = "showSshKey" if show_ssh_key else "accessinfo"
-    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}?option=accessinfo&accessInfoOption={option}")
+    params = {"option": "accessinfo"}
+    if show_ssh_key:
+        params["accessInfoOption"] = "showSshKey"
+    return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}", params=params)
 
 # Tool: Get nodegroups list
 @mcp.tool()
@@ -1601,8 +1621,8 @@ def search_images(
         - Each image (when found) includes:
           - cspImageName: CSP-specific image identifier (CRITICAL for Infra creation)
           - description: Image description
-          - guestOS: Guest operating system
-          - architecture: OS architecture
+          - osType / osDistribution / osPlatform: Operating system information
+          - osArchitecture: OS architecture
           - creationDate: Image creation date
           - isBasicImage: Boolean indicating if this is a basic OS image (PRIORITY indicator)
           
@@ -1916,7 +1936,7 @@ def recommend_vm_spec(
     )
     
     # Use ONLY the returned spec IDs:
-    for spec in specs["recommended_specs"]:
+    for spec in specs["summarized_specs"]:
         spec_id = spec["id"]  # e.g., "aws+us-west-1+t3.medium"
         # Use this exact spec_id in create_infra_dynamic() - NEVER modify
     ```
@@ -2099,22 +2119,22 @@ def _internal_review_infra_dynamic(
         data["label"] = label
     if post_command:
         data["postCommand"] = post_command
-    if hold:
-        data["hold"] = hold
     if vnet_template_id:
         data["vNetTemplateId"] = vnet_template_id
     if sg_template_id:
         data["sgTemplateId"] = sg_template_id
-    
-    # Make API request to review endpoint
+
+    # Make API request to review endpoint (hold is a query option, not a body field)
     url = f"/ns/{ns_id}/infraDynamicReview"
+    if hold:
+        url += "?option=hold"
     result = api_request("POST", url, json_data=data)
     
     # 🔍 ENHANCED: Add historical risk analysis for each VM configuration
-    if isinstance(result, dict) and "vmReviews" in result:
+    if isinstance(result, dict) and "nodeReviews" in result:
         enhanced_risk_analysis = []
         
-        for i, vm_review in enumerate(result["vmReviews"]):
+        for i, vm_review in enumerate(result["nodeReviews"]):
             vm_config = vm_configurations[i] if i < len(vm_configurations) else {}
             spec_id = vm_config.get("specId")
             image_name = vm_config.get("imageId")
@@ -2175,8 +2195,8 @@ def _internal_review_infra_dynamic(
     
     # Enhance result with additional guidance based on review results
     if isinstance(result, dict):
-        # 🚀 ENHANCED: Analyze vmReviews for specific guidance and reconfiguration needs
-        vm_reviews = result.get("vmReviews", [])
+        # 🚀 ENHANCED: Analyze nodeReviews for specific guidance and reconfiguration needs
+        vm_reviews = result.get("nodeReviews", [])
         failed_vms = []
         provisioning_issues = []
         reconfiguration_needed = False
@@ -2255,19 +2275,19 @@ def _internal_review_infra_dynamic(
             
             result["_next_step"] = "Fix the reported issues and run review_infra_dynamic_request() again."
         
-        # Add summary of vmReviews for LLM reference
+        # Add summary of nodeReviews for LLM reference
         if vm_reviews:
             result["_vm_summary"] = {
                 "total_vms": len(vm_reviews),
                 "successful_vms": len([vm for vm in vm_reviews if vm.get("canCreate", True)]),
                 "failed_vms": len([vm for vm in vm_reviews if not vm.get("canCreate", True)]),
                 "providers_used": list(set([vm.get("providerName", "") for vm in vm_reviews if vm.get("providerName")])),
-                "review_details": "Check vmReviews field for detailed per-VM validation results"
+                "review_details": "Check nodeReviews field for detailed per-VM validation results"
             }
         
         # Add enhanced summary with corrected VM count and cost information
-        if "totalVmCount" in result and "estimatedCost" in result:
-            vm_count = result["totalVmCount"]
+        if "totalNodeCount" in result and "estimatedCost" in result:
+            vm_count = result["totalNodeCount"]
             estimated_cost = result.get("estimatedCost", "Cost estimation unavailable")
             result["_deployment_summary"] = {
                 "total_vms_to_deploy": vm_count,
@@ -2289,7 +2309,7 @@ def _internal_review_infra_dynamic(
 🎯 **Infra Creation Plan Validated Successfully!**
 
 📊 **Deployment Summary:**
-• Total VMs: {result.get('totalVmCount', 'N/A')}
+• Total VMs: {result.get('totalNodeCount', 'N/A')}
 • Estimated Cost: {result.get('estimatedCost', 'N/A')}
 • Status: All configurations validated ✅
 
@@ -2319,7 +2339,7 @@ def _internal_review_infra_dynamic(
 ⚠️ **Infra Creation Plan - Warnings Detected**
 
 📊 **Deployment Summary:**
-• Total VMs: {result.get('totalVmCount', 'N/A')}
+• Total VMs: {result.get('totalNodeCount', 'N/A')}
 • Estimated Cost: {result.get('estimatedCost', 'N/A')}
 • Status: Can create with warnings ⚠️
 
@@ -2349,7 +2369,7 @@ def _internal_review_infra_dynamic(
 ❌ **Infra Creation Plan - Errors Must Be Fixed**
 
 📊 **Review Results:**
-• Total VMs: {result.get('totalVmCount', 'N/A')}
+• Total VMs: {result.get('totalNodeCount', 'N/A')}
 • Status: Cannot create due to errors ❌
 
 🚫 **Errors Found:**
@@ -2424,7 +2444,7 @@ def review_infra_dynamic_request(
         )
     else:
         # ❌ Fix validation issues first
-        print("Validation issues:", review_result.get("vmReviews", []))
+        print("Validation issues:", review_result.get("nodeReviews", []))
         # Modify vm_configurations and re-run review
     ```
     
@@ -2478,8 +2498,8 @@ def review_infra_dynamic_request(
         - overallMessage: Summary of validation results  
         - creationViable: Boolean - Whether Infra can be created
         - estimatedCost: String - Cost estimate (e.g., "$0.0837/hour")
-        - totalVmCount: Number - Total VMs to be created (includes NodeGroup sizes)
-        - vmReviews: Array - Detailed validation for each VM configuration
+        - totalNodeCount: Number - Total VMs to be created (includes NodeGroup sizes)
+        - nodeReviews: Array - Detailed validation for each VM configuration
         
         **🎯 LLM GUIDANCE FIELDS:**
         - _llm_guidance: Object with user interaction instructions including:
@@ -2505,7 +2525,7 @@ def review_infra_dynamic_request(
             "overallMessage": "All VMs can be created successfully",
             "creationViable": true,
             "estimatedCost": "$0.0837/hour",
-            "totalVmCount": 2,
+            "totalNodeCount": 2,
             "_llm_guidance": {
                 "status": "READY_TO_CREATE",
                 "user_prompt": "Configuration validated! Would you like to proceed?",
@@ -2637,7 +2657,7 @@ def create_infra_dynamic(
     
     # STEP 2: Search and select images for each spec
     vm_configurations = []
-    for i, spec in enumerate(specs["recommended_specs"][:2]):
+    for i, spec in enumerate(specs["summarized_specs"][:2]):
         spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
         
         # 2.1: Search for compatible images using matched_spec_id
@@ -2715,7 +2735,7 @@ def create_infra_dynamic(
     
     # 4. Use returned spec IDs exactly as provided
     vm_configs = []
-    for spec in specs["recommended_specs"]:
+    for spec in specs["summarized_specs"]:
         vm_configs.append({
             "specId": spec["id"],  # e.g., "aws+us-west-1+t3.medium"
             "name": f"vm-{spec['regionName']}-{len(vm_configs)+1}",
@@ -2831,7 +2851,7 @@ def create_infra_dynamic(
         When force_create=True (after successful review):
         - Created Infra information including:
           • id: Infra ID for future operations
-          • vm: List of created VMs with their details  
+          • node: List of created nodes (VMs) with their details
           • status: Current Infra status
           • deployment summary
         
@@ -2973,6 +2993,7 @@ if review_result.get("overallStatus") == "Ready":
     # Validate required VM configuration fields and auto-map images if needed
     processed_vm_configs = []
     for i, vm_config in enumerate(vm_configurations):
+        vm_config = dict(vm_config)  # Work on a copy — don't mutate the caller's dicts
         # Check if specId is provided
         if "specId" not in vm_config:
             return {
@@ -3094,9 +3115,13 @@ if review_result.get("overallStatus") == "Ready":
         processed_vm_configs.append(vm_config)
     
     # Build request data according to model.InfraDynamicReq spec
+    # (strip internal "_"-prefixed bookkeeping keys and non-API fields from each node group)
     data = {
         "name": name,
-        "nodeGroups": processed_vm_configs,  # Use processed configs with auto-mapped images
+        "nodeGroups": [
+            {k: v for k, v in cfg.items() if not k.startswith("_") and k != "os_requirements"}
+            for cfg in processed_vm_configs
+        ],
         "policyOnPartialFailure": policy_on_partial_failure
     }
     
@@ -3190,22 +3215,23 @@ def review_spec_image_pair(
         spec_id="aws+ap-northeast-2+t3.nano",
         image_id="ami-01f71f215b23ba262"
     )
-    if result.get("isAvailable"):
+    if result.get("isValid"):
         # Proceed to build full Infra configuration
         ...
     ```
-    
+
     Args:
         spec_id: VM specification ID (e.g., "aws+ap-northeast-2+t3.nano") (REQUIRED)
         image_id: CSP-specific image ID (e.g., "ami-01f71f215b23ba262") (REQUIRED)
-    
+
     Returns:
         Validation result including:
-        - isAvailable: Whether the spec+image pair is valid and available
-        - specInfo: Spec details (vCPU, memory, cost)
-        - imageInfo: Image details (OS, architecture)
-        - compatibility: Compatibility analysis
-        - estimatedCost: Cost estimation for this spec
+        - isValid: Whether the spec+image pair is valid and available
+        - status / message: Overall review outcome
+        - specDetails: Spec details (vCPU, memory, cost)
+        - imageDetails: Image details (OS, architecture)
+        - availability, specValidation, imageValidation: Detailed checks
+        - estimatedCost (string), warnings, errors, suggestedZone
     """
     data = {
         "specId": spec_id,
@@ -3426,23 +3452,27 @@ def delete_infra(ns_id: str, infra_id: str) -> Dict:
 
 # Tool: Control Infra
 @mcp.tool()
-def control_infra(ns_id: str, infra_id: str, action: str) -> Dict:
+def control_infra(ns_id: str, infra_id: str, action: str, force: bool = False) -> Dict:
     """
-    Control an Infra. Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, etc.)
-    
+    Control an Infra. Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, reconcile, abort)
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-        action: Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, etc.)
-    
+        action: Control action (refine, suspend, resume, reboot, terminate, continue, withdraw, reconcile, abort)
+        force: Force the action even if the Infra is in an in-progress state
+
     Returns:
         Control result
     """
-    valid_actions = ["refine", "suspend", "resume", "reboot", "terminate", "continue", "withdraw"]
+    valid_actions = ["refine", "suspend", "resume", "reboot", "terminate", "continue", "withdraw", "reconcile", "abort"]
     if action not in valid_actions:
         return {"error": f"Unsupported action: {action}. Supported actions: {', '.join(valid_actions)}"}
-    
-    return api_request("GET", f"/ns/{ns_id}/control/infra/{infra_id}?action={action}")
+
+    params = {"action": action}
+    if force:
+        params["force"] = "true"
+    return api_request("GET", f"/ns/{ns_id}/control/infra/{infra_id}", params=params)
 
 #####################################
 # NLB Management (Network Load Balancer)
@@ -4084,95 +4114,45 @@ def execute_command_infra(
     if label_selector:
         params["labelSelector"] = label_selector
 
-    if params:
-        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-        url += f"?{query_string}"
-
-    result = api_request("POST", url, json_data=data)
+    result = api_request("POST", url, json_data=data, params=params or None)
 
     # Apply output summarization if enabled
     if summarize_output and "results" in result:
         total_original_size = 0
         total_summarized_size = 0
         summarization_applied = False
-        
+
+        def _summarize_entry(text):
+            nonlocal total_original_size, total_summarized_size, summarization_applied
+            info = _summarize_command_output(text, max_output_lines, max_output_chars)
+            total_original_size += info["original_length"]
+            total_summarized_size += len(info["summary"])
+            if info["truncated"]:
+                summarization_applied = True
+            return {
+                "output": info["summary"],
+                "truncated": info["truncated"],
+                "original_length": info["original_length"],
+                "lines_count": info["lines_count"]
+            }
+
         for vm_result in result["results"]:
-            # Summarize stdout for each command
-            if "stdout" in vm_result:
-                if isinstance(vm_result["stdout"], list):
-                    summarized_stdout = []
-                    for i, stdout_item in enumerate(vm_result["stdout"]):
-                        if isinstance(stdout_item, str):
-                            summary_info = _summarize_command_output(
-                                stdout_item, max_output_lines, max_output_chars
-                            )
-                            total_original_size += summary_info["original_length"]
-                            total_summarized_size += len(summary_info["summary"])
-                            if summary_info["truncated"]:
-                                summarization_applied = True
-                            summarized_stdout.append({
-                                "command_index": i,
-                                "output": summary_info["summary"],
-                                "truncated": summary_info["truncated"],
-                                "original_length": summary_info["original_length"],
-                                "lines_count": summary_info["lines_count"]
-                            })
-                        else:
-                            summarized_stdout.append(stdout_item)
-                    vm_result["stdout"] = summarized_stdout
-                elif isinstance(vm_result["stdout"], str):
-                    summary_info = _summarize_command_output(
-                        vm_result["stdout"], max_output_lines, max_output_chars
-                    )
-                    total_original_size += summary_info["original_length"]
-                    total_summarized_size += len(summary_info["summary"])
-                    if summary_info["truncated"]:
-                        summarization_applied = True
-                    vm_result["stdout"] = {
-                        "output": summary_info["summary"],
-                        "truncated": summary_info["truncated"],
-                        "original_length": summary_info["original_length"],
-                        "lines_count": summary_info["lines_count"]
+            for stream in ("stdout", "stderr"):
+                value = vm_result.get(stream)
+                # Current API returns a map of command-index -> output
+                if isinstance(value, dict):
+                    vm_result[stream] = {
+                        k: (_summarize_entry(v) if isinstance(v, str) else v)
+                        for k, v in value.items()
                     }
-            
-            # Summarize stderr for each command
-            if "stderr" in vm_result:
-                if isinstance(vm_result["stderr"], list):
-                    summarized_stderr = []
-                    for i, stderr_item in enumerate(vm_result["stderr"]):
-                        if isinstance(stderr_item, str):
-                            summary_info = _summarize_command_output(
-                                stderr_item, max_output_lines, max_output_chars
-                            )
-                            total_original_size += summary_info["original_length"]
-                            total_summarized_size += len(summary_info["summary"])
-                            if summary_info["truncated"]:
-                                summarization_applied = True
-                            summarized_stderr.append({
-                                "command_index": i,
-                                "output": summary_info["summary"],
-                                "truncated": summary_info["truncated"],
-                                "original_length": summary_info["original_length"],
-                                "lines_count": summary_info["lines_count"]
-                            })
-                        else:
-                            summarized_stderr.append(stderr_item)
-                    vm_result["stderr"] = summarized_stderr
-                elif isinstance(vm_result["stderr"], str):
-                    summary_info = _summarize_command_output(
-                        vm_result["stderr"], max_output_lines, max_output_chars
-                    )
-                    total_original_size += summary_info["original_length"]
-                    total_summarized_size += len(summary_info["summary"])
-                    if summary_info["truncated"]:
-                        summarization_applied = True
-                    vm_result["stderr"] = {
-                        "output": summary_info["summary"],
-                        "truncated": summary_info["truncated"],
-                        "original_length": summary_info["original_length"],
-                        "lines_count": summary_info["lines_count"]
-                    }
-        
+                elif isinstance(value, list):
+                    vm_result[stream] = [
+                        (dict(_summarize_entry(item), command_index=i) if isinstance(item, str) else item)
+                        for i, item in enumerate(value)
+                    ]
+                elif isinstance(value, str):
+                    vm_result[stream] = _summarize_entry(value)
+
         # Add summarization metadata
         result["output_summary"] = {
             "summarization_enabled": True,
@@ -4209,15 +4189,18 @@ def execute_command_infra(
     if label_selector:
         context_data["label_selector"] = label_selector
     
-    # Determine success status
+    # Determine success status ("error" per node result; whole call may also be an error dict)
     success_count = 0
     total_count = len(result.get("results", []))
-    
+
     for vm_result in result.get("results", []):
-        if not vm_result.get("err"):
+        if not vm_result.get("error"):
             success_count += 1
-    
-    status = "completed" if success_count == total_count else "partial_failure" if success_count > 0 else "failed"
+
+    if "results" not in result:
+        status = "failed"
+    else:
+        status = "completed" if success_count == total_count else "partial_failure" if success_count > 0 else "failed"
     
     _store_interaction_memory(
         user_request=f"Execute commands {commands} on Infra '{infra_id}' in namespace '{ns_id}'",
@@ -4449,30 +4432,21 @@ def execute_remote_commands_enhanced(
         # Auto-populate common template variables
         try:
             access_info = get_infra_access_info(ns_id, infra_id, show_ssh_key=False)
-            if "accessInfo" in access_info:
-                public_ips = []
-                private_ips = []
-                
-                for access in access_info["accessInfo"]:
-                    if "publicIP" in access:
-                        public_ips.append(access["publicIP"])
-                    if "privateIP" in access:
-                        private_ips.append(access["privateIP"])
-                
-                # Set default template variables
-                if public_ips and "public_ip" not in template_variables:
-                    template_variables["public_ip"] = public_ips[0]
-                if "public_ips_space" not in template_variables:
-                    template_variables["public_ips_space"] = " ".join(public_ips)
-                if "public_ips_comma" not in template_variables:
-                    template_variables["public_ips_comma"] = ",".join(public_ips)
-                if "private_ips_space" not in template_variables:
-                    template_variables["private_ips_space"] = " ".join(private_ips)
-                if "infra_id" not in template_variables:
-                    template_variables["infra_id"] = infra_id
-                if "ns_id" not in template_variables:
-                    template_variables["ns_id"] = ns_id
-        except Exception as e:
+            public_ips, private_ips = _extract_infra_ips(access_info)
+
+            if public_ips and "public_ip" not in template_variables:
+                template_variables["public_ip"] = public_ips[0]
+            if "public_ips_space" not in template_variables:
+                template_variables["public_ips_space"] = " ".join(public_ips)
+            if "public_ips_comma" not in template_variables:
+                template_variables["public_ips_comma"] = ",".join(public_ips)
+            if "private_ips_space" not in template_variables:
+                template_variables["private_ips_space"] = " ".join(private_ips)
+            if "infra_id" not in template_variables:
+                template_variables["infra_id"] = infra_id
+            if "ns_id" not in template_variables:
+                template_variables["ns_id"] = ns_id
+        except Exception:
             # Continue without auto-populated variables
             pass
         
@@ -4576,16 +4550,17 @@ def analyze_provisioning_risk(
         params = {"cspImageName": csp_image_name}
 
         result = api_request("GET", url, params=params)
+        is_error = "error" in result
 
         # Store interaction for future reference
         store_interaction_memory(
             user_request=f"Analyze provisioning risk for spec '{spec_id}' with image '{csp_image_name}'",
-            llm_response=f"Risk analysis completed - Level: {result.get('riskLevel', 'unknown')}",
+            llm_response="Risk analysis failed" if is_error else f"Risk analysis completed - Level: {result.get('riskLevel', 'unknown')}",
             operation_type="risk_analysis",
             context_data={"spec_id": spec_id, "csp_image_name": csp_image_name, "risk_level": result.get('riskLevel')},
-            status="completed"
+            status="failed" if is_error else "completed"
         )
-        
+
         return result
 
     except Exception as e:
@@ -4651,14 +4626,15 @@ def get_detailed_provisioning_risk(
         params = {"specId": spec_id, "cspImageName": csp_image_name}
 
         result = api_request("GET", url, params=params)
-        
-        # Store detailed analysis for future reference
+        is_error = "error" in result
+
+        # Store detailed analysis for future reference (risk levels are under specRisk.level / overallRisk.level)
         store_interaction_memory(
             user_request=f"Get detailed provisioning risk analysis for spec '{spec_id}' with image '{csp_image_name}'",
-            llm_response=f"Detailed risk analysis completed - Spec Risk: {result.get('specRisk', {}).get('riskLevel', 'unknown')}, Overall: {result.get('overallRisk', {}).get('riskLevel', 'unknown')}",
+            llm_response="Detailed risk analysis failed" if is_error else f"Detailed risk analysis completed - Spec Risk: {result.get('specRisk', {}).get('level', 'unknown')}, Overall: {result.get('overallRisk', {}).get('level', 'unknown')}",
             operation_type="detailed_risk_analysis",
             context_data={"spec_id": spec_id, "csp_image_name": csp_image_name, "analysis_type": "detailed"},
-            status="completed"
+            status="failed" if is_error else "completed"
         )
 
         return result
@@ -4722,16 +4698,20 @@ def get_provisioning_history(
         url = f"/provisioning/log/{spec_id}"
         
         result = api_request("GET", url)
-        
+        is_error = "error" in result
+        # 204 No Content means no history recorded for this spec
+        if result.get("message") == "Success (No content)":
+            result = {"message": "No provisioning history recorded for this spec", "specId": spec_id}
+
         # Store history query for context
         store_interaction_memory(
             user_request=f"Get provisioning history for spec '{spec_id}'",
-            llm_response=f"History retrieved - Failures: {result.get('failureCount', 0)}, Successes: {result.get('successCount', 0)}",
+            llm_response="History query failed" if is_error else f"History retrieved - Failures: {result.get('failureCount', 0)}, Successes: {result.get('successCount', 0)}",
             operation_type="provisioning_history",
             context_data={"spec_id": spec_id, "failure_count": result.get('failureCount', 0)},
-            status="completed"
+            status="failed" if is_error else "completed"
         )
-        
+
         return result
         
     except Exception as e:
@@ -4821,15 +4801,15 @@ def get_infra_risk_mitigation_guidance(
                 
                 # Get risk analysis for this specific VM
                 try:
-                    risk_result = analyze_provisioning_risk(spec_id, image_name)
+                    risk_result = analyze_provisioning_risk(spec_id, image_name) if image_name else {"error": "no image specified"}
                     if "error" not in risk_result:
                         risk_level = risk_result.get("riskLevel", "unknown")
                         vm_guidance["risk_level"] = risk_level
-                        vm_guidance["failure_rate"] = risk_result.get("failureRate", "N/A")
-                        vm_guidance["risk_score"] = risk_result.get("riskScore", 0)
-                        
+                        # failureRate lives under the nested "analysis" object
+                        vm_guidance["failure_rate"] = risk_result.get("analysis", {}).get("failureRate", "N/A")
+
                         # Categorize by risk level
-                        guidance["risk_summary"][f"{risk_level}_risk_vms"].append(i)
+                        guidance["risk_summary"].setdefault(f"{risk_level}_risk_vms", []).append(i)
                         
                         # Generate specific recommendations based on risk level
                         if risk_level == "high":
@@ -4871,7 +4851,7 @@ def get_infra_risk_mitigation_guidance(
                                 vm_guidance["historical_context"] = {
                                     "total_failures": failure_count,
                                     "failure_images": history.get("failureImages", []),
-                                    "common_errors": history.get("errorMessages", [])
+                                    "common_errors": history.get("failureMessages", [])
                                 }
                 
                 except Exception as e:
@@ -5228,18 +5208,14 @@ def transfer_file_infra(
     if node_id:
         params["nodeId"] = node_id
 
-    if params:
-        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-        url += f"?{query_string}"
-
     # Open file
     try:
         with open(file_path, 'rb') as file:
             files = {'file': (os.path.basename(file_path), file)}
             data = {'path': target_path}
-            
+
             # Request with multipart form data
-            return api_request("POST", url, files=files, json_data=data)
+            return api_request("POST", url, files=files, json_data=data, params=params or None)
     except Exception as e:
         return {"error": f"File transfer error: {str(e)}"}
 
@@ -5279,9 +5255,9 @@ def list_node_command_status(
         infra_id: Infra ID
         node_id: Node ID (e.g., g1-1)
         status: Filter by status values (e.g., ["Completed", "Failed"])
-        request_id: Filter by request ID
-        page: Page number for pagination
-        size: Page size for pagination
+        request_id: Filter by x-request-id of the command execution
+        page: Page number for pagination (converted to offset)
+        size: Page size for pagination (max records to return)
 
     Returns:
         List of command status records for the node
@@ -5290,11 +5266,11 @@ def list_node_command_status(
     if status:
         params["status"] = status
     if request_id:
-        params["requestId"] = request_id
-    if page is not None:
-        params["page"] = page
+        params["xRequestId"] = request_id
     if size is not None:
-        params["size"] = size
+        params["limit"] = size
+    if page is not None:
+        params["offset"] = (max(page, 1) - 1) * (size or 50)
     return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{node_id}/commandStatus", params=params)
 
 
@@ -5389,7 +5365,7 @@ def get_infra_handling_command_count(
 # Tool: Check available region zones for a spec
 @mcp.tool()
 def check_available_region_zones_for_spec(
-    connection_name: str,
+    provider: str,
     spec_name: str
 ) -> Dict:
     """
@@ -5399,14 +5375,14 @@ def check_available_region_zones_for_spec(
     before attempting infra creation.
 
     Args:
-        connection_name: Cloud connection configuration name
-        spec_name: CSP spec name to check
+        provider: Cloud provider name (e.g., "aws", "gcp", "azure")
+        spec_name: CSP spec name to check (e.g., "t3.medium")
 
     Returns:
         Available region zones for the spec
     """
     data = {
-        "connectionName": connection_name,
+        "provider": provider,
         "cspSpecName": spec_name
     }
     return api_request("POST", "/availableRegionZonesForSpec", json_data=data)
@@ -5415,22 +5391,20 @@ def check_available_region_zones_for_spec(
 # Tool: Check available region zones for a list of specs
 @mcp.tool()
 def check_available_region_zones_for_spec_list(
-    spec_list: List[Dict]
+    provider: str,
+    spec_names: List[str]
 ) -> Dict:
     """
-    Check available region zones for multiple VM specifications at once.
-
-    Each item in spec_list should have:
-    - connectionName: Cloud connection name
-    - cspSpecName: CSP spec name
+    Check available region zones for multiple VM specifications of one provider at once.
 
     Args:
-        spec_list: List of dicts with connectionName and cspSpecName
+        provider: Cloud provider name (e.g., "aws")
+        spec_names: List of CSP spec names (e.g., ["t3.medium", "m5.large"])
 
     Returns:
         Available region zones for each spec in the list
     """
-    data = {"specList": spec_list}
+    data = {"provider": provider, "cspSpecNames": spec_names}
     return api_request("POST", "/availableRegionZonesForSpecList", json_data=data)
 
 
@@ -5438,26 +5412,23 @@ def check_available_region_zones_for_spec_list(
 @mcp.tool()
 def update_existing_spec_list_by_available_region_zones(
     ns_id: str,
-    connection_name: Optional[str] = None
+    provider: str
 ) -> Dict:
     """
     Update the availability status of existing specs in the namespace by checking
     actual available region zones from the CSP.
 
-    This refreshes which specs can be provisioned in which zones, helping avoid
-    failures caused by outdated availability data.
+    This refreshes which specs can be provisioned in which zones (and removes
+    stale unavailable specs), helping avoid failures caused by outdated data.
 
     Args:
         ns_id: Namespace ID
-        connection_name: (Optional) Limit update to a specific connection
+        provider: Cloud provider name to refresh (e.g., "aws")
 
     Returns:
-        Update result with refreshed availability information
+        Cleanup result (specsDeleted, specsToDelete, availabilityResults, ...)
     """
-    data = {}
-    if connection_name:
-        data["connectionName"] = connection_name
-    return api_request("POST", f"/ns/{ns_id}/updateExistingSpecListByAvailableRegionZones", json_data=data if data else None)
+    return api_request("POST", f"/ns/{ns_id}/updateExistingSpecListByAvailableRegionZones", json_data={"provider": provider})
 
 
 #####################################
@@ -5513,7 +5484,7 @@ def infra_management_prompt() -> str:
     
     # Step 2: For each spec, find compatible images in same CSP/region
     vm_configs = []
-    for spec in specs["recommended_specs"][:2]:  # Use multiple specs for multi-CSP
+    for spec in specs["summarized_specs"][:2]:  # Use multiple specs for multi-CSP
         spec_id = spec["id"]  # e.g., "aws+us-east-1+t3.medium"
         
         # Extract CSP and region from spec ID
@@ -5558,7 +5529,7 @@ def infra_management_prompt() -> str:
     )
     
     vm_configs = []
-    for spec in specs["recommended_specs"][:2]:
+    for spec in specs["summarized_specs"][:2]:
         vm_configs.append({
             "specId": spec["id"],  # REQUIRED: Exact spec ID
             "name": f"vm-{spec['providerName']}-{len(vm_configs)+1}",
@@ -5594,7 +5565,7 @@ def infra_management_prompt() -> str:
         name="silicon-valley-infra",
         vm_configurations=[
             {"specId": spec["id"], "name": f"vm-{spec['regionName']}-{i+1}"}
-            for i, spec in enumerate(specs["recommended_specs"][:3])
+            for i, spec in enumerate(specs["summarized_specs"][:3])
         ]
     )
     ```
@@ -5636,8 +5607,8 @@ def infra_management_prompt() -> str:
             )
             
             # Replace high-risk spec with safer alternative
-            if safer_specs["recommended_specs"]:
-                vm_configs[vm_index]["specId"] = safer_specs["recommended_specs"][0]["id"]
+            if safer_specs["summarized_specs"]:
+                vm_configs[vm_index]["specId"] = safer_specs["summarized_specs"][0]["id"]
         
         # Step 5: Re-review with updated configurations
         final_review = review_infra_dynamic_request(
@@ -5701,7 +5672,7 @@ def infra_management_prompt() -> str:
     
     # Step 3: Use specs with auto-mapping or manual image selection
     vm_configs = []
-    for spec in specs["recommended_specs"][:2]:
+    for spec in specs["summarized_specs"][:2]:
         vm_configs.append({
             "specId": spec["id"],
             "name": f"vm-{spec['regionName']}-{len(vm_configs)+1}",
@@ -5768,7 +5739,7 @@ def infra_management_prompt() -> str:
     validation_passed = validation.get("validation_passed", False)
     
     # 2B. VM-Level Analysis
-    vm_reviews = validation.get("vmReviews", [])
+    vm_reviews = validation.get("nodeReviews", [])
     for i, vm_review in enumerate(vm_reviews):
         vm_name = vm_configs[i].get("name", f"VM-{i+1}")
         print(f"\\n🔍 VM Review: {vm_name}")
@@ -5961,7 +5932,7 @@ def infra_management_prompt() -> str:
     ```python
     # A. For each spec, build VM configuration
     vm_configs = []
-    for spec in specs["recommended_specs"]:
+    for spec in specs["summarized_specs"]:
         spec_id = spec["id"]
         
         # B. Extract CSP info from spec
@@ -6443,7 +6414,7 @@ def image_infra_workflow_prompt() -> str:
     specs = recommend_vm_spec(filter_policies={"vCPU": {"min": 2}})
     
     # 2. For precise control, get compatible images
-    spec = specs["recommended_specs"][0]  # Take first recommended spec
+    spec = specs["summarized_specs"][0]  # Take first recommended spec
     csp, region, spec_name = spec["id"].split("+")  # Parse spec ID
     
     # Search for Ubuntu images in same CSP/region
@@ -6704,7 +6675,6 @@ def check_infra_status_and_handle_failures(
     """
     try:
         # Get detailed Infra status
-        infra_info = get_infra(ns_id, infra_id)
         infra_status = get_infra_list_with_options(ns_id, option="status")
         
         # Find specific Infra in status list
@@ -6723,6 +6693,8 @@ def check_infra_status_and_handle_failures(
             }
         
         overall_status = target_infra_status.get("status", "Unknown")
+        # Status is composite, e.g. "Running:2 (R:2/2)" — extract the base keyword for comparisons
+        base_status = overall_status.split(":")[0].strip().lower()
         vm_status_list = target_infra_status.get("node", [])
         
         # Analyze VM status distribution
@@ -6773,7 +6745,7 @@ def check_infra_status_and_handle_failures(
         recommendations = []
         recovery_actions = []
         
-        if overall_status.lower() == "partial-failed" or len(failed_vms) > 0:
+        if base_status == "partial-failed" or len(failed_vms) > 0:
             recommendations.append(
                 f"🚨 PARTIAL DEPLOYMENT FAILURE DETECTED: {len(failed_vms)} out of {len(vm_status_list)} VMs failed"
             )
@@ -6800,7 +6772,7 @@ def check_infra_status_and_handle_failures(
                     "preserved_vms": running_vms
                 })
         
-        elif overall_status.lower() == "failed" or len(running_vms) == 0:
+        elif base_status == "failed" or (len(failed_vms) > 0 and len(running_vms) == 0 and len(creating_vms) == 0):
             recommendations.append("❌ CRITICAL: All VMs in Infra have failed")
             recommendations.append("🔧 RECOMMENDED ACTIONS: Check error logs, recreate Infra, or terminate and retry")
             
@@ -6821,7 +6793,7 @@ def check_infra_status_and_handle_failures(
                 }
             ])
         
-        elif overall_status.lower() in ["running", "running-all"]:
+        elif base_status == "running":
             recommendations.append("✅ SUCCESS: All VMs are running successfully")
             recommendations.append("📊 NEXT STEPS: Execute commands, configure applications, or set up monitoring")
             
@@ -7020,19 +6992,23 @@ To cancel, use check_infra_status_and_handle_failures() to explore other options
             
             post_recovery_status = check_infra_status_and_handle_failures(ns_id, infra_id, auto_cleanup_failed=False)
         
-        # Step 6: Prepare comprehensive response
+        # Step 6: Prepare comprehensive response (reflect actual recovery-call outcome)
+        recovery_failed = isinstance(recovery_result, dict) and "error" in recovery_result
         response = {
             "infra_id": infra_id,
             "namespace": ns_id,
             "recovery_action": recovery_action,
-            "execution_status": "completed",
+            "execution_status": "failed" if recovery_failed else "completed",
             "timestamp": datetime.now().isoformat(),
             "pre_recovery_analysis": pre_recovery_status["status_analysis"],
             "recovery_execution": recovery_result,
             "post_recovery_analysis": post_recovery_status["status_analysis"] if post_recovery_status else None,
-            "recovery_success": True,
+            "recovery_success": not recovery_failed,
             "next_steps": []
         }
+        if recovery_failed:
+            response["next_steps"].append("Recovery API call failed — inspect recovery_execution for details")
+            return response
         
         # Determine success and next steps
         if recovery_action == "terminate":
@@ -7385,7 +7361,7 @@ def _get_vm_cost_estimate(spec_id: str) -> Dict:
                         "specs": {
                             "vCPU": spec_info.get("vCPU", "unknown"),
                             "memoryGiB": spec_info.get("memoryGiB", "unknown"),
-                            "storageGiB": spec_info.get("storageGiB", "unknown"),
+                            "diskSizeGB": spec_info.get("diskSizeGB", "unknown"),
                             "provider": provider,
                             "region": region,
                             "spec_name": spec_name
@@ -8045,7 +8021,7 @@ def get_spec_image_mapping_examples() -> Dict:
             "recommendation_3": {
                 "title": "Use Validation Tools", 
                 "description": "Validate configurations before deployment",
-                "tools": ["validate_vm_spec_image_compatibility()", "create_infra_with_proper_spec_mapping()"]
+                "tools": ["validate_vm_spec_image_compatibility()", "create_infra_dynamic()"]
             }
         },
         "common_mistakes": [
@@ -9004,7 +8980,7 @@ def deploy_ollama_pull_with_models(
                 limit="10"
             )
             
-            if not specs or not specs.get("recommended_specs"):
+            if not specs or not specs.get("summarized_specs"):
                 return {"status": "error", "error": "Failed to get VM specifications"}
             
             # Create VM configurations based on model count
@@ -9014,7 +8990,7 @@ def deploy_ollama_pull_with_models(
             vm_configurations = []
             for i in range(vm_count):
                 vm_configurations.append({
-                    "specId": specs["recommended_specs"][i % len(specs["recommended_specs"])]["id"],
+                    "specId": specs["summarized_specs"][i % len(specs["summarized_specs"])]["id"],
                     "name": f"ollama-vm-{i+1}",
                     "description": f"Ollama VM {i+1} for LLM models",
                     "nodeGroupSize": 1
@@ -9028,7 +9004,8 @@ def deploy_ollama_pull_with_models(
             description=description
         )
         
-        if infra_result.get("status") != "success":
+        # Success = created infra with an id; "status" here is the infra status string, not "success"
+        if "error" in infra_result or not infra_result.get("id"):
             return {
                 "status": "error",
                 "error": "Failed to create Infra",
@@ -9633,28 +9610,38 @@ def execute_application_commands(
                 "suggestion": "Provide meaningful commands with actual content"
             }
         
-        # Get Infra access info for template expansion
+        # Get Infra access info for template expansion (raw InfraAccessInfo; no "status" field)
         access_info = get_infra_access_info(namespace_id, infra_id, show_ssh_key=False)
-        
-        if access_info.get("status") != "success":
+
+        if "error" in access_info:
             return {
                 "status": "error",
                 "error": "Failed to get Infra access information",
                 "details": access_info
             }
-        
+
         # Expand command templates
         expanded_commands = []
         for cmd in valid_commands:  # Use valid_commands instead of commands
             expanded_cmd = _expand_command_templates(cmd, access_info, infra_id)
             expanded_commands.append(expanded_cmd)
-        
+
+        # Map target_selection to execute_command_infra's target params
+        target_kwargs = {}
+        if target_selection:
+            target_type = target_selection.get("type")
+            target_id = target_selection.get("target_id")
+            if target_type == "nodegroup" and target_id:
+                target_kwargs["nodegroup_id"] = target_id
+            elif target_type in ("vm", "node") and target_id:
+                target_kwargs["node_id"] = target_id
+
         # Execute commands
         execute_result = execute_command_infra(
-            namespace_id=namespace_id,
+            ns_id=namespace_id,
             infra_id=infra_id,
             commands=expanded_commands,
-            **{k: v for k, v in (target_selection or {}).items() if k != "type"}
+            **target_kwargs
         )
         
         return {
@@ -9971,7 +9958,7 @@ def _deploy_application_to_infrastructure(
         
         # Execute commands on Infra
         execution_result = execute_command_infra(
-            namespace_id=namespace_id,
+            ns_id=namespace_id,
             infra_id=infra_id,
             commands=expanded_commands
         )
@@ -9989,6 +9976,20 @@ def _deploy_application_to_infrastructure(
             "status": "error",
             "error": str(e)
         }
+
+# Helper function: Extract node IPs from an InfraAccessInfo response
+def _extract_infra_ips(access_info: Dict) -> tuple:
+    """Return (public_ips, private_ips) from GET .../infra/{id}?option=accessinfo."""
+    public_ips, private_ips = [], []
+    nodegroups = access_info.get("InfraNodeGroupAccessInfo") or access_info.get("infraNodeGroupAccessInfo") or []
+    for ng in nodegroups:
+        nodes = ng.get("NodeAccessInfo") or ng.get("nodeAccessInfo") or []
+        for node in nodes:
+            if node.get("publicIP"):
+                public_ips.append(node["publicIP"])
+            if node.get("privateIP"):
+                private_ips.append(node["privateIP"])
+    return public_ips, private_ips
 
 # Helper function: Expand command templates
 def _expand_command_templates(command: str, access_info: Dict, infra_id: str) -> str:
@@ -10012,19 +10013,8 @@ def _expand_command_templates(command: str, access_info: Dict, infra_id: str) ->
     if "$$Func(" in command:
         return command  # Return as-is for CB-Tumblebug to process
     
-    # Extract access information for manual template variables
-    access_data = access_info.get("access_info", {})
-    
-    # Get public and private IPs
-    public_ips = []
-    private_ips = []
-    
-    for nodegroup in access_data.get("infra_nodegroup_access_info", []):
-        for vm in nodegroup.get("vm_access_info_array", []):
-            if vm.get("public_ip"):
-                public_ips.append(vm["public_ip"])
-            if vm.get("private_ip"):
-                private_ips.append(vm["private_ip"])
+    # Extract node IPs for manual template variables
+    public_ips, private_ips = _extract_infra_ips(access_info)
     
     # Process only manual template variables ({{...}})
     if public_ips:
@@ -10427,8 +10417,8 @@ def execute_compute_task(
         if cleanup_after_completion:
             workflow_result["status"] = "cleaning_up"
             cleanup_result = _cleanup_compute_resources(
-                target_namespace, 
-                delete_namespace=is_temporary_namespace
+                target_namespace,
+                delete_ns=is_temporary_namespace
             )
             workflow_result["cleanup_status"] = cleanup_result
         
@@ -10463,7 +10453,7 @@ def execute_compute_task(
             try:
                 emergency_cleanup = _cleanup_compute_resources(
                     target_namespace,
-                    delete_namespace=is_temporary_namespace
+                    delete_ns=is_temporary_namespace
                 )
                 workflow_result["emergency_cleanup"] = emergency_cleanup
             except:
@@ -10676,7 +10666,8 @@ def _execute_computation_on_infrastructure(
         max_wait_attempts = 30
         for attempt in range(max_wait_attempts):
             infra_status = get_infra(namespace, infra_id)
-            if infra_status.get("status") == "Running":
+            # Status is a composite string, e.g. "Running:2 (R:2/2)"
+            if str(infra_status.get("status", "")).startswith("Running"):
                 break
             elif attempt == max_wait_attempts - 1:
                 return {"status": "failed", "error": "Infra failed to reach Running state"}
@@ -10877,26 +10868,26 @@ print('COMPUTATION COMPLETED')
 """
 
 # Helper function: Cleanup compute resources
-def _cleanup_compute_resources(namespace: str, delete_namespace: bool = False) -> Dict:
+def _cleanup_compute_resources(namespace: str, delete_ns: bool = False) -> Dict:
     """
     Clean up compute resources created for computation task.
-    
+
     Args:
         namespace: Namespace containing the compute resources
-        delete_namespace: Whether to delete the namespace itself (only for temporary namespaces)
-    
+        delete_ns: Whether to delete the namespace itself (only for temporary namespaces)
+
     Returns:
         Cleanup result with details of what was cleaned up
     """
     cleanup_result = {
         "namespace": namespace,
-        "namespace_type": "temporary" if delete_namespace else "persistent",
+        "namespace_type": "temporary" if delete_ns else "persistent",
         "infra_deleted": False,
         "resources_released": False,
         "namespace_deleted": False,
         "status": "starting"
     }
-    
+
     try:
         # Get list of Infras in namespace
         infra_list = get_infra_list(namespace)
@@ -10906,28 +10897,29 @@ def _cleanup_compute_resources(namespace: str, delete_namespace: bool = False) -
                 if infra_id and "compute" in infra_id.lower():  # Only delete compute-related Infras
                     try:
                         delete_result = delete_infra(namespace, infra_id)
-                        cleanup_result["infra_deleted"] = True
-                    except:
+                        if "error" not in delete_result:
+                            cleanup_result["infra_deleted"] = True
+                    except Exception:
                         pass
-        
+
         # Release shared resources only if deleting namespace
-        if delete_namespace:
+        if delete_ns:
             try:
-                release_result = release_resources(namespace)
-                cleanup_result["resources_released"] = True
-            except:
+                release_result = release_resources(namespace, force_release=True)
+                cleanup_result["resources_released"] = "error" not in release_result
+            except Exception:
                 pass
-            
+
             # Delete namespace only if it was temporary
             try:
                 ns_delete_result = delete_namespace(namespace)
-                cleanup_result["namespace_deleted"] = True
-            except:
+                cleanup_result["namespace_deleted"] = "error" not in ns_delete_result
+            except Exception:
                 pass
-        
+
         cleanup_result["status"] = "completed"
         return cleanup_result
-        
+
     except Exception as e:
         cleanup_result["status"] = "failed"
         cleanup_result["error"] = str(e)
@@ -11032,13 +11024,14 @@ def create_or_update_labels(
     labels: Dict[str, str]
 ) -> Dict:
     """
-    Create or update labels on a resource (Infra, VM, namespace, etc.).
-    
+    Create or update labels on a resource (Infra, node, namespace, etc.).
+
     Labels are key-value string pairs used to organize and select resources.
     If a label key already exists, its value will be updated.
-    
+
     Args:
-        label_type: Resource type (e.g., "infra", "vm", "ns", "spec", "image")
+        label_type: Resource type — one of: ns, infra, nodeGroup, node, k8s, vNet,
+            subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage
         uid: Resource UID (unique identifier of the resource)
         labels: Dictionary of label key-value pairs to set
             Example: {"env": "production", "team": "backend", "app": "web-server"}
@@ -11059,9 +11052,9 @@ def get_labels(
     Get all labels for a specific resource.
     
     Args:
-        label_type: Resource type (e.g., "infra", "vm", "ns", "spec", "image")
+        label_type: Resource type (e.g., "infra", "node", "ns")
         uid: Resource UID (unique identifier of the resource)
-    
+
     Returns:
         Labels attached to the resource as key-value pairs
     """
@@ -11078,7 +11071,7 @@ def remove_label(
     Remove a specific label from a resource by its key.
     
     Args:
-        label_type: Resource type (e.g., "infra", "vm", "ns")
+        label_type: Resource type (e.g., "infra", "node", "ns")
         uid: Resource UID
         key: Label key to remove
     
@@ -11099,13 +11092,13 @@ def get_resources_by_label(
     Use this to discover resources by their labels across a resource type.
     
     Args:
-        label_type: Resource type to search (e.g., "infra", "vm", "ns")
+        label_type: Resource type to search (e.g., "infra", "node", "ns")
         labels: Comma-separated label selector (e.g., "env=production,team=backend")
-    
+
     Returns:
-        List of resources matching the label selector
+        Matching resources under the "results" key
     """
-    return api_request("GET", f"/resources/{label_type}", params={"labels": labels})
+    return api_request("GET", f"/resources/{label_type}", params={"labelSelector": labels})
 
 # Tool: Merge CSP Resource Labels
 @mcp.tool()
@@ -11120,9 +11113,9 @@ def merge_csp_resource_labels(
     (e.g., via AWS Console, Azure Portal) back into CB-Tumblebug's label store.
     
     Args:
-        label_type: Resource type (e.g., "infra", "vm")
+        label_type: Resource type (e.g., "infra", "node")
         uid: Resource UID
-    
+
     Returns:
         Merged label information
     """
@@ -11144,7 +11137,7 @@ def list_credential_holders() -> Dict:
     x-credential-holder header via the credential_holder parameter in API calls.
     
     Returns:
-        List of credential holders with:
+        Dict with "credentialHolderList": list of holders, each with:
         - credentialHolder: Holder identifier (e.g., "admin", "dev-team")
         - providers: List of cloud providers with credentials (e.g., ["aws", "gcp", "azure"])
         - connectionCount: Total connection configurations
@@ -11227,7 +11220,7 @@ specs = recommend_vm_spec(
 
 # 1.2: Search and select images for each spec
 vm_configurations = []
-for i, spec in enumerate(specs["recommended_specs"][:2]):
+for i, spec in enumerate(specs["summarized_specs"][:2]):
     spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
     
     # 1.2.1: Search for compatible images using matched_spec_id
@@ -11277,7 +11270,7 @@ if review_result.get("overallStatus") == "Ready":
     creation_viable = True
 elif review_result.get("overallStatus") == "Warning":
     print("⚠️ Warnings detected - Review before proceeding")
-    # Check vmReviews for specific warnings
+    # Check nodeReviews for specific warnings
     creation_viable = True  # Can proceed with caution
 elif review_result.get("overallStatus") == "Error":
     print("❌ Errors detected - Must fix before proceeding") 
@@ -11286,7 +11279,7 @@ elif review_result.get("overallStatus") == "Error":
 
 # 2.2: Review cost estimates
 print(f"💰 Estimated cost: {review_result.get('estimatedCost')}")
-print(f"🖥️ Total VMs: {review_result.get('totalVmCount')}")
+print(f"🖥️ Total VMs: {review_result.get('totalNodeCount')}")
 ```
 
 #### STEP 3: 🚀 Infra CREATION (Only After Successful Review)
@@ -11346,7 +11339,7 @@ create_infra_dynamic(..., force_create=True)  # Without checking review
 # DO: Follow the complete three-step process
 specs = recommend_vm_spec(...)
 vm_configs = []
-for spec in specs["recommended_specs"]:
+for spec in specs["summarized_specs"]:
     # REQUIRED: Search for compatible images with specific OS version
     images = search_images(matched_spec_id=spec["id"], os_type="ubuntu 22.04")  # Specify exact OS+version
     selected_image = images["imageList"][0]["cspImageName"]
@@ -11375,8 +11368,8 @@ vm_config = {
 - `overallStatus`: "Ready" | "Warning" | "Error"
 - `creationViable`: Boolean - can create Infra?
 - `estimatedCost`: Cost per hour (e.g., "$0.0837/hour")
-- `totalVmCount`: Total VMs including NodeGroup sizes
-- `vmReviews`: Per-VM validation details
+- `totalNodeCount`: Total VMs including NodeGroup sizes
+- `nodeReviews`: Per-VM validation details
 
 ### Decision Matrix:
 - **"Ready" + creationViable: true** → ✅ Proceed with creation
@@ -11495,7 +11488,7 @@ elif user_response.lower() in ["no", "n", "cancel"]:
     print("❌ Infra creation cancelled by user.")
 else:
     # Show detailed information
-    print("📋 Detailed validation results:", review_result["vmReviews"])
+    print("📋 Detailed validation results:", review_result["nodeReviews"])
 ```
 
 **🟡 "READY_WITH_WARNINGS":**
@@ -12177,7 +12170,7 @@ specs = recommend_vm_spec(
 ```python
 # Create VM configurations using recommended specs
 vm_configurations = []
-for i, spec in enumerate(specs["recommended_specs"][:2]):
+for i, spec in enumerate(specs["summarized_specs"][:2]):
     vm_configurations.append({
         "specId": spec["id"],  # Use exact spec ID from API
         "name": f"app-vm-{i+1}",
@@ -12334,7 +12327,7 @@ specs = recommend_vm_spec(
 
 # 4. Build VM config
 vm_configs = [{
-    "specId": specs["recommended_specs"][0]["id"],
+    "specId": specs["summarized_specs"][0]["id"],
     "name": "nginx-vm-1",
     "description": "Nginx web server VM"
 }]
@@ -12841,7 +12834,7 @@ specs = recommend_vm_spec(
 
 # STEP 2: Build VM configurations using ONLY returned spec IDs
 vm_configurations = []
-for i, spec in enumerate(specs["recommended_specs"][:2]):
+for i, spec in enumerate(specs["summarized_specs"][:2]):
     vm_configurations.append({
         "specId": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
         "name": f"vm-{spec['providerName']}-{i+1}",
@@ -13309,7 +13302,7 @@ review = review_nodegroup_dynamic(
 )
 
 # Step 2: If review passes, add the NodeGroup
-if review.get("isAvailable") or review.get("canCreate"):
+if review.get("isValid") or review.get("canCreate"):
     result = add_nodegroup_dynamic(
         ns_id="default",
         infra_id="my-infra",
@@ -13330,7 +13323,7 @@ check = review_spec_image_pair(
     spec_id="aws+ap-northeast-2+t3.nano",
     image_id="ami-01f71f215b23ba262"
 )
-if check.get("isAvailable"):
+if check.get("isValid"):
     print("Spec and image are compatible and available")
 ```
 
@@ -13365,10 +13358,10 @@ create_or_update_labels(
     labels={"env": "production", "team": "backend", "app": "web-server"}
 )
 
-# Add labels to a VM
+# Add labels to a node (VM)
 create_or_update_labels(
-    label_type="vm",
-    uid="vm-uid-123",
+    label_type="node",
+    uid="node-uid-123",
     labels={"role": "worker", "tier": "compute"}
 )
 ```
@@ -13383,7 +13376,7 @@ production_resources = get_resources_by_label(
 
 # Find worker VMs in the backend team
 workers = get_resources_by_label(
-    label_type="vm",
+    label_type="node",
     labels="role=worker,team=backend"
 )
 ```
@@ -13391,7 +13384,7 @@ workers = get_resources_by_label(
 ### Syncing CSP Labels
 ```python
 # Pull labels set directly on CSP resources (e.g., via AWS Console)
-merge_csp_resource_labels(label_type="vm", uid="vm-uid-123")
+merge_csp_resource_labels(label_type="node", uid="node-uid-123")
 ```
 
 ## 🔐 Credential Holder Management
