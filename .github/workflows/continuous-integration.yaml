@@ -24,14 +24,12 @@ jobs:
   # The job key (i.e., ID) is "build-source-code"
   build-source-code:
     # Job name is "Building source code"
-    # This job runs on Ubuntu-latest (Ubuntu 22.04 LTS checked on 2023-12-13)
-    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
     name: Build source code
     strategy:
       matrix:
         go-version: ["1.26.2"]
-        os: [ubuntu-22.04]
-        #os: [ubuntu-22.04, ubuntu-20.04, windows-2022, windows-2019]
+        os: [ubuntu-24.04]
+        #os: [ubuntu-24.04, windows-2022]  # extend for multi-OS builds
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v7
@@ -52,9 +50,7 @@ jobs:
     # Job name is "Build a container image"
     name: Build a container image
 
-    # This job runs on Ubuntu-latest (Ubuntu 22.04 LTS checked on 2023-12-13)
-    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout source code
         uses: actions/checkout@v7
