@@ -1,0 +1,20 @@
+# Local-only Helm overrides for `make k-up` (K8s counterpart of compose's .env).
+# Usage: cp values-local.yaml.example values-local.yaml  (values-local.yaml is gitignored)
+# k-up includes it automatically and it persists across upgrades/reinstalls.
+# NOTE: mapui.placeholderDefaults values end up in the served JS bundle — anyone
+# who can open MapUI can read them; use only where MapUI access is controlled.
+
+mapui:
+  # Preset remote-command popup parameters (keys match <PLACEHOLDER> names)
+  placeholderDefaults: {}
+    # HF_TOKEN: hf_xxx
+    # VLLM_HF_TOKEN: hf_xxx
+    # TAVILY_API_KEY: tvly-xxx
+    # DISCORD_TOKEN: xxx
+    # DISCORD_HOME_CHANNEL: "123456789"
+    # HERMES_API_KEY: xxx
+    # NTFY_TOPIC: my-topic
+
+# Any other chart value can be overridden here as well, e.g.:
+# tumblebug:
+#   logLevel: info
