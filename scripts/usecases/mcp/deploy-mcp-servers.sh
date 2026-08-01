@@ -64,7 +64,12 @@ data:
           huggingface, custom (KServe-servable formats)
         Optional: params_m (millions of parameters), size_mb, license
         (default apache-2.0), gpu_required (default false), description.
-        Ask the user for any required value they have not provided yet."""
+        Ask the user for any required value they have not provided yet.
+
+        Note: the chosen format determines how the model would later be served —
+        standard formats need NO container image build (KServe standard runtime),
+        while 'custom' requires building an image. Call get_serving_guide to
+        explain the serving path for a model."""
         r = httpx.post(f"{API}/models", timeout=10, json={
             "name": name, "task": task, "format": format, "params_m": params_m,
             "size_mb": size_mb, "license": license, "gpu_required": gpu_required,
@@ -80,6 +85,61 @@ data:
         if r.status_code >= 400:
             return {"error": r.status_code, "detail": r.json().get("detail", r.text)}
         return r.json()
+
+    STANDARD_FORMATS = ["sklearn", "xgboost", "lightgbm", "onnx",
+                        "tensorflow", "pytorch", "huggingface"]
+
+    @mcp.tool
+    def get_serving_guide(model_id: int = 0, format: str = "") -> dict:
+        """Explain HOW a catalog model would be deployed for inference and
+        whether a container image build is required. Pass model_id (preferred)
+        or a format string. Use this when the user asks how to serve/deploy a
+        model, or to compare serving approaches.
+
+        Three serving methods (demo scripts in scripts/usecases/kserve/examples):
+        - A standard-runtime: KServe serves standard formats (sklearn, xgboost,
+          lightgbm, onnx, tensorflow, pytorch, huggingface) directly — NO serving
+          code, NO container build; model artifact + a small InferenceService YAML.
+        - B custom-image: 'custom' format needs a container image built and pushed
+          to a registry, then a KServe custom-predictor InferenceService.
+        - C plain-deployment: any format can also run WITHOUT KServe as a plain
+          K8s Deployment/Service — you write the API server and manage scaling
+          and rollouts yourself (most control, most work)."""
+        model = None
+        if model_id:
+            model = get(f"/models/{model_id}")
+            format = model.get("format", format)
+        if not format:
+            return {"error": "provide model_id or format"}
+        if format in STANDARD_FORMATS:
+            method, kserve, build = "A", True, False
+            rationale = (f"'{format}' is a KServe standard-runtime format: the model "
+                         "artifact is served as-is — no serving code, no image build.")
+            example = "scripts/usecases/kserve/examples/a-sklearn-isvc.sh"
+        elif format == "custom":
+            method, kserve, build = "B", True, True
+            rationale = ("'custom' format has its own runtime/dependencies: build a "
+                         "container image, push it to a registry, then serve via a "
+                         "KServe custom-predictor InferenceService.")
+            example = "scripts/usecases/kserve/examples/build-serve-custom-model.sh"
+        else:
+            method, kserve, build = "C", False, True
+            rationale = (f"'{format}' is not a KServe-known format: serve it as a plain "
+                         "K8s Deployment/Service without KServe — hand-written API "
+                         "server, manual scaling and rollout.")
+            example = "scripts/usecases/kserve/examples/c-plain-deployment.sh"
+        return {
+            "model": model.get("name") if model else None,
+            "format": format,
+            "recommended_method": method,
+            "uses_kserve": kserve,
+            "container_build_required": build,
+            "gpu_required": model.get("gpu_required") if model else None,
+            "rationale": rationale,
+            "example_script": example,
+            "alternatives": ("Method C (plain Deployment, no KServe) is always possible "
+                             "for full manual control; it trades convenience for effort."),
+        }
 
     # stateless: any replica can serve any request (no per-pod session state)
     mcp.run(transport="http", host="0.0.0.0", port=8000, path="/mcp", stateless_http=True)

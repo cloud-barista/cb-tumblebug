@@ -2726,7 +2726,7 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 	}
 
 	// Construct the SCP command and log it
-	targetFullPath := fmt.Sprintf("%s/%s", targetPath, fileName)
+	targetFullPath := fmt.Sprintf("%s/%s", normalizeRemotePath(targetPath), fileName)
 	cmd := fmt.Sprintf("scp -t '%s'", targetFullPath)
 	log.Info().Msgf("Executing SCP command: %s", cmd)
 
@@ -2875,6 +2875,22 @@ func downloadFileFromNodeViaBastion(nsId string, infraId string, nodeId string, 
 	return fileData, fileName, nil
 }
 
+// normalizeRemotePath rewrites "~"-prefixed paths as home-relative paths.
+// Quoted scp paths are not shell-expanded, but scp resolves relative paths
+// against the login user's home directory.
+func normalizeRemotePath(path string) string {
+	if path == "~" {
+		return "."
+	}
+	if strings.HasPrefix(path, "~/") {
+		if p := strings.TrimPrefix(path, "~/"); p != "" {
+			return p
+		}
+		return "."
+	}
+	return path
+}
+
 // runSCPDownloadWithBastion downloads a file using SCP over SSH via a Bastion host (SCP source mode: scp -f)
 func runSCPDownloadWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, sourcePath string, bastionCtx tofuContext, targetCtx tofuContext) ([]byte, string, error) {
 	log.Info().Msgf("Setting up SCP download connection via Bastion Host for: %s", sourcePath)
@@ -2955,6 +2971,7 @@ func runSCPDownloadWithBastion(bastionInfo model.SshInfo, targetInfo model.SshIn
 		stdin.Close()
 		return nil, "", fmt.Errorf("invalid sourcePath: contains disallowed characters")
 	}
+	sourcePath = normalizeRemotePath(sourcePath)
 
 	// Start SCP in source mode (download: scp -f)
 	cmd := fmt.Sprintf("scp -f '%s'", sourcePath)

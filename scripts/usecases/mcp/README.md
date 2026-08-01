@@ -87,6 +87,43 @@ Register different routes in different clients (e.g. `/mcp` in Claude Code,
 `/mcp-serving` in VS Code Copilot) and compare their tool lists. Note: a route
 with a single target exposes original tool names without the target prefix.
 
+## Live-demo features of the web catalog
+
+The catalog page (30902) is built to make MCP-driven changes visible on stage:
+
+- **Live changes feed** (right panel): every model registered or deleted via
+  MCP tools appears as a timestamped event within 5 s; new cards glow with a
+  **NEW** badge for 20 s.
+- **Detail modal**: click any card — full metadata plus a **serving-method
+  panel** showing how that model would be deployed (see below).
+- **Serving badges** on every card: `A · no build` / `B · image build` /
+  `C · manual`, derived from the model format.
+
+Suggested talk track: ask the LLM to *"register an onnx model called
+tomato-ripeness-cnn"* → the card pops into the catalog with NEW + the feed logs
+it → click it → the modal explains it would serve with **zero container
+builds** → ask the LLM *"how would I serve it?"* → `get_serving_guide` answers
+with the same classification.
+
+## Serving-method comparison (A/B/C)
+
+The catalog and the `get_serving_guide` MCP tool classify every model into one
+of three serving paths (working demos in `scripts/usecases/kserve/examples/`;
+note that not all of them use KServe):
+
+| Method | Container build? | KServe? | You write serving code? | Demo script |
+|---|---|---|---|---|
+| **A** standard-runtime | **No** | Yes | No — model file + 8-line YAML | `a-sklearn-isvc.sh` |
+| **B** custom-image | **Yes** (registry needed) | Yes | Yes (runtime image) | `build-serve-custom-model.sh` |
+| **C** plain Deployment | Yes (or inline hack) | **No** | Yes + manual scaling/rollout | `c-plain-deployment.sh` |
+
+Formats `sklearn/xgboost/lightgbm/onnx/tensorflow/pytorch/huggingface` → A,
+`custom` → B, anything else → C. Because the mapping lives in the MCP tool
+docstrings, the LLM can explain the trade-off unprompted — e.g. ask
+*"우리 카탈로그에서 컨테이너 빌드 없이 바로 서빙 가능한 모델만 골라줘"* and it
+will reason from formats alone. For the full A/B/C hands-on comparison run the
+three example scripts on a KServe cluster (mapui: 🚀 KServe steps 10/11/14).
+
 ## Notes
 
 - Component versions: agentgateway `v1.3.1` (standalone mode, static config),

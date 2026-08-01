@@ -135,9 +135,48 @@ spec:
             - "--probe.kubernetes=true"
             - "--probe.kubernetes.role=host"
             - "--probe.docker=false"
+            # containerd clusters: fill the Containers view via the CRI probe
+            - "--probe.cri=true"
+            - "--probe.cri.endpoint=unix:///run/containerd/containerd.sock"
             - "scope-app.${NS}.svc.cluster.local:4040"
           securityContext:
             privileged: true
+          volumeMounts:
+            - name: cri-sock
+              mountPath: /run/containerd/containerd.sock
+          resources:
+            requests: { cpu: 50m, memory: 100Mi }
+      volumes:
+        - name: cri-sock
+          hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket
+---
+# Cluster-scope probe: watches the K8s API and feeds the Pods/Services/
+# Deployments topologies (host-role agents only report node-local data)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scope-cluster-agent
+  namespace: ${NS}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: scope-cluster-agent }
+  template:
+    metadata:
+      labels: { app: scope-cluster-agent }
+    spec:
+      serviceAccountName: weave-scope
+      containers:
+        - name: agent
+          image: weaveworks/scope:${SCOPE_VERSION}
+          args:
+            - "--mode=probe"
+            - "--probe.kubernetes=true"
+            - "--probe.kubernetes.role=cluster"
+            - "--probe.docker=false"
+            - "scope-app.${NS}.svc.cluster.local:4040"
           resources:
             requests: { cpu: 50m, memory: 100Mi }
 EOF
@@ -146,6 +185,7 @@ echo ""
 echo "Waiting for Weave Scope to start..."
 kubectl -n ${NS} rollout status deployment/scope-app --timeout=3m > /dev/null
 kubectl -n ${NS} rollout status daemonset/scope-agent --timeout=3m > /dev/null
+kubectl -n ${NS} rollout status deployment/scope-cluster-agent --timeout=3m > /dev/null
 
 NODE_IP=$(hostname -I | awk '{print $1}')
 echo ""
