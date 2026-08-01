@@ -164,10 +164,34 @@ GW_VALUES_FLAG = $(if $(wildcard $(K8S_GW_VALUES)),-f $(K8S_GW_VALUES))
 ENVOY_GATEWAY_VERSION ?= v1.8.3
 # Local-source dev images (compose `build:` equivalent): one state file per component
 DEV_IMAGE_FLAGS = $(foreach f,$(wildcard deployments/helm/cb-tumblebug/values-dev-image-*.yaml),-f $(f))
+# Free-form local overrides (gitignored; e.g. mapui.placeholderDefaults with tokens)
+K8S_LOCAL_VALUES := deployments/helm/cb-tumblebug/values-local.yaml
+LOCAL_VALUES_FLAG = $(if $(wildcard $(K8S_LOCAL_VALUES)),-f $(K8S_LOCAL_VALUES))
+# MapUI popup params shared with docker-compose via .env (regenerated on every k-up)
+K8S_ENV_PARAMS := deployments/helm/cb-tumblebug/values-env-params.yaml
+MAPUI_PARAM_KEYS := HF_TOKEN VLLM_HF_TOKEN TAVILY_API_KEY DISCORD_TOKEN DISCORD_HOME_CHANNEL DISCORD_HOME_CHANNEL_NAME HERMES_API_KEY NTFY_TOPIC
+# k-* output styling (disable with NO_COLOR=1); print with: printf '%b\n' '...'
+ifdef NO_COLOR
+KB :=
+KG :=
+KY :=
+KR :=
+KC :=
+KD :=
+KX :=
+else
+KB := \033[1m
+KG := \033[32m
+KY := \033[33m
+KR := \033[31m
+KC := \033[36m
+KD := \033[2m
+KX := \033[0m
+endif
 
 k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no cluster is reachable)
-	@command -v helm >/dev/null || { echo "helm is required: https://helm.sh/docs/intro/install/"; exit 1; }
-	@command -v kubectl >/dev/null || { echo "kubectl is required"; exit 1; }
+	@command -v helm >/dev/null || { printf '%b\n' '$(KR)\xe2\x9c\x96 helm is required$(KX) \xe2\x80\x94 https://helm.sh/docs/intro/install/'; exit 1; }
+	@command -v kubectl >/dev/null || { printf '%b\n' '$(KR)\xe2\x9c\x96 kubectl is required$(KX)'; exit 1; }
 	@if ! $(KUBECTL) cluster-info >/dev/null 2>&1; then \
 		if command -v kind >/dev/null; then \
 			echo "No reachable cluster. Creating kind cluster '$(KIND_CLUSTER_NAME)'..."; \
@@ -181,7 +205,7 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 	@# Show the install target; confirm when it is not a local kind cluster
 	@ctx="$(K8S_CONTEXT)"; [ -n "$$ctx" ] || ctx=$$(kubectl config current-context 2>/dev/null); \
 	server=$$($(KUBECTL) config view --minify -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null); \
-	echo "Target cluster: context '$$ctx' ($$server), namespace '$(K8S_NAMESPACE)'"; \
+	printf '%b\n' "$(KB)$(KC)\xe2\x96\x8c Target$(KX) context $(KB)$$ctx$(KX) ($$server), namespace $(KB)$(K8S_NAMESPACE)$(KX)"; \
 	case "$$ctx" in \
 		kind-*) ;; \
 		*) if [ -t 0 ]; then \
@@ -194,7 +218,7 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 	@# Preflight: PVCs need a default StorageClass unless storageClassName values are given
 	@if ! echo '$(HELM_ARGS)' | grep -q storageClassName; then \
 		if ! $(KUBECTL) get storageclass 2>/dev/null | grep -q '(default)'; then \
-			echo "ERROR: this cluster has no default StorageClass — PVCs would stay Pending forever."; \
+			printf '%b\n' '$(KR)\xe2\x9c\x96 No default StorageClass$(KX) \xe2\x80\x94 PVCs would stay Pending forever.'; \
 			echo "  Fix one of:"; \
 			echo "   - mark a StorageClass as default (storageclass.kubernetes.io/is-default-class=true)"; \
 			echo "   - pass explicit classes: make k-up HELM_ARGS=\"--set etcd.storageClassName=<sc> --set tumblebugPostgres.storageClassName=<sc> --set spiderPostgres.storageClassName=<sc> --set openbao.storageClassName=<sc> --set terrarium.storageClassName=<sc>\""; \
@@ -205,36 +229,54 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 	@total=$$($(KUBECTL) get nodes --no-headers 2>/dev/null | wc -l); \
 	tainted=$$($(KUBECTL) get nodes -o jsonpath='{range .items[*]}{range .spec.taints[*]}{.key}:{.effect} {end}{"\n"}{end}' 2>/dev/null | grep -c 'node-role.kubernetes.io/\(control-plane\|master\):NoSchedule' || true); \
 	if [ "$$total" -gt 0 ] && [ "$$tainted" -ge "$$total" ]; then \
-		echo "WARNING: all $$total node(s) carry the control-plane NoSchedule taint — pods will stay Pending."; \
-		echo "  Single-node cluster fix: kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-"; \
+		printf '%b\n' "$(KY)\xe2\x9a\xa0 All $$total node(s) carry the control-plane NoSchedule taint \xe2\x80\x94 pods will stay Pending.$(KX)"; \
+		printf '%b\n' '  Single-node fix: $(KC)kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-$(KX)'; \
 	fi
 	@if $(HELM) status $(HELM_RELEASE) -n $(K8S_NAMESPACE) >/dev/null 2>&1; then \
 		rev=$$($(HELM) list -n $(K8S_NAMESPACE) --filter '^$(HELM_RELEASE)$$' 2>/dev/null | tail -1 | awk '{print $$3}'); \
-		echo "Existing release found (revision $$rev) — upgrading in place (pods restart only if templates changed)..."; \
+		printf '%b\n' "$(KD)Existing release (revision $$rev) \xe2\x80\x94 upgrading in place (pods restart only if templates changed)$(KX)"; \
 	else \
-		echo "No existing release — fresh install into namespace '$(K8S_NAMESPACE)'..."; \
+		printf '%b\n' "$(KD)No existing release \xe2\x80\x94 fresh install into namespace $(K8S_NAMESPACE)$(KX)"; \
+	fi
+	@# Reuse compose's .env for MapUI popup params (single source; values-local.yaml wins)
+	@rm -f $(K8S_ENV_PARAMS); \
+	if [ -f .env ]; then \
+		params=""; \
+		for k in $(MAPUI_PARAM_KEYS); do \
+			v=$$(sed -n "s/^$$k=//p" .env | tail -1); \
+			[ "$$k" = "VLLM_HF_TOKEN" ] && [ -z "$$v" ] && v=$$(sed -n 's/^HF_TOKEN=//p' .env | tail -1); \
+			[ -n "$$v" ] && params="$$params    $$k: \"$$v\"\n"; \
+		done; \
+		if [ -n "$$params" ]; then \
+			printf 'mapui:\n  placeholderDefaults:\n%b' "$$params" > $(K8S_ENV_PARAMS); \
+			printf '%b\n' '$(KD)MapUI popup params loaded from .env (override: values-local.yaml)$(KX)'; \
+		fi; \
 	fi
 	@# --reset-values: state comes only from chart defaults + current flags
 	@# (otherwise helm silently carries over user-supplied values from the previous revision)
 	@$(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART) \
 		--namespace $(K8S_NAMESPACE) --create-namespace --timeout 10m \
-		--reset-values $(MCP_VALUES_FLAG) $(AGW_VALUES_FLAG) $(AGW_AUTH_VALUES_FLAG) $(GW_VALUES_FLAG) $(DEV_IMAGE_FLAGS) $(HELM_ARGS) || \
+		--reset-values $(MCP_VALUES_FLAG) $(AGW_VALUES_FLAG) $(AGW_AUTH_VALUES_FLAG) $(GW_VALUES_FLAG) $(DEV_IMAGE_FLAGS) \
+		$$( [ -f $(K8S_ENV_PARAMS) ] && printf '%s' '-f $(K8S_ENV_PARAMS)' ) $(LOCAL_VALUES_FLAG) $(HELM_ARGS) || \
 		{ $(MAKE) --no-print-directory k-diagnose; exit 1; }
 	@echo ""
-	@echo "Waiting for pods to become Ready (timeout 10m)..."
+	@printf '%b' "Waiting for pods to become Ready (timeout 10m)... "
 	@$(KUBECTL) wait pods -l app.kubernetes.io/part-of=cb-tumblebug \
-		--for=condition=Ready -n $(K8S_NAMESPACE) --timeout=600s || \
-		{ $(MAKE) --no-print-directory k-diagnose; exit 1; }
+		--for=condition=Ready -n $(K8S_NAMESPACE) --timeout=600s >/dev/null || \
+		{ printf '%b\n' '$(KR)\xe2\x9c\x96$(KX)'; $(MAKE) --no-print-directory k-diagnose; exit 1; }
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 all Ready$(KX)'
 	@$(MAKE) --no-print-directory k-status
-	@echo ""
-	@echo "Next: make k-init   (first deployment only — register credentials & load assets)"
+	@rev=$$($(HELM) list -n $(K8S_NAMESPACE) --filter '^$(HELM_RELEASE)$$' 2>/dev/null | tail -1 | awk '{print $$3}'); \
+	if [ "$$rev" = "1" ]; then \
+		printf '%b\n' '' '$(KB)Next:$(KX) $(KC)make k-init$(KX)   $(KD)(first deployment only \xe2\x80\x94 register credentials & load assets)$(KX)'; \
+	fi
 	@echo ""
 	@$(MAKE) --no-print-directory k-info
 
 # Internal: dump why the deployment is unhealthy (used by k-up failure paths)
 k-diagnose:
 	@echo ""
-	@echo "=== Deployment diagnostics (namespace $(K8S_NAMESPACE)) ==="
+	@printf '%b\n' '$(KB)$(KR)\xe2\x96\x8c Deployment diagnostics$(KX) $(KD)(namespace $(K8S_NAMESPACE))$(KX)'
 	@echo "--- Pods not Running/Completed:"
 	@$(KUBECTL) get pods -n $(K8S_NAMESPACE) 2>/dev/null | grep -vE "Running|Completed" || echo "  (none)"
 	@echo "--- PVC status (Pending = no usable StorageClass?):"
@@ -247,7 +289,7 @@ k-diagnose:
 	@echo "Check again later with: make k-status"
 
 k-init: ## Run initialization against the Kubernetes deployment (port-forward + headless-capable init)
-	@echo "Port-forwarding cb-tumblebug ($(K8S_INIT_PORT) -> 1323)..."
+	@printf '%b\n' '$(KD)Port-forwarding cb-tumblebug ($(K8S_INIT_PORT) -> 1323)...$(KX)'
 	@$(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug $(K8S_INIT_PORT):1323 >/dev/null 2>&1 & \
 	PF_PID=$$!; \
 	trap "kill $$PF_PID 2>/dev/null" EXIT; \
@@ -262,22 +304,22 @@ k-down: ## Uninstall the Helm release and wait for pods to terminate (PVCs/data 
 	$(HELM) uninstall $(HELM_RELEASE) -n $(K8S_NAMESPACE) || true
 	@$(KUBECTL) delete job openbao-init -n $(K8S_NAMESPACE) --ignore-not-found 2>/dev/null || true
 	@$(MAKE) --no-print-directory k-port-forward-stop
-	@echo "Waiting for pods to terminate (timeout 2m)..."
+	@printf '%b' "Waiting for pods to terminate (timeout 2m)... "
 	@$(KUBECTL) wait --for=delete pods -l app.kubernetes.io/part-of=cb-tumblebug \
-		-n $(K8S_NAMESPACE) --timeout=120s 2>/dev/null || \
-		{ echo "Some pods are still terminating — check later with: make k-status"; }
-	@echo "Stopped. Data PVCs are kept (restart: make k-up). Full reset: make k-clean"
+		-n $(K8S_NAMESPACE) --timeout=120s 2>/dev/null && printf '%b\n' '$(KG)\xe2\x9c\x94$(KX)' || \
+		printf '%b\n' '$(KY)\xe2\x9a\xa0 some pods are still terminating \xe2\x80\x94 check later with: make k-status$(KX)'
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Stopped.$(KX) Data PVCs are kept $(KD)(restart: $(KX)$(KC)make k-up$(KX)$(KD); full reset: $(KX)$(KC)make k-clean$(KX)$(KD))$(KX)'
 
 k-clean: ## Full K8s reset: uninstall + delete PVCs and OpenBao key Secret
 	@$(HELM) uninstall $(HELM_RELEASE) -n $(K8S_NAMESPACE) 2>/dev/null || true
 	@$(KUBECTL) delete job openbao-init -n $(K8S_NAMESPACE) --ignore-not-found 2>/dev/null || true
-	$(KUBECTL) delete pvc --all -n $(K8S_NAMESPACE) 2>/dev/null || true
-	@echo "Waiting for PVC deletion to complete (prevents volume reuse races on the next k-up)..."
-	@$(KUBECTL) wait --for=delete pvc --all -n $(K8S_NAMESPACE) --timeout=180s 2>/dev/null || true
-	$(KUBECTL) delete secret openbao-keys -n $(K8S_NAMESPACE) 2>/dev/null || true
+	@$(KUBECTL) delete pvc --all -n $(K8S_NAMESPACE) 2>/dev/null || true
+	@printf '%b' "Waiting for PVC deletion $(KD)(prevents volume reuse races on the next k-up)$(KX)... "
+	@$(KUBECTL) wait --for=delete pvc --all -n $(K8S_NAMESPACE) --timeout=180s 2>/dev/null && printf '%b\n' '$(KG)\xe2\x9c\x94$(KX)' || printf '%b\n' '$(KY)\xe2\x9a\xa0 timeout$(KX)'
+	@$(KUBECTL) delete secret openbao-keys -n $(K8S_NAMESPACE) 2>/dev/null || true
 	@$(MAKE) --no-print-directory k-port-forward-stop
-	@echo "Cleaned. Run 'make k-up' then 'make k-init' to re-deploy."
-	@echo "(a kind cluster is kept; remove with: kind delete cluster --name $(KIND_CLUSTER_NAME))"
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Cleaned.$(KX) Re-deploy with: $(KC)make k-up$(KX) then $(KC)make k-init$(KX)'
+	@printf '%b\n' '$(KD)(a kind cluster is kept; remove with: kind delete cluster --name $(KIND_CLUSTER_NAME))$(KX)'
 
 k-port-forward: ## Start port-forwards for API (1323) and MapUI (1324); idempotent (restarts stale ones)
 	@$(MAKE) --no-print-directory k-port-forward-stop
@@ -285,30 +327,30 @@ k-port-forward: ## Start port-forwards for API (1323) and MapUI (1324); idempote
 	@$(KUBECTL) get svc cb-mapui -n $(K8S_NAMESPACE) >/dev/null 2>&1 && \
 		{ $(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-mapui 1324:1324 >/dev/null 2>&1 & } || true
 	@sleep 2
-	@echo "Port-forwards started:"
-	@echo "  API / Swagger : http://localhost:1323/tumblebug/api"
-	@echo "  MapUI         : http://localhost:1324"
-	@echo "Stop with: make k-port-forward-stop"
+	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Port-forwards started$(KX)'
+	@printf '%b\n' '  API / Swagger : $(KC)http://localhost:1323/tumblebug/api$(KX)'
+	@printf '%b\n' '  MapUI         : $(KC)http://localhost:1324$(KX)'
+	@printf '%b\n' '$(KD)Stop with: make k-port-forward-stop$(KX)'
 	@$(KUBECTL) get svc cb-tumblebug-mcp-server -n $(K8S_NAMESPACE) >/dev/null 2>&1 && \
-		echo "MCP is enabled — connection guide: make k-info" || true
+		printf '%b\n' 'MCP is enabled \xe2\x80\x94 connection guide: $(KC)make k-info$(KX)' || true
 	@$(KUBECTL) get svc -n envoy-gateway-system \
 		-l gateway.envoyproxy.io/owning-gateway-name=cb-tumblebug-gateway -o name 2>/dev/null | grep -q . && \
-		echo "Gateway entrypoint available: make k-gateway-forward (single URL for MapUI/API/MCP)" || true
+		printf '%b\n' 'Gateway entrypoint available: $(KC)make k-gateway-forward$(KX) $(KD)(single URL for MapUI/API/MCP)$(KX)' || true
 
 k-mcp-on: ## Enable the MCP server (persists across future k-up runs)
 	@printf 'mcp:\n  enabled: true\n' > $(K8S_MCP_VALUES)
-	@echo "MCP server enabled (persisted in $(K8S_MCP_VALUES)). Applying..."
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 MCP server enabled$(KX) $(KD)(persisted in $(K8S_MCP_VALUES)) \xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
 
 k-mcp-off: ## Disable the MCP server (also disables agentgateway, which depends on it)
 	@rm -f $(K8S_MCP_VALUES) $(K8S_AGW_VALUES) $(K8S_AGW_AUTH_VALUES)
-	@echo "MCP server (and agentgateway, if enabled) disabled. Applying..."
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 MCP server (and agentgateway, if enabled) disabled$(KX) $(KD)\xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
 
 k-agentgateway-on: ## Enable agentgateway in front of the MCP server (enables MCP too; persistent)
 	@printf 'mcp:\n  enabled: true\n' > $(K8S_MCP_VALUES)
 	@printf 'agentgateway:\n  enabled: true\n' > $(K8S_AGW_VALUES)
-	@echo "agentgateway + MCP enabled (persisted). Applying..."
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 agentgateway + MCP enabled$(KX) $(KD)(persisted) \xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
 
 k-info: ## Show access endpoints & LLM-client setup based on what is currently enabled
@@ -316,30 +358,30 @@ k-info: ## Show access endpoints & LLM-client setup based on what is currently e
 		-l gateway.envoyproxy.io/owning-gateway-name=cb-tumblebug-gateway -o name 2>/dev/null | head -1); \
 	mcp=$$($(KUBECTL) get svc cb-tumblebug-mcp-server -n $(K8S_NAMESPACE) -o name 2>/dev/null); \
 	agw=$$($(KUBECTL) get svc agentgateway -n $(K8S_NAMESPACE) -o name 2>/dev/null); \
-	echo "=== Access guide (based on what is enabled) ==="; \
+	printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Access guide$(KX) $(KD)(based on what is enabled)$(KX)'; \
 	if [ -n "$$gw" ]; then \
 		routes="/ MapUI | /tumblebug API+Swagger"; \
 		[ -n "$$mcp" ] && routes="$$routes | /mcp MCP"; \
-		echo "Single entrypoint (recommended): make k-gateway-forward"; \
-		echo "  -> http://localhost:8080 ($$routes)"; \
+		printf '%b\n' 'Single entrypoint $(KD)(recommended)$(KX): $(KC)make k-gateway-forward$(KX)'; \
+		printf '%b\n' "  -> $(KC)http://localhost:8080$(KX) ($$routes)"; \
 		if $(KUBECTL) get -n envoy-gateway-system $$gw -o jsonpath='{.spec.ports[*].port}' 2>/dev/null | grep -qw 443; then \
-			echo "  -> https://localhost:8443 (same routes; self-signed cert — browser OK, MCP clients may reject)"; \
+			printf '%b\n' '  -> $(KC)https://localhost:8443$(KX) $(KD)(same routes; self-signed cert \xe2\x80\x94 browser OK, MCP clients may reject)$(KX)'; \
 		fi; \
-		echo "  Note: localhost http is safe here — kubectl port-forward tunnels traffic inside TLS to the cluster."; \
+		printf '%b\n' '  $(KD)Note: localhost http is safe here \xe2\x80\x94 kubectl port-forward tunnels traffic inside TLS to the cluster.$(KX)'; \
 	else \
-		echo "Per-service access: make k-port-forward  (API/Swagger :1323, MapUI :1324)"; \
+		printf '%b\n' 'Per-service access: $(KC)make k-port-forward$(KX)  $(KD)(API/Swagger :1323, MapUI :1324)$(KX)'; \
 	fi; \
 	auth=0; $(KUBECTL) get configmap agentgateway-jwks -n $(K8S_NAMESPACE) >/dev/null 2>&1 && auth=1; \
 	if [ -n "$$mcp" ]; then \
 		if [ -n "$$gw" ]; then \
 			$(MAKE) --no-print-directory k-mcp-client-info MCP_URL=http://localhost:8080/mcp MCP_AUTH=$$auth; \
-			echo '  (after: make k-gateway-forward)'; \
+			printf '%b\n' '  $(KD)(prerequisite: make k-gateway-forward)$(KX)'; \
 		elif [ -n "$$agw" ]; then \
 			$(MAKE) --no-print-directory k-mcp-client-info MCP_URL=http://localhost:3000/mcp MCP_AUTH=$$auth; \
-			echo "  (after: kubectl port-forward -n $(K8S_NAMESPACE) svc/agentgateway 3000:3000)"; \
+			printf '%b\n' '  $(KD)(prerequisite: kubectl port-forward -n $(K8S_NAMESPACE) svc/agentgateway 3000:3000)$(KX)'; \
 		else \
 			$(MAKE) --no-print-directory k-mcp-client-info MCP_URL=http://localhost:8000/mcp MCP_AUTH=0; \
-			echo "  (after: kubectl port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug-mcp-server 8000:8000)"; \
+			printf '%b\n' '  $(KD)(prerequisite: kubectl port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug-mcp-server 8000:8000)$(KX)'; \
 		fi; \
 	fi
 
@@ -347,39 +389,44 @@ k-info: ## Show access endpoints & LLM-client setup based on what is currently e
 k-mcp-client-info:
 	@echo ""
 ifeq ($(MCP_AUTH),1)
-	@echo "Connect your LLM client to $(MCP_URL) (streamable HTTP, JWT auth ON — mint: make k-mcp-token):"
-	@echo '  VS Code / Copilot (.vscode/mcp.json):'
-	@echo '      { "servers": { "cb-tumblebug": { "type": "http", "url": "$(MCP_URL)",'
-	@echo '          "headers": { "Authorization": "Bearer <TOKEN>" } } } }'
-	@echo '  Claude Code (CLI):'
-	@echo '      TOKEN=$$(make -s k-mcp-token | grep -o "eyJ[A-Za-z0-9_.-]*")'
-	@echo '      claude mcp add --transport http cb-tumblebug $(MCP_URL) --header "Authorization: Bearer $$TOKEN"'
-	@echo '  Cursor (~/.cursor/mcp.json):'
-	@echo '      { "mcpServers": { "cb-tumblebug": { "url": "$(MCP_URL)",'
-	@echo '          "headers": { "Authorization": "Bearer <TOKEN>" } } } }'
-	@echo '  MCP Inspector: Authentication > Bearer Token = <TOKEN> (token only, no "Bearer " prefix)'
+	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c MCP client setup$(KX) \xe2\x80\x94 $(KC)$(MCP_URL)$(KX) $(KD)(streamable HTTP)$(KX) $(KG)[JWT auth ON]$(KX)'
+	@printf '%b\n' '  $(KB)VS Code / Copilot$(KX) $(KD)(.vscode/mcp.json)$(KX):'
+	@printf '%b\n' '$(KC)      { "servers": { "cb-tumblebug": { "type": "http", "url": "$(MCP_URL)",$(KX)'
+	@printf '%b\n' '$(KC)          "headers": { "Authorization": "Bearer <TOKEN>" } } } }$(KX)'
+	@printf '%b\n' '  $(KB)Claude Code$(KX) $(KD)(CLI \xe2\x80\x94 copy both lines)$(KX):'
+	@printf '%b\n' '$(KC)      TOKEN=$$(make -s k-mcp-token | grep -o "eyJ[A-Za-z0-9_.-]*")$(KX)'
+	@printf '%b\n' '$(KC)      claude mcp add --transport http cb-tumblebug $(MCP_URL) --header "Authorization: Bearer $$TOKEN"$(KX)'
+	@printf '%b\n' '  $(KB)Cursor$(KX) $(KD)(~/.cursor/mcp.json)$(KX):'
+	@printf '%b\n' '$(KC)      { "mcpServers": { "cb-tumblebug": { "url": "$(MCP_URL)",$(KX)'
+	@printf '%b\n' '$(KC)          "headers": { "Authorization": "Bearer <TOKEN>" } } } }$(KX)'
+	@printf '%b\n' '  $(KB)MCP Inspector$(KX): Authentication > Bearer Token = <TOKEN> $(KD)(token only, no "Bearer " prefix)$(KX)'
+	@printf '%b\n' '  $(KD)Mint a token: $(KX)$(KC)make k-mcp-token$(KX)'
 else
-	@echo "Connect your LLM client to $(MCP_URL) (streamable HTTP):"
-	@echo '  VS Code / Copilot (.vscode/mcp.json):'
-	@echo '      { "servers": { "cb-tumblebug": { "type": "http", "url": "$(MCP_URL)" } } }'
-	@echo '  Claude Code (CLI):'
-	@echo '      claude mcp add --transport http cb-tumblebug $(MCP_URL)'
-	@echo '  Cursor (~/.cursor/mcp.json):'
-	@echo '      { "mcpServers": { "cb-tumblebug": { "url": "$(MCP_URL)" } } }'
+	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c MCP client setup$(KX) \xe2\x80\x94 $(KC)$(MCP_URL)$(KX) $(KD)(streamable HTTP)$(KX)'
+	@printf '%b\n' '  $(KB)VS Code / Copilot$(KX) $(KD)(.vscode/mcp.json)$(KX):'
+	@printf '%b\n' '$(KC)      { "servers": { "cb-tumblebug": { "type": "http", "url": "$(MCP_URL)" } } }$(KX)'
+	@printf '%b\n' '  $(KB)Claude Code$(KX) $(KD)(CLI)$(KX):'
+	@printf '%b\n' '$(KC)      claude mcp add --transport http cb-tumblebug $(MCP_URL)$(KX)'
+	@printf '%b\n' '  $(KB)Cursor$(KX) $(KD)(~/.cursor/mcp.json)$(KX):'
+	@printf '%b\n' '$(KC)      { "mcpServers": { "cb-tumblebug": { "url": "$(MCP_URL)" } } }$(KX)'
 endif
-	@echo '  Claude Desktop: run the stdio<->HTTP bridge ON YOUR DESKTOP (a Claude Desktop'
-	@echo '      client limitation, same for compose) — see src/interface/mcp/README.md'
-	@echo '      (mcp-simple-proxy.py + claude_desktop_config.json example)'
-	@echo '  Test/debug with MCP Inspector:'
-	@echo '      npx @modelcontextprotocol/inspector'
-	@echo '        -> open the printed URL; Transport: "Streamable HTTP", URL: $(MCP_URL)'
-	@echo '      quick CLI check: npx @modelcontextprotocol/inspector --cli $(MCP_URL) --method tools/list'
-	@echo '  Security note: the MCP endpoint itself is UNAUTHENTICATED (PoC) — tools act with'
-	@echo '      the TB API credentials embedded in the server. Locally it is reachable only'
-	@echo '      via kubectl port-forward; add gateway-level auth before any external exposure.'
+	@printf '%b\n' '  $(KB)Claude Desktop$(KX): run the stdio<->HTTP bridge ON YOUR DESKTOP $(KD)(a Claude Desktop$(KX)'
+	@printf '%b\n' '      $(KD)client limitation, same for compose) \xe2\x80\x94 see src/interface/mcp/README.md$(KX)'
+	@printf '%b\n' '      $(KD)(mcp-simple-proxy.py + claude_desktop_config.json example)$(KX)'
+	@printf '%b\n' '  $(KB)Test/debug$(KX) with MCP Inspector:'
+	@printf '%b\n' '$(KC)      npx @modelcontextprotocol/inspector$(KX)'
+	@printf '%b\n' '        $(KD)-> open the printed URL; Transport: "Streamable HTTP", URL: $(MCP_URL)$(KX)'
+	@printf '%b\n' '      quick CLI check: $(KC)npx @modelcontextprotocol/inspector --cli $(MCP_URL) --method tools/list$(KX)'
+ifeq ($(MCP_AUTH),1)
+	@printf '%b\n' '  $(KG)Security: JWT auth is ENFORCED at the gateway$(KX) \xe2\x80\x94 requests without a valid token get 401.'
+else
+	@printf '%b\n' '  $(KY)Security note: the MCP endpoint itself is UNAUTHENTICATED$(KX) \xe2\x80\x94 tools act with the TB API'
+	@printf '%b\n' '      credentials embedded in the server. Locally it is reachable only via kubectl port-forward;'
+	@printf '%b\n' '      enable gateway-level auth before any external exposure: $(KC)make k-mcp-auth-on$(KX)'
+endif
 
 k-mcp-auth-on: ## Enable JWT auth on the MCP route (local key; mint tokens with k-mcp-token; persistent)
-	@[ -f $(K8S_AGW_VALUES) ] || { echo "agentgateway is not enabled — run 'make k-agentgateway-on' first."; exit 1; }
+	@[ -f $(K8S_AGW_VALUES) ] || { printf '%b\n' '$(KR)\xe2\x9c\x96 agentgateway is not enabled$(KX) \xe2\x80\x94 run $(KC)make k-agentgateway-on$(KX) first.'; exit 1; }
 	@mkdir -p $(MCP_AUTH_DIR) && chmod 700 $(MCP_AUTH_DIR)
 	@if [ ! -f $(MCP_AUTH_DIR)/key.pem ]; then \
 		echo "Generating RSA signing key ($(MCP_AUTH_DIR)/key.pem)..."; \
@@ -389,32 +436,31 @@ k-mcp-auth-on: ## Enable JWT auth on the MCP route (local key; mint tokens with 
 	@n=$$(openssl rsa -pubin -in $(MCP_AUTH_DIR)/pub.pem -noout -modulus | cut -d= -f2 | xxd -r -p | base64 -w0 | tr '+/' '-_' | tr -d '='); \
 	jwks="{\"keys\":[{\"kty\":\"RSA\",\"kid\":\"cb-tb\",\"use\":\"sig\",\"alg\":\"RS256\",\"n\":\"$$n\",\"e\":\"AQAB\"}]}"; \
 	printf 'agentgateway:\n  auth:\n    enabled: true\n    jwks: '"'"'%s'"'"'\n' "$$jwks" > $(K8S_AGW_AUTH_VALUES)
-	@echo "MCP JWT auth enabled (persisted). Applying..."
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 MCP JWT auth enabled$(KX) $(KD)(persisted) \xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
-	@echo ""
-	@echo "Mint a token with: make k-mcp-token"
+	@printf '%b\n' '' 'Mint a token with: $(KC)make k-mcp-token$(KX)'
 
 k-mcp-auth-off: ## Disable JWT auth on the MCP route (key file is kept)
 	@rm -f $(K8S_AGW_AUTH_VALUES)
-	@echo "MCP JWT auth disabled. Applying..."
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 MCP JWT auth disabled$(KX) $(KD)\xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
 
 k-mcp-token: ## Mint a dev JWT for the MCP endpoint (MCP_TOKEN_TTL_HOURS=$(MCP_TOKEN_TTL_HOURS))
-	@[ -f $(MCP_AUTH_DIR)/key.pem ] || { echo "No signing key — run 'make k-mcp-auth-on' first."; exit 1; }
+	@[ -f $(MCP_AUTH_DIR)/key.pem ] || { printf '%b\n' '$(KR)\xe2\x9c\x96 No signing key$(KX) \xe2\x80\x94 run $(KC)make k-mcp-auth-on$(KX) first.'; exit 1; }
 	@b64url() { base64 -w0 | tr '+/' '-_' | tr -d '='; }; \
 	now=$$(date +%s); exp=$$((now + $(MCP_TOKEN_TTL_HOURS)*3600)); \
 	h=$$(printf '{"alg":"RS256","typ":"JWT","kid":"cb-tb"}' | b64url); \
 	p=$$(printf '{"iss":"$(MCP_JWT_ISSUER)","aud":"$(MCP_JWT_AUDIENCE)","sub":"dev","iat":%s,"exp":%s}' "$$now" "$$exp" | b64url); \
 	s=$$(printf '%s.%s' "$$h" "$$p" | openssl dgst -sha256 -sign $(MCP_AUTH_DIR)/key.pem -binary | b64url); \
-	echo "Token (valid until $$(date -d @$$exp '+%Y-%m-%d %H:%M' 2>/dev/null || date -r $$exp)):"; \
+	printf '%b\n' "$(KB)$(KC)\xe2\x96\x8c MCP token$(KX) $(KD)(valid until $$(date -d @$$exp '+%Y-%m-%d %H:%M' 2>/dev/null || date -r $$exp); TTL: MCP_TOKEN_TTL_HOURS=$(MCP_TOKEN_TTL_HOURS))$(KX)"; \
 	echo ""; \
 	echo "$$h.$$p.$$s"; \
 	echo ""; \
-	echo "Use as: Authorization: Bearer <token>   (Inspector: paste token only, no 'Bearer ' prefix)"
+	printf '%b\n' "$(KD)Use as: Authorization: Bearer <token>   (Inspector: paste token only, no Bearer prefix)$(KX)"
 
 k-agentgateway-off: ## Disable agentgateway (MCP server stays enabled)
 	@rm -f $(K8S_AGW_VALUES) $(K8S_AGW_AUTH_VALUES)
-	@echo "agentgateway disabled (MCP server kept). Applying..."
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 agentgateway disabled$(KX) $(KD)(MCP server kept) \xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
 
 k-gateway-on: ## Enable the Gateway API entrypoint (/, /tumblebug, /mcp); installs Envoy Gateway on kind if missing
@@ -432,15 +478,32 @@ k-gateway-on: ## Enable the Gateway API entrypoint (/, /tumblebug, /mcp); instal
 			exit 1 ;; \
 		esac; \
 	fi
-	@printf 'gateway:\n  enabled: true\n' > $(K8S_GW_VALUES)
-	@echo "Gateway entrypoint enabled (persisted). Applying..."
+	@# Preserve an existing state file (it may carry extra flags like tls.enabled)
+	@[ -f $(K8S_GW_VALUES) ] || printf 'gateway:\n  enabled: true\n' > $(K8S_GW_VALUES)
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Gateway entrypoint enabled$(KX) $(KD)(persisted) \xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
-	@echo ""
-	@echo "Single entrypoint: make k-gateway-forward   (http://localhost:8080 -> / mapui, /tumblebug API, /mcp MCP)"
+	@printf '%b\n' '' 'Single entrypoint: $(KC)make k-gateway-forward$(KX)   $(KD)(http://localhost:8080 -> / mapui, /tumblebug API, /mcp MCP)$(KX)'
 
 k-gateway-off: ## Disable the Gateway API entrypoint (the implementation/controller is left installed)
 	@rm -f $(K8S_GW_VALUES)
-	@echo "Gateway entrypoint disabled. Applying..."
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Gateway entrypoint disabled$(KX) $(KD)\xe2\x80\x94 applying...$(KX)'
+	@$(MAKE) --no-print-directory k-up
+
+k-gateway-tls-on: ## Enable HTTPS (:8443 via k-gateway-forward) on the gateway entrypoint (self-signed cert; persistent)
+	@[ -f $(K8S_GW_VALUES) ] || { printf '%b\n' '$(KR)\xe2\x9c\x96 gateway is not enabled$(KX) \xe2\x80\x94 run $(KC)make k-gateway-on$(KX) first.'; exit 1; }
+	@printf 'gateway:\n  enabled: true\n  tls:\n    enabled: true\n' > $(K8S_GW_VALUES)
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Gateway HTTPS enabled$(KX) $(KD)(self-signed cert, generated once and reused) \xe2\x80\x94 applying...$(KX)'
+	@$(MAKE) --no-print-directory k-up
+	@# A freshly generated cert can be seconds "in the future" for the controller's
+	@# one-shot validation (InvalidCertificateRef, no requeue) — nudge a re-reconcile
+	@sleep 3; $(KUBECTL) annotate gateway cb-tumblebug-gateway -n $(K8S_NAMESPACE) \
+		cloud-barista/tls-nudge="$$(date +%s)" --overwrite >/dev/null 2>&1 || true
+	@printf '%b\n' '' 'HTTPS entrypoint: $(KC)make k-gateway-forward$(KX)  $(KD)-> https://localhost:8443$(KX)'
+
+k-gateway-tls-off: ## Disable HTTPS on the gateway entrypoint (HTTP :8080 stays)
+	@[ -f $(K8S_GW_VALUES) ] || { printf '%b\n' '$(KR)\xe2\x9c\x96 gateway is not enabled$(KX) \xe2\x80\x94 nothing to do.'; exit 1; }
+	@printf 'gateway:\n  enabled: true\n' > $(K8S_GW_VALUES)
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Gateway HTTPS disabled$(KX) $(KD)(HTTP :8080 stays) \xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
 
 k-build-tb: ## Build local cb-tumblebug source into the cluster (shortcut)
@@ -503,7 +566,7 @@ k-gateway-forward: ## Port-forward the gateway entrypoint to localhost:8080 (+84
 		https=" / https://localhost:8443"; \
 	fi; \
 	sleep 2; \
-	echo "Gateway entrypoint: http://localhost:8080$$https  (/ mapui, /tumblebug API, /mcp MCP)"
+	printf '%b\n' "$(KB)$(KC)\xe2\x96\x8c Gateway entrypoint$(KX) $(KC)http://localhost:8080$$https$(KX)  $(KD)(/ mapui, /tumblebug API, /mcp MCP)$(KX)"
 
 K8S_TOKEN_FILE ?= $(HOME)/.cloud-barista/k8s-admin.token
 
@@ -544,20 +607,21 @@ k-port-forward-stop: ## Stop this deployment's port-forwards incl. the gateway e
 
 k-status: ## Show K8s deployment status (release/pods/services/port-forwards)
 	@if $(HELM) status $(HELM_RELEASE) -n $(K8S_NAMESPACE) >/dev/null 2>&1; then \
+		printf '%b' '$(KB)$(KC)\xe2\x96\x8c Helm release$(KX) '; \
 		$(HELM) list -n $(K8S_NAMESPACE) --filter '^$(HELM_RELEASE)$$' 2>/dev/null | tail -1 | \
-			awk '{print "Helm release: " $$1 " (" $$8 ", revision " $$3 ", updated " $$4 " " $$5 ")"}'; \
+			awk '{print $$1 " (" $$8 ", revision " $$3 ", updated " $$4 " " $$5 ")"}'; \
 	else \
-		echo "Helm release: not installed — run 'make k-up'"; \
+		printf '%b\n' '$(KY)\xe2\x96\x8c Helm release: not installed$(KX) \xe2\x80\x94 run $(KC)make k-up$(KX)'; \
 	fi
 	@echo ""
 	@$(KUBECTL) get pods,svc -n $(K8S_NAMESPACE) 2>/dev/null || true
 	@echo ""
-	@echo "Active port-forwards (may be stale after pod restarts — refresh with: make k-port-forward):"
+	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Active port-forwards$(KX) $(KD)(may be stale after pod restarts \xe2\x80\x94 refresh with: make k-port-forward)$(KX)'
 	@pf=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && $$3 == "port-forward"'); \
 	if [ -n "$$pf" ]; then \
 		echo "$$pf" | sed 's/^/  /'; \
 	else \
-		echo "  (none) — start with: make k-port-forward"; \
+		printf '%b\n' '  (none) \xe2\x80\x94 start with: $(KC)make k-port-forward$(KX)'; \
 	fi
 
 k-ps: ## Show K8s deployment status (alias for k-status)
@@ -698,4 +762,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-diagnose
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-diagnose

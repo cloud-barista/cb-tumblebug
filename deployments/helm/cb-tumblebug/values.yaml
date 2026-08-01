@@ -81,6 +81,17 @@ terrarium:
 mapui:
   enabled: true
   resources: {}
+  # Preset remote-command popup parameters (keys match <PLACEHOLDER> names).
+  # NOTE: values end up in the served JS bundle — anyone who can open MapUI can
+  # read them. Use only where MapUI itself is access-controlled (localhost/VPN).
+  # Do NOT put real tokens here (this file is tracked) — put them in the
+  # gitignored deployments/helm/cb-tumblebug/values-local.yaml instead; k-up
+  # picks it up automatically and it persists across upgrades. e.g.:
+  #   placeholderDefaults:
+  #     HF_TOKEN: hf_xxx
+  #     TAVILY_API_KEY: tvly-xxx
+  #     DISCORD_TOKEN: xxx
+  placeholderDefaults: {}
 
 mcp:
   # Requires a published cb-tumblebug-mcp-server image (compose builds it locally)
