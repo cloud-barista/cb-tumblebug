@@ -1229,6 +1229,64 @@ def get_security_groups(ns_id: str) -> Dict:
     """
     return api_request("GET", f"/ns/{ns_id}/resources/securityGroup")
 
+# Helper: normalize firewall rule dicts to the API's field names
+def _normalize_firewall_rules(rules: List[Dict]) -> List[Dict]:
+    normalized = []
+    for rule in rules:
+        r = {}
+        for k, v in rule.items():
+            key = {"ports": "Ports", "port": "Ports", "protocol": "Protocol",
+                   "direction": "Direction", "cidr": "CIDR"}.get(k.lower(), k)
+            r[key] = v
+        r.setdefault("Direction", "inbound")
+        r.setdefault("CIDR", "0.0.0.0/0")
+        if "Ports" in r:
+            r["Ports"] = str(r["Ports"])
+        normalized.append(r)
+    return normalized
+
+# Tool: Add SecurityGroup firewall rules
+@mcp.tool()
+def add_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict]) -> Dict:
+    """
+    Add firewall rules to a SecurityGroup.
+
+    Common use case: Infra-created SecurityGroups open SSH(22) only — open service
+    ports (e.g., 80/443) after installing applications like web servers.
+
+    Args:
+        ns_id: Namespace ID
+        sg_id: SecurityGroup ID (e.g., "<infraId>-<nodeGroupId>"; see get_security_groups())
+        rules: List of rules. Each rule:
+            - Ports: Port(s) as string — single, list, or ranges (e.g., "80", "80,443", "8000-9000")
+            - Protocol: "TCP" | "UDP" | "ICMP" | "ALL" (required)
+            - Direction: "inbound" | "outbound" (default: "inbound")
+            - CIDR: Allowed IP range (default: "0.0.0.0/0")
+            Example: [{"Ports": "80,443", "Protocol": "TCP"}]
+
+    Returns:
+        Update result with the SecurityGroup's resulting rule set
+    """
+    data = {"firewallRules": _normalize_firewall_rules(rules)}
+    return api_request("POST", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data)
+
+# Tool: Remove SecurityGroup firewall rules
+@mcp.tool()
+def remove_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict]) -> Dict:
+    """
+    Remove firewall rules from a SecurityGroup (rules must match existing ones).
+
+    Args:
+        ns_id: Namespace ID
+        sg_id: SecurityGroup ID
+        rules: List of rules to remove — same format as add_security_group_rules()
+
+    Returns:
+        Update result with the SecurityGroup's resulting rule set
+    """
+    data = {"firewallRules": _normalize_firewall_rules(rules)}
+    return api_request("DELETE", f"/ns/{ns_id}/resources/securityGroup/{sg_id}/rules", json_data=data)
+
 # Tool: Get SSHKey resources for a specific namespace
 @mcp.tool()
 def get_ssh_keys(ns_id: str) -> Dict:

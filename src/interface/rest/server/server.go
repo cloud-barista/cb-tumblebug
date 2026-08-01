@@ -168,6 +168,9 @@ func RunServer() {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if shouldSkipRequestLog(c) {
+				// Proxies (e.g., Envoy gateway) inject X-Request-ID; drop it on
+				// tracking-skipped endpoints so they follow the untracked path.
+				c.Request().Header.Del(echo.HeaderXRequestID)
 				return next(c)
 			}
 			return middlewares.RequestIdAndDetailsIssuer(next)(c)
