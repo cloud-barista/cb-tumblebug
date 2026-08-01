@@ -73,6 +73,8 @@ echo "  ✓ cert-manager ready"
 # KServe (RawDeployment mode)
 # ============================================================
 echo "Installing KServe ${KSERVE_VERSION}..."
+# kserve.yaml does not include the Namespace object — create it first
+kubectl create namespace kserve --dry-run=client -o yaml | kubectl apply -f - > /dev/null
 kubectl apply --server-side -f "https://github.com/kserve/kserve/releases/download/${KSERVE_VERSION}/kserve.yaml" > /dev/null
 kubectl wait --for=condition=Available deploy -n kserve --all --timeout=5m > /dev/null
 kubectl apply --server-side -f "https://github.com/kserve/kserve/releases/download/${KSERVE_VERSION}/kserve-cluster-resources.yaml" > /dev/null
