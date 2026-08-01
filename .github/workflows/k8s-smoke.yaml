@@ -27,15 +27,24 @@ jobs:
           helm lint deployments/helm/cb-tumblebug
           helm template cb-tumblebug deployments/helm/cb-tumblebug -n cb-tumblebug > /dev/null
 
+      # Build cb-tumblebug from the PR source so the smoke test covers this code
+      # (also keeps CI green when values.yaml pre-stages a not-yet-published tag)
+      - name: Build cb-tumblebug image from PR source
+        run: docker build -t cb-tumblebug:pr-smoke .
+
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
           cluster_name: cb-tumblebug
 
+      - name: Load PR image into kind
+        run: kind load docker-image cb-tumblebug:pr-smoke --name cb-tumblebug
+
       - name: Install chart
         run: |
           helm upgrade --install cb-tumblebug deployments/helm/cb-tumblebug \
-            --namespace cb-tumblebug --create-namespace --timeout 15m
+            --namespace cb-tumblebug --create-namespace --timeout 15m \
+            --set images.tumblebug=cb-tumblebug:pr-smoke
 
       - name: Wait for workloads
         run: |
