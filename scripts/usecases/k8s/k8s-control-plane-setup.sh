@@ -80,6 +80,7 @@ EXTERNAL_IP=""            # External/Public IP for cert SAN and external access 
 POD_NETWORK_CIDR="10.244.0.0/16"  # Pod network CIDR (default for Flannel)
 K8S_VERSION="1.35"        # Kubernetes version (1.35, 1.34, 1.33, etc.)
 LLMD_MODE=false           # Enable llm-d components (Gateway API, LeaderWorkerSet, GPU Operator)
+CNI="flannel"             # CNI plugin: flannel (default) or cilium
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -104,6 +105,10 @@ while [[ $# -gt 0 ]]; do
             LLMD_MODE=true
             shift
             ;;
+        --cni)
+            CNI="$2"
+            shift 2
+            ;;
         -h|--help)
             echo "Kubernetes Control Plane Setup Script"
             echo ""
@@ -117,6 +122,8 @@ while [[ $# -gt 0 ]]; do
             echo "  -v, --version      Kubernetes version (default: 1.35)"
             echo "      --llm-d        Enable llm-d mode: install Gateway API, LeaderWorkerSet,"
             echo "                     Helm, and NVIDIA GPU Operator for distributed LLM inference"
+            echo "      --cni          CNI plugin: flannel (default) or cilium"
+            echo "                     (with cilium, enable the Hubble UI service map later via enable-hubble-ui.sh)"
             echo "  -h, --help         Show this help message"
             echo ""
             echo "Examples:"
@@ -295,7 +302,6 @@ if [ -f /etc/kubernetes/admin.conf ]; then
         # Still output the join command for convenience
         KUBEADM_JOIN_CMD=$(kubeadm token create --print-join-command 2>/dev/null || cat ~/k8s-worker-join-command.txt 2>/dev/null || echo "")
         if [ -n "$KUBEADM_JOIN_CMD" ]; then
-            echo "[K8S_JOIN_COMMAND]"
             echo "$KUBEADM_JOIN_CMD"
         fi
         exit 0
@@ -325,9 +331,20 @@ if [ "$K8S_ALREADY_INITIALIZED" = false ]; then
     sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
     sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-    # Install Flannel CNI plugin
-    echo "Installing Flannel CNI plugin..."
-    kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml > /dev/null
+    # Install CNI plugin
+    if [ "$CNI" = "cilium" ]; then
+        echo "Installing Cilium CNI..."
+        if ! command -v cilium > /dev/null 2>&1; then
+            CILIUM_CLI_VERSION=$(curl -fsSL https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+            curl -fsSL "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/bin
+        fi
+        # ipam.mode=kubernetes: follow the kubeadm-assigned pod CIDR (${POD_NETWORK_CIDR})
+        cilium install --set ipam.mode=kubernetes --wait > /dev/null
+        echo "  ✓ Cilium ready (service-map UI: enable-hubble-ui.sh as an optional step)"
+    else
+        echo "Installing Flannel CNI plugin..."
+        kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml > /dev/null
+    fi
 
     # Wait for the node to be ready
     echo "Waiting for node to be ready..."
@@ -756,7 +773,7 @@ if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
         echo "  kubectl get pods -n gpu-operator      # GPU Operator pods"
     fi
     echo ""
-    echo "\$\$FILEPATH[Kubeconfig](~/kubeconfig-external.yaml)"
+    echo "\$\$FILEPATH[Kubeconfig](${HOME}/kubeconfig-external.yaml)"
     echo "\$\$CMD[Check Nodes](kubectl get nodes -o wide)"
     exit 0
 else
