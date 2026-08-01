@@ -87,6 +87,11 @@ spec:
         - path:
             type: PathPrefix
             value: /tumblebug
+      # Infra provisioning APIs run for minutes — disable the request timeout
+      # (Envoy's 15s default otherwise 504s mid-provisioning and cancels the
+      # request context, leaving half-created infra)
+      timeouts:
+        request: 0s
       backendRefs:
         - name: cb-tumblebug
           port: 1323

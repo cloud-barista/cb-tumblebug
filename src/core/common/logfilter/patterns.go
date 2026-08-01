@@ -44,6 +44,7 @@ var RequestSkipPatterns = []SkipRule{
 
 	// Health check and utility endpoints
 	{Patterns: []string{"/tumblebug/readyz"}},
+	{Patterns: []string{"/tumblebug/livez"}},
 	{Patterns: []string{"/tumblebug/httpVersion"}},
 	{Patterns: []string{"/tumblebug/testStreamResponse"}},
 
@@ -86,6 +87,7 @@ var APISkipPatterns = []SkipRule{
 
 	// Health check endpoints
 	{Patterns: []string{"/tumblebug/readyz"}},
+	{Patterns: []string{"/tumblebug/livez"}},
 	{Patterns: []string{"/tumblebug/httpVersion"}},
 
 	// Infra status polling (very frequent) - GET only
