@@ -75,7 +75,12 @@ echo "  ✓ cert-manager ready"
 echo "Installing KServe ${KSERVE_VERSION}..."
 # kserve.yaml does not include the Namespace object — create it first
 kubectl create namespace kserve --dry-run=client -o yaml | kubectl apply -f - > /dev/null
-kubectl apply --server-side -f "https://github.com/kserve/kserve/releases/download/${KSERVE_VERSION}/kserve.yaml" > /dev/null
+# kserve.yaml bundles CRDs and CRs using them (ClusterStorageContainer) — the CR
+# can race CRD establishment ("no matches for kind"); apply, wait, re-apply
+KSERVE_URL="https://github.com/kserve/kserve/releases/download/${KSERVE_VERSION}/kserve.yaml"
+kubectl apply --server-side -f "${KSERVE_URL}" > /dev/null 2>&1 || true
+kubectl wait --for=condition=Established crd --all --timeout=60s > /dev/null 2>&1 || true
+kubectl apply --server-side -f "${KSERVE_URL}" > /dev/null
 kubectl wait --for=condition=Available deploy -n kserve --all --timeout=5m > /dev/null
 kubectl apply --server-side -f "https://github.com/kserve/kserve/releases/download/${KSERVE_VERSION}/kserve-cluster-resources.yaml" > /dev/null
 

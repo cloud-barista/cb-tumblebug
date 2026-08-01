@@ -35,6 +35,14 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
             - { name: http, containerPort: 1324 }
+          {{- if .Values.mapui.placeholderDefaults }}
+          # Preset remote-command popup parameters (MAPUI_PARAM_<NAME> -> <NAME> placeholder)
+          env:
+            {{- range $k, $v := .Values.mapui.placeholderDefaults }}
+            - name: MAPUI_PARAM_{{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          {{- end }}
           # Parcel dev server builds the bundle on start — allow several minutes
           startupProbe:
             tcpSocket: { port: http }

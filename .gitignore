@@ -98,5 +98,7 @@ src/testclient/test-clis/**/test-results/*
 deployments/helm/cb-tumblebug/values-mcp.yaml
 deployments/helm/cb-tumblebug/values-agentgateway.yaml
 deployments/helm/cb-tumblebug/values-gateway.yaml
+deployments/helm/cb-tumblebug/values-local.yaml
+deployments/helm/cb-tumblebug/values-env-params.yaml
 deployments/helm/cb-tumblebug/values-dev-image-*.yaml
 deployments/helm/cb-tumblebug/values-agentgateway-auth.yaml

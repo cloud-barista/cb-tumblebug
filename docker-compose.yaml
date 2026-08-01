@@ -224,6 +224,16 @@ services:
     # build:
     #   context: ../cb-mapui
     #   dockerfile: Dockerfile
+    environment:
+      # Optional: preset remote-command popup parameters from .env (blank = ask in UI)
+      - MAPUI_PARAM_HF_TOKEN=${HF_TOKEN:-}
+      - MAPUI_PARAM_VLLM_HF_TOKEN=${HF_TOKEN:-}
+      - MAPUI_PARAM_TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - MAPUI_PARAM_DISCORD_TOKEN=${DISCORD_TOKEN:-}
+      - MAPUI_PARAM_DISCORD_HOME_CHANNEL=${DISCORD_HOME_CHANNEL:-}
+      - MAPUI_PARAM_DISCORD_HOME_CHANNEL_NAME=${DISCORD_HOME_CHANNEL_NAME:-}
+      - MAPUI_PARAM_HERMES_API_KEY=${HERMES_API_KEY:-}
+      - MAPUI_PARAM_NTFY_TOPIC=${NTFY_TOPIC:-}
     networks:
       - cloud-barista
     ports:
