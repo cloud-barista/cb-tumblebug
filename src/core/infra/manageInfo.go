@@ -559,7 +559,7 @@ func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.In
 		SystemLabel:     infraInfo.SystemLabel,
 		Description:     infraInfo.Description,
 		NodeGroups:      nodeGroups,
-		PostCommand:     infraInfo.PostCommand,
+		PostCommands:    infraInfo.PostCommands,
 	}
 
 	return infraDynamicReq, nil

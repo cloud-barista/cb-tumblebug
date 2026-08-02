@@ -269,12 +269,14 @@ Simply use the `imageId` returned from the build process in your standard Infra 
         "specId": "aws-t3-small"
       }
     ],
-    "postCommand": {
-      "command": [
-        "sudo apt-get update",
-        "sudo apt-get install -y nginx"
-      ]
-    }
+    "postCommands": [
+      {
+        "command": [
+          "sudo apt-get update",
+          "sudo apt-get install -y nginx"
+        ]
+      }
+    ]
   },
   "snapshotReq": {
     "name": "nginx-custom-image",
@@ -306,7 +308,7 @@ treats them as a build step rather than a side effect:
   no snapshot is taken, the reason is returned in `message`, `postCommandStatus` is echoed
   in the result, and `cleanupInfraAfterSnapshot` is still honored for teardown.
   Set `proceed` only when you knowingly want to bake the image regardless.
-- **Ordered phases are supported.** Use `postCommands[]` in `sourceInfraReq` to separate
+- **Ordered phases are supported.** Use additional entries in `postCommands[]` to separate
   install → configure → pre-snapshot cleanup (e.g. `cloud-init clean`,
   `waagent -deprovision`), and to target different NodeGroups when building several
   images at once.

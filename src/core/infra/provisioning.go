@@ -247,7 +247,6 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 		TargetStatus:    model.StatusRunning,
 		InstallMonAgent: req.InstallMonAgent,
 		SystemLabel:     req.SystemLabel,
-		PostCommand:      req.PostCommand,
 		PostCommands:     req.PostCommands,
 		PostCommandAsync: req.PostCommandAsync,
 	}
@@ -495,14 +494,8 @@ func markPostCommandRunning(nsId, infraId, xRequestId string) {
 // postCommand and postCommands are mutually exclusive, each phase targets at
 // most one scope, and the cumulative timeout budget is bounded (phases run
 // inside the synchronous creation call).
-func ValidatePostCommandRequest(single model.PostCommandReq, phases []model.PostCommandReq) error {
-	if len(single.Command) > 0 && len(phases) > 0 {
-		return fmt.Errorf("use either postCommand (single) or postCommands (phases), not both")
-	}
+func ValidatePostCommandRequest(phases []model.PostCommandReq) error {
 	all := phases
-	if len(all) == 0 && len(single.Command) > 0 {
-		all = []model.PostCommandReq{single}
-	}
 	totalMinutes := 0
 	for i, p := range all {
 		targets := 0
@@ -623,9 +616,6 @@ func persistPostCommandOutcome(nsId, infraId string, status model.PostCommandSta
 	}
 	infraTmp.PostCommandStatus = status
 	infraTmp.PostCommandResults = phases
-	if len(phases) > 0 {
-		infraTmp.PostCommandResult = phases[0].Results
-	}
 	UpdateInfraInfo(nsId, infraTmp)
 }
 
@@ -638,9 +628,6 @@ func persistPostCommandOutcome(nsId, infraId string, status model.PostCommandSta
 // observable via SSE (xRequestId) or by polling the infra object.
 func handlePostCommands(nsId, infraId string, infraTmp model.InfraInfo) error {
 	phases := infraTmp.PostCommands
-	if len(phases) == 0 && len(infraTmp.PostCommand.Command) > 0 {
-		phases = []model.PostCommandReq{infraTmp.PostCommand}
-	}
 	if len(phases) == 0 {
 		return nil
 	}
@@ -1821,13 +1808,12 @@ func CreateInfraDynamic(ctx context.Context, nsId string, req *model.InfraDynami
 	infraReq.SystemLabel = req.SystemLabel
 	infraReq.InstallMonAgent = req.InstallMonAgent
 	infraReq.Description = req.Description
-	infraReq.PostCommand = req.PostCommand
 	infraReq.PostCommands = req.PostCommands
 	infraReq.PostCommandAsync = req.PostCommandAsync
 	infraReq.PolicyOnPartialFailure = req.PolicyOnPartialFailure
 
 	// Validate post-deployment command request shape early (before any provisioning)
-	if err := ValidatePostCommandRequest(req.PostCommand, req.PostCommands); err != nil {
+	if err := ValidatePostCommandRequest(req.PostCommands); err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.InfraInfo{}, err
 	}
@@ -3009,6 +2995,13 @@ func ReviewInfraDynamicReq(ctx context.Context, nsId string, req *model.InfraDyn
 
 	log.Debug().Msgf("Starting Infra dynamic request review for: %s", req.Name)
 
+	// Review is the dry run of creation: reject a malformed bootstrap request here
+	// so the caller sees it before any provisioning attempt
+	if err := ValidatePostCommandRequest(req.PostCommands); err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
 	reviewResult := &model.ReviewInfraDynamicReqInfo{
 		InfraName:      req.Name,
 		TotalNodeCount: len(req.NodeGroups),
@@ -3423,7 +3416,7 @@ func CreateSystemInfraDynamic(option string) (*model.InfraInfo, error) {
 }
 
 // CreateInfraNodeGroupDynamic is func to create requested VM in a dynamic way and add it to Infra
-func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId string, req *model.CreateNodeGroupDynamicReq) (*model.InfraInfo, error) {
+func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId string, req *model.AddNodeGroupDynamicReq) (*model.InfraInfo, error) {
 
 	emptyInfra := &model.InfraInfo{}
 	nodeGroupId := req.Name
@@ -3437,13 +3430,13 @@ func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId strin
 		return emptyInfra, err
 	}
 
-	err = checkCommonResAvailableForNodeGroupDynamicReq(ctx, req, nsId)
+	err = checkCommonResAvailableForNodeGroupDynamicReq(ctx, &req.CreateNodeGroupDynamicReq, nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfra, err
 	}
 
-	nodeReqResult, err := getNodeGroupReqFromDynamicReq(ctx, nsId, infraId, req)
+	nodeReqResult, err := getNodeGroupReqFromDynamicReq(ctx, nsId, infraId, &req.CreateNodeGroupDynamicReq)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfra, err
@@ -3457,9 +3450,6 @@ func CreateInfraNodeGroupDynamic(ctx context.Context, nsId string, infraId strin
 	// Bootstrap the newly added nodeGroup (phases without an explicit target
 	// are scoped to this group so existing nodes are untouched)
 	phases := req.PostCommands
-	if len(phases) == 0 && len(req.PostCommand.Command) > 0 {
-		phases = []model.PostCommandReq{req.PostCommand}
-	}
 	if len(phases) > 0 {
 		xRequestId := newPostCommandRequestId(infraId)
 		markPostCommandRunning(nsId, infraId, xRequestId)

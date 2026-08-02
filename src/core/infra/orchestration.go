@@ -277,19 +277,20 @@ func OrchestrationController() {
 
 						// ScaleOut Infra according to the Node requirement.
 						log.Debug().Msg("[Generating Node]")
-						result, nodeCreateErr := CreateInfraNodeGroupDynamic(common.NewDefaultContext(), nsId, infraPolicyTmp.Id, &autoAction.NodeGroupDynamicReq)
+						result, nodeCreateErr := CreateInfraNodeGroupDynamic(common.NewDefaultContext(), nsId, infraPolicyTmp.Id,
+							&model.AddNodeGroupDynamicReq{CreateNodeGroupDynamicReq: autoAction.NodeGroupDynamicReq})
 						if nodeCreateErr != nil {
 							infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 						}
 						common.PrintJsonPretty(result)
 
-						if len(autoAction.PostCommand.Command) != 0 {
+						if len(autoAction.PostCommands) != 0 {
 
-							log.Debug().Msgf("[Post Command to Node] %v", autoAction.PostCommand.Command)
+							log.Debug().Msgf("[Post Command to Node] %v", autoAction.PostCommands)
 							// Shared helper: aggregates per-node outcomes and persists status/results
 							status, cmdErr := executePostCommands(nsId, infraPolicyTmp.Id, common.ToLower(autoAction.NodeGroupDynamicReq.Name),
-								[]model.PostCommandReq{autoAction.PostCommand}, newPostCommandRequestId(infraPolicyTmp.Id))
+								autoAction.PostCommands, newPostCommandRequestId(infraPolicyTmp.Id))
 							if cmdErr != nil || status == model.PostCommandStatusFailed || status == model.PostCommandStatusCompletedWithErrors {
 								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateInfraPolicyInfo(nsId, infraPolicyTmp)

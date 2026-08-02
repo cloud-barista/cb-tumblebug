@@ -144,20 +144,25 @@ the same engine as [Remote Command](remote-command-and-file-transfer.md) — bas
 routing, TOFU host-key verification, per-node parallelism, `$$Func()` placeholders, and
 command-status history all apply.
 
-### Single command set (simple case)
+`postCommands[]` is the single entry point: it holds **phases** that run
+**sequentially**, each with its own target. A simple "run these commands everywhere"
+request is just one phase.
+
+### Single phase (simple case)
 
 ```jsonc
-"postCommand": {
-  "command": ["sudo apt-get update", "sudo apt-get install -y nginx"],
-  "timeoutMinutes": 10,
-  "labelSelector": "role=web"     // optional target; default = all nodes
-}
+"postCommands": [
+  {
+    "command": ["sudo apt-get update", "sudo apt-get install -y nginx"],
+    "timeoutMinutes": 10,
+    "labelSelector": "role=web"     // optional target; default = all nodes
+  }
+]
 ```
 
 ### Ordered phases (multi-step bootstrap)
 
-`postCommands[]` runs phases **sequentially**, each with its own target — the shape
-needed for control-plane-then-worker patterns:
+Multiple phases give the control-plane-then-worker shape:
 
 ```jsonc
 "postCommands": [
@@ -175,9 +180,8 @@ needed for control-plane-then-worker patterns:
 | `continueOnError` | `true` keeps running later phases after this one fails |
 | `userName` | Leave **empty** so each node uses its own verified SSH user (mixed images just work) |
 
-`postCommand` and `postCommands` are mutually exclusive; the request is rejected with a
-400 if both are present, if a phase sets more than one target, or if the cumulative
-timeout exceeds the budget.
+The request is rejected with a 400 if a phase sets more than one target, if a phase has
+no command, or if the cumulative timeout exceeds the budget.
 
 ### Synchronous vs Asynchronous
 
@@ -257,7 +261,7 @@ Two different operations, often confused:
 
 | Goal | API | Notes |
 |---|---|---|
-| **Add a new NodeGroup** (different spec/image/labels) | `POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic` | Supports `label`, `postCommand`/`postCommands` (scoped to the new group by default), and `postCommandAsync` |
+| **Add a new NodeGroup** (different spec/image/labels) | `POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamic` | Supports `label`, `postCommands` (scoped to the new group by default), and `postCommandAsync` |
 | **Add nodes to an existing NodeGroup** | `POST /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}` with `{"numNodesToAdd": N}` | Same spec/image as the group; no bootstrap fields |
 
 Adding a NodeGroup has its own review endpoint (`.../nodeGroupDynamicReview`) with the
@@ -271,7 +275,7 @@ same semantics as `infraDynamicReview`.
   "imageId": "ami-0abc...",
   "nodeGroupSize": 2,
   "label": { "role": "worker", "accelerator": "gpu" },
-  "postCommand": { "command": ["curl -fsSL https://.../worker-setup.sh | bash"] },
+  "postCommands": [ { "command": ["curl -fsSL https://.../worker-setup.sh | bash"] } ],
   "postCommandAsync": true
 }
 ```
@@ -325,9 +329,9 @@ POST /ns/default/infraDynamic
   "nodeGroups": [ { "name": "web", "specId": "aws+us-west-1+t3a.medium",
                     "imageId": "ami-0abc...", "nodeGroupSize": 3, "label": { "role": "web" } } ],
   "postCommandAsync": true,
-  "postCommand": { "command": [
+  "postCommands": [ { "command": [
       "sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx",
-      "echo \"<h1>$(hostname)</h1>\" | sudo tee /var/www/html/index.html >/dev/null && sudo systemctl enable --now nginx" ] }
+      "echo \"<h1>$(hostname)</h1>\" | sudo tee /var/www/html/index.html >/dev/null && sudo systemctl enable --now nginx" ] } ]
 }
 // 2) watch: GET /ns/default/stream/cmd/infra/web-sv?xRequestId={postCommandRequestId}
 // 3) open the port: POST /ns/default/resources/securityGroup/web-sv-web/rules  { Ports: "80", ... }

@@ -8079,12 +8079,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "NodeGroup dynamic request specifying specId, imageId, and scaling parameters",
+                        "description": "NodeGroup dynamic request specifying specId, imageId, scaling parameters, and optional postCommands bootstrap",
                         "name": "nodeGroupReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CreateNodeGroupDynamicReq"
+                            "$ref": "#/definitions/model.AddNodeGroupDynamicReq"
                         }
                     },
                     {
@@ -8166,12 +8166,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to review node dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})",
+                        "description": "Request body to review node dynamic addition (same shape as the add request). Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})",
                         "name": "nodeGroupReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CreateNodeGroupDynamicReq"
+                            "$ref": "#/definitions/model.AddNodeGroupDynamicReq"
                         }
                     },
                     {
@@ -22007,6 +22007,98 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AddNodeGroupDynamicReq": {
+            "type": "object",
+            "required": [
+                "imageId",
+                "specId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "description": "if ConnectionName is given, the Node tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Created via CB-Tumblebug"
+                },
+                "distributeSubnets": {
+                    "description": "DistributeSubnets, when true, spreads this NodeGroup's VMs across the VNet's subnets\n(round-robin), which spreads them across availability zones for multi-zone VNets.\nBest-effort: subnets whose zone lacks the requested spec are excluded so VMs consolidate\nto zones that have it. Ignored when Zone is set (that pins a single subnet) or when the\nVNet has a single subnet. Default false (all VMs land in the first subnet).",
+                    "type": "boolean",
+                    "example": false
+                },
+                "imageId": {
+                    "description": "ImageId is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "ami-01f71f215b23ba262"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "\"env\"": "\"test\"}",
+                        "{\"role\"": "\"worker\""
+                    }
+                },
+                "name": {
+                    "description": "NodeGroup name, actual Node name will be generated with -N postfix.",
+                    "type": "string",
+                    "example": "g1"
+                },
+                "nodeGroupSize": {
+                    "description": "NodeGroupSize is the number of Nodes to create in this NodeGroup. If \u003e 0, nodeGroup will be generated. Default is 1.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "postCommandAsync": {
+                    "description": "PostCommandAsync returns the response as soon as the nodes are provisioned and\nruns the bootstrap commands in the background (observe via streaming/polling)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "postCommands": {
+                    "description": "PostCommands are sequential bootstrap phases for the newly added nodes.\nPhases without an explicit target are scoped to this NodeGroup.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
+                },
+                "rootDiskSize": {
+                    "description": "Root disk size in GB. 0 = use CSP default.",
+                    "type": "integer",
+                    "example": 50
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "gp3"
+                },
+                "sgTemplateId": {
+                    "description": "SgTemplateId overrides the Infra-level SgTemplateId for this NodeGroup.\nIf empty, inherits the SgTemplateId from the parent InfraDynamicReq.",
+                    "type": "string",
+                    "example": ""
+                },
+                "specId": {
+                    "description": "SpecId is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.nano"
+                },
+                "vNetTemplateId": {
+                    "description": "VNetTemplateId overrides the Infra-level VNetTemplateId for this NodeGroup.\nIf empty, inherits the VNetTemplateId from the parent InfraDynamicReq.",
+                    "type": "string",
+                    "example": ""
+                },
+                "zone": {
+                    "description": "Zone is an optional field to specify the availability zone for Node placement.\nIf specified, subnet will be created in this zone for resources like GPU Nodes\nthat may only be available in specific zones. If empty, auto-selection applies.",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
+                }
+            }
+        },
         "model.AgentInstallContent": {
             "type": "object",
             "properties": {
@@ -22139,13 +22231,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "random"
                 },
-                "postCommand": {
-                    "description": "PostCommand is field for providing command to Nodes after their creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.PostCommandReq"
-                        }
-                    ]
+                "postCommands": {
+                    "description": "PostCommands bootstrap the Nodes added by this action (phases run in order)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
                 }
             }
         },
@@ -23451,26 +23542,6 @@ const docTemplate = `{
                     "description": "NodeGroupSize is the number of Nodes to create in this NodeGroup. If \u003e 0, nodeGroup will be generated. Default is 1.",
                     "type": "integer",
                     "example": 3
-                },
-                "postCommand": {
-                    "description": "PostCommand bootstraps the newly added nodes (targets this nodeGroup by default)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.PostCommandReq"
-                        }
-                    ]
-                },
-                "postCommandAsync": {
-                    "description": "PostCommandAsync returns the response as soon as the nodes are provisioned and\nruns the bootstrap commands in the background (observe via streaming/polling)",
-                    "type": "boolean",
-                    "example": false
-                },
-                "postCommands": {
-                    "description": "PostCommands are sequential bootstrap phases for the newly added nodes",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.PostCommandReq"
-                    }
                 },
                 "rootDiskSize": {
                     "description": "Root disk size in GB. 0 = use CSP default.",
@@ -25193,8 +25264,11 @@ const docTemplate = `{
                 "policy": {
                     "$ref": "#/definitions/model.AutopilotPolicy"
                 },
-                "postCommand": {
-                    "$ref": "#/definitions/model.PostCommandReq"
+                "postCommands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
                 }
             }
         },
@@ -25281,14 +25355,6 @@ const docTemplate = `{
                 "placementAlgo": {
                     "type": "string"
                 },
-                "postCommand": {
-                    "description": "PostCommand is for the command to bootstrap the Nodes",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.PostCommandReq"
-                        }
-                    ]
-                },
                 "postCommandAsync": {
                     "description": "PostCommandAsync echoes whether the commands run in the background",
                     "type": "boolean"
@@ -25297,14 +25363,6 @@ const docTemplate = `{
                     "description": "PostCommandRequestId is the streaming/tracking key of the post-deployment run\n(always set when post-deployment commands were requested, in both modes)",
                     "type": "string",
                     "example": "pc-infra01-1a2b3c"
-                },
-                "postCommandResult": {
-                    "description": "PostCommandResult is the result of the command for bootstraping the Nodes",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.InfraSshCmdResultForAPI"
-                        }
-                    ]
                 },
                 "postCommandResults": {
                     "description": "PostCommandResults holds per-phase outcomes",
@@ -25623,21 +25681,13 @@ const docTemplate = `{
                     ],
                     "example": "continue"
                 },
-                "postCommand": {
-                    "description": "PostCommand is for the command to bootstrap the Nodes",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.PostCommandReq"
-                        }
-                    ]
-                },
                 "postCommandAsync": {
                     "description": "PostCommandAsync (default false) returns the response as soon as nodes are\nprovisioned and runs post-deployment commands in the background. The response\nthen carries postCommandStatus=\"Running\" plus postCommandRequestId; observe with\nGET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}\nor by polling GET /ns/{nsId}/infra/{infraId}.",
                     "type": "boolean",
                     "example": false
                 },
                 "postCommands": {
-                    "description": "PostCommands are sequential post-deployment command phases with optional per-phase targets.\nUse either postCommand (single, legacy) or postCommands (phases), not both.",
+                    "description": "PostCommands are post-deployment command phases that bootstrap the Nodes.\nPhases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector.\nA single command set is simply one phase: [{\"command\": [\"...\"]}]",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.PostCommandReq"
@@ -25853,14 +25903,6 @@ const docTemplate = `{
                 "placementAlgo": {
                     "type": "string"
                 },
-                "postCommand": {
-                    "description": "PostCommand is for the command to bootstrap the Nodes",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.PostCommandReq"
-                        }
-                    ]
-                },
                 "postCommandAsync": {
                     "description": "PostCommandAsync echoes whether the commands run in the background",
                     "type": "boolean"
@@ -25869,14 +25911,6 @@ const docTemplate = `{
                     "description": "PostCommandRequestId is the streaming/tracking key of the post-deployment run\n(always set when post-deployment commands were requested, in both modes)",
                     "type": "string",
                     "example": "pc-infra01-1a2b3c"
-                },
-                "postCommandResult": {
-                    "description": "PostCommandResult is the result of the command for bootstraping the Nodes",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.InfraSshCmdResultForAPI"
-                        }
-                    ]
                 },
                 "postCommandResults": {
                     "description": "PostCommandResults holds per-phase outcomes",
@@ -26078,21 +26112,13 @@ const docTemplate = `{
                     ],
                     "example": "continue"
                 },
-                "postCommand": {
-                    "description": "PostCommand is for the command to bootstrap the Nodes",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.PostCommandReq"
-                        }
-                    ]
-                },
                 "postCommandAsync": {
                     "description": "PostCommandAsync runs post-deployment commands in the background",
                     "type": "boolean",
                     "example": false
                 },
                 "postCommands": {
-                    "description": "PostCommands are sequential post-deployment command phases (alternative to postCommand)",
+                    "description": "PostCommands are sequential post-deployment command phases that bootstrap the Nodes",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.PostCommandReq"

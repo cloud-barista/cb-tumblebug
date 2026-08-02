@@ -142,10 +142,7 @@ type InfraReq struct {
 
 	NodeGroups []CreateNodeGroupReq `json:"nodeGroups" validate:"required"`
 
-	// PostCommand is for the command to bootstrap the Nodes
-	PostCommand PostCommandReq `json:"postCommand" validate:"omitempty"`
-
-	// PostCommands are sequential post-deployment command phases (alternative to postCommand)
+	// PostCommands are sequential post-deployment command phases that bootstrap the Nodes
 	PostCommands []PostCommandReq `json:"postCommands,omitempty" validate:"omitempty"`
 
 	// PostCommandAsync runs post-deployment commands in the background
@@ -208,9 +205,6 @@ type InfraInfo struct {
 	// List of IDs for new nodes. Return IDs if the nodes are newly added. This field should be used for return body only.
 	NewNodeList []string `json:"newNodeList"`
 
-	// PostCommand is for the command to bootstrap the Nodes
-	PostCommand PostCommandReq `json:"postCommand"`
-
 	// PostCommands are the requested post-deployment command phases
 	PostCommands []PostCommandReq `json:"postCommands,omitempty"`
 
@@ -229,9 +223,6 @@ type InfraInfo struct {
 	// PostCommandRequestId is the streaming/tracking key of the post-deployment run
 	// (always set when post-deployment commands were requested, in both modes)
 	PostCommandRequestId string `json:"postCommandRequestId,omitempty" example:"pc-infra01-1a2b3c"`
-
-	// PostCommandResult is the result of the command for bootstraping the Nodes
-	PostCommandResult InfraSshCmdResultForAPI `json:"postCommandResult"`
 
 	// CreationErrors contains information about Node creation failures (if any)
 	CreationErrors *InfraCreationErrors `json:"creationErrors,omitempty"`
@@ -385,6 +376,22 @@ type ScaleOutNodeGroupReq struct {
 	// to be added according to new future capability
 }
 
+// AddNodeGroupDynamicReq is the request body for adding a NodeGroup to an existing Infra.
+// It is CreateNodeGroupDynamicReq plus bootstrap fields; those fields are intentionally
+// absent from the nodeGroups[] elements of InfraDynamicReq, where Infra-level
+// postCommands (with per-phase targeting) is the single way to bootstrap.
+type AddNodeGroupDynamicReq struct {
+	CreateNodeGroupDynamicReq
+
+	// PostCommands are sequential bootstrap phases for the newly added nodes.
+	// Phases without an explicit target are scoped to this NodeGroup.
+	PostCommands []PostCommandReq `json:"postCommands,omitempty" validate:"omitempty"`
+
+	// PostCommandAsync returns the response as soon as the nodes are provisioned and
+	// runs the bootstrap commands in the background (observe via streaming/polling)
+	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
+}
+
 // InfraDynamicReq is struct for requirements to create Infra dynamically (with default resource option)
 type InfraDynamicReq struct {
 	Name string `json:"name" validate:"required" example:"infra01"`
@@ -428,11 +435,9 @@ type InfraDynamicReq struct {
 	// ]
 	NodeGroups []CreateNodeGroupDynamicReq `json:"nodeGroups" validate:"required"`
 
-	// PostCommand is for the command to bootstrap the Nodes
-	PostCommand PostCommandReq `json:"postCommand"`
-
-	// PostCommands are sequential post-deployment command phases with optional per-phase targets.
-	// Use either postCommand (single, legacy) or postCommands (phases), not both.
+	// PostCommands are post-deployment command phases that bootstrap the Nodes.
+	// Phases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector.
+	// A single command set is simply one phase: [{"command": ["..."]}]
 	PostCommands []PostCommandReq `json:"postCommands,omitempty"`
 
 	// PostCommandAsync (default false) returns the response as soon as nodes are
@@ -471,16 +476,6 @@ type CreateNodeGroupDynamicReq struct {
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label" example:"{\"role\":\"worker\",\"env\":\"test\"}"`
-
-	// PostCommand bootstraps the newly added nodes (targets this nodeGroup by default)
-	PostCommand PostCommandReq `json:"postCommand,omitempty" validate:"omitempty"`
-
-	// PostCommands are sequential bootstrap phases for the newly added nodes
-	PostCommands []PostCommandReq `json:"postCommands,omitempty" validate:"omitempty"`
-
-	// PostCommandAsync returns the response as soon as the nodes are provisioned and
-	// runs the bootstrap commands in the background (observe via streaming/polling)
-	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
 
 	Description string `json:"description" example:"Created via CB-Tumblebug"`
 
@@ -1195,9 +1190,9 @@ type AutoAction struct {
 	ActionType          string                    `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
 	NodeGroupDynamicReq CreateNodeGroupDynamicReq `json:"nodeGroupDynamicReq"`
 
-	// PostCommand is field for providing command to Nodes after their creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
-	PostCommand   PostCommandReq `json:"postCommand"`
-	PlacementAlgo string         `json:"placementAlgo" example:"random"`
+	// PostCommands bootstrap the Nodes added by this action (phases run in order)
+	PostCommands  []PostCommandReq `json:"postCommands,omitempty"`
+	PlacementAlgo string           `json:"placementAlgo" example:"random"`
 }
 
 // Policy is struct for Infra auto-control Policy request that includes AutoCondition, AutoAction, Status.
@@ -2064,7 +2059,7 @@ type InfraAutopilotReq struct {
 	NodeSpecs       []NodeSpec        `json:"nodeSpecs" validate:"required,min=1"`
 	Policy          AutopilotPolicy   `json:"policy,omitempty"`
 	InstallMonAgent string            `json:"installMonAgent,omitempty" example:"no"`
-	PostCommand     *PostCommandReq   `json:"postCommand,omitempty"`
+	PostCommands    []PostCommandReq  `json:"postCommands,omitempty"`
 	Description     string            `json:"description,omitempty"`
 	Label           map[string]string `json:"label,omitempty"`
 }

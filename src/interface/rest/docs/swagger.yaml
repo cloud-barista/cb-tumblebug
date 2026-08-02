@@ -6652,12 +6652,12 @@ paths:
         schema:
           type: string
       requestBody:
-        description: "NodeGroup dynamic request specifying specId, imageId, and scaling\
-          \ parameters"
+        description: "NodeGroup dynamic request specifying specId, imageId, scaling\
+          \ parameters, and optional postCommands bootstrap"
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.CreateNodeGroupDynamicReq'
+              $ref: '#/components/schemas/model.AddNodeGroupDynamicReq'
         required: true
       responses:
         "200":
@@ -6754,13 +6754,14 @@ paths:
         schema:
           type: string
       requestBody:
-        description: "Request body to review node dynamic addition. Must include specId\
-          \ and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small,\
-          \ imageId: aws+ap-northeast-2+ubuntu22.04, nodeGroupSize: 2})"
+        description: "Request body to review node dynamic addition (same shape as\
+          \ the add request). Must include specId and imageId info. (ex: {name: web-servers,\
+          \ specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04,\
+          \ nodeGroupSize: 2})"
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.CreateNodeGroupDynamicReq'
+              $ref: '#/components/schemas/model.AddNodeGroupDynamicReq'
         required: true
       responses:
         "200":
@@ -18587,6 +18588,101 @@ components:
           type: string
         zone:
           type: string
+    model.AddNodeGroupDynamicReq:
+      required:
+      - imageId
+      - specId
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: |-
+            if ConnectionName is given, the Node tries to use associtated credential.
+            if not, it will use predefined ConnectionName in Spec objects
+          example: aws-ap-northeast-2
+        description:
+          type: string
+          example: Created via CB-Tumblebug
+        distributeSubnets:
+          type: boolean
+          description: |-
+            DistributeSubnets, when true, spreads this NodeGroup's VMs across the VNet's subnets
+            (round-robin), which spreads them across availability zones for multi-zone VNets.
+            Best-effort: subnets whose zone lacks the requested spec are excluded so VMs consolidate
+            to zones that have it. Ignored when Zone is set (that pins a single subnet) or when the
+            VNet has a single subnet. Default false (all VMs land in the first subnet).
+          example: false
+        imageId:
+          type: string
+          description: ImageId is field for id of a image in common namespace
+          example: ami-01f71f215b23ba262
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+          example:
+            '"env"': "\"test\"}"
+            '{"role"': '"worker"'
+        name:
+          type: string
+          description: "NodeGroup name, actual Node name will be generated with -N\
+            \ postfix."
+          example: g1
+        nodeGroupSize:
+          type: integer
+          description: "NodeGroupSize is the number of Nodes to create in this NodeGroup.\
+            \ If > 0, nodeGroup will be generated. Default is 1."
+          example: 3
+        postCommandAsync:
+          type: boolean
+          description: |-
+            PostCommandAsync returns the response as soon as the nodes are provisioned and
+            runs the bootstrap commands in the background (observe via streaming/polling)
+          example: false
+        postCommands:
+          type: array
+          description: |-
+            PostCommands are sequential bootstrap phases for the newly added nodes.
+            Phases without an explicit target are scoped to this NodeGroup.
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
+        rootDiskSize:
+          type: integer
+          description: Root disk size in GB. 0 = use CSP default.
+          example: 50
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: gp3
+          default: default
+        sgTemplateId:
+          type: string
+          description: |-
+            SgTemplateId overrides the Infra-level SgTemplateId for this NodeGroup.
+            If empty, inherits the SgTemplateId from the parent InfraDynamicReq.
+          example: ""
+        specId:
+          type: string
+          description: SpecId is field for id of a spec in common namespace
+          example: aws+ap-northeast-2+t3.nano
+        vNetTemplateId:
+          type: string
+          description: |-
+            VNetTemplateId overrides the Infra-level VNetTemplateId for this NodeGroup.
+            If empty, inherits the VNetTemplateId from the parent InfraDynamicReq.
+          example: ""
+        zone:
+          type: string
+          description: |-
+            Zone is an optional field to specify the availability zone for Node placement.
+            If specified, subnet will be created in this zone for resources like GPU Nodes
+            that may only be available in specific zones. If empty, auto-selection applies.
+          example: ap-northeast-2a
     model.AgentInstallContent:
       type: object
       properties:
@@ -18683,13 +18779,12 @@ components:
         placementAlgo:
           type: string
           example: random
-        postCommand:
-          type: object
-          description: PostCommand is field for providing command to Nodes after their
-            creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
-            -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
-          allOf:
-          - $ref: '#/components/schemas/model.PostCommandReq'
+        postCommands:
+          type: array
+          description: PostCommands bootstrap the Nodes added by this action (phases
+            run in order)
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
     model.AutoCondition:
       type: object
       properties:
@@ -19667,24 +19762,6 @@ components:
           description: "NodeGroupSize is the number of Nodes to create in this NodeGroup.\
             \ If > 0, nodeGroup will be generated. Default is 1."
           example: 3
-        postCommand:
-          type: object
-          description: PostCommand bootstraps the newly added nodes (targets this
-            nodeGroup by default)
-          allOf:
-          - $ref: '#/components/schemas/model.PostCommandReq'
-        postCommandAsync:
-          type: boolean
-          description: |-
-            PostCommandAsync returns the response as soon as the nodes are provisioned and
-            runs the bootstrap commands in the background (observe via streaming/polling)
-          example: false
-        postCommands:
-          type: array
-          description: PostCommands are sequential bootstrap phases for the newly
-            added nodes
-          items:
-            $ref: '#/components/schemas/model.PostCommandReq'
         rootDiskSize:
           type: integer
           description: Root disk size in GB. 0 = use CSP default.
@@ -20986,8 +21063,10 @@ components:
             $ref: '#/components/schemas/model.NodeSpec'
         policy:
           $ref: '#/components/schemas/model.AutopilotPolicy'
-        postCommand:
-          $ref: '#/components/schemas/model.PostCommandReq'
+        postCommands:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
     model.InfraAutopilotResult:
       type: object
       properties:
@@ -21054,11 +21133,6 @@ components:
             $ref: '#/components/schemas/model.NodeSpecResult'
         placementAlgo:
           type: string
-        postCommand:
-          type: object
-          description: PostCommand is for the command to bootstrap the Nodes
-          allOf:
-          - $ref: '#/components/schemas/model.PostCommandReq'
         postCommandAsync:
           type: boolean
           description: PostCommandAsync echoes whether the commands run in the background
@@ -21068,12 +21142,6 @@ components:
             PostCommandRequestId is the streaming/tracking key of the post-deployment run
             (always set when post-deployment commands were requested, in both modes)
           example: pc-infra01-1a2b3c
-        postCommandResult:
-          type: object
-          description: PostCommandResult is the result of the command for bootstraping
-            the Nodes
-          allOf:
-          - $ref: '#/components/schemas/model.InfraSshCmdResultForAPI'
         postCommandResults:
           type: array
           description: PostCommandResults holds per-phase outcomes
@@ -21348,11 +21416,6 @@ components:
           - continue
           - rollback
           - refine
-        postCommand:
-          type: object
-          description: PostCommand is for the command to bootstrap the Nodes
-          allOf:
-          - $ref: '#/components/schemas/model.PostCommandReq'
         postCommandAsync:
           type: boolean
           description: |-
@@ -21365,8 +21428,9 @@ components:
         postCommands:
           type: array
           description: |-
-            PostCommands are sequential post-deployment command phases with optional per-phase targets.
-            Use either postCommand (single, legacy) or postCommands (phases), not both.
+            PostCommands are post-deployment command phases that bootstrap the Nodes.
+            Phases run sequentially; each may target a nodeGroupId, nodeId, or labelSelector.
+            A single command set is simply one phase: [{"command": ["..."]}]
           items:
             $ref: '#/components/schemas/model.PostCommandReq'
         sgTemplateId:
@@ -21539,11 +21603,6 @@ components:
             $ref: '#/components/schemas/model.NodeInfo'
         placementAlgo:
           type: string
-        postCommand:
-          type: object
-          description: PostCommand is for the command to bootstrap the Nodes
-          allOf:
-          - $ref: '#/components/schemas/model.PostCommandReq'
         postCommandAsync:
           type: boolean
           description: PostCommandAsync echoes whether the commands run in the background
@@ -21553,12 +21612,6 @@ components:
             PostCommandRequestId is the streaming/tracking key of the post-deployment run
             (always set when post-deployment commands were requested, in both modes)
           example: pc-infra01-1a2b3c
-        postCommandResult:
-          type: object
-          description: PostCommandResult is the result of the command for bootstraping
-            the Nodes
-          allOf:
-          - $ref: '#/components/schemas/model.InfraSshCmdResultForAPI'
         postCommandResults:
           type: array
           description: PostCommandResults holds per-phase outcomes
@@ -21710,11 +21763,6 @@ components:
           - continue
           - rollback
           - refine
-        postCommand:
-          type: object
-          description: PostCommand is for the command to bootstrap the Nodes
-          allOf:
-          - $ref: '#/components/schemas/model.PostCommandReq'
         postCommandAsync:
           type: boolean
           description: PostCommandAsync runs post-deployment commands in the background
@@ -21722,7 +21770,7 @@ components:
         postCommands:
           type: array
           description: PostCommands are sequential post-deployment command phases
-            (alternative to postCommand)
+            that bootstrap the Nodes
           items:
             $ref: '#/components/schemas/model.PostCommandReq'
         systemLabel:
