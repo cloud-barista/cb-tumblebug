@@ -2,6 +2,10 @@
 
 Comprehensive guide for executing remote commands and transferring files to Infra Nodes via secure SSH with TOFU (Trust On First Use) verification.
 
+> 💡 The same execution engine powers **post-deployment commands** that bootstrap nodes
+> during Infra creation (targeting, streaming, and command-status history all behave
+> identically). See [Infra Provisioning → Post-deployment Commands](infra-provisioning.md).
+
 ## 📑 Table of Contents
 
 1. [Overview](#overview)

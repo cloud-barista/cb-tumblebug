@@ -2,6 +2,12 @@
 
 This document provides a comprehensive guide to the **Infra** resource model in CB-Tumblebug, including the conceptual structure and terminology of **Infra**, **NodeGroup**, and **Node**, as well as their lifecycle management. It covers the resource hierarchy, naming rationale, state transitions, control actions, status management, and internal mechanisms.
 
+> 💡 For the *creation* path itself — request structure, auto-created shared resources,
+> post-deployment bootstrap, scaling, and cleanup — see
+> [Infra Provisioning](infra-provisioning.md). Note that node status and bootstrap status
+> are separate signals: an Infra can be `Running` while `postCommandStatus` reports a
+> failed bootstrap.
+
 ## 🔑 Key Concepts and Terminology
 
 ### Why the Terminology Change

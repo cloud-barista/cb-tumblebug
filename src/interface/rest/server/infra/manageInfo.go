@@ -242,7 +242,7 @@ func RestPutInfra(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
-// @Param option query string false "Option for delete Infra (support force delete)" Enums(terminate,force)
+// @Param option query string false "terminate (default, recommended): terminate CSP nodes then delete records. force: DANGEROUS — deletes CB-TB records without confirming CSP termination, leaving billed orphan instances that also block VNet/SecurityGroup cleanup; use only for stuck infra and verify with /inspectResources afterwards" Enums(terminate,force)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"

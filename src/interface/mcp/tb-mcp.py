@@ -2156,6 +2156,8 @@ def _internal_review_infra_dynamic(
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
+    post_commands: Optional[List[Dict]] = None,
+    post_command_async: bool = False,
     hold: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
@@ -2177,6 +2179,10 @@ def _internal_review_infra_dynamic(
         data["label"] = label
     if post_command:
         data["postCommand"] = post_command
+    if post_commands:
+        data["postCommands"] = post_commands
+    if post_command_async:
+        data["postCommandAsync"] = True
     if vnet_template_id:
         data["vNetTemplateId"] = vnet_template_id
     if sg_template_id:
@@ -2471,6 +2477,8 @@ def review_infra_dynamic_request(
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
+    post_commands: Optional[List[Dict]] = None,
+    post_command_async: bool = False,
     hold: bool = False,
     policy_on_partial_failure: str = "continue",
     vnet_template_id: str = "",
@@ -2541,8 +2549,23 @@ def review_infra_dynamic_request(
         description: Infra description
         system_label: System label for special purposes
         label: Key-value pairs for Infra labeling
-        post_command: Post-deployment command configuration with format:
-            {"command": ["command1", "command2"], "userName": "username"}
+        post_command: Single post-deployment command phase (all nodes by default):
+            {"command": ["command1", "command2"], "timeoutMinutes": 10}
+            Optional targeting: "nodeGroupId" | "nodeId" | "labelSelector" (pick at most one).
+            Omit "userName" so the server resolves the verified username per node.
+        post_commands: Sequential phases (use INSTEAD of post_command, not both), e.g.
+            [{"command": ["control-setup.sh"], "nodeGroupId": "control"},
+             {"command": ["worker-join.sh"], "labelSelector": "role=worker", "continueOnError": False}]
+            Phases run in order; by default a failed phase skips the remaining ones.
+            Cumulative timeoutMinutes across phases must stay within 120 minutes.
+            Outcome is reported in the response as postCommandStatus
+            (Completed | CompletedWithErrors | Failed) with per-phase postCommandResults.
+        post_command_async: Return as soon as nodes are provisioned and run the commands
+            in the background (recommended for long bootstraps: nodes bill from Running,
+            and a synchronous wait can hit client/proxy timeouts). The response then has
+            postCommandStatus="Running" plus postCommandRequestId; check progress by
+            re-reading the infra (get_infra) until the status is terminal, or stream via
+            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}.
         hold: Whether to hold provisioning for review
         policy_on_partial_failure: Policy when some VMs fail ("continue", "rollback", "refine"), default "continue"
         vnet_template_id: VNet template ID for Infra-level default (optional)
@@ -2691,6 +2714,8 @@ def create_infra_dynamic(
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
+    post_commands: Optional[List[Dict]] = None,
+    post_command_async: bool = False,
     hold: bool = False,
     skip_confirmation: bool = False,
     force_create: bool = False,
@@ -2889,8 +2914,23 @@ def create_infra_dynamic(
     5. Validate that spec and image are from same CSP provider and region
         system_label: System label for special purposes (optional)
         label: Key-value pairs for Infra labeling (optional)
-        post_command: Post-deployment command configuration with format:
-            {"command": ["command1", "command2"], "userName": "username"} (optional)
+        post_command: Single post-deployment command phase (all nodes by default):
+            {"command": ["command1", "command2"], "timeoutMinutes": 10}
+            Optional targeting: "nodeGroupId" | "nodeId" | "labelSelector" (pick at most one).
+            Omit "userName" so the server resolves the verified username per node.
+        post_commands: Sequential phases (use INSTEAD of post_command, not both), e.g.
+            [{"command": ["control-setup.sh"], "nodeGroupId": "control"},
+             {"command": ["worker-join.sh"], "labelSelector": "role=worker", "continueOnError": False}]
+            Phases run in order; by default a failed phase skips the remaining ones.
+            Cumulative timeoutMinutes across phases must stay within 120 minutes.
+            Outcome is reported in the response as postCommandStatus
+            (Completed | CompletedWithErrors | Failed) with per-phase postCommandResults.
+        post_command_async: Return as soon as nodes are provisioned and run the commands
+            in the background (recommended for long bootstraps: nodes bill from Running,
+            and a synchronous wait can hit client/proxy timeouts). The response then has
+            postCommandStatus="Running" plus postCommandRequestId; check progress by
+            re-reading the infra (get_infra) until the status is terminal, or stream via
+            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}. (optional)
         hold: Whether to hold provisioning for review (optional)
         skip_confirmation: Skip user confirmation step (for automated workflows, default: False)
         force_create: Bypass confirmation and create Infra immediately (default: False)
@@ -3193,6 +3233,10 @@ if review_result.get("overallStatus") == "Ready":
         data["label"] = label
     if post_command:
         data["postCommand"] = post_command
+    if post_commands:
+        data["postCommands"] = post_commands
+    if post_command_async:
+        data["postCommandAsync"] = True
     if vnet_template_id:
         data["vNetTemplateId"] = vnet_template_id
     if sg_template_id:
@@ -3313,7 +3357,10 @@ def add_nodegroup_dynamic(
     zone: str = "",
     vnet_template_id: str = "",
     sg_template_id: str = "",
-    label: Optional[Dict[str, str]] = None
+    label: Optional[Dict[str, str]] = None,
+    post_command: Optional[Dict] = None,
+    post_commands: Optional[List[Dict]] = None,
+    post_command_async: bool = False
 ) -> Dict:
     """
     Add a new NodeGroup of VMs to an existing Infra dynamically.
@@ -3349,7 +3396,11 @@ def add_nodegroup_dynamic(
         zone: Availability zone (optional, e.g., "ap-northeast-2a")
         vnet_template_id: VNet template ID (optional)
         sg_template_id: Security group template ID (optional)
-        label: Key-value pairs for labeling (optional)
+        label: Key-value pairs for labeling (optional; enables labelSelector targeting later)
+        post_command: Bootstrap command for the new nodes, e.g.
+            {"command": ["curl ... | bash"], "timeoutMinutes": 10}
+        post_commands: Sequential bootstrap phases (alternative to post_command), e.g.
+            [{"command": ["setup.sh"], "timeoutMinutes": 10, "continueOnError": False}]
     
     Returns:
         Updated Infra information including the newly added NodeGroup
@@ -3377,6 +3428,14 @@ def add_nodegroup_dynamic(
         data["sgTemplateId"] = sg_template_id
     if label:
         data["label"] = label
+    # Bootstrap commands run on the NEW nodes only (phases without an explicit
+    # target are scoped to this nodeGroup by the server)
+    if post_command:
+        data["postCommand"] = post_command
+    if post_commands:
+        data["postCommands"] = post_commands
+    if post_command_async:
+        data["postCommandAsync"] = True
     
     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamic", json_data=data)
 
@@ -3444,6 +3503,11 @@ def delete_infra(ns_id: str, infra_id: str) -> Dict:
     """
     Delete an Infra.
     This operation will terminate all VMs in the Infra and delete the Infra.
+
+    Safety: deletion always runs with option=terminate (CSP resources are terminated
+    first). Forced metadata-only deletion is not available through this tool because it
+    orphans running instances. If the API reports that termination is still in progress,
+    wait a few minutes and call this tool again.
     This operation is irreversible and should be used with caution.
     This operation requires confirmation from the user.
     
@@ -3460,7 +3524,12 @@ def delete_infra(ns_id: str, infra_id: str) -> Dict:
     except:
         associated_resources = None
     
-    # Delete the Infra
+    # Delete the Infra.
+    # Always option=terminate: it terminates CSP nodes before removing CB-TB records.
+    # option=force is deliberately NOT exposed here — it drops CB-TB metadata without
+    # confirming CSP termination, leaving orphaned (billing) instances that also block
+    # VNet/SecurityGroup cleanup. If deletion is rejected because termination is still
+    # in progress, retry in a few minutes instead of forcing.
     result = api_request("DELETE", f"/ns/{ns_id}/infra/{infra_id}?option=terminate")
     
     # Add shared resources cleanup guidance to the result
@@ -6798,10 +6867,48 @@ def check_infra_status_and_handle_failures(
             "creating_vms_count": len(creating_vms),
             "deployment_health": "healthy" if len(failed_vms) == 0 else "partial-failed" if len(running_vms) > 0 else "critical"
         }
-        
+
+        # Post-deployment (bootstrap) command outcome: nodes can be Running while
+        # their bootstrap failed, so surface it alongside node health
+        post_status = None
+        try:
+            infra_detail = get_infra(ns_id, infra_id)
+            if isinstance(infra_detail, dict):
+                post_status = infra_detail.get("postCommandStatus")
+                if post_status and post_status != "None":
+                    recovery_analysis["post_command_status"] = post_status
+                    failed_phases = [
+                        {
+                            "phase": ph.get("phase"),
+                            "target": ph.get("target"),
+                            "status": ph.get("status"),
+                            "failed_nodes": [
+                                {"nodeId": r.get("nodeId"), "error": r.get("error")}
+                                for r in ((ph.get("results") or {}).get("results") or [])
+                                if r.get("error")
+                            ],
+                        }
+                        for ph in (infra_detail.get("postCommandResults") or [])
+                        if ph.get("status") not in ("Completed", None)
+                    ]
+                    if failed_phases:
+                        recovery_analysis["post_command_failed_phases"] = failed_phases
+        except Exception as e:
+            logger.debug(f"Could not read postCommandStatus: {e}")
+
         # Generate recommendations based on status
         recommendations = []
         recovery_actions = []
+
+        if post_status in ("Failed", "CompletedWithErrors"):
+            recommendations.append(
+                f"⚠️ BOOTSTRAP ISSUE: post-deployment commands reported '{post_status}' "
+                f"(nodes may be Running but not configured as intended)"
+            )
+            recommendations.append(
+                "💡 Inspect 'postCommandResults' for the failing phase/nodes, then re-run the "
+                "commands with execute_command_infra() targeting those nodes"
+            )
         
         if base_status == "partial-failed" or len(failed_vms) > 0:
             recommendations.append(
