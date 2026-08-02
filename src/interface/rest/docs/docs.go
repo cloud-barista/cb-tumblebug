@@ -4953,7 +4953,7 @@ const docTemplate = `{
                             "force"
                         ],
                         "type": "string",
-                        "description": "Option for delete Infra (support force delete)",
+                        "description": "terminate (default, recommended): terminate CSP nodes then delete records. force: DANGEROUS — deletes CB-TB records without confirming CSP termination, leaving billed orphan instances that also block VNet/SecurityGroup cleanup; use only for stuck infra and verify with /inspectResources afterwards",
                         "name": "option",
                         "in": "query"
                     },
@@ -22143,7 +22143,7 @@ const docTemplate = `{
                     "description": "PostCommand is field for providing command to Nodes after their creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.InfraCmdReq"
+                            "$ref": "#/definitions/model.PostCommandReq"
                         }
                     ]
                 }
@@ -22568,6 +22568,15 @@ const docTemplate = `{
                     "default": true,
                     "example": true
                 },
+                "policyOnPostCommandFailure": {
+                    "description": "PolicyOnPostCommandFailure decides whether to bake images when post-deployment\ncommands did not complete cleanly: \"abort\" (default) fails the build, \"proceed\" continues",
+                    "type": "string",
+                    "enum": [
+                        "abort",
+                        "proceed"
+                    ],
+                    "example": "abort"
+                },
                 "snapshotReq": {
                     "description": "Snapshot configuration for creating custom images",
                     "allOf": [
@@ -22609,6 +22618,15 @@ const docTemplate = `{
                 "namespace": {
                     "type": "string",
                     "example": "default"
+                },
+                "postCommandStatus": {
+                    "description": "PostCommandStatus echoes the post-deployment command outcome of the source infra",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.PostCommandStatus"
+                        }
+                    ],
+                    "example": "Completed"
                 },
                 "snapshotResult": {
                     "description": "Snapshot results",
@@ -23433,6 +23451,26 @@ const docTemplate = `{
                     "description": "NodeGroupSize is the number of Nodes to create in this NodeGroup. If \u003e 0, nodeGroup will be generated. Default is 1.",
                     "type": "integer",
                     "example": 3
+                },
+                "postCommand": {
+                    "description": "PostCommand bootstraps the newly added nodes (targets this nodeGroup by default)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.PostCommandReq"
+                        }
+                    ]
+                },
+                "postCommandAsync": {
+                    "description": "PostCommandAsync returns the response as soon as the nodes are provisioned and\nruns the bootstrap commands in the background (observe via streaming/polling)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "postCommands": {
+                    "description": "PostCommands are sequential bootstrap phases for the newly added nodes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
                 },
                 "rootDiskSize": {
                     "description": "Root disk size in GB. 0 = use CSP default.",
@@ -25156,7 +25194,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.AutopilotPolicy"
                 },
                 "postCommand": {
-                    "$ref": "#/definitions/model.InfraCmdReq"
+                    "$ref": "#/definitions/model.PostCommandReq"
                 }
             }
         },
@@ -25247,17 +25285,49 @@ const docTemplate = `{
                     "description": "PostCommand is for the command to bootstrap the Nodes",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.InfraCmdReq"
+                            "$ref": "#/definitions/model.PostCommandReq"
                         }
                     ]
+                },
+                "postCommandAsync": {
+                    "description": "PostCommandAsync echoes whether the commands run in the background",
+                    "type": "boolean"
+                },
+                "postCommandRequestId": {
+                    "description": "PostCommandRequestId is the streaming/tracking key of the post-deployment run\n(always set when post-deployment commands were requested, in both modes)",
+                    "type": "string",
+                    "example": "pc-infra01-1a2b3c"
                 },
                 "postCommandResult": {
                     "description": "PostCommandResult is the result of the command for bootstraping the Nodes",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.InfraSshCmdResult"
+                            "$ref": "#/definitions/model.InfraSshCmdResultForAPI"
                         }
                     ]
+                },
+                "postCommandResults": {
+                    "description": "PostCommandResults holds per-phase outcomes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandPhaseResult"
+                    }
+                },
+                "postCommandStatus": {
+                    "description": "PostCommandStatus summarizes the post-deployment command outcome.\n\"Running\" means execution is still in progress (async mode): stream it with\nGET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}\nor poll this object until the status becomes terminal.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.PostCommandStatus"
+                        }
+                    ],
+                    "example": "Completed"
+                },
+                "postCommands": {
+                    "description": "PostCommands are the requested post-deployment command phases",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
                 },
                 "provisioningAttempts": {
                     "type": "array",
@@ -25557,9 +25627,21 @@ const docTemplate = `{
                     "description": "PostCommand is for the command to bootstrap the Nodes",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.InfraCmdReq"
+                            "$ref": "#/definitions/model.PostCommandReq"
                         }
                     ]
+                },
+                "postCommandAsync": {
+                    "description": "PostCommandAsync (default false) returns the response as soon as nodes are\nprovisioned and runs post-deployment commands in the background. The response\nthen carries postCommandStatus=\"Running\" plus postCommandRequestId; observe with\nGET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}\nor by polling GET /ns/{nsId}/infra/{infraId}.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "postCommands": {
+                    "description": "PostCommands are sequential post-deployment command phases with optional per-phase targets.\nUse either postCommand (single, legacy) or postCommands (phases), not both.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
                 },
                 "sgTemplateId": {
                     "description": "SgTemplateId specifies the SecurityGroup template ID (from system namespace) to use\nwhen auto-creating shared SecurityGroup resources. Propagates to all NodeGroups unless\noverridden at the NodeGroup level. If empty, the default all-open behavior is used.",
@@ -25775,17 +25857,49 @@ const docTemplate = `{
                     "description": "PostCommand is for the command to bootstrap the Nodes",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.InfraCmdReq"
+                            "$ref": "#/definitions/model.PostCommandReq"
                         }
                     ]
+                },
+                "postCommandAsync": {
+                    "description": "PostCommandAsync echoes whether the commands run in the background",
+                    "type": "boolean"
+                },
+                "postCommandRequestId": {
+                    "description": "PostCommandRequestId is the streaming/tracking key of the post-deployment run\n(always set when post-deployment commands were requested, in both modes)",
+                    "type": "string",
+                    "example": "pc-infra01-1a2b3c"
                 },
                 "postCommandResult": {
                     "description": "PostCommandResult is the result of the command for bootstraping the Nodes",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.InfraSshCmdResult"
+                            "$ref": "#/definitions/model.InfraSshCmdResultForAPI"
                         }
                     ]
+                },
+                "postCommandResults": {
+                    "description": "PostCommandResults holds per-phase outcomes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandPhaseResult"
+                    }
+                },
+                "postCommandStatus": {
+                    "description": "PostCommandStatus summarizes the post-deployment command outcome.\n\"Running\" means execution is still in progress (async mode): stream it with\nGET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}\nor poll this object until the status becomes terminal.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.PostCommandStatus"
+                        }
+                    ],
+                    "example": "Completed"
+                },
+                "postCommands": {
+                    "description": "PostCommands are the requested post-deployment command phases",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
                 },
                 "resourceType": {
                     "description": "ResourceType is the type of the resource",
@@ -25968,9 +26082,21 @@ const docTemplate = `{
                     "description": "PostCommand is for the command to bootstrap the Nodes",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.InfraCmdReq"
+                            "$ref": "#/definitions/model.PostCommandReq"
                         }
                     ]
+                },
+                "postCommandAsync": {
+                    "description": "PostCommandAsync runs post-deployment commands in the background",
+                    "type": "boolean",
+                    "example": false
+                },
+                "postCommands": {
+                    "description": "PostCommands are sequential post-deployment command phases (alternative to postCommand)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PostCommandReq"
+                    }
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose",
@@ -28814,6 +28940,106 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.PostCommandPhaseResult": {
+            "type": "object",
+            "properties": {
+                "phase": {
+                    "description": "Phase is the 1-based execution order",
+                    "type": "integer",
+                    "example": 1
+                },
+                "results": {
+                    "description": "Results holds per-node command results",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.InfraSshCmdResultForAPI"
+                        }
+                    ]
+                },
+                "status": {
+                    "description": "Status is the aggregated outcome of this phase (Skipped when a previous phase stopped execution)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.PostCommandStatus"
+                        }
+                    ],
+                    "example": "Completed"
+                },
+                "target": {
+                    "description": "Target echoes the scope this phase ran against",
+                    "type": "string",
+                    "example": "nodeGroupId=control"
+                }
+            }
+        },
+        "model.PostCommandReq": {
+            "type": "object",
+            "required": [
+                "command"
+            ],
+            "properties": {
+                "command": {
+                    "description": "Command is the list of commands to execute",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"
+                    ]
+                },
+                "continueOnError": {
+                    "description": "ContinueOnError keeps running the remaining phases when this phase fails (default: false)",
+                    "type": "boolean",
+                    "example": false
+                },
+                "labelSelector": {
+                    "description": "LabelSelector limits execution to nodes matching the selector (e.g. \"role=worker\")",
+                    "type": "string",
+                    "example": "role=worker"
+                },
+                "nodeGroupId": {
+                    "description": "NodeGroupId limits execution to one nodeGroup",
+                    "type": "string",
+                    "example": "g1"
+                },
+                "nodeId": {
+                    "description": "NodeId limits execution to a single node",
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "timeoutMinutes": {
+                    "description": "TimeoutMinutes is the timeout for command execution in minutes (default: 30, min: 1, max: 120)\nIf not specified or set to 0, the default timeout (30 minutes) will be used",
+                    "type": "integer",
+                    "default": 30,
+                    "example": 30
+                },
+                "userName": {
+                    "description": "UserName is the SSH username to use for command execution",
+                    "type": "string",
+                    "example": "cb-user"
+                }
+            }
+        },
+        "model.PostCommandStatus": {
+            "type": "string",
+            "enum": [
+                "Skipped",
+                "Running",
+                "None",
+                "Completed",
+                "CompletedWithErrors",
+                "Failed"
+            ],
+            "x-enum-varnames": [
+                "PostCommandStatusSkipped",
+                "PostCommandStatusRunning",
+                "PostCommandStatusNone",
+                "PostCommandStatusCompleted",
+                "PostCommandStatusCompletedWithErrors",
+                "PostCommandStatusFailed"
+            ]
         },
         "model.PriorityCondition": {
             "type": "object",

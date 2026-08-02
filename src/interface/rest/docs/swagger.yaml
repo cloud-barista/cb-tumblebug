@@ -3992,7 +3992,10 @@ paths:
           default: infra01
       - name: option
         in: query
-        description: Option for delete Infra (support force delete)
+        description: "terminate (default, recommended): terminate CSP nodes then delete\
+          \ records. force: DANGEROUS — deletes CB-TB records without confirming CSP\
+          \ termination, leaving billed orphan instances that also block VNet/SecurityGroup\
+          \ cleanup; use only for stuck infra and verify with /inspectResources afterwards"
         schema:
           type: string
           enum:
@@ -18686,7 +18689,7 @@ components:
             creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
             -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
           allOf:
-          - $ref: '#/components/schemas/model.InfraCmdReq'
+          - $ref: '#/components/schemas/model.PostCommandReq'
     model.AutoCondition:
       type: object
       properties:
@@ -18995,6 +18998,15 @@ components:
           description: Whether to cleanup (terminate) Infra after snapshot creation
           example: true
           default: true
+        policyOnPostCommandFailure:
+          type: string
+          description: |-
+            PolicyOnPostCommandFailure decides whether to bake images when post-deployment
+            commands did not complete cleanly: "abort" (default) fails the build, "proceed" continues
+          example: abort
+          enum:
+          - abort
+          - proceed
         snapshotReq:
           type: object
           description: Snapshot configuration for creating custom images
@@ -19024,6 +19036,13 @@ components:
         namespace:
           type: string
           example: default
+        postCommandStatus:
+          type: object
+          description: PostCommandStatus echoes the post-deployment command outcome
+            of the source infra
+          example: Completed
+          allOf:
+          - $ref: '#/components/schemas/model.PostCommandStatus'
         snapshotResult:
           type: object
           description: Snapshot results
@@ -19648,6 +19667,24 @@ components:
           description: "NodeGroupSize is the number of Nodes to create in this NodeGroup.\
             \ If > 0, nodeGroup will be generated. Default is 1."
           example: 3
+        postCommand:
+          type: object
+          description: PostCommand bootstraps the newly added nodes (targets this
+            nodeGroup by default)
+          allOf:
+          - $ref: '#/components/schemas/model.PostCommandReq'
+        postCommandAsync:
+          type: boolean
+          description: |-
+            PostCommandAsync returns the response as soon as the nodes are provisioned and
+            runs the bootstrap commands in the background (observe via streaming/polling)
+          example: false
+        postCommands:
+          type: array
+          description: PostCommands are sequential bootstrap phases for the newly
+            added nodes
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
         rootDiskSize:
           type: integer
           description: Root disk size in GB. 0 = use CSP default.
@@ -20950,7 +20987,7 @@ components:
         policy:
           $ref: '#/components/schemas/model.AutopilotPolicy'
         postCommand:
-          $ref: '#/components/schemas/model.InfraCmdReq'
+          $ref: '#/components/schemas/model.PostCommandReq'
     model.InfraAutopilotResult:
       type: object
       properties:
@@ -21021,13 +21058,42 @@ components:
           type: object
           description: PostCommand is for the command to bootstrap the Nodes
           allOf:
-          - $ref: '#/components/schemas/model.InfraCmdReq'
+          - $ref: '#/components/schemas/model.PostCommandReq'
+        postCommandAsync:
+          type: boolean
+          description: PostCommandAsync echoes whether the commands run in the background
+        postCommandRequestId:
+          type: string
+          description: |-
+            PostCommandRequestId is the streaming/tracking key of the post-deployment run
+            (always set when post-deployment commands were requested, in both modes)
+          example: pc-infra01-1a2b3c
         postCommandResult:
           type: object
           description: PostCommandResult is the result of the command for bootstraping
             the Nodes
           allOf:
-          - $ref: '#/components/schemas/model.InfraSshCmdResult'
+          - $ref: '#/components/schemas/model.InfraSshCmdResultForAPI'
+        postCommandResults:
+          type: array
+          description: PostCommandResults holds per-phase outcomes
+          items:
+            $ref: '#/components/schemas/model.PostCommandPhaseResult'
+        postCommandStatus:
+          type: object
+          description: |-
+            PostCommandStatus summarizes the post-deployment command outcome.
+            "Running" means execution is still in progress (async mode): stream it with
+            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+            or poll this object until the status becomes terminal.
+          example: Completed
+          allOf:
+          - $ref: '#/components/schemas/model.PostCommandStatus'
+        postCommands:
+          type: array
+          description: PostCommands are the requested post-deployment command phases
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
         provisioningAttempts:
           type: array
           items:
@@ -21286,7 +21352,23 @@ components:
           type: object
           description: PostCommand is for the command to bootstrap the Nodes
           allOf:
-          - $ref: '#/components/schemas/model.InfraCmdReq'
+          - $ref: '#/components/schemas/model.PostCommandReq'
+        postCommandAsync:
+          type: boolean
+          description: |-
+            PostCommandAsync (default false) returns the response as soon as nodes are
+            provisioned and runs post-deployment commands in the background. The response
+            then carries postCommandStatus="Running" plus postCommandRequestId; observe with
+            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+            or by polling GET /ns/{nsId}/infra/{infraId}.
+          example: false
+        postCommands:
+          type: array
+          description: |-
+            PostCommands are sequential post-deployment command phases with optional per-phase targets.
+            Use either postCommand (single, legacy) or postCommands (phases), not both.
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
         sgTemplateId:
           type: string
           description: |-
@@ -21461,13 +21543,42 @@ components:
           type: object
           description: PostCommand is for the command to bootstrap the Nodes
           allOf:
-          - $ref: '#/components/schemas/model.InfraCmdReq'
+          - $ref: '#/components/schemas/model.PostCommandReq'
+        postCommandAsync:
+          type: boolean
+          description: PostCommandAsync echoes whether the commands run in the background
+        postCommandRequestId:
+          type: string
+          description: |-
+            PostCommandRequestId is the streaming/tracking key of the post-deployment run
+            (always set when post-deployment commands were requested, in both modes)
+          example: pc-infra01-1a2b3c
         postCommandResult:
           type: object
           description: PostCommandResult is the result of the command for bootstraping
             the Nodes
           allOf:
-          - $ref: '#/components/schemas/model.InfraSshCmdResult'
+          - $ref: '#/components/schemas/model.InfraSshCmdResultForAPI'
+        postCommandResults:
+          type: array
+          description: PostCommandResults holds per-phase outcomes
+          items:
+            $ref: '#/components/schemas/model.PostCommandPhaseResult'
+        postCommandStatus:
+          type: object
+          description: |-
+            PostCommandStatus summarizes the post-deployment command outcome.
+            "Running" means execution is still in progress (async mode): stream it with
+            GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+            or poll this object until the status becomes terminal.
+          example: Completed
+          allOf:
+          - $ref: '#/components/schemas/model.PostCommandStatus'
+        postCommands:
+          type: array
+          description: PostCommands are the requested post-deployment command phases
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
         resourceType:
           type: string
           description: ResourceType is the type of the resource
@@ -21603,7 +21714,17 @@ components:
           type: object
           description: PostCommand is for the command to bootstrap the Nodes
           allOf:
-          - $ref: '#/components/schemas/model.InfraCmdReq'
+          - $ref: '#/components/schemas/model.PostCommandReq'
+        postCommandAsync:
+          type: boolean
+          description: PostCommandAsync runs post-deployment commands in the background
+          example: false
+        postCommands:
+          type: array
+          description: PostCommands are sequential post-deployment command phases
+            (alternative to postCommand)
+          items:
+            $ref: '#/components/schemas/model.PostCommandReq'
         systemLabel:
           type: string
           description: SystemLabel is for describing the infra in a keyword (any string
@@ -23702,6 +23823,86 @@ components:
           $ref: '#/components/schemas/model.AutoCondition'
         status:
           type: string
+    model.PostCommandPhaseResult:
+      type: object
+      properties:
+        phase:
+          type: integer
+          description: Phase is the 1-based execution order
+          example: 1
+        results:
+          type: object
+          description: Results holds per-node command results
+          allOf:
+          - $ref: '#/components/schemas/model.InfraSshCmdResultForAPI'
+        status:
+          type: object
+          description: Status is the aggregated outcome of this phase (Skipped when
+            a previous phase stopped execution)
+          example: Completed
+          allOf:
+          - $ref: '#/components/schemas/model.PostCommandStatus'
+        target:
+          type: string
+          description: Target echoes the scope this phase ran against
+          example: nodeGroupId=control
+    model.PostCommandReq:
+      required:
+      - command
+      type: object
+      properties:
+        command:
+          type: array
+          description: Command is the list of commands to execute
+          example:
+          - "client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP\
+            \ is: $client_ip"
+          items:
+            type: string
+        continueOnError:
+          type: boolean
+          description: "ContinueOnError keeps running the remaining phases when this\
+            \ phase fails (default: false)"
+          example: false
+        labelSelector:
+          type: string
+          description: LabelSelector limits execution to nodes matching the selector
+            (e.g. "role=worker")
+          example: role=worker
+        nodeGroupId:
+          type: string
+          description: NodeGroupId limits execution to one nodeGroup
+          example: g1
+        nodeId:
+          type: string
+          description: NodeId limits execution to a single node
+          example: g1-1
+        timeoutMinutes:
+          type: integer
+          description: |-
+            TimeoutMinutes is the timeout for command execution in minutes (default: 30, min: 1, max: 120)
+            If not specified or set to 0, the default timeout (30 minutes) will be used
+          example: 30
+        userName:
+          type: string
+          description: UserName is the SSH username to use for command execution
+          example: cb-user
+    model.PostCommandStatus:
+      type: string
+      enum:
+      - Skipped
+      - Running
+      - None
+      - Completed
+      - CompletedWithErrors
+      - Failed
+      x-enum-varnames:
+      - PostCommandStatusSkipped
+      - PostCommandStatusRunning
+      - PostCommandStatusNone
+      - PostCommandStatusCompleted
+      - PostCommandStatusCompletedWithErrors
+      - PostCommandStatusFailed
     model.PriorityCondition:
       type: object
       properties:

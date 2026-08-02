@@ -14,8 +14,6 @@ jobs:
   update-swagger-doc:
     name: Update Swagger doc
     if: github.repository == 'cloud-barista/cb-tumblebug'
-    # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
-    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -32,7 +30,8 @@ jobs:
         
       - name: Install swag
         run: |
-          go install github.com/swaggo/swag/cmd/swag@latest
+          # Pinned to v1 — swag v2 (OpenAPI 3.1) migration is deferred intentionally
+          go install github.com/swaggo/swag/cmd/swag@v1.16.6
 
       - name: Update Swagger doc
         run: |

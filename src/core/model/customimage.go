@@ -106,6 +106,10 @@ type BuildAgnosticImageReq struct {
 
 	// Whether to cleanup (terminate) Infra after snapshot creation
 	CleanupInfraAfterSnapshot bool `json:"cleanupInfraAfterSnapshot" example:"true" default:"true"`
+
+	// PolicyOnPostCommandFailure decides whether to bake images when post-deployment
+	// commands did not complete cleanly: "abort" (default) fails the build, "proceed" continues
+	PolicyOnPostCommandFailure string `json:"policyOnPostCommandFailure,omitempty" example:"abort" enums:"abort,proceed" validate:"omitempty,oneof=abort proceed"`
 }
 
 // BuildAgnosticImageResult represents the result of building agnostic images
@@ -115,6 +119,9 @@ type BuildAgnosticImageResult struct {
 	Namespace      string `json:"namespace" example:"default"`
 	InfraStatus    string `json:"infraStatus" example:"Running"`
 	InfraCleanedUp bool   `json:"infraCleanedUp" example:"true"`
+
+	// PostCommandStatus echoes the post-deployment command outcome of the source infra
+	PostCommandStatus PostCommandStatus `json:"postCommandStatus,omitempty" example:"Completed"`
 
 	// Snapshot results
 	SnapshotResult InfraSnapshotResult `json:"snapshotResult"`

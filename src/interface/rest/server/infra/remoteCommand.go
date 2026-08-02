@@ -35,29 +35,7 @@ import (
 
 // convertSshCmdResultForAPI converts internal SshCmdResult to API-friendly format
 func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.InfraSshCmdResultForAPI {
-	apiResults := make([]model.SshCmdResultForAPI, len(internal))
-
-	for i, result := range internal {
-		apiResult := model.SshCmdResultForAPI{
-			InfraId: result.InfraId,
-			NodeId:  result.NodeId,
-			NodeIp:  result.NodeIp,
-			Command: result.Command,
-			Stdout:  result.Stdout,
-			Stderr:  result.Stderr,
-		}
-
-		// Convert error to string for JSON serialization
-		if result.Err != nil {
-			apiResult.Error = result.Err.Error()
-		}
-
-		apiResults[i] = apiResult
-	}
-
-	return model.InfraSshCmdResultForAPI{
-		Results: apiResults,
-	}
+	return model.ConvertSshCmdResultsForAPI(internal)
 }
 
 // RestPostCmdInfra godoc

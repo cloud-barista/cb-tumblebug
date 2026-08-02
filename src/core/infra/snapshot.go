@@ -16,6 +16,7 @@ package infra
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -373,6 +374,13 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 	// Step 1: Set PolicyOnPartialFailure to "refine" for better error handling
 	req.SourceInfraReq.PolicyOnPartialFailure = "refine"
 
+	// Image baking must observe the bootstrap outcome before snapshotting, so this
+	// workflow always runs post-deployment commands synchronously
+	if req.SourceInfraReq.PostCommandAsync {
+		log.Info().Msg("postCommandAsync is ignored for image building (bootstrap result is required before snapshot)")
+		req.SourceInfraReq.PostCommandAsync = false
+	}
+
 	log.Info().Msgf("Starting BuildAgnosticImage workflow for Infra: %s", req.SourceInfraReq.Name)
 
 	// Step 2: Create Infra with dynamic provisioning
@@ -410,6 +418,32 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 		err := fmt.Errorf("no running VMs found in Infra after provisioning")
 		log.Error().Err(err).Msg("")
 		return result, err
+	}
+
+	// Gate on post-deployment command outcome: a failed bootstrap means the image
+	// content is wrong — do not bake a broken image unless explicitly allowed
+	if len(req.SourceInfraReq.PostCommand.Command) > 0 || len(req.SourceInfraReq.PostCommands) > 0 {
+		if fresh, _, ferr := GetInfraObject(nsId, infraInfo.Id); ferr == nil {
+			result.PostCommandStatus = fresh.PostCommandStatus
+			policy := strings.ToLower(req.PolicyOnPostCommandFailure)
+			if policy == "" {
+				policy = "abort"
+			}
+			if policy == "abort" && fresh.PostCommandStatus != model.PostCommandStatusCompleted {
+				err := fmt.Errorf("post-deployment commands did not complete cleanly (status: %s); aborting image build (set policyOnPostCommandFailure=proceed to bake anyway)", fresh.PostCommandStatus)
+				log.Error().Err(err).Msg("")
+				if req.CleanupInfraAfterSnapshot {
+					log.Info().Msg("Cleaning up Infra after aborted image build...")
+					if _, cleanupErr := DelInfra(nsId, infraInfo.Id, model.ActionTerminate); cleanupErr != nil {
+						log.Error().Err(cleanupErr).Msg("Failed to cleanup Infra")
+					} else {
+						result.InfraCleanedUp = true
+					}
+				}
+				result.Message = err.Error()
+				return result, err
+			}
+		}
 	}
 
 	// Step 4: Create snapshots from the Infra (one per nodegroup)

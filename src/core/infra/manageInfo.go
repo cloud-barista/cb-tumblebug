@@ -2907,6 +2907,24 @@ func GetAvailableDataDisks(nsId string, infraId string, nodeId string, option st
 // [Delete Infra and Node object]
 
 // DelInfra is func to delete Infra object
+// describePotentialOrphans lists nodes that are not Terminated yet, i.e. CSP
+// resources that force deletion would leave behind (billing + dependency locks).
+func describePotentialOrphans(infraInfo *model.InfraInfo) string {
+	if infraInfo == nil {
+		return "CB-TB metadata was removed without confirming CSP termination"
+	}
+	alive := []string{}
+	for _, node := range infraInfo.Node {
+		if !strings.Contains(node.Status, model.StatusTerminated) && node.CspResourceId != "" {
+			alive = append(alive, fmt.Sprintf("%s(%s,%s)", node.Id, node.CspResourceId, node.Status))
+		}
+	}
+	if len(alive) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d node(s) may remain on the CSP: %s", len(alive), strings.Join(alive, ", "))
+}
+
 func DelInfra(nsId string, infraId string, option string) (model.IdList, error) {
 
 	option = common.ToLower(option)
@@ -3008,6 +3026,14 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err
+		}
+		// option=force removes CB-TB metadata without waiting for CSP termination:
+		// anything still alive on the CSP becomes an orphan (keeps billing and blocks
+		// VNet/SecurityGroup deletion). Warn loudly and report it to the caller.
+		if orphanWarning := describePotentialOrphans(infraInfo); orphanWarning != "" {
+			log.Warn().Msgf("Force deletion of Infra '%s': %s", infraId, orphanWarning)
+			deletedResources.IdList = append(deletedResources.IdList,
+				"[WARNING] "+orphanWarning+" — verify with POST /tumblebug/inspectResources (resourceType: node) and terminate leftovers")
 		}
 	}
 

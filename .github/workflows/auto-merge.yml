@@ -11,9 +11,11 @@ jobs:
     # Apply this job if it is a PR and by OWNER with '/approve' comment
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/approve') }}
     
-    # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
-    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
     runs-on: ubuntu-latest
+    # Explicit token scopes: labeling needs write (default token can be read-only)
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
       # Check the commenter is a member of the maintainer team of this repo
       - name: Extract Repository Name
@@ -43,12 +45,10 @@ jobs:
           fi
       
       # Apply 'approved' label when OWNER left '/approve' comment
-      - uses: actions/checkout@v7
-      - uses: actions-ecosystem/action-add-labels@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          labels: |
-            approved
+      - name: Add 'approved' label
+        run: gh pr edit ${{ github.event.issue.number }} -R ${{ github.repository }} --add-label approved
+        env:
+          GH_TOKEN: ${{ github.token }}
       
       # AutoMerging if this PR has MERGE_LABELS: approved, lgtm (not wip, hold)
       - name: automerge-lgtm-approved

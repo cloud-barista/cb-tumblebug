@@ -287,8 +287,10 @@ func OrchestrationController() {
 						if len(autoAction.PostCommand.Command) != 0 {
 
 							log.Debug().Msgf("[Post Command to Node] %v", autoAction.PostCommand.Command)
-							_, cmdErr := RemoteCommandToInfra(nsId, infraPolicyTmp.Id, common.ToLower(autoAction.NodeGroupDynamicReq.Name), "", "", &autoAction.PostCommand, "")
-							if cmdErr != nil {
+							// Shared helper: aggregates per-node outcomes and persists status/results
+							status, cmdErr := executePostCommands(nsId, infraPolicyTmp.Id, common.ToLower(autoAction.NodeGroupDynamicReq.Name),
+								[]model.PostCommandReq{autoAction.PostCommand}, newPostCommandRequestId(infraPolicyTmp.Id))
+							if cmdErr != nil || status == model.PostCommandStatusFailed || status == model.PostCommandStatusCompletedWithErrors {
 								infraPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateInfraPolicyInfo(nsId, infraPolicyTmp)
 							}

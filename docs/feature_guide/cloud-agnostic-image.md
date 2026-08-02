@@ -280,7 +280,8 @@ Simply use the `imageId` returned from the build process in your standard Infra 
     "name": "nginx-custom-image",
     "description": "Ubuntu 22.04 with Nginx pre-installed"
   },
-  "cleanupInfraAfterSnapshot": true
+  "cleanupInfraAfterSnapshot": true,
+  "policyOnPostCommandFailure": "abort"
 }
 ```
 
@@ -291,6 +292,27 @@ Simply use the `imageId` returned from the build process in your standard Infra 
 | `sourceInfraReq` | object | Yes | - | Standard Infra creation request with Node specs and post-commands |
 | `snapshotReq` | object | Yes | - | Configuration for the resulting images (name, description) |
 | `cleanupInfraAfterSnapshot` | boolean | No | `true` | Whether to delete the Infra after successful image creation |
+| `policyOnPostCommandFailure` | string | No | `abort` | `abort`: fail the build when post-deployment commands did not complete cleanly. `proceed`: snapshot anyway |
+
+### Post-deployment Commands in Image Building
+
+The commands in `sourceInfraReq` define **what the image contains**, so this workflow
+treats them as a build step rather than a side effect:
+
+- **They always run synchronously.** A `postCommandAsync: true` in `sourceInfraReq` is
+  ignored (and logged) because the snapshot must not start before the bootstrap result
+  is known.
+- **A failed bootstrap aborts the build by default** (`policyOnPostCommandFailure: abort`):
+  no snapshot is taken, the reason is returned in `message`, `postCommandStatus` is echoed
+  in the result, and `cleanupInfraAfterSnapshot` is still honored for teardown.
+  Set `proceed` only when you knowingly want to bake the image regardless.
+- **Ordered phases are supported.** Use `postCommands[]` in `sourceInfraReq` to separate
+  install → configure → pre-snapshot cleanup (e.g. `cloud-init clean`,
+  `waagent -deprovision`), and to target different NodeGroups when building several
+  images at once.
+
+See [Infra Provisioning → Post-deployment Commands](infra-provisioning.md) for the full
+semantics (targeting, timeouts, status values).
 
 **Response:** `200 OK`
 ```json

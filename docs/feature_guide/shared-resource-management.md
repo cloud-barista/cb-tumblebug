@@ -82,6 +82,15 @@ The deletion can fail with a `DependencyViolation` error if the CSP still has re
 
 This happens when a Node (VM) was removed from CB-TB's registry — for example, due to a partial failure or forced cleanup — **without being actually terminated on the CSP**. The VM continues to hold references to the shared SG, SSHKey, and VNet, blocking their deletion.
 
+> 💡 **The most common trigger is `DELETE /infra/{infraId}?option=force`.** That option skips the "nodes must be Terminated" precondition and drops CB-TB metadata immediately, so any node still alive on the CSP becomes an orphan — it keeps billing and holds the shared resources hostage. Use `option=terminate` and retry later if termination is still in progress. When `force` is used anyway, the response now carries a warning listing the nodes at risk:
+>
+> ```
+> [WARNING] 1 node(s) may remain on the CSP: n-1(i-0a2a9a21c2b0050a8,Running)
+>           — verify with POST /tumblebug/inspectResources (resourceType: node) and terminate leftovers
+> ```
+>
+> See also: [Infra Provisioning → Cleaning Up](infra-provisioning.md).
+
 These VMs are called **orphaned resources**. They exist in one of two states invisible to CB-TB:
 
 | State | Description |

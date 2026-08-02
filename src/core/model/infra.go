@@ -143,7 +143,13 @@ type InfraReq struct {
 	NodeGroups []CreateNodeGroupReq `json:"nodeGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the Nodes
-	PostCommand InfraCmdReq `json:"postCommand" validate:"omitempty"`
+	PostCommand PostCommandReq `json:"postCommand" validate:"omitempty"`
+
+	// PostCommands are sequential post-deployment command phases (alternative to postCommand)
+	PostCommands []PostCommandReq `json:"postCommands,omitempty" validate:"omitempty"`
+
+	// PostCommandAsync runs post-deployment commands in the background
+	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
 
 	// PolicyOnPartialFailure determines how to handle Node creation failures
 	// - "continue": Continue with partial Infra creation (default)
@@ -203,14 +209,95 @@ type InfraInfo struct {
 	NewNodeList []string `json:"newNodeList"`
 
 	// PostCommand is for the command to bootstrap the Nodes
-	PostCommand InfraCmdReq `json:"postCommand"`
+	PostCommand PostCommandReq `json:"postCommand"`
+
+	// PostCommands are the requested post-deployment command phases
+	PostCommands []PostCommandReq `json:"postCommands,omitempty"`
+
+	// PostCommandAsync echoes whether the commands run in the background
+	PostCommandAsync bool `json:"postCommandAsync,omitempty"`
+
+	// PostCommandResults holds per-phase outcomes
+	PostCommandResults []PostCommandPhaseResult `json:"postCommandResults,omitempty"`
+
+	// PostCommandStatus summarizes the post-deployment command outcome.
+	// "Running" means execution is still in progress (async mode): stream it with
+	// GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+	// or poll this object until the status becomes terminal.
+	PostCommandStatus PostCommandStatus `json:"postCommandStatus,omitempty" example:"Completed"`
+
+	// PostCommandRequestId is the streaming/tracking key of the post-deployment run
+	// (always set when post-deployment commands were requested, in both modes)
+	PostCommandRequestId string `json:"postCommandRequestId,omitempty" example:"pc-infra01-1a2b3c"`
 
 	// PostCommandResult is the result of the command for bootstraping the Nodes
-	PostCommandResult InfraSshCmdResult `json:"postCommandResult"`
+	PostCommandResult InfraSshCmdResultForAPI `json:"postCommandResult"`
 
 	// CreationErrors contains information about Node creation failures (if any)
 	CreationErrors *InfraCreationErrors `json:"creationErrors,omitempty"`
 }
+
+// PostCommandReq is a post-deployment command phase: an InfraCmdReq plus optional
+// targeting (at most one of nodeGroupId/nodeId/labelSelector) and phase policy.
+// Targeting mirrors the query parameters of the remote-command API.
+type PostCommandReq struct {
+	InfraCmdReq
+
+	// NodeGroupId limits execution to one nodeGroup
+	NodeGroupId string `json:"nodeGroupId,omitempty" example:"g1"`
+	// NodeId limits execution to a single node
+	NodeId string `json:"nodeId,omitempty" example:"g1-1"`
+	// LabelSelector limits execution to nodes matching the selector (e.g. "role=worker")
+	LabelSelector string `json:"labelSelector,omitempty" example:"role=worker"`
+	// ContinueOnError keeps running the remaining phases when this phase fails (default: false)
+	ContinueOnError bool `json:"continueOnError,omitempty" example:"false"`
+}
+
+// Target returns a human-readable echo of this phase's target scope
+func (p PostCommandReq) Target() string {
+	switch {
+	case p.NodeGroupId != "":
+		return "nodeGroupId=" + p.NodeGroupId
+	case p.NodeId != "":
+		return "nodeId=" + p.NodeId
+	case p.LabelSelector != "":
+		return "labelSelector=" + p.LabelSelector
+	}
+	return "all nodes"
+}
+
+// PostCommandPhaseResult is the outcome of a single post-command phase
+type PostCommandPhaseResult struct {
+	// Phase is the 1-based execution order
+	Phase int `json:"phase" example:"1"`
+	// Target echoes the scope this phase ran against
+	Target string `json:"target" example:"nodeGroupId=control"`
+	// Status is the aggregated outcome of this phase (Skipped when a previous phase stopped execution)
+	Status PostCommandStatus `json:"status" example:"Completed"`
+	// Results holds per-node command results
+	Results InfraSshCmdResultForAPI `json:"results"`
+}
+
+// PostCommandStatusSkipped indicates the phase did not run (a previous phase failed)
+const PostCommandStatusSkipped PostCommandStatus = "Skipped"
+
+// PostCommandStatusRunning indicates post-deployment commands are still executing
+// (async mode: the creation response returns before they finish)
+const PostCommandStatusRunning PostCommandStatus = "Running"
+
+// PostCommandStatus summarizes a post-deployment command run across target nodes
+type PostCommandStatus string
+
+const (
+	// PostCommandStatusNone indicates no post-deployment command was requested
+	PostCommandStatusNone PostCommandStatus = "None"
+	// PostCommandStatusCompleted indicates all target nodes succeeded
+	PostCommandStatusCompleted PostCommandStatus = "Completed"
+	// PostCommandStatusCompletedWithErrors indicates some target nodes failed
+	PostCommandStatusCompletedWithErrors PostCommandStatus = "CompletedWithErrors"
+	// PostCommandStatusFailed indicates all target nodes failed (or execution could not start)
+	PostCommandStatusFailed PostCommandStatus = "Failed"
+)
 
 // InfraCreationErrors represents errors that occurred during Infra creation
 type InfraCreationErrors struct {
@@ -342,7 +429,18 @@ type InfraDynamicReq struct {
 	NodeGroups []CreateNodeGroupDynamicReq `json:"nodeGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the Nodes
-	PostCommand InfraCmdReq `json:"postCommand"`
+	PostCommand PostCommandReq `json:"postCommand"`
+
+	// PostCommands are sequential post-deployment command phases with optional per-phase targets.
+	// Use either postCommand (single, legacy) or postCommands (phases), not both.
+	PostCommands []PostCommandReq `json:"postCommands,omitempty"`
+
+	// PostCommandAsync (default false) returns the response as soon as nodes are
+	// provisioned and runs post-deployment commands in the background. The response
+	// then carries postCommandStatus="Running" plus postCommandRequestId; observe with
+	// GET /ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={postCommandRequestId}
+	// or by polling GET /ns/{nsId}/infra/{infraId}.
+	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
 
 	// SystemLabel is for describing the infra in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
@@ -373,6 +471,16 @@ type CreateNodeGroupDynamicReq struct {
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label" example:"{\"role\":\"worker\",\"env\":\"test\"}"`
+
+	// PostCommand bootstraps the newly added nodes (targets this nodeGroup by default)
+	PostCommand PostCommandReq `json:"postCommand,omitempty" validate:"omitempty"`
+
+	// PostCommands are sequential bootstrap phases for the newly added nodes
+	PostCommands []PostCommandReq `json:"postCommands,omitempty" validate:"omitempty"`
+
+	// PostCommandAsync returns the response as soon as the nodes are provisioned and
+	// runs the bootstrap commands in the background (observe via streaming/polling)
+	PostCommandAsync bool `json:"postCommandAsync,omitempty" example:"false"`
 
 	Description string `json:"description" example:"Created via CB-Tumblebug"`
 
@@ -1088,8 +1196,8 @@ type AutoAction struct {
 	NodeGroupDynamicReq CreateNodeGroupDynamicReq `json:"nodeGroupDynamicReq"`
 
 	// PostCommand is field for providing command to Nodes after their creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
-	PostCommand   InfraCmdReq `json:"postCommand"`
-	PlacementAlgo string      `json:"placementAlgo" example:"random"`
+	PostCommand   PostCommandReq `json:"postCommand"`
+	PlacementAlgo string         `json:"placementAlgo" example:"random"`
 }
 
 // Policy is struct for Infra auto-control Policy request that includes AutoCondition, AutoAction, Status.
@@ -1503,6 +1611,26 @@ type SshCmdResultForAPI struct { // For REST API response
 // InfraSshCmdResultForAPI is struct for Set of SshCmd Results in terms of Infra for API response
 type InfraSshCmdResultForAPI struct {
 	Results []SshCmdResultForAPI `json:"results"`
+}
+
+// ConvertSshCmdResultsForAPI converts internal results to the API shape (error as string)
+func ConvertSshCmdResultsForAPI(internal []SshCmdResult) InfraSshCmdResultForAPI {
+	apiResults := make([]SshCmdResultForAPI, len(internal))
+	for i, result := range internal {
+		apiResult := SshCmdResultForAPI{
+			InfraId: result.InfraId,
+			NodeId:  result.NodeId,
+			NodeIp:  result.NodeIp,
+			Command: result.Command,
+			Stdout:  result.Stdout,
+			Stderr:  result.Stderr,
+		}
+		if result.Err != nil {
+			apiResult.Error = result.Err.Error()
+		}
+		apiResults[i] = apiResult
+	}
+	return InfraSshCmdResultForAPI{Results: apiResults}
 }
 
 // InfraFileTransferAndCmdResult is struct for combined file transfer and optional command execution result (internal)
@@ -1936,7 +2064,7 @@ type InfraAutopilotReq struct {
 	NodeSpecs       []NodeSpec        `json:"nodeSpecs" validate:"required,min=1"`
 	Policy          AutopilotPolicy   `json:"policy,omitempty"`
 	InstallMonAgent string            `json:"installMonAgent,omitempty" example:"no"`
-	PostCommand     *InfraCmdReq      `json:"postCommand,omitempty"`
+	PostCommand     *PostCommandReq   `json:"postCommand,omitempty"`
 	Description     string            `json:"description,omitempty"`
 	Label           map[string]string `json:"label,omitempty"`
 }
