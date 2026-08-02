@@ -2155,7 +2155,6 @@ def _internal_review_infra_dynamic(
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_command: Optional[Dict] = None,
     post_commands: Optional[List[Dict]] = None,
     post_command_async: bool = False,
     hold: bool = False,
@@ -2177,8 +2176,6 @@ def _internal_review_infra_dynamic(
         data["systemLabel"] = system_label
     if label:
         data["label"] = label
-    if post_command:
-        data["postCommand"] = post_command
     if post_commands:
         data["postCommands"] = post_commands
     if post_command_async:
@@ -2476,7 +2473,6 @@ def review_infra_dynamic_request(
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_command: Optional[Dict] = None,
     post_commands: Optional[List[Dict]] = None,
     post_command_async: bool = False,
     hold: bool = False,
@@ -2549,11 +2545,10 @@ def review_infra_dynamic_request(
         description: Infra description
         system_label: System label for special purposes
         label: Key-value pairs for Infra labeling
-        post_command: Single post-deployment command phase (all nodes by default):
-            {"command": ["command1", "command2"], "timeoutMinutes": 10}
-            Optional targeting: "nodeGroupId" | "nodeId" | "labelSelector" (pick at most one).
-            Omit "userName" so the server resolves the verified username per node.
-        post_commands: Sequential phases (use INSTEAD of post_command, not both), e.g.
+        post_commands: Post-deployment command phases that bootstrap the nodes. A single
+            command set is just one phase: [{"command": ["cmd1", "cmd2"], "timeoutMinutes": 10}].
+            Optional per-phase targeting: "nodeGroupId" | "nodeId" | "labelSelector" (at most one).
+            Omit "userName" so the server resolves the verified username per node. Example:
             [{"command": ["control-setup.sh"], "nodeGroupId": "control"},
              {"command": ["worker-join.sh"], "labelSelector": "role=worker", "continueOnError": False}]
             Phases run in order; by default a failed phase skips the remaining ones.
@@ -2654,7 +2649,8 @@ def review_infra_dynamic_request(
         description=description,
         system_label=system_label,
         label=label,
-        post_command=post_command,
+        post_commands=post_commands,
+        post_command_async=post_command_async,
         hold=hold,
         policy_on_partial_failure=policy_on_partial_failure,
         vnet_template_id=vnet_template_id,
@@ -2713,7 +2709,6 @@ def create_infra_dynamic(
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_command: Optional[Dict] = None,
     post_commands: Optional[List[Dict]] = None,
     post_command_async: bool = False,
     hold: bool = False,
@@ -2914,11 +2909,10 @@ def create_infra_dynamic(
     5. Validate that spec and image are from same CSP provider and region
         system_label: System label for special purposes (optional)
         label: Key-value pairs for Infra labeling (optional)
-        post_command: Single post-deployment command phase (all nodes by default):
-            {"command": ["command1", "command2"], "timeoutMinutes": 10}
-            Optional targeting: "nodeGroupId" | "nodeId" | "labelSelector" (pick at most one).
-            Omit "userName" so the server resolves the verified username per node.
-        post_commands: Sequential phases (use INSTEAD of post_command, not both), e.g.
+        post_commands: Post-deployment command phases that bootstrap the nodes. A single
+            command set is just one phase: [{"command": ["cmd1", "cmd2"], "timeoutMinutes": 10}].
+            Optional per-phase targeting: "nodeGroupId" | "nodeId" | "labelSelector" (at most one).
+            Omit "userName" so the server resolves the verified username per node. Example:
             [{"command": ["control-setup.sh"], "nodeGroupId": "control"},
              {"command": ["worker-join.sh"], "labelSelector": "role=worker", "continueOnError": False}]
             Phases run in order; by default a failed phase skips the remaining ones.
@@ -3052,7 +3046,7 @@ if review_result.get("overallStatus") == "Ready":
             "description": description,
             "system_label": system_label,
             "label": label,
-            "post_command": post_command,
+            "post_commands": post_commands,
             "hold": hold
         }
         
@@ -3231,8 +3225,6 @@ if review_result.get("overallStatus") == "Ready":
         data["systemLabel"] = system_label
     if label:
         data["label"] = label
-    if post_command:
-        data["postCommand"] = post_command
     if post_commands:
         data["postCommands"] = post_commands
     if post_command_async:
@@ -3358,7 +3350,6 @@ def add_nodegroup_dynamic(
     vnet_template_id: str = "",
     sg_template_id: str = "",
     label: Optional[Dict[str, str]] = None,
-    post_command: Optional[Dict] = None,
     post_commands: Optional[List[Dict]] = None,
     post_command_async: bool = False
 ) -> Dict:
@@ -3397,10 +3388,8 @@ def add_nodegroup_dynamic(
         vnet_template_id: VNet template ID (optional)
         sg_template_id: Security group template ID (optional)
         label: Key-value pairs for labeling (optional; enables labelSelector targeting later)
-        post_command: Bootstrap command for the new nodes, e.g.
-            {"command": ["curl ... | bash"], "timeoutMinutes": 10}
-        post_commands: Sequential bootstrap phases (alternative to post_command), e.g.
-            [{"command": ["setup.sh"], "timeoutMinutes": 10, "continueOnError": False}]
+        post_commands: Bootstrap phases for the NEW nodes (scoped to this nodeGroup), e.g.
+            [{"command": ["curl ... | bash"], "timeoutMinutes": 10, "continueOnError": False}]
     
     Returns:
         Updated Infra information including the newly added NodeGroup
@@ -3430,8 +3419,6 @@ def add_nodegroup_dynamic(
         data["label"] = label
     # Bootstrap commands run on the NEW nodes only (phases without an explicit
     # target are scoped to this nodeGroup by the server)
-    if post_command:
-        data["postCommand"] = post_command
     if post_commands:
         data["postCommands"] = post_commands
     if post_command_async:
@@ -3452,7 +3439,9 @@ def review_nodegroup_dynamic(
     root_disk_type: str = "",
     root_disk_size: int = 0,
     connection_name: str = "",
-    zone: str = ""
+    zone: str = "",
+    post_commands: Optional[List[Dict]] = None,
+    post_command_async: bool = False
 ) -> Dict:
     """
     Review/validate a NodeGroup configuration before adding it to an existing Infra.
@@ -3472,6 +3461,8 @@ def review_nodegroup_dynamic(
         root_disk_size: Root disk size in GB (int, 0 for CSP default)
         connection_name: Specific connection name (optional)
         zone: Availability zone (optional)
+        post_commands: Bootstrap phases to validate (same shape as add_nodegroup_dynamic)
+        post_command_async: Whether the bootstrap would run in the background
     
     Returns:
         Validation result including spec/image availability, cost estimation,
@@ -3494,7 +3485,13 @@ def review_nodegroup_dynamic(
         data["connectionName"] = connection_name
     if zone:
         data["zone"] = zone
-    
+    # Review accepts the same body as add_nodegroup_dynamic, so a reviewed request
+    # can be submitted unchanged (bootstrap phases are validated here too)
+    if post_commands:
+        data["postCommands"] = post_commands
+    if post_command_async:
+        data["postCommandAsync"] = True
+
     return api_request("POST", f"/ns/{ns_id}/infra/{infra_id}/nodeGroupDynamicReview", json_data=data)
 
 # Tool: Delete Infra

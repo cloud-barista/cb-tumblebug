@@ -529,7 +529,7 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	var infraInfo *model.InfraInfo
 
 	// Base infra configuration used when creating the infra with the first NodeGroup.
-	// InstallMonAgent and PostCommand are intentionally withheld here: CreateInfraDynamic
+	// InstallMonAgent and PostCommands are intentionally withheld here: CreateInfraDynamic
 	// runs them at the end of the FIRST NodeGroup only (while all other NodeGroups are
 	// still blocked on infra creation), so nodes added afterwards would never receive
 	// them. Autopilot instead runs both once, after every NodeGroup has completed and
@@ -626,7 +626,8 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 		}
 
 		// CreateInfraNodeGroupDynamic can safely run concurrently for distinct NodeGroup names.
-		result, err := CreateInfraNodeGroupDynamic(ctx, nsId, infraId, &ngReq)
+		result, err := CreateInfraNodeGroupDynamic(ctx, nsId, infraId,
+			&model.AddNodeGroupDynamicReq{CreateNodeGroupDynamicReq: ngReq})
 		infraMu.Lock()
 		if result != nil {
 			infraInfo = result
@@ -770,8 +771,8 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 	if created && stats.Succeeded > 0 {
 		if infraObj, _, getErr := GetInfraObject(nsId, infraId); getErr == nil {
 			infraObj.InstallMonAgent = req.InstallMonAgent
-			if req.PostCommand != nil {
-				infraObj.PostCommand = *req.PostCommand
+			if len(req.PostCommands) > 0 {
+				infraObj.PostCommands = req.PostCommands
 			}
 			UpdateInfraInfo(nsId, infraObj)
 
@@ -784,7 +785,7 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 				appendInfraSystemMessage(nsId, infraId, fmt.Sprintf("Post-deployment commands failed: %s", err.Error()))
 			}
 
-			// Refresh so the result carries PostCommandResult and final status.
+			// Refresh so the result carries PostCommandResults and final status.
 			if refreshed, refErr := GetInfraInfo(nsId, infraId); refErr == nil {
 				infraInfo = refreshed
 			}

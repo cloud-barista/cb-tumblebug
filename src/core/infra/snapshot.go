@@ -422,7 +422,7 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 
 	// Gate on post-deployment command outcome: a failed bootstrap means the image
 	// content is wrong — do not bake a broken image unless explicitly allowed
-	if len(req.SourceInfraReq.PostCommand.Command) > 0 || len(req.SourceInfraReq.PostCommands) > 0 {
+	if len(req.SourceInfraReq.PostCommands) > 0 {
 		if fresh, _, ferr := GetInfraObject(nsId, infraInfo.Id); ferr == nil {
 			result.PostCommandStatus = fresh.PostCommandStatus
 			policy := strings.ToLower(req.PolicyOnPostCommandFailure)
