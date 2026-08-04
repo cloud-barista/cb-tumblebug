@@ -546,9 +546,12 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	newSecurityGroup = oldSecurityGroup
 	newSecurityGroup.FirewallRules = nil
 
+	snapshot := []model.FirewallRuleInfo{}
 	for _, newSpiderSecurityRule := range tempSpiderSecurityInfo.SecurityRules {
-		newSecurityGroup.FirewallRules = append(newSecurityGroup.FirewallRules, ConvertSpiderToFirewallRuleInfo(newSpiderSecurityRule))
+		snapshot = append(snapshot, ConvertSpiderToFirewallRuleInfo(newSpiderSecurityRule))
 	}
+	// Read-back may lag behind the create; keep the added rules
+	newSecurityGroup.FirewallRules = reconcileRuleSnapshot(snapshot, req, nil)
 	Val, _ := json.Marshal(newSecurityGroup)
 
 	err = kvstore.Put(securityGroupKey, string(Val))
@@ -733,9 +736,12 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	newSecurityGroup := model.SecurityGroupInfo{}
 	newSecurityGroup = oldSecurityGroup
 	newSecurityGroup.FirewallRules = nil
+	snapshot := []model.FirewallRuleInfo{}
 	for _, newSpiderSecurityRule := range tempSpiderSecurityInfo.SecurityRules {
-		newSecurityGroup.FirewallRules = append(newSecurityGroup.FirewallRules, ConvertSpiderToFirewallRuleInfo(newSpiderSecurityRule))
+		snapshot = append(snapshot, ConvertSpiderToFirewallRuleInfo(newSpiderSecurityRule))
 	}
+	// Read-back may still list the deleted rules; drop them
+	newSecurityGroup.FirewallRules = reconcileRuleSnapshot(snapshot, nil, rulesToDelete)
 	Val, _ := json.Marshal(newSecurityGroup)
 
 	err = kvstore.Put(securityGroupKey, string(Val))
@@ -785,7 +791,8 @@ func UpdateFirewallRules(nsId string, securityGroupId string, desiredRules []mod
 	}
 
 	for _, rule := range desiredRulesInfos {
-		if !strings.EqualFold(rule.Protocol, "ICMP") {
+		// ICMP and ALL have no port concept (same exemption as the create path)
+		if !strings.EqualFold(rule.Protocol, "ICMP") && !strings.EqualFold(rule.Protocol, "ALL") {
 			if !isValidPorts(rule.Port) {
 				err := fmt.Errorf("invalid port range in rule: %v", rule)
 				return model.SecurityGroupUpdateResponse{
@@ -922,6 +929,60 @@ func UpdateFirewallRules(nsId string, securityGroupId string, desiredRules []mod
 	return resp, nil
 }
 
+// sameFirewallRule reports whether two rules describe the same scope.
+// Ports are compared as ranges so CSP spellings of "no port" ("" vs "-1") match.
+func sameFirewallRule(a, b model.FirewallRuleInfo) bool {
+	if !strings.EqualFold(a.Direction, b.Direction) ||
+		!strings.EqualFold(a.Protocol, b.Protocol) ||
+		a.CIDR != b.CIDR {
+		return false
+	}
+	ra, rb := parsePortsToRanges(a.Port), parsePortsToRanges(b.Port)
+	if len(ra) == 0 && len(rb) == 0 {
+		return true
+	}
+	if len(ra) != len(rb) {
+		return false
+	}
+	for i := range ra {
+		if ra[i] != rb[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// reconcileRuleSnapshot corrects a CSP rule snapshot read right after a mutation:
+// CSPs are eventually consistent, so storing it verbatim can drift permanently.
+func reconcileRuleSnapshot(snapshot, added, deleted []model.FirewallRuleInfo) []model.FirewallRuleInfo {
+	result := []model.FirewallRuleInfo{}
+	for _, rule := range snapshot {
+		stale := false
+		for _, d := range deleted {
+			if sameFirewallRule(rule, d) {
+				stale = true
+				break
+			}
+		}
+		if !stale {
+			result = append(result, rule)
+		}
+	}
+	for _, a := range added {
+		found := false
+		for _, rule := range result {
+			if sameFirewallRule(rule, a) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result = append(result, a)
+		}
+	}
+	return result
+}
+
 // isValidPorts checks if a Ports string is valid (all ranges/values 0~65535)
 func isValidPorts(ports string) bool {
 	ranges := parsePortsToRanges(ports)
@@ -1001,10 +1062,6 @@ func diffFirewallRules(current, desired []model.FirewallRuleInfo) (toAdd, toDele
 	}
 	toDelete = make([]model.FirewallRuleInfo, 0, len(uniqueDelete))
 	for _, rule := range uniqueDelete {
-		// skip if the rule is Protocol:ALL outbound 0.0.0.0/0 (it is the default rule)
-		if strings.EqualFold(rule.Direction, "outbound") && rule.CIDR == "0.0.0.0/0" && strings.EqualFold(rule.Protocol, "ALL") {
-			continue
-		}
 		toDelete = append(toDelete, rule)
 	}
 
@@ -1015,6 +1072,10 @@ func diffFirewallRules(current, desired []model.FirewallRuleInfo) (toAdd, toDele
 func portsOverlap(portsA, portsB string) bool {
 	rangesA := parsePortsToRanges(portsA)
 	rangesB := parsePortsToRanges(portsB)
+	// Port-less rules (ICMP, ALL): "no ports" matches "no ports"
+	if len(rangesA) == 0 && len(rangesB) == 0 {
+		return true
+	}
 	for _, ra := range rangesA {
 		for _, rb := range rangesB {
 			if ra[0] <= rb[1] && ra[1] >= rb[0] {
