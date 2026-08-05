@@ -787,6 +787,12 @@ type NodeGroupInfo struct {
 
 	NodeId        []string `json:"nodeId"`
 	NodeGroupSize int      `json:"nodeGroupSize"`
+
+	// RootDiskType/RootDiskSize keep what was requested when the NodeGroup was created.
+	// Nodes hold the CSP-reported values instead, which are not always valid as a request
+	// (e.g. NCP reports "SSD" but only accepts "HDD"), so scale-out reads these.
+	RootDiskType string `json:"rootDiskType,omitempty"`
+	RootDiskSize int    `json:"rootDiskSize,omitempty"`
 }
 
 // InfraClusterInfo is a lightweight, on-demand cluster view synthesized from Infra NodeGroups and Nodes.

@@ -256,10 +256,12 @@ func GenInfraKey(nsId string, infraId string, nodeId string) string {
 
 }
 
-// GenInfraNodeGroupKey is func to generate a key from nodeGroupId used in keyValue store
+// GenInfraNodeGroupKey is func to generate a key from nodeGroupId used in keyValue store.
+// The group id is canonicalized the same way Node ids are (ToLower), so a record written
+// from a mixed-case request name stays reachable by the id Nodes actually carry.
 func GenInfraNodeGroupKey(nsId string, infraId string, groupId string) string {
 
-	return "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrNodeGroup + "/" + groupId
+	return "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrNodeGroup + "/" + ToLower(groupId)
 
 }
 

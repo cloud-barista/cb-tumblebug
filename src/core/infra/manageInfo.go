@@ -213,6 +213,36 @@ func ListNodeByNodeGroup(nsId string, infraId string, groupId string) ([]string,
 	return ListNodeByFilter(nsId, infraId, filterKey, groupId)
 }
 
+// removeNodeFromNodeGroupRecord drops a deleted Node from its NodeGroup record, so the
+// record does not keep over-counting. Only that Node is removed: names reserved for
+// Nodes still being created must stay listed, or they could be handed out again.
+func removeNodeFromNodeGroupRecord(nsId, infraId, nodeGroupId, nodeId string, remainingNodeIds []string) {
+	nodeGroupInfo, err := GetNodeGroup(nsId, infraId, nodeGroupId)
+	if err != nil {
+		return
+	}
+	kept := []string{}
+	for _, id := range nodeGroupInfo.NodeId {
+		if id != nodeId {
+			kept = append(kept, id)
+		}
+	}
+	for _, id := range remainingNodeIds {
+		if !contains(kept, id) {
+			kept = append(kept, id)
+		}
+	}
+	nodeGroupInfo.NodeId = kept
+	nodeGroupInfo.NodeGroupSize = len(kept)
+	val, err := json.Marshal(nodeGroupInfo)
+	if err != nil {
+		return
+	}
+	if err := kvstore.Put(common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId), string(val)); err != nil {
+		log.Warn().Err(err).Msgf("Failed to update the NodeGroup record of %s", nodeGroupId)
+	}
+}
+
 // GetNodeGroup is func to return list of NodeGroups in a given Infra
 func GetNodeGroup(nsId string, infraId string, nodeGroupId string) (model.NodeGroupInfo, error) {
 	nodeGroupInfo := model.NodeGroupInfo{}
@@ -3359,13 +3389,17 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 			log.Error().Err(err).Msg("Failed to list node in nodeGroup to remove")
 			return err
 		}
+		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, v)
 		if len(nodeListInNodeGroup) == 0 {
-			nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, v)
 			err := kvstore.Delete(nodeGroupKey)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
 				return err
 			}
+			continue
+		}
+		if v == nodeInfo.NodeGroupId {
+			removeNodeFromNodeGroupRecord(nsId, infraId, v, nodeId, nodeListInNodeGroup)
 		}
 	}
 
@@ -3469,13 +3503,15 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 		log.Error().Err(err).Msg("Failed to list node in nodeGroup to remove")
 		return err
 	}
+	nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeInfo.NodeGroupId)
 	if len(nodeListInNodeGroup) == 0 {
-		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeInfo.NodeGroupId)
 		err := kvstore.Delete(nodeGroupKey)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
 			return err
 		}
+	} else {
+		removeNodeFromNodeGroupRecord(nsId, infraId, nodeInfo.NodeGroupId, nodeId, nodeListInNodeGroup)
 	}
 
 	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfo.SshKeyId, model.StrDelete, key)
