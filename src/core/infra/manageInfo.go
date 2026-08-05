@@ -2381,8 +2381,17 @@ applyStatus:
 		nodeInfo.SystemMessage = nodeStatusTmp.SystemMessage
 
 		if cspResourceName != "" {
-			// don't update Node info, if cspResourceName is empty
-			UpdateNodeInfo(nsId, infraId, nodeInfo)
+			// Write onto the freshly read object: nodeInfo is a snapshot taken before
+			// the CSP status call, so writing it wholesale would revert fields changed
+			// meanwhile (e.g. DataDiskIds set by AttachDetachDataDisk)
+			originalNodeInfo.Status = nodeStatusTmp.Status
+			originalNodeInfo.TargetAction = nodeStatusTmp.TargetAction
+			originalNodeInfo.TargetStatus = nodeStatusTmp.TargetStatus
+			originalNodeInfo.SystemMessage = nodeStatusTmp.SystemMessage
+			originalNodeInfo.PublicIP = nodeInfo.PublicIP
+			originalNodeInfo.PrivateIP = nodeInfo.PrivateIP
+			originalNodeInfo.SSHPort = nodeInfo.SSHPort
+			UpdateNodeInfo(nsId, infraId, originalNodeInfo)
 		}
 	}
 	// else: Node is already terminated, skip status update
@@ -2637,9 +2646,18 @@ func ProvisionDataDisk(ctx context.Context, nsId string, infraId string, nodeId 
 		return model.NodeInfo{}, err
 	}
 
+	// A disk can only be attached to a Node in the same zone, so default to the
+	// Node's zone instead of the connection's (they differ whenever the Node was
+	// placed in a non-default zone)
+	zone := u.Zone
+	if zone == "" {
+		zone = node.Region.Zone
+	}
+
 	createDiskReq := model.DataDiskReq{
 		Name:           u.Name,
 		ConnectionName: node.ConnectionName,
+		Zone:           zone,
 		DiskType:       u.DiskType,
 		DiskSize:       u.DiskSize,
 		Description:    u.Description,
@@ -2664,6 +2682,39 @@ func ProvisionDataDisk(ctx context.Context, nsId string, infraId string, nodeId 
 }
 
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from Node
+// fetchNodeDetailsWithRetry reads node details from Spider, retrying briefly to absorb
+// CSP eventual-consistency lag after a change.
+func fetchNodeDetailsWithRetry(node model.NodeInfo) ([]model.KeyValue, error) {
+	const attempts = 4
+	const interval = 3 * time.Second
+
+	client := clientManager.NewHttpClient()
+	url := fmt.Sprintf("%s/node/%s", model.SpiderRestUrl, node.CspResourceName)
+	requestBodyConnection := model.SpiderConnectionName{ConnectionName: node.ConnectionName}
+
+	var err error
+	for i := range attempts {
+		time.Sleep(interval)
+
+		var callResultSpiderNodeInfo model.SpiderVMInfo
+		_, err = clientManager.ExecuteHttpRequest(
+			client,
+			"GET",
+			url,
+			nil,
+			clientManager.SetUseBody(requestBodyConnection),
+			&requestBodyConnection,
+			&callResultSpiderNodeInfo,
+			clientManager.MediumDuration,
+		)
+		if err == nil {
+			return callResultSpiderNodeInfo.KeyValueList, nil
+		}
+		log.Debug().Err(err).Msgf("Node details not available yet (attempt %d/%d)", i+1, attempts)
+	}
+	return nil, err
+}
+
 func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command string, dataDiskId string, force bool) (model.NodeInfo, error) {
 	nodeKey := common.GenInfraKey(nsId, infraId, nodeId)
 
@@ -2699,6 +2750,15 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 
 	dataDisk := model.DataDiskInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &dataDisk)
+
+	// A disk cannot cross zones; fail early with a clear reason instead of a CSP error
+	if strings.EqualFold(command, model.AttachDataDisk) && !force &&
+		dataDisk.Zone != "" && node.Region.Zone != "" && dataDisk.Zone != node.Region.Zone {
+		err := fmt.Errorf("the dataDisk %s is in zone %s but the node %s is in zone %s; a dataDisk can only be attached to a node in the same zone",
+			dataDiskId, dataDisk.Zone, nodeId, node.Region.Zone)
+		log.Error().Err(err).Msg("")
+		return model.NodeInfo{}, err
+	}
 
 	client := clientManager.NewHttpClient()
 	method := "PUT"
@@ -2778,41 +2838,12 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 		}
 	}
 
-	time.Sleep(8 * time.Second)
-	method = "GET"
-	url = fmt.Sprintf("%s/node/%s", model.SpiderRestUrl, node.CspResourceName)
-	requestBodyConnection := model.SpiderConnectionName{
-		ConnectionName: node.ConnectionName,
-	}
-	var callResultSpiderNodeInfo model.SpiderVMInfo
-
-	_, err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBodyConnection),
-		&requestBodyConnection,
-		&callResultSpiderNodeInfo,
-		clientManager.MediumDuration,
-	)
-
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return node, err
-	}
-
-	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderNode.DataDiskIIDs: %s", updatedSpiderNode.DataDiskIIDs) // for debug
-	node.AddtionalDetails = callResultSpiderNodeInfo.KeyValueList
-
+	// Persist first: the CSP change is already done and is not rolled back, so it must
+	// not depend on the follow-up read succeeding (issue #2648)
 	UpdateNodeInfo(nsId, infraId, node)
 
-	// Update TB DataDisk object's 'associatedObjects' field
-	resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, cmdToUpdateAsso, nodeKey)
-
-	// Update TB DataDisk object's 'status' field
-	// Directly set the final expected status after successful attach/detach operation
-	// (no need to query Spider again since the operation was successful)
+	// Status first: UpdateResourceObject writes this in-memory copy as a whole, so it
+	// must not run after the association update below (it would overwrite it)
 	switch command {
 	case model.AttachDataDisk:
 		dataDisk.Status = model.DiskAttached
@@ -2820,7 +2851,18 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 		dataDisk.Status = model.DiskAvailable
 	}
 	resource.UpdateResourceObject(nsId, model.StrDataDisk, dataDisk)
+
+	// Update TB DataDisk object's 'associatedObjects' field (re-reads the stored object)
+	resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, cmdToUpdateAsso, nodeKey)
 	log.Debug().Msgf("Updated DataDisk %s status to %s after %s operation", dataDiskId, dataDisk.Status, command)
+
+	// Best-effort refresh of auxiliary details; failure must not fail the operation
+	if details, err := fetchNodeDetailsWithRetry(node); err != nil {
+		log.Warn().Err(err).Msgf("Node details not refreshed after %s of dataDisk %s (operation itself succeeded)", command, dataDiskId)
+	} else {
+		node.AddtionalDetails = details
+		UpdateNodeInfo(nsId, infraId, node)
+	}
 	/*
 		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, dataDisk.CspResourceName)
 

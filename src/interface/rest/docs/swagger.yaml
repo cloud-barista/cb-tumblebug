@@ -5980,7 +5980,8 @@ paths:
       tags:
       - "[Infra Resource] Data Disk Management"
       summary: Provisioning (Create and attach) dataDisk
-      description: Provisioning (Create and attach) dataDisk
+      description: Provisioning (Create and attach) dataDisk. The dataDisk is created
+        in the Node's zone unless a zone is given.
       operationId: PostNodeDataDisk
       parameters:
       - name: nsId
@@ -20089,6 +20090,11 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+        zone:
+          type: string
+          description: Zone the disk resides in; a Node can only attach a disk from
+            its own zone
+          example: ap-northeast-2a
     model.DataDiskNodeReq:
       required:
       - diskSize
@@ -20107,6 +20113,12 @@ components:
         name:
           type: string
           example: aws-ap-southeast-1-datadisk
+        zone:
+          type: string
+          description: |-
+            Zone overrides the target zone. Empty (recommended) inherits the Node's zone,
+            which is required for the disk to be attachable to it.
+          example: ap-northeast-2a
     model.DataDiskReq:
       required:
       - connectionName
@@ -20134,6 +20146,12 @@ components:
         name:
           type: string
           example: aws-ap-southeast-1-datadisk
+        zone:
+          type: string
+          description: |-
+            Zone places the disk in a specific zone. A disk can only be attached to a Node
+            in the same zone. Empty means the zone assigned to the connection.
+          example: ap-northeast-2a
     model.DataDiskUpsizeReq:
       required:
       - diskSize

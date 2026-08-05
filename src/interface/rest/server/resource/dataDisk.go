@@ -248,7 +248,7 @@ func RestPutNodeDataDisk(c echo.Context) error {
 // RestPostNodeDataDisk godoc
 // @ID PostNodeDataDisk
 // @Summary Provisioning (Create and attach) dataDisk
-// @Description Provisioning (Create and attach) dataDisk
+// @Description Provisioning (Create and attach) dataDisk. The dataDisk is created in the Node's zone unless a zone is given.
 // @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json

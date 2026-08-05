@@ -554,7 +554,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	newSecurityGroup.FirewallRules = reconcileRuleSnapshot(snapshot, req, nil)
 	Val, _ := json.Marshal(newSecurityGroup)
 
-	err = kvstore.Put(securityGroupKey, string(Val))
+	err = PutResourceObject(securityGroupKey, Val)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
@@ -724,27 +724,28 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 		clientManager.MediumDuration,
 	)
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return model.SecurityGroupInfo{}, err
-	}
-
-	tempSpiderSecurityInfo := &callResult2
-
 	log.Info().Msg("DELETE FirewallRule")
 
 	newSecurityGroup := model.SecurityGroupInfo{}
 	newSecurityGroup = oldSecurityGroup
 	newSecurityGroup.FirewallRules = nil
-	snapshot := []model.FirewallRuleInfo{}
-	for _, newSpiderSecurityRule := range tempSpiderSecurityInfo.SecurityRules {
-		snapshot = append(snapshot, ConvertSpiderToFirewallRuleInfo(newSpiderSecurityRule))
+
+	// The rules are already gone from the CSP, so persist that regardless of the
+	// read-back: on failure fall back to the locally known list minus the deleted rules
+	snapshot := oldSecurityGroup.FirewallRules
+	if err != nil {
+		log.Warn().Err(err).Msg("Security group not re-read after rule deletion; using local state")
+	} else {
+		snapshot = []model.FirewallRuleInfo{}
+		for _, newSpiderSecurityRule := range callResult2.SecurityRules {
+			snapshot = append(snapshot, ConvertSpiderToFirewallRuleInfo(newSpiderSecurityRule))
+		}
 	}
 	// Read-back may still list the deleted rules; drop them
 	newSecurityGroup.FirewallRules = reconcileRuleSnapshot(snapshot, nil, rulesToDelete)
 	Val, _ := json.Marshal(newSecurityGroup)
 
-	err = kvstore.Put(securityGroupKey, string(Val))
+	err = PutResourceObject(securityGroupKey, Val)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err

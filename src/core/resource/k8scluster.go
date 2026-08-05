@@ -2315,8 +2315,15 @@ func updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(tbK8sNGInfoList *[]mo
 			}
 		}
 		if found == false {
-			// In case of removing the nodegroup
+			// Rebuild from what TB already knew, so TB-only fields (notably
+			// IsInitialNodeGroup, which guards deletion) survive a transient snapshot
 			absentInfo := model.K8sNodeGroupInfo{}
+			for _, known := range *tbK8sNGInfoList {
+				if known.Name == spNGInfo.IId.NameId {
+					absentInfo = known
+					break
+				}
+			}
 			updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(&absentInfo, &spNGInfo)
 			absentList = append(absentList, absentInfo)
 		}

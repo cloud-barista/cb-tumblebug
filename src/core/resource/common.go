@@ -1830,8 +1830,11 @@ func GetResource(nsId string, resourceType string, resourceId string) (any, erro
 			if res.Status != callResult.Status {
 				log.Debug().Msgf("DataDisk %s status changed from %s to %s", res.Id, res.Status, callResult.Status)
 				res.Status = callResult.Status
-				// fmt.Printf("res.Status: %s \n", res.Status) // for debug
-				UpdateResourceObject(nsId, model.StrDataDisk, res)
+				// Only the status is known to have changed here; res was read before the
+				// Spider call, so writing it wholesale could revert concurrent updates
+				if err := UpdateResourceStatus(nsId, model.StrDataDisk, res.Id, string(callResult.Status)); err != nil {
+					log.Warn().Err(err).Msgf("Failed to persist status of dataDisk %s", res.Id)
+				}
 			}
 
 			return res, nil
@@ -3039,12 +3042,66 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject any) 
 
 	if !reflect.DeepEqual(oldObject, resourceObject) {
 		val, _ := json.Marshal(resourceObject)
+		// Callers pass a snapshot taken earlier, so a whole-object write would revert
+		// associatedObjectList changes made meanwhile by UpdateAssociatedObjectList
+		// (the only writer of that field). Keep the stored value.
+		val = preserveAssociatedObjectList(keyValue.Value, val)
 		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
 	}
 
+}
+
+// PutResourceObject writes a resource record to the kvstore while keeping the stored
+// associatedObjectList, which is maintained separately by UpdateAssociatedObjectList.
+// Use it instead of kvstore.Put when writing a whole resource snapshot.
+func PutResourceObject(key string, value []byte) error {
+	if keyValue, exists, err := kvstore.GetKv(key); err == nil && exists {
+		value = preserveAssociatedObjectList(keyValue.Value, value)
+	}
+	return kvstore.Put(key, string(value))
+}
+
+// UpdateResourceStatus updates only the status field of a stored resource, leaving
+// every other field as stored. Use it instead of writing a whole snapshot back when
+// only the status is known to have changed.
+func UpdateResourceStatus(nsId string, resourceType string, resourceId string, status string) error {
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil || !exists {
+		return err
+	}
+	updated, err := sjson.Set(keyValue.Value, "status", status)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	return kvstore.Put(key, updated)
+}
+
+// preserveAssociatedObjectList carries the stored associatedObjectList over into the
+// value about to be written, so a whole-object write cannot drop associations.
+func preserveAssociatedObjectList(storedValue string, newValue []byte) []byte {
+	var stored map[string]any
+	if err := json.Unmarshal([]byte(storedValue), &stored); err != nil {
+		return newValue
+	}
+	assoc, ok := stored["associatedObjectList"]
+	if !ok {
+		return newValue
+	}
+	var updated map[string]any
+	if err := json.Unmarshal(newValue, &updated); err != nil {
+		return newValue
+	}
+	updated["associatedObjectList"] = assoc
+	merged, err := json.Marshal(updated)
+	if err != nil {
+		return newValue
+	}
+	return merged
 }
 
 func expandInfraType(infraType string) string {

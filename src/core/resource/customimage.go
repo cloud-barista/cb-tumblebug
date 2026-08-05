@@ -78,9 +78,15 @@ func RegisterCustomImageWithInfo(nsId string, content model.ImageInfo) (model.Im
 	}
 
 	// "INSERT INTO `custom_image`(`namespace`, `provider_name`, `csp_image_name`, ...) VALUES ('nsId', 'content.ProviderName', 'content.CspImageName', ...);
+	// The CSP image already exists at this point, so retry before giving up
 	result := model.ORM.Create(&content)
+	for i := 0; result.Error != nil && i < 2; i++ {
+		time.Sleep(1 * time.Second)
+		result = model.ORM.Create(&content)
+	}
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("Failed to insert custom image to database")
+		log.Error().Err(result.Error).Msgf("Custom image exists on the CSP but not recorded in TB: cspImageName=%s cspImageId=%s connection=%s",
+			content.CspImageName, content.CspImageId, content.ConnectionName)
 		return model.ImageInfo{}, result.Error
 	} else {
 		log.Trace().Msg("SQL: Insert success")
@@ -251,12 +257,17 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 		return model.ImageInfo{}, err
 	}
 
-	// Get connection config for provider and region information
+	// Get connection config for provider and region information. The image is already
+	// registered on the CSP side, so this must not abort the local record — that would
+	// leave a billable image untracked. ProviderName is part of the record's key, so
+	// retry briefly before settling for a degraded record.
 	connConfig, err := common.GetConnConfig(u.ConnectionName)
+	for i := 0; err != nil && i < 2; i++ {
+		time.Sleep(1 * time.Second)
+		connConfig, err = common.GetConnConfig(u.ConnectionName)
+	}
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig: %s", err.Error())
-		log.Error().Err(err).Msg("")
-		return model.ImageInfo{}, err
+		log.Warn().Err(err).Msgf("Cannot retrieve ConnectionConfig for %s; registering image %s without provider/region", u.ConnectionName, u.Name)
 	}
 
 	// Create ImageInfo based on new structure
@@ -299,19 +310,23 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
-	Key := common.GenResourceKey(nsId, resourceType, content.Id)
-	Val, _ := json.Marshal(content)
-	err = kvstore.Put(Key, string(Val))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return content, err
+	// The DB is the read path for custom images, so record there first: without it the
+	// image is invisible and undeletable through TB while still billing on the CSP
+	result := model.ORM.Create(&content)
+	for i := 0; result.Error != nil && i < 2; i++ {
+		time.Sleep(1 * time.Second)
+		result = model.ORM.Create(&content)
+	}
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msgf("Custom image registered on the CSP but not recorded in TB: cspImageName=%s cspImageId=%s connection=%s",
+			content.CspImageName, content.CspImageId, content.ConnectionName)
+		return content, result.Error
 	}
 
-	// Insert into database
-	result := model.ORM.Create(&content)
-	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("Failed to insert custom image to database")
-		return content, result.Error
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
+	Val, _ := json.Marshal(content)
+	if err := kvstore.Put(Key, string(Val)); err != nil {
+		log.Warn().Err(err).Msgf("Custom image %s recorded in DB but not in kvstore", content.Id)
 	}
 
 	return content, nil

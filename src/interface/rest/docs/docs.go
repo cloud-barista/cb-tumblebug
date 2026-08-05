@@ -7322,7 +7322,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Provisioning (Create and attach) dataDisk",
+                "description": "Provisioning (Create and attach) dataDisk. The dataDisk is created in the Node's zone unless a zone is given.",
                 "consumes": [
                     "application/json"
                 ],
@@ -23927,6 +23927,11 @@ const docTemplate = `{
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
+                },
+                "zone": {
+                    "description": "Zone the disk resides in; a Node can only attach a disk from its own zone",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
                 }
             }
         },
@@ -23952,6 +23957,11 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "aws-ap-southeast-1-datadisk"
+                },
+                "zone": {
+                    "description": "Zone overrides the target zone. Empty (recommended) inherits the Node's zone,\nwhich is required for the disk to be attachable to it.",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
                 }
             }
         },
@@ -23986,6 +23996,11 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "aws-ap-southeast-1-datadisk"
+                },
+                "zone": {
+                    "description": "Zone places the disk in a specific zone. A disk can only be attached to a Node\nin the same zone. Empty means the zone assigned to the connection.",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
                 }
             }
         },

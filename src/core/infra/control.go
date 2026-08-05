@@ -2137,6 +2137,13 @@ func importNodeFromCsp(nsId, infraId, nodeId, connectionName, name, cspSystemId 
 	}
 	var resp regResp
 
+	// Load the node before registering: once /regvm succeeds the IIDs must be recorded,
+	// otherwise a later reconcile re-registers and fails with "already exists"
+	nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId)
+	if gerr != nil {
+		return fmt.Errorf("GetNodeObject failed before /regvm: %w", gerr)
+	}
+
 	client := clientManager.NewHttpClient()
 	client.SetTimeout(2 * time.Minute)
 	if _, err := clientManager.ExecuteHttpRequest(
@@ -2149,10 +2156,6 @@ func importNodeFromCsp(nsId, infraId, nodeId, connectionName, name, cspSystemId 
 		return fmt.Errorf("Spider /regvm failed: %w", err)
 	}
 
-	nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId)
-	if gerr != nil {
-		return fmt.Errorf("GetNodeObject failed after /regvm: %w", gerr)
-	}
 	if resp.IId.NameId != "" {
 		nodeObj.CspResourceName = resp.IId.NameId
 	} else {
