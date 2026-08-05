@@ -1241,6 +1241,12 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 
 	// common.PrintJsonPretty(callResult)
 
+	// A direct SDK terminate never reaches Spider, so Spider's IID record would be left
+	// behind and reported as an orphan forever. The bulk path does the same cleanup.
+	if useDirect && action == model.ActionTerminate {
+		asyncSpiderForceDeleteVM(temp.ConnectionName, temp.CspResourceName)
+	}
+
 	// Fetch actual VM status from CSP after successful control operation
 	// This ensures we have the most accurate status in our database
 	nodeStatusInfo, err := FetchNodeStatus(nsId, infraId, nodeId)

@@ -171,17 +171,150 @@ func contains(slice []string, item string) bool {
 	return slices.Contains(slice, item)
 }
 
+// nodeGroupNameLocks serializes name assignment per NodeGroup so two concurrent
+// additions cannot reserve the same index. Single-process scope, which matches the
+// single-replica deployment; the kvstore checks below still guard the rest.
+var nodeGroupNameLocks sync.Map
+
+// reserveNodeNames picks names for the Nodes about to be created and records them in
+// the NodeGroup object, so a concurrent caller sees them as taken. Names follow the
+// Nodes that actually exist rather than a size counter: a record that under-counts
+// would name a live Node, whose record would then be overwritten and its CSP resource
+// left running untracked (issue #2652).
+func reserveNodeNames(nsId, infraId, nodeGroupId string, nodeRequest *model.CreateNodeGroupReq, count int, newNodeGroup bool) ([]string, error) {
+	registerMode := nodeRequest.CspResourceId != ""
+	mutex, _ := nodeGroupNameLocks.LoadOrStore(nsId+"/"+infraId+"/"+nodeGroupId, &sync.Mutex{})
+	mutex.(*sync.Mutex).Lock()
+	defer mutex.(*sync.Mutex).Unlock()
+
+	migrateLegacyNodeGroupRecord(nsId, infraId, nodeGroupId)
+
+	record := model.NodeGroupInfo{
+		ResourceType: model.StrNodeGroup,
+		Id:           nodeGroupId,
+		Name:         nodeGroupId,
+		Uid:          common.GenUid(),
+	}
+	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Cannot read the NodeGroup record of %s", nodeGroupId)
+	}
+	if exists {
+		if !newNodeGroup {
+			return nil, fmt.Errorf("Duplicated NodeGroup ID")
+		}
+		json.Unmarshal([]byte(keyValue.Value), &record)
+	} else {
+		record.RootDiskType = nodeRequest.RootDiskType
+		record.RootDiskSize = nodeRequest.RootDiskSize
+	}
+
+	// Names in use: the Nodes that exist plus the ones the record already reserved
+	// (a reservation is recorded before its Node object exists)
+	inUse := append([]string{}, record.NodeId...)
+	liveNodeIds, listErr := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
+	if listErr != nil {
+		log.Warn().Err(listErr).Msgf("Cannot list Nodes of NodeGroup %s; relying on its record", nodeGroupId)
+	}
+	for _, liveNodeId := range liveNodeIds {
+		if !contains(inUse, liveNodeId) {
+			inUse = append(inUse, liveNodeId)
+		}
+	}
+	startIndex := maxNodeIndex(nodeGroupId, inUse) + 1
+	if fromSize := record.NodeGroupSize + 1; fromSize > startIndex {
+		startIndex = fromSize
+	}
+
+	newNodeIds := []string{}
+	if registerMode {
+		// Register mode: one Node per registration, named after the NodeGroup
+		newNodeIds = append(newNodeIds, nodeGroupId)
+	} else {
+		for i := startIndex; i < count+startIndex; i++ {
+			newNodeIds = append(newNodeIds, nodeGroupId+"-"+strconv.Itoa(i))
+		}
+	}
+
+	for _, newNodeId := range newNodeIds {
+		if _, nodeExists, _ := kvstore.GetKv(common.GenInfraKey(nsId, infraId, newNodeId)); nodeExists {
+			return nil, fmt.Errorf("Node %s already exists in Infra %s; aborting to avoid overwriting it and orphaning its CSP resource", newNodeId, infraId)
+		}
+	}
+
+	record.NodeId = append(inUse, newNodeIds...)
+	record.NodeGroupSize = len(record.NodeId)
+	val, _ := json.Marshal(record)
+	if err := kvstore.Put(key, string(val)); err != nil {
+		return nil, fmt.Errorf("cannot store the NodeGroup record of %s: %w", nodeGroupId, err)
+	}
+	return newNodeIds, nil
+}
+
+// migrateLegacyNodeGroupRecord moves a record stored under a non-canonical (mixed-case)
+// key to the canonical one. Such a record was unreachable from the lower-cased id that
+// Nodes carry, which is one way the size bookkeeping went missing (issue #2652).
+func migrateLegacyNodeGroupRecord(nsId, infraId, nodeGroupId string) {
+	groupIds, err := ListNodeGroupId(nsId, infraId)
+	if err != nil {
+		return
+	}
+	canonicalKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId)
+	prefix := common.GenInfraKey(nsId, infraId, "") + "/" + model.StrNodeGroup + "/"
+	for _, groupId := range groupIds {
+		if groupId == nodeGroupId || common.ToLower(groupId) != nodeGroupId {
+			continue
+		}
+		legacyKey := prefix + groupId
+		legacyValue, exists, err := kvstore.GetKv(legacyKey)
+		if err != nil || !exists {
+			continue
+		}
+		if _, canonicalExists, _ := kvstore.GetKv(canonicalKey); !canonicalExists {
+			if err := kvstore.Put(canonicalKey, legacyValue.Value); err != nil {
+				continue
+			}
+		}
+		kvstore.Delete(legacyKey)
+		log.Info().Msgf("Migrated NodeGroup record %s to %s", legacyKey, canonicalKey)
+	}
+}
+
+// maxNodeIndex returns the highest "<nodeGroupId>-<n>" suffix among the given Node IDs,
+// or 0 when none matches. Node names are derived from it so that a new Node never takes
+// the name of an existing one.
+func maxNodeIndex(nodeGroupId string, nodeIds []string) int {
+	highest := 0
+	prefix := nodeGroupId + "-"
+	for _, nodeId := range nodeIds {
+		suffix, found := strings.CutPrefix(nodeId, prefix)
+		if !found {
+			continue
+		}
+		if index, err := strconv.Atoi(suffix); err == nil && index > highest {
+			highest = index
+		}
+	}
+	return highest
+}
+
 // createNodeGroup creates a nodeGroup with proper error handling
 func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *model.CreateNodeGroupReq, nodeGroupSize, nodeStartIndex int, uid string, req *model.InfraReq) error {
 	log.Info().Msgf("Creating Infra nodeGroup object for '%s'", nodeRequest.Name)
 	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
 
 	nodeGroupInfoData := model.NodeGroupInfo{
-		ResourceType:  model.StrNodeGroup,
-		Id:            common.ToLower(nodeRequest.Name),
-		Name:          common.ToLower(nodeRequest.Name),
-		Uid:           common.GenUid(),
-		NodeGroupSize: nodeRequest.NodeGroupSize,
+		ResourceType: model.StrNodeGroup,
+		Id:           common.ToLower(nodeRequest.Name),
+		Name:         common.ToLower(nodeRequest.Name),
+		Uid:          common.GenUid(),
+		// Record the number of Nodes actually created, not the requested value:
+		// a request may omit it (0) while one Node is still created, and a later
+		// ScaleOut would then reuse that Node's name (issue #2652)
+		NodeGroupSize: nodeGroupSize,
+		RootDiskType:  nodeRequest.RootDiskType,
+		RootDiskSize:  nodeRequest.RootDiskSize,
 	}
 
 	// Build Node ID list
@@ -808,10 +941,17 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 
 // ScaleOutInfraNodeGroup is func to create Infra groupNode
 func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, nodeGroupId string, numNodesToAdd int) (*model.InfraInfo, error) {
+	if numNodesToAdd < 1 {
+		return &model.InfraInfo{}, fmt.Errorf("numNodesToAdd must be 1 or more (got %d)", numNodesToAdd)
+	}
+
 	nodeIdList, err := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
 	if err != nil {
 		temp := &model.InfraInfo{}
 		return temp, err
+	}
+	if len(nodeIdList) == 0 {
+		return &model.InfraInfo{}, fmt.Errorf("NodeGroup '%s' has no Node in Infra '%s'; scale-out needs an existing Node to copy the configuration from", nodeGroupId, infraId)
 	}
 	nodeObj, err := GetNodeObject(nsId, infraId, nodeIdList[0])
 	if err != nil {
@@ -825,15 +965,26 @@ func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, no
 	nodeGroupReqTemplate.Name = nodeObj.NodeGroupId
 	nodeGroupReqTemplate.ConnectionName = nodeObj.ConnectionName
 	nodeGroupReqTemplate.ImageId = nodeObj.ImageId
+	// Carry the resolved CSP image name over: without it CreateNode falls back to a
+	// namespace image lookup that fails for CSPs whose imageId is not a TB resource id
+	nodeGroupReqTemplate.CspImageName = nodeObj.CspImageName
 	nodeGroupReqTemplate.SpecId = nodeObj.SpecId
+	nodeGroupReqTemplate.Label = filterOutSystemLabels(nodeObj.Label)
 	nodeGroupReqTemplate.VNetId = nodeObj.VNetId
 	nodeGroupReqTemplate.SubnetId = nodeObj.SubnetId
 	nodeGroupReqTemplate.SecurityGroupIds = nodeObj.SecurityGroupIds
 	nodeGroupReqTemplate.SshKeyId = nodeObj.SshKeyId
 	nodeGroupReqTemplate.NodeUserName = nodeObj.NodeUserName
 	nodeGroupReqTemplate.NodeUserPassword = nodeObj.NodeUserPassword
-	nodeGroupReqTemplate.RootDiskType = nodeObj.RootDiskType
-	nodeGroupReqTemplate.RootDiskSize = nodeObj.RootDiskSize
+	// Root disk config comes from the NodeGroup record (what was requested). The Node
+	// holds the CSP-reported type, which some CSPs reject when sent back as a request.
+	if nodeGroupInfo, err := GetNodeGroup(nsId, infraId, nodeGroupId); err == nil {
+		nodeGroupReqTemplate.RootDiskType = nodeGroupInfo.RootDiskType
+		nodeGroupReqTemplate.RootDiskSize = nodeGroupInfo.RootDiskSize
+	}
+	if nodeGroupReqTemplate.RootDiskSize == 0 {
+		nodeGroupReqTemplate.RootDiskSize = nodeObj.RootDiskSize
+	}
 	nodeGroupReqTemplate.Description = nodeObj.Description
 
 	nodeGroupReqTemplate.NodeGroupSize = numNodesToAdd
@@ -918,8 +1069,6 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		nodeGroupSize = 1
 	}
 
-	nodeStartIndex := 1
-
 	tentativeNodeId := common.ToLower(nodeRequest.Name)
 
 	err = common.CheckString(tentativeNodeId)
@@ -931,67 +1080,22 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	// Create or update nodeGroup object (nodeGroupSize is always >= 1)
 	log.Info().Msg("Create Infra nodeGroup object")
 
-	nodeGroupInfoData := model.NodeGroupInfo{}
-	nodeGroupInfoData.ResourceType = model.StrNodeGroup
-	nodeGroupInfoData.Id = tentativeNodeId
-	nodeGroupInfoData.Name = tentativeNodeId
-	nodeGroupInfoData.Uid = common.GenUid()
-	nodeGroupInfoData.NodeGroupSize = nodeGroupSize
-
-	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
-	keyValue, exists, err := kvstore.GetKv(key)
-	if err != nil {
-		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): %s", err.Error())
-		log.Error().Err(err).Msg("")
-	}
-	if exists {
-		if newNodeGroup {
-			json.Unmarshal([]byte(keyValue.Value), &nodeGroupInfoData)
-			existingNodeSize := nodeGroupInfoData.NodeGroupSize
-			// add the number of existing Nodes in the NodeGroup with requested number for additions
-			nodeGroupInfoData.NodeGroupSize = existingNodeSize + nodeGroupSize
-			nodeStartIndex = existingNodeSize + 1
-		} else {
-			err = fmt.Errorf("Duplicated NodeGroup ID")
-			log.Error().Err(err).Msg("")
-			return nil, err
-		}
-	}
-
-	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
-		if nodeRequest.CspResourceId != "" {
-			// Register mode: one node per registration, no index suffix
-			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id)
-			break
-		} else {
-			nodeGroupInfoData.NodeId = append(nodeGroupInfoData.NodeId, nodeGroupInfoData.Id+"-"+strconv.Itoa(i))
-		}
-	}
-
-	val, _ := json.Marshal(nodeGroupInfoData)
-	err = kvstore.Put(key, string(val))
+	newNodeIds, err := reserveNodeNames(nsId, infraId, tentativeNodeId, nodeRequest, nodeGroupSize, newNodeGroup)
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		return nil, err
 	}
-	// check stored nodeGroup object
-	_, _, err = kvstore.GetKv(key)
-	if err != nil {
-		err = fmt.Errorf("In CreateInfraGroupNode(); kvstore.GetKv(): %s", err.Error())
-		log.Error().Err(err).Msg("")
-		// return nil, err
-	}
+	log.Info().Msgf("Reserved Node names for NodeGroup %s: %v", tentativeNodeId, newNodeIds)
 
-	// Create Node objects for all Nodes in the nodeGroup
-	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
+	var objectErrs []error
+	var objectErrMu sync.Mutex
+
+	// Create Node objects for the reserved names
+	for i, reservedNodeId := range newNodeIds {
 		nodeInfoData := model.NodeInfo{}
 
-		nodeInfoData.NodeGroupId = common.ToLower(nodeRequest.Name)
-		if nodeRequest.CspResourceId != "" {
-			// Register mode: node name is the nodeGroup name itself (no index suffix)
-			nodeInfoData.Name = common.ToLower(nodeRequest.Name)
-		} else {
-			nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
-		}
+		nodeInfoData.NodeGroupId = tentativeNodeId
+		nodeInfoData.Name = reservedNodeId
 
 		log.Debug().Msg("nodeInfoData.Name: " + nodeInfoData.Name)
 
@@ -1046,9 +1150,20 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		nodeInfoData.CspResourceId = nodeRequest.CspResourceId
 
 		wg.Add(1)
-		go CreateNodeObject(&wg, nsId, infraId, &nodeInfoData)
+		go func(node model.NodeInfo) {
+			if err := CreateNodeObject(&wg, nsId, infraId, &node); err != nil {
+				objectErrMu.Lock()
+				objectErrs = append(objectErrs, err)
+				objectErrMu.Unlock()
+			}
+		}(nodeInfoData)
 	}
 	wg.Wait()
+	if len(objectErrs) > 0 {
+		err := fmt.Errorf("failed to create Node objects for NodeGroup %s: %v", tentativeNodeId, objectErrs)
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
 
 	// Set option based on whether this is a registration (CspResourceId is set)
 	option := "create"
@@ -1058,25 +1173,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 
 	// Collect all Node info for rate-limited parallel processing
 	var nodeInfoList []*model.NodeInfo
-	for i := nodeStartIndex; i <= nodeGroupSize+nodeStartIndex; i++ {
-		nodeInfoData := model.NodeInfo{}
-
-		if nodeGroupSize == 0 { // for Node (not in a group)
-			nodeInfoData.Name = common.ToLower(nodeRequest.Name)
-		} else { // for Node (in a group)
-			if i == nodeGroupSize+nodeStartIndex {
-				break
-			}
-			nodeInfoData.NodeGroupId = common.ToLower(nodeRequest.Name)
-			if nodeRequest.CspResourceId != "" {
-				// Register mode: node name is the nodeGroup name itself (no index suffix)
-				nodeInfoData.Name = common.ToLower(nodeRequest.Name)
-			} else {
-				nodeInfoData.Name = common.ToLower(nodeRequest.Name) + "-" + strconv.Itoa(i)
-			}
-		}
-		nodeInfoData.Id = nodeInfoData.Name
-		nodeId := nodeInfoData.Id
+	for _, nodeId := range newNodeIds {
 		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1191,14 +1288,9 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		}
 	}
 
-	nodeList, err := ListNodeByNodeGroup(nsId, infraId, tentativeNodeId)
-
-	if err != nil {
-		infraTmp.SystemMessage = append(infraTmp.SystemMessage, err.Error())
-	}
-	if nodeList != nil {
-		infraTmp.NewNodeList = nodeList
-	}
+	// Only the Nodes added by this call: callers (and the registration flow) read this
+	// to identify what was just created, so the whole NodeGroup must not be reported
+	infraTmp.NewNodeList = newNodeIds
 
 	return &infraTmp, nil
 
@@ -4179,6 +4271,13 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 		return fmt.Errorf("AddNodeToInfra Cannot find infraId. Key: %s", key)
 	}
 
+	// Overwriting a Node record loses the identity of its CSP resource, which keeps
+	// running and billing untracked (issue #2652)
+	nodeKey := common.GenInfraKey(nsId, infraId, nodeInfoData.Id)
+	if _, nodeExists, getErr := kvstore.GetKv(nodeKey); getErr == nil && nodeExists {
+		return fmt.Errorf("Node %s already exists in Infra %s; refusing to overwrite its record", nodeInfoData.Id, infraId)
+	}
+
 	configTmp, err := common.GetConnConfig(nodeInfoData.ConnectionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -4187,9 +4286,8 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 	nodeInfoData.Location = configTmp.RegionDetail.Location
 
 	// Make VM object
-	key = common.GenInfraKey(nsId, infraId, nodeInfoData.Id)
 	val, _ := json.Marshal(nodeInfoData)
-	err = kvstore.Put(key, string(val))
+	err = kvstore.Put(nodeKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
