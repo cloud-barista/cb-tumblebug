@@ -417,7 +417,7 @@ func CreateSubnet(ctx context.Context, nsId string, vNetId string, subnetReq *mo
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(vNetKey, string(vNetObj))
+	err = PutResourceObject(vNetKey, vNetObj)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -832,7 +832,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(vNetKey, string(val))
+	err = PutResourceObject(vNetKey, val)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1022,7 +1022,7 @@ func syncSubnetState(nsId string, subnetInfo *model.SubnetInfo, vNetInfo *model.
 	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
 
 	if vVal, vmErr := json.Marshal(vNetInfo); vmErr == nil {
-		if vpErr := kvstore.Put(vNetKey, string(vVal)); vpErr != nil {
+		if vpErr := PutResourceObject(vNetKey, vVal); vpErr != nil {
 			log.Warn().Err(vpErr).Msg("failed to persist updated vNet info after subnet reconcile")
 		}
 	}
@@ -1237,7 +1237,7 @@ func RegisterSubnet(ctx context.Context, nsId string, vNetId string, subnetReq *
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(vNetKey, string(vNetObj))
+	err = PutResourceObject(vNetKey, vNetObj)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1484,7 +1484,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(vNetKey, string(val))
+	err = PutResourceObject(vNetKey, val)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

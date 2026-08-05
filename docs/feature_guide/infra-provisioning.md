@@ -280,6 +280,26 @@ same semantics as `infraDynamicReview`.
 }
 ```
 
+## 💾 Adding Data Disks
+
+A data disk lives in one availability zone and can only be attached to a Node in that
+same zone. Two ways to create one:
+
+| Goal | API | Zone |
+|---|---|---|
+| **Create and attach for a Node** (recommended) | `POST /ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk` | Inherits the Node's zone; `zone` may override it |
+| **Create a standalone disk** | `POST /ns/{nsId}/resources/dataDisk` | `zone` if given, otherwise the zone assigned to the connection |
+
+```jsonc
+// Node-scoped: no zone needed, it follows the Node (even if the Node is in a non-default zone)
+{ "name": "data-1", "diskType": "gp3", "diskSize": 100 }
+```
+
+Attach/detach an existing disk with
+`PUT /ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk?option=attach|detach`.
+A cross-zone attach is rejected up front rather than surfacing a CSP error such as
+`InvalidVolume.ZoneMismatch`.
+
 ## ✅ Verifying a Deployment
 
 ```bash
@@ -366,6 +386,8 @@ and `policyOnPostCommandFailure` decides whether a failed bootstrap aborts the b
 | Review a NodeGroup addition | `POST /tumblebug/ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview` |
 | Add nodes to a NodeGroup | `POST /tumblebug/ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId}` |
 | Stream bootstrap progress | `GET /tumblebug/ns/{nsId}/stream/cmd/infra/{infraId}?xRequestId={id}` |
+| Create and attach a data disk | `POST /tumblebug/ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk` |
+| Attach/detach a data disk | `PUT /tumblebug/ns/{nsId}/infra/{infraId}/node/{nodeId}/dataDisk?option=attach` |
 | Open service ports | `POST /tumblebug/ns/{nsId}/resources/securityGroup/{sgId}/rules` |
 | Delete an Infra | `DELETE /tumblebug/ns/{nsId}/infra/{infraId}?option=terminate` |
 | Release shared resources | `DELETE /tumblebug/ns/{nsId}/sharedResources` |

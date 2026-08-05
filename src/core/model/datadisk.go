@@ -66,6 +66,8 @@ type SpiderDiskInfo struct {
 	// Fields for request
 	Name  string
 	CSPid string
+	// Zone is the target zone; empty means the zone assigned to the connection
+	Zone string `json:",omitempty"`
 
 	// Fields for both request and response
 	DiskType string // "", "SSD(gp2)", "Premium SSD", ...
@@ -89,6 +91,10 @@ type DataDiskReq struct {
 	DiskSize       int    `json:"diskSize" validate:"required" example:"77"` // Disk size in GB
 	Description    string `json:"description,omitempty"`
 
+	// Zone places the disk in a specific zone. A disk can only be attached to a Node
+	// in the same zone. Empty means the zone assigned to the connection.
+	Zone string `json:"zone,omitempty" example:"ap-northeast-2a"`
+
 	// Fields for "Register existing dataDisk" feature
 	// CspResourceId is required to register object from CSP (option=register)
 	CspResourceId string `json:"cspResourceId"`
@@ -100,6 +106,10 @@ type DataDiskNodeReq struct {
 	DiskType    string `json:"diskType" example:"default"`
 	DiskSize    int    `json:"diskSize" validate:"required" example:"77"` // Disk size in GB
 	Description string `json:"description,omitempty"`
+
+	// Zone overrides the target zone. Empty (recommended) inherits the Node's zone,
+	// which is required for the disk to be attachable to it.
+	Zone string `json:"zone,omitempty" example:"ap-northeast-2a"`
 }
 
 // DataDiskInfo is a struct that represents TB dataDisk object.
@@ -123,6 +133,8 @@ type DataDiskInfo struct {
 
 	DiskType             string     `json:"diskType" example:"standard"`
 	DiskSize             int        `json:"diskSize" example:"77"`      // Disk size in GB
+	// Zone the disk resides in; a Node can only attach a disk from its own zone
+	Zone string `json:"zone,omitempty" example:"ap-northeast-2a"`
 	Status               DiskStatus `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
 	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/infra/infra01/node/aws-ap-southeast-1-1"`
 	CreatedTime          time.Time  `json:"createdTime" example:"2022-10-12T05:09:51.05Z"`

@@ -177,7 +177,10 @@ func CreateNodeSnapshot(nsId string, infraId string, nodeId string, snapshotReq 
 
 	result, err := resource.RegisterCustomImageWithInfo(nsId, tempImageInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		// The CSP image exists and bills even though TB failed to record it: name it
+		// in the log so it can be found and cleaned up
+		log.Error().Err(err).Msgf("Snapshot created on the CSP but not recorded in TB: cspImageName=%s cspImageId=%s connection=%s",
+			tempImageInfo.CspImageName, tempImageInfo.CspImageId, tempImageInfo.ConnectionName)
 		return model.ImageInfo{}, err
 	}
 

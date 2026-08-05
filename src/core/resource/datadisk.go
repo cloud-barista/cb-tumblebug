@@ -43,6 +43,16 @@ func DataDiskReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// firstNonEmpty returns the first non-empty string
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 // CreateDataDisk accepts DataDisk creation request, creates and returns an TB dataDisk object
 func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, option string) (model.DataDiskInfo, error) {
 
@@ -85,6 +95,7 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 		ReqInfo: model.SpiderDiskInfo{
 			Name:     uid,
 			CSPid:    u.CspResourceId, // for option=register
+			Zone:     u.Zone,          // empty: the zone assigned to the connection
 			DiskType: u.DiskType,
 			DiskSize: strconv.Itoa(u.DiskSize),
 		},
@@ -136,6 +147,7 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 		ConnectionName:       u.ConnectionName,
 		DiskType:             tempSpiderDiskInfo.DiskType,
 		DiskSize:             diskSizeFromSpider,
+		Zone:                 firstNonEmpty(tempSpiderDiskInfo.Zone, u.Zone),
 		CspResourceId:        tempSpiderDiskInfo.IId.SystemId,
 		CspResourceName:      tempSpiderDiskInfo.IId.NameId,
 		Status:               tempSpiderDiskInfo.Status,
@@ -279,7 +291,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.DataDiskUpsizeReq) 
 	log.Info().Msg("PUT UpsizeDataDisk")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = kvstore.Put(Key, string(Val))
+	err = PutResourceObject(Key, Val)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
