@@ -495,6 +495,7 @@ func CreateNLB(nsId string, infraId string, u *model.NLBReq, option string) (mod
 			Threshold:    tempSpiderNLBInfo.HealthChecker.Threshold,
 			KeyValueList: tempSpiderNLBInfo.HealthChecker.KeyValueList,
 		},
+		ConnectionConfig:     connConfig,
 		CspResourceId:        tempSpiderNLBInfo.IId.SystemId,
 		CspResourceName:      tempSpiderNLBInfo.IId.NameId,
 		CreatedTime:          tempSpiderNLBInfo.CreatedTime,
@@ -766,6 +767,79 @@ func ListNLB(nsId string, infraId string, filterKey string, filterVal string) (a
 		res := []model.NLBInfo{}
 		return res, nil
 	}
+}
+
+// splitNLBKey returns the Infra id and NLB id of a key shaped
+// "/ns/{nsId}/infra/{infraId}/nlb/{nlbId}", or false for any other key.
+func splitNLBKey(key, nsPrefix string) (infraId, nlbId string, ok bool) {
+	parts := strings.Split(strings.TrimPrefix(key, nsPrefix), "/")
+	if len(parts) != 3 || parts[1] != model.StrNLB {
+		return "", "", false
+	}
+	return parts[0], parts[2], true
+}
+
+// ListNLBAllInNs returns every NLB in the namespace, each tagged with the Infra it
+// belongs to. NLBs live under their Infra, so this scans the Infra subtree once
+// instead of listing Infras and querying each of them.
+func ListNLBAllInNs(nsId string, filterKey string, filterVal string) ([]model.NLBInfoInNs, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	nsPrefix := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/", nsId)
+	keyValue, err := kvstore.GetKvList(nsPrefix)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	res := []model.NLBInfoInNs{}
+	for _, v := range keyValue {
+		infraId, _, ok := splitNLBKey(v.Key, nsPrefix)
+		if !ok {
+			continue
+		}
+		// Same filter semantics as the per-Infra listing: both terms must appear
+		if filterKey != "" {
+			value := strings.ToLower(v.Value)
+			if !(strings.Contains(value, strings.ToLower(filterKey)) && strings.Contains(value, strings.ToLower(filterVal))) {
+				continue
+			}
+		}
+		tempObj := model.NLBInfo{}
+		if err := json.Unmarshal([]byte(v.Value), &tempObj); err != nil {
+			log.Error().Err(err).Str("key", v.Key).Msg("Cannot read the NLB object")
+			return nil, err
+		}
+		res = append(res, model.NLBInfoInNs{InfraId: infraId, NLBInfo: tempObj})
+	}
+	return res, nil
+}
+
+// ListNLBIdAllInNs returns "{infraId}/{nlbId}" for every NLB in the namespace.
+// The Infra id is part of the id because an NLB id is only unique within its Infra.
+func ListNLBIdAllInNs(nsId string) ([]string, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	nsPrefix := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/", nsId)
+	keyValue, err := kvstore.GetKvList(nsPrefix)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	idList := []string{}
+	for _, v := range keyValue {
+		if infraId, nlbId, ok := splitNLBKey(v.Key, nsPrefix); ok {
+			idList = append(idList, infraId+"/"+nlbId)
+		}
+	}
+	return idList, nil
 }
 
 // DelNLB deletes the TB NLB object
@@ -1153,11 +1227,12 @@ func AddNLBNodes(nsId string, infraId string, resourceId string, u *model.NLBAdd
 	tempSpiderNLBInfo := &callResult
 
 	content := model.NLBInfo{
-		Id:             nlb.Name,
-		Name:           nlb.Name,
-		ConnectionName: nlb.ConnectionName,
-		Type:           tempSpiderNLBInfo.Type,
-		Scope:          tempSpiderNLBInfo.Scope,
+		Id:               nlb.Name,
+		Name:             nlb.Name,
+		ConnectionName:   nlb.ConnectionName,
+		ConnectionConfig: nlb.ConnectionConfig,
+		Type:             tempSpiderNLBInfo.Type,
+		Scope:            tempSpiderNLBInfo.Scope,
 		Listener: model.NLBListenerInfo{
 			Protocol:     tempSpiderNLBInfo.Listener.Protocol,
 			IP:           tempSpiderNLBInfo.Listener.IP,

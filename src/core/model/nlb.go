@@ -215,6 +215,15 @@ type NLBReq struct { // Tumblebug
 }
 
 // NLBInfo is a struct that represents TB nlb object.
+// NLBInfoInNs is an NLB together with the Infra it belongs to. NLBs are stored under
+// their Infra, so a namespace-wide listing has to carry the parent Infra id for the
+// caller to map each NLB back to it.
+type NLBInfoInNs struct {
+	// InfraId is the Infra this NLB belongs to
+	InfraId string `json:"infraId" example:"infra01"`
+	NLBInfo
+}
+
 type NLBInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`

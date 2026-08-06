@@ -285,6 +285,54 @@ func RestDelAllInfra(c echo.Context) error {
 // TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention needs to be revised.
 
+// RestGetAllNodeInNsResponse is a wrapper struct to create JSON body of 'List all Nodes in a namespace' request
+type RestGetAllNodeInNsResponse struct {
+	Node []model.NodeInfoInNs `json:"node"`
+}
+
+// RestGetAllNodeInNs godoc
+// @ID GetAllNodeInNs
+// @Summary List all Nodes in a namespace (across Infras)
+// @Description List all Nodes in a namespace regardless of the Infra they belong to. Each item carries its parent infraId.
+// @Description This is a read-only listing; create/delete a Node through /ns/{nsId}/infra/{infraId}/node.
+// @Description With option=id, each entry is "{infraId}/{nodeId}" because a Node id is only unique within its Infra.
+// @Tags [MC-Infra] Infra Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param option query string false "Option" Enums(id)
+// @Param filterKey query string false "Field key for filtering (ex: connectionName)"
+// @Param filterVal query string false "Field value for filtering (ex: aws-ap-northeast-2)"
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNodeInNsResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/node [get]
+func RestGetAllNodeInNs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	optionFlag := c.QueryParam("option")
+	filterKey := c.QueryParam("filterKey")
+	filterVal := c.QueryParam("filterVal")
+
+	if optionFlag == "id" {
+		content := model.IdList{}
+		var err error
+		content.IdList, err = infra.ListNodeIdAllInNs(nsId)
+		return clientManager.EndRequestWithLog(c, err, content)
+	}
+
+	nodeList, err := infra.ListNodeAllInNs(nsId, filterKey, filterVal)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content := RestGetAllNodeInNsResponse{Node: nodeList}
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 // RestGetInfraNode godoc
 // @ID GetInfraNode
 // @Summary Get node in specified Infra
