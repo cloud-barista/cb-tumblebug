@@ -19679,6 +19679,10 @@ components:
           type: string
         verified:
           type: boolean
+        verifiedMessage:
+          type: string
+          description: VerifiedMessage explains why verification failed (empty when
+            verified)
     model.ConnConfigList:
       type: object
       properties:

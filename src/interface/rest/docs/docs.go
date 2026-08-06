@@ -23436,6 +23436,10 @@ const docTemplate = `{
                 },
                 "verified": {
                     "type": "boolean"
+                },
+                "verifiedMessage": {
+                    "description": "VerifiedMessage explains why verification failed (empty when verified)",
+                    "type": "string"
                 }
             }
         },
