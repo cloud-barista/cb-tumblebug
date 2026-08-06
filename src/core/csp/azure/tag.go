@@ -37,7 +37,7 @@ func BatchUpsertTags(ctx context.Context, region, zone, cspResourceId, resourceT
 		return fmt.Errorf("failed to get Azure credentials: %w", err)
 	}
 
-	tagsClient, err := getOrCreateTagsClient(creds)
+	tagsClient, err := newTagsClient(creds)
 	if err != nil {
 		return fmt.Errorf("failed to get Azure Tags client: %w", err)
 	}

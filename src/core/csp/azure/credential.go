@@ -20,31 +20,22 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	armcompute "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 )
 
-// credentialCache stores ClientSecretCredential objects keyed by "tenantID|clientID".
-// Reusing the same object is critical: the Azure SDK caches the OAuth token internally,
-// so reuse means Azure AD is called only once per token lifetime (~1 hour) instead of
-// on every API call.
-var credentialCache sync.Map // key: "tenantID|clientID" → *azidentity.ClientSecretCredential
-
-// vmClientCache stores VirtualMachinesClient objects keyed by subscriptionID.
-// Reusing the client also reuses the underlying HTTP transport connection pool.
-var vmClientCache sync.Map // key: subscriptionID → *armcompute.VirtualMachinesClient
-
-// tagsClientCache stores TagsClient objects keyed by subscriptionID.
-var tagsClientCache sync.Map // key: subscriptionID → *armresources.TagsClient
+// credentialCache stores ClientSecretCredential objects, keyed by the account and the
+// credential in use. Reusing the object is what makes the Azure SDK reuse its cached
+// OAuth token (~1 hour) instead of calling Azure AD on every API call. Client objects
+// (VirtualMachines, Tags) are not cached: their constructors do no I/O and azcore
+// shares one HTTP transport process-wide, so building them per call costs nothing.
+var credentialCache sync.Map
 
 // getOrCreateCredential returns a cached ClientSecretCredential for the given Azure
 // credentials, creating one if it does not already exist.
-//
-// Caching is essential for performance: azidentity.NewClientSecretCredential fetches
-// an OAuth token from Azure AD (login.microsoftonline.com) on its first actual API
-// call and caches it internally. Without caching the object itself, every Azure API
-// call would discard that cached token and trigger a new Azure AD round-trip.
 func getOrCreateCredential(creds *azureCreds) (*azidentity.ClientSecretCredential, error) {
-	key := creds.TenantID + "|" + creds.ClientID
-	if v, ok := credentialCache.Load(key); ok {
+	account := creds.TenantID + "|" + creds.ClientID
+	credKey := csp.CredKey(creds.ClientSecret)
+	if v, ok := csp.LoadClient(&credentialCache, account, credKey); ok {
 		return v.(*azidentity.ClientSecretCredential), nil
 	}
 
@@ -55,46 +46,31 @@ func getOrCreateCredential(creds *azureCreds) (*azidentity.ClientSecretCredentia
 		return nil, fmt.Errorf("Azure: failed to create ClientSecretCredential: %w", err)
 	}
 
-	actual, _ := credentialCache.LoadOrStore(key, credential)
-	return actual.(*azidentity.ClientSecretCredential), nil
+	return csp.StoreClient(&credentialCache, account, credKey, credential).(*azidentity.ClientSecretCredential), nil
 }
 
-// getOrCreateVMClient returns a cached VirtualMachinesClient for the given subscription.
-func getOrCreateVMClient(creds *azureCreds) (*armcompute.VirtualMachinesClient, error) {
-	if v, ok := vmClientCache.Load(creds.SubscriptionID); ok {
-		return v.(*armcompute.VirtualMachinesClient), nil
-	}
-
+// newVMClient returns a VirtualMachinesClient built on the cached credential.
+func newVMClient(creds *azureCreds) (*armcompute.VirtualMachinesClient, error) {
 	credential, err := getOrCreateCredential(creds)
 	if err != nil {
 		return nil, err
 	}
-
 	client, err := armcompute.NewVirtualMachinesClient(creds.SubscriptionID, credential, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Azure: failed to create VirtualMachinesClient: %w", err)
 	}
-
-	actual, _ := vmClientCache.LoadOrStore(creds.SubscriptionID, client)
-	return actual.(*armcompute.VirtualMachinesClient), nil
+	return client, nil
 }
 
-// getOrCreateTagsClient returns a cached TagsClient for the given subscription.
-func getOrCreateTagsClient(creds *azureCreds) (*armresources.TagsClient, error) {
-	if v, ok := tagsClientCache.Load(creds.SubscriptionID); ok {
-		return v.(*armresources.TagsClient), nil
-	}
-
+// newTagsClient returns a TagsClient built on the cached credential.
+func newTagsClient(creds *azureCreds) (*armresources.TagsClient, error) {
 	credential, err := getOrCreateCredential(creds)
 	if err != nil {
 		return nil, err
 	}
-
 	client, err := armresources.NewTagsClient(creds.SubscriptionID, credential, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Azure: failed to create TagsClient: %w", err)
 	}
-
-	actual, _ := tagsClientCache.LoadOrStore(creds.SubscriptionID, client)
-	return actual.(*armresources.TagsClient), nil
+	return client, nil
 }

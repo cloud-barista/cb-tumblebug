@@ -85,7 +85,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("Azure vmstatus: cannot get credentials: %w", err)
 	}
 
-	vmClient, err := getOrCreateVMClient(creds)
+	vmClient, err := newVMClient(creds)
 	if err != nil {
 		return nil, fmt.Errorf("Azure vmstatus: failed to get VM client: %w", err)
 	}

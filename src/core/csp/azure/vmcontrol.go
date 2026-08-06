@@ -58,7 +58,7 @@ func runBatchControl(ctx context.Context, instanceIds []string, resultStatus str
 	if err != nil {
 		return nil, fmt.Errorf("Azure vmcontrol: cannot get credentials: %w", err)
 	}
-	vmClient, err := getOrCreateVMClient(creds)
+	vmClient, err := newVMClient(creds)
 	if err != nil {
 		return nil, fmt.Errorf("Azure vmcontrol: failed to get VM client: %w", err)
 	}
