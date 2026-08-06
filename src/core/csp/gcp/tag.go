@@ -310,16 +310,17 @@ func getGCPCreds(ctx context.Context) (*gcpCreds, error) {
 	}, nil
 }
 
-// computeServiceCache stores *compute.Service objects keyed by clientEmail.
-// Reusing the same service object is critical: the underlying oauth2.Transport caches
-// the GCP access token internally. Creating a new service on every call discards that
-// cache, forcing a new token fetch from oauth2.googleapis.com on each API call.
-var computeServiceCache sync.Map // key: clientEmail → *compute.Service
+// computeServiceCache stores *compute.Service objects, keyed by the service account
+// and the key in use. Reusing the object is what makes the underlying oauth2.Transport
+// reuse its cached access token instead of fetching one from oauth2.googleapis.com on
+// every call; keying by the key as well means a rotated key gets its own service.
+var computeServiceCache sync.Map
 
 // newComputeService returns a cached GCP Compute Engine API service for the given
 // service account, creating one if it does not already exist.
 func newComputeService(ctx context.Context, creds *gcpCreds) (*compute.Service, error) {
-	if v, ok := computeServiceCache.Load(creds.ClientEmail); ok {
+	credKey := csp.CredKey(creds.PrivateKey)
+	if v, ok := csp.LoadClient(&computeServiceCache, creds.ClientEmail, credKey); ok {
 		return v.(*compute.Service), nil
 	}
 
@@ -342,11 +343,13 @@ func newComputeService(ctx context.Context, creds *gcpCreds) (*compute.Service, 
 		return nil, fmt.Errorf("failed to create GCP JWT config: %w", err)
 	}
 
-	svc, err := compute.NewService(ctx, option.WithHTTPClient(conf.Client(ctx)))
+	// The service is cached process-wide, so it must not capture the request context:
+	// once that request ends the context is cancelled and later token refreshes fail.
+	svcCtx := context.Background()
+	svc, err := compute.NewService(svcCtx, option.WithHTTPClient(conf.Client(svcCtx)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GCP Compute service: %w", err)
 	}
 
-	actual, _ := computeServiceCache.LoadOrStore(creds.ClientEmail, svc)
-	return actual.(*compute.Service), nil
+	return csp.StoreClient(&computeServiceCache, creds.ClientEmail, credKey, svc).(*compute.Service), nil
 }

@@ -1145,6 +1145,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 				verified, err := CheckConnConfigAvailable(connConfig.ConfigName)
 				if err != nil {
 					log.Error().Err(err).Msgf("[%s] Cannot check ConnConfig %s (will mark unverified)", req.ProviderName, connConfig.ConfigName)
+					connConfig.VerifiedMessage = csp.ExplainCredentialError(connConfig.ProviderName, err)
 				}
 				connConfig.Verified = verified
 				status := "✗"
@@ -1171,16 +1172,19 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 		}()
 
 		for result := range results {
-			if result.Verified {
-				key := GenConnectionKey(result.ConfigName)
-				val, err := json.Marshal(result)
-				if err != nil {
-					return model.CredentialInfo{}, err
-				}
-				err = kvstore.Put(string(key), string(val))
-				if err != nil {
-					return callResult, err
-				}
+			// Store the failure reason too, so the caller can tell an expired secret
+			// from a permission or network problem without reading server logs
+			if !result.Verified && result.VerifiedMessage == "" {
+				continue
+			}
+			key := GenConnectionKey(result.ConfigName)
+			val, err := json.Marshal(result)
+			if err != nil {
+				return model.CredentialInfo{}, err
+			}
+			err = kvstore.Put(string(key), string(val))
+			if err != nil {
+				return callResult, err
 			}
 		}
 	}

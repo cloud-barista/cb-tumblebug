@@ -425,6 +425,8 @@ type ConnConfig struct {
 	RegionDetail         RegionDetail   `json:"regionDetail" gorm:"type:text;serializer:json"`
 	RegionRepresentative bool           `json:"regionRepresentative"`
 	Verified             bool           `json:"verified"`
+	// VerifiedMessage explains why verification failed (empty when verified)
+	VerifiedMessage string `json:"verifiedMessage,omitempty" gorm:"-"`
 }
 
 // SpiderConnConfig is struct for containing a CB-Spider struct for connection config
