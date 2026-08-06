@@ -605,6 +605,46 @@ k-port-forward-stop: ## Stop this deployment's port-forwards incl. the gateway e
 		kill $$pids 2>/dev/null || true; \
 	fi
 
+K8S_DNS_SERVERS ?= 8.8.8.8 1.1.1.1
+
+k-dns-public: ## Make cluster DNS resolve external names via public DNS (K8S_DNS_SERVERS) instead of the host resolver
+	@current=$$($(KUBECTL) -n kube-system get cm coredns -o jsonpath='{.data.Corefile}' 2>/dev/null); \
+	[ -n "$$current" ] || { printf '%b\n' '$(KR)\xe2\x9c\x96 coredns ConfigMap not found$(KX)'; exit 1; }; \
+	printf '%s' "$$current" | sed -E 's|^([[:space:]]*)forward \. [^{]*(\{?.*)$$|\1forward . $(K8S_DNS_SERVERS) \2|' > /tmp/Corefile.$$$$; \
+	$(KUBECTL) -n kube-system create cm coredns --from-file=Corefile=/tmp/Corefile.$$$$ \
+		--dry-run=client -o yaml | $(KUBECTL) apply -f - >/dev/null; \
+	rm -f /tmp/Corefile.$$$$
+	@$(KUBECTL) -n kube-system rollout restart deploy/coredns >/dev/null
+	@$(KUBECTL) -n kube-system rollout status deploy/coredns --timeout=120s >/dev/null
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Cluster DNS now forwards external names to $(K8S_DNS_SERVERS)$(KX)' \
+		'$(KD)Use this when the host resolver is unreliable (e.g. VPN): pods were failing with$(KX)' \
+		'$(KD)"server misbehaving" or getting IPv6-only answers for CSP endpoints.$(KX)' \
+		'$(KD)Revert: $(KX)$(KC)make k-dns-host$(KX)$(KD) \xe2\x80\x94 re-apply after recreating the cluster.$(KX)'
+
+k-dns-host: ## Revert cluster DNS to the node resolver (kubeadm default)
+	@current=$$($(KUBECTL) -n kube-system get cm coredns -o jsonpath='{.data.Corefile}' 2>/dev/null); \
+	[ -n "$$current" ] || { printf '%b\n' '$(KR)\xe2\x9c\x96 coredns ConfigMap not found$(KX)'; exit 1; }; \
+	printf '%s' "$$current" | sed -E 's|^([[:space:]]*)forward \. [^{]*(\{?.*)$$|\1forward . /etc/resolv.conf \2|' > /tmp/Corefile.$$$$; \
+	$(KUBECTL) -n kube-system create cm coredns --from-file=Corefile=/tmp/Corefile.$$$$ \
+		--dry-run=client -o yaml | $(KUBECTL) apply -f - >/dev/null; \
+	rm -f /tmp/Corefile.$$$$
+	@$(KUBECTL) -n kube-system rollout restart deploy/coredns >/dev/null
+	@$(KUBECTL) -n kube-system rollout status deploy/coredns --timeout=120s >/dev/null
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Cluster DNS reverted to the node resolver$(KX)'
+
+k-dns-check: ## Show which DNS the cluster forwards to, and resolve a CSP endpoint from a pod
+	@printf '%b' '$(KB)$(KC)\xe2\x96\x8c Cluster DNS$(KX) '
+	@$(KUBECTL) -n kube-system get cm coredns -o jsonpath='{.data.Corefile}' 2>/dev/null | \
+		awk '/forward \./ {sub(/^[ \t]+/,""); print; exit}'
+	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Resolution from cb-spider$(KX)'
+	@for h in $(K8S_DNS_PROBE_HOSTS); do \
+		printf '  %-40s ' "$$h"; \
+		$(KUBECTL) exec -n $(K8S_NAMESPACE) deploy/cb-spider -- getent ahostsv4 "$$h" 2>/dev/null | \
+			awk 'NR==1{print $$1; found=1} END{if(!found) print "$(KR)no IPv4 answer$(KX)"}'; \
+	done
+
+K8S_DNS_PROBE_HOSTS ?= ec2.ap-northeast-2.amazonaws.com jp-tok.iaas.cloud.ibm.com login.microsoftonline.com
+
 k-status: ## Show K8s deployment status (release/pods/services/port-forwards)
 	@if $(HELM) status $(HELM_RELEASE) -n $(K8S_NAMESPACE) >/dev/null 2>&1; then \
 		printf '%b' '$(KB)$(KC)\xe2\x96\x8c Helm release$(KX) '; \
