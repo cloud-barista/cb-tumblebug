@@ -223,6 +223,54 @@ func RestGetAllNLB(c echo.Context) error {
 	}
 }
 
+// RestGetAllNLBInNsResponse is a wrapper struct to create JSON body of 'List all NLBs in a namespace' request
+type RestGetAllNLBInNsResponse struct {
+	NLB []model.NLBInfoInNs `json:"nlb"`
+}
+
+// RestGetAllNLBInNs godoc
+// @ID GetAllNLBInNs
+// @Summary List all NLBs in a namespace (across Infras)
+// @Description List all NLBs in a namespace regardless of the Infra they belong to. Each item carries its parent infraId.
+// @Description This is a read-only listing; create/delete an NLB through /ns/{nsId}/infra/{infraId}/nlb.
+// @Description With option=id, each entry is "{infraId}/{nlbId}" because an NLB id is only unique within its Infra.
+// @Tags [Infra Resource] NLB Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param option query string false "Option" Enums(id)
+// @Param filterKey query string false "Field key for filtering (ex: cspResourceName)"
+// @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNLBInNsResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/nlb [get]
+func RestGetAllNLBInNs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	optionFlag := c.QueryParam("option")
+	filterKey := c.QueryParam("filterKey")
+	filterVal := c.QueryParam("filterVal")
+
+	if optionFlag == "id" {
+		content := model.IdList{}
+		var err error
+		content.IdList, err = infra.ListNLBIdAllInNs(nsId)
+		return clientManager.EndRequestWithLog(c, err, content)
+	}
+
+	nlbList, err := infra.ListNLBAllInNs(nsId, filterKey, filterVal)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content := RestGetAllNLBInNsResponse{NLB: nlbList}
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 // RestDelNLB godoc
 // @ID DelNLB
 // @Summary Delete NLB

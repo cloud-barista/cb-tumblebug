@@ -118,6 +118,15 @@ const StrAutoGen string = "autogen"
 // DefaultSystemLabel is const for string to specify the Default System Label
 const DefaultSystemLabel string = "Managed by CB-Tumblebug"
 
+// NodeInfoInNs is a Node together with the Infra it belongs to. Nodes are stored under
+// their Infra, so a namespace-wide listing has to carry the parent Infra id for the
+// caller to map each Node back to it.
+type NodeInfoInNs struct {
+	// InfraId is the Infra this Node belongs to
+	InfraId string `json:"infraId" example:"infra01"`
+	NodeInfo
+}
+
 // RegionInfo is struct for region information
 type RegionInfo struct {
 	Region string `json:"region" example:"us-east-1"`

@@ -10936,6 +10936,150 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/nlb:
+    get:
+      tags:
+      - "[Infra Resource] NLB Management"
+      summary: List all NLBs in a namespace (across Infras)
+      description: |-
+        List all NLBs in a namespace regardless of the Infra they belong to. Each item carries its parent infraId.
+        This is a read-only listing; create/delete an NLB through /ns/{nsId}/infra/{infraId}/nlb.
+        With option=id, each entry is "{infraId}/{nlbId}" because an NLB id is only unique within its Infra.
+      operationId: GetAllNLBInNs
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          enum:
+          - id
+      - name: filterKey
+        in: query
+        description: "Field key for filtering (ex: cspResourceName)"
+        schema:
+          type: string
+      - name: filterVal
+        in: query
+        description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/infra.JSONResult'
+                - type: object
+                  properties:
+                    '[DEFAULT]':
+                      $ref: '#/components/schemas/infra.RestGetAllNLBInNsResponse'
+                    '[ID]':
+                      $ref: '#/components/schemas/model.IdList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/node:
+    get:
+      tags:
+      - "[MC-Infra] Infra Provisioning and Management"
+      summary: List all Nodes in a namespace (across Infras)
+      description: |-
+        List all Nodes in a namespace regardless of the Infra they belong to. Each item carries its parent infraId.
+        This is a read-only listing; create/delete a Node through /ns/{nsId}/infra/{infraId}/node.
+        With option=id, each entry is "{infraId}/{nodeId}" because a Node id is only unique within its Infra.
+      operationId: GetAllNodeInNs
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          enum:
+          - id
+      - name: filterKey
+        in: query
+        description: "Field key for filtering (ex: connectionName)"
+        schema:
+          type: string
+      - name: filterVal
+        in: query
+        description: "Field value for filtering (ex: aws-ap-northeast-2)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/infra.JSONResult'
+                - type: object
+                  properties:
+                    '[DEFAULT]':
+                      $ref: '#/components/schemas/infra.RestGetAllNodeInNsResponse'
+                    '[ID]':
+                      $ref: '#/components/schemas/model.IdList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/objectStorage:
     get:
       tags:
@@ -18553,6 +18697,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.InfraStatusInfo'
+    infra.RestGetAllNLBInNsResponse:
+      type: object
+      properties:
+        nlb:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NLBInfoInNs'
     infra.RestGetAllNLBResponse:
       type: object
       properties:
@@ -18560,6 +18711,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.NLBInfo'
+    infra.RestGetAllNodeInNsResponse:
+      type: object
+      properties:
+        node:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeInfoInNs'
     infra.RestGetBenchmarkRequest:
       type: object
       properties:
@@ -22905,6 +23063,77 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+    model.NLBInfoInNs:
+      type: object
+      properties:
+        associatedObjectList:
+          type: array
+          items:
+            type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        createdTime:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        healthChecker:
+          $ref: '#/components/schemas/model.NLBHealthCheckerInfo'
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        infraId:
+          type: string
+          description: InfraId is the Infra this NLB belongs to
+          example: infra01
+        isAutoGenerated:
+          type: boolean
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        listener:
+          $ref: '#/components/schemas/model.NLBListenerInfo'
+        location:
+          $ref: '#/components/schemas/model.Location'
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        scope:
+          type: string
+          description: REGION(V) | GLOBAL
+        status:
+          type: string
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        targetGroup:
+          $ref: '#/components/schemas/model.NLBTargetGroupInfo'
+        type:
+          type: string
+          description: PUBLIC(V) | INTERNAL
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
     model.NLBListenerInfo:
       type: object
       properties:
@@ -23099,6 +23328,151 @@ components:
           $ref: '#/components/schemas/model.ImageSummary'
         imageId:
           type: string
+        label:
+          type: object
+          additionalProperties:
+            type: string
+        location:
+          $ref: '#/components/schemas/model.Location'
+        monAgentStatus:
+          type: string
+          description: Montoring agent status
+          example: "[installed, notInstalled, failed]"
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        networkAgentStatus:
+          type: string
+          description: NetworkAgent status
+          example: "[notInstalled, installing, installed, failed]"
+        networkInterface:
+          type: string
+        nodeGroupId:
+          type: string
+          description: defined if the Node is in a group
+        nodeUserName:
+          type: string
+        nodeUserPassword:
+          type: string
+        privateDNS:
+          type: string
+        privateIP:
+          type: string
+        publicDNS:
+          type: string
+        publicIP:
+          type: string
+        region:
+          type: object
+          description: "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}"
+          allOf:
+          - $ref: '#/components/schemas/model.RegionInfo'
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        rootDiskSize:
+          type: integer
+        rootDiskType:
+          type: string
+        securityGroupIds:
+          type: array
+          items:
+            type: string
+        spec:
+          $ref: '#/components/schemas/model.SpecSummary'
+        specId:
+          type: string
+        sshHostKeyInfo:
+          type: object
+          description: SshHostKeyInfo contains SSH host key information for TOFU (Trust
+            On First Use) verification
+          allOf:
+          - $ref: '#/components/schemas/model.SshHostKeyInfo'
+        sshKeyId:
+          type: string
+        sshPort:
+          type: integer
+        status:
+          type: string
+          description: Required by CB-Tumblebug
+        subnetId:
+          type: string
+        systemMessage:
+          type: string
+          description: Latest system message such as error message
+          example: Failed because ...
+        targetAction:
+          type: string
+        targetStatus:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vNetId:
+          type: string
+    model.NodeInfoInNs:
+      type: object
+      properties:
+        RootDeviceName:
+          type: string
+        addtionalDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        commandStatus:
+          type: array
+          description: CommandStatus stores the status and history of remote commands
+            executed on this Node
+          items:
+            $ref: '#/components/schemas/model.CommandStatusInfo'
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        createdTime:
+          type: string
+          description: Created time
+          example: 2022-11-10 23:00:00
+        cspImageName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        cspSpecName:
+          type: string
+        cspSshKeyId:
+          type: string
+        cspSubnetId:
+          type: string
+        cspVNetId:
+          type: string
+        dataDiskIds:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        image:
+          $ref: '#/components/schemas/model.ImageSummary'
+        imageId:
+          type: string
+        infraId:
+          type: string
+          description: InfraId is the Infra this Node belongs to
+          example: infra01
         label:
           type: object
           additionalProperties:

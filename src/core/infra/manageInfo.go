@@ -74,6 +74,79 @@ func ListInfraId(nsId string) ([]string, error) {
 }
 
 // ListNodeId is func to list Node IDs
+// splitNodeKey returns the Infra id and Node id of a key shaped
+// "/ns/{nsId}/infra/{infraId}/node/{nodeId}", or false for any other key.
+func splitNodeKey(key, nsPrefix string) (infraId, nodeId string, ok bool) {
+	parts := strings.Split(strings.TrimPrefix(key, nsPrefix), "/")
+	if len(parts) != 3 || parts[1] != model.StrNode {
+		return "", "", false
+	}
+	return parts[0], parts[2], true
+}
+
+// ListNodeAllInNs returns every Node in the namespace, each tagged with the Infra it
+// belongs to. Nodes live under their Infra, so this scans the Infra subtree once
+// instead of listing Infras and querying each of them.
+func ListNodeAllInNs(nsId string, filterKey string, filterVal string) ([]model.NodeInfoInNs, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	nsPrefix := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/", nsId)
+	keyValue, err := kvstore.GetKvList(nsPrefix)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	res := []model.NodeInfoInNs{}
+	for _, v := range keyValue {
+		infraId, _, ok := splitNodeKey(v.Key, nsPrefix)
+		if !ok {
+			continue
+		}
+		// Same filter semantics as the other listings: both terms must appear
+		if filterKey != "" {
+			value := strings.ToLower(v.Value)
+			if !(strings.Contains(value, strings.ToLower(filterKey)) && strings.Contains(value, strings.ToLower(filterVal))) {
+				continue
+			}
+		}
+		tempObj := model.NodeInfo{}
+		if err := json.Unmarshal([]byte(v.Value), &tempObj); err != nil {
+			log.Error().Err(err).Str("key", v.Key).Msg("Cannot read the Node object")
+			return nil, err
+		}
+		res = append(res, model.NodeInfoInNs{InfraId: infraId, NodeInfo: tempObj})
+	}
+	return res, nil
+}
+
+// ListNodeIdAllInNs returns "{infraId}/{nodeId}" for every Node in the namespace.
+// The Infra id is part of the id because a Node id is only unique within its Infra.
+func ListNodeIdAllInNs(nsId string) ([]string, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	nsPrefix := fmt.Sprintf("/"+model.StrNamespace+"/%s/"+model.StrInfra+"/", nsId)
+	keyValue, err := kvstore.GetKvList(nsPrefix)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	idList := []string{}
+	for _, v := range keyValue {
+		if infraId, nodeId, ok := splitNodeKey(v.Key, nsPrefix); ok {
+			idList = append(idList, infraId+"/"+nodeId)
+		}
+	}
+	return idList, nil
+}
+
 func ListNodeId(nsId string, infraId string) ([]string, error) {
 
 	// err := common.CheckString(nsId)

@@ -12928,6 +12928,194 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/nlb": {
+            "get": {
+                "description": "List all NLBs in a namespace regardless of the Infra they belong to. Each item carries its parent infraId.\nThis is a read-only listing; create/delete an NLB through /ns/{nsId}/infra/{infraId}/nlb.\nWith option=id, each entry is \"{infraId}/{nlbId}\" because an NLB id is only unique within its Infra.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] NLB Management"
+                ],
+                "summary": "List all NLBs in a namespace (across Infras)",
+                "operationId": "GetAllNLBInNs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: cspResourceName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)",
+                        "name": "filterVal",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Different return structures by the given option param",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/infra.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/infra.RestGetAllNLBInNsResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/model.IdList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/node": {
+            "get": {
+                "description": "List all Nodes in a namespace regardless of the Infra they belong to. Each item carries its parent infraId.\nThis is a read-only listing; create/delete a Node through /ns/{nsId}/infra/{infraId}/node.\nWith option=id, each entry is \"{infraId}/{nodeId}\" because a Node id is only unique within its Infra.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] Infra Provisioning and Management"
+                ],
+                "summary": "List all Nodes in a namespace (across Infras)",
+                "operationId": "GetAllNodeInNs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: connectionName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: aws-ap-northeast-2)",
+                        "name": "filterVal",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Different return structures by the given option param",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/infra.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/infra.RestGetAllNodeInNsResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/model.IdList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/objectStorage": {
             "get": {
                 "description": "Get the list of object storages (buckets)\n\n**Filtering with filterKey and filterVal:**\nBoth parameters perform a case-insensitive substring match against the stored JSON of each resource.\nA resource is included in the result only when its JSON contains **both** the filterKey string and the filterVal string.\n\nCommon filterKey examples:\n- ` + "`" + `connectionName` + "`" + ` — filter by cloud connection (e.g. filterVal: ` + "`" + `aws-ap-northeast-2` + "`" + `)\n- ` + "`" + `status` + "`" + `         — filter by resource status  (e.g. filterVal: ` + "`" + `Available` + "`" + `)",
@@ -21953,6 +22141,17 @@ const docTemplate = `{
                 }
             }
         },
+        "infra.RestGetAllNLBInNsResponse": {
+            "type": "object",
+            "properties": {
+                "nlb": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NLBInfoInNs"
+                    }
+                }
+            }
+        },
         "infra.RestGetAllNLBResponse": {
             "type": "object",
             "properties": {
@@ -21960,6 +22159,17 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.NLBInfo"
+                    }
+                }
+            }
+        },
+        "infra.RestGetAllNodeInNsResponse": {
+            "type": "object",
+            "properties": {
+                "node": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeInfoInNs"
                     }
                 }
             }
@@ -27644,6 +27854,100 @@ const docTemplate = `{
                 }
             }
         },
+        "model.NLBInfoInNs": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "healthChecker": {
+                    "$ref": "#/definitions/model.NLBHealthCheckerInfo"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "infraId": {
+                    "description": "InfraId is the Infra this NLB belongs to",
+                    "type": "string",
+                    "example": "infra01"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "listener": {
+                    "$ref": "#/definitions/model.NLBListenerInfo"
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "REGION(V) | GLOBAL",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "targetGroup": {
+                    "$ref": "#/definitions/model.NLBTargetGroupInfo"
+                },
+                "type": {
+                    "description": "PUBLIC(V) | INTERNAL",
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                }
+            }
+        },
         "model.NLBListenerInfo": {
             "type": "object",
             "properties": {
@@ -27911,6 +28215,207 @@ const docTemplate = `{
                 },
                 "imageId": {
                     "type": "string"
+                },
+                "label": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "networkAgentStatus": {
+                    "description": "NetworkAgent status",
+                    "type": "string",
+                    "example": "[notInstalled, installing, installed, failed]"
+                },
+                "networkInterface": {
+                    "type": "string"
+                },
+                "nodeGroupId": {
+                    "description": "defined if the Node is in a group",
+                    "type": "string"
+                },
+                "nodeUserName": {
+                    "type": "string"
+                },
+                "nodeUserPassword": {
+                    "type": "string"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.RegionInfo"
+                        }
+                    ]
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "type": "integer"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "spec": {
+                    "$ref": "#/definitions/model.SpecSummary"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshHostKeyInfo": {
+                    "description": "SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SshHostKeyInfo"
+                        }
+                    ]
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "Required by CB-Tumblebug",
+                    "type": "string"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.NodeInfoInNs": {
+            "type": "object",
+            "properties": {
+                "RootDeviceName": {
+                    "type": "string"
+                },
+                "addtionalDetails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "commandStatus": {
+                    "description": "CommandStatus stores the status and history of remote commands executed on this Node",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CommandStatusInfo"
+                    }
+                },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
+                "cspImageName": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "cspSshKeyId": {
+                    "type": "string"
+                },
+                "cspSubnetId": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "image": {
+                    "$ref": "#/definitions/model.ImageSummary"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "infraId": {
+                    "description": "InfraId is the Infra this Node belongs to",
+                    "type": "string",
+                    "example": "infra01"
                 },
                 "label": {
                     "type": "object",
