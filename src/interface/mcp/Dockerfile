@@ -8,7 +8,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 WORKDIR /app
 
 # install system dependencies by uv (pinned for reproducible builds)
-RUN uv pip install --system "fastmcp==3.4.5" "requests==2.34.2" "uvicorn==0.51.0"
+# cryptography: credentials are RSA/AES-encrypted client-side before being registered
+RUN uv pip install --system "fastmcp==3.4.5" "requests==2.34.2" "uvicorn==0.51.0" "cryptography==46.0.4"
 
 COPY tb-mcp.py .
 

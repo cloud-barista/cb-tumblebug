@@ -396,6 +396,14 @@ func setConfig() {
 		panic(err)
 	}
 
+	// Restore CSPs registered at runtime (POST /cloudInfo/{providerName}) before the
+	// registration sweep below, so they are pushed to CB-Spider along with the ones
+	// read from cloudinfo.yaml. Loading these must not be fatal: a provider that can
+	// no longer be restored should not stop the server from starting.
+	if err := common.LoadDynamicCspDefinitions(); err != nil {
+		log.Error().Err(err).Msg("config: failed to restore runtime-registered CSP definitions")
+	}
+
 	// Register all cloud info
 	err = common.RegisterAllCloudInfo()
 	if err != nil {

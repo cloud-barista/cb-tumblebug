@@ -494,6 +494,98 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /cloudInfo/{providerName}:
+    post:
+      tags:
+      - "[Admin] Multi-Cloud Information"
+      summary: Register a CSP definition at runtime
+      description: |-
+        Add (or replace) a cloud provider definition without editing assets/cloudinfo.yaml or restarting the server, then register it with CB-Spider.
+
+        This exists for clouds that come into being while CB-Tumblebug is running - most obviously an OpenStack that CB-Tumblebug itself deployed onto a VM it created. The definition is persisted, so it survives a restart.
+
+        Use `cloudPlatform` to name the base platform when this is an instance of one (ex: an OpenStack named `openstack-site01` sets cloudPlatform to `openstack`); CB-Spider selects its driver from that. Registering credentials is a separate, subsequent call to POST /credential.
+      operationId: RegisterCspDefinition
+      parameters:
+      - name: providerName
+        in: path
+        description: Provider name to register
+        required: true
+        schema:
+          type: string
+          default: openstack-site01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: "CSP definition (driver, cloudPlatform, regions with zones)"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.CSPDetail'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: cspDetail
+    delete:
+      tags:
+      - "[Admin] Multi-Cloud Information"
+      summary: Remove a runtime-registered CSP definition
+      description: Remove a CSP definition that was registered at runtime. Providers
+        loaded from assets/cloudinfo.yaml cannot be removed this way - they would
+        return on the next restart; edit the file instead.
+      operationId: UnregisterCspDefinition
+      parameters:
+      - name: providerName
+        in: path
+        description: Provider name to remove
+        required: true
+        schema:
+          type: string
+          default: openstack-site01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /config:
     get:
       tags:

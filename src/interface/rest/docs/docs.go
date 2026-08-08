@@ -579,6 +579,117 @@ const docTemplate = `{
                 }
             }
         },
+        "/cloudInfo/{providerName}": {
+            "post": {
+                "description": "Add (or replace) a cloud provider definition without editing assets/cloudinfo.yaml or restarting the server, then register it with CB-Spider.\n\nThis exists for clouds that come into being while CB-Tumblebug is running - most obviously an OpenStack that CB-Tumblebug itself deployed onto a VM it created. The definition is persisted, so it survives a restart.\n\nUse ` + "`" + `cloudPlatform` + "`" + ` to name the base platform when this is an instance of one (ex: an OpenStack named ` + "`" + `openstack-site01` + "`" + ` sets cloudPlatform to ` + "`" + `openstack` + "`" + `); CB-Spider selects its driver from that. Registering credentials is a separate, subsequent call to POST /credential.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud Information"
+                ],
+                "summary": "Register a CSP definition at runtime",
+                "operationId": "RegisterCspDefinition",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "openstack-site01",
+                        "description": "Provider name to register",
+                        "name": "providerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "CSP definition (driver, cloudPlatform, regions with zones)",
+                        "name": "cspDetail",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CSPDetail"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove a CSP definition that was registered at runtime. Providers loaded from assets/cloudinfo.yaml cannot be removed this way - they would return on the next restart; edit the file instead.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud Information"
+                ],
+                "summary": "Remove a runtime-registered CSP definition",
+                "operationId": "UnregisterCspDefinition",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "openstack-site01",
+                        "description": "Provider name to remove",
+                        "name": "providerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/config": {
             "get": {
                 "description": "List all configs",

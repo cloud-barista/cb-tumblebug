@@ -322,6 +322,10 @@ func RunServer() {
 	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
 
 	e.GET("/tumblebug/cloudInfo", rest_common.RestGetCloudInfo)
+	// Register a CSP that did not exist when the server started (ex: an OpenStack
+	// CB-Tumblebug just deployed onto a VM it created).
+	e.POST("/tumblebug/cloudInfo/:providerName", rest_common.RestRegisterCspDefinition)
+	e.DELETE("/tumblebug/cloudInfo/:providerName", rest_common.RestUnregisterCspDefinition)
 	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
 	e.GET("/tumblebug/connConfig/:connConfigName", rest_common.RestGetConnConfig)
 	e.GET("/tumblebug/provider", rest_common.RestGetProviderList)
