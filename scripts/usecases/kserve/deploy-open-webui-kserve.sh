@@ -12,6 +12,7 @@ set -e
 ISVC_NAME="llm"
 BACKEND_URL=""
 NODE_PORT="30080"
+LOCAL_PATH_VERSION="v0.0.30"
 
 usage() {
     echo "Usage: $0 [-n|--name <isvc-name>] [--backend-url <url[;url2;...]>] [--nodeport <port>]"
@@ -43,11 +44,16 @@ echo "==== Open WebUI Setup (KServe) ===="
 echo "  Backends: ${BACKEND_URL}"
 echo "  NodePort: ${NODE_PORT}"
 
-# The PVC below needs a default StorageClass; fail early with a clear message
+# The PVC below needs a default StorageClass. Provision one when the cluster has none,
+# so this runs on a plain kubeadm cluster without pulling in the whole KServe stack.
 if ! kubectl get storageclass 2>/dev/null | grep -q "(default)"; then
-    echo "ERROR: No default StorageClass found (the data PVC would stay Pending forever)."
-    echo "       Run deploy-kserve-stack.sh first, or set a default StorageClass manually."
-    exit 1
+    echo "No default StorageClass found; installing local-path-provisioner..."
+    kubectl apply -f "https://raw.githubusercontent.com/rancher/local-path-provisioner/${LOCAL_PATH_VERSION}/deploy/local-path-storage.yaml" > /dev/null
+    kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}' > /dev/null
+    kubectl rollout status deploy local-path-provisioner -n local-path-storage --timeout=3m > /dev/null
+    echo "  ✓ local-path set as default StorageClass"
+else
+    echo "  ✓ Default StorageClass already present"
 fi
 
 cat <<EOF | kubectl apply -f -

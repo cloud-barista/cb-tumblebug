@@ -109,7 +109,20 @@ PUBLIC_IP=$(curl -s --connect-timeout 5 http://169.254.169.254/latest/meta-data/
             echo "$HOST_IP")
 
 case "$RUN_MODE" in
-    report) echo " This host already has a completed DevStack install; reporting only." ;;
+    report)
+        echo " This host already has a completed DevStack install; reporting only."
+        # The snippets from the original run were saved; show them straight away so a
+        # caller whose earlier session dropped can recover them without waiting for the
+        # CSP round-trips below to finish.
+        if sudo test -f /opt/stack/cb-registration-info.txt 2>/dev/null; then
+            echo ""
+            echo "============================================================"
+            echo " Saved registration info from the original run"
+            echo "============================================================"
+            sudo cat /opt/stack/cb-registration-info.txt
+            echo ""
+        fi
+        ;;
     attach) echo " A stack.sh run is already in progress (pid $(sudo cat "$RUN_PID")); attaching to it." ;;
 esac
 
@@ -527,6 +540,80 @@ if [ $STACK_EXIT -eq 0 ]; then
     REGION=$(os region list -f value -c Region 2>/dev/null | head -1 || echo "RegionOne")
     AZ=$(os availability zone list --compute -f value -c "Zone Name" 2>/dev/null | grep -v "^internal$" | head -1 || echo "nova")
 
+    # Everything the caller actually needs is known now, so print it BEFORE the catalog
+    # rewrite and the service checks. Those steps talk to the CSP and can stall or drop the
+    # SSH session; when that happened the registration snippets were lost with it, even
+    # though the install had succeeded. Printing first means a dropped connection costs
+    # progress messages, not the one output that is hard to reconstruct.
+    #
+    # It is written to a file as well: a remote command that loses its channel loses its
+    # stdout entirely, and this is the only way to get the snippets back without re-running
+    # anything.
+    REGISTRATION_INFO=/opt/stack/cb-registration-info.txt
+    { echo ""
+    echo " Horizon Dashboard  : http://${PUBLIC_IP}/dashboard"
+    echo " Keystone Auth URL  : http://${PUBLIC_IP}/identity/v3$([ "$API_REACHABLE" = "no" ] && echo '   <-- port 80 CLOSED, see warning above')"
+    echo " Username / Password: admin / ${ADMIN_PASSWORD}"
+    echo " Project ID         : ${PROJECT_ID}"
+    echo " Region / AZ        : ${REGION} / ${AZ}"
+    echo ""
+
+    echo "============================================================"
+    echo " credentials.yaml snippet"
+    echo "============================================================"
+    cat << CRED_EOF
+
+    ${CSP_NAME}:
+      IdentityEndpoint: http://${PUBLIC_IP}/identity/v3
+      Username: admin
+      Password: ${ADMIN_PASSWORD}
+      DomainName: Default
+      ProjectID: ${PROJECT_ID}
+
+CRED_EOF
+
+    echo "============================================================"
+    echo " cloudinfo.yaml snippet"
+    echo "============================================================"
+    cat << CLOUD_EOF
+
+  ${CSP_NAME}:
+    description: DevStack (${PUBLIC_IP})
+    cloudPlatform: openstack
+    driver: openstack-driver-v1.0.so
+    region:
+      ${REGION}:
+        id: ${REGION}
+        description: DevStack ${REGION}
+        location:
+          display: ${LOCATION_DISPLAY}
+          latitude: ${LOCATION_LATITUDE}
+          longitude: ${LOCATION_LONGITUDE}
+        zone:
+        - ${AZ}
+
+CLOUD_EOF
+
+    echo "============================================================"
+    echo " Next Steps"
+    echo "============================================================"
+    echo ""
+    echo " 1. Add the snippets above to:"
+    echo "    - ~/.cloud-barista/credentials.yaml  (credentials)"
+    echo "    - cb-tumblebug/assets/cloudinfo.yaml  (cloud info)"
+    echo ""
+    echo " 2. Re-initialize CB-Tumblebug:"
+    echo "    make enc-cred && make init"
+    echo ""
+    echo " For detailed info, run: ./2.getRegistrationInfo.sh"
+    echo "\$\$ENDPOINT[Horizon Dashboard](http://0.0.0.0/dashboard)"
+    echo "\$\$CREDENTIAL[Admin Login](admin / ${ADMIN_PASSWORD})"
+    } 2>&1 | sudo tee "$REGISTRATION_INFO"
+    sudo chmod 644 "$REGISTRATION_INFO" 2>/dev/null || true
+
+    echo ""
+    echo " (the block above is saved on this host at $REGISTRATION_INFO)"
+
     # ----------------------------------------------------------
     # Verify CB-Spider required services in service catalog
     # CB-Spider's OpenStack driver (gophercloud v2) requires
@@ -652,64 +739,6 @@ if [ $STACK_EXIT -eq 0 ]; then
     fi
 
 
-    echo ""
-    echo " Horizon Dashboard  : http://${PUBLIC_IP}/dashboard"
-    echo " Keystone Auth URL  : http://${PUBLIC_IP}/identity/v3$([ "$API_REACHABLE" = "no" ] && echo '   <-- port 80 CLOSED, see warning above')"
-    echo " Username / Password: admin / ${ADMIN_PASSWORD}"
-    echo " Project ID         : ${PROJECT_ID}"
-    echo " Region / AZ        : ${REGION} / ${AZ}"
-    echo ""
-
-    echo "============================================================"
-    echo " credentials.yaml snippet"
-    echo "============================================================"
-    cat << CRED_EOF
-
-    ${CSP_NAME}:
-      IdentityEndpoint: http://${PUBLIC_IP}/identity/v3
-      Username: admin
-      Password: ${ADMIN_PASSWORD}
-      DomainName: Default
-      ProjectID: ${PROJECT_ID}
-
-CRED_EOF
-
-    echo "============================================================"
-    echo " cloudinfo.yaml snippet"
-    echo "============================================================"
-    cat << CLOUD_EOF
-
-  ${CSP_NAME}:
-    description: DevStack (${PUBLIC_IP})
-    cloudPlatform: openstack
-    driver: openstack-driver-v1.0.so
-    region:
-      ${REGION}:
-        id: ${REGION}
-        description: DevStack ${REGION}
-        location:
-          display: ${LOCATION_DISPLAY}
-          latitude: ${LOCATION_LATITUDE}
-          longitude: ${LOCATION_LONGITUDE}
-        zone:
-        - ${AZ}
-
-CLOUD_EOF
-
-    echo "============================================================"
-    echo " Next Steps"
-    echo "============================================================"
-    echo ""
-    echo " 1. Add the snippets above to:"
-    echo "    - ~/.cloud-barista/credentials.yaml  (credentials)"
-    echo "    - cb-tumblebug/assets/cloudinfo.yaml  (cloud info)"
-    echo ""
-    echo " 2. Re-initialize CB-Tumblebug:"
-    echo "    make enc-cred && make init"
-    echo ""
-    echo " For detailed info, run: ./2.getRegistrationInfo.sh"
-    echo "\$\$ENDPOINT[Horizon Dashboard](http://0.0.0.0/dashboard)"
-    echo "\$\$CREDENTIAL[Admin Login](admin / ${ADMIN_PASSWORD})"
 else
     echo " DevStack installation FAILED (exit code: $STACK_EXIT)"
     echo " Check logs: /opt/stack/logs/stack.sh.log (runner output: $RUN_LOG)"
