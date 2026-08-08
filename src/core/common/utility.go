@@ -687,7 +687,7 @@ func GetConnConfigListByProviderRegionZone(provider, region, zone string) ([]str
 // RegisterAllCloudInfo is func to register all cloud info from asset to CB-Spider
 func RegisterAllCloudInfo() error {
 	// First, populate the cloud platform mapping for all CSPs
-	for providerName, cspDetail := range RuntimeCloudInfo.CSPs {
+	for providerName, cspDetail := range snapshotCspDetails() {
 		if cspDetail.CloudPlatform != "" {
 			// Derived CSP: maps to the base platform (e.g., openstack-new01 → openstack)
 			modelcsp.RegisterCloudPlatform(providerName, cspDetail.CloudPlatform)
@@ -697,7 +697,7 @@ func RegisterAllCloudInfo() error {
 		}
 	}
 
-	for providerName := range RuntimeCloudInfo.CSPs {
+	for _, providerName := range listCspNames() {
 		err := RegisterCloudInfo(providerName)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -709,16 +709,18 @@ func RegisterAllCloudInfo() error {
 // GetProviderList is func to list all cloud providers
 func GetProviderList() (*model.IdList, error) {
 	providers := model.IdList{}
-	for providerName := range RuntimeCloudInfo.CSPs {
-		providers.IdList = append(providers.IdList, providerName)
-	}
+	providers.IdList = append(providers.IdList, listCspNames()...)
 	return &providers, nil
 }
 
 // RegisterCloudInfo is func to register cloud info from asset to CB-Spider
 func RegisterCloudInfo(providerName string) error {
 
-	driverName := RuntimeCloudInfo.CSPs[providerName].Driver
+	cspDetail, ok := getCspDetail(providerName)
+	if !ok {
+		return fmt.Errorf("provider %q is not registered", providerName)
+	}
+	driverName := cspDetail.Driver
 
 	// Resolve the cloud platform type for Spider registration.
 	// Spider uses ProviderName to select the correct driver handler,
@@ -747,7 +749,7 @@ func RegisterCloudInfo(providerName string) error {
 		return err
 	}
 
-	for regionName := range RuntimeCloudInfo.CSPs[providerName].Regions {
+	for regionName := range cspDetail.Regions {
 		err := RegisterRegionZone(providerName, regionName)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -784,7 +786,7 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	// When zone is empty, CSPs typically auto-select an available zone for the resource.
 	// This is useful for specialized resources (e.g., GPU VMs) that may only be available
 	// in specific zones that vary by region and time.
-	cspInfo := RuntimeCloudInfo.CSPs[providerName]
+	cspInfo, _ := getCspDetail(providerName)
 	regionInfo := cspInfo.Regions[regionName]
 
 	var representativeZone string
@@ -825,13 +827,13 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	}
 
 	// register all regionZones
-	for _, zoneName := range RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones {
+	for _, zoneName := range regionInfo.Zones {
 		requestBody.RegionName = providerName + "-" + regionName + "-" + zoneName
 		keyValueInfoList := []model.KeyValue{
-			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
+			{Key: "Region", Value: regionInfo.RegionId},
 			{Key: "Zone", Value: zoneName},
 		}
-		requestBody.AvailableZoneList = RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones
+		requestBody.AvailableZoneList = regionInfo.Zones
 		requestBody.KeyValueInfoList = keyValueInfoList
 
 		_, err := clientManager.ExecuteHttpRequest(
@@ -1473,11 +1475,6 @@ func RetrieveRegionListFromCsp() (model.RetrievedRegionList, error) {
 	temp, _ := resp.Result().(*model.RetrievedRegionList)
 	return *temp, nil
 
-}
-
-// GetCloudInfo is func to get all cloud info from the asset
-func GetCloudInfo() (model.CloudInfo, error) {
-	return RuntimeCloudInfo, nil
 }
 
 // ConvertToMessage is func to change input data to gRPC message

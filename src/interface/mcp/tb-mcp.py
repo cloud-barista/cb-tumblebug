@@ -1141,6 +1141,293 @@ def create_namespace_with_validation(name: str, description: Optional[str] = Non
 
 
 #####################################
+# Dynamic CSP Registration
+#####################################
+#
+# Registering a cloud that did not exist when CB-Tumblebug started. The driving case is
+# an OpenStack that CB-Tumblebug itself deployed onto a VM it created: without these
+# tools it takes editing assets/cloudinfo.yaml, `make enc-cred` and `make init`, none of
+# which an agent can reach.
+#
+# The full sequence is three calls, in this order:
+#   1. register_csp_definition  - make the provider known (driver, regions, zones)
+#   2. register_csp_credential  - authenticate; creates the connection configs
+#   3. fetch_assets_for_provider - pull specs/images so VMs can actually be requested
+#
+# Skipping step 3 leaves a verified connection with an empty catalog, so
+# recommend_vm_spec and search_images return nothing for the new provider and
+# create_infra_dynamic has no spec to use.
+
+# Tool: Register a CSP definition at runtime
+@mcp.tool()
+def register_csp_definition(
+    provider_name: str,
+    driver: str,
+    regions: Dict,
+    cloud_platform: str = "",
+    description: str = ""
+) -> Dict:
+    """
+    Register a new cloud provider at runtime, without restarting CB-Tumblebug.
+
+    Use this for a cloud that came into existence after the server started - most often
+    an OpenStack deployed onto a VM that CB-Tumblebug provisioned. The definition is
+    persisted and survives a restart.
+
+    This is step 1 of 3. Follow with register_csp_credential(), then
+    fetch_assets_for_provider().
+
+    Args:
+        provider_name: Name for this provider, e.g. "openstack-site01". Becomes the
+            provider in connection names, so keep it unique and descriptive.
+        driver: CB-Spider driver file, e.g. "openstack-driver-v1.0.so"
+        regions: Region map. Each region needs at least one zone:
+            {"RegionOne": {"id": "RegionOne", "zone": ["nova"],
+                           "location": {"display": "Europe (Milan)",
+                                        "latitude": 45.4, "longitude": 9.1}}}
+            The location is what places the cloud on the CB-MapUI map.
+        cloud_platform: Base platform this is an instance of, e.g. "openstack".
+            REQUIRED when provider_name is not itself a base platform - CB-Spider picks
+            its driver from this. Omit only when registering a base platform.
+        description: Human-readable description, e.g. "DevStack on 15.161.132.237"
+
+    Returns:
+        Registration result. On success, register_csp_credential() is the next call.
+    """
+    csp_detail = {
+        "driver": driver,
+        "regions": {},
+    }
+    if cloud_platform:
+        csp_detail["cloudPlatform"] = cloud_platform
+    if description:
+        csp_detail["description"] = description
+
+    # Accept both the cloudinfo.yaml spelling ("zone", "id") and the JSON model spelling
+    # ("zones", "regionId"), because the snippet users paste comes from the YAML.
+    for region_name, region in (regions or {}).items():
+        zones = region.get("zone") or region.get("zones") or []
+        if isinstance(zones, str):
+            zones = [zones]
+        entry = {
+            "regionId": region.get("id") or region.get("regionId") or region_name,
+            "zones": zones,
+        }
+        if region.get("description"):
+            entry["description"] = region["description"]
+        if region.get("location"):
+            entry["location"] = region["location"]
+        csp_detail["regions"][region_name] = entry
+
+    return api_request("POST", f"/cloudInfo/{provider_name}", json_data=csp_detail)
+
+
+# Tool: Remove a runtime-registered CSP definition
+@mcp.tool()
+def unregister_csp_definition(provider_name: str) -> Dict:
+    """
+    Remove a CSP definition that was registered at runtime.
+
+    Providers that came from assets/cloudinfo.yaml cannot be removed this way - they
+    would return on the next restart. Edit the file for those.
+
+    Args:
+        provider_name: Provider to remove, e.g. "openstack-site01"
+
+    Returns:
+        Removal result
+    """
+    return api_request("DELETE", f"/cloudInfo/{provider_name}")
+
+
+def _encrypt_credential_values(public_key_pem: str, credential: Dict) -> tuple:
+    """
+    Encrypt credential values the way CB-Tumblebug's /credential endpoint expects.
+
+    Each value is AES-256-CBC encrypted under one per-call key, with a fresh IV
+    prepended to its ciphertext; that AES key is then RSA-OAEP(SHA-256) wrapped with the
+    server's public key. Mirrors init/init.py, which is the reference implementation.
+
+    Returns (encrypted values by key, base64 RSA-wrapped AES key).
+    """
+    import base64
+    import os as _os
+
+    from cryptography.hazmat.primitives import hashes, padding as sym_padding, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding as asym_padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+    aes_key = _os.urandom(32)
+
+    encrypted = {}
+    for name, value in credential.items():
+        iv = _os.urandom(16)
+        padder = sym_padding.PKCS7(algorithms.AES.block_size).padder()
+        padded = padder.update(str(value).encode()) + padder.finalize()
+        encryptor = Cipher(algorithms.AES(aes_key), modes.CBC(iv)).encryptor()
+        ciphertext = encryptor.update(padded) + encryptor.finalize()
+        # The server splits the IV back off the front, so order matters here.
+        encrypted[name] = base64.b64encode(iv + ciphertext).decode()
+
+    wrapped = serialization.load_pem_public_key(public_key_pem.encode()).encrypt(
+        aes_key,
+        asym_padding.OAEP(
+            mgf=asym_padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None,
+        ),
+    )
+    return encrypted, base64.b64encode(wrapped).decode()
+
+
+# Tool: Register credentials for a CSP
+@mcp.tool()
+def register_csp_credential(
+    provider_name: str,
+    credential: Dict,
+    credential_holder: str = "admin"
+) -> Dict:
+    """
+    Register credentials for a cloud provider and create its connection configs.
+
+    This is step 2 of 3, after register_csp_definition(). On success CB-Tumblebug builds
+    one connection per region and verifies each; the response reports which verified.
+
+    Args:
+        provider_name: Provider the credentials belong to, e.g. "openstack-site01"
+        credential: Key/value credentials as the provider expects them. For OpenStack:
+            {"IdentityEndpoint": "http://<ip>/identity/v3", "Username": "admin",
+             "Password": "<pw>", "DomainName": "Default", "ProjectID": "<id>"}
+            For AWS: {"ClientId": "...", "ClientSecret": "..."}
+        credential_holder: Credential holder name (default: "admin")
+
+    Returns:
+        Registration result including per-connection verification status. When a
+        connection reports verified=false, read verifiedMessage - it distinguishes an
+        expired secret from a permission problem from an unreachable endpoint. For a
+        self-hosted OpenStack the usual cause is the API port being closed in the
+        security group of the VM hosting it.
+    """
+    if not credential:
+        return {"error": "credential is required",
+                "hint": "For OpenStack: IdentityEndpoint, Username, Password, DomainName, ProjectID"}
+
+    # Credentials are never sent in the clear: the server hands out a short-lived RSA
+    # public key, each value is AES-encrypted, and the AES key travels RSA-wrapped.
+    key_response = api_request("GET", "/credential/publicKey")
+    public_key = (key_response or {}).get("publicKey")
+    token_id = (key_response or {}).get("publicKeyTokenId")
+    if not public_key or not token_id:
+        return {"error": "Could not obtain the credential encryption key",
+                "response": key_response,
+                "hint": "Is CB-Tumblebug reachable and initialized?"}
+
+    try:
+        encrypted_values, encrypted_aes_key = _encrypt_credential_values(public_key, credential)
+    except ImportError as e:
+        return {"error": "The 'cryptography' package is required to encrypt credentials",
+                "detail": str(e),
+                "hint": "pip install cryptography (already pinned in the MCP server image)"}
+    except Exception as e:
+        return {"error": f"Failed to encrypt credentials: {e}"}
+
+    data = {
+        "credentialHolder": credential_holder,
+        "providerName": provider_name,
+        "credentialKeyValueList": [{"key": k, "value": v} for k, v in encrypted_values.items()],
+        "publicKeyTokenId": token_id,
+        "encryptedClientAesKeyByPublicKey": encrypted_aes_key,
+    }
+    # Verification dials every region of the provider, so allow well past the default.
+    return api_request("POST", "/credential", json_data=data, timeout_override=(60, 900))
+
+
+# Tool: Fetch specs and images for specific providers
+@mcp.tool()
+def fetch_assets_for_provider(provider_names: List[str]) -> Dict:
+    """
+    Fetch VM specs and images for named providers only.
+
+    This is step 3 of 3. Until it runs, a newly registered provider has an empty
+    catalog: recommend_vm_spec() and search_images() return nothing for it, and
+    create_infra_dynamic() has no spec or image to reference.
+
+    Scoping to the new provider is what makes this usable interactively. Loading every
+    registered provider walks all connections and takes 10-40 minutes; one small
+    provider such as a DevStack finishes in seconds.
+
+    Args:
+        provider_names: Providers to fetch, e.g. ["openstack-site01"]. Use the names
+            from get_connections() or the provider list. Must not be empty - passing
+            nothing would fetch every provider.
+
+    Returns:
+        Fetch result. Afterwards, call recommend_vm_spec() / search_images() to see
+        what the provider actually offers; a DevStack typically exposes only a handful.
+    """
+    if not provider_names:
+        return {
+            "error": "provider_names is required",
+            "reason": "An empty list would fetch every registered provider, which takes 10-40 minutes.",
+            "hint": "Pass the provider you just registered, e.g. ['openstack-site01'].",
+        }
+
+    # Only VERIFIED connections are fetched from. Without this check an unverified
+    # provider returns an empty result in a couple of seconds and looks like a silent
+    # success, when the real problem is that the cloud could not be reached.
+    unverified, verified_count, probed = [], 0, False
+    try:
+        all_conns = api_request("GET", "/connConfig", params={"filterVerified": "false"})
+        wanted = {p.lower() for p in provider_names}
+        for conn in (all_conns or {}).get("connectionconfig", []):
+            if str(conn.get("providerName", "")).lower() not in wanted:
+                continue
+            if conn.get("verified"):
+                verified_count += 1
+            else:
+                unverified.append({
+                    "configName": conn.get("configName"),
+                    "verifiedMessage": conn.get("verifiedMessage") or "(no detail)",
+                })
+        probed = True
+    except Exception:
+        pass  # Advisory only; never block the fetch on this probe.
+
+    if probed and verified_count == 0:
+        if not unverified:
+            # The provider is defined but has no connections at all, which means step 2
+            # was skipped. Fetching would return nothing and look like a success.
+            return {
+                "error": "These providers have no connections yet",
+                "reason": "A CSP definition alone does not create connections; credentials do. "
+                          "Assets are fetched per connection, so there is nothing to fetch from.",
+                "providers": provider_names,
+                "hint": "Call register_csp_credential() for each provider first, confirm the "
+                        "connection reports verified, then retry this call.",
+            }
+        return {
+            "error": "None of the requested providers has a verified connection",
+            "reason": "Assets are fetched only from verified connections, so this would return nothing.",
+            "unverifiedConnections": unverified,
+            "hint": "Read verifiedMessage above. For a self-hosted OpenStack the usual cause is "
+                    "the API port (80) being closed in the security group of the VM hosting it - "
+                    "fix that, re-run register_csp_credential(), then retry this call.",
+        }
+
+    params = {"providers": ",".join(provider_names)}
+    # Even one provider can take a few minutes when it has many regions.
+    result = api_request("GET", "/loadAssets", params=params, timeout_override=(60, 1800))
+
+    summary = {"fetchedProviders": provider_names, "result": result}
+    if unverified:
+        summary["warning"] = "Some connections of these providers are unverified and were skipped"
+        summary["unverifiedConnections"] = unverified
+    summary["nextStep"] = ("Call recommend_vm_spec() and search_images() for this provider to see "
+                           "what it offers before create_infra_dynamic().")
+    return summary
+
+
+#####################################
 # Connection Management
 #####################################
 
@@ -1230,6 +1517,34 @@ def get_security_groups(ns_id: str) -> Dict:
     return api_request("GET", f"/ns/{ns_id}/resources/securityGroup")
 
 # Helper: normalize firewall rule dicts to the API's field names
+def _normalize_node_groups(node_groups: List[Dict]) -> List[Dict]:
+    """
+    Coerce a node-group list into the shapes model.CreateNodeGroupDynamicReq accepts.
+
+    The server unmarshals rootDiskSize and nodeGroupSize as integers and rejects the
+    request outright when they arrive as strings ("cannot unmarshal string into Go struct
+    field ... of type int"). Callers - LLMs especially - naturally quote them, so convert
+    here rather than surfacing a 400 they cannot act on.
+
+    Also accepts the pre-0.12.30 key spelling subGroupSize, which some older examples
+    still use, and maps it to nodeGroupSize.
+    """
+    INT_FIELDS = ("rootDiskSize", "nodeGroupSize")
+    normalized = []
+    for group in (node_groups or []):
+        g = dict(group)
+        if "subGroupSize" in g and "nodeGroupSize" not in g:
+            g["nodeGroupSize"] = g.pop("subGroupSize")
+        for field in INT_FIELDS:
+            if field in g and g[field] not in (None, ""):
+                try:
+                    g[field] = int(str(g[field]).strip())
+                except (TypeError, ValueError):
+                    pass  # leave it; the server will report a clearer error than we can
+        normalized.append(g)
+    return normalized
+
+
 def _normalize_firewall_rules(rules: List[Dict]) -> List[Dict]:
     normalized = []
     for rule in rules:
@@ -1496,6 +1811,148 @@ def get_infra(ns_id: str, infra_id: str) -> Dict:
         Infra information
     """
     return api_request("GET", f"/ns/{ns_id}/infra/{infra_id}")
+
+#####################################
+# Bastion Management
+#####################################
+#
+# A bastion is the SSH jump host CB-Tumblebug tunnels through to reach a node. One is
+# auto-assigned when a node has a public IP, so most Infras never need these tools.
+#
+# They matter when a node's "public" address is not reachable from CB-Tumblebug. The
+# clearest case is a VM inside a self-hosted OpenStack: its floating IP is private space
+# routable only from the machine running that OpenStack. Registering that machine as the
+# bastion is the only way remote commands reach the VM.
+
+# Tool: Set a bastion node for a target node
+@mcp.tool()
+def set_bastion_node(
+    ns_id: str,
+    infra_id: str,
+    target_node_id: str,
+    bastion_node_id: str,
+    bastion_infra_id: str = "",
+    bastion_ns_id: str = ""
+) -> Dict:
+    """
+    Register a bastion (SSH jump host) for a node, so remote commands can reach it.
+
+    Needed when the target's own address is not reachable from CB-Tumblebug. For a VM in
+    a self-hosted OpenStack, the bastion is the VM that hosts that OpenStack - it is the
+    only machine that can route to the tenant's floating IPs.
+
+    The bastion may live in a different Infra, and even a different namespace, from its
+    target; pass bastion_infra_id (and bastion_ns_id) for that.
+
+    A manually registered bastion takes precedence over any auto-assigned one, including
+    an auto-assignment that pointed the node at itself.
+
+    Args:
+        ns_id: Namespace of the TARGET node
+        infra_id: Infra of the TARGET node
+        target_node_id: Node that needs to be reached, e.g. "g1-1"
+        bastion_node_id: Node to jump through, e.g. "g9-1". Must have an address
+            CB-Tumblebug can reach, and must be able to route to the target.
+        bastion_infra_id: Bastion's Infra, when different from the target's
+        bastion_ns_id: Bastion's namespace, when different from the target's
+
+    Returns:
+        Registration result. Verify with a simple execute_command_infra() such as
+        "hostname" before running anything long.
+    """
+    path = f"/ns/{ns_id}/infra/{infra_id}/node/{target_node_id}/bastion"
+    if bastion_ns_id and bastion_infra_id:
+        path = f"{path}/{bastion_ns_id}/{bastion_infra_id}/{bastion_node_id}"
+    elif bastion_infra_id:
+        path = f"{path}/{bastion_infra_id}/{bastion_node_id}"
+    else:
+        path = f"{path}/{bastion_node_id}"
+    result = api_request("PUT", path)
+    # This endpoint answers with a bare JSON string; wrap it so the tool keeps its
+    # declared Dict return type and the caller gets a usable next step.
+    if isinstance(result, str):
+        return {
+            "message": result,
+            "alreadyRegistered": "already exists" in result,
+            "nextStep": "Confirm with get_bastion_nodes(), then run a simple command "
+                        "(hostname) on the target to prove it is reachable.",
+        }
+    return result
+
+
+# Tool: Get bastion nodes for a target node
+@mcp.tool()
+def get_bastion_nodes(ns_id: str, infra_id: str, target_node_id: str) -> Dict:
+    """
+    List the bastion nodes registered for a node.
+
+    Useful when remote commands to a node time out: if the only entry is the node
+    itself, CB-Tumblebug will dial it directly, which fails whenever its address is not
+    reachable from here.
+
+    Args:
+        ns_id: Namespace of the target node
+        infra_id: Infra of the target node
+        target_node_id: Node to inspect, e.g. "g1-1"
+
+    Returns:
+        Registered bastions, each with its namespace, Infra and node id
+    """
+    result = api_request("GET", f"/ns/{ns_id}/infra/{infra_id}/node/{target_node_id}/bastion")
+    # This endpoint answers with a bare JSON array; wrap it so the tool's return type
+    # stays a Dict and callers get the self-bastion hint alongside the list.
+    if isinstance(result, list):
+        is_self_only = (
+            len(result) == 1
+            and result[0].get("nodeId") == target_node_id
+            and result[0].get("infraId") == infra_id
+        )
+        return {
+            "bastionNodes": result,
+            "count": len(result),
+            "selfBastionOnly": is_self_only,
+            "note": ("The only bastion is the node itself, so CB-Tumblebug will dial it "
+                     "directly. That works only if the node's own address is reachable from "
+                     "CB-Tumblebug; if commands time out, register a reachable jump host with "
+                     "set_bastion_node().") if is_self_only else None,
+        }
+    return result
+
+
+# Tool: Remove a bastion node
+@mcp.tool()
+def remove_bastion_node(
+    ns_id: str,
+    infra_id: str,
+    bastion_node_id: str,
+    bastion_infra_id: str = "",
+    bastion_ns_id: str = ""
+) -> Dict:
+    """
+    Remove a bastion registration from an Infra.
+
+    Args:
+        ns_id: Namespace of the Infra holding the registration
+        infra_id: Infra holding the registration
+        bastion_node_id: Bastion node to unregister
+        bastion_infra_id: Bastion's Infra, when it differs from infra_id
+        bastion_ns_id: Bastion's namespace, when it differs from ns_id
+
+    Returns:
+        Removal result
+    """
+    path = f"/ns/{ns_id}/infra/{infra_id}/bastion"
+    if bastion_ns_id and bastion_infra_id:
+        path = f"{path}/{bastion_ns_id}/{bastion_infra_id}/{bastion_node_id}"
+    elif bastion_infra_id:
+        path = f"{path}/{bastion_infra_id}/{bastion_node_id}"
+    else:
+        path = f"{path}/{bastion_node_id}"
+    result = api_request("DELETE", path)
+    if isinstance(result, str):
+        return {"message": result}
+    return result
+
 
 # Tool: Get Infra access information
 @mcp.tool()
@@ -2151,7 +2608,7 @@ def _format_errors_for_user(vm_reviews: List[Dict]) -> str:
 def _internal_review_infra_dynamic(
     ns_id: str,
     name: str,
-    vm_configurations: List[Dict],
+    node_groups: List[Dict],
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
@@ -2167,7 +2624,7 @@ def _internal_review_infra_dynamic(
     data = {
         "name": name,
         "description": description,
-        "nodeGroups": vm_configurations,
+        "nodeGroups": _normalize_node_groups(node_groups),
         "policyOnPartialFailure": policy_on_partial_failure
     }
     
@@ -2196,7 +2653,7 @@ def _internal_review_infra_dynamic(
         enhanced_risk_analysis = []
         
         for i, vm_review in enumerate(result["nodeReviews"]):
-            vm_config = vm_configurations[i] if i < len(vm_configurations) else {}
+            vm_config = node_groups[i] if i < len(node_groups) else {}
             spec_id = vm_config.get("specId")
             image_name = vm_config.get("imageId")
             
@@ -2264,7 +2721,7 @@ def _internal_review_infra_dynamic(
         
         # Analyze each VM review for specific issues
         for i, vm_review in enumerate(vm_reviews):
-            vm_config = vm_configurations[i] if i < len(vm_configurations) else {}
+            vm_config = node_groups[i] if i < len(node_groups) else {}
             can_create = vm_review.get("canCreate", True)
             errors = vm_review.get("errors", [])
             warnings = vm_review.get("warnings", [])
@@ -2304,7 +2761,7 @@ def _internal_review_infra_dynamic(
         creation_viable = result.get("creationViable", False)
         if creation_viable:
             result["_guidance"] = "✅ Validation passed! You can proceed with create_infra_dynamic() using the same parameters."
-            result["_next_step"] = f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
+            result["_next_step"] = f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', node_groups=<same_configurations>)"
             
             # Add warnings for hold mode or other special cases
             if hold:
@@ -2324,7 +2781,7 @@ def _internal_review_infra_dynamic(
             if reconfiguration_needed:
                 result["_guidance"] += "\n\n💡 RECONFIGURATION NEEDED:"
                 result["_guidance"] += "\n  1. Use recommend_vm_spec() to find alternative specifications from different providers"
-                result["_guidance"] += "\n  2. Update vm_configurations with working specs and run review again"
+                result["_guidance"] += "\n  2. Update node_groups with working specs and run review again"
                 result["_guidance"] += "\n  3. Consider using hold=True for providers requiring manual deployment"
                 
                 # Add specific provider guidance from review results
@@ -2440,7 +2897,7 @@ def _internal_review_infra_dynamic(
 1. Use `recommend_vm_spec()` to get alternative VM specifications
 2. Check `search_images()` for compatible images in different regions
 3. Verify CSP provider availability and quotas
-4. Update vm_configurations and run review again
+4. Update node_groups and run review again
 
 **I'll help you fix these issues. Would you like me to:**
 - 🔄 **Find alternatives** - Search for different VM specs/images
@@ -2469,7 +2926,7 @@ def _internal_review_infra_dynamic(
 def review_infra_dynamic_request(
     ns_id: str,
     name: str,
-    vm_configurations: List[Dict],
+    node_groups: List[Dict],
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
@@ -2492,7 +2949,7 @@ def review_infra_dynamic_request(
     review_result = review_infra_dynamic_request(
         ns_id="my-project",
         name="web-app-cluster", 
-        vm_configurations=vm_configs  # From recommend_vm_spec()
+        node_groups=vm_configs  # From recommend_vm_spec()
     )
     
     # STEP 2: 📋 Check validation results
@@ -2501,13 +2958,13 @@ def review_infra_dynamic_request(
         infra = create_infra_dynamic(
             ns_id="my-project",
             name="web-app-cluster",
-            vm_configurations=vm_configs,
+            node_groups=vm_configs,
             force_create=True  # Required after review
         )
     else:
         # ❌ Fix validation issues first
         print("Validation issues:", review_result.get("nodeReviews", []))
-        # Modify vm_configurations and re-run review
+        # Modify node_groups and re-run review
     ```
     
     **🔬 COMPREHENSIVE VALIDATION CHECKS:**
@@ -2529,7 +2986,7 @@ def review_infra_dynamic_request(
     Args:
         ns_id: Namespace ID for Infra deployment
         name: Infra name (must be unique within namespace)
-        vm_configurations: List of VM configuration dictionaries. Each VM config should include:
+        node_groups: List of NodeGroup dictionaries (maps to the server's nodeGroups). Each should include:
             - specId: VM specification ID from recommend_vm_spec() (REQUIRED)
             - imageId: CSP-specific image identifier (optional - auto-mapped if omitted)
             - name: VM or nodeGroup name (optional)
@@ -2541,7 +2998,10 @@ def review_infra_dynamic_request(
             - zone: Availability zone (optional, e.g., "ap-northeast-2a")
             - vNetTemplateId: VNet template ID for nodegroup (optional)
             - sgTemplateId: Security group template ID for nodegroup (optional)
-            - label: Key-value pairs for VM labeling (optional)
+            - label: Key-value pairs for NodeGroup labeling (optional). This is what
+              label_selector targets later, so a role label here is how one remote
+              command reaches a whole tier: {"role":"control"} on the control plane
+              and {"role":"node"} on the workers, then label_selector="role=node".
         description: Infra description
         system_label: System label for special purposes
         label: Key-value pairs for Infra labeling
@@ -2645,7 +3105,7 @@ def review_infra_dynamic_request(
     return _internal_review_infra_dynamic(
         ns_id=ns_id,
         name=name,
-        vm_configurations=vm_configurations,
+        node_groups=node_groups,
         description=description,
         system_label=system_label,
         label=label,
@@ -2705,7 +3165,7 @@ def review_infra_dynamic_request(
 def create_infra_dynamic(
     ns_id: str,
     name: str,
-    vm_configurations: List[Dict],
+    node_groups: List[Dict],
     description: str = "Infra created dynamically via MCP",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
@@ -2734,7 +3194,7 @@ def create_infra_dynamic(
     )
     
     # STEP 2: Search and select images for each spec
-    vm_configurations = []
+    node_groups = []
     for i, spec in enumerate(specs["summarized_specs"][:2]):
         spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
         
@@ -2757,7 +3217,7 @@ def create_infra_dynamic(
             raise Exception(f"No compatible images found for spec {spec_id}")
         
         # 2.3: Create VM configuration with REQUIRED imageId
-        vm_configurations.append({
+        node_groups.append({
             "specId": spec_id,                    # 🚨 REQUIRED
             "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
             "name": f"vm-{spec['providerName']}-{i+1}",
@@ -2768,7 +3228,7 @@ def create_infra_dynamic(
     review_result = review_infra_dynamic_request(
         ns_id="default",
         name="my-infra",
-        vm_configurations=vm_configurations
+        node_groups=node_groups
     )
     
     # STEP 4: Check review results and fix any issues
@@ -2780,7 +3240,7 @@ def create_infra_dynamic(
     infra = create_infra_dynamic(
         ns_id="default",
         name="my-infra",
-        vm_configurations=vm_configurations,
+        node_groups=node_groups,
         force_create=True  # Required to bypass review enforcement
     )
     ```
@@ -2824,7 +3284,7 @@ def create_infra_dynamic(
     result = create_infra_dynamic(
         ns_id="my-project",
         name="silicon-valley-infra",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     ```
     
@@ -2859,14 +3319,14 @@ def create_infra_dynamic(
     infra = create_infra_dynamic(
         ns_id="default",
         name="multi-csp-infra",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     ```
     
     Args:
         ns_id: Namespace ID
         name: Infra name (required)
-        vm_configurations: List of VM configuration dictionaries (required). Each VM config should include:
+        node_groups: List of NodeGroup dictionaries (required; maps to the server's nodeGroups). Each should include:
             
             **CRITICAL REQUIREMENTS FOR Infra DYNAMIC:**
             - specId: EXACT spec ID from recommend_vm_spec() API response (REQUIRED)
@@ -2896,7 +3356,10 @@ def create_infra_dynamic(
             - zone: Availability zone (optional, e.g., "ap-northeast-2a")
             - vNetTemplateId: VNet template ID for nodegroup-level override (optional)
             - sgTemplateId: Security group template ID for nodegroup-level override (optional)
-            - label: Key-value pairs for VM labeling (optional)
+            - label: Key-value pairs for NodeGroup labeling (optional). This is what
+              label_selector targets later, so a role label here is how one remote
+              command reaches a whole tier: {"role":"control"} on the control plane
+              and {"role":"node"} on the workers, then label_selector="role=node".
             - os_requirements: Dict with os_type, use_case for auto image selection (optional)
         
         description: Infra description (optional)
@@ -2958,7 +3421,7 @@ def create_infra_dynamic(
     summary = create_infra_dynamic(
         ns_id="my-project",
         name="my-infra",
-        vm_configurations=[...]
+        node_groups=[...]
     )
     # User reviews detailed summary with cost estimates
     
@@ -2966,7 +3429,7 @@ def create_infra_dynamic(
     result = create_infra_dynamic(
         ns_id="my-project",
         name="my-infra", 
-        vm_configurations=[...],
+        node_groups=[...],
         force_create=True  # Proceed with creation
     )
     ```
@@ -3004,7 +3467,7 @@ def create_infra_dynamic(
             "llm_instructions": {
                 "immediate_action": "CALL_REVIEW_FUNCTION",
                 "message_to_user": "I need to validate this Infra configuration first to ensure it will work and show you the cost estimates. Let me run the review step.",
-                "next_function_call": f"review_infra_dynamic_request(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)",
+                "next_function_call": f"review_infra_dynamic_request(ns_id='{ns_id}', name='{name}', node_groups=<same_configurations>)",
                 "after_review": "After review completes, I'll show you the results and ask for confirmation before creating the infrastructure."
             },
             "example_code": f'''
@@ -3012,7 +3475,7 @@ def create_infra_dynamic(
 review_result = review_infra_dynamic_request(
     ns_id="{ns_id}",
     name="{name}",
-    vm_configurations=vm_configurations
+    node_groups=node_groups
 )
 
 # STEP 2: Check results and create if valid
@@ -3020,7 +3483,7 @@ if review_result.get("overallStatus") == "Ready":
     infra = create_infra_dynamic(
         ns_id="{ns_id}",
         name="{name}",
-        vm_configurations=vm_configurations,
+        node_groups=node_groups,
         force_create=True
     )
 ''',
@@ -3033,7 +3496,7 @@ if review_result.get("overallStatus") == "Ready":
         creation_summary = generate_infra_creation_summary(
             ns_id=ns_id,
             name=name,
-            vm_configurations=vm_configurations,
+            node_groups=node_groups,
             description=description,
             hold=hold
         )
@@ -3042,7 +3505,7 @@ if review_result.get("overallStatus") == "Ready":
         creation_summary["_CREATION_PARAMETERS"] = {
             "ns_id": ns_id,
             "name": name,
-            "vm_configurations": vm_configurations,
+            "node_groups": node_groups,
             "description": description,
             "system_label": system_label,
             "label": label,
@@ -3056,13 +3519,13 @@ if review_result.get("overallStatus") == "Ready":
             "message": "📋 Please review the Infra creation plan above, including cost estimates and deployment strategy.",
             "to_proceed": {
                 "description": "After reviewing, call this function again with force_create=True to proceed with deployment",
-                "function_call": f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>, force_create=True)",
+                "function_call": f"create_infra_dynamic(ns_id='{ns_id}', name='{name}', node_groups=<same_configurations>, force_create=True)",
                 "alternative": "Or use skip_confirmation=True if you want to skip future confirmations"
             },
             "to_modify": {
-                "description": "To modify the configuration, adjust vm_configurations and run this function again",
+                "description": "To modify the configuration, adjust node_groups and run this function again",
                 "options": [
-                    "Modify vm specs, images, or counts in vm_configurations",
+                    "Modify vm specs, images, or counts in node_groups",
                     "Change namespace, description, or other parameters",
                     "Add or remove VMs from the configuration"
                 ]
@@ -3084,7 +3547,7 @@ if review_result.get("overallStatus") == "Ready":
     
     # Validate required VM configuration fields and auto-map images if needed
     processed_vm_configs = []
-    for i, vm_config in enumerate(vm_configurations):
+    for i, vm_config in enumerate(node_groups):
         vm_config = dict(vm_config)  # Work on a copy — don't mutate the caller's dicts
         # Check if specId is provided
         if "specId" not in vm_config:
@@ -3210,10 +3673,10 @@ if review_result.get("overallStatus") == "Ready":
     # (strip internal "_"-prefixed bookkeeping keys and non-API fields from each node group)
     data = {
         "name": name,
-        "nodeGroups": [
+        "nodeGroups": _normalize_node_groups([
             {k: v for k, v in cfg.items() if not k.startswith("_") and k != "os_requirements"}
             for cfg in processed_vm_configs
-        ],
+        ]),
         "policyOnPartialFailure": policy_on_partial_failure
     }
     
@@ -3244,7 +3707,7 @@ if review_result.get("overallStatus") == "Ready":
     context_data = {
         "namespace_id": ns_id,
         "infra_name": name,
-        "vm_count": len(vm_configurations),
+        "vm_count": len(node_groups),
         "hold": hold
     }
     
@@ -3341,7 +3804,7 @@ def add_nodegroup_dynamic(
     spec_id: str,
     image_id: str,
     name: str = "",
-    sub_group_size: int = 1,
+    node_group_size: int = 1,
     description: str = "",
     root_disk_type: str = "",
     root_disk_size: int = 0,
@@ -3368,7 +3831,7 @@ def add_nodegroup_dynamic(
         spec_id="aws+ap-northeast-2+t3.medium",
         image_id="ami-0c02fb55956c7d316",
         name="worker-group",
-        sub_group_size=3,
+        node_group_size=3,
         description="Worker nodes"
     )
     ```
@@ -3379,7 +3842,7 @@ def add_nodegroup_dynamic(
         spec_id: VM specification ID from recommend_vm_spec() (REQUIRED)
         image_id: CSP-specific image ID from search_images() (REQUIRED)
         name: NodeGroup name (optional)
-        sub_group_size: Number of VMs in the nodegroup (int, default 1)
+        node_group_size: Number of VMs in the nodegroup (int, default 1)
         description: NodeGroup description (optional)
         root_disk_type: Root disk type (optional)
         root_disk_size: Root disk size in GB (int, 0 for CSP default)
@@ -3397,7 +3860,7 @@ def add_nodegroup_dynamic(
     data = {
         "specId": spec_id,
         "imageId": image_id,
-        "nodeGroupSize": sub_group_size
+        "nodeGroupSize": node_group_size
     }
     if name:
         data["name"] = name
@@ -3434,7 +3897,7 @@ def review_nodegroup_dynamic(
     spec_id: str,
     image_id: str,
     name: str = "",
-    sub_group_size: int = 1,
+    node_group_size: int = 1,
     description: str = "",
     root_disk_type: str = "",
     root_disk_size: int = 0,
@@ -3455,7 +3918,7 @@ def review_nodegroup_dynamic(
         spec_id: VM specification ID (REQUIRED)
         image_id: CSP-specific image ID (REQUIRED)
         name: NodeGroup name (optional)
-        sub_group_size: Number of VMs (int, default 1)
+        node_group_size: Number of VMs (int, default 1)
         description: NodeGroup description (optional)
         root_disk_type: Root disk type (optional)
         root_disk_size: Root disk size in GB (int, 0 for CSP default)
@@ -3471,7 +3934,7 @@ def review_nodegroup_dynamic(
     data = {
         "specId": spec_id,
         "imageId": image_id,
-        "nodeGroupSize": sub_group_size
+        "nodeGroupSize": node_group_size
     }
     if name:
         data["name"] = name
@@ -4132,11 +4595,16 @@ def execute_command_infra(
     label_selector: Optional[str] = None,
     summarize_output: bool = True,
     max_output_lines: Union[int, str] = 5,
-    max_output_chars: Union[int, str] = 1000
+    max_output_chars: Union[int, str] = 1000,
+    timeout_minutes: Optional[int] = None
 ) -> Dict:
     """
     Execute remote commands via SSH on nodes of an Infra.
     Executes on all nodes, or a specific nodegroup/node/label-selector subset.
+
+    Each entry of `commands` runs in its OWN SSH session, so nothing carries over between
+    them: a shell variable, a `cd`, an exported value set in one entry is gone in the next.
+    Anything that needs state must be a single entry, chained with `;` or `&&`.
 
     🚨 **CRITICAL PERFORMANCE WARNING:**
     Remote command execution can take significant time depending on:
@@ -4227,7 +4695,17 @@ def execute_command_infra(
     data = {
         "command": valid_commands  # Use validated commands
     }
-    
+
+    # The server defaults to 30 minutes and kills the session at that point. Long
+    # installs (a DevStack build runs 20-40 minutes) must raise it or they are cut off
+    # mid-way, leaving a half-configured host.
+    request_timeout = None
+    if timeout_minutes:
+        capped = max(1, min(int(timeout_minutes), 120))  # server clamps to 1..120
+        data["timeoutMinutes"] = capped
+        # Give the HTTP read a margin over the command's own budget.
+        request_timeout = (60, capped * 60 + 120)
+
     url = f"/ns/{ns_id}/cmd/infra/{infra_id}"
     params = {}
     
@@ -4238,7 +4716,8 @@ def execute_command_infra(
     if label_selector:
         params["labelSelector"] = label_selector
 
-    result = api_request("POST", url, json_data=data, params=params or None)
+    result = api_request("POST", url, json_data=data, params=params or None,
+                         timeout_override=request_timeout)
 
     # Apply output summarization if enabled
     if summarize_output and "results" in result:
@@ -4354,6 +4833,87 @@ PREDEFINED_SCRIPTS = {
         ],
         "description": "Comprehensive system information collection"
     },
+    # --- Nested-cloud scenario -------------------------------------------------
+    # Mirrors the CB-MapUI usecase menus ("☁️ OpenStack (DevStack)" and
+    # "☸️ Kubernetes"), so an agent can run the same flows an operator clicks
+    # through. Placeholders are filled by
+    # execute_remote_commands_enhanced(template_variables={...}) using the
+    # double-brace form - not the <NAME> form CB-MapUI uses in its own templates.
+    "devstack_install": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/1.installDevStack.sh -o /tmp/installDevStack.sh && bash /tmp/installDevStack.sh --csp-name {{csp_name}} --latitude {{latitude}} --longitude {{longitude}} --location \"{{location}}\""
+        ],
+        "description": "Install OpenStack (DevStack) on a BARE-METAL node. Requires a *.metal spec: nested KVM needs hardware virtualization, and ordinary instances fall back to slow QEMU emulation. Takes 20-40 minutes, so pass timeout_minutes=120. Safe to re-run: it attaches to an install in progress instead of starting a second one. Prints credentials.yaml/cloudinfo.yaml snippets at the end - feed those to register_csp_definition() and register_csp_credential()."
+    },
+    "devstack_registration_info": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/2.getRegistrationInfo.sh -o /tmp/getRegistrationInfo.sh && bash /tmp/getRegistrationInfo.sh --csp-name {{csp_name}}"
+        ],
+        "description": "Re-print the registration snippets (Keystone endpoint, ProjectID, region/zone) for an already-installed DevStack."
+    },
+    "devstack_update_endpoints": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/3.updateEndpoints.sh -o /tmp/updateEndpoints.sh && bash /tmp/updateEndpoints.sh --csp-name {{csp_name}}"
+        ],
+        "description": "Repoint the OpenStack service catalog after the host's public IP changed (stop/start, or no elastic IP). Re-register the credential afterwards."
+    },
+    "devstack_clean": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/4.cleanDevStack.sh -o /tmp/cleanDevStack.sh && bash /tmp/cleanDevStack.sh"
+        ],
+        "description": "Tear down a failed or stale DevStack so it can be installed cleanly again."
+    },
+    "k8s_control_plane": {
+        "commands": [
+            "CNI=$(echo \"{{k8s_cni}}\" | tr 'A-Z' 'a-z' | xargs); [ -z \"$CNI\" ] && CNI=flannel; curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/k8s/k8s-control-plane-setup.sh | bash -s -- --cni \"$CNI\""
+        ],
+        "description": "Install a Kubernetes control plane. K8S_CNI selects the CNI: empty or 'flannel' (default), or 'cilium'. Needs working outbound access - verify the security group has an outbound rule first, since a stateful firewall keeps SSH alive while blocking every package download."
+    },
+    "k8s_get_join_command": {
+        "commands": [
+            "echo '[K8S_JOIN_COMMAND]'; sudo kubeadm token create --print-join-command"
+        ],
+        "description": "Print the kubeadm join command, to be handed to workers. Run on the CONTROL PLANE. Tokens expire (24h by default), so fetch this immediately before joining workers rather than reusing an old one. Use summarize_output=false so the command is not truncated."
+    },
+    "k8s_worker_join": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/k8s/k8s-worker-setup.sh | bash -s -- -j \"{{join_command}}\""
+        ],
+        "description": "Install the kubelet stack and join this node to an existing cluster. Run on the WORKER nodes (target them with node_id or label_selector - never the control plane, which is already a member). join_command comes from k8s_get_join_command. The worker must reach the control plane on port 6443, which inside one OpenStack tenant network it does by default."
+    },
+    "k8s_storage_default": {
+        "commands": [
+            "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.31/deploy/local-path-storage.yaml",
+            "kubectl patch storageclass local-path -p '{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'",
+            "kubectl get storageclass"
+        ],
+        "description": "Install local-path as the default StorageClass. Required in EVERY topology before deploying anything with a PVC (Open WebUI has one): nothing else installs a StorageClass unless the full KServe stack is deployed. Use this for MULTI-NODE clusters; for a single-node cluster use k8s_single_node_prep, which also removes the control-plane taint."
+    },
+    "k8s_single_node_prep": {
+        "commands": [
+            "kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule- || true",
+            "kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.31/deploy/local-path-storage.yaml",
+            "kubectl patch storageclass local-path -p '{\"metadata\":{\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'",
+            "kubectl get nodes -o wide",
+            "kubectl get storageclass"
+        ],
+        "description": "Prepare a SINGLE-NODE cluster for workloads: remove the control-plane taint and install local-path as the default StorageClass. Without both, pods stay Pending forever with no error explaining why. Use this ONLY when the cluster has no workers - with workers joined, keep the taint (so the control plane stays reserved) and run k8s_storage_default instead."
+    },
+    "k8s_open_webui": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/kserve/deploy-open-webui-kserve.sh -o /tmp/deploy-open-webui.sh",
+            "BACKEND='{{backend_url}}'; case \"$BACKEND\" in http*) ;; *) BACKEND='' ;; esac; if [ -n \"$BACKEND\" ]; then echo \"Connecting Open WebUI to: $BACKEND\"; bash /tmp/deploy-open-webui.sh --nodeport {{node_port}} --backend-url \"$BACKEND\"; else echo 'No backend URL given - the UI will come up with an empty model list.'; bash /tmp/deploy-open-webui.sh --nodeport {{node_port}}; fi",
+            "kubectl get svc open-webui -o wide",
+            "curl -s -o /dev/null -w 'local NodePort check: %{http_code}\\n' http://127.0.0.1:{{node_port}}/"
+        ],
+        "description": "Deploy Open WebUI as a NodePort service and confirm it answers locally. node_port is typically 30080. Set backend_url to an OpenAI-compatible endpoint (or several joined by ';') - get it from discover_vllm_endpoints() first, otherwise the UI deploys with an empty model list and chat does not answer. Requires a default StorageClass: the data PVC is a hard precondition, and nothing installs one unless the KServe stack was deployed, so run k8s_single_node_prep first. KServe itself is NOT required - the script falls back cleanly when no InferenceService exists."
+    },
+    "publish_nodeport_via_host": {
+        "commands": [
+            "set -e; IFACE=$(ip route show 0.0.0.0/0 | grep -oE 'dev [^ ]+' | cut -c5- | head -1); echo \"forwarding via $IFACE\"; sudo sysctl -w net.ipv4.ip_forward=1; sudo iptables -t nat -C PREROUTING -i \"$IFACE\" -p tcp --dport {{ext_port}} -j DNAT --to-destination {{target_ip}}:{{target_port}} 2>/dev/null || sudo iptables -t nat -A PREROUTING -i \"$IFACE\" -p tcp --dport {{ext_port}} -j DNAT --to-destination {{target_ip}}:{{target_port}}; sudo iptables -C FORWARD -p tcp -d {{target_ip}} --dport {{target_port}} -j ACCEPT 2>/dev/null || sudo iptables -A FORWARD -p tcp -d {{target_ip}} --dport {{target_port}} -j ACCEPT; sudo iptables -t nat -C POSTROUTING -d {{target_ip}} -p tcp --dport {{target_port}} -j MASQUERADE 2>/dev/null || sudo iptables -t nat -A POSTROUTING -d {{target_ip}} -p tcp --dport {{target_port}} -j MASQUERADE; echo '--- active rules ---'; sudo iptables -t nat -L PREROUTING -n -v --line-numbers | grep {{ext_port}}"
+        ],
+        "description": "Publish a service that lives behind a private address. RUN THIS ON THE HOST that owns the public IP and can route to target_ip - never on the target itself, where DNAT to its own unreachable address becomes an infinite loop. Kept as ONE command on purpose: CB-Tumblebug runs each entry of a command list in a SEPARATE SSH session, so a shell variable set in one entry is empty in the next. The MASQUERADE is required: with DNAT alone the target replies straight to the client and that reply never passes back through this host's conntrack. Also open ext_port in the host's security group AND target_port in the target's security group. Rules are added idempotently, so re-running is safe."
+    },
     "docker_install": {
         "commands": [
             "echo 'Installing Docker...'",
@@ -4450,6 +5010,115 @@ PREDEFINED_SCRIPTS = {
     }
 }
 
+# Tool: Discover vLLM (OpenAI-compatible) endpoints across the namespace
+@mcp.tool()
+def discover_vllm_endpoints(
+    ns_id: str = "default",
+    name_filter: str = "llm",
+    port: int = 8000,
+    api_path: str = "/v1",
+    probe: bool = True
+) -> Dict:
+    """
+    Find vLLM servers already running in this namespace and build the backend URL
+    Open WebUI needs.
+
+    Run this BEFORE deploying Open WebUI. Without a backend the UI still comes up, but
+    its model list is empty and chat does not answer - which only becomes obvious during
+    a demo.
+
+    How it works: lists the Infras in the namespace, keeps those whose name contains
+    name_filter, collects their node public IPs, and (when probe=True) calls
+    GET <ip>:<port><api_path>/models on each. That call is the OpenAI-compatible model
+    listing, so a success confirms both that the host is reachable and that something
+    OpenAI-compatible is actually serving there - not merely that a VM exists.
+
+    Args:
+        ns_id: Namespace to search (default: "default")
+        name_filter: Substring an Infra name must contain, case-insensitive
+            (default: "llm"). Pass "" to consider every Infra in the namespace.
+        port: Port vLLM serves on (default: 8000, the vLLM default)
+        api_path: OpenAI-compatible base path (default: "/v1")
+        probe: Verify each candidate by calling the models endpoint (default: True).
+            Set False to build URLs without contacting the hosts.
+
+    Returns:
+        backendUrl - ";"-joined confirmed endpoints, ready to pass straight to the
+        k8s_open_webui script as {{backend_url}}; plus per-endpoint models found, and
+        the candidates that failed with the reason.
+    """
+    infra_list = api_request("GET", f"/ns/{ns_id}/infra", params={"option": "id"})
+    all_infras = (infra_list or {}).get("output") or []
+    if not all_infras:
+        return {"error": f"No Infra found in namespace '{ns_id}'", "backendUrl": ""}
+
+    needle = (name_filter or "").lower()
+    matched = [i for i in all_infras if needle in i.lower()] if needle else list(all_infras)
+    if not matched:
+        return {
+            "error": f"No Infra name contains '{name_filter}'",
+            "allInfras": all_infras,
+            "hint": "Pass name_filter='' to consider every Infra, or give the exact name.",
+            "backendUrl": "",
+        }
+
+    confirmed, rejected = [], []
+    for infra_id in matched:
+        try:
+            access = get_infra_access_info(ns_id, infra_id, show_ssh_key=False)
+            public_ips, private_ips = _extract_infra_ips(access)
+        except Exception as e:
+            rejected.append({"infra": infra_id, "reason": f"could not read access info: {e}"})
+            continue
+
+        if not public_ips and not private_ips:
+            # Most often the nodes are stopped or terminated: access info still lists the
+            # Infra but carries no addresses. Say so rather than dropping it silently.
+            rejected.append({
+                "infra": infra_id,
+                "reason": "no node addresses returned - the nodes are probably not running",
+                "hint": f"Check with get_infra('{ns_id}', '{infra_id}'); a Terminated or "
+                        f"Suspended node has no reachable address.",
+            })
+            continue
+
+        # A vLLM reachable only on a private address is no use to Open WebUI unless it
+        # shares the network, so prefer public and fall back only when there is none.
+        for ip in (public_ips or private_ips):
+            url = f"http://{ip}:{port}{api_path}"
+            if not probe:
+                confirmed.append({"infra": infra_id, "endpoint": url, "models": "(not probed)"})
+                continue
+            try:
+                r = requests.get(f"{url}/models", timeout=(5, 15))
+                if r.status_code != 200:
+                    rejected.append({"infra": infra_id, "endpoint": url,
+                                     "reason": f"models endpoint returned HTTP {r.status_code}"})
+                    continue
+                models = [m.get("id") for m in (r.json().get("data") or []) if m.get("id")]
+                confirmed.append({"infra": infra_id, "endpoint": url, "models": models})
+            except Exception as e:
+                rejected.append({"infra": infra_id, "endpoint": url,
+                                 "reason": f"not reachable: {type(e).__name__}"})
+
+    backend_url = ";".join(c["endpoint"] for c in confirmed)
+    result = {
+        "backendUrl": backend_url,
+        "confirmed": confirmed,
+        "searchedInfras": matched,
+        "rejected": rejected,
+    }
+    if backend_url:
+        result["nextStep"] = ("Pass backendUrl as the {{backend_url}} template variable to the "
+                              "k8s_open_webui script so Open WebUI connects to these models.")
+    else:
+        result["warning"] = ("No serving endpoint confirmed. Open WebUI will still deploy, but "
+                             "with an empty model list and no working chat.")
+        result["hint"] = ("Check that vLLM is running and that its port is open in the security "
+                          "group of the Infra hosting it (add_security_group_rules), then re-run.")
+    return result
+
+
 # Tool: Enhanced remote command execution with predefined scripts
 @mcp.tool()
 def execute_remote_commands_enhanced(
@@ -4461,7 +5130,8 @@ def execute_remote_commands_enhanced(
     nodegroup_id: Optional[str] = None,
     node_id: Optional[str] = None,
     label_selector: Optional[str] = None,
-    summarize_output: bool = True
+    summarize_output: bool = True,
+    timeout_minutes: Optional[int] = None
 ) -> Dict:
     """
     Execute enhanced remote commands on Infra nodes with predefined scripts and template variable support.
@@ -4487,6 +5157,9 @@ def execute_remote_commands_enhanced(
         infra_id: Infra ID
         script_name: Name of predefined script to execute (optional)
         custom_commands: List of custom commands to execute (optional)
+            Like execute_command_infra, each entry runs in its OWN SSH session - a
+            variable set in one does not exist in the next. Predefined scripts follow
+            the same rule, which is why the multi-step ones are single entries.
         template_variables: Variables to substitute in commands (e.g., {"public_ip": "1.2.3.4"})
         nodegroup_id: Target specific nodegroup (optional)
         node_id: Target specific node by node ID (optional)
@@ -4594,7 +5267,8 @@ def execute_remote_commands_enhanced(
             nodegroup_id=nodegroup_id,
             node_id=node_id,
             label_selector=label_selector,
-            summarize_output=summarize_output
+            summarize_output=summarize_output,
+            timeout_minutes=timeout_minutes
         )
         
         # Add enhanced metadata
@@ -4849,7 +5523,7 @@ def get_provisioning_history(
 # Tool: Get risk-based Infra reconfiguration guidance
 @mcp.tool()
 def get_infra_risk_mitigation_guidance(
-    vm_configurations: List[Dict],
+    node_groups: List[Dict],
     risk_analysis_results: Optional[Dict] = None
 ) -> Dict:
     """
@@ -4876,7 +5550,7 @@ def get_infra_risk_mitigation_guidance(
     4. **Progressive Deployment**: Start with low-risk VMs first
     
     Args:
-        vm_configurations: Original VM configurations that may have risks
+        node_groups: Original VM configurations that may have risks
         risk_analysis_results: Optional risk analysis from review_infra_dynamic_request()
     
     Returns:
@@ -4891,7 +5565,7 @@ def get_infra_risk_mitigation_guidance(
     try:
         guidance = {
             "risk_summary": {
-                "total_vms": len(vm_configurations),
+                "total_vms": len(node_groups),
                 "analyzed_vms": 0,
                 "high_risk_vms": [],
                 "medium_risk_vms": [],
@@ -4906,7 +5580,7 @@ def get_infra_risk_mitigation_guidance(
         }
         
         # Analyze each VM configuration
-        for i, vm_config in enumerate(vm_configurations):
+        for i, vm_config in enumerate(node_groups):
             spec_id = vm_config.get("specId")
             image_name = vm_config.get("imageId")
             
@@ -5021,7 +5695,7 @@ def get_infra_risk_mitigation_guidance(
         # Generate alternative configurations automatically
         for vm_guidance in guidance["vm_specific_guidance"]:
             if vm_guidance["risk_level"] == "high":
-                original_config = vm_configurations[vm_guidance["vm_index"]]
+                original_config = node_groups[vm_guidance["vm_index"]]
                 spec_id = original_config.get("specId", "")
                 
                 if spec_id:
@@ -5641,7 +6315,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="my-project",
         name="multi-csp-infra",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     ```
     
@@ -5664,7 +6338,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="my-project",
         name="auto-mapped-infra",
-        vm_configurations=vm_configs  # Auto-mapping ensures compatibility
+        node_groups=vm_configs  # Auto-mapping ensures compatibility
     )
     ```
     
@@ -5687,7 +6361,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="production",
         name="silicon-valley-infra",
-        vm_configurations=[
+        node_groups=[
             {"specId": spec["id"], "name": f"vm-{spec['regionName']}-{i+1}"}
             for i, spec in enumerate(specs["summarized_specs"][:3])
         ]
@@ -5708,7 +6382,7 @@ def infra_management_prompt() -> str:
     review_result = review_infra_dynamic_request(
         ns_id="production",
         name="web-application",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     
     # Step 3: Check for high-risk VMs and get mitigation guidance
@@ -5738,7 +6412,7 @@ def infra_management_prompt() -> str:
         final_review = review_infra_dynamic_request(
             ns_id="production",
             name="web-application",
-            vm_configurations=vm_configs
+            node_groups=vm_configs
         )
     
     # Step 6: Create Infra only after acceptable risk level
@@ -5746,7 +6420,7 @@ def infra_management_prompt() -> str:
         infra = create_infra_dynamic(
             ns_id="production",
             name="web-application",
-            vm_configurations=vm_configs
+            node_groups=vm_configs
         )
     ```
     
@@ -5770,7 +6444,7 @@ def infra_management_prompt() -> str:
         stable_infra = create_infra_dynamic(
             ns_id="production",
             name="stable-infrastructure",
-            vm_configurations=low_risk_configs
+            node_groups=low_risk_configs
         )
     
     # Step 3: Research and deploy high-risk VMs with alternatives
@@ -5806,7 +6480,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="location-project",
         name="silicon-valley-infra",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     ```
     
@@ -5823,7 +6497,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="my-project",
         name="managed-infra",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     ```
     
@@ -5833,7 +6507,7 @@ def infra_management_prompt() -> str:
     preview = create_infra_dynamic(
         ns_id="my-project",
         name="preview-infra",
-        vm_configurations=vm_configs,
+        node_groups=vm_configs,
         skip_confirmation=False  # Returns preview only
     )
     
@@ -5841,7 +6515,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="my-project",
         name="confirmed-infra",
-        vm_configurations=vm_configs,
+        node_groups=vm_configs,
         force_create=True  # Actually creates after confirmation
     )
     ```
@@ -5852,7 +6526,7 @@ def infra_management_prompt() -> str:
     validation = review_infra_dynamic_request(
         ns_id="my-project",
         name="web-application",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     
     # Step 2: CRITICAL - Comprehensive review result analysis
@@ -5968,7 +6642,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="my-project",
         name="web-application",
-        vm_configurations=vm_configs
+        node_groups=vm_configs
     )
     
     # Step 6: Post-creation status monitoring
@@ -6089,7 +6763,7 @@ def infra_management_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id=target_namespace,
         name=infra_name,
-        vm_configurations=vm_configs,
+        node_groups=vm_configs,
         description="Multi-CSP infrastructure",
         hold=False,  # Set True to hold for review
         skip_confirmation=False,  # Set True for automated workflows
@@ -6509,7 +7183,7 @@ def image_infra_workflow_prompt() -> str:
     result = create_infra_dynamic(
         ns_id="my-project",
         name="multi-csp-infrastructure", 
-        vm_configurations=vm_configs  # Auto-mapping ensures correct images
+        node_groups=vm_configs  # Auto-mapping ensures correct images
     )
     ```
     
@@ -6562,7 +7236,7 @@ def image_infra_workflow_prompt() -> str:
     create_infra_dynamic(
         ns_id="my-project",
         name="web-infrastructure",
-        vm_configurations=[vm_config]
+        node_groups=[vm_config]
     )
     ```
     
@@ -6658,7 +7332,7 @@ def image_infra_workflow_prompt() -> str:
     infra = create_infra_dynamic(
         ns_id="my-project",
         name="multi-csp-infrastructure",
-        vm_configurations=vm_configs  # Each VM has correct CSP-specific image
+        node_groups=vm_configs  # Each VM has correct CSP-specific image
     )
     ```
     
@@ -7234,7 +7908,7 @@ To cancel, use check_infra_status_and_handle_failures() to explore other options
 def preview_infra_configuration(
     ns_id: str,
     name: str,
-    vm_configurations: List[Dict],
+    node_groups: List[Dict],
     description: str = "Infra to be created",
 ) -> Dict:
     """
@@ -7253,7 +7927,7 @@ def preview_infra_configuration(
     Args:
         ns_id: Namespace ID where Infra will be created
         name: Infra name
-        vm_configurations: List of VM configurations to preview
+        node_groups: List of VM configurations to preview
         description: Infra description
     
     Returns:
@@ -7264,7 +7938,7 @@ def preview_infra_configuration(
             "name": name,
             "namespace_id": ns_id,
             "description": description,
-            "total_vms": len(vm_configurations)
+            "total_vms": len(node_groups)
         },
         "namespace_validation": {},
         "vm_analysis": [],
@@ -7297,7 +7971,7 @@ def preview_infra_configuration(
     manual_images = 0
     validation_issues = 0
     
-    for i, vm_config in enumerate(vm_configurations):
+    for i, vm_config in enumerate(node_groups):
         vm_analysis = {
             "vm_index": i,
             "vm_name": vm_config.get("name", f"vm-{i+1}"),
@@ -7399,7 +8073,7 @@ def preview_infra_configuration(
     
     # Step 4: Resource summary
     preview_result["resource_summary"] = {
-        "total_vms": len(vm_configurations),
+        "total_vms": len(node_groups),
         "auto_mapped_images": auto_mapped_images,
         "manual_images": manual_images,
         "validation_issues": validation_issues,
@@ -7611,7 +8285,7 @@ def _estimate_cost_from_spec_name(spec_name: str, provider: str) -> float:
 def generate_infra_creation_summary(
     ns_id: str,
     name: str,
-    vm_configurations: List[Dict],
+    node_groups: List[Dict],
     description: str = "Infra to be created",
     install_mon_agent: str = "no",
     hold: bool = False
@@ -7633,7 +8307,7 @@ def generate_infra_creation_summary(
     Args:
         ns_id: Namespace ID
         name: Infra name
-        vm_configurations: VM configurations
+        node_groups: VM configurations
         description: Infra description
         hold: Whether to hold for review
     
@@ -7641,7 +8315,7 @@ def generate_infra_creation_summary(
         Comprehensive summary with detailed cost analysis and confirmation prompt
     """
     # Get detailed preview first
-    preview = preview_infra_configuration(ns_id, name, vm_configurations, description)
+    preview = preview_infra_configuration(ns_id, name, node_groups, description)
     
     # Enhanced summary structure
     summary = {
@@ -7649,7 +8323,7 @@ def generate_infra_creation_summary(
             "infra_name": name,
             "namespace": ns_id,
             "description": description,
-            "total_vms": len(vm_configurations),
+            "total_vms": len(node_groups),
             "deployment_mode": "REVIEW_FIRST" if hold else "IMMEDIATE_DEPLOYMENT",
             "creation_timestamp": datetime.now().isoformat()
         },
@@ -7681,7 +8355,7 @@ def generate_infra_creation_summary(
     provider_costs = {}
     cost_warnings = []
     
-    for i, vm_config in enumerate(vm_configurations):
+    for i, vm_config in enumerate(node_groups):
         vm_name = vm_config.get("name", f"vm-{i+1}")
         common_spec = vm_config.get("specId", "")
         common_image = vm_config.get("imageId", "AUTO-MAPPED")
@@ -7783,7 +8457,7 @@ def generate_infra_creation_summary(
     summary["DEPLOYMENT_STRATEGY"] = {
         "complexity": deployment_complexity,
         "total_instances": total_instances,
-        "estimated_total_time": f"{max(5, len(vm_configurations) * 2)}-{max(10, len(vm_configurations) * 5)} minutes",
+        "estimated_total_time": f"{max(5, len(node_groups) * 2)}-{max(10, len(node_groups) * 5)} minutes",
         "parallel_deployment": len(csp_distribution) > 1
     }
     
@@ -7818,7 +8492,7 @@ def generate_infra_creation_summary(
 📋 DEPLOYMENT OVERVIEW:
 • Infra Name: {name}
 • Namespace: {ns_id}
-• Total VMs: {len(vm_configurations)} configurations
+• Total VMs: {len(node_groups)} configurations
 • Total Instances: {total_instances}
 • Deployment Type: {summary['MULTI_CLOUD_DISTRIBUTION']['deployment_type'].upper()}
 
@@ -7845,7 +8519,7 @@ def generate_infra_creation_summary(
         next_steps = [
             "✅ Approve: Call create_infra_dynamic() with skip_confirmation=True to proceed",
             "📝 Review: Use hold=True to create but hold for manual review",
-            "✏️ Modify: Adjust vm_configurations if needed and re-run this summary"
+            "✏️ Modify: Adjust node_groups if needed and re-run this summary"
         ]
         
         summary["USER_CONFIRMATION"]["ready_to_proceed"] = True
@@ -7898,12 +8572,12 @@ def generate_infra_creation_summary(
     }
     
     # Resource estimate
-    total_vm_instances = sum(int(vm.get("nodeGroupSize", 1)) for vm in vm_configurations)
+    total_vm_instances = sum(int(vm.get("nodeGroupSize", 1)) for vm in node_groups)
     summary["RESOURCE_ESTIMATE"] = {
         "total_vm_instances": total_vm_instances,
-        "unique_configurations": len(vm_configurations),
+        "unique_configurations": len(node_groups),
         "multi_cloud_deployment": csp_dist.get("total_csps", 0) > 1,
-        "estimated_deployment_time": f"{2 + len(vm_configurations)}~{5 + len(vm_configurations) * 2} minutes"
+        "estimated_deployment_time": f"{2 + len(node_groups)}~{5 + len(node_groups) * 2} minutes"
     }
     
     # Important notes from recommendations
@@ -7926,7 +8600,7 @@ def generate_infra_creation_summary(
 READY TO CREATE Infra '{name}'
 
 Your multi-cloud infrastructure is configured and ready for deployment:
-- {len(vm_configurations)} VM configuration(s) across {csp_dist.get('total_csps', 0)} cloud provider(s)
+- {len(node_groups)} VM configuration(s) across {csp_dist.get('total_csps', 0)} cloud provider(s)
 - {total_vm_instances} total VM instance(s) will be created
 - Deployment mode: {'Review first (hold=True)' if hold else 'Immediate deployment'}
 
@@ -7965,7 +8639,7 @@ Please review and fix the issues identified in the validation report.
 
 # Tool: Validate VM configuration spec-image compatibility
 @mcp.tool()
-def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
+def validate_vm_spec_image_compatibility(node_groups: List[Dict]) -> Dict:
     """
     Validate that VM configurations have proper spec-to-image mapping.
     This tool helps identify potential compatibility issues before Infra creation.
@@ -7977,14 +8651,14 @@ def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
     - Region compatibility checks where possible
     
     Args:
-        vm_configurations: List of VM configurations to validate
+        node_groups: List of VM configurations to validate
     
     Returns:
         Validation results with detailed compatibility analysis
     """
     validation_result = {
         "overall_status": "checking",
-        "total_configurations": len(vm_configurations),
+        "total_configurations": len(node_groups),
         "valid_configurations": 0,
         "validation_details": [],
         "recommendations": []
@@ -7998,7 +8672,7 @@ def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
         "tencent": {"required_patterns": ["img-"], "forbidden_patterns": ["ami-", "/subscriptions/"]}
     }
     
-    for i, vm_config in enumerate(vm_configurations):
+    for i, vm_config in enumerate(node_groups):
         config_validation = {
             "vm_index": i,
             "vm_name": vm_config.get("name", f"vm-{i+1}"),
@@ -9072,7 +9746,7 @@ def deploy_ollama_pull_with_models(
     ns_id: str,
     infra_name: str,
     selected_models: List[str],
-    vm_configurations: Optional[List[Dict]] = None,
+    node_groups: Optional[List[Dict]] = None,
     description: str = "Ollama deployment with custom model selection"
 ) -> Dict:
     """
@@ -9098,7 +9772,7 @@ def deploy_ollama_pull_with_models(
         ns_id: Namespace ID
         infra_name: Name for the Infra
         selected_models: List of model names from ollama.com (e.g., ['llama3.3:latest', 'deepseek-r1'])
-        vm_configurations: Optional VM configs (if not provided, will create optimized config)
+        node_groups: Optional VM configs (if not provided, will create optimized config)
         description: Deployment description
     
     Returns:
@@ -9131,7 +9805,7 @@ def deploy_ollama_pull_with_models(
     
     try:
         # If no VM configurations provided, create optimized ones based on model count
-        if not vm_configurations:
+        if not node_groups:
             # Get VM specifications for LLM workload
             specs = recommend_vm_spec(
                 filter_policies={
@@ -9149,9 +9823,9 @@ def deploy_ollama_pull_with_models(
             model_count = len(selected_models)
             vm_count = min(model_count, 4)  # Max 4 VMs for distribution
             
-            vm_configurations = []
+            node_groups = []
             for i in range(vm_count):
-                vm_configurations.append({
+                node_groups.append({
                     "specId": specs["summarized_specs"][i % len(specs["summarized_specs"])]["id"],
                     "name": f"ollama-vm-{i+1}",
                     "description": f"Ollama VM {i+1} for LLM models",
@@ -9162,7 +9836,7 @@ def deploy_ollama_pull_with_models(
         infra_result = create_infra_dynamic(
             ns_id=ns_id,
             name=infra_name,
-            vm_configurations=vm_configurations,
+            node_groups=node_groups,
             description=description
         )
         
@@ -9201,8 +9875,8 @@ def deploy_ollama_pull_with_models(
             "infra_created": infra_result,
             "selected_models": selected_models,
             "model_count": len(selected_models),
-            "vm_count": len(vm_configurations),
-            "model_distribution": f"Models distributed across {len(vm_configurations)} VMs using AssignTask",
+            "vm_count": len(node_groups),
+            "model_distribution": f"Models distributed across {len(node_groups)} VMs using AssignTask",
             "deployment_commands": ollama_commands,
             "execution_result": execution_result,
             "access_instructions": [
@@ -9639,13 +10313,13 @@ def get_application_deployment_guide(
                 "title": "Validate Infra Configuration",
                 "description": "Review Infra configuration before creation",
                 "tools_to_use": ["review_infra_dynamic_request"],
-                "example": "review_infra_dynamic_request(ns_id='my-app-ns', name='my-app-infra', vm_configurations=vm_configs)"
+                "example": "review_infra_dynamic_request(ns_id='my-app-ns', name='my-app-infra', node_groups=vm_configs)"
             },
             "step_4_infra_creation": {
                 "title": "Create Infra Infrastructure",
                 "description": "Create the multi-cloud infrastructure",
                 "tools_to_use": ["create_infra_dynamic"],
-                "example": "create_infra_dynamic(ns_id='my-app-ns', name='my-app-infra', vm_configurations=vm_configs)"
+                "example": "create_infra_dynamic(ns_id='my-app-ns', name='my-app-infra', node_groups=vm_configs)"
             },
             "step_5_application_deployment": {
                 "title": "Deploy Application",
@@ -10018,7 +10692,7 @@ def _provision_application_infrastructure(
             }
         
         # Create VM configurations for each region
-        vm_configurations = []
+        node_groups = []
         available_specs = vm_specs_result.get("summarized_specs", [])
         available_images = images_result.get("image_list", [])
         
@@ -10045,9 +10719,9 @@ def _provision_application_infrastructure(
                 "rootDiskType": "default"
             }
             
-            vm_configurations.append(vm_config)
+            node_groups.append(vm_config)
         
-        if not vm_configurations:
+        if not node_groups:
             return {
                 "status": "error",
                 "error": "No suitable VM configurations found for target regions"
@@ -10057,7 +10731,7 @@ def _provision_application_infrastructure(
         infra_result = create_infra_dynamic(
             ns_id=namespace_id,
             name=infra_name,
-            vm_configurations=vm_configurations,
+            node_groups=node_groups,
             description=f"Infrastructure for {deployment_plan['application_config']['name']}",
         )
         
@@ -10065,8 +10739,8 @@ def _provision_application_infrastructure(
             "status": "success",
             "infra_id": infra_name,
             "infra_result": infra_result,
-            "vm_configurations": vm_configurations,
-            "total_vms": sum(int(vm["nodeGroupSize"]) for vm in vm_configurations)
+            "node_groups": node_groups,
+            "total_vms": sum(int(vm["nodeGroupSize"]) for vm in node_groups)
         }
         
     except Exception as e:
@@ -10753,7 +11427,7 @@ def _provision_compute_infrastructure(namespace: str, task_analysis: Dict, workf
             for image_attempt, image in enumerate(image_list):
                 try:
                     # Create Infra configuration
-                    vm_configurations = [{
+                    node_groups = [{
                         "specId": spec_id,
                         "imageId": image.get("cspImageName"),
                         "name": f"compute-vm-{workflow_id}",
@@ -10765,7 +11439,7 @@ def _provision_compute_infrastructure(namespace: str, task_analysis: Dict, workf
                     infra_result = create_infra_dynamic(
                         ns_id=namespace,
                         name=f"compute-infra-{workflow_id}-attempt{attempt+1}",
-                        vm_configurations=vm_configurations,
+                        node_groups=node_groups,
                         description=f"Compute infrastructure for task: {workflow_id} (Attempt {attempt+1})",
                         skip_confirmation=True  # Skip confirmation for automated workflow
                     )
@@ -11381,7 +12055,7 @@ specs = recommend_vm_spec(
 )
 
 # 1.2: Search and select images for each spec
-vm_configurations = []
+node_groups = []
 for i, spec in enumerate(specs["summarized_specs"][:2]):
     spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
     
@@ -11409,7 +12083,7 @@ for i, spec in enumerate(specs["summarized_specs"][:2]):
             raise Exception(f"No compatible images found for spec {spec_id}")
     
     # 1.2.3: Create VM configuration with required imageId
-    vm_configurations.append({
+    node_groups.append({
         "specId": spec_id,                    # MUST use exact ID from API
         "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
         "name": f"vm-{spec['providerName']}-{i+1}",
@@ -11420,7 +12094,7 @@ for i, spec in enumerate(specs["summarized_specs"][:2]):
 review_result = review_infra_dynamic_request(
     ns_id="default",
     name="my-infrastructure",
-    vm_configurations=vm_configurations
+    node_groups=node_groups
 )
 ```
 
@@ -11437,7 +12111,7 @@ elif review_result.get("overallStatus") == "Warning":
 elif review_result.get("overallStatus") == "Error":
     print("❌ Errors detected - Must fix before proceeding") 
     creation_viable = False
-    # Fix issues in vm_configurations and re-run review
+    # Fix issues in node_groups and re-run review
 
 # 2.2: Review cost estimates
 print(f"💰 Estimated cost: {review_result.get('estimatedCost')}")
@@ -11451,7 +12125,7 @@ if creation_viable:
     infra_result = create_infra_dynamic(
         ns_id="default",
         name="my-infrastructure",
-        vm_configurations=vm_configurations,  # Already includes specId + imageId
+        node_groups=node_groups,  # Already includes specId + imageId
         force_create=True  # 🚨 REQUIRED after review
     )
     print(f"✅ Infra created: {infra_result.get('id')}")
@@ -11464,7 +12138,7 @@ else:
 ### ❌ NEVER Do This:
 ```python
 # DON'T: Skip review step
-create_infra_dynamic(ns_id="default", name="test", vm_configurations=[...])
+create_infra_dynamic(ns_id="default", name="test", node_groups=[...])
 # This will return an error requiring review first
 
 # DON'T: Create spec IDs manually
@@ -11512,9 +12186,9 @@ for spec in specs["summarized_specs"]:
         "name": f"vm-{spec['providerName']}-1"
     })
 
-review = review_infra_dynamic_request(ns_id="default", name="test", vm_configurations=vm_configs)
+review = review_infra_dynamic_request(ns_id="default", name="test", node_groups=vm_configs)
 if review["overallStatus"] == "Ready":
-    create_infra_dynamic(ns_id="default", name="test", vm_configurations=vm_configs, force_create=True)
+    create_infra_dynamic(ns_id="default", name="test", node_groups=vm_configs, force_create=True)
 
 # DO: Always include imageId in VM configurations
 vm_config = {
@@ -11623,7 +12297,7 @@ This workflow prevents expensive deployment failures and ensures reliable infras
 review_result = review_infra_dynamic_request(
     ns_id="default",
     name="user-requested-infra",
-    vm_configurations=vm_configurations
+    node_groups=node_groups
 )
 
 # ❌ WRONG: Never call create_infra_dynamic directly
@@ -11980,7 +12654,7 @@ specs = recommend_vm_spec(
 
 #### Step 4: 🔧 Build VM Configurations
 ```python
-vm_configurations = [{
+node_groups = [{
     "specId": spec["id"],
     "name": f"vm-{app_name}-1",
     "description": f"VM for {app_name}",
@@ -11990,12 +12664,12 @@ vm_configurations = [{
 
 #### Step 5: ✅ Validate Configuration (MANDATORY)
 ```python
-review = review_infra_dynamic_request(ns_id, name, vm_configurations)
+review = review_infra_dynamic_request(ns_id, name, node_groups)
 ```
 
 #### Step 6: 🚀 Create Infrastructure
 ```python
-infra = create_infra_dynamic(ns_id, name, vm_configurations, force_create=True)
+infra = create_infra_dynamic(ns_id, name, node_groups, force_create=True)
 ```
 
 #### Step 7: 📦 Install Application
@@ -12180,7 +12854,7 @@ Error: "rollback completed successfully after errors in resource preparation"
 2. **Simplify Configuration:**
    ```python
    # Reduce VM count or specs
-   vm_configurations = [{
+   node_groups = [{
        "specId": "smaller_spec_id",  # Use smaller instance
        "nodeGroupSize": 1               # Start with single VM
    }]
@@ -12189,7 +12863,7 @@ Error: "rollback completed successfully after errors in resource preparation"
 3. **Validate Before Retry:**
    ```python
    # Always validate before retrying
-   review = review_infra_dynamic_request(ns_id, name, vm_configurations)
+   review = review_infra_dynamic_request(ns_id, name, node_groups)
    ```
 
 #### 2. **Timeout Errors (10+ minute operations)**
@@ -12217,7 +12891,7 @@ Error: "Request timeout - operation took longer than 10 minutes"
 2. **Retry with Simpler Configuration:**
    ```python
    # Start with single region/provider
-   vm_configurations = [{
+   node_groups = [{
        "specId": single_region_spec,
        "nodeGroupSize": 1
    }]
@@ -12262,7 +12936,7 @@ Error: "Infra configuration validation failed"
 **✅ LLM Recovery Actions:**
 1. **Analyze Validation Results:**
    ```python
-   review = review_infra_dynamic_request(ns_id, name, vm_configurations)
+   review = review_infra_dynamic_request(ns_id, name, node_groups)
    
    # Check each VM's validation status
    for vm in review.get("vm_validations", []):
@@ -12331,9 +13005,9 @@ specs = recommend_vm_spec(
 ### Step 4: Build VM Configuration
 ```python
 # Create VM configurations using recommended specs
-vm_configurations = []
+node_groups = []
 for i, spec in enumerate(specs["summarized_specs"][:2]):
-    vm_configurations.append({
+    node_groups.append({
         "specId": spec["id"],  # Use exact spec ID from API
         "name": f"app-vm-{i+1}",
         "description": f"VM for {application_name} in {spec['regionName']}",
@@ -12348,7 +13022,7 @@ for i, spec in enumerate(specs["summarized_specs"][:2]):
 review_result = review_infra_dynamic_request(
     ns_id="my-app",
     name="my-app-infra",
-    vm_configurations=vm_configurations
+    node_groups=node_groups
 )
 
 # Check validation results
@@ -12365,7 +13039,7 @@ else:
 infra_result = create_infra_dynamic(
     ns_id="my-app",
     name="my-app-infra",
-    vm_configurations=vm_configurations,
+    node_groups=node_groups,
     description="Infrastructure for my application",
     force_create=True  # Skip confirmation since we validated
 )
@@ -12731,7 +13405,7 @@ for region in regions:
     create_infra_dynamic(
         ns_id="global-app",
         name=f"app-{region.split('+')[0]}",
-        vm_configurations=[{
+        node_groups=[{
             "imageId": selected_image,
             "specId": f"{region}+standard-instance",
             "nodeGroupSize": 3
@@ -12995,9 +13669,9 @@ specs = recommend_vm_spec(
 )
 
 # STEP 2: Build VM configurations using ONLY returned spec IDs
-vm_configurations = []
+node_groups = []
 for i, spec in enumerate(specs["summarized_specs"][:2]):
-    vm_configurations.append({
+    node_groups.append({
         "specId": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
         "name": f"vm-{spec['providerName']}-{i+1}",
         "description": f"VM in {spec['regionName']}",
@@ -13009,7 +13683,7 @@ for i, spec in enumerate(specs["summarized_specs"][:2]):
 review_result = review_infra_dynamic_request(
     ns_id="my-project",
     name="web-app-cluster", 
-    vm_configurations=vm_configurations,
+    node_groups=node_groups,
     description="Production web application cluster"
 )
 
@@ -13023,7 +13697,7 @@ if review_result.get("summary", {}).get("validationPassed", False):
     infra_result = create_infra_dynamic(
         ns_id="my-project",
         name="web-app-cluster",
-        vm_configurations=vm_configurations,
+        node_groups=node_groups,
         force_create=True  # Skip confirmation since we already reviewed
     )
     
@@ -13085,7 +13759,7 @@ else:
 
 **Example Usage Pattern:**
 - Call recommend_vm_spec() with your requirements
-- Use returned spec["id"] values in vm_configurations
+- Use returned spec["id"] values in node_groups
 - Run review_infra_dynamic_request() to validate
 - Check validation_passed status before proceeding
 - Use create_infra_dynamic() with validated configurations
@@ -13459,7 +14133,7 @@ review = review_nodegroup_dynamic(
     infra_id="my-infra",
     spec_id="aws+ap-northeast-2+t3.medium",
     image_id="ami-0c02fb55956c7d316",
-    sub_group_size=3,
+    node_group_size=3,
     name="worker-nodes"
 )
 
@@ -13470,7 +14144,7 @@ if review.get("isValid") or review.get("canCreate"):
         infra_id="my-infra",
         spec_id="aws+ap-northeast-2+t3.medium",
         image_id="ami-0c02fb55956c7d316",
-        sub_group_size=3,
+        node_group_size=3,
         name="worker-nodes",
         description="Worker nodes for batch processing"
     )

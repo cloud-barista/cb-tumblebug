@@ -526,6 +526,62 @@ func RestGetCloudInfo(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestRegisterCspDefinition godoc
+// @ID RegisterCspDefinition
+// @Summary Register a CSP definition at runtime
+// @Description Add (or replace) a cloud provider definition without editing assets/cloudinfo.yaml or restarting the server, then register it with CB-Spider.
+// @Description
+// @Description This exists for clouds that come into being while CB-Tumblebug is running - most obviously an OpenStack that CB-Tumblebug itself deployed onto a VM it created. The definition is persisted, so it survives a restart.
+// @Description
+// @Description Use `cloudPlatform` to name the base platform when this is an instance of one (ex: an OpenStack named `openstack-site01` sets cloudPlatform to `openstack`); CB-Spider selects its driver from that. Registering credentials is a separate, subsequent call to POST /credential.
+// @Tags [Admin] Multi-Cloud Information
+// @Accept  json
+// @Produce  json
+// @Param providerName path string true "Provider name to register" default(openstack-site01)
+// @Param cspDetail body model.CSPDetail true "CSP definition (driver, cloudPlatform, regions with zones)"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /cloudInfo/{providerName} [post]
+func RestRegisterCspDefinition(c echo.Context) error {
+
+	providerName := c.Param("providerName")
+
+	cspDetail := &model.CSPDetail{}
+	if err := c.Bind(cspDetail); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	err := common.RegisterCspDefinition(providerName, *cspDetail, true)
+	content := map[string]string{
+		"message": "Registered the CSP definition. Register its credential next: POST /tumblebug/credential",
+	}
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestUnregisterCspDefinition godoc
+// @ID UnregisterCspDefinition
+// @Summary Remove a runtime-registered CSP definition
+// @Description Remove a CSP definition that was registered at runtime. Providers loaded from assets/cloudinfo.yaml cannot be removed this way - they would return on the next restart; edit the file instead.
+// @Tags [Admin] Multi-Cloud Information
+// @Accept  json
+// @Produce  json
+// @Param providerName path string true "Provider name to remove" default(openstack-site01)
+// @Success 200 {object} model.SimpleMsg
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /cloudInfo/{providerName} [delete]
+func RestUnregisterCspDefinition(c echo.Context) error {
+
+	providerName := c.Param("providerName")
+
+	err := common.UnregisterCspDefinition(providerName)
+	content := map[string]string{"message": "Removed the runtime-registered CSP definition"}
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 // RestGetK8sClusterInfo func is a rest api wrapper for K8sClusterAssetInfo
 // RestGetK8sClusterInfo godoc
 // @ID GetK8sClusterInfo
