@@ -776,7 +776,7 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 					nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
 				}
 
-				_, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
+				userName, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					nodeAccessInfo.PrivateKey = ""
@@ -785,7 +785,7 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 					if strings.EqualFold(option, "showSshKey") {
 						nodeAccessInfo.PrivateKey = privateKey
 					}
-					nodeAccessInfo.NodeUserName = verifiedUserName
+					nodeAccessInfo.NodeUserName = ResolveSshUserName(verifiedUserName, userName)
 				}
 
 				//nodeAccessInfo.NodeUserPassword
@@ -852,7 +852,7 @@ func GetInfraNodeAccessInfo(nsId string, infraId string, nodeId string, option s
 		nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
 	}
 
-	_, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
+	userName, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
 	if err != nil {
 		log.Info().Err(err).Msg("")
 		return output, err
@@ -860,7 +860,7 @@ func GetInfraNodeAccessInfo(nsId string, infraId string, nodeId string, option s
 		if strings.EqualFold(option, "showSshKey") {
 			nodeAccessInfo.PrivateKey = privateKey
 		}
-		nodeAccessInfo.NodeUserName = verifiedUserName
+		nodeAccessInfo.NodeUserName = ResolveSshUserName(verifiedUserName, userName)
 	}
 
 	output = nodeAccessInfo

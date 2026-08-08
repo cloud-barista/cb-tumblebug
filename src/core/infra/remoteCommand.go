@@ -3475,6 +3475,21 @@ func GetUsableBastionNodes(nsId string, infraId string, targetNodeId string) ([]
 //     bastion always works — it costs at most one extra hop when the target was
 //     directly reachable anyway — whereas a self-entry fails outright when it was
 //     not. For un-annotated legacy data the safe choice is the correct one.
+// ResolveSshUserName picks the SSH account for a node from what the SSH key resource
+// carries, falling back to the platform default. It is the same order VerifySshUserName
+// applies when it actually connects, so reported access info matches how commands are
+// really delivered. VerifiedUsername is currently never written (the verification step
+// is disabled), which is why the fallback carries the common case.
+func ResolveSshUserName(verifiedUserName, userName string) string {
+	if verifiedUserName != "" {
+		return verifiedUserName
+	}
+	if userName != "" {
+		return userName
+	}
+	return model.SshDefaultUserName[0] // cb-user
+}
+
 // isSameBastion reports whether a stored entry names the given bastion. A legacy entry
 // with an empty NsId predates cross-namespace support and implicitly belongs to the
 // target's namespace, so defaultNsId stands in for it.
