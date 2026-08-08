@@ -52,6 +52,14 @@ openbao:
   storage: 1Gi
   storageClassName: ""
 
+# Overlay files under /app/assets from a ConfigMap instead of the copy baked into the
+# image, so editing e.g. assets/cloudinfo.yaml to register a new CSP does not require
+# an image rebuild. Compose gets this for free via its ./assets/ bind mount.
+# Managed by `make k-assets` / `make k-assets-off`; `files` empty means "use the image".
+assetsOverride:
+  configMapName: cb-tumblebug-assets
+  files: []
+
 tumblebug:
   # K8s-recommended settings (compose keeps its own defaults)
   logWriter: stdout

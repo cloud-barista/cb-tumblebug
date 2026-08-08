@@ -74,7 +74,22 @@ type BastionNode struct {
 	NsId    string `json:"nsId,omitempty"`
 	InfraId string `json:"infraId"`
 	NodeId  string `json:"nodeId"`
+
+	// Assigned records who registered this bastion: BastionAssignedManual when an
+	// operator named it, BastionAssignedAuto when the system picked any Running VM
+	// with a public IP. The distinction matters when both kinds are registered for
+	// one subnet: naming a bastion asserts the target is NOT directly reachable,
+	// while an auto entry only asserts "some VM here has a public IP". Empty means
+	// the entry predates this field (see pickBastion for how that is handled).
+	Assigned string `json:"assigned,omitempty" example:"manual" enums:"manual,auto"`
 }
+
+const (
+	// BastionAssignedManual marks a bastion an operator registered explicitly.
+	BastionAssignedManual = "manual"
+	// BastionAssignedAuto marks a bastion the system chose on its own.
+	BastionAssignedAuto = "auto"
+)
 
 // VNetDesignRequest is a struct to handle the utility function, DesignVNet()
 type VNetDesignRequest struct {

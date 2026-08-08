@@ -9,6 +9,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from getpass import getpass
+from urllib.parse import quote
 
 import requests
 import yaml
@@ -32,6 +33,8 @@ Examples:
   %(prog)s --load-assets-only                 # Load assets (specs and images) only
   %(prog)s --fetch-price-only                 # Fetch price information only
   %(prog)s --load-templates-only              # Load template files only
+  %(prog)s -y --providers openstack-dev01     # Fetch specs/images for one CSP only (minutes)
+  %(prog)s -y --providers aws,gcp             # Fetch specs/images for a few CSPs
   %(prog)s --credentials --load-assets        # Register credentials and load assets
   %(prog)s -y --credentials --fetch-price     # Register credentials and fetch price (no confirmation)
   %(prog)s --key-file /path/to/keyfile        # Use key file for decryption
@@ -72,6 +75,16 @@ parser.add_argument(
     default=None,
     help="Path to decryption key file (default: ~/.cloud-barista/.tmp_enc_key, then prompt)",
 )
+parser.add_argument(
+    "--providers",
+    type=str,
+    default=None,
+    metavar="LIST",
+    help="Comma-separated providers to fetch specs/images for (ex: aws,gcp). "
+    "Names are the ones from GET /provider, so a single registered CSP can be targeted. "
+    "Fetching one provider takes minutes instead of the 10-40 minutes a full run needs. "
+    "Skips the backup prompt and the price step.",
+)
 args = parser.parse_args()
 
 # Determine which operations to run
@@ -81,6 +94,15 @@ run_credentials = run_all or args.credentials_only
 run_load_assets = run_all or args.load_assets_only
 run_fetch_price = run_all or args.fetch_price_only
 run_load_templates = run_all or args.load_templates_only
+
+# Providers to fetch specs/images for. Empty means every provider.
+target_providers = [p.strip() for p in (args.providers or "").split(",") if p.strip()]
+if target_providers:
+    # A targeted fetch is for topping up one or two CSPs, so restoring the full backup
+    # would undo the point, and pricing is a whole-system pass that is not worth
+    # 10 minutes here (private clouds have no price data at all).
+    run_fetch_price = args.fetch_price_only
+    run_load_assets = True
 
 # Initialize colorama
 init(autoreset=True)
@@ -226,8 +248,53 @@ if backup_available:
         backup_mtime = os.path.getmtime(backup_db_path)
         backup_age_days = int((time.time() - backup_mtime) / 86400)
 
+def prompt_for_providers():
+    """Ask which providers to fetch, listing the ones actually registered.
+
+    Returns a list of provider names, or [] if the user backs out.
+    """
+    try:
+        resp = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/provider", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        body = resp.json()
+        providers = sorted(body.get("providers") or body.get("output") or body)
+    except Exception as e:
+        print(Fore.RED + f"Could not list providers from the server: {e}")
+        print(Fore.WHITE + "Enter names manually, comma-separated (or leave empty to cancel).")
+        providers = []
+
+    if providers:
+        print("")
+        print(Fore.CYAN + "Registered providers:")
+        for i, p in enumerate(providers, 1):
+            print(Fore.WHITE + f"  {i:2}. {p}")
+        print("")
+        raw = input(Fore.CYAN + "Numbers or names (comma-separated): " + Fore.RESET)
+    else:
+        raw = input(Fore.CYAN + "Provider names (comma-separated): " + Fore.RESET)
+
+    selected = []
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        if token.isdigit() and providers:
+            idx = int(token)
+            if 1 <= idx <= len(providers):
+                selected.append(providers[idx - 1])
+            else:
+                print(Fore.RED + f"  Ignoring out-of-range number: {idx}")
+        else:
+            selected.append(token)
+    return selected
+
+
 # Ask for backup choice BEFORE showing operations summary
-if run_load_assets and backup_available and not args.yes:
+if run_load_assets and target_providers:
+    # Provider list came from --providers; nothing to ask.
+    use_backup = False
+    include_azure = False
+elif run_load_assets and backup_available and not args.yes:
     print(Fore.CYAN + "=" * 80)
     print(Fore.CYAN + "🚀 Choose Initialization Method")
     print(Fore.CYAN + "=" * 80)
@@ -254,9 +321,14 @@ if run_load_assets and backup_available and not args.yes:
     print(Fore.WHITE + "     → Fetches from ALL cloud providers including Azure")
     print(Fore.YELLOW + "     ⚠️  Warning: Azure image fetch is very slow and may take 40+ minutes")
     print("")
+    print(Fore.CYAN + "  d. 🎯 Fetch from SELECTED CSPs only (~minutes)")
+    print(Fore.WHITE + "     → Pick from the providers registered on this server")
+    print(Fore.WHITE + "     → Use after registering a new CSP; leaves existing data untouched")
+    print(Fore.WHITE + "     → Step 3 (pricing) is skipped")
+    print("")
 
     while True:
-        choice = input(Fore.CYAN + "Select option (a/a+/b/c): " + Fore.RESET).lower()
+        choice = input(Fore.CYAN + "Select option (a/a+/b/c/d): " + Fore.RESET).lower()
         if choice in ["a"]:
             use_backup = True
             patch_after_restore = False
@@ -275,8 +347,19 @@ if run_load_assets and backup_available and not args.yes:
             use_backup = False
             include_azure = True
             break
+        elif choice in ["d"]:
+            selected = prompt_for_providers()
+            if not selected:
+                print(Fore.RED + "No provider selected. Choose again.")
+                continue
+            target_providers = selected
+            use_backup = False
+            include_azure = False
+            run_fetch_price = args.fetch_price_only
+            print(Fore.GREEN + f"\nSelected providers: {', '.join(target_providers)}")
+            break
         else:
-            print(Fore.RED + "Invalid input. Please enter 'a', 'a+', 'b', or 'c'.")
+            print(Fore.RED + "Invalid input. Please enter 'a', 'a+', 'b', 'c', or 'd'.")
     print("")
 elif run_load_assets and backup_available and args.yes:
     # Auto-yes mode: use backup by default
@@ -312,6 +395,8 @@ if run_load_assets:
         operations.append(f"Load assets from backup ({backup_size_mb:.1f} MB - includes specs, images, pricing)")
         if patch_after_restore:
             operations.append("Patch images from cloudimage.csv (POST /tumblebug/updateImagesFromAsset)")
+    elif target_providers:
+        operations.append(f"Load assets (fetch from {', '.join(target_providers)} only)")
     else:
         operations.append("Load assets (fetch from CSPs)")
 if run_fetch_price and not use_backup:
@@ -880,7 +965,11 @@ if run_load_assets:
     # If not using backup or backup failed, proceed with standard initialization
     if not use_backup and run_load_assets:
         # Adjust estimated time based on Azure inclusion
-        if include_azure:
+        if target_providers:
+            expected_completion_time_seconds = 300  # a handful of providers
+            print(Fore.YELLOW + f"\nLoading common Specs and Images from: {', '.join(target_providers)}")
+            print(Fore.CYAN + "Other providers keep the data they already have.")
+        elif include_azure:
             expected_completion_time_seconds = 2400  # 40 minutes for Azure
             print(Fore.YELLOW + "\nLoading common Specs and Images from ALL CSPs including Azure...")
             print(Fore.MAGENTA + "⚠️  This may take 40+ minutes due to Azure image fetch")
@@ -893,9 +982,12 @@ if run_load_assets:
     def load_resources():
         global response_json
         try:
-            # Build URL with includeAzure parameter
+            # Build URL. providers takes precedence server-side: naming the providers
+            # already says what to fetch, so includeAzure no longer applies.
             url = f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets"
-            if include_azure:
+            if target_providers:
+                url += "?providers=" + quote(",".join(target_providers))
+            elif include_azure:
                 url += "?includeAzure=true"
 
             response = requests.get(url, headers=HEADERS)
