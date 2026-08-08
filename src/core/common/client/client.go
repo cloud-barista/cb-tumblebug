@@ -114,6 +114,9 @@ const (
 	LongDuration = 10 * time.Second
 	// VeryLongDuration is a duration for very long-term cache
 	VeryLongDuration = 300 * time.Second
+	// AccessInfoDuration outlives a slow CSP round trip, so the shorter durations
+	// (which can expire before the call they cache even returns) do not apply here.
+	AccessInfoDuration = 60 * time.Second
 
 	// AvailabilityCheckTimeout is the per-request HTTP timeout for probing
 	// whether a connection config is reachable via Spider. Sized for the

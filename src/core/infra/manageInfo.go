@@ -719,88 +719,105 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	// TODO: make in parallel
+	// Groups are gathered concurrently; each node in them costs a live CSP round trip.
+	groupResults := make([]model.InfraNodeGroupAccessInfo, len(nodeGroupList))
+	groupErrs := make([]error, len(nodeGroupList))
+	var groupWg sync.WaitGroup
 
-	for _, groupId := range nodeGroupList {
-		nodeGroupAccessInfo := model.InfraNodeGroupAccessInfo{}
-		nodeGroupAccessInfo.NodeGroupId = groupId
-		nlb, err := GetNLB(nsId, infraId, groupId)
-		if err == nil {
-			nodeGroupAccessInfo.NlbListener = &nlb.Listener
-		}
-		nodeList, err := ListNodeByNodeGroup(nsId, infraId, groupId)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return temp, err
-		}
-		var wg sync.WaitGroup
-		chanResults := make(chan model.InfraNodeAccessInfo)
+	for groupIndex, groupId := range nodeGroupList {
+		groupWg.Add(1)
+		go func(groupIndex int, groupId string) {
+			defer groupWg.Done()
 
-		for _, nodeId := range nodeList {
-			// Check if Node is terminated before processing
-			nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
+			nodeGroupAccessInfo := model.InfraNodeGroupAccessInfo{}
+			nodeGroupAccessInfo.NodeGroupId = groupId
+			nlb, err := GetNLB(nsId, infraId, groupId)
+			if err == nil {
+				nodeGroupAccessInfo.NlbListener = &nlb.Listener
+			}
+			nodeList, err := ListNodeByNodeGroup(nsId, infraId, groupId)
 			if err != nil {
-				log.Debug().Err(err).Msgf("Failed to get VM object for %s, skipping", nodeId)
-				continue
+				log.Error().Err(err).Msg("")
+				groupErrs[groupIndex] = err
+				return
 			}
+			var wg sync.WaitGroup
+			chanResults := make(chan model.InfraNodeAccessInfo)
 
-			// Skip terminated Nodes as they don't have meaningful access info
-			if strings.EqualFold(nodeObject.Status, model.StatusTerminated) {
-				log.Debug().Msgf("VM %s is terminated, skipping access info collection", nodeId)
-				continue
-			}
-
-			wg.Add(1)
-			go func(nsId string, infraId string, nodeId string, option string, chanResults chan model.InfraNodeAccessInfo) {
-				defer wg.Done()
-				common.RandomSleep(0, len(nodeList)/2*1000)
-				nodeInfo, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId)
-
-				nodeAccessInfo := model.InfraNodeAccessInfo{}
-				if err != nil {
-					log.Info().Err(err).Msg("")
-					nodeAccessInfo.PublicIP = ""
-					nodeAccessInfo.PrivateIP = ""
-					nodeAccessInfo.SSHPort = 0
-				} else {
-					nodeAccessInfo.PublicIP = nodeInfo.PublicIp
-					nodeAccessInfo.PrivateIP = nodeInfo.PrivateIp
-					nodeAccessInfo.SSHPort = nodeInfo.SSHPort
-				}
-				nodeAccessInfo.NodeId = nodeId
-
+			for _, nodeId := range nodeList {
+				// Check if Node is terminated before processing
 				nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
 				if err != nil {
-					log.Info().Err(err).Msg("")
-				} else {
-					nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
+					log.Debug().Err(err).Msgf("Failed to get VM object for %s, skipping", nodeId)
+					continue
 				}
 
-				userName, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					nodeAccessInfo.PrivateKey = ""
-					nodeAccessInfo.NodeUserName = ""
-				} else {
-					if strings.EqualFold(option, "showSshKey") {
-						nodeAccessInfo.PrivateKey = privateKey
+				// Skip terminated Nodes as they don't have meaningful access info
+				if strings.EqualFold(nodeObject.Status, model.StatusTerminated) {
+					log.Debug().Msgf("VM %s is terminated, skipping access info collection", nodeId)
+					continue
+				}
+
+				wg.Add(1)
+				go func(nsId string, infraId string, nodeId string, option string, chanResults chan model.InfraNodeAccessInfo) {
+					defer wg.Done()
+					common.RandomSleep(0, len(nodeList)/2*1000)
+					nodeInfo, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId)
+
+					nodeAccessInfo := model.InfraNodeAccessInfo{}
+					if err != nil {
+						log.Info().Err(err).Msg("")
+						nodeAccessInfo.PublicIP = ""
+						nodeAccessInfo.PrivateIP = ""
+						nodeAccessInfo.SSHPort = 0
+					} else {
+						nodeAccessInfo.PublicIP = nodeInfo.PublicIp
+						nodeAccessInfo.PrivateIP = nodeInfo.PrivateIp
+						nodeAccessInfo.SSHPort = nodeInfo.SSHPort
 					}
-					nodeAccessInfo.NodeUserName = ResolveSshUserName(verifiedUserName, userName)
-				}
+					nodeAccessInfo.NodeId = nodeId
 
-				//nodeAccessInfo.NodeUserPassword
-				chanResults <- nodeAccessInfo
-			}(nsId, infraId, nodeId, option, chanResults)
-		}
-		go func() {
-			wg.Wait()
-			close(chanResults)
-		}()
-		for result := range chanResults {
-			nodeGroupAccessInfo.NodeAccessInfo = append(nodeGroupAccessInfo.NodeAccessInfo, result)
-		}
+					nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
+					if err != nil {
+						log.Info().Err(err).Msg("")
+					} else {
+						nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
+					}
 
-		output.InfraNodeGroupAccessInfo = append(output.InfraNodeGroupAccessInfo, nodeGroupAccessInfo)
+					userName, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
+					if err != nil {
+						log.Error().Err(err).Msg("")
+						nodeAccessInfo.PrivateKey = ""
+						nodeAccessInfo.NodeUserName = ""
+					} else {
+						if strings.EqualFold(option, "showSshKey") {
+							nodeAccessInfo.PrivateKey = privateKey
+						}
+						nodeAccessInfo.NodeUserName = ResolveSshUserName(verifiedUserName, userName)
+					}
+
+					//nodeAccessInfo.NodeUserPassword
+					chanResults <- nodeAccessInfo
+				}(nsId, infraId, nodeId, option, chanResults)
+			}
+			go func() {
+				wg.Wait()
+				close(chanResults)
+			}()
+			for result := range chanResults {
+				nodeGroupAccessInfo.NodeAccessInfo = append(nodeGroupAccessInfo.NodeAccessInfo, result)
+			}
+
+			groupResults[groupIndex] = nodeGroupAccessInfo
+		}(groupIndex, groupId)
+	}
+	groupWg.Wait()
+
+	for i, groupErr := range groupErrs {
+		if groupErr != nil {
+			return temp, groupErr
+		}
+		output.InfraNodeGroupAccessInfo = append(output.InfraNodeGroupAccessInfo, groupResults[i])
 	}
 
 	return output, nil
@@ -1642,7 +1659,7 @@ func GetNodeCurrentPublicIp(nsId string, infraId string, nodeId string) (model.N
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		clientManager.MediumDuration,
+		clientManager.AccessInfoDuration,
 	)
 
 	if err != nil {
