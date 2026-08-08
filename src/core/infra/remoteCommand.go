@@ -3209,35 +3209,64 @@ func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNs
 				// (they were stored before cross-namespace support was added and implicitly
 				// belong to the target namespace).
 				for _, existingNode := range subnetInfo.BastionNodes {
-					effectiveNsId := existingNode.NsId
-					if effectiveNsId == "" {
-						effectiveNsId = nsId
-					}
-					if effectiveNsId == bastionNsId && existingNode.InfraId == bastionInfraId && existingNode.NodeId == bastionNodeId {
+					if isSameBastion(existingNode, nsId, bastionNsId, bastionInfraId, bastionNodeId) {
+						// The entry is already there, but registering it by hand still carries
+						// intent: it promotes an auto entry to manual and retires the auto
+						// entries it supersedes. Re-registering is how an operator repairs a
+						// subnet whose stored list drifted, so this path cannot be a no-op.
+						changed := false
+						if assignedBy == model.BastionAssignedManual {
+							pruned, dropped := pruneAutoBastions(subnetInfo.BastionNodes)
+							for _, d := range dropped {
+								if isSameBastion(d, nsId, bastionNsId, bastionInfraId, bastionNodeId) {
+									continue // the entry being re-registered; it comes back as manual below
+								}
+								log.Info().Msgf("Removing auto-assigned bastion %s from subnet %s: bastion (NS: %s, Infra: %s, VM: %s) was registered by hand",
+									d.NodeId, subnetInfo.Id, bastionNsId, bastionInfraId, bastionNodeId)
+								changed = true
+							}
+
+							// Drop every copy of this bastion and re-add exactly one, so the
+							// re-registration repairs duplicates rather than adding to them.
+							kept := []model.BastionNode{}
+							for _, k := range pruned {
+								if isSameBastion(k, nsId, bastionNsId, bastionInfraId, bastionNodeId) {
+									continue
+								}
+								kept = append(kept, k)
+							}
+							if len(kept) != len(pruned)-1 || existingNode.Assigned != model.BastionAssignedManual {
+								changed = true // duplicates collapsed, or an auto/legacy entry promoted
+							}
+							kept = append(kept, model.BastionNode{NsId: bastionNsId, InfraId: bastionInfraId, NodeId: bastionNodeId, Assigned: model.BastionAssignedManual})
+							subnetInfo.BastionNodes = kept
+						}
+						if changed {
+							tempVNetInfo.SubnetInfoList[i] = subnetInfo
+							resource.UpdateResourceObject(nsId, model.StrVNet, tempVNetInfo)
+							return fmt.Sprintf("Bastion (NS: %s, Infra: %s, VM: %s) is now the manual bastion for subnet (ID: %s) in VNet (ID: %s); superseded auto-assigned entries were removed.",
+								bastionNsId, bastionInfraId, bastionNodeId, subnetInfo.Id, nodeObj.VNetId), nil
+						}
 						return fmt.Sprintf("Bastion (NS: %s, Infra: %s, VM: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
 							bastionNsId, bastionInfraId, bastionNodeId, subnetInfo.Id, nodeObj.VNetId), nil
 					}
 				}
 			}
 
-			// Registering a real bastion says the target is not directly reachable, so
-			// an auto-assigned entry pointing at the target itself is now wrong, not
-			// merely redundant. Drop it instead of leaving it to be picked later.
-			if assignedBy == model.BastionAssignedManual && bastionNodeId != targetNodeId {
-				kept := subnetInfo.BastionNodes[:0]
-				for _, existing := range subnetInfo.BastionNodes {
-					effNsId := existing.NsId
-					if effNsId == "" {
-						effNsId = nsId
-					}
-					isAutoSelf := existing.Assigned != model.BastionAssignedManual &&
-						effNsId == nsId && existing.InfraId == infraId && existing.NodeId == targetNodeId
-					if isAutoSelf {
-						log.Info().Msgf("Removing auto-assigned self-bastion %s for VM %s: bastion (NS: %s, Infra: %s, VM: %s) was registered instead",
-							existing.NodeId, targetNodeId, bastionNsId, bastionInfraId, bastionNodeId)
-						continue
-					}
-					kept = append(kept, existing)
+			// Registering a bastion by hand answers the question auto-assignment was
+			// guessing at, so every auto entry in this subnet is now obsolete. They are
+			// already inert - pickBastion prefers manual entries - but leaving them makes
+			// the stored list, and anything drawn from it, disagree with how commands
+			// actually route.
+			//
+			// Only entries explicitly marked auto are dropped. An entry predating the
+			// Assigned field may well have been an operator's choice, and losing that
+			// silently would be worse than leaving a redundant one behind.
+			if assignedBy == model.BastionAssignedManual {
+				kept, dropped := pruneAutoBastions(subnetInfo.BastionNodes)
+				for _, d := range dropped {
+					log.Info().Msgf("Removing auto-assigned bastion %s from subnet %s: bastion (NS: %s, Infra: %s, VM: %s) was registered by hand",
+						d.NodeId, subnetInfo.Id, bastionNsId, bastionInfraId, bastionNodeId)
 				}
 				subnetInfo.BastionNodes = kept
 			}
@@ -3446,6 +3475,35 @@ func GetUsableBastionNodes(nsId string, infraId string, targetNodeId string) ([]
 //     bastion always works — it costs at most one extra hop when the target was
 //     directly reachable anyway — whereas a self-entry fails outright when it was
 //     not. For un-annotated legacy data the safe choice is the correct one.
+// isSameBastion reports whether a stored entry names the given bastion. A legacy entry
+// with an empty NsId predates cross-namespace support and implicitly belongs to the
+// target's namespace, so defaultNsId stands in for it.
+func isSameBastion(entry model.BastionNode, defaultNsId, nsId, infraId, nodeId string) bool {
+	entryNsId := entry.NsId
+	if entryNsId == "" {
+		entryNsId = defaultNsId
+	}
+	return entryNsId == nsId && entry.InfraId == infraId && entry.NodeId == nodeId
+}
+
+// pruneAutoBastions removes the auto-assigned entries from a subnet's bastion list,
+// returning the entries to keep and the ones dropped. It is applied when an operator
+// registers a bastion by hand: pickBastion would ignore the auto entries from then on,
+// so keeping them only lets the stored list contradict how commands actually route.
+//
+// Entries predating the Assigned field are kept. One of those may itself have been an
+// operator's choice, and discarding it silently is worse than a redundant entry.
+func pruneAutoBastions(bastions []model.BastionNode) (kept []model.BastionNode, dropped []model.BastionNode) {
+	for _, b := range bastions {
+		if b.Assigned == model.BastionAssignedAuto {
+			dropped = append(dropped, b)
+			continue
+		}
+		kept = append(kept, b)
+	}
+	return kept, dropped
+}
+
 func pickBastion(bastions []model.BastionNode, nsId string, infraId string, targetNodeId string) model.BastionNode {
 	isSelf := func(b model.BastionNode) bool {
 		bNsId := b.NsId
