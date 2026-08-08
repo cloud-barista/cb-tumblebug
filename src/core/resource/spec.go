@@ -3038,10 +3038,42 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 					// since values are typically standardized (GPU, TPU, etc.)
 				}
 
+				// Fields matched by AND-ed substrings: every whitespace/comma separated token
+				// must appear somewhere in the value. A spec id is a compound of provider,
+				// region and CSP name (e.g. "aws+eu-south-1+m5.metal"), so callers reach for
+				// fragments of it rather than the whole string - "metal 5" should find
+				// m5.metal without the caller reconstructing the full id.
+				//
+				// This does not cost an index: the surrounding LOWER() already prevents the
+				// btree on (id, namespace) from being used, so exact match was scanning the
+				// table too. Measured on 73k specs: LOWER(id) = ? took 211 ms, two AND-ed
+				// LIKEs took 31 ms (fewer rows survive to be materialised).
+				tokenSubstringFields := []string{
+					"Id",          // e.g. "metal 5" -> aws+eu-south-1+m5.metal
+					"CspSpecName", // e.g. "metal" -> m5.metal, m6i.metal, ...
+				}
+
 				// Check if current field requires LIKE search
 				useLikeSearch := slices.Contains(likeSearchFields, modelFieldName)
 
-				if useLikeSearch {
+				if slices.Contains(tokenSubstringFields, modelFieldName) {
+					// Every token must match; an empty token list means no filter at all.
+					tokens := strings.FieldsFunc(cleanValue, func(c rune) bool {
+						return c == ',' || c == ' '
+					})
+					matched := 0
+					for _, token := range tokens {
+						token = strings.TrimSpace(token)
+						if token == "" {
+							continue
+						}
+						query = query.Where("LOWER("+dbFieldName+") LIKE ?", "%"+token+"%")
+						matched++
+					}
+					if matched > 0 {
+						log.Info().Msgf("Filtering by %s (SUBSTRING AND): %v", dbFieldName, tokens)
+					}
+				} else if useLikeSearch {
 					// For LIKE search, use the original single value (don't support multiple values for LIKE)
 					query = query.Where("LOWER("+dbFieldName+") LIKE ?", "%"+cleanValue+"%")
 					log.Info().Msgf("Filtering by %s (LIKE): %s", dbFieldName, cleanValue)

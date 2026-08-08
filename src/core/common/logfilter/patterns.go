@@ -105,6 +105,7 @@ var APISkipPatterns = []SkipRule{
 	{Method: "GET", Patterns: []string{"/resources/sshKey"}},
 	{Method: "GET", Patterns: []string{"/resources/customImage"}},
 	{Method: "GET", Patterns: []string{"/resources/dataDisk"}},
+	{Method: "GET", Patterns: []string{"/resources/nlb"}},
 }
 
 // ==============================================================================
