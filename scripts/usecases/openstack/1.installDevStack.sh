@@ -30,8 +30,16 @@ export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 export NEEDRESTART_SUSPEND=1
 
+# Auto-restart services after package upgrades, but never sshd: this script runs
+# inside an SSH session, and restarting ssh.service kills it mid-install.
 if [ -d /etc/needrestart/conf.d ]; then
-    echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/99-autorestart.conf > /dev/null 2>&1 || true
+    sudo tee /etc/needrestart/conf.d/99-autorestart.conf > /dev/null 2>&1 << 'NRCONF' || true
+$nrconf{restart} = 'a';
+$nrconf{override_rc} = {
+    qr(^ssh\.service$)  => 0,
+    qr(^sshd\.service$) => 0,
+};
+NRCONF
 fi
 
 # ============================================================
@@ -64,6 +72,46 @@ echo " CSP Name       : $CSP_NAME"
 echo " Admin Password : $ADMIN_PASSWORD"
 echo " Branch         : $OPENSTACK_BRANCH"
 echo "============================================================"
+
+# ============================================================
+# Run state - make this script safe to re-run
+# ============================================================
+# The caller (CB-Tumblebug remote command) re-runs the whole command when the SSH
+# transport drops. On a 20-40 minute install that lands on top of a run which is
+# still going, or has already finished, and a second stack.sh wrecks the first one.
+# These markers make a repeat invocation attach to the running install, or skip
+# straight to reporting, instead of starting a rival stack.sh.
+RUN_LOG=/opt/stack/stack.run.log
+RUN_EXIT=/opt/stack/stack.run.exit
+RUN_PID=/opt/stack/stack.run.pid
+DONE_MARKER=/opt/stack/stack.run.done
+
+stack_is_running() {
+    local pid
+    pid=$(sudo cat "$RUN_PID" 2>/dev/null) || return 1
+    [ -n "$pid" ] || return 1
+    # Match on the command line too: a bare kill -0 would be fooled by pid reuse
+    # after a reboot, and then we would wait forever on an unrelated process.
+    sudo ps -p "$pid" -o args= 2>/dev/null | grep -q 'run-stack\.sh'
+}
+
+RUN_MODE=install
+if sudo test -f "$DONE_MARKER" 2>/dev/null; then
+    RUN_MODE=report
+elif stack_is_running; then
+    RUN_MODE=attach
+fi
+
+# Host addresses are needed by every mode (local.conf, endpoint rewrite, output).
+HOST_IP=$(hostname -I | awk '{print $1}')
+PUBLIC_IP=$(curl -s --connect-timeout 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || \
+            curl -s --connect-timeout 5 https://api.ipify.org 2>/dev/null || \
+            echo "$HOST_IP")
+
+case "$RUN_MODE" in
+    report) echo " This host already has a completed DevStack install; reporting only." ;;
+    attach) echo " A stack.sh run is already in progress (pid $(sudo cat "$RUN_PID")); attaching to it." ;;
+esac
 
 # ============================================================
 # Wait for apt locks (in case cloud-init is still running)
@@ -103,6 +151,12 @@ retry() {
     echo "ERROR: Command failed after $max_attempts attempts: $*"
     return 1
 }
+
+# ============================================================
+# Steps [Pre-flight] through [4/5] only apply to a fresh install. In attach/report
+# mode the host is already prepared, so they are skipped (see "Run state" above).
+# ============================================================
+if [ "$RUN_MODE" = "install" ]; then
 
 # ============================================================
 # Pre-flight checks
@@ -148,9 +202,16 @@ echo "  All pre-flight checks passed."
 echo ""
 echo "[1/5] Updating system packages..."
 retry sudo apt-get update -qq
+
+# Hold the OpenSSH packages across the upgrade. Their postinst restarts ssh.service,
+# which severs the SSH session this script runs in; the caller then sees a transport
+# error and may re-run the whole command on top of a live install.
+SSH_PKGS="openssh-server openssh-client openssh-sftp-server"
+sudo apt-mark hold $SSH_PKGS > /dev/null 2>&1 || true
 retry sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq \
     -o Dpkg::Options::="--force-confdef" \
     -o Dpkg::Options::="--force-confold"
+sudo apt-mark unhold $SSH_PKGS > /dev/null 2>&1 || true
 
 echo "Installing prerequisites..."
 retry sudo apt-get install -y -qq git python3-pip python3-venv net-tools curl jq
@@ -188,68 +249,87 @@ sudo -u stack git config --global http.version HTTP/1.1
 sudo -u stack git config --global http.postBuffer 524288000
 
 # Install a git wrapper at /usr/local/bin/git (takes PATH precedence over /usr/bin/git).
-# This intercepts every 'git clone' call — including those fired by stack.sh's internal
-# git_timed() — and retries on transient TLS/network failures (curl 35, curl 56, exit 128).
-# Non-clone subcommands are passed through to the real git immediately.
-sudo tee /usr/local/bin/git > /dev/null << GITWRAP
+# This intercepts every network-facing git call — including those fired by stack.sh's
+# internal git_timed() — and retries transient failures (curl 35, curl 56, exit 128).
+#
+# Why every network subcommand and not just clone: DevStack's git_clone() always runs
+# 'git fetch origin <ref>' right after cloning, and its git_timed() only retries exit
+# 124 (timeout) — exit 128 goes straight to die(). opendev.org intermittently answers
+# /info/refs with a non-git response ("could not determine hash algorithm; is this a
+# git repository?"), which is exit 128, so a single bad response aborts the install.
+sudo tee /usr/local/bin/git > /dev/null << 'GITWRAP'
 #!/bin/bash
 # Always point to the real git binary, never to this wrapper itself.
 # Using $(which git) would cause infinite recursion on re-runs of this script.
 REAL_GIT="/usr/bin/git"
-if [[ "\$1" == "clone" ]]; then
-    # Identify the destination directory for cleanup on retry.
-    # git clone syntax: git clone [options] <repository> [<directory>]
-    # Strategy: skip 'clone' itself and any option flags with their values,
-    # leaving only positional args (repository and optional directory).
-    # The last positional arg is <directory> if given; otherwise derive it
-    # from the repository basename (strip .git suffix).
-    # Safety: only remove the directory if it contains a .git entry (i.e. it
-    # is actually a partial clone, not an unrelated directory that happens to
-    # share the name).
-    dest_dir=""
-    skip_next=false
-    positional=()
-    for arg in "\$@"; do
-        if \$skip_next; then
-            skip_next=false
-            continue
-        fi
-        case "\$arg" in
-            # Options that consume the next argument as their value
-            -b|--branch|-o|--origin|-u|--upload-pack|--reference|--depth| \
-            --shallow-since|--shallow-exclude|-j|--jobs|--filter|--recurse-submodules)
-                skip_next=true ;;
-            -*) ;;  # other flags, no value consumed
-            *) positional+=("\$arg") ;;
-        esac
-    done
-    # positional[0] = 'clone' (shift it out), positional[1] = repo, positional[2] = dir
-    if [ \${#positional[@]} -ge 3 ]; then
-        dest_dir="\${positional[2]}"
-    elif [ \${#positional[@]} -ge 2 ]; then
-        # Derive from repo URL: strip trailing .git and take basename
-        dest_dir="\$(basename "\${positional[1]}" .git)"
-    fi
 
-    max_attempts=3
-    delay=30
-    for attempt in \$(seq 1 \$max_attempts); do
-        "\$REAL_GIT" "\$@" && exit 0
-        exit_code=\$?
-        if [ \$attempt -lt \$max_attempts ]; then
-            echo "git clone failed (attempt \$attempt/\$max_attempts, exit: \$exit_code). Retrying in \${delay}s..." >&2
-            # Remove partial clone so the next attempt starts clean.
-            # Only remove if it contains .git — guard against accidental deletion
-            # of an unrelated directory that shares the name.
-            if [ -n "\$dest_dir" ] && [ -d "\$dest_dir" ] && [ -e "\$dest_dir/.git" ]; then
-                rm -rf "\$dest_dir"
-            fi
-            sleep \$delay
-        fi
-    done
-    exit \$exit_code
+# Report a timeout to the caller if we are interrupted (DevStack wraps git calls in
+# 'timeout -s SIGINT $GIT_TIMEOUT' and retries exit 124 on its own).
+trap 'exit 124' INT TERM
+
+# Options that consume the next argument as their value; skipped when looking for
+# the subcommand and when locating a clone's destination directory.
+opt_takes_value() {
+    case "$1" in
+        -C|-c|--git-dir|--work-tree|--namespace|--exec-path|\
+        -b|--branch|-o|--origin|-u|--upload-pack|--reference|--depth|\
+        --shallow-since|--shallow-exclude|-j|--jobs|--filter|--recurse-submodules)
+            return 0 ;;
+    esac
+    return 1
+}
+
+# Collect positional args (subcommand first) so both the dispatch below and the
+# clone destination lookup see the same view of the command line.
+positional=()
+skip_next=false
+for arg in "$@"; do
+    if $skip_next; then skip_next=false; continue; fi
+    if opt_takes_value "$arg"; then skip_next=true; continue; fi
+    case "$arg" in
+        -*) ;;
+        *) positional+=("$arg") ;;
+    esac
+done
+subcmd="${positional[0]}"
+
+case "$subcmd" in
+    clone|fetch|pull|ls-remote|remote) ;;  # network operations: retry
+    *) exec "$REAL_GIT" "$@" ;;            # everything else: pass through
+esac
+
+# Identify a clone's destination directory so a partial clone can be cleared
+# before retrying. git clone syntax: git clone [options] <repository> [<directory>]
+# positional[0] = 'clone', [1] = repository, [2] = optional directory.
+# Safety: only remove the directory if it contains a .git entry, i.e. it really is
+# a partial clone and not an unrelated directory that happens to share the name.
+dest_dir=""
+if [ "$subcmd" = "clone" ]; then
+    if [ ${#positional[@]} -ge 3 ]; then
+        dest_dir="${positional[2]}"
+    elif [ ${#positional[@]} -ge 2 ]; then
+        dest_dir="$(basename "${positional[1]}" .git)"
+    fi
 fi
-exec "\$REAL_GIT" "\$@"
+
+# Exponential backoff: the observed opendev.org outages lasted longer than the
+# flat 3x30s this wrapper used to allow.
+delays=(10 20 40 60)
+max_attempts=$(( ${#delays[@]} + 1 ))
+attempt=1
+while :; do
+    "$REAL_GIT" "$@" && exit 0
+    exit_code=$?
+    [ $attempt -ge $max_attempts ] && break
+    delay="${delays[$((attempt - 1))]}"
+    echo "git $subcmd failed (attempt $attempt/$max_attempts, exit: $exit_code). Retrying in ${delay}s..." >&2
+    if [ -n "$dest_dir" ] && [ -d "$dest_dir" ] && [ -e "$dest_dir/.git" ]; then
+        rm -rf "$dest_dir"
+    fi
+    sleep "$delay"
+    attempt=$((attempt + 1))
+done
+exit $exit_code
 GITWRAP
 sudo chmod +x /usr/local/bin/git
 
@@ -268,13 +348,6 @@ retry sudo -u stack bash -c "OPENSTACK_BRANCH='$OPENSTACK_BRANCH'
 # ============================================================
 echo ""
 echo "[4/5] Generating local.conf..."
-
-# Detect host IP (private IP for AWS)
-HOST_IP=$(hostname -I | awk '{print $1}')
-# Detect public IP for external access
-PUBLIC_IP=$(curl -s --connect-timeout 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || \
-            curl -s --connect-timeout 5 https://api.ipify.org 2>/dev/null || \
-            echo "$HOST_IP")
 
 sudo -u stack bash -c "cat > /opt/stack/devstack/local.conf << 'LOCALCONF'
 [[local|localrc]]
@@ -297,7 +370,11 @@ HOST_IP=${HOST_IP}
 # The registration script (2.getRegistrationInfo.sh) handles
 # rewriting internal IPs to public IPs in the output snippets.
 
-# Always re-clone source repos (safe for re-installs after clean.sh)
+# Always re-clone source repos. This doubles the number of opendev.org requests,
+# but it is what makes a re-run self-healing: a run that dies mid-clone leaves a
+# repo with an unborn HEAD, and with RECLONE=no DevStack keeps that directory and
+# fails later on a missing file (e.g. requirements/upper-constraints.txt).
+# Transient opendev.org failures are handled by the git wrapper above instead.
 RECLONE=yes
 
 # -------------------------------------------------------
@@ -352,20 +429,70 @@ LOCALCONF
 
 echo "Generated local.conf with HOST_IP=$HOST_IP"
 
-# ============================================================
-# Step 5: Run DevStack installation (git clone retries via wrapper)
-# ============================================================
-echo ""
-echo "[5/5] Running stack.sh (this takes 20-40 minutes with Octavia/Manila)..."
-echo "      Logs: /opt/stack/logs/stack.sh.log"
+fi  # end of "$RUN_MODE" = install
 
-# Git clone retries are handled transparently by /usr/local/bin/git (installed above).
-# PATH is explicitly prepended to ensure the wrapper takes precedence over /usr/bin/git
-# even when sudo resets the environment (Ubuntu default: env_reset in /etc/sudoers).
-set +e
-sudo -u stack bash -c 'export PATH=/usr/local/bin:$PATH; cd /opt/stack/devstack && ./stack.sh'
-STACK_EXIT=$?
-set -e
+# ============================================================
+# Step 5: Run DevStack installation (git retries via the wrapper above)
+# ============================================================
+# stack.sh is started detached (setsid, stdio on files) and then followed from here.
+# If the SSH session dies mid-install the install carries on instead of wedging on a
+# dead pipe, and a later invocation attaches to it rather than starting a rival run.
+start_stack() {
+    sudo -u stack tee /opt/stack/run-stack.sh > /dev/null << RUNNER
+#!/bin/bash
+# PATH is prepended so the git retry wrapper takes precedence over /usr/bin/git even
+# when sudo resets the environment (Ubuntu default: env_reset in /etc/sudoers).
+export PATH=/usr/local/bin:\$PATH
+cd /opt/stack/devstack || exit 1
+echo \$\$ > $RUN_PID
+rm -f $RUN_EXIT
+./stack.sh > $RUN_LOG 2>&1 < /dev/null
+echo \$? > $RUN_EXIT
+RUNNER
+    sudo chmod +x /opt/stack/run-stack.sh
+    sudo -u stack rm -f "$RUN_EXIT" "$RUN_PID"
+    sudo -u stack setsid /opt/stack/run-stack.sh < /dev/null > /dev/null 2>&1 &
+    # Wait for the runner to publish its pid, so stack_is_running() is meaningful.
+    for _ in $(seq 1 20); do
+        if stack_is_running; then break; fi
+        sleep 1
+    done
+}
+
+follow_stack() {
+    sudo -u stack touch "$RUN_LOG"
+    sudo tail -n +1 -F "$RUN_LOG" &
+    local tail_pid=$!
+    while [ ! -f "$RUN_EXIT" ]; do
+        if ! stack_is_running; then
+            # Runner is gone; give it a moment to record its exit code.
+            sleep 5
+            break
+        fi
+        sleep 10
+    done
+    sleep 3
+    kill "$tail_pid" 2>/dev/null || true
+    wait "$tail_pid" 2>/dev/null || true
+}
+
+if [ "$RUN_MODE" = "report" ]; then
+    STACK_EXIT=0
+else
+    echo ""
+    echo "[5/5] Running stack.sh (this takes 20-40 minutes with Octavia/Manila)..."
+    echo "      Logs: /opt/stack/logs/stack.sh.log"
+
+    if [ "$RUN_MODE" = "install" ]; then
+        start_stack
+    fi
+    follow_stack
+
+    STACK_EXIT=$(sudo cat "$RUN_EXIT" 2>/dev/null || echo 1)
+    if [ "$STACK_EXIT" = "0" ]; then
+        sudo -u stack touch "$DONE_MARKER"
+    fi
+fi
 
 echo ""
 echo "============================================================"
@@ -377,26 +504,28 @@ if [ $STACK_EXIT -eq 0 ]; then
     # Gather registration info for CB-Tumblebug
     # ----------------------------------------------------------
     source /opt/stack/devstack/openrc admin admin 2>/dev/null
-    PROJECT_ID=$(openstack project show admin -f value -c id 2>/dev/null || echo "UNKNOWN")
-    REGION=$(openstack region list -f value -c Region 2>/dev/null | head -1 || echo "RegionOne")
-    AZ=$(openstack availability zone list --compute -f value -c "Zone Name" 2>/dev/null | grep -v "^internal$" | head -1 || echo "nova")
 
-    # Update all service catalog endpoints to use Public IP
-    # so external clients (CB-Spider) can reach them.
-    INTERNAL_IP="$HOST_IP"
-    CHANGED=0
-    for eid in $(openstack endpoint list -f value -c ID 2>/dev/null); do
-        eurl=$(openstack endpoint show "$eid" -f value -c url 2>/dev/null)
-        if echo "$eurl" | grep -q "$INTERNAL_IP"; then
-            new_url=$(echo "$eurl" | sed "s/$INTERNAL_IP/$PUBLIC_IP/g")
-            openstack endpoint set --url "$new_url" "$eid" 2>/dev/null
-            CHANGED=$((CHANGED + 1))
-        fi
-    done
-    if [ $CHANGED -gt 0 ]; then
-        echo ""
-        echo " Updated $CHANGED service catalog endpoint(s): $INTERNAL_IP -> $PUBLIC_IP"
+    # Every openstack call is capped: the catalog is rewritten to the Public IP further
+    # down, and openstackclient follows the catalog after authenticating, so on a re-run
+    # against a host whose port 80 is closed each call would otherwise block forever.
+    os() { timeout 60 openstack "$@"; }
+
+    # Check reachability first — it needs no CLI, and it explains any missing values
+    # below when the catalog is already public and the port is shut.
+    API_REACHABLE=yes
+    if ! timeout 10 curl -s -o /dev/null "http://${PUBLIC_IP}/identity/v3" 2>/dev/null; then
+        API_REACHABLE=no
     fi
+    if [ "$API_REACHABLE" = "no" ] && [ "$RUN_MODE" = "report" ]; then
+        echo ""
+        echo " NOTE: the service catalog already points at ${PUBLIC_IP}, which is not"
+        echo "       reachable, so the details below may be incomplete. See the warning"
+        echo "       at the end for how to open the port."
+    fi
+
+    PROJECT_ID=$(os project show admin -f value -c id 2>/dev/null || echo "UNKNOWN")
+    REGION=$(os region list -f value -c Region 2>/dev/null | head -1 || echo "RegionOne")
+    AZ=$(os availability zone list --compute -f value -c "Zone Name" 2>/dev/null | grep -v "^internal$" | head -1 || echo "nova")
 
     # ----------------------------------------------------------
     # Verify CB-Spider required services in service catalog
@@ -415,10 +544,17 @@ if [ $STACK_EXIT -eq 0 ]; then
     echo " Verifying CB-Spider required services..."
     PLACEHOLDER_CREATED=0
 
+    # A previous run may already have registered a placeholder. Reporting that as
+    # "installed" hides the fact that the service does not exist, so look at the
+    # endpoint URL rather than only at the service type.
+    service_is_placeholder() {
+        os endpoint list --service "$1" -f value -c URL 2>/dev/null | grep -q '/placeholder/'
+    }
+
     # Cinder (Block Storage) - gophercloud v2 type: "block-storage"
     # gophercloud v2 ServiceTypeAliases: "block-storage" -> ["volumev3", "volumev2", "volume", "block-store"]
     # No alias entry needed; "block-storage" is matched directly.
-    if openstack service list -f value -c Type 2>/dev/null | grep -qE "^(block-storage|volumev3)$"; then
+    if os service list -f value -c Type 2>/dev/null | grep -qE "^(block-storage|volumev3)$"; then
         echo "   ✓ block-storage (Cinder) - installed"
     else
         echo "   ✗ block-storage (Cinder) - NOT found"
@@ -426,22 +562,34 @@ if [ $STACK_EXIT -eq 0 ]; then
     fi
 
     # Octavia (Load Balancer) - gophercloud v2 type: "load-balancer"
-    if openstack service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
-        echo "   ✓ load-balancer (Octavia) - installed"
+    if os service list -f value -c Type 2>/dev/null | grep -q "^load-balancer$"; then
+        if service_is_placeholder load-balancer; then
+            echo "   ⚠ load-balancer - PLACEHOLDER only, Octavia is not installed"
+            echo "     CB-Spider will initialize, but every NLB call against it fails."
+            echo "     To install it for real, add to local.conf next to enable_plugin octavia:"
+            echo "       enable_service octavia o-api o-cw o-hm o-hk o-da"
+            echo "     (Octavia's plugin does not enable its own services; Manila's does.)"
+        else
+            echo "   ✓ load-balancer (Octavia) - installed"
+        fi
     else
         echo "   ✗ load-balancer (Octavia) - NOT found, creating placeholder..."
-        openstack service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer && \
-        openstack endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" && \
+        os service create --name octavia --description "Load Balancer (placeholder for CB-Spider)" load-balancer && \
+        os endpoint create --region "$REGION" load-balancer public "http://${PUBLIC_IP}/placeholder/load-balancer/v2.0" && \
         PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
     fi
 
     # Manila (Shared File System) - gophercloud v2 type: "shared-file-system" (alias: "sharev2")
-    if openstack service list -f value -c Type 2>/dev/null | grep -qE "^(shared-file-system|sharev2)$"; then
-        echo "   ✓ shared-file-system (Manila) - installed"
+    if os service list -f value -c Type 2>/dev/null | grep -qE "^(shared-file-system|sharev2)$"; then
+        if service_is_placeholder shared-file-system; then
+            echo "   ⚠ shared-file-system - PLACEHOLDER only, Manila is not installed"
+        else
+            echo "   ✓ shared-file-system (Manila) - installed"
+        fi
     else
         echo "   ✗ shared-file-system (Manila) - NOT found, creating placeholder..."
-        openstack service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" shared-file-system && \
-        openstack endpoint create --region "$REGION" shared-file-system public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" && \
+        os service create --name manilav2 --description "Shared File System (placeholder for CB-Spider)" shared-file-system && \
+        os endpoint create --region "$REGION" shared-file-system public "http://${PUBLIC_IP}/placeholder/shared-file-system/v2" && \
         PLACEHOLDER_CREATED=$((PLACEHOLDER_CREATED + 1))
     fi
 
@@ -449,9 +597,64 @@ if [ $STACK_EXIT -eq 0 ]; then
         echo "   ⚠ Created $PLACEHOLDER_CREATED placeholder(s) - plugin install may have failed"
     fi
 
+    # Update all service catalog endpoints to use Public IP
+    # so external clients (CB-Spider) can reach them.
+    INTERNAL_IP="$HOST_IP"
+    CHANGED=0
+    # List once up front: the per-endpoint 'show' calls this used to make would other-
+    # wise run against a catalog that is being rewritten underneath them. Identity is
+    # rewritten last for the same reason.
+    ALL_ENDPOINTS=$(os endpoint list -f value -c ID -c "Service Type" -c URL 2>/dev/null || true)
+
+    rewrite_endpoint() {
+        local eid="$1" eurl="$2" new_url
+        case "$eurl" in *"$INTERNAL_IP"*) ;; *) return 0 ;; esac
+        new_url=$(echo "$eurl" | sed "s/$INTERNAL_IP/$PUBLIC_IP/g")
+        if os endpoint set --url "$new_url" "$eid" 2>/dev/null; then
+            CHANGED=$((CHANGED + 1))
+        fi
+    }
+
+    identity_endpoints=()
+    while read -r eid etype eurl; do
+        [ -n "$eid" ] || continue
+        if [ "$etype" = "identity" ]; then
+            identity_endpoints+=("$eid $eurl")
+            continue
+        fi
+        rewrite_endpoint "$eid" "$eurl"
+    done <<< "$ALL_ENDPOINTS"
+
+    # Identity last — nothing below needs the catalog entry we are about to move.
+    for entry in "${identity_endpoints[@]}"; do
+        rewrite_endpoint "${entry%% *}" "${entry#* }"
+    done
+
+    if [ $CHANGED -gt 0 ]; then
+        echo ""
+        echo " Updated $CHANGED service catalog endpoint(s): $INTERNAL_IP -> $PUBLIC_IP"
+    fi
+
+    # A public catalog is only useful if the port is actually open. Since CB-Tumblebug
+    # 0.12.30 the default security group opens TCP 22 only, so the rewrite above
+    # silently produces a cloud that no external client can reach. Say so plainly.
+    if [ "$API_REACHABLE" = "no" ]; then
+        echo ""
+        echo " WARNING: http://${PUBLIC_IP}/identity/v3 is NOT reachable from outside."
+        echo "          The OpenStack API is served on TCP 80, but this Node's security"
+        echo "          group allows only SSH (the default since CB-Tumblebug 0.12.30)."
+        echo "          CB-Spider cannot use this cloud until that port is opened:"
+        echo ""
+        echo "            POST /tumblebug/ns/{nsId}/resources/securityGroup/{sgId}/rules"
+        echo "            {\"firewallRules\":[{\"ports\":\"80\",\"protocol\":\"TCP\",\"direction\":\"inbound\",\"cidr\":\"<your-cidr>\"}]}"
+        echo ""
+        echo "          Or create the Infra with sgTemplateId set to a template that opens it."
+    fi
+
+
     echo ""
     echo " Horizon Dashboard  : http://${PUBLIC_IP}/dashboard"
-    echo " Keystone Auth URL  : http://${PUBLIC_IP}/identity/v3"
+    echo " Keystone Auth URL  : http://${PUBLIC_IP}/identity/v3$([ "$API_REACHABLE" = "no" ] && echo '   <-- port 80 CLOSED, see warning above')"
     echo " Username / Password: admin / ${ADMIN_PASSWORD}"
     echo " Project ID         : ${PROJECT_ID}"
     echo " Region / AZ        : ${REGION} / ${AZ}"
@@ -509,7 +712,13 @@ CLOUD_EOF
     echo "\$\$CREDENTIAL[Admin Login](admin / ${ADMIN_PASSWORD})"
 else
     echo " DevStack installation FAILED (exit code: $STACK_EXIT)"
-    echo " Check logs: /opt/stack/logs/stack.sh.log"
+    echo " Check logs: /opt/stack/logs/stack.sh.log (runner output: $RUN_LOG)"
     echo "============================================================"
+    echo ""
+    echo " Reported error:"
+    sudo cat /opt/stack/logs/error.log 2>/dev/null | tail -5 || true
+    echo ""
+    echo " Re-run this script to resume; it will skip the host preparation steps"
+    echo " and will not start a second stack.sh while one is still running."
     exit 1
 fi

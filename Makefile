@@ -164,6 +164,13 @@ GW_VALUES_FLAG = $(if $(wildcard $(K8S_GW_VALUES)),-f $(K8S_GW_VALUES))
 ENVOY_GATEWAY_VERSION ?= v1.8.3
 # Local-source dev images (compose `build:` equivalent): one state file per component
 DEV_IMAGE_FLAGS = $(foreach f,$(wildcard deployments/helm/cb-tumblebug/values-dev-image-*.yaml),-f $(f))
+# Local assets/ overlaid via ConfigMap instead of the image copy (see k-assets)
+K8S_ASSETS_VALUES := deployments/helm/cb-tumblebug/values-dev-assets.yaml
+DEV_ASSETS_FLAG = $(if $(wildcard $(K8S_ASSETS_VALUES)),-f $(K8S_ASSETS_VALUES))
+K8S_ASSETS_CM ?= cb-tumblebug-assets
+# Everything under assets/ that the server reads at runtime. Excludes assets.dump.gz
+# (34MB DB dump, host-side only) which would blow past the 1MiB ConfigMap limit.
+K8S_ASSETS_FILES = $(sort $(wildcard assets/*.yaml) $(wildcard assets/*.csv))
 # Free-form local overrides (gitignored; e.g. mapui.placeholderDefaults with tokens)
 K8S_LOCAL_VALUES := deployments/helm/cb-tumblebug/values-local.yaml
 LOCAL_VALUES_FLAG = $(if $(wildcard $(K8S_LOCAL_VALUES)),-f $(K8S_LOCAL_VALUES))
@@ -256,7 +263,7 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 	@# (otherwise helm silently carries over user-supplied values from the previous revision)
 	@$(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART) \
 		--namespace $(K8S_NAMESPACE) --create-namespace --timeout 10m \
-		--reset-values $(MCP_VALUES_FLAG) $(AGW_VALUES_FLAG) $(AGW_AUTH_VALUES_FLAG) $(GW_VALUES_FLAG) $(DEV_IMAGE_FLAGS) \
+		--reset-values $(MCP_VALUES_FLAG) $(AGW_VALUES_FLAG) $(AGW_AUTH_VALUES_FLAG) $(GW_VALUES_FLAG) $(DEV_IMAGE_FLAGS) $(DEV_ASSETS_FLAG) \
 		$$( [ -f $(K8S_ENV_PARAMS) ] && printf '%s' '-f $(K8S_ENV_PARAMS)' ) $(LOCAL_VALUES_FLAG) $(HELM_ARGS) || \
 		{ $(MAKE) --no-print-directory k-diagnose; exit 1; }
 	@echo ""
@@ -552,6 +559,38 @@ k-build-off: ## Revert to published images (C=tb|mapui|mcp for one; omit C for a
 	@echo "Reverting to published image(s). Applying..."
 	@$(MAKE) --no-print-directory k-up
 
+k-assets: ## Apply LOCAL assets/ (cloudinfo.yaml etc.) to the cluster — compose bind-mount equivalent
+	@files="$(K8S_ASSETS_FILES)"; \
+	[ -n "$$files" ] || { echo "No assets/*.yaml or assets/*.csv found."; exit 1; }; \
+	total=$$(cat $$files | wc -c); \
+	if [ "$$total" -gt 1000000 ]; then \
+		printf '%b\n' "$(KR)\xe2\x9c\x96 assets total $$total bytes, over the ~1MiB ConfigMap limit$(KX)"; \
+		echo "  Trim assets/ or switch to a PVC/initContainer for the large files."; exit 1; \
+	fi; \
+	$(KUBECTL) get ns $(K8S_NAMESPACE) >/dev/null 2>&1 || $(KUBECTL) create ns $(K8S_NAMESPACE); \
+	args=""; for f in $$files; do args="$$args --from-file=$$f"; done; \
+	: "server-side apply: client-side would stash the whole object in the" \
+	  "last-applied-configuration annotation, which caps out at 256KB"; \
+	$(KUBECTL) create configmap $(K8S_ASSETS_CM) -n $(K8S_NAMESPACE) $$args \
+		--dry-run=client -o yaml | \
+		$(KUBECTL) apply --server-side --force-conflicts -f - >/dev/null && \
+	{ printf 'assetsOverride:\n  configMapName: %s\n  files:\n' "$(K8S_ASSETS_CM)"; \
+	  for f in $$files; do printf '    - %s\n' "$$(basename $$f)"; done; } > $(K8S_ASSETS_VALUES) && \
+	printf '%b\n' "$(KD)ConfigMap $(K8S_ASSETS_CM) updated ($$(echo $$files | wc -w) files, $$total bytes)$(KX)" && \
+	$(MAKE) --no-print-directory k-up && \
+	echo "Restarting deploy/cb-tumblebug to re-read the assets..." && \
+	$(KUBECTL) rollout restart deploy/cb-tumblebug -n $(K8S_NAMESPACE) && \
+	$(KUBECTL) rollout status deploy/cb-tumblebug -n $(K8S_NAMESPACE) --timeout=600s && \
+	echo "Local assets active (persists across k-up). Revert: make k-assets-off"
+
+k-assets-off: ## Revert to the assets baked into the container image
+	@rm -f $(K8S_ASSETS_VALUES)
+	@echo "Reverting to image assets. Applying..."
+	@$(MAKE) --no-print-directory k-up
+	@$(KUBECTL) delete configmap $(K8S_ASSETS_CM) -n $(K8S_NAMESPACE) --ignore-not-found
+	@$(KUBECTL) rollout restart deploy/cb-tumblebug -n $(K8S_NAMESPACE)
+	@$(KUBECTL) rollout status deploy/cb-tumblebug -n $(K8S_NAMESPACE) --timeout=600s
+
 k-gateway-forward: ## Port-forward the gateway entrypoint to localhost:8080 (+8443 when TLS is on; idempotent)
 	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && $$3 == "port-forward" && /envoy-gateway-system/{print $$1}' | xargs); \
 	[ -z "$$pids" ] || kill $$pids 2>/dev/null || true
@@ -778,6 +817,7 @@ help: ## Display this help screen
 	@echo -e "  \033[36mk-gateway-forward\033[0m      Port-forward the gateway entrypoint to :8080"
 	@echo -e "  \033[36mk-build-tb/-mapui/-mcp/-sp\033[0m Build LOCAL source into the cluster (compose --build equiv.)"
 	@echo -e "  \033[36mk-build-off [C=]\033[0m       Revert to published images"
+	@echo -e "  \033[36mk-assets / k-assets-off\033[0m   Apply LOCAL assets/ (cloudinfo.yaml etc.) without an image rebuild"
 	@echo "  (aliases: make up/init/down TARGET=k8s)"
 	@echo ""
 	@echo "🧹 Cleanup:"
@@ -802,4 +842,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-diagnose
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-diagnose

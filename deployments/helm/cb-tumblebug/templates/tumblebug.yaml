@@ -84,6 +84,16 @@ spec:
             {{- end }}
           volumeMounts:
             - { name: log, mountPath: /app/log }
+            {{- if .Values.assetsOverride.files }}
+            # subPath: overlay one file at a time so anything not in the ConfigMap
+            # (assets.dump.gz, assets/spider/) still comes from the image.
+            {{- end }}
+            {{- range .Values.assetsOverride.files }}
+            - name: assets-override
+              mountPath: /app/assets/{{ . }}
+              subPath: {{ . }}
+              readOnly: true
+            {{- end }}
           startupProbe:
             httpGet: { path: /tumblebug/readyz, port: http }
             periodSeconds: 5
@@ -110,3 +120,8 @@ spec:
       volumes:
         - name: log
           emptyDir: {}
+        {{- if .Values.assetsOverride.files }}
+        - name: assets-override
+          configMap:
+            name: {{ .Values.assetsOverride.configMapName }}
+        {{- end }}

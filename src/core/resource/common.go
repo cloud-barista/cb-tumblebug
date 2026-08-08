@@ -2127,7 +2127,14 @@ func GetNameFromStruct(u any) (string, error) {
 
 // LoadAssets is to register common resources from asset files (../assets/*.csv)
 // includeAzure: if true, Azure images will be fetched (may take 40+ minutes)
-func LoadAssets(includeAzure bool) (*model.IdList, error) {
+// LoadAssets fetches specs and images into the system namespace.
+//
+// targetProviders narrows the run to the named providers (as listed by GET /provider,
+// i.e. cloudinfo keys, so a single OpenStack instance can be targeted rather than every
+// OpenStack). Fetching every provider takes 10-40 minutes, which is a poor trade when
+// only one newly registered CSP needs its catalog. When it is set, includeAzure no
+// longer applies: the caller has already said exactly what to fetch.
+func LoadAssets(includeAzure bool, targetProviders []string) (*model.IdList, error) {
 
 	regiesteredIds := &model.IdList{}
 
@@ -2146,7 +2153,10 @@ func LoadAssets(includeAzure bool) (*model.IdList, error) {
 
 	startTime := time.Now()
 
-	reqBodySpecFetchOption := &model.SpecFetchOption{}
+	reqBodySpecFetchOption := &model.SpecFetchOption{TargetProviders: targetProviders}
+	if len(targetProviders) > 0 {
+		log.Info().Strs("providers", targetProviders).Msg("Loading assets for the selected providers only")
+	}
 
 	resultFetchSpecsForAllConnConfigs, err := FetchSpecsForAllConnConfigs(model.SystemCommonNs, reqBodySpecFetchOption)
 	if err != nil {
@@ -2172,7 +2182,12 @@ func LoadAssets(includeAzure bool) (*model.IdList, error) {
 	reqBodyImageFetchOption := &model.ImageFetchOption{}
 
 	// Configure Azure inclusion based on parameter
-	if includeAzure {
+	if len(targetProviders) > 0 {
+		// An explicit provider list wins: excluding/including Azure is meaningless
+		// once the caller has named the providers to fetch.
+		reqBodyImageFetchOption.TargetProviders = targetProviders
+		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Azure}
+	} else if includeAzure {
 		log.Info().Msg("Azure images will be fetched (this may take 40+ minutes)")
 		// When including Azure, add it to RegionAgnosticProviders
 		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Azure}

@@ -23,7 +23,16 @@ Options:
 - `--password PASSWORD` — OpenStack admin password (default: `cbtumblebug`)
 - `--branch BRANCH` — OpenStack release branch (default: `stable/2025.2`)
 
-This takes **15–30 minutes**. After completion, you'll have a working OpenStack with:
+This takes **20–40 minutes** with Octavia and Manila enabled. When running it as a
+CB-Tumblebug remote command, set the timeout to **120 minutes** — the 30-minute
+default expires mid-install (the mapui `DevStack-Install` preset does this for you).
+
+The script is safe to re-run. `stack.sh` runs detached from the SSH session, so a
+dropped connection does not abort the install, and a repeat invocation attaches to the
+run in progress (or just reports the endpoints if the install already finished) rather
+than starting a second `stack.sh`. Run `4.cleanDevStack.sh` to force a fresh install.
+
+After completion, you'll have a working OpenStack with:
 - Keystone (identity)
 - Nova (compute) with KVM
 - Glance (images) with Ubuntu 22.04 cloud image

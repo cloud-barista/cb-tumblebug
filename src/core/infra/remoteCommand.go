@@ -199,6 +199,23 @@ func isTransientSSHError(err error) bool {
 	return false
 }
 
+// producedRemoteOutput reports whether the remote side sent anything back, i.e.
+// the command had begun executing before the transport failed. Used to decide
+// whether re-running it would be safe.
+func producedRemoteOutput(stdout, stderr map[int]string) bool {
+	for _, v := range stdout {
+		if v != "" {
+			return true
+		}
+	}
+	for _, v := range stderr {
+		if v != "" {
+			return true
+		}
+	}
+	return false
+}
+
 // dialSSHWithContext is a context-aware replacement for ssh.Dial. The stdlib
 // ssh.Dial ignores caller context and waits up to ClientConfig.Timeout
 // (default 30s) before giving up — meaning when our retryCtx fires earlier
@@ -632,7 +649,7 @@ func RemoteCommandToInfra(nsId string, infraId string, nodeGroupId string, nodeI
 			// Use the same selection as the execution path (pickBastion) so
 			// this dependency accounting names the bastion the target will
 			// actually tunnel through when several are registered.
-			bastionId := pickBastion(bs, n).NodeId
+			bastionId := pickBastion(bs, nsId, infraId, n).NodeId
 			if bastionId == "" || bastionId == n {
 				continue // self-bastion — no contention with siblings
 			}
@@ -1033,7 +1050,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 
 	// Spread load across the subnet's bastions when more than one is
 	// registered; deterministic per target so retries reuse the same hop.
-	bastionNode := pickBastion(bastionNodes, nodeId)
+	bastionNode := pickBastion(bastionNodes, nsId, infraId, nodeId)
 
 	// Validate bastion node has valid Node ID
 	if bastionNode.NodeId == "" {
@@ -2178,6 +2195,20 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 		if attempt >= maxOuterAttempts || !isTransientSSHError(attemptErr) {
 			break
 		}
+		// A retry re-runs the command from the beginning, which is only safe while
+		// nothing has run yet. Once the remote side has sent anything back, the
+		// command is already executing (or has finished) and re-running a
+		// side-effecting script on top of itself does more damage than reporting the
+		// dropped transport. Observed in production: a 20-minute DevStack install
+		// completed, an unrelated package upgrade restarted the target's sshd, and
+		// the retry started a second install over the finished one.
+		if producedRemoteOutput(finalStdout, finalStderr) {
+			log.Warn().
+				Err(attemptErr).
+				Str("targetNodeId", targetCtx.NodeId).
+				Msg("Transport dropped after the command had started producing output — not re-running it")
+			break
+		}
 		log.Warn().
 			Err(attemptErr).
 			Str("targetNodeId", targetCtx.NodeId).
@@ -2580,7 +2611,7 @@ func transferFileToNodeViaBastion(nsId string, infraId string, nodeId string, ta
 		return fmt.Errorf("failed to get bastion nodes: %v", err)
 	}
 
-	bastionNode := pickBastion(bastionNodes, nodeId)
+	bastionNode := pickBastion(bastionNodes, nsId, infraId, nodeId)
 	bastionNsId := bastionNode.NsId
 	if bastionNsId == "" {
 		bastionNsId = nsId
@@ -2826,7 +2857,7 @@ func downloadFileFromNodeViaBastion(nsId string, infraId string, nodeId string, 
 		return nil, "", fmt.Errorf("failed to get bastion nodes: %w", err)
 	}
 
-	bastionNode := pickBastion(bastionNodes, nodeId)
+	bastionNode := pickBastion(bastionNodes, nsId, infraId, nodeId)
 	bastionNsId := bastionNode.NsId
 	if bastionNsId == "" {
 		bastionNsId = nsId
@@ -3112,6 +3143,13 @@ func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNs
 		return "", err
 	}
 
+	// An explicitly named bastion is recorded as manual; an auto-selected one as auto.
+	// pickBastion relies on this to prefer what an operator asked for.
+	assignedBy := model.BastionAssignedManual
+	if bastionNodeId == "" {
+		assignedBy = model.BastionAssignedAuto
+	}
+
 	// find subnet and append bastion node
 	for i, subnetInfo := range tempVNetInfo.SubnetInfoList {
 		if subnetInfo.Id == nodeObj.SubnetId {
@@ -3182,7 +3220,29 @@ func SetBastionNodes(nsId string, infraId string, targetNodeId string, bastionNs
 				}
 			}
 
-			bastionCandidate := model.BastionNode{NsId: bastionNsId, InfraId: bastionInfraId, NodeId: bastionNodeId}
+			// Registering a real bastion says the target is not directly reachable, so
+			// an auto-assigned entry pointing at the target itself is now wrong, not
+			// merely redundant. Drop it instead of leaving it to be picked later.
+			if assignedBy == model.BastionAssignedManual && bastionNodeId != targetNodeId {
+				kept := subnetInfo.BastionNodes[:0]
+				for _, existing := range subnetInfo.BastionNodes {
+					effNsId := existing.NsId
+					if effNsId == "" {
+						effNsId = nsId
+					}
+					isAutoSelf := existing.Assigned != model.BastionAssignedManual &&
+						effNsId == nsId && existing.InfraId == infraId && existing.NodeId == targetNodeId
+					if isAutoSelf {
+						log.Info().Msgf("Removing auto-assigned self-bastion %s for VM %s: bastion (NS: %s, Infra: %s, VM: %s) was registered instead",
+							existing.NodeId, targetNodeId, bastionNsId, bastionInfraId, bastionNodeId)
+						continue
+					}
+					kept = append(kept, existing)
+				}
+				subnetInfo.BastionNodes = kept
+			}
+
+			bastionCandidate := model.BastionNode{NsId: bastionNsId, InfraId: bastionInfraId, NodeId: bastionNodeId, Assigned: assignedBy}
 			subnetInfo.BastionNodes = append(subnetInfo.BastionNodes, bastionCandidate)
 			tempVNetInfo.SubnetInfoList[i] = subnetInfo
 			resource.UpdateResourceObject(nsId, model.StrVNet, tempVNetInfo)
@@ -3363,10 +3423,64 @@ func GetUsableBastionNodes(nsId string, infraId string, targetNodeId string) ([]
 // Any bastion in the target's subnet can reach the target's private network,
 // so if the chosen bastion later drops out, rehoming to the next-best one is
 // functionally safe.
-func pickBastion(bastions []model.BastionNode, targetNodeId string) model.BastionNode {
-	best := bastions[0]
+// Before hashing, the candidate set is narrowed, because a subnet can hold two
+// kinds of registration that are NOT interchangeable:
+//
+//   - a MANUAL entry means an operator said "reach the target through here",
+//     which only makes sense if the target is not directly reachable;
+//   - an AUTO entry only means "this VM in the subnet has a public IP", and for a
+//     single-VM Infra that VM is the target itself.
+//
+// Treating both as equal let the hash pick a self-entry over an operator's real
+// bastion — intermittently, since it depends on the node ids. That is what broke
+// SSH to an OpenStack VM whose floating IP (172.24.4.86, RFC1918 space) is only
+// routable inside its own hypervisor host: the self-entry short-circuits to a
+// direct dial, which can never work, while the registered host node could reach it.
+//
+// Narrowing rules:
+//  1. If any manual entry exists, use only manual entries. This keeps the
+//     self-bastion optimization for operators who deliberately register a
+//     public-IP VM as its own subnet's bastion.
+//  2. Otherwise (all auto, or entries predating the Assigned field), drop the
+//     self-entry when some other bastion is registered. Routing through another
+//     bastion always works — it costs at most one extra hop when the target was
+//     directly reachable anyway — whereas a self-entry fails outright when it was
+//     not. For un-annotated legacy data the safe choice is the correct one.
+func pickBastion(bastions []model.BastionNode, nsId string, infraId string, targetNodeId string) model.BastionNode {
+	isSelf := func(b model.BastionNode) bool {
+		bNsId := b.NsId
+		if bNsId == "" {
+			bNsId = nsId
+		}
+		return bNsId == nsId && b.InfraId == infraId && b.NodeId == targetNodeId
+	}
+
+	candidates := []model.BastionNode{}
+	for _, b := range bastions {
+		if b.Assigned == model.BastionAssignedManual {
+			candidates = append(candidates, b)
+		}
+	}
+	if len(candidates) == 0 {
+		nonSelf := []model.BastionNode{}
+		for _, b := range bastions {
+			if !isSelf(b) {
+				nonSelf = append(nonSelf, b)
+			}
+		}
+		if len(nonSelf) > 0 {
+			candidates = nonSelf
+		} else {
+			candidates = bastions
+		}
+	}
+	if len(candidates) == 0 {
+		return model.BastionNode{}
+	}
+
+	best := candidates[0]
 	var bestScore uint64
-	for i, b := range bastions {
+	for i, b := range candidates {
 		sum := sha256.Sum256([]byte(targetNodeId + "|" + b.NodeId))
 		score := binary.BigEndian.Uint64(sum[:8])
 		if i == 0 || score > bestScore {

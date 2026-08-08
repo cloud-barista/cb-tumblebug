@@ -350,10 +350,13 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @ID LoadAssets
 // @Summary Load Common Resources from internal asset files
 // @Description Load Common Resources from internal asset files (Spec, Image). By default, Azure images are excluded for faster initialization. Use includeAzure=true to fetch Azure images (may take 40+ minutes).
+// @Description
+// @Description Use providers to fetch only the named providers (comma-separated, as listed by GET /provider). This targets a single registered CSP rather than every provider, which turns a 10-40 minute run into minutes - useful right after registering one new CSP. When providers is set, includeAzure is ignored.
 // @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param includeAzure query string false "Include Azure images (may take 40+ minutes)" default(false) Enums(true, false)
+// @Param providers query string false "Comma-separated providers to fetch (ex: aws,gcp). Empty means all." default()
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -368,7 +371,15 @@ func RestLoadAssets(c echo.Context) error {
 		includeAzure = true
 	}
 
-	content, err := resource.LoadAssets(includeAzure)
+	// Parse providers query parameter (default: empty = every provider)
+	targetProviders := []string{}
+	for _, p := range strings.Split(c.QueryParam("providers"), ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			targetProviders = append(targetProviders, p)
+		}
+	}
+
+	content, err := resource.LoadAssets(includeAzure, targetProviders)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

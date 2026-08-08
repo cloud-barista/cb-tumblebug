@@ -2133,7 +2133,7 @@ const docTemplate = `{
         },
         "/loadAssets": {
             "get": {
-                "description": "Load Common Resources from internal asset files (Spec, Image). By default, Azure images are excluded for faster initialization. Use includeAzure=true to fetch Azure images (may take 40+ minutes).",
+                "description": "Load Common Resources from internal asset files (Spec, Image). By default, Azure images are excluded for faster initialization. Use includeAzure=true to fetch Azure images (may take 40+ minutes).\n\nUse providers to fetch only the named providers (comma-separated, as listed by GET /provider). This targets a single registered CSP rather than every provider, which turns a 10-40 minute run into minutes - useful right after registering one new CSP. When providers is set, includeAzure is ignored.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2155,6 +2155,13 @@ const docTemplate = `{
                         "default": "false",
                         "description": "Include Azure images (may take 40+ minutes)",
                         "name": "includeAzure",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Comma-separated providers to fetch (ex: aws,gcp). Empty means all.",
+                        "name": "providers",
                         "in": "query"
                     },
                     {
@@ -22804,6 +22811,15 @@ const docTemplate = `{
         "model.BastionNode": {
             "type": "object",
             "properties": {
+                "assigned": {
+                    "description": "Assigned records who registered this bastion: BastionAssignedManual when an\noperator named it, BastionAssignedAuto when the system picked any Running VM\nwith a public IP. The distinction matters when both kinds are registered for\none subnet: naming a bastion asserts the target is NOT directly reachable,\nwhile an auto entry only asserts \"some VM here has a public IP\". Empty means\nthe entry predates this field (see pickBastion for how that is handled).",
+                    "type": "string",
+                    "enum": [
+                        "manual",
+                        "auto"
+                    ],
+                    "example": "manual"
+                },
                 "infraId": {
                     "type": "string"
                 },

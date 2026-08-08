@@ -101,4 +101,5 @@ deployments/helm/cb-tumblebug/values-gateway.yaml
 deployments/helm/cb-tumblebug/values-local.yaml
 deployments/helm/cb-tumblebug/values-env-params.yaml
 deployments/helm/cb-tumblebug/values-dev-image-*.yaml
+deployments/helm/cb-tumblebug/values-dev-assets.yaml
 deployments/helm/cb-tumblebug/values-agentgateway-auth.yaml

@@ -92,6 +92,12 @@ sudo rm -rf /opt/stack/.config 2>/dev/null || true
 sudo rm -rf /opt/stack/requirements 2>/dev/null || true
 sudo rm -rf /opt/stack/bin 2>/dev/null || true
 
+# Remove the run-state markers written by 1.installDevStack.sh, otherwise the next
+# install would see a "completed" marker and skip straight to reporting.
+sudo rm -f /opt/stack/stack.run.done /opt/stack/stack.run.exit \
+           /opt/stack/stack.run.pid /opt/stack/stack.run.log \
+           /opt/stack/run-stack.sh 2>/dev/null || true
+
 # Remove cloned OpenStack service repos (nova, glance, etc.)
 # Keep devstack source itself unless --full
 for dir in /opt/stack/*/; do
