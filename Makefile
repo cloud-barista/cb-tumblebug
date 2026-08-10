@@ -522,6 +522,62 @@ k-build-mcp: ## Build local MCP server source into the cluster (shortcut)
 k-build-sp: ## Build local cb-spider source into the cluster (shortcut)
 	@$(MAKE) --no-print-directory k-build C=cb-spider
 
+# --- MCP contract checks ------------------------------------------------------
+# Runs inside the MCP image so fastmcp and the rest of the runtime deps are present;
+# needs no cluster and no cloud credentials. Seconds, not minutes.
+MCP_TEST_IMAGE ?= cloudbaristaorg/mcp:local-dev
+
+mcp-check: ## Tier 1 contract checks for the MCP server (tools golden file, endpoints, schema budget, secrets, errors)
+	@docker image inspect $(MCP_TEST_IMAGE) >/dev/null 2>&1 || \
+		docker build -q -t $(MCP_TEST_IMAGE) src/interface/mcp >/dev/null
+	@docker run --rm \
+		-v "$(PWD)/src/interface/mcp:/repo/src/interface/mcp:ro" \
+		-v "$(PWD)/src/interface/rest/docs/swagger.json:/repo/src/interface/rest/docs/swagger.json:ro" \
+		-w /repo $(MCP_TEST_IMAGE) \
+		python3 /repo/src/interface/mcp/tests/check_contract.py
+
+mcp-check-update: ## Rewrite the MCP tools golden file after an intended tool change
+	@docker image inspect $(MCP_TEST_IMAGE) >/dev/null 2>&1 || \
+		docker build -q -t $(MCP_TEST_IMAGE) src/interface/mcp >/dev/null
+	@docker run --rm --user "$$(id -u):$$(id -g)" \
+		-v "$(PWD)/src/interface/mcp:/repo/src/interface/mcp" \
+		-v "$(PWD)/src/interface/rest/docs/swagger.json:/repo/src/interface/rest/docs/swagger.json:ro" \
+		-w /repo $(MCP_TEST_IMAGE) \
+		python3 /repo/src/interface/mcp/tests/check_contract.py --update
+
+mcp-bench: ## Measure MCP response sizes through the gateway (needs: make k-gateway-forward)
+	@python3 src/interface/mcp/tests/bench.py
+
+mcp-scenarios: ## Tier 2: drive real requests through MCP alone, stopping before any spend
+	@python3 src/interface/mcp/tests/scenarios.py $(ARGS)
+
+# --- MCP spend limits ---------------------------------------------------------
+# Policy and approvals live in etcd, written directly. Deliberately not an MCP tool: the
+# gateway terminates JWT and the MCP server cannot tell an administrator from an agent, so
+# an "admin-only tool" would be unenforceable. The agent can request; only this can grant.
+ETCD_POD ?= cb-tumblebug-etcd-0
+
+mcp-budget: ## Show the MCP spend policy and pending approval requests
+	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl get --prefix /mcp/policy/budget
+	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl get --prefix /mcp/budget/requests/ || true
+
+mcp-budget-set: ## Set spend limits (PER_CREATION=10 PER_DAY=100 CONCURRENT=50 ENABLED=true)
+	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/policy/budget \
+		'{"enabled":$(or $(ENABLED),true),"per_creation_usd_per_hour":$(or $(PER_CREATION),10),"per_day_created_usd_per_hour":$(or $(PER_DAY),100),"concurrent_running_usd_per_hour":$(or $(CONCURRENT),50)}'
+	@printf '%b\n' 'Spend limits updated. Check with: make mcp-budget'
+
+mcp-budget-approve: ## Approve one over-budget request (ID=req-...)
+	@test -n "$(ID)" || { echo "usage: make mcp-budget-approve ID=req-..."; exit 1; }
+	@cur=$$($(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl get --print-value-only /mcp/budget/requests/$(ID)); \
+	test -n "$$cur" || { echo "no such request: $(ID)"; exit 1; }; \
+	upd=$$(printf '%s' "$$cur" | python3 -c 'import json,sys; d=json.load(sys.stdin); d["status"]="approved"; print(json.dumps(d))'); \
+	$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/budget/requests/$(ID) "$$upd" >/dev/null
+	@printf '%b\n' 'Approved $(ID) — the agent may retry with budget_ack=$(ID) (single use)'
+
+mcp-budget-off: ## Disable spend limits
+	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/policy/budget '{"enabled":false}'
+	@printf '%b\n' 'Spend limits disabled.'
+
 k-build: ## Build LOCAL source and run it in the cluster (C=tb|mapui|mcp) — compose `--build` equivalent
 	@case "$(C)" in \
 		cb-tumblebug|tb)      canon="cb-tumblebug"; ctx="."; key="tumblebug"; deploy="cb-tumblebug" ;; \

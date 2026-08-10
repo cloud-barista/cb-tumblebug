@@ -43,12 +43,17 @@ spec:
               value: {{ $v | quote }}
             {{- end }}
           {{- end }}
-          # Parcel dev server builds the bundle on start — allow several minutes
+          # Parcel dev server builds the bundle on start. Usually under a minute, but it
+          # occasionally takes far longer, and a threshold it can miss turns a slow start
+          # into a restart loop: measured 15 restarts in 11 h, each burning the full
+          # window, which also makes `helm upgrade --wait` fail while it cycles.
+          # 30 minutes is generous enough that the container is only killed if it is
+          # genuinely stuck rather than merely slow.
           startupProbe:
             tcpSocket: { port: http }
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 60
+            failureThreshold: 180
           readinessProbe:
             tcpSocket: { port: http }
             periodSeconds: 10

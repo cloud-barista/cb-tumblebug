@@ -33,6 +33,12 @@ fi
 MODEL_NAME=""
 HOST="0.0.0.0"
 PORT="8000"
+# Open WebUI sends tool_choice="auto" on every chat request. With tool calling off, vLLM
+# rejects it outright - "auto tool choice requires --enable-auto-tool-choice and
+# --tool-call-parser to be set" - and the chat window shows that error instead of a reply.
+# On by default, because that is what the common client expects.
+ENABLE_TOOLS="true"
+TOOL_PARSER=""
 HF_TOKEN="${HF_TOKEN:-}"  # inherit from env if already set (avoids CLI arg exposure)
 GPU_UTIL=""               # empty = vLLM default (~0.9)
 CTX_LEN=""                # empty = model default
@@ -51,6 +57,8 @@ usage() {
   echo "  --gpu-util FLOAT    GPU memory utilization 0.0-1.0 (default: vLLM default)"
   echo "  --ctx-len N         Max context length / max-model-len (default: model default)"
   echo "  --api-key KEY       API key for the vLLM server (default: none)"
+  echo "  --tool-parser NAME  Tool-call parser (default: guessed from the model name)"
+  echo "  --no-tools          Do not enable tool calling"
   echo ""
   echo "Recommended models:"
   echo "  Qwen/Qwen2.5-1.5B-Instruct       (~3GB VRAM)"
@@ -68,6 +76,8 @@ while [[ "$#" -gt 0 ]]; do
     --gpu-util) GPU_UTIL="${2?Error: --gpu-util requires an argument}"; shift 2 ;;
     --ctx-len)  CTX_LEN="${2?Error: --ctx-len requires an argument}";   shift 2 ;;
     --api-key)  API_KEY="${2?Error: --api-key requires an argument}";   shift 2 ;;
+    --tool-parser) TOOL_PARSER="${2?Error: --tool-parser requires an argument}"; shift 2 ;;
+    --no-tools) ENABLE_TOOLS="false";                                   shift 1 ;;
     -h|--help)  usage 0 ;;
     *)
       # Backward compatibility: treat first non-flag arg as model name
@@ -322,6 +332,31 @@ VLLM_CMD_ARGS=(
 [ -n "$GPU_UTIL" ] && VLLM_CMD_ARGS+=(--gpu-memory-utilization "$GPU_UTIL")
 [ -n "$CTX_LEN" ]  && VLLM_CMD_ARGS+=(--max-model-len "$CTX_LEN")
 [ -n "$API_KEY" ]  && VLLM_CMD_ARGS+=(--api-key "$API_KEY")
+
+# Tool calling. The parser must match the model's own tool-call format, so it is guessed
+# from the model name when not given. An unknown family gets no parser rather than a wrong
+# one - a mismatched parser yields silently malformed tool calls, which is worse than not
+# offering tools at all.
+if [ "$ENABLE_TOOLS" = "true" ]; then
+  if [ -z "$TOOL_PARSER" ]; then
+    case "$(echo "$MODEL_NAME" | tr 'A-Z' 'a-z')" in
+      *qwen*)                              TOOL_PARSER="hermes" ;;
+      *llama-3.1*|*llama-3.2*|*llama-3.3*) TOOL_PARSER="llama3_json" ;;
+      *llama-4*)                           TOOL_PARSER="llama4_json" ;;
+      *mistral*|*mixtral*)                 TOOL_PARSER="mistral" ;;
+      *deepseek-v3*)                       TOOL_PARSER="deepseek_v3" ;;
+      *granite*)                           TOOL_PARSER="granite" ;;
+      *)                                   TOOL_PARSER="" ;;
+    esac
+  fi
+  if [ -n "$TOOL_PARSER" ] && python -m vllm.entrypoints.openai.api_server --help 2>/dev/null | grep -q -- '--enable-auto-tool-choice'; then
+    VLLM_CMD_ARGS+=(--enable-auto-tool-choice --tool-call-parser "$TOOL_PARSER")
+    echo "Tool calling enabled (parser: $TOOL_PARSER)"
+  else
+    echo "Tool calling stays off (no parser known for '$MODEL_NAME', or this vLLM build lacks the flag)."
+    echo "  Open WebUI will report an error on chat unless you pass --tool-parser NAME."
+  fi
+fi
 
 if [ "$GPU_TYPE" = "nvidia" ]; then
   # vLLM 0.23+ always uses the v1 engine (VLLM_USE_V1=0 is ignored).
