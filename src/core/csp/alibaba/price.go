@@ -186,7 +186,7 @@ func fetchSingleInstanceTypePrice(client *ecs.Client, region, instanceType strin
 		if isAlibabaExpectedSkipError(err) {
 			return model.SpiderPrice{}, false, "expected_skip"
 		}
-		log.Warn().Msgf("Alibaba direct pricing: region=%s instanceType=%s err=%v", region, instanceType, err)
+		log.Warn().Msgf("Alibaba direct pricing: region=%s instanceType=%s err=%s", region, instanceType, csp.RedactErr(err))
 		return model.SpiderPrice{}, false, "unexpected_error"
 	}
 
@@ -306,7 +306,7 @@ func listInstanceTypes(client *ecs.Client, region string) ([]string, error) {
 
 		resp, err := client.DescribeInstanceTypes(req)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list Alibaba instance types for region %s: %w", region, err)
+			return nil, fmt.Errorf("failed to list Alibaba instance types for region %s: %s", region, csp.RedactErr(err))
 		}
 
 		for _, t := range resp.InstanceTypes.InstanceType {
@@ -466,7 +466,7 @@ func listAvailableInstanceTypes(client *ecs.Client, region string, zoneID string
 
 	resp, err := client.DescribeAvailableResource(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list Alibaba available resources for region %s: %w", region, err)
+		return nil, fmt.Errorf("failed to list Alibaba available resources for region %s: %s", region, csp.RedactErr(err))
 	}
 
 	available := make(map[string]struct{})
@@ -513,7 +513,7 @@ func listInstanceTypeDetails(client *ecs.Client, region string) ([]ecs.InstanceT
 
 		resp, err := client.DescribeInstanceTypes(req)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list Alibaba instance type details for region %s: %w", region, err)
+			return nil, fmt.Errorf("failed to list Alibaba instance type details for region %s: %s", region, csp.RedactErr(err))
 		}
 
 		out = append(out, resp.InstanceTypes.InstanceType...)
