@@ -8,67 +8,67 @@
         "name": "g1-ibm-au-syd",
         "nodeGroupSize": 1,
         "specId": "ibm+au-syd+nxf-2x1",
-        "imageId": "r026-7769ffd7-a85c-45e0-a4e8-390fe5ef9599"
+        "imageId": "r026-b879575b-8209-4e6a-a46e-0e01adf56aaf"
       },
       {
         "name": "g2-ibm-br-sao",
         "nodeGroupSize": 1,
         "specId": "ibm+br-sao+nxf-2x1",
-        "imageId": "r042-b9a53180-c8f4-4f58-a88e-2db642e26053"
+        "imageId": "r042-f36f14d7-e44f-42da-b5d8-7da0318b21e6"
       },
       {
         "name": "g3-ibm-ca-mon",
         "nodeGroupSize": 1,
         "specId": "ibm+ca-mon+nxf-2x1",
-        "imageId": "r058-34d12a44-4f2d-43ab-9730-b8977ba04779"
+        "imageId": "r058-db393538-5f96-4dfd-8787-2880f7fd57c9"
       },
       {
         "name": "g4-ibm-ca-tor",
         "nodeGroupSize": 1,
         "specId": "ibm+ca-tor+nxf-2x1",
-        "imageId": "r038-a09608e4-eba9-4b36-b64f-ddb8c4f0fd85"
+        "imageId": "r038-023d738d-8f47-4af2-9041-de843170104c"
       },
       {
         "name": "g5-ibm-eu-de",
         "nodeGroupSize": 1,
         "specId": "ibm+eu-de+nxf-2x1",
-        "imageId": "r010-6e04f3c5-0416-4b02-bc7b-bb24fb212749"
+        "imageId": "r010-1861cdc6-be06-4d69-bdaa-3b26777b7900"
       },
       {
         "name": "g6-ibm-eu-es",
         "nodeGroupSize": 1,
         "specId": "ibm+eu-es+nxf-2x1",
-        "imageId": "r050-bdce8454-8640-4ca4-9a1d-8df250123f49"
+        "imageId": "r050-31db9e7b-bb45-419a-8b1e-33058dffcd3e"
       },
       {
         "name": "g7-ibm-eu-gb",
         "nodeGroupSize": 1,
         "specId": "ibm+eu-gb+nxf-2x1",
-        "imageId": "r018-fae06be2-9a69-4d6a-ad76-945be5216a96"
+        "imageId": "r018-68376cdc-433f-418e-9c3c-2f13d6e57a73"
       },
       {
         "name": "g8-ibm-jp-osa",
         "nodeGroupSize": 1,
         "specId": "ibm+jp-osa+nxf-2x1",
-        "imageId": "r034-3cb1bb72-002d-45fe-8ac1-6e36906963c4"
+        "imageId": "r034-8ac504c3-af7c-4def-9731-491910196565"
       },
       {
         "name": "g9-ibm-jp-tok",
         "nodeGroupSize": 1,
         "specId": "ibm+jp-tok+nxf-2x1",
-        "imageId": "r022-933c9a78-57e0-45c3-b96f-a01f834aaeba"
+        "imageId": "r022-f1f5d21f-f498-45c2-8bb6-ce5cf0709bd0"
       },
       {
         "name": "g10-ibm-us-east",
         "nodeGroupSize": 1,
         "specId": "ibm+us-east+nxf-2x1",
-        "imageId": "r014-dd311616-aaec-44ed-ab74-c336ee3e2cb4"
+        "imageId": "r014-13be14d6-99f8-4a41-b3c1-80cfcc7c7943"
       },
       {
         "name": "g11-ibm-us-south",
         "nodeGroupSize": 1,
         "specId": "ibm+us-south+nxf-2x1",
-        "imageId": "r006-0c97943f-31ba-4680-b929-9581c5f177f4"
+        "imageId": "r006-23020f83-9547-4501-a96a-a28b96671308"
       }
     ]
   }

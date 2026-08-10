@@ -8,7 +8,7 @@
         "name": "g1-alibaba-ap-northeast-1",
         "nodeGroupSize": 2,
         "specId": "alibaba+ap-northeast-1+ecs.e-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260615.vhd",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260723.vhd",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -16,7 +16,7 @@
         "name": "g2-alibaba-us-east-1",
         "nodeGroupSize": 2,
         "specId": "alibaba+us-east-1+ecs.e-c4m1.large",
-        "imageId": "ubuntu_24_04_x64_20G_alibase_20260615.vhd",
+        "imageId": "ubuntu_24_04_x64_20G_alibase_20260720.vhd",
         "rootDiskType": "default",
         "rootDiskSize": 60
       },
@@ -40,7 +40,7 @@
         "name": "g5-azure-koreasouth",
         "nodeGroupSize": 2,
         "specId": "azure+koreasouth+standard_b2ts_v2",
-        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202606100",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -48,7 +48,7 @@
         "name": "g6-azure-australiaeast",
         "nodeGroupSize": 2,
         "specId": "azure+australiaeast+standard_b1ms",
-        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202606110",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -56,7 +56,7 @@
         "name": "g7-gcp-asia-northeast1",
         "nodeGroupSize": 2,
         "specId": "gcp+asia-northeast1+e2-standard-2",
-        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260623",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260731",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -64,7 +64,7 @@
         "name": "g8-gcp-europe-west3",
         "nodeGroupSize": 2,
         "specId": "gcp+europe-west3+t2d-standard-1",
-        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260623",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260731",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -72,13 +72,13 @@
         "name": "g9-ibm-jp-osa",
         "nodeGroupSize": 2,
         "specId": "ibm+jp-osa+nxf-2x1",
-        "imageId": "r034-3cb1bb72-002d-45fe-8ac1-6e36906963c4"
+        "imageId": "r034-8ac504c3-af7c-4def-9731-491910196565"
       },
       {
         "name": "g10-ibm-us-south",
         "nodeGroupSize": 2,
         "specId": "ibm+us-south+bxf-2x8",
-        "imageId": "r006-0c97943f-31ba-4680-b929-9581c5f177f4"
+        "imageId": "r006-23020f83-9547-4501-a96a-a28b96671308"
       },
       {
         "name": "g11-kt-kr1",

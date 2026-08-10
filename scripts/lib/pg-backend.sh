@@ -57,10 +57,25 @@ _pg_kubectl_detect_pod() {
     PG_K8S_NS="${TB_K8S_NAMESPACE:-default}"
     if [ -n "$TB_POSTGRES_POD" ]; then
         PG_POD="$TB_POSTGRES_POD"
-    else
-        local selector="${TB_POSTGRES_POD_SELECTOR:-app=cb-tumblebug-postgres}"
-        PG_POD=$(kubectl get pod -n "$PG_K8S_NS" -l "$selector" \
-            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+        [ -n "$PG_POD" ]
+        return
+    fi
+
+    local selector="${TB_POSTGRES_POD_SELECTOR:-app=cb-tumblebug-postgres}"
+    PG_POD=$(kubectl get pod -n "$PG_K8S_NS" -l "$selector" \
+        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+
+    # The Helm chart installs into its own namespace (cb-tumblebug), not "default", so a
+    # bare `make backup-assets` used to report "no backend available" while the pod was
+    # running. Look across namespaces before giving up.
+    if [ -z "$PG_POD" ]; then
+        local found
+        found=$(kubectl get pod -A -l "$selector" \
+            -o jsonpath='{.items[0].metadata.namespace} {.items[0].metadata.name}' 2>/dev/null || true)
+        if [ -n "$found" ]; then
+            PG_K8S_NS="${found%% *}"
+            PG_POD="${found##* }"
+        fi
     fi
     [ -n "$PG_POD" ]
 }

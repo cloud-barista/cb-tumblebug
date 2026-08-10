@@ -16,7 +16,7 @@
       },
       {
         "specId": "alibaba+ap-northeast-2+ecs.t6-c1m4.xlarge",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260522.vhd",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260723.vhd",
         "nodeGroupName": "k8sng01",
         "desiredNodeSize": 1,
         "minNodeSize": 1,

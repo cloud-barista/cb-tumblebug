@@ -6052,13 +6052,7 @@ PREDEFINED_SCRIPTS = {
     # double-brace form - not the <NAME> form CB-MapUI uses in its own templates.
     "devstack_install": {
         "commands": [
-            # A watchdog releases the installer's log follower once stack.sh records its exit
-            # code. Older copies of the script signal that follower without sudo, which fails
-            # silently and leaves a finished install waiting for its timeout. It selects by
-            # process name rather than command line: this very command line quotes the
-            # follower's, so a pkill -f pattern would match the installer and kill it.
-            # Harmless once the script is fixed - by then there is no tail left to signal.
-            "printf '%s\\n' '#!/bin/bash' 'for i in $(seq 1 720); do sleep 10; sudo test -f /opt/stack/stack.run.exit || continue; sleep 20; for p in $(pgrep -x tail); do sudo kill $p 2>/dev/null; done; exit 0; done' > /tmp/devstack-watchdog.sh && chmod +x /tmp/devstack-watchdog.sh && setsid /tmp/devstack-watchdog.sh < /dev/null > /dev/null 2>&1 & curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/1.installDevStack.sh -o /tmp/installDevStack.sh && bash /tmp/installDevStack.sh --csp-name {{csp_name}} --latitude {{latitude}} --longitude {{longitude}} --location \"{{location}}\""
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/openstack/1.installDevStack.sh -o /tmp/installDevStack.sh && bash /tmp/installDevStack.sh --csp-name {{csp_name}} --latitude {{latitude}} --longitude {{longitude}} --location \"{{location}}\""
         ],
         "description": "Install OpenStack (DevStack) on a BARE-METAL node. Requires a *.metal spec: nested KVM needs hardware virtualization, and ordinary instances fall back to slow QEMU emulation. Takes 20-40 minutes, so pass timeout_minutes=120. Safe to re-run: it attaches to an install in progress instead of starting a second one. Prints credentials.yaml/cloudinfo.yaml snippets at the end - feed those to register_csp_definition() and register_csp_credential()."
     },
