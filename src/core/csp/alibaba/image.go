@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/singleflight"
 )
@@ -151,8 +152,8 @@ func describeImageFromFamily(ctx context.Context, region, family string) (imageI
 	resp, err := client.DescribeImageFromFamily(req)
 	elapsed := time.Since(start)
 	if err != nil {
-		return "", "", fmt.Errorf("DescribeImageFromFamily(region=%s, family=%s) failed after %s: %w",
-			region, family, elapsed, err)
+		return "", "", fmt.Errorf("DescribeImageFromFamily(region=%s, family=%s) failed after %s: %s",
+			region, family, elapsed, csp.RedactErr(err))
 	}
 
 	// Alibaba returns Image with empty ImageId when no image exists in the family.

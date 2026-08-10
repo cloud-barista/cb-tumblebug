@@ -107,14 +107,14 @@ clean-all: compose-down clean-db ## Full reset including OpenBao (requires re-in
 # ===== Database Backup & Restore =====
 backup-assets: ## Backup PostgreSQL database to assets directory for version control
 	@chmod +x ./scripts/backup-assets.sh 2>/dev/null || true
-	@./scripts/backup-assets.sh
+	@TB_K8S_NAMESPACE=$${TB_K8S_NAMESPACE:-$(K8S_NAMESPACE)} ./scripts/backup-assets.sh
 
 restore-assets: ## Restore PostgreSQL database from assets backup (or FILE=<path>)
 	@chmod +x ./scripts/restore-assets.sh 2>/dev/null || true
 	@if [ -z "$(FILE)" ]; then \
-		./scripts/restore-assets.sh; \
+		TB_K8S_NAMESPACE=$${TB_K8S_NAMESPACE:-$(K8S_NAMESPACE)} ./scripts/restore-assets.sh; \
 	else \
-		./scripts/restore-assets.sh $(FILE); \
+		TB_K8S_NAMESPACE=$${TB_K8S_NAMESPACE:-$(K8S_NAMESPACE)} ./scripts/restore-assets.sh $(FILE); \
 	fi
 
 # ===== Utility Aliases =====

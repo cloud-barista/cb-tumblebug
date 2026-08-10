@@ -31,7 +31,7 @@
       {
         "name": "g5-tencent-ap-guangzhou",
         "nodeGroupSize": 1,
-        "specId": "tencent+ap-guangzhou+bf1.medium2",
+        "specId": "tencent+ap-guangzhou+sa9.medium2",
         "imageId": "img-7rotv4ux"
       },
       {

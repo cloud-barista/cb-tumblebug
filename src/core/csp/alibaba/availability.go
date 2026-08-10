@@ -92,8 +92,8 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 	resp, err := client.DescribeAvailableResource(req)
 	elapsed := time.Since(start)
 	if err != nil {
-		return model.AvailabilityResult{}, fmt.Errorf("DescribeAvailableResource(region=%s, instanceType=%s) failed after %s: %w",
-			region, instanceType, elapsed, err)
+		return model.AvailabilityResult{}, fmt.Errorf("DescribeAvailableResource(region=%s, instanceType=%s) failed after %s: %s",
+			region, instanceType, elapsed, csp.RedactErr(err))
 	}
 
 	result := model.AvailabilityResult{

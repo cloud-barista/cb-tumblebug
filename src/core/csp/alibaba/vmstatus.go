@@ -69,7 +69,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 
 		resp, err := client.DescribeInstances(req)
 		if err != nil {
-			return nil, fmt.Errorf("Alibaba DescribeInstances failed (region=%s): %w", region, err)
+			return nil, fmt.Errorf("Alibaba DescribeInstances failed (region=%s): %s", region, csp.RedactErr(err))
 		}
 
 		for _, inst := range resp.Instances.Instance {
