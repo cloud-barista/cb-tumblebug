@@ -35,6 +35,18 @@ extractionPatterns:
             - "*ubuntu-pro*"         # Ubuntu Pro (paid support)
             - "*-pro-*"              # Pro variants with dashes
             - "*:pro-*"              # Azure format pro images
+            # The three above all assume a hyphenated image name. The text these rules are
+            # matched against is OSDistribution, and GCP puts prose there - "Canonical,
+            # Ubuntu, 22.04 LTS Pro Server, amd64 jammy pro server image built on ..." - so
+            # the hyphen forms never fire and a licensed image was classified as a clean
+            # base image. Space-separated forms cover it.
+            - "*lts pro*"            # "22.04 LTS Pro Server", "22.04 LTS Pro FIPS" (GCP)
+            - "*minimal pro*"        # "22.04 LTS Minimal Pro" (GCP)
+            - "* pro server*"        # "... amd64 jammy pro server image ..." (GCP)
+            # Accelerator images that are not GPU images: a TPU image carries an
+            # accelerator runtime and is not a clean base install, but the GPU detector
+            # looks for nvidia/gpu/cuda and never matches it.
+            - "*tpu version*"        # "22.04 LTS TPU version(s): v5e/v5p/v6e" (GCP)
             - "*marketplace*"
             # Development/Testing  
             - "*daily*"

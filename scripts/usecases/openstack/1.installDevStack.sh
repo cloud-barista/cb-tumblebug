@@ -485,7 +485,12 @@ follow_stack() {
         sleep 10
     done
     sleep 3
-    kill "$tail_pid" 2>/dev/null || true
+    # The follower runs under sudo, so it belongs to root and this script cannot signal it:
+    # a plain kill fails silently, the wait below never returns, and the caller sits on a
+    # finished install until its timeout (measured: stack.sh done in 998 s, the command
+    # still running 40 minutes later). Signal it as root, children first.
+    sudo pkill -P "$tail_pid" 2>/dev/null || true
+    sudo kill "$tail_pid" 2>/dev/null || true
     wait "$tail_pid" 2>/dev/null || true
 }
 
