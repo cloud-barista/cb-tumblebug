@@ -42,6 +42,9 @@ var RuntimeK8sClusterInfo = model.K8sClusterAssetInfo{}
 // RuntimeExtractPatternsInfo is global variable for model.ExtractPatternsInfo
 var RuntimeExtractPatternsInfo = model.ExtractPatternsInfo{}
 
+// RuntimeRDBMSInfo is global variable for model.RDBMSInfoConfig
+var RuntimeRDBMSInfo = model.RDBMSInfoConfig{}
+
 // RuntimeLatancyMap is global variable for LatancyMap
 var RuntimeLatancyMap = [][]string{}
 

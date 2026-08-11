@@ -12404,6 +12404,253 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/rdbms:
+    get:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: List RDBMS instances
+      description: |-
+        Get the list of RDBMS instances registered in the namespace
+
+        **Filtering with filterKey and filterVal:**
+        Both parameters perform a case-insensitive substring match against the stored JSON of each resource.
+        A resource is included in the result only when its JSON contains **both** the filterKey string and the filterVal string.
+      operationId: ListRDBMSs
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          enum:
+          - id
+      - name: filterKey
+        in: query
+        description: "Field key for filtering (ex: connectionName)"
+        schema:
+          type: string
+      - name: filterVal
+        in: query
+        description: "Field value for filtering (ex: aws-ap-northeast-2)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/resource.JSONResult'
+                - type: object
+                  properties:
+                    '[DEFAULT]':
+                      $ref: '#/components/schemas/model.RDBMSListResponse'
+                    '[ID]':
+                      $ref: '#/components/schemas/model.IdList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Create an RDBMS instance
+      description: |-
+        Create a managed RDBMS instance and wait for it to become Available (provisioning
+        can take several minutes).
+
+        Call GET /tumblebug/rdbms/support first to discover valid dbEngineVersion/
+        dbInstanceSpec/storageType/storageSize values and Requires*/Supports* constraints
+        for the target connectionName. Alternatively, set autoFillDefaults=true to have
+        those four fields filled from the first supported option reported — this is a
+        capability-valid pick, not a cost/performance recommendation.
+      operationId: PostRDBMS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      requestBody:
+        description: RDBMS Create Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RDBMSCreateRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RDBMSInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: reqBody
+  /ns/{nsId}/resources/rdbms/{rdbmsId}:
+    get:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Get details of an RDBMS instance
+      description: "Get details of an RDBMS instance, always refreshed live"
+      operationId: GetRDBMS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: rdbmsId
+        in: path
+        description: RDBMS ID
+        required: true
+        schema:
+          type: string
+          default: rdbms-01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RDBMSInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Delete an RDBMS instance
+      description: Delete an RDBMS instance. Use option=force to delete despite DeletionProtection.
+      operationId: DeleteRDBMS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: rdbmsId
+        in: path
+        description: RDBMS ID
+        required: true
+        schema:
+          type: string
+          default: rdbms-01
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          enum:
+          - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/searchImage:
     post:
       tags:
@@ -16813,8 +17060,15 @@ paths:
       - "[Infra Resource] RDBMS Management"
       summary: Get CSP RDBMS capability support information
       description: |-
-        Get CSP support metadata and capabilities for RDBMS engines (e.g., mysql, mariadb, postgresql)
-        Query parameters can be filtered by providerName, regionName, or dbEngine.
+        Get CSP support metadata and capabilities for a single connection (resolved from
+        providerName+regionName) and DB engine. This is computed live per request, so
+        providerName/regionName/dbEngine are all required to avoid a slow fan-out across
+        every registered connection and every supported engine.
+
+        Some fields (e.g. storageTypeOptions, storageSizeRange) may be a fixed/approximate
+        reference value rather than a live, current value for a given CSP. Check
+        notes.staticFields for which field names that applies to right now, and why; a
+        field not listed there is live.
       operationId: GetRDBMSSupport
       parameters:
       - name: providerName
@@ -16833,7 +17087,7 @@ paths:
           default: ap-northeast-2
       - name: dbEngine
         in: query
-        description: "DB Engine Name (e.g., mysql, mariadb, postgresql)"
+        description: DB Engine Name
         required: true
         schema:
           type: string
@@ -24681,6 +24935,198 @@ components:
           type: string
         publicKeyTokenId:
           type: string
+    model.RDBMSCreateRequest:
+      required:
+      - connectionName
+      - dbEngine
+      - masterUserName
+      - masterUserPassword
+      - name
+      - vNetId
+      type: object
+      properties:
+        autoFillDefaults:
+          type: boolean
+          description: |-
+            AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from
+            GET /tumblebug/rdbms/support when left empty/zero. Selection is "first supported
+            option that passes live capability checks" — not a cost/performance recommendation.
+          example: false
+        backupRetentionDays:
+          type: integer
+          example: 7
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2
+        dbEngine:
+          type: string
+          example: mysql
+          enum:
+          - mysql
+          - mariadb
+          - postgresql
+        dbEngineVersion:
+          type: string
+          description: DBEngineVersion may be left empty when AutoFillDefaults is
+            true.
+          example: "8.0"
+        dbInstanceSpec:
+          type: string
+          description: DBInstanceSpec may be left empty when AutoFillDefaults is true.
+          example: db.t3.medium
+        deletionProtection:
+          type: boolean
+          example: false
+        description:
+          type: string
+          example: managed by CB-Tumblebug
+        highAvailability:
+          type: boolean
+          example: false
+        iops:
+          type: string
+          example: "3000"
+        masterUserName:
+          type: string
+          example: admin
+        masterUserPassword:
+          type: string
+          example: Password123!
+        name:
+          type: string
+          example: rdbms-01
+        publicAccess:
+          type: boolean
+          example: true
+        securityGroupIds:
+          type: array
+          example:
+          - sg-01
+          items:
+            type: string
+        storageSize:
+          type: integer
+          description: StorageSize may be left as 0 when AutoFillDefaults is true.
+          example: 100
+        storageType:
+          type: string
+          example: gp3
+        subnetIds:
+          type: array
+          example:
+          - subnet-01
+          items:
+            type: string
+        tagList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        vNetId:
+          type: string
+          example: vnet-01
+    model.RDBMSInfo:
+      type: object
+      properties:
+        backupRetentionDays:
+          type: integer
+          example: 7
+        backupTime:
+          type: string
+          example: 03:00
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Condition'
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+        dbEngine:
+          type: string
+          example: mysql
+        dbEngineVersion:
+          type: string
+          example: "8.0"
+        dbInstanceSpec:
+          type: string
+          example: db.t3.medium
+        deletionProtection:
+          type: boolean
+          example: false
+        description:
+          type: string
+        encryption:
+          type: boolean
+        endpoint:
+          type: string
+          example: rdbms-01.xxxx.rds.amazonaws.com:3306
+        highAvailability:
+          type: boolean
+          example: false
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: rdbms-01
+        iops:
+          type: string
+          example: "3000"
+        masterUserName:
+          type: string
+          example: admin
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: rdbms-01
+        publicAccess:
+          type: boolean
+          example: true
+        resourceType:
+          type: string
+          description: ResourceType is the type of this resource
+          example: rdbms
+        securityGroupIds:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        storageSize:
+          type: integer
+          example: 100
+        storageType:
+          type: string
+          example: gp3
+        subnetIds:
+          type: array
+          items:
+            type: string
+        systemMessage:
+          type: string
+        tagList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vNetId:
+          type: string
+    model.RDBMSListResponse:
+      type: object
+      properties:
+        rdbms:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.RDBMSInfo'
     model.RDBMSMetaInfo:
       type: object
       properties:
@@ -24699,6 +25145,14 @@ components:
           - db.t3.medium
           items:
             type: string
+        notes:
+          type: object
+          description: |-
+            Notes carries Tumblebug's own advisory annotations about this response (storage
+            type guidance, which fields above are static/approximate), as opposed to the live
+            capability fields above, which come straight from CB-Spider.
+          allOf:
+          - $ref: '#/components/schemas/model.RDBMSNotes'
         providerName:
           type: string
           example: aws
@@ -24748,6 +25202,33 @@ components:
         supportsStorageTypeSelection:
           type: boolean
           example: true
+    model.RDBMSNotes:
+      type: object
+      properties:
+        staticFields:
+          type: array
+          description: |-
+            StaticFields lists which fields of the surrounding RDBMSMetaInfo are fixed/approximate
+            reference values right now, and why; a field not listed there is live.
+          items:
+            $ref: '#/components/schemas/model.RDBMSStaticField'
+        storageTypes:
+          type: array
+          description: |-
+            StorageTypes is per-storage-type guidance (display name, description, constraints,
+            recommendation) for each entry in StorageTypeOptions above; see buildStorageTypeNotes.
+          items:
+            $ref: '#/components/schemas/model.StorageTypeNote'
+    model.RDBMSStaticField:
+      type: object
+      properties:
+        field:
+          type: string
+          example: storageTypeOptions
+        note:
+          type: string
+          example: NCP G3 generation sets storage type (SSD) automatically; not user-selectable
+            or queryable via API.
     model.RDBMSSupportResponse:
       type: object
       properties:
@@ -24755,9 +25236,7 @@ components:
           type: string
           example: rdbms
         supports:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.RDBMSMetaInfo'
+          $ref: '#/components/schemas/model.RDBMSMetaInfo'
     model.Range:
       type: object
       properties:
@@ -27170,6 +27649,55 @@ components:
         min:
           type: integer
           example: 10
+    model.StorageTypeNote:
+      type: object
+      properties:
+        compatibleSpecs:
+          type: array
+          example:
+          - rds.mysql.*
+          items:
+            type: string
+        constraints:
+          type: string
+          example: "Requires 'iops' parameter (e.g., '3000')"
+        description:
+          type: string
+          example: "Cost-effective, 3000 baseline IOPS, recommended for general workloads"
+        displayName:
+          type: string
+          example: General Purpose SSD v3
+        incompatibleSpecs:
+          type: array
+          example:
+          - mysql.n4.*
+          items:
+            type: string
+        iopsRange:
+          $ref: '#/components/schemas/model.StorageSizeRange'
+        maxSize:
+          type: integer
+          example: 65536
+        minSize:
+          type: integer
+          example: 100
+        recommendationLevel:
+          type: string
+          example: recommended
+          enum:
+          - legacy
+          - standard
+          - recommended
+          - premium
+        recommended:
+          type: boolean
+          example: true
+        requiresIops:
+          type: boolean
+          example: true
+        storageType:
+          type: string
+          example: gp3
     model.SubnetInfo:
       type: object
       properties:

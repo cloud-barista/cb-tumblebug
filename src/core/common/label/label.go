@@ -652,7 +652,7 @@ func ListCSPResourceLabel(ctx context.Context, labelType, uid string, connection
 
 // convertTermToSpider converts internal label type to CSP resource type
 func convertTermToSpider(labelType string) string {
-	// Spider ResourceType Enum: all, image, vpc, subnet, sg, keypair, vm, nlb, disk, myimage, cluster, nodegroup
+	// Spider ResourceType Enum: all, image, vpc, subnet, sg, keypair, vm, nlb, disk, myimage, cluster, nodegroup, rdbms
 	if strings.EqualFold(labelType, model.StrVNet) {
 		return model.StrVPC
 	} else if strings.EqualFold(labelType, model.StrSecurityGroup) {
@@ -666,7 +666,9 @@ func convertTermToSpider(labelType string) string {
 	} else if strings.EqualFold(labelType, model.StrNode) {
 		return model.StrSpiderVM // CB-Spider uses "vm" for VM resources
 	} else if strings.EqualFold(labelType, model.StrK8s) {
-		return "cluster" // CB-Spider uses "cluster" for K8s cluster resources
+		return model.StrCluster // CB-Spider uses "cluster" for K8s cluster resources
+	} else if strings.EqualFold(labelType, model.StrRDBMS) {
+		return model.StrRDBMS // CB-Spider uses "rdbms" for RDBMS resources
 	} else {
 		return labelType
 	}

@@ -1063,7 +1063,8 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		strings.EqualFold(resourceType, model.StrVNet) ||
 		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
 		strings.EqualFold(resourceType, model.StrDataDisk) ||
-		strings.EqualFold(resourceType, model.StrObjectStorage) {
+		strings.EqualFold(resourceType, model.StrObjectStorage) ||
+		strings.EqualFold(resourceType, model.StrRDBMS) {
 		// continue
 	} else {
 		errString := "Cannot list " + resourceType + "s."
@@ -1285,6 +1286,26 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				res = append(res, tempObj)
 			}
 			return res, nil
+		case model.StrRDBMS:
+			res := []model.RDBMSInfo{}
+			for _, v := range keyValue {
+				tempObj := model.RDBMSInfo{}
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					log.Error().Err(err).Msg("")
+					return nil, err
+				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
+				}
+				res = append(res, tempObj)
+			}
+			return res, nil
 		}
 
 	} else { //return empty object according to resourceType
@@ -1305,6 +1326,8 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			return []model.DataDiskInfo{}, nil
 		case model.StrObjectStorage:
 			return []model.ObjectStorageInfo{}, nil
+		case model.StrRDBMS:
+			return []model.RDBMSInfo{}, nil
 		}
 	}
 
@@ -1840,6 +1863,14 @@ func GetResource(nsId string, resourceType string, resourceId string) (any, erro
 			return res, nil
 		case model.StrObjectStorage:
 			res := model.ObjectStorageInfo{}
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return nil, err
+			}
+			return res, nil
+		case model.StrRDBMS:
+			res := model.RDBMSInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")

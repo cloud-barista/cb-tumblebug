@@ -360,9 +360,9 @@ type CreateNodeGroupReq struct {
 	// and the image is not a custom image, CreateNode skips the redundant per-VM GetImage
 	// DB call, significantly reducing concurrent DB load during large infra creation.
 	// Custom images always go through the full GetImage path (this field stays empty for them).
-	CspImageName     string   `json:"cspImageName,omitempty"`
-	VNetId           string   `json:"vNetId" validate:"required"`
-	SubnetId         string   `json:"subnetId" validate:"required"`
+	CspImageName string `json:"cspImageName,omitempty"`
+	VNetId       string `json:"vNetId" validate:"required"`
+	SubnetId     string `json:"subnetId" validate:"required"`
 	// SubnetIds, when non-empty, spreads this NodeGroup's VMs across these subnets
 	// (round-robin by VM index). SubnetId above is the primary/fallback (first subnet).
 	// Populated by dynamic provisioning when DistributeSubnets is requested; empty means
@@ -2081,21 +2081,21 @@ type InfraAutopilotReq struct {
 
 // ProvisioningAttempt records one pre-flight review pass for a candidate spec.
 type ProvisioningAttempt struct {
-	NodeSpecName   string  `json:"nodeSpecName"`
-	NodeGroupName  string  `json:"nodeGroupName"`
-	SpecId         string  `json:"specId"`
-	ConnectionName string  `json:"connectionName,omitempty"`
-	Zone           string  `json:"zone,omitempty"`
-	ImageId        string  `json:"imageId,omitempty"`
-	RequestedCount int     `json:"requestedCount"`
-	SucceededCount int     `json:"succeededCount"`
-	TrimmedCount   int     `json:"trimmedCount"`
-	PoolIndex      int     `json:"poolIndex"`
-	Status         string  `json:"status"`
-	FailureReason  string  `json:"failureReason,omitempty"`
-	ReviewRejected bool    `json:"reviewRejected,omitempty"`
-	ZoneOverridden bool    `json:"zoneOverridden,omitempty"`
-	DiskOverridden bool    `json:"diskOverridden,omitempty"`
+	NodeSpecName        string  `json:"nodeSpecName"`
+	NodeGroupName       string  `json:"nodeGroupName"`
+	SpecId              string  `json:"specId"`
+	ConnectionName      string  `json:"connectionName,omitempty"`
+	Zone                string  `json:"zone,omitempty"`
+	ImageId             string  `json:"imageId,omitempty"`
+	RequestedCount      int     `json:"requestedCount"`
+	SucceededCount      int     `json:"succeededCount"`
+	TrimmedCount        int     `json:"trimmedCount"`
+	PoolIndex           int     `json:"poolIndex"`
+	Status              string  `json:"status"`
+	FailureReason       string  `json:"failureReason,omitempty"`
+	ReviewRejected      bool    `json:"reviewRejected,omitempty"`
+	ZoneOverridden      bool    `json:"zoneOverridden,omitempty"`
+	DiskOverridden      bool    `json:"diskOverridden,omitempty"`
 	RiskLevel           string  `json:"riskLevel,omitempty"`
 	CostPerHour         float64 `json:"costPerHour,omitempty"`
 	StartedAt           string  `json:"startedAt,omitempty"`

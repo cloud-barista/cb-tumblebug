@@ -299,3 +299,24 @@ func DeriveObjectStorageStatus(conditions []Condition) string {
 
 	return StorageStatusAvailable
 }
+
+// DeriveRDBMSStatus derives the RDBMS instance status from its Conditions.
+func DeriveRDBMSStatus(conditions []Condition) string {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status == ConditionUnknown {
+		return StorageStatusUnknown
+	}
+
+	if ready.Status == ConditionFalse {
+		switch ready.Reason {
+		case ReasonCreating:
+			return StorageStatusCreating
+		case ReasonDeleting:
+			return StorageStatusDeleting
+		default:
+			return StorageStatusFailed
+		}
+	}
+
+	return StorageStatusAvailable
+}
