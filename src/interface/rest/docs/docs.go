@@ -14700,6 +14700,307 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/rdbms": {
+            "get": {
+                "description": "Get the list of RDBMS instances registered in the namespace\n\n**Filtering with filterKey and filterVal:**\nBoth parameters perform a case-insensitive substring match against the stored JSON of each resource.\nA resource is included in the result only when its JSON contains **both** the filterKey string and the filterVal string.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "List RDBMS instances",
+                "operationId": "ListRDBMSs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: connectionName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: aws-ap-northeast-2)",
+                        "name": "filterVal",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Different return structures by the given option param",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resource.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/model.RDBMSListResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/model.IdList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a managed RDBMS instance and wait for it to become Available (provisioning\ncan take several minutes).\n\nCall GET /tumblebug/rdbms/support first to discover valid dbEngineVersion/\ndbInstanceSpec/storageType/storageSize values and Requires*/Supports* constraints\nfor the target connectionName. Alternatively, set autoFillDefaults=true to have\nthose four fields filled from the first supported option reported — this is a\ncapability-valid pick, not a cost/performance recommendation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Create an RDBMS instance",
+                "operationId": "PostRDBMS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "RDBMS Create Request",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSCreateRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/rdbms/{rdbmsId}": {
+            "get": {
+                "description": "Get details of an RDBMS instance, always refreshed live",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Get details of an RDBMS instance",
+                "operationId": "GetRDBMS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "rdbms-01",
+                        "description": "RDBMS ID",
+                        "name": "rdbmsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an RDBMS instance. Use option=force to delete despite DeletionProtection.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Delete an RDBMS instance",
+                "operationId": "DeleteRDBMS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "rdbms-01",
+                        "description": "RDBMS ID",
+                        "name": "rdbmsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/searchImage": {
             "post": {
                 "description": "Search image",
@@ -19961,7 +20262,7 @@ const docTemplate = `{
         },
         "/rdbms/support": {
             "get": {
-                "description": "Get CSP support metadata and capabilities for RDBMS engines (e.g., mysql, mariadb, postgresql)\nQuery parameters can be filtered by providerName, regionName, or dbEngine.",
+                "description": "Get CSP support metadata and capabilities for a single connection (resolved from\nproviderName+regionName) and DB engine. This is computed live per request, so\nproviderName/regionName/dbEngine are all required to avoid a slow fan-out across\nevery registered connection and every supported engine.\n\nSome fields (e.g. storageTypeOptions, storageSizeRange) may be a fixed/approximate\nreference value rather than a live, current value for a given CSP. Check\nnotes.staticFields for which field names that applies to right now, and why; a\nfield not listed there is live.",
                 "consumes": [
                     "application/json"
                 ],
@@ -20001,7 +20302,7 @@ const docTemplate = `{
                         "type": "string",
                         "default": "mysql",
                         "example": "mysql",
-                        "description": "DB Engine Name (e.g., mysql, mariadb, postgresql)",
+                        "description": "DB Engine Name",
                         "name": "dbEngine",
                         "in": "query",
                         "required": true
@@ -30027,6 +30328,261 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RDBMSCreateRequest": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "dbEngine",
+                "masterUserName",
+                "masterUserPassword",
+                "name",
+                "vNetId"
+            ],
+            "properties": {
+                "autoFillDefaults": {
+                    "description": "AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from\nGET /tumblebug/rdbms/support when left empty/zero. Selection is \"first supported\noption that passes live capability checks\" — not a cost/performance recommendation.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "backupRetentionDays": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "dbEngine": {
+                    "type": "string",
+                    "enum": [
+                        "mysql",
+                        "mariadb",
+                        "postgresql"
+                    ],
+                    "example": "mysql"
+                },
+                "dbEngineVersion": {
+                    "description": "DBEngineVersion may be left empty when AutoFillDefaults is true.",
+                    "type": "string",
+                    "example": "8.0"
+                },
+                "dbInstanceSpec": {
+                    "description": "DBInstanceSpec may be left empty when AutoFillDefaults is true.",
+                    "type": "string",
+                    "example": "db.t3.medium"
+                },
+                "deletionProtection": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "description": {
+                    "type": "string",
+                    "example": "managed by CB-Tumblebug"
+                },
+                "highAvailability": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "iops": {
+                    "type": "string",
+                    "example": "3000"
+                },
+                "masterUserName": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "masterUserPassword": {
+                    "type": "string",
+                    "example": "Password123!"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "rdbms-01"
+                },
+                "publicAccess": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
+                },
+                "storageSize": {
+                    "description": "StorageSize may be left as 0 when AutoFillDefaults is true.",
+                    "type": "integer",
+                    "example": 100
+                },
+                "storageType": {
+                    "type": "string",
+                    "example": "gp3"
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
+                },
+                "tagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "vNetId": {
+                    "type": "string",
+                    "example": "vnet-01"
+                }
+            }
+        },
+        "model.RDBMSInfo": {
+            "type": "object",
+            "properties": {
+                "backupRetentionDays": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "backupTime": {
+                    "type": "string",
+                    "example": "03:00"
+                },
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string"
+                },
+                "dbEngine": {
+                    "type": "string",
+                    "example": "mysql"
+                },
+                "dbEngineVersion": {
+                    "type": "string",
+                    "example": "8.0"
+                },
+                "dbInstanceSpec": {
+                    "type": "string",
+                    "example": "db.t3.medium"
+                },
+                "deletionProtection": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "description": {
+                    "type": "string"
+                },
+                "encryption": {
+                    "type": "boolean"
+                },
+                "endpoint": {
+                    "type": "string",
+                    "example": "rdbms-01.xxxx.rds.amazonaws.com:3306"
+                },
+                "highAvailability": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "rdbms-01"
+                },
+                "iops": {
+                    "type": "string",
+                    "example": "3000"
+                },
+                "masterUserName": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "rdbms-01"
+                },
+                "publicAccess": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of this resource",
+                    "type": "string",
+                    "example": "rdbms"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "storageSize": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "storageType": {
+                    "type": "string",
+                    "example": "gp3"
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "systemMessage": {
+                    "type": "string"
+                },
+                "tagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RDBMSListResponse": {
+            "type": "object",
+            "properties": {
+                "rdbms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RDBMSInfo"
+                    }
+                }
+            }
+        },
         "model.RDBMSMetaInfo": {
             "type": "object",
             "properties": {
@@ -30049,6 +30605,14 @@ const docTemplate = `{
                     },
                     "example": [
                         "db.t3.medium"
+                    ]
+                },
+                "notes": {
+                    "description": "Notes carries Tumblebug's own advisory annotations about this response (storage\ntype guidance, which fields above are static/approximate), as opposed to the live\ncapability fields above, which come straight from CB-Spider.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.RDBMSNotes"
+                        }
                     ]
                 },
                 "providerName": {
@@ -30120,6 +30684,38 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RDBMSNotes": {
+            "type": "object",
+            "properties": {
+                "staticFields": {
+                    "description": "StaticFields lists which fields of the surrounding RDBMSMetaInfo are fixed/approximate\nreference values right now, and why; a field not listed there is live.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RDBMSStaticField"
+                    }
+                },
+                "storageTypes": {
+                    "description": "StorageTypes is per-storage-type guidance (display name, description, constraints,\nrecommendation) for each entry in StorageTypeOptions above; see buildStorageTypeNotes.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.StorageTypeNote"
+                    }
+                }
+            }
+        },
+        "model.RDBMSStaticField": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string",
+                    "example": "storageTypeOptions"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "NCP G3 generation sets storage type (SSD) automatically; not user-selectable or queryable via API."
+                }
+            }
+        },
         "model.RDBMSSupportResponse": {
             "type": "object",
             "properties": {
@@ -30128,10 +30724,7 @@ const docTemplate = `{
                     "example": "rdbms"
                 },
                 "supports": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.RDBMSMetaInfo"
-                    }
+                    "$ref": "#/definitions/model.RDBMSMetaInfo"
                 }
             }
         },
@@ -33421,6 +34014,74 @@ const docTemplate = `{
                 "min": {
                     "type": "integer",
                     "example": 10
+                }
+            }
+        },
+        "model.StorageTypeNote": {
+            "type": "object",
+            "properties": {
+                "compatibleSpecs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "rds.mysql.*"
+                    ]
+                },
+                "constraints": {
+                    "type": "string",
+                    "example": "Requires 'iops' parameter (e.g., '3000')"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Cost-effective, 3000 baseline IOPS, recommended for general workloads"
+                },
+                "displayName": {
+                    "type": "string",
+                    "example": "General Purpose SSD v3"
+                },
+                "incompatibleSpecs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "mysql.n4.*"
+                    ]
+                },
+                "iopsRange": {
+                    "$ref": "#/definitions/model.StorageSizeRange"
+                },
+                "maxSize": {
+                    "type": "integer",
+                    "example": 65536
+                },
+                "minSize": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "recommendationLevel": {
+                    "type": "string",
+                    "enum": [
+                        "legacy",
+                        "standard",
+                        "recommended",
+                        "premium"
+                    ],
+                    "example": "recommended"
+                },
+                "recommended": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "requiresIops": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "storageType": {
+                    "type": "string",
+                    "example": "gp3"
                 }
             }
         },

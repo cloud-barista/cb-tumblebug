@@ -396,6 +396,27 @@ func setConfig() {
 		panic(err)
 	}
 
+	//
+	// Load rdbmsinfo
+	//
+	// Non-fatal unlike the assets above: it only enriches RDBMS support responses and
+	// create-request validation with a storage type knowledge base (resource/rdbms.go);
+	// a missing/invalid file must not stop the server from starting.
+	rdbmsInfoViper := viper.New()
+	fileName = "rdbmsinfo"
+	common.SetupViperPaths(rdbmsInfoViper)
+	rdbmsInfoViper.SetConfigName(fileName)
+	rdbmsInfoViper.SetConfigType("yaml")
+	if err = rdbmsInfoViper.ReadInConfig(); err != nil {
+		log.Error().Err(err).Msg("config: failed to read rdbmsinfo config file")
+	} else {
+		log.Info().Msgf("config: loaded %s", rdbmsInfoViper.ConfigFileUsed())
+		if err = rdbmsInfoViper.Unmarshal(&common.RuntimeRDBMSInfo); err != nil {
+			log.Error().Err(err).Msg("config: failed to unmarshal rdbmsinfo")
+			common.RuntimeRDBMSInfo = model.RDBMSInfoConfig{}
+		}
+	}
+
 	// Restore CSPs registered at runtime (POST /cloudInfo/{providerName}) before the
 	// registration sweep below, so they are pushed to CB-Spider along with the ones
 	// read from cloudinfo.yaml. Loading these must not be fatal: a provider that can

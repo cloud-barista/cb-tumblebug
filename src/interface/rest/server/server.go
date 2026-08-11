@@ -758,7 +758,6 @@ func RunServer() {
 	g.POST("/:nsId/registerCspResource/vNet/:vNetId/subnet", rest_resource.RestPostRegisterSubnet)
 	g.DELETE("/:nsId/deregisterResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
 
-
 	// NLB support information
 	e.GET("/tumblebug/nlb/support", rest_infra.RestGetNLBSupport)
 
@@ -767,6 +766,12 @@ func RunServer() {
 
 	// RDBMS support information
 	e.GET("/tumblebug/rdbms/support", rest_resource.RestGetRDBMSSupport)
+
+	// RDBMS instance lifecycle management
+	g.POST("/:nsId/resources/rdbms", rest_resource.RestPostRDBMS)
+	g.GET("/:nsId/resources/rdbms", rest_resource.RestGetAllResources)
+	g.GET("/:nsId/resources/rdbms/:rdbmsId", rest_resource.RestGetRDBMS)
+	g.DELETE("/:nsId/resources/rdbms/:rdbmsId", rest_resource.RestDeleteRDBMS)
 
 	// Object Storage management
 	g.PUT("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)

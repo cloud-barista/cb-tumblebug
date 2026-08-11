@@ -1,0 +1,384 @@
+# Configuration for RDBMS (Relational Database Management System) of Cloud Service Providers (CSPs)
+# This file defines storage types, DBMS requirements, and database requirements for each CSP
+
+# Last Updated: 2026-08-11
+# Source: CB-Spider storage-type-test (2026-08-03)
+# Reference: https://github.com/cloud-barista/cb-spider/tree/master/test/rdbms-mysql-test/storage-type-test
+
+# The file is in YAML format and contains the following fields:
+# dbms: Top level key
+#   <csp>: Name of the CSP (lowercase)
+#     description: Description of the CSP RDBMS service
+#     link: URL to the official documentation
+#     storageTypeSelectable: true|false - whether this CSP lets a caller choose a storage
+#       type at all (per CB-Spider's storage-type-test). false covers both "storage type
+#       is not user-configurable" (e.g. azure/ibm/ncp auto-assign it) and "only one type
+#       exists" CSPs. This is a static reference value; the live, per-connection flag is
+#       RDBMSMetaInfo.SupportsStorageTypeSelection (see resource/rdbms.go).
+#     storageTypes: Storage type configurations (map structure for O(1) lookup)
+#       <storageType>: Storage type identifier (as returned by CSP)
+#         name: Display name
+#         description: User-friendly description
+#         recommendationLevel: legacy|standard|recommended|premium
+#         requiresIops: true|false (whether 'iops' parameter is required)
+#         minStorageSize: Minimum storage size in GB
+#         maxStorageSize: Maximum storage size in GB (optional)
+#         note: Additional notes or constraints
+#     dbmsRequirements: DBMS engine-specific requirements (e.g., MySQL, PostgreSQL)
+#     databaseRequirements: Database-level requirements (naming rules, reserved names, etc.)
+
+dbms:
+  aws:
+    description: Amazon Web Services RDS (Relational Database Service)
+    link: https://docs.aws.amazon.com/rds/
+    storageTypeSelectable: true
+    storageTypes:
+      gp2:
+        name: General Purpose SSD (gp2)
+        description: Legacy general-purpose SSD storage. Consider gp3 for better cost/performance.
+        recommendationLevel: legacy
+        requiresIops: false
+        minStorageSize: 20
+        maxStorageSize: 65536
+        note: "Verified: 2026-08-03 (Spider storage-type-test)"
+        
+      gp3:
+        name: General Purpose SSD (gp3)
+        description: Latest generation general-purpose SSD with 3,000 baseline IOPS and 125 MiB/s throughput. Recommended for most workloads.
+        recommendationLevel: recommended
+        requiresIops: false
+        minStorageSize: 20
+        maxStorageSize: 65536
+        note: "Verified: 2026-08-03 (Spider storage-type-test)"
+        
+      io1:
+        name: Provisioned IOPS SSD (io1)
+        description: High-performance SSD for I/O-intensive workloads. Requires 'iops' parameter (e.g., '3000'). Minimum 100 GB storage.
+        recommendationLevel: premium
+        requiresIops: true
+        minStorageSize: 100
+        maxStorageSize: 65536
+        iopsRange:
+          min: 1000
+          max: 64000
+        note: "Verified: 2026-08-03 (Spider storage-type-test with iops=3000)"
+        
+      io2:
+        name: Provisioned IOPS SSD (io2)
+        description: Next-generation high-performance SSD with higher durability (99.999%). Requires 'iops' parameter. Minimum 100 GB storage.
+        recommendationLevel: premium
+        requiresIops: true
+        minStorageSize: 100
+        maxStorageSize: 65536
+        iopsRange:
+          min: 1000
+          max: 256000
+        note: "Verified: 2026-08-03 (Spider storage-type-test with iops=3000)"
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 20
+        maxStorageSize: 65536
+        defaultPort: 3306
+        note: "Storage size requirements apply to all MySQL versions on AWS RDS"
+        
+    databaseRequirements:
+      maxDatabaseNameLength: 64
+      reservedDatabaseNames:
+        - mysql
+        - information_schema
+        - performance_schema
+        - sys
+        - rdsadmin
+      note: "Database names are case-insensitive on MySQL. Reserved names cannot be used."
+      
+  gcp:
+    description: Google Cloud Platform Cloud SQL
+    link: https://cloud.google.com/sql/docs
+    storageTypeSelectable: true
+    storageTypes:
+      PD_SSD:
+        name: Persistent Disk SSD
+        description: Standard SSD storage. Automatically selected for N2 machine series (db-perf-optimized-N-*) and Shared/Dedicated core instances.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 10
+        maxStorageSize: 65536
+        note: "Verified: 2026-08-03 (Spider storage-type-test). Machine series determines storage type; not directly selectable."
+        
+      PD_HDD:
+        name: Persistent Disk HDD
+        description: Cost-effective HDD storage for less I/O-intensive workloads. Available on Shared/Dedicated core instances.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 10
+        maxStorageSize: 65536
+        note: "Verified: 2026-08-03 (Spider storage-type-test)"
+        
+      HYPERDISK_BALANCED:
+        name: Hyperdisk Balanced
+        description: High-performance next-generation storage. Minimum 20 GB. Only available on C4A (db-c4a-highmem-*) and N4 (db-custom-N4-*) machine series.
+        recommendationLevel: premium
+        requiresIops: false
+        minStorageSize: 20
+        maxStorageSize: 65536
+        compatibleMachineSeries:
+          - C4A
+          - N4
+        note: "Verified: 2026-08-03 (Spider storage-type-test). Automatically selected when using C4A/N4 instances."
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 10
+        maxStorageSize: 65536
+        defaultPort: 3306
+        note: "Storage type is determined by machine series selection (N2, C4A, N4, etc.), not directly by user input"
+        
+    databaseRequirements:
+      maxDatabaseNameLength: 64
+      reservedDatabaseNames:
+        - mysql
+        - information_schema
+        - performance_schema
+        - sys
+      note: "Database names follow standard MySQL naming conventions"
+      
+  alibaba:
+    description: Alibaba Cloud ApsaraDB RDS
+    link: https://www.alibabacloud.com/help/en/rds/
+    storageTypeSelectable: true
+    storageTypes:
+      cloud_auto:
+        name: Auto-selected Storage Type
+        description: Alibaba Cloud automatically selects the optimal storage type based on region and instance specification. Recommended for simplicity.
+        recommendationLevel: recommended
+        requiresIops: false
+        minStorageSize: 20
+        maxStorageSize: 32768
+        note: "Verified: 2026-08-03 (Spider storage-type-test returned 'general_essd'). CSP determines actual type at provisioning time."
+        
+      cloud_essd:
+        name: Enhanced SSD (ESSD PL1)
+        description: Standard enhanced SSD with good balance of performance and cost. Performance Level 1.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 20
+        maxStorageSize: 32768
+        note: "Verified: 2026-08-03 (Spider storage-type-test)"
+        
+      cloud_essd2:
+        name: Enhanced SSD (ESSD PL2)
+        description: High-performance enhanced SSD. Performance Level 2. Minimum 500 GB storage. Not compatible with mysql.n4.* instance specifications.
+        recommendationLevel: premium
+        requiresIops: false
+        minStorageSize: 500
+        maxStorageSize: 32768
+        incompatibleSpecs:
+          - "mysql.n4.*"
+        note: "Verified: 2026-08-03 (Spider storage-type-test with mysql.n2.small.2c spec). Requires mysql.n2.* or higher spec series."
+        
+      cloud_essd3:
+        name: Enhanced SSD (ESSD PL3)
+        description: Ultra-high-performance enhanced SSD. Performance Level 3. Minimum 1,500 GB storage. Not compatible with mysql.n4.* instance specifications.
+        recommendationLevel: premium
+        requiresIops: false
+        minStorageSize: 1500
+        maxStorageSize: 32768
+        incompatibleSpecs:
+          - "mysql.n4.*"
+        note: "Verified: 2026-08-03 (Spider storage-type-test with mysql.n2.small.2c spec). Requires mysql.n2.* or higher spec series."
+        
+      local_ssd:
+        name: Premium Local SSD
+        description: Local SSD storage with high performance. Only compatible with rds.mysql.* instance specification series. Data loss risk on instance failure.
+        recommendationLevel: premium
+        requiresIops: false
+        minStorageSize: 20
+        maxStorageSize: 2000
+        compatibleSpecs:
+          - "rds.mysql.*"
+        note: "Verified: 2026-08-03 (Spider storage-type-test with rds.mysql.t1.small). Not compatible with mysql.n4.* series (InvalidInstanceLevel.DiskType error)."
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 20
+        maxStorageSize: 32768
+        defaultPort: 3306
+        note: "Storage type compatibility depends on instance specification series (mysql.n4.*, mysql.n2.*, rds.mysql.*)"
+        
+    databaseRequirements:
+      maxDatabaseNameLength: 64
+      reservedDatabaseNames:
+        - mysql
+        - information_schema
+        - performance_schema
+        - sys
+      note: "Database names follow standard MySQL naming conventions"
+      
+  tencent:
+    description: Tencent Cloud TencentDB for MySQL
+    link: https://www.tencentcloud.com/document/product/236
+    storageTypeSelectable: true
+    storageTypes:
+      local_ssd:
+        name: Local SSD
+        description: High-performance local SSD storage. Minimum 50 GB.
+        recommendationLevel: premium
+        requiresIops: false
+        minStorageSize: 50
+        note: "Verified: 2026-08-03 (Spider storage-type-test)"
+        
+      CLOUD_HSSD:
+        name: Cloud Enhanced SSD
+        description: Cloud-based enhanced SSD with high performance. Minimum 50 GB.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 50
+        note: "Storage type option available in TencentDB metainfo API"
+        
+      CLOUD_SSD:
+        name: Cloud SSD
+        description: Standard cloud SSD storage. Minimum 50 GB.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 50
+        note: "Storage type option available in TencentDB metainfo API"
+        
+      CLOUD_PREMIUM:
+        name: Cloud Premium
+        description: Premium cloud storage with good balance. Minimum 50 GB.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 50
+        note: "Storage type option available in TencentDB metainfo API"
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 50
+        defaultPort: 3306
+        note: "DBInstanceSpec is specified in MB (e.g., 8000 = 8 GB memory). Concurrent order rejection may occur (OperationDenied.OtherOderInProcess); driver auto-retries."
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"
+      
+  openstack:
+    description: OpenStack Trove
+    link: https://docs.openstack.org/trove/latest/
+    storageTypeSelectable: true
+    storageTypes:
+      __DEFAULT__:
+        name: Default Storage
+        description: Default storage type provided by OpenStack deployment. Actual backend depends on deployment configuration.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 1
+        note: "Verified: 2026-08-03 (Spider storage-type-test). OpenStack Trove does not expose storage type in instance info after creation."
+        
+      RBD:
+        name: Ceph RBD
+        description: Ceph RADOS Block Device storage (if available in deployment).
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 1
+        note: "Verified: 2026-08-03 (Spider storage-type-test). Availability depends on OpenStack deployment. Storage type not exposed post-creation."
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 1
+        defaultPort: 3306
+        note: "Storage type selection depends on OpenStack deployment configuration"
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"
+      
+  nhn:
+    description: NHN Cloud RDS for MySQL
+    link: https://docs.nhncloud.com/ko/Database/RDS/ko/overview/
+    storageTypeSelectable: true
+    storageTypes:
+      General_HDD:
+        name: General HDD
+        description: Cost-effective HDD storage for less demanding workloads. Minimum 20 GB.
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 20
+        note: "Verified: 2026-08-03 (Spider storage-type-test, elapsed 10m7s)"
+        
+      General_SSD:
+        name: General SSD
+        description: Standard SSD storage for better performance. Recommended for most workloads. Minimum 20 GB.
+        recommendationLevel: recommended
+        requiresIops: false
+        minStorageSize: 20
+        note: "Verified: 2026-08-03 (Spider storage-type-test, elapsed 11m7s)"
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 20
+        defaultPort: 3306
+        note: "Storage type options are queried dynamically from NHN Cloud RDS API"
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"
+      
+  azure:
+    description: Azure Database for MySQL Flexible Server
+    link: https://learn.microsoft.com/azure/mysql/flexible-server/
+    note: "Storage type selection not supported. Storage SKU is read-only and automatically set by Azure based on compute tier (Premium SSD for General Purpose/Memory Optimized tiers, locally redundant storage for Burstable tier)."
+    storageTypeSelectable: false
+    storageTypes:
+      auto:
+        name: Automatic (Azure-managed)
+        description: Storage SKU is automatically determined by Azure based on compute tier. User cannot specify storage type.
+        recommendationLevel: standard
+        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). storageSku is read-only in Azure MySQL Flexible Server API."
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 20
+        maxStorageSize: 16384
+        defaultPort: 3306
+        note: "Storage is managed automatically by Azure based on compute tier selection"
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"
+      
+  ibm:
+    description: IBM Cloud Databases for MySQL
+    link: https://cloud.ibm.com/docs/databases-for-mysql
+    note: "Storage type selection not supported. IBM Cloud Databases manages storage automatically."
+    storageTypeSelectable: false
+    storageTypes:
+      auto:
+        name: Automatic (IBM-managed)
+        description: Storage is managed automatically by IBM Cloud Databases. User cannot specify storage type.
+        recommendationLevel: standard
+        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). IBM Cloud Databases does not provide storage type selection."
+        
+    dbmsRequirements:
+      mysql:
+        defaultPort: 3306
+        note: "Storage is managed automatically by IBM Cloud"
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"
+      
+  ncp:
+    description: Naver Cloud Platform Cloud DB for MySQL
+    link: https://www.ncloud.com/product/database/cloudDbMysql
+    note: "Storage type selection not supported. NCP G3 generation automatically applies SSD storage."
+    storageTypeSelectable: false
+    storageTypes:
+      ssd:
+        name: SSD (automatic)
+        description: G3 generation automatically uses SSD storage. DataStorageTypeCode cannot be specified by user.
+        recommendationLevel: standard
+        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). NCP G3 applies SSD automatically; storage type cannot be specified."
+        
+    dbmsRequirements:
+      mysql:
+        defaultPort: 3306
+        note: "G3 generation uses SSD by default; no user configuration available"
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"

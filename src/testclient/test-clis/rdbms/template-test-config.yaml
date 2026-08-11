@@ -1,0 +1,183 @@
+tumblebug:
+  # CB-Tumblebug API endpoint
+  endpoint: http://localhost:1323
+
+  # Namespace used for all test operations
+  nsId: default
+
+# Multi-CSP test cases for batch testing the RDBMS lifecycle:
+# vNet+subnets -> securityGroup -> rdbms/support -> RDBMS create -> get -> list
+# -> delete -> securityGroup delete -> subnets delete -> vNet delete
+#
+# Copy this file to test-config.yaml and adjust values for your environment.
+# Set 'execute: true' for the CSPs you want to include in the test run.
+#
+# autoFillDefaults: true fills dbEngineVersion/dbInstanceSpec/storageType/storageSize
+# from GET /tumblebug/rdbms/support (first supported option) — see
+# docs/feature_guide/rdbms-management.md. Leave the four fields blank when using it.
+#
+# CSPs verified for RDBMS (mysql) per docs/feature_guide/rdbms-management.md §2.1:
+# aws, azure, gcp, alibaba, tencent, ibm, openstack, ncp, nhn
+#
+# Password policy quirks (see rdbms-management.md §5):
+# - IBM: rejects special characters (e.g. !, @) in masterUserPassword
+# - NCP: requires a special character in masterUserPassword
+testCases:
+  - rdbmsId: test-rdbms-aws
+    connectionName: aws-ap-northeast-2
+    vNetName: test-rdbms-vnet-aws
+    cidrBlock: 10.0.0.0/16
+    # AWS requires 2 subnets in distinct AZs (SubnetGroup requirement) and a SecurityGroup.
+    subnets:
+      - name: subnet-1
+        cidr: 10.0.1.0/24
+        zone: ap-northeast-2a
+      - name: subnet-2
+        cidr: 10.0.2.0/24
+        zone: ap-northeast-2c
+    securityGroupName: test-rdbms-sg-aws
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-azure
+    connectionName: azure-koreacentral
+    vNetName: test-rdbms-vnet-azure
+    cidrBlock: 10.1.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.1.1.0/24
+        zone: ""
+    securityGroupName: test-rdbms-sg-azure
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-gcp
+    connectionName: gcp-us-central1
+    vNetName: test-rdbms-vnet-gcp
+    cidrBlock: 10.2.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.2.1.0/24
+        zone: us-central1-a
+    securityGroupName: test-rdbms-sg-gcp
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-alibaba
+    connectionName: alibaba-ap-northeast-1
+    vNetName: test-rdbms-vnet-alibaba
+    cidrBlock: 10.3.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.3.1.0/24
+        zone: ""
+    securityGroupName: test-rdbms-sg-alibaba
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-tencent
+    connectionName: tencent-ap-seoul
+    vNetName: test-rdbms-vnet-tencent
+    cidrBlock: 10.4.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.4.1.0/24
+        zone: ""
+    securityGroupName: test-rdbms-sg-tencent
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-ibm
+    connectionName: ibm-us-south
+    vNetName: test-rdbms-vnet-ibm
+    cidrBlock: 10.5.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.5.1.0/24
+        zone: ""
+    securityGroupName: test-rdbms-sg-ibm
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    # IBM rejects special characters in the password.
+    masterUserPassword: Password123
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-openstack
+    connectionName: openstack-regionone
+    vNetName: test-rdbms-vnet-openstack
+    cidrBlock: 10.6.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.6.1.0/24
+        zone: ""
+    securityGroupName: test-rdbms-sg-openstack
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-ncp
+    connectionName: ncp-kr
+    vNetName: test-rdbms-vnet-ncp
+    cidrBlock: 10.7.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.7.1.0/24
+        zone: ""
+    securityGroupName: test-rdbms-sg-ncp
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    # NCP requires a special character in the password.
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
+
+  - rdbmsId: test-rdbms-nhn
+    connectionName: nhn-kr1
+    vNetName: test-rdbms-vnet-nhn
+    cidrBlock: 10.8.0.0/16
+    subnets:
+      - name: subnet-1
+        cidr: 10.8.1.0/24
+        zone: ""
+    securityGroupName: test-rdbms-sg-nhn
+    dbEngine: mysql
+    autoFillDefaults: true
+    masterUserName: admin
+    masterUserPassword: Password123!
+    publicAccess: true
+    highAvailability: false
+    execute: false
