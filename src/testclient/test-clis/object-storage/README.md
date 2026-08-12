@@ -121,18 +121,28 @@ Each column shows `OK` on success or `FAIL: <reason>` on error.
 ## Reconcile orphaned metadata
 
 If a bucket creation partially failed and the metadata is stuck in a `Failed`
-state, you can clean it up without touching the CSP by calling the Tumblebug
-API directly:
+state, diagnosis and cleanup are two separate steps — Reconcile never deletes
+metadata by itself. First, diagnose:
 
 ```bash
-curl -X DELETE \
-  "http://localhost:1323/tumblebug/ns/default/resources/objectStorage/test-bucket-tencent?reconcile=true" \
+curl -X PUT \
+  "http://localhost:1323/tumblebug/ns/default/resources/objectStorage/test-bucket-tencent/reconcile" \
   -u "$TB_API_USERNAME:$TB_API_PASSWORD"
 ```
 
-The `reconcile=true` option checks whether the CSP bucket actually exists and
-removes only the Tumblebug metadata if the bucket is absent, leaving the CSP
-resource untouched.
+This checks whether the CSP bucket actually exists. If it doesn't, the resource
+is marked `Failed` with `ConditionSynced.Reason=CspResourceMissing`, and the
+metadata is preserved (not deleted) so you can review it first. Once you've
+confirmed it's safe to remove, prune it:
+
+```bash
+curl -X POST \
+  "http://localhost:1323/tumblebug/ns/default/resources/objectStorage/reconcile/prune" \
+  -u "$TB_API_USERNAME:$TB_API_PASSWORD"
+```
+
+`Prune` only removes items diagnosed as `CspResourceMissing` across the whole
+namespace; it never touches the CSP resource itself.
 
 ---
 

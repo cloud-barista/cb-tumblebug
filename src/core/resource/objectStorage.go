@@ -794,8 +794,11 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 }
 
 // markObjectStorageDeleteFailedThenReconcile persists the object storage as
-// Failed(DeletionFailed) and then runs a single-shot self-heal
-// ReconcileObjectStorage (any reconcile error is logged at WARN only).
+// Failed(DeletionFailed) and then diagnoses (and restores, if applicable)
+// its sync state against the CSP — the same non-destructive check the
+// ObjectStorageReconciler performs. It only ever calls kvstore.Put; it never
+// deletes metadata or calls Spider DELETE (see docs/feature_guide/
+// resource-reconciliation.md, "Spider Delete Behavior").
 //
 // `cause` is the original delete error; it populates both the Condition
 // message and SystemMessage. The caller decides what error to return.
@@ -805,12 +808,34 @@ func markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey string, o
 	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
 	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
 	objStrgInfo.SystemMessage = cause.Error()
+
+	statusResp, fetchErr := GetCspResourceStatus(objStrgInfo.ConnectionName, model.StrObjectStorage)
+	if fetchErr != nil {
+		log.Warn().Err(fetchErr).Msgf("auto-diagnose after delete failure could not fetch CSP status for objectStorage %s/%s", nsId, osId)
+	} else {
+		syncState := GetResourceSyncState(objStrgInfo.CspResourceName, objStrgInfo.CspResourceId, statusResp)
+		if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(objStrgInfo.Conditions) {
+			prevReason, prevMessage := "", ""
+			if cond := model.GetCondition(objStrgInfo.Conditions, model.ConditionReady); cond != nil {
+				prevReason = cond.Reason
+				prevMessage = cond.Message
+			}
+			restoredMsg := fmt.Sprintf("Restored from %s; CSP resource exists", prevReason)
+			if prevMessage != "" {
+				restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
+			}
+			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
+			// Record Synced from the real syncState, not a hardcoded "Synchronized with CSP" — keeps SpMetaMissing visible during restore.
+			ApplySyncState(&objStrgInfo.Conditions, &objStrgInfo.Status, &objStrgInfo.SystemMessage, syncState)
+			// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
+			objStrgInfo.Status = model.StorageStatusAvailable
+		} else {
+			ApplySyncState(&objStrgInfo.Conditions, &objStrgInfo.Status, &objStrgInfo.SystemMessage, syncState)
+		}
+	}
+
 	if failVal, marshalErr := json.Marshal(objStrgInfo); marshalErr == nil {
 		_ = kvstore.Put(objStrgKey, string(failVal))
-	}
-	// Self-heal: opportunistic single-shot Reconcile after recording Failed state.
-	if _, recErr := ReconcileObjectStorage(nsId, osId); recErr != nil {
-		log.Warn().Err(recErr).Msgf("auto-reconcile after delete failure failed for objectStorage %s/%s", nsId, osId)
 	}
 }
 
@@ -970,174 +995,6 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 	}
 
 	return nil
-}
-
-// ReconcileObjectStorage repairs discrepancies between Tumblebug metadata and
-// the actual CSP resource:
-//  1. Uid empty (CSP resource never created) → orphaned metadata removed.
-//  2. Uid set but CSP bucket missing → orphaned metadata removed.
-//  3. CSP bucket exists and metadata stuck in Failed(DeletionFailed) →
-//     status restored to Available.
-//
-// Otherwise returns "NoActionNeeded".
-func ReconcileObjectStorage(nsId, osId string) (model.ObjectStorageReconcileResponse, error) {
-	var emptyRet model.ObjectStorageReconcileResponse
-
-	// 1. Validate input parameters
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	err = common.CheckString(osId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-
-	result := model.ObjectStorageReconcileResponse{
-		ObjectStorageId: osId,
-	}
-
-	// 2. Fetch metadata from the key-value store
-	resourceType := model.StrObjectStorage
-	objStrgData, err := GetResource(nsId, resourceType, osId)
-	if err != nil {
-		// Metadata not found – nothing to reconcile
-		result.MetadataStatus = "NotFound"
-		result.CspResourceStatus = "Skipped"
-		result.Action = "NoActionNeeded"
-		result.Message = fmt.Sprintf("No metadata found for object storage '%s'; nothing to reconcile", osId)
-		log.Warn().Msgf("ReconcileObjectStorage: %s", result.Message)
-		return result, nil
-	}
-
-	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
-	result.MetadataStatus = "Found"
-	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
-
-	// 3. If Uid is empty the CSP resource was never created; metadata is orphaned
-	if objStrgInfo.Uid == "" {
-		result.CspResourceStatus = "Skipped"
-		log.Warn().Msgf("ReconcileObjectStorage: object storage '%s' has no CSP resource (Uid empty); removing orphaned metadata", osId)
-
-		if delErr := kvstore.Delete(objStrgKey); delErr != nil {
-			log.Error().Err(delErr).Msg("ReconcileObjectStorage: failed to delete orphaned metadata")
-			return emptyRet, delErr
-		}
-		// Label cleanup is best-effort; Uid is empty so there is no label entry to clean.
-		result.Action = "MetadataRemoved"
-		result.Message = "Orphaned metadata removed: CSP resource was never created (Uid is empty)"
-		return result, nil
-	}
-
-	// 4. Check whether the CSP resource actually exists via Spider HEAD
-	connName := objStrgInfo.ConnectionName
-	uid := objStrgInfo.Uid
-
-	client := clientManager.NewHttpClient()
-	spReq := clientManager.NoBody
-	spResp := clientManager.NoBody
-	headURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
-	log.Debug().Msgf("[ReconcileObjectStorage] HEAD %s", headURL)
-
-	// headRestyResp is captured so HandleHttpResponse can wrap the error with
-	// the HTTP status code for accurate apierr classification.
-	headRestyResp, headErr := clientManager.ExecuteHttpRequest(
-		client,
-		"HEAD",
-		headURL,
-		spiderS3JSONHeaders,
-		clientManager.SetUseBody(spReq),
-		&spReq,
-		&spResp,
-		clientManager.ShortDuration,
-	)
-	headErr = clientManager.HandleHttpResponse(headRestyResp, headErr)
-
-	if headErr == nil {
-		// 5a. CSP resource exists.
-		result.CspResourceStatus = "Exists"
-
-		// If metadata is stuck in a terminal-failure state (e.g., DeletionFailed)
-		// while the CSP resource is alive, restore the status to Available.
-		// This typically happens when a previous Delete failed due to a
-		// dependency that has since been resolved.
-		if model.ShouldRestoreToAvailable(objStrgInfo.Conditions) {
-			prevReason := ""
-			if r := model.GetCondition(objStrgInfo.Conditions, model.ConditionReady); r != nil {
-				prevReason = r.Reason
-			}
-			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored,
-				fmt.Sprintf("Restored from %s; CSP resource exists", prevReason))
-			model.SetCondition(&objStrgInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
-			objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
-			objStrgInfo.SystemMessage = ""
-
-			restoredVal, marshalErr := json.Marshal(objStrgInfo)
-			if marshalErr != nil {
-				log.Error().Err(marshalErr).Msg("ReconcileObjectStorage: failed to marshal restored info")
-				return emptyRet, marshalErr
-			}
-			if putErr := kvstore.Put(objStrgKey, string(restoredVal)); putErr != nil {
-				log.Error().Err(putErr).Msg("ReconcileObjectStorage: failed to persist restored info")
-				return emptyRet, putErr
-			}
-
-			result.Action = "StatusRestored"
-			result.Message = fmt.Sprintf("CSP resource exists; status restored to Available from %s", prevReason)
-			log.Info().Msgf("ReconcileObjectStorage: bucket '%s' status restored to Available (from %s)", uid, prevReason)
-			return result, nil
-		}
-
-		result.Action = "NoActionNeeded"
-		result.Message = "CSP resource exists; metadata is consistent"
-		log.Info().Msgf("ReconcileObjectStorage: bucket '%s' exists on CSP — no action needed", uid)
-		return result, nil
-	}
-
-	// 5b. CSP resource does not exist (HEAD returned an error / 404)
-	result.CspResourceStatus = "NotFound"
-	log.Warn().Err(headErr).Msgf("ReconcileObjectStorage: bucket '%s' not found on CSP; removing orphaned metadata", uid)
-
-	// [Via Spider] Purge Spider bucket metadata by force delete (CSP resource already gone).
-	// Note: Spider sends a force delete request to the CSP and removes its own metadata
-	// regardless of whether the CSP-side deletion succeeds or fails.
-	forceDelURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s&force=true", model.SpiderRestUrl, uid, connName)
-	log.Debug().Msgf("[ReconcileObjectStorage] Purge Spider bucket metadata by force delete: %s", forceDelURL)
-	spForceDelReq := clientManager.NoBody
-	spForceDelResp := clientManager.NoBody
-	restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
-		clientManager.NewHttpClient(),
-		"DELETE",
-		forceDelURL,
-		spiderS3JSONHeaders,
-		clientManager.SetUseBody(spForceDelReq),
-		&spForceDelReq,
-		&spForceDelResp,
-		clientManager.ShortDuration,
-	)
-	forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr)
-	if forceDelErr != nil {
-		log.Warn().Err(forceDelErr).Msgf("ReconcileObjectStorage: Purge Spider bucket metadata by force delete failed for %s (continuing reconcile)", uid)
-	} else {
-		log.Info().Msgf("ReconcileObjectStorage: Purge Spider bucket metadata by force delete succeeded for %s", uid)
-	}
-
-	// Remove metadata from kvstore
-	if delErr := kvstore.Delete(objStrgKey); delErr != nil {
-		log.Error().Err(delErr).Msg("ReconcileObjectStorage: failed to delete orphaned metadata")
-		return emptyRet, delErr
-	}
-
-	// Remove label — best-effort (non-fatal if label is already absent)
-	if labelErr := label.DeleteLabelObject(model.StrObjectStorage, objStrgInfo.Uid); labelErr != nil {
-		log.Warn().Err(labelErr).Msg("ReconcileObjectStorage: failed to delete label (non-fatal)")
-	}
-
-	result.Action = "MetadataRemoved"
-	result.Message = fmt.Sprintf("Orphaned metadata removed: CSP resource '%s' does not exist", uid)
-	return result, nil
 }
 
 // CheckObjectStorageExistence checks if the object storage exists in both the key-value store and Spider
@@ -2224,14 +2081,47 @@ func PruneObjectStorages(nsId string) (model.ResourcePruneResults, error) {
 
 	for _, osItem := range osList {
 		condSynced := model.GetCondition(osItem.Conditions, model.ConditionSynced)
-		isMissing := (condSynced != nil && condSynced.Reason == model.ReasonCspResourceMissing) ||
-			(osItem.Status == model.StorageStatusFailed && condSynced != nil && condSynced.Status == model.ConditionFalse)
-
-		if !isMissing {
+		// Only ReasonCspResourceMissing is Prune's concern — a broader Status==Failed check would also
+		// match SpMetaMissing (CSP still alive) and delete metadata for a resource that isn't actually gone.
+		if condSynced == nil || condSynced.Reason != model.ReasonCspResourceMissing {
 			continue
 		}
 
 		osKey := common.GenResourceKey(nsId, model.StrObjectStorage, osItem.Id)
+
+		// The list above is a snapshot; re-read and re-verify right before acting, since a
+		// concurrent Reconcile may have already restored this item in the meantime.
+		freshKv, exists, fErr := kvstore.GetKv(osKey)
+		if fErr != nil || !exists {
+			continue
+		}
+		if json.Unmarshal([]byte(freshKv.Value), &osItem) != nil {
+			continue
+		}
+		condSynced = model.GetCondition(osItem.Conditions, model.ConditionSynced)
+		if condSynced == nil || condSynced.Reason != model.ReasonCspResourceMissing {
+			continue
+		}
+
+		// Purge Spider's own orphaned IID too, or it's stranded forever once TB's record is gone.
+		if osItem.Uid != "" {
+			forceDelURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s&force=true", model.SpiderRestUrl, osItem.Uid, osItem.ConnectionName)
+			spForceDelReq := clientManager.NoBody
+			spForceDelResp := clientManager.NoBody
+			restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
+				clientManager.NewHttpClient(),
+				"DELETE",
+				forceDelURL,
+				spiderS3JSONHeaders,
+				clientManager.SetUseBody(spForceDelReq),
+				&spForceDelReq,
+				&spForceDelResp,
+				clientManager.ShortDuration,
+			)
+			if forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr); forceDelErr != nil && !apierr.IsNotFound(forceDelErr) {
+				log.Warn().Err(forceDelErr).Msgf("Prune: failed to purge Spider metadata for ObjectStorage %s (continuing)", osItem.Id)
+			}
+		}
 
 		// Remove label
 		if lErr := label.DeleteLabelObject(model.StrObjectStorage, osItem.Uid); lErr != nil {

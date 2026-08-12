@@ -269,15 +269,15 @@ func RestGetObjectStorageLocation(c echo.Context) error {
 // @Description | (none) | Standard delete. Fails if the bucket is not empty. |
 // @Description | `empty` | Empty the bucket first, then delete. |
 // @Description | `force` | Force delete bucket with all contents (passed to Spider as `force=true`). Behaviour varies by CSP; use when standard delete is not sufficient. |
-// @Description | `reconcile` | Do not call the CSP delete API. Instead, check whether the CSP bucket actually exists and remove only the Tumblebug metadata if the bucket is absent. Use this to clean up orphaned metadata that cannot be deleted through normal means (e.g., a bucket stuck in `Failed` status after a partial creation or a CSP-side deletion error such as Tencent 405). Returns a reconcile result object instead of 204. |
+// @Description
+// @Description To clean up metadata for a bucket whose CSP resource is already gone, use `PUT .../reconcile` followed by `POST .../prune` instead of a delete option.
 // @Tags [Infra Resource] Object Storage Management
 // @Accept json
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param osId path string true "Object Storage ID" default(os01)
-// @Param option query string false "Delete option (mutually exclusive)" Enums(empty, force, reconcile)
+// @Param option query string false "Delete option (mutually exclusive)" Enums(empty, force)
 // @Success 204 "No Content"
-// @Success 200 {object} model.ObjectStorageReconcileResponse "OK (option=reconcile only)"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -302,20 +302,10 @@ func RestDeleteObjectStorage(c echo.Context) error {
 	}
 
 	option := strings.ToLower(c.QueryParam("option"))
-	if option != "" && option != "empty" && option != "force" && option != "reconcile" {
-		err := fmt.Errorf("invalid option %q: must be one of empty, force, reconcile", option)
+	if option != "" && option != "empty" && option != "force" {
+		err := fmt.Errorf("invalid option %q: must be one of empty, force", option)
 		log.Warn().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-	}
-
-	// [Process] reconcile branch
-	if option == "reconcile" {
-		result, err := resource.ReconcileObjectStorage(nsId, osId)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to reconcile object storage")
-			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-		}
-		return c.JSON(http.StatusOK, result)
 	}
 
 	// [Process] normal delete branch
@@ -1034,7 +1024,7 @@ func RestReconcileObjectStorage(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /ns/{nsId}/resources/objectStorage/prune [post]
+// @Router /ns/{nsId}/resources/objectStorage/reconcile/prune [post]
 func RestPruneObjectStorages(c echo.Context) error {
 	nsId := c.Param("nsId")
 	if nsId == "" {

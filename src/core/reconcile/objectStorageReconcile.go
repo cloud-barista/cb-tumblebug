@@ -82,11 +82,8 @@ func (r *ObjectStorageReconciler) reconcileAvailable(nsId string, osInfo *model.
 	osKey := common.GenResourceKey(nsId, model.StrObjectStorage, osInfo.Id)
 	syncState := resource.GetResourceSyncState(osInfo.CspResourceName, osInfo.CspResourceId, *statusResp)
 
-	if syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing {
-		resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, model.SyncStateInSync)
-	} else {
-		resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, syncState)
-	}
+	// Never fold SpMetaMissing into InSync — ApplySyncState leaves Status untouched for it, so this stays accurate.
+	resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, syncState)
 
 	val, err := json.Marshal(osInfo)
 	if err != nil {
@@ -104,16 +101,22 @@ func (r *ObjectStorageReconciler) reconcileFailed(nsId string, osInfo *model.Obj
 	syncState := resource.GetResourceSyncState(osInfo.CspResourceName, osInfo.CspResourceId, *statusResp)
 
 	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(osInfo.Conditions) {
-		prevReason := ""
+		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(osInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason
+			prevMessage = cond.Message
 		}
 		log.Info().Msgf("ObjectStorage (%s) restored from %s to Available; CSP resource exists", osInfo.Id, prevReason)
 
-		model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, fmt.Sprintf("Restored from %s; CSP resource exists", prevReason))
-		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Synchronized with CSP")
+		restoredMsg := fmt.Sprintf("Restored from %s; CSP resource exists", prevReason)
+		if prevMessage != "" {
+			restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
+		}
+		model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
+		// Record Synced from the real syncState, not a hardcoded "Synchronized with CSP" — keeps SpMetaMissing visible during restore.
+		resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, syncState)
+		// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
 		osInfo.Status = model.StorageStatusAvailable
-		osInfo.SystemMessage = ""
 	} else {
 		resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, syncState)
 	}

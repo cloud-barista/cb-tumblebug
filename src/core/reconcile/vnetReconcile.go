@@ -112,17 +112,15 @@ func (r *VNetReconciler) reconcileAvailable(nsId string, vNetInfo *model.VNetInf
 
 	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
 
-	if syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing {
-		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, model.SyncStateInSync)
-	} else {
-		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
-	}
+	// Never fold SpMetaMissing into InSync — ApplySyncState leaves Status untouched for it, so this stays accurate.
+	resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
 
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		return model.SimpleMsg{}, err
 	}
-	if putErr := kvstore.Put(vNetKey, string(val)); putErr != nil {
+	// PutResourceObject (not a plain kvstore.Put) preserves AssociatedObjectList against a concurrent update.
+	if putErr := resource.PutResourceObject(vNetKey, val); putErr != nil {
 		return model.SimpleMsg{}, putErr
 	}
 	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) reconciled", vNetInfo.Id)}, nil
@@ -138,16 +136,22 @@ func (r *VNetReconciler) reconcileFailed(nsId string, vNetInfo *model.VNetInfo, 
 	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
 
 	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(vNetInfo.Conditions) {
-		prevReason := ""
+		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason
+			prevMessage = cond.Message
 		}
 		log.Info().Msgf("vNet (%s) restored from %s to Available; CSP resource exists", vNetInfo.Id, prevReason)
 
-		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, fmt.Sprintf("Restored from %s; CSP resource exists", prevReason))
-		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Synchronized with CSP")
+		restoredMsg := fmt.Sprintf("Restored from %s; CSP resource exists", prevReason)
+		if prevMessage != "" {
+			restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
+		}
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
+		// Record Synced from the real syncState, not a hardcoded "Synchronized with CSP" — keeps SpMetaMissing visible during restore.
+		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
+		// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
 		vNetInfo.Status = model.NetworkStatusAvailable
-		vNetInfo.SystemMessage = ""
 	} else {
 		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
 	}
@@ -156,7 +160,8 @@ func (r *VNetReconciler) reconcileFailed(nsId string, vNetInfo *model.VNetInfo, 
 	if err != nil {
 		return model.SimpleMsg{}, err
 	}
-	if putErr := kvstore.Put(vNetKey, string(val)); putErr != nil {
+	// PutResourceObject (not a plain kvstore.Put) preserves AssociatedObjectList against a concurrent update.
+	if putErr := resource.PutResourceObject(vNetKey, val); putErr != nil {
 		return model.SimpleMsg{}, putErr
 	}
 	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) reconciled", vNetInfo.Id)}, nil

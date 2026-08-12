@@ -1072,3 +1072,99 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 
 	return nil
 }
+
+// PruneRDBMS purges Tumblebug metadata for RDBMS instances diagnosed by Reconcile
+// as missing on CSP (ConditionSynced.Reason == ReasonCspResourceMissing). This is
+// the only place, besides an explicit DeleteRDBMS call, that removes RDBMS metadata.
+func PruneRDBMS(nsId string) (model.ResourcePruneResults, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		return model.ResourcePruneResults{}, err
+	}
+
+	resList, err := ListResource(nsId, model.StrRDBMS, "", "")
+	if err != nil {
+		return model.ResourcePruneResults{}, err
+	}
+
+	rdbmsList, ok := resList.([]model.RDBMSInfo)
+	if !ok {
+		return model.ResourcePruneResults{}, fmt.Errorf("unexpected type from ListResource")
+	}
+
+	pruneResults := model.ResourcePruneResults{
+		Results: []model.ResourcePruneResult{},
+	}
+
+	for _, rdbmsItem := range rdbmsList {
+		condSynced := model.GetCondition(rdbmsItem.Conditions, model.ConditionSynced)
+		// Only ReasonCspResourceMissing is Prune's concern — a broader Status==Failed check would also
+		// match SpMetaMissing (CSP still alive) and delete metadata for a resource that isn't actually gone.
+		if condSynced == nil || condSynced.Reason != model.ReasonCspResourceMissing {
+			continue
+		}
+
+		rdbmsKey := common.GenResourceKey(nsId, model.StrRDBMS, rdbmsItem.Id)
+
+		// The list above is a snapshot; re-read and re-verify right before acting, since a
+		// concurrent Reconcile may have already restored this item in the meantime.
+		freshKv, exists, fErr := kvstore.GetKv(rdbmsKey)
+		if fErr != nil || !exists {
+			continue
+		}
+		if json.Unmarshal([]byte(freshKv.Value), &rdbmsItem) != nil {
+			continue
+		}
+		condSynced = model.GetCondition(rdbmsItem.Conditions, model.ConditionSynced)
+		if condSynced == nil || condSynced.Reason != model.ReasonCspResourceMissing {
+			continue
+		}
+
+		// Purge Spider's own orphaned IID too, or it's stranded forever once TB's record is gone.
+		if rdbmsItem.Uid != "" {
+			forceDelURL := fmt.Sprintf("%s/rdbms/%s?force=true", model.SpiderRestUrl, rdbmsItem.Uid)
+			spForceDelReq := spiderRDBMSDeleteRequest{ConnectionName: rdbmsItem.ConnectionName}
+			var spForceDelResp spiderBooleanInfoResp
+			restyForceDelResp, forceDelErr := clientManager.ExecuteHttpRequest(
+				clientManager.NewHttpClient(),
+				"DELETE",
+				forceDelURL,
+				nil,
+				clientManager.SetUseBody(spForceDelReq),
+				&spForceDelReq,
+				&spForceDelResp,
+				clientManager.ShortDuration,
+			)
+			if forceDelErr = clientManager.HandleHttpResponse(restyForceDelResp, forceDelErr); forceDelErr != nil && !apierr.IsNotFound(forceDelErr) {
+				log.Warn().Err(forceDelErr).Msgf("Prune: failed to purge Spider metadata for RDBMS %s (continuing)", rdbmsItem.Id)
+			}
+		}
+
+		// Remove label
+		if lErr := label.DeleteLabelObject(model.StrRDBMS, rdbmsItem.Uid); lErr != nil {
+			log.Warn().Err(lErr).Msgf("failed to delete label during prune for RDBMS %s", rdbmsItem.Id)
+		}
+
+		// Delete KV metadata
+		delErr := kvstore.Delete(rdbmsKey)
+		res := model.ResourcePruneResult{
+			ResourceType:   model.StrRDBMS,
+			ResourceId:     rdbmsItem.Id,
+			ConnectionName: rdbmsItem.ConnectionName,
+		}
+
+		if delErr != nil {
+			res.Success = false
+			res.Error = delErr.Error()
+			pruneResults.FailedCount++
+		} else {
+			res.Success = true
+			res.Message = fmt.Sprintf("Orphaned metadata for RDBMS (%s) pruned successfully", rdbmsItem.Id)
+			pruneResults.SuccessCount++
+		}
+		pruneResults.TotalPruned++
+		pruneResults.Results = append(pruneResults.Results, res)
+	}
+
+	return pruneResults, nil
+}

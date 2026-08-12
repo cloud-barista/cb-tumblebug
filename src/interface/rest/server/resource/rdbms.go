@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -238,4 +239,107 @@ func RestDeleteRDBMS(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// RestReconcileAllRDBMS godoc
+// @ID ReconcileAllRDBMS
+// @Summary Reconcile all RDBMS instances in a namespace
+// @Description Compares Tumblebug metadata with actual CSP RDBMS status via Spider.
+// @Description Restores status for alive resources and flags discrepancies.
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Success 200 {object} model.ResourceReconcileResults "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/rdbms/reconcile [put]
+func RestReconcileAllRDBMS(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := reconcile.GetManager().RunReconcileAll(c.Request().Context(), nsId, model.StrRDBMS, 5)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to reconcile RDBMS instances")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestReconcileRDBMS godoc
+// @ID ReconcileRDBMS
+// @Summary Reconcile a single RDBMS instance
+// @Description Compares Tumblebug metadata for a specific RDBMS instance with actual CSP status via Spider.
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param rdbmsId path string true "RDBMS ID" default(rdbms-01)
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/reconcile [put]
+func RestReconcileRDBMS(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	rdbmsId := c.Param("rdbmsId")
+	if rdbmsId == "" {
+		err := fmt.Errorf("rdbmsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := reconcile.GetManager().RunReconcile(c.Request().Context(), nsId, model.StrRDBMS, rdbmsId, nil)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to reconcile RDBMS (%s)", rdbmsId)
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestPruneRDBMS godoc
+// @ID PruneRDBMS
+// @Summary Prune orphaned RDBMS metadata in a namespace
+// @Description Purges Tumblebug metadata for RDBMS instances diagnosed as missing on CSP.
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Success 200 {object} model.ResourcePruneResults "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/rdbms/reconcile/prune [post]
+func RestPruneRDBMS(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := resource.PruneRDBMS(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to prune RDBMS metadata")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
 }

@@ -11381,7 +11381,8 @@ paths:
         | (none) | Standard delete. Fails if the bucket is not empty. |
         | `empty` | Empty the bucket first, then delete. |
         | `force` | Force delete bucket with all contents (passed to Spider as `force=true`). Behaviour varies by CSP; use when standard delete is not sufficient. |
-        | `reconcile` | Do not call the CSP delete API. Instead, check whether the CSP bucket actually exists and remove only the Tumblebug metadata if the bucket is absent. Use this to clean up orphaned metadata that cannot be deleted through normal means (e.g., a bucket stuck in `Failed` status after a partial creation or a CSP-side deletion error such as Tencent 405). Returns a reconcile result object instead of 204. |
+
+        To clean up metadata for a bucket whose CSP resource is already gone, use `PUT .../reconcile` followed by `POST .../prune` instead of a delete option.
       operationId: RestDeleteObjectStorage
       parameters:
       - name: nsId
@@ -11406,7 +11407,6 @@ paths:
           enum:
           - empty
           - force
-          - reconcile
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
@@ -11419,12 +11419,6 @@ paths:
         schema:
           type: string
       responses:
-        "200":
-          description: OK (option=reconcile only)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.ObjectStorageReconcileResponse'
         "204":
           description: No Content
           content: {}
@@ -12311,52 +12305,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/objectStorage/prune:
-    post:
-      tags:
-      - "[Infra Resource] Object Storage Management"
-      summary: Prune orphaned Object Storage metadata in a namespace
-      description: Purges Tumblebug metadata for Object Storage resources diagnosed
-        as missing on CSP.
-      operationId: PruneObjectStorages
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.ResourcePruneResults'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/objectStorage/reconcile:
     put:
       tags:
@@ -12392,6 +12340,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.ResourceReconcileResults'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/reconcile/prune:
+    post:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Prune orphaned Object Storage metadata in a namespace
+      description: Purges Tumblebug metadata for Object Storage resources diagnosed
+        as missing on CSP.
+      operationId: PruneObjectStorages
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ResourcePruneResults'
         "400":
           description: Bad Request
           content:
@@ -12647,6 +12641,158 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "404":
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/rdbms/{rdbmsId}/reconcile:
+    put:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Reconcile a single RDBMS instance
+      description: Compares Tumblebug metadata for a specific RDBMS instance with
+        actual CSP status via Spider.
+      operationId: ReconcileRDBMS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: rdbmsId
+        in: path
+        description: RDBMS ID
+        required: true
+        schema:
+          type: string
+          default: rdbms-01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/rdbms/reconcile:
+    put:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Reconcile all RDBMS instances in a namespace
+      description: |-
+        Compares Tumblebug metadata with actual CSP RDBMS status via Spider.
+        Restores status for alive resources and flags discrepancies.
+      operationId: ReconcileAllRDBMS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ResourceReconcileResults'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/rdbms/reconcile/prune:
+    post:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Prune orphaned RDBMS metadata in a namespace
+      description: Purges Tumblebug metadata for RDBMS instances diagnosed as missing
+        on CSP.
+      operationId: PruneRDBMS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ResourcePruneResults'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -14143,21 +14289,13 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Network Management"
-      summary: "Delete VNet (supporting actions: withsubnet, reconcile [deprecated],\
-        \ force)"
+      summary: "Delete VNet (supporting actions: withsubnet, force)"
       description: |-
         Delete VNet
         ---
         **action options:**
 
         **withsubnets** – Delete the VNet together with all its subnets in a single call.
-
-        **reconcile** – (To be deprecated: Use PUT /ns/{nsId}/resources/vNet/{vNetId}/reconcile instead) Synchronize Tumblebug metadata with the actual CSP state.
-        Checks whether the VNet/Subnet resource still exists on CSP (via Spider).
-        If the CSP resource is gone, removes the orphaned Tumblebug metadata.
-        If the CSP resource still exists, keeps the metadata intact.
-        Use this to clean up stale metadata after system errors or partial failures.
-        (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=reconcile` - To be deprecated)
 
         **force** – Force-delete the VNet and its subnets on CSP (passes `?force=true` to Spider).
         Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
@@ -14179,12 +14317,11 @@ paths:
           type: string
       - name: action
         in: query
-        description: Action (reconcile action is to be deprecated)
+        description: Action
         schema:
           type: string
           enum:
           - withsubnets
-          - reconcile
           - force
       - name: x-request-id
         in: header
@@ -14450,18 +14587,11 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Network Management"
-      summary: "Delete Subnet (supporting actions: reconcile [deprecated], force)"
+      summary: "Delete Subnet (supporting actions: force)"
       description: |-
         Delete Subnet
         ---
         **action options:**
-
-        **reconcile** – (To be deprecated: Use PUT /ns/{nsId}/resources/vNet/{vNetId}/reconcile instead) Synchronize Tumblebug metadata with the actual CSP state.
-        Checks whether the Subnet resource still exists on CSP (via Spider).
-        If the CSP resource is gone, removes the orphaned Tumblebug metadata.
-        If the CSP resource still exists, keeps the metadata intact.
-        Use this to clean up stale metadata after system errors or partial failures.
-        (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile` - To be deprecated)
 
         **force** – Force-delete the Subnet on CSP (passes `?force=true` to Spider).
         Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
@@ -14489,11 +14619,10 @@ paths:
           type: string
       - name: action
         in: query
-        description: Action (reconcile action is to be deprecated)
+        description: Action
         schema:
           type: string
           enum:
-          - reconcile
           - force
       - name: x-request-id
         in: header
@@ -14515,52 +14644,6 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/vNet/prune:
-    post:
-      tags:
-      - "[Infra Resource] Network Management"
-      summary: Prune orphaned vNet metadata in a namespace
-      description: Purges Tumblebug metadata for vNet resources diagnosed as missing
-        on CSP.
-      operationId: PruneVNets
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: x-request-id
-        in: header
-        description: Custom request ID for tracking
-        schema:
-          type: string
-      - name: x-credential-holder
-        in: header
-        description: "Credential holder ID for selecting which credentials to use\
-          \ (default: system default holder)"
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.ResourcePruneResults'
-        "400":
-          description: Bad Request
           content:
             application/json:
               schema:
@@ -14615,6 +14698,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.ResourceReconcileResults'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/vNet/reconcile/prune:
+    post:
+      tags:
+      - "[Infra Resource] Network Management"
+      summary: Prune orphaned vNet metadata in a namespace
+      description: Purges Tumblebug metadata for vNet resources diagnosed as missing
+        on CSP.
+      operationId: PruneVNets
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ResourcePruneResults'
         "400":
           description: Bad Request
           content:
@@ -24358,41 +24487,6 @@ components:
             type: string
           example:
             x-ms-blob-type: BlockBlob
-    model.ObjectStorageReconcileResponse:
-      type: object
-      properties:
-        action:
-          type: string
-          description: |-
-            Action describes what corrective action was taken
-            Possible values: "NoActionNeeded", "MetadataRemoved", "MetadataUpdated", "StatusRestored"
-            "StatusRestored" means the resource status was restored to Available because
-            the CSP resource still exists but Tumblebug metadata was stuck in a terminal
-            failure state (e.g., DeletionFailed) — typically caused by a dependency that
-            has since been resolved.
-          example: MetadataRemoved
-        cspResourceStatus:
-          type: string
-          description: |-
-            CspResourceStatus indicates whether the corresponding CSP resource actually exists
-            Possible values: "Exists", "NotFound", "Skipped"
-            "Skipped" means the CSP check was not performed because the metadata had no CSP resource ID (Uid is empty)
-          example: NotFound
-        message:
-          type: string
-          description: Message provides a human-readable description of the reconcile
-            result
-          example: "Orphaned metadata removed: CSP resource does not exist"
-        metadataStatus:
-          type: string
-          description: |-
-            MetadataStatus indicates whether Tumblebug metadata was found in the key-value store
-            Possible values: "Found", "NotFound"
-          example: Found
-        objectStorageId:
-          type: string
-          description: ObjectStorageId is the Tumblebug resource ID that was reconciled
-          example: test-add-object-tencent
     model.ObjectStorageSetCorsRequest:
       required:
       - corsRule

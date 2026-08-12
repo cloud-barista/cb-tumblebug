@@ -249,16 +249,25 @@ They do not support Register/Deregister operations.
 ### 5.5. Reconcile
 
 `Reconcile` reconciles the gap between Tumblebug metadata (Desired) and the actual
-CSP/Spider/Terrarium resource (Actual). It is the single corrective entry point used
-when the metadata and the real resource have drifted apart — typically because a
-previous operation failed, was interrupted, or was bypassed.
+CSP/Spider/Terrarium resource (Actual). Behavior currently differs by resource:
 
-| Scenario                            | Metadata                                       | CSP/Terrarium | Action               | Result                                                                 |
-| ----------------------------------- | ---------------------------------------------- | ------------- | -------------------- | ---------------------------------------------------------------------- |
-| Healthy                             | exists / `Available`                           | exists        | `NoActionNeeded`     | unchanged                                                              |
-| Orphaned metadata                   | exists                                         | missing (404) | `MetadataRemoved`    | metadata + label deleted                                               |
-| **Stuck in terminal-failure state** | `Failed(DeletionFailed` or `DeregisterFailed)` | exists        | **`StatusRestored`** | `Ready=True / Restored`, `Synced=True / Available`, `Status=Available` |
-| Spider/Terrarium transient outage   | any                                            | 5xx / network | (none)               | error returned, status unchanged                                       |
+- **VNet and Subnet** are on the non-destructive `Reconcile`/`Prune` pattern (see
+  `docs/feature_guide/resource-reconciliation.md` for the full design): `VNetReconciler`
+  (`src/core/reconcile/vnetReconcile.go`) diagnoses via the shared
+  `GetResourceSyncState`/`ApplySyncState` helpers and **never deletes metadata**. Orphaned
+  metadata is only removed by a separate, explicit `POST /ns/{nsId}/resources/vNet/reconcile/prune`
+  call (`PruneVNets`).
+- **VPN** has not been migrated yet — `ReconcileSiteToSiteVPN` (`src/core/resource/vpn.go`)
+  still deletes metadata immediately once it confirms the CSP/Terrarium resource is gone, as
+  shown below.
+
+| Scenario                            | Metadata                                       | CSP/Terrarium | Action                                | Result                                                                             |
+| ----------------------------------- | ---------------------------------------------- | ------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
+| Healthy                             | exists / `Available`                           | exists        | `NoActionNeeded`                        | unchanged                                                                           |
+| Orphaned metadata (VPN)             | exists                                         | missing (404) | `MetadataRemoved`                       | metadata + label deleted immediately                                               |
+| Orphaned metadata (VNet/Subnet)     | exists                                         | missing (404) | diagnosis only (`CspResourceMissing`)   | `Status=Failed`, metadata **preserved** until an explicit `Prune` call             |
+| **Stuck in terminal-failure state** | `Failed(DeletionFailed` or `DeregisterFailed)` | exists        | **`StatusRestored`**                    | `Ready=True / Restored`, `Synced` reflects the real sync state, `Status=Available` |
+| Spider/Terrarium transient outage   | any                                            | 5xx / network | (none)                                   | error returned, status unchanged                                                    |
 
 **Restore guard (conservative):** Status is restored to `Available` only when **all** of
 the following hold:
@@ -367,6 +376,7 @@ The VNet itself remains operational. Subnet health is tracked solely via the `Ch
 | `src/core/model/vnet.go`      | `VNetInfo.Conditions []Condition`, `VNetInfo.SystemMessage string`                                                                                                                                                  |
 | `src/core/model/subnet.go`    | `SubnetInfo.Conditions []Condition`, `SubnetInfo.SystemMessage string`                                                                                                                                              |
 | `src/core/model/vpn.go`       | `VpnInfo.Conditions []Condition`, `VpnInfo.SystemMessage string`                                                                                                                                                    |
-| `src/core/resource/vnet.go`   | Conditions transitions for CreateVNet, DeleteVNet, RegisterVNet, DeregisterVNet, ReconcileVNet                                                                                                                      |
-| `src/core/resource/subnet.go` | Conditions transitions for CreateSubnet, DeleteSubnet, RegisterSubnet, DeregisterSubnet, ReconcileSubnet                                                                                                            |
-| `src/core/resource/vpn.go`    | Conditions transitions for CreateSiteToSiteVPN, DeleteSiteToSiteVPN                                                                                                                                                 |
+| `src/core/resource/vnet.go`   | Conditions transitions for CreateVNet, DeleteVNet, RegisterVNet, DeregisterVNet, PruneVNets                                                                                                                        |
+| `src/core/resource/subnet.go` | Conditions transitions for CreateSubnet, DeleteSubnet, RegisterSubnet, DeregisterSubnet, SyncSubnetsForVNet (called by VNetReconciler, never deletes metadata)                                                    |
+| `src/core/resource/vpn.go`    | Conditions transitions for CreateSiteToSiteVPN, DeleteSiteToSiteVPN, ReconcileSiteToSiteVPN (not yet migrated to the non-destructive pattern)                                                                      |
+| `src/core/reconcile/vnetReconcile.go` | `VNetReconciler` — the `Reconcile`/`ReconcileAll` entry points used by `PUT .../vNet/reconcile`, recurses into Subnets via `SyncSubnetsForVNet`                                                             |
