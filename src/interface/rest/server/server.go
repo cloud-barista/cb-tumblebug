@@ -731,7 +731,7 @@ func RunServer() {
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
 	g.PUT("/:nsId/resources/vNet/reconcile", rest_resource.RestReconcileAllVNets)
 	g.PUT("/:nsId/resources/vNet/:vNetId/reconcile", rest_resource.RestReconcileVNet)
-	g.POST("/:nsId/resources/vNet/prune", rest_resource.RestPruneVNets)
+	g.POST("/:nsId/resources/vNet/reconcile/prune", rest_resource.RestPruneVNets)
 
 	// Template-based vNet provisioning
 	g.POST("/:nsId/resources/vNet/template/:templateId", rest_resource.RestPostVNetFromTemplate)
@@ -772,6 +772,9 @@ func RunServer() {
 	g.GET("/:nsId/resources/rdbms", rest_resource.RestGetAllResources)
 	g.GET("/:nsId/resources/rdbms/:rdbmsId", rest_resource.RestGetRDBMS)
 	g.DELETE("/:nsId/resources/rdbms/:rdbmsId", rest_resource.RestDeleteRDBMS)
+	g.PUT("/:nsId/resources/rdbms/reconcile", rest_resource.RestReconcileAllRDBMS)
+	g.PUT("/:nsId/resources/rdbms/:rdbmsId/reconcile", rest_resource.RestReconcileRDBMS)
+	g.POST("/:nsId/resources/rdbms/reconcile/prune", rest_resource.RestPruneRDBMS)
 
 	// Object Storage management
 	g.PUT("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)
@@ -782,7 +785,7 @@ func RunServer() {
 	g.GET("/:nsId/resources/objectStorage/:osId/location", rest_resource.RestGetObjectStorageLocation)
 	g.PUT("/:nsId/resources/objectStorage/reconcile", rest_resource.RestReconcileAllObjectStorages)
 	g.PUT("/:nsId/resources/objectStorage/:osId/reconcile", rest_resource.RestReconcileObjectStorage)
-	g.POST("/:nsId/resources/objectStorage/prune", rest_resource.RestPruneObjectStorages)
+	g.POST("/:nsId/resources/objectStorage/reconcile/prune", rest_resource.RestPruneObjectStorages)
 
 	// Object Storage management - CORS
 	g.PUT("/:nsId/resources/objectStorage/:osId/cors", rest_resource.RestSetObjectStorageCORS)

@@ -83,10 +83,15 @@ Object Storage does not use the `ChildrenReady` condition (no child resources).
 
 **Synced condition**
 
-| Reason      | Situation                    |
-| ----------- | ---------------------------- |
-| `Creating`  | Sync not yet established     |
-| `Available` | Resource is in sync with CSP |
+| Reason                | Situation                                                               |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `Creating`             | Sync not yet established                                                 |
+| `Available` / `InSync` | Resource is in sync with CSP                                             |
+| `CspResourceMissing`   | TB + Spider metadata exist, but the CSP bucket is gone                   |
+| `SpMetaMissing`        | TB metadata exists and the CSP bucket is alive, but Spider lost its IID  |
+| `TbMetaOnly`           | Bucket absent from both Spider and the CSP — ghost metadata              |
+
+See `docs/feature_guide/resource-reconciliation.md` for the full diagnostic state matrix; this table only lists the Reasons, not the actions taken for each.
 
 ---
 
@@ -148,27 +153,37 @@ On failure, `SystemMessage` is set with the error detail and the resource is per
 
 ### 5.3. Reconcile
 
-`ReconcileObjectStorage` reconciles the gap between Tumblebug metadata (Desired) and the
-actual CSP bucket (Actual). Same pattern as network resources — see
-[Network §5.5 Reconcile](network-status-management.md#55-reconcile) for the full design.
+Reconcile is **non-destructive diagnosis only** — it never deletes metadata or calls a
+destructive Spider API. It is implemented by `ObjectStorageReconciler`
+(`src/core/reconcile/objectStorageReconcile.go`), using the same shared
+`GetResourceSyncState`/`ApplySyncState` helpers (`src/core/resource/common.go`) as VNet
+and RDBMS. See `docs/feature_guide/resource-reconciliation.md` for the full design,
+including why Reconcile must never call Spider `DELETE`.
 
-| Scenario                            | Metadata                 | CSP bucket    | Action               | Result                                                                 |
-| ----------------------------------- | ------------------------ | ------------- | -------------------- | ---------------------------------------------------------------------- |
-| Healthy                             | exists / `Available`     | exists        | `NoActionNeeded`     | unchanged                                                              |
-| Never created (Uid empty)           | exists / `Failed`        | n/a           | `MetadataRemoved`    | metadata deleted                                                       |
-| Orphaned metadata                   | exists                   | missing (404) | `MetadataRemoved`    | metadata + label deleted                                               |
-| **Stuck in terminal-failure state** | `Failed(DeletionFailed)` | exists        | **`StatusRestored`** | `Ready=True / Restored`, `Synced=True / Available`, `Status=Available` |
-| Spider transient outage             | any                      | 5xx / network | (none)               | error returned, status unchanged                                       |
+| Scenario                            | Metadata           | CSP bucket    | Synced Reason set        | Result                                                                       |
+| ------------------------------------ | ------------------- | ------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| Healthy                             | exists / `Available` | exists        | `InSync`                  | unchanged                                                                     |
+| Never created / Orphaned metadata   | exists              | missing (404) | `CspResourceMissing`      | `Status=Failed`, **metadata preserved** — only `Prune` (a separate, explicit `POST .../reconcile/prune` call) removes it |
+| Spider lost its IID, CSP still alive | exists              | exists        | `SpMetaMissing`           | `Synced=False/SpMetaMissing`; `Status` left as-is (not forced to `Failed`)     |
+| **Stuck in terminal-failure state** | `Failed(DeletionFailed)` | exists    | `Available` (restored)    | `Ready=True/Restored` (previous failure kept in the message), `Status=Available` |
+| Spider transient outage             | any                 | 5xx / network | (none)                    | error returned, status unchanged                                             |
 
 **Restore guard:** Status is restored to `Available` only when the CSP bucket is
-confirmed to exist AND `ConditionReady` is `False` with `Reason == DeletionFailed`.
+confirmed to exist AND `ConditionReady` is `False` with `Reason` in
+`{DeletionFailed, DeregisterFailed}` (`model.ShouldRestoreToAvailable`).
 `CreationFailed` and in-flight states are intentionally excluded.
 
 **Auto-trigger after delete failure:** When `DeleteObjectStorage` fails and records the
-resource as `Failed(DeletionFailed)`, `ReconcileObjectStorage` is automatically invoked
-**once** immediately after the failure is persisted. The original delete error is still
-returned to the caller unchanged; auto-reconcile errors are logged at WARN only. There
+resource as `Failed(DeletionFailed)`, `markObjectStorageDeleteFailedThenReconcile`
+(`src/core/resource/objectStorage.go`) runs the same diagnose-and-restore-if-applicable
+check **once**, inline, immediately after the failure is persisted — it only ever calls
+`kvstore.Put`, never `kvstore.Delete` or Spider `DELETE`. The original delete error is
+still returned to the caller unchanged; diagnosis errors are logged at WARN only. There
 is no internal retry loop or background scheduler.
+
+**Cleaning up orphaned metadata:** Reconcile only diagnoses `CspResourceMissing`; actually
+removing that metadata requires a separate, explicit `POST /ns/{nsId}/resources/objectStorage/reconcile/prune`
+call (`PruneObjectStorages`), which only touches items whose `ConditionSynced.Reason == CspResourceMissing`.
 
 ---
 
@@ -222,4 +237,5 @@ Domain-specific differences:
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `src/core/model/condition.go`        | `Condition` struct, `ResourceStatus*` base constants, `StorageStatus*` aliases, `DeriveObjectStorageStatus()` |
 | `src/core/model/objectStorage.go`    | `ObjectStorageInfo.Conditions []Condition`, `ObjectStorageInfo.SystemMessage string`                          |
-| `src/core/resource/objectStorage.go` | Conditions transitions for `CreateObjectStorage`, `DeleteObjectStorage`, `ReconcileObjectStorage`             |
+| `src/core/resource/objectStorage.go` | Conditions transitions for `CreateObjectStorage`, `DeleteObjectStorage`, `markObjectStorageDeleteFailedThenReconcile`, `PruneObjectStorages` |
+| `src/core/reconcile/objectStorageReconcile.go` | `ObjectStorageReconciler` — the `Reconcile`/`ReconcileAll` entry points used by `PUT .../reconcile` |

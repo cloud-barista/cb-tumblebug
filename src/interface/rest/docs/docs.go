@@ -13399,64 +13399,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/objectStorage/prune": {
-            "post": {
-                "description": "Purges Tumblebug metadata for Object Storage resources diagnosed as missing on CSP.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Object Storage Management"
-                ],
-                "summary": "Prune orphaned Object Storage metadata in a namespace",
-                "operationId": "PruneObjectStorages",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ResourcePruneResults"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/resources/objectStorage/reconcile": {
             "put": {
                 "description": "Compares Tumblebug metadata with actual CSP object storage status via Spider.\nRestores status for alive resources and flags discrepancies.",
@@ -13498,6 +13440,64 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.ResourceReconcileResults"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/reconcile/prune": {
+            "post": {
+                "description": "Purges Tumblebug metadata for Object Storage resources diagnosed as missing on CSP.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Prune orphaned Object Storage metadata in a namespace",
+                "operationId": "PruneObjectStorages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourcePruneResults"
                         }
                     },
                     "400": {
@@ -13581,7 +13581,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete an object storage (bucket).\n\n**Query option (mutually exclusive — specify at most one):**\n\n| option | Description |\n|--------|-------------|\n| (none) | Standard delete. Fails if the bucket is not empty. |\n| ` + "`" + `empty` + "`" + ` | Empty the bucket first, then delete. |\n| ` + "`" + `force` + "`" + ` | Force delete bucket with all contents (passed to Spider as ` + "`" + `force=true` + "`" + `). Behaviour varies by CSP; use when standard delete is not sufficient. |\n| ` + "`" + `reconcile` + "`" + ` | Do not call the CSP delete API. Instead, check whether the CSP bucket actually exists and remove only the Tumblebug metadata if the bucket is absent. Use this to clean up orphaned metadata that cannot be deleted through normal means (e.g., a bucket stuck in ` + "`" + `Failed` + "`" + ` status after a partial creation or a CSP-side deletion error such as Tencent 405). Returns a reconcile result object instead of 204. |",
+                "description": "Delete an object storage (bucket).\n\n**Query option (mutually exclusive — specify at most one):**\n\n| option | Description |\n|--------|-------------|\n| (none) | Standard delete. Fails if the bucket is not empty. |\n| ` + "`" + `empty` + "`" + ` | Empty the bucket first, then delete. |\n| ` + "`" + `force` + "`" + ` | Force delete bucket with all contents (passed to Spider as ` + "`" + `force=true` + "`" + `). Behaviour varies by CSP; use when standard delete is not sufficient. |\n\nTo clean up metadata for a bucket whose CSP resource is already gone, use ` + "`" + `PUT .../reconcile` + "`" + ` followed by ` + "`" + `POST .../prune` + "`" + ` instead of a delete option.",
                 "consumes": [
                     "application/json"
                 ],
@@ -13613,8 +13613,7 @@ const docTemplate = `{
                     {
                         "enum": [
                             "empty",
-                            "force",
-                            "reconcile"
+                            "force"
                         ],
                         "type": "string",
                         "description": "Delete option (mutually exclusive)",
@@ -13635,12 +13634,6 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK (option=reconcile only)",
-                        "schema": {
-                            "$ref": "#/definitions/model.ObjectStorageReconcileResponse"
-                        }
-                    },
                     "204": {
                         "description": "No Content"
                     },
@@ -14865,6 +14858,122 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/rdbms/reconcile": {
+            "put": {
+                "description": "Compares Tumblebug metadata with actual CSP RDBMS status via Spider.\nRestores status for alive resources and flags discrepancies.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Reconcile all RDBMS instances in a namespace",
+                "operationId": "ReconcileAllRDBMS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourceReconcileResults"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/rdbms/reconcile/prune": {
+            "post": {
+                "description": "Purges Tumblebug metadata for RDBMS instances diagnosed as missing on CSP.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Prune orphaned RDBMS metadata in a namespace",
+                "operationId": "PruneRDBMS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourcePruneResults"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/rdbms/{rdbmsId}": {
             "get": {
                 "description": "Get details of an RDBMS instance, always refreshed live",
@@ -14994,6 +15103,78 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/rdbms/{rdbmsId}/reconcile": {
+            "put": {
+                "description": "Compares Tumblebug metadata for a specific RDBMS instance with actual CSP status via Spider.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Reconcile a single RDBMS instance",
+                "operationId": "ReconcileRDBMS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "rdbms-01",
+                        "description": "RDBMS ID",
+                        "name": "rdbmsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -16771,64 +16952,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/vNet/prune": {
-            "post": {
-                "description": "Purges Tumblebug metadata for vNet resources diagnosed as missing on CSP.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Network Management"
-                ],
-                "summary": "Prune orphaned vNet metadata in a namespace",
-                "operationId": "PruneVNets",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
-                        "name": "x-credential-holder",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ResourcePruneResults"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/resources/vNet/reconcile": {
             "put": {
                 "description": "Reconcile all VNets and their subnets in the namespace by comparing TB metadata with CSP state. TB metadata is the source of truth; only TB-registered resources are reconciled.\n\n⚠️ **PERFORMANCE NOTE**: Reconciliation may take 1-2 minutes per cloud connection due to CSP API response time. Plan accordingly for namespaces with multiple cloud connections.",
@@ -16879,6 +17002,64 @@ const docTemplate = `{
                         "description": "Reconciliation results",
                         "schema": {
                             "$ref": "#/definitions/model.ResourceReconcileResults"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/vNet/reconcile/prune": {
+            "post": {
+                "description": "Purges Tumblebug metadata for vNet resources diagnosed as missing on CSP.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Prune orphaned vNet metadata in a namespace",
+                "operationId": "PruneVNets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourcePruneResults"
                         }
                     },
                     "400": {
@@ -17041,7 +17222,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete VNet\n---\n**action options:**\n\n**withsubnets** – Delete the VNet together with all its subnets in a single call.\n\n**reconcile** – (To be deprecated: Use PUT /ns/{nsId}/resources/vNet/{vNetId}/reconcile instead) Synchronize Tumblebug metadata with the actual CSP state.\nChecks whether the VNet/Subnet resource still exists on CSP (via Spider).\nIf the CSP resource is gone, removes the orphaned Tumblebug metadata.\nIf the CSP resource still exists, keeps the metadata intact.\nUse this to clean up stale metadata after system errors or partial failures.\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=reconcile` + "`" + ` - To be deprecated)\n\n**force** – Force-delete the VNet and its subnets on CSP (passes ` + "`" + `?force=true` + "`" + ` to Spider).\nUse this when normal deletion fails due to CSP-side constraints (e.g., resource in use).\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=force` + "`" + `)",
+                "description": "Delete VNet\n---\n**action options:**\n\n**withsubnets** – Delete the VNet together with all its subnets in a single call.\n\n**force** – Force-delete the VNet and its subnets on CSP (passes ` + "`" + `?force=true` + "`" + ` to Spider).\nUse this when normal deletion fails due to CSP-side constraints (e.g., resource in use).\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}?action=force` + "`" + `)",
                 "consumes": [
                     "application/json"
                 ],
@@ -17051,7 +17232,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Delete VNet (supporting actions: withsubnet, reconcile [deprecated], force)",
+                "summary": "Delete VNet (supporting actions: withsubnet, force)",
                 "operationId": "DelVNet",
                 "parameters": [
                     {
@@ -17072,11 +17253,10 @@ const docTemplate = `{
                     {
                         "enum": [
                             "withsubnets",
-                            "reconcile",
                             "force"
                         ],
                         "type": "string",
-                        "description": "Action (reconcile action is to be deprecated)",
+                        "description": "Action",
                         "name": "action",
                         "in": "query"
                     },
@@ -17402,7 +17582,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete Subnet\n---\n**action options:**\n\n**reconcile** – (To be deprecated: Use PUT /ns/{nsId}/resources/vNet/{vNetId}/reconcile instead) Synchronize Tumblebug metadata with the actual CSP state.\nChecks whether the Subnet resource still exists on CSP (via Spider).\nIf the CSP resource is gone, removes the orphaned Tumblebug metadata.\nIf the CSP resource still exists, keeps the metadata intact.\nUse this to clean up stale metadata after system errors or partial failures.\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile` + "`" + ` - To be deprecated)\n\n**force** – Force-delete the Subnet on CSP (passes ` + "`" + `?force=true` + "`" + ` to Spider).\nUse this when normal deletion fails due to CSP-side constraints (e.g., resource in use).\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=force` + "`" + `)",
+                "description": "Delete Subnet\n---\n**action options:**\n\n**force** – Force-delete the Subnet on CSP (passes ` + "`" + `?force=true` + "`" + ` to Spider).\nUse this when normal deletion fails due to CSP-side constraints (e.g., resource in use).\n(e.g., ` + "`" + `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=force` + "`" + `)",
                 "consumes": [
                     "application/json"
                 ],
@@ -17412,7 +17592,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Delete Subnet (supporting actions: reconcile [deprecated], force)",
+                "summary": "Delete Subnet (supporting actions: force)",
                 "operationId": "DelSubnet",
                 "parameters": [
                     {
@@ -17439,11 +17619,10 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "reconcile",
                             "force"
                         ],
                         "type": "string",
-                        "description": "Action (reconcile action is to be deprecated)",
+                        "description": "Action",
                         "name": "action",
                         "in": "query"
                     },
@@ -29562,36 +29741,6 @@ const docTemplate = `{
                     "example": {
                         "x-ms-blob-type": "BlockBlob"
                     }
-                }
-            }
-        },
-        "model.ObjectStorageReconcileResponse": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "description": "Action describes what corrective action was taken\nPossible values: \"NoActionNeeded\", \"MetadataRemoved\", \"MetadataUpdated\", \"StatusRestored\"\n\"StatusRestored\" means the resource status was restored to Available because\nthe CSP resource still exists but Tumblebug metadata was stuck in a terminal\nfailure state (e.g., DeletionFailed) — typically caused by a dependency that\nhas since been resolved.",
-                    "type": "string",
-                    "example": "MetadataRemoved"
-                },
-                "cspResourceStatus": {
-                    "description": "CspResourceStatus indicates whether the corresponding CSP resource actually exists\nPossible values: \"Exists\", \"NotFound\", \"Skipped\"\n\"Skipped\" means the CSP check was not performed because the metadata had no CSP resource ID (Uid is empty)",
-                    "type": "string",
-                    "example": "NotFound"
-                },
-                "message": {
-                    "description": "Message provides a human-readable description of the reconcile result",
-                    "type": "string",
-                    "example": "Orphaned metadata removed: CSP resource does not exist"
-                },
-                "metadataStatus": {
-                    "description": "MetadataStatus indicates whether Tumblebug metadata was found in the key-value store\nPossible values: \"Found\", \"NotFound\"",
-                    "type": "string",
-                    "example": "Found"
-                },
-                "objectStorageId": {
-                    "description": "ObjectStorageId is the Tumblebug resource ID that was reconciled",
-                    "type": "string",
-                    "example": "test-add-object-tencent"
                 }
             }
         },

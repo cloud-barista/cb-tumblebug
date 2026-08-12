@@ -972,18 +972,24 @@ func syncSubnetState(nsId string, subnetInfo *model.SubnetInfo, vNetInfo *model.
 	switch subnetSyncState {
 	case model.SyncStateInSync, model.SyncStateSpMetaMissing:
 		if model.ShouldRestoreToAvailable(subnetInfo.Conditions) {
-			prevReason := ""
+			prevReason, prevMessage := "", ""
 			if r := model.GetCondition(subnetInfo.Conditions, model.ConditionReady); r != nil {
 				prevReason = r.Reason
+				prevMessage = r.Message
 			}
-			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored,
-				fmt.Sprintf("Restored from %s; CSP resource exists", prevReason))
-			model.SetCondition(&subnetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
-			subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
-			subnetInfo.SystemMessage = ""
+			restoredMsg := fmt.Sprintf("Restored from %s; CSP resource exists", prevReason)
+			if prevMessage != "" {
+				restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
+			}
+			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
+			// Record Synced from the real syncState, not a hardcoded "Available" — keeps SpMetaMissing visible during restore.
+			ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, subnetSyncState)
+			// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
+			subnetInfo.Status = model.NetworkStatusAvailable
 			ret.Message = fmt.Sprintf("subnet (%s) status restored to Available from %s; CSP resource exists", subnetInfo.Id, prevReason)
 		} else {
-			ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, model.SyncStateInSync)
+			// Never fold SpMetaMissing into InSync — ApplySyncState leaves Status untouched for it, so this stays accurate.
+			ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, subnetSyncState)
 			ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetInfo.Id)
 		}
 

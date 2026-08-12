@@ -21,7 +21,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -211,17 +210,10 @@ type RestGetAllSubnetResponse struct {
 
 // RestDelSubnet godoc
 // @ID DelSubnet
-// @Summary Delete Subnet (supporting actions: reconcile [deprecated], force)
+// @Summary Delete Subnet (supporting actions: force)
 // @Description Delete Subnet
 // @Description ---
 // @Description **action options:**
-// @Description
-// @Description **reconcile** – (To be deprecated: Use PUT /ns/{nsId}/resources/vNet/{vNetId}/reconcile instead) Synchronize Tumblebug metadata with the actual CSP state.
-// @Description Checks whether the Subnet resource still exists on CSP (via Spider).
-// @Description If the CSP resource is gone, removes the orphaned Tumblebug metadata.
-// @Description If the CSP resource still exists, keeps the metadata intact.
-// @Description Use this to clean up stale metadata after system errors or partial failures.
-// @Description (e.g., `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}?action=reconcile` - To be deprecated)
 // @Description
 // @Description **force** – Force-delete the Subnet on CSP (passes `?force=true` to Spider).
 // @Description Use this when normal deletion fails due to CSP-side constraints (e.g., resource in use).
@@ -232,7 +224,7 @@ type RestGetAllSubnetResponse struct {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
-// @Param action query string false "Action (reconcile action is to be deprecated)" Enums(reconcile, force)
+// @Param action query string false "Action" Enums(force)
 // @Success 200 {object} model.SimpleMsg "OK"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -280,18 +272,6 @@ func RestDelSubnet(c echo.Context) error {
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
-		}
-	case resource.ActionReconcile:
-		manager := reconcile.GetManager()
-		res, err := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, vNetId, nil)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
-		}
-		if simpleMsg, ok := res.(model.SimpleMsg); ok {
-			resp = simpleMsg
-		} else {
-			resp = model.SimpleMsg{Message: "reconcile completed"}
 		}
 	default:
 		errMsg := fmt.Errorf("invalid action (%s)", action)

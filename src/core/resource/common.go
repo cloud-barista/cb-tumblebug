@@ -3362,6 +3362,8 @@ func GetCspResourceStatus(connConfig string, resourceType string, filter ...Reso
 		spiderRequestURL = model.SpiderRestUrl + "/allmyimage"
 	case model.StrObjectStorage:
 		spiderRequestURL = model.SpiderRestUrl + "/alls3"
+	case model.StrRDBMS:
+		spiderRequestURL = model.SpiderRestUrl + "/allrdbms"
 	default:
 		err := fmt.Errorf("unsupported resource type: %s", resourceType)
 		response.Error = err.Error()
@@ -3581,28 +3583,6 @@ func fetchSpiderVpcInfo(client *resty.Client, vpcNameId, connConfig string) (mod
 		clientManager.MediumDuration,
 	)
 	return spiderVpcInfo, err
-}
-
-// getResourceState returns the state of a resource across Spider and CSP:
-// "exists", "spiderOnly", "cspOnly", or "absent".
-func getResourceState(resourceName string, resourceSystemId string, statusResp model.CspResourceStatusResponse) string {
-	allList := statusResp.AllList
-	for _, item := range allList.MappedList {
-		if item.NameId == resourceName || (resourceSystemId != "" && item.SystemId == resourceSystemId) {
-			return "exists"
-		}
-	}
-	for _, item := range allList.OnlySpiderList {
-		if item.NameId == resourceName {
-			return "spiderOnly"
-		}
-	}
-	for _, item := range allList.OnlyCSPList {
-		if item.NameId == resourceName || (resourceSystemId != "" && item.SystemId == resourceSystemId) {
-			return "cspOnly"
-		}
-	}
-	return "absent"
 }
 
 // GetResourceSyncState returns the observed ResourceSyncState across 3 layers (TB, Spider, CSP).
