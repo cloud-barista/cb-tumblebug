@@ -21955,6 +21955,23 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Filter by X-Request-Source header (e.g., mcp)",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
+                        "type": "string",
+                        "default": "false",
+                        "description": "Option to omit request/response bodies from the results (set 'true' to activate)",
+                        "name": "brief",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "true",
                             "false"
