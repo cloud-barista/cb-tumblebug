@@ -26,31 +26,26 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// RestGetRDBMSSupport godoc
-// @ID GetRDBMSSupport
-// @Summary Get CSP RDBMS capability support information
-// @Description Get CSP support metadata and capabilities for a single connection (resolved from
-// @Description providerName+regionName) and DB engine. This is computed live per request, so
-// @Description providerName/regionName/dbEngine are all required to avoid a slow fan-out across
-// @Description every registered connection and every supported engine.
-// @Description
-// @Description Some fields (e.g. storageTypeOptions, storageSizeRange) may be a fixed/approximate
-// @Description reference value rather than a live, current value for a given CSP. Check
-// @Description notes.staticFields for which field names that applies to right now, and why; a
-// @Description field not listed there is live.
+// RestGetRDBMSCapability godoc
+// @ID GetRDBMSCapability
+// @Summary Get live RDBMS capability details for a specific connection
+// @Description Live capability query for one connection+dbEngine (calls CB-Spider), so all
+// @Description three params are required. Call GET /tumblebug/rdbms/support first to see
+// @Description which CSPs/engines are worth trying. Fields listed in notes.staticFields are
+// @Description fixed/approximate rather than live.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
-// @Param providerName query string true "Provider Name (e.g., aws, gcp, azure, ncp)" example(aws) default(aws)
+// @Param providerName query string true "Provider Name" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt) example(aws)
 // @Param regionName query string true "Region Name (e.g., ap-northeast-2)" example(ap-northeast-2) default(ap-northeast-2)
-// @Param dbEngine query string true "DB Engine Name" Enums(mysql, mariadb, postgresql) example(mysql) default(mysql)
-// @Success 200 {object} model.RDBMSSupportResponse "OK"
+// @Param dbEngine query string true "DB Engine Name" Enums(mysql, mariadb) example(mysql) default(mysql)
+// @Success 200 {object} model.RDBMSCapabilityResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
-// @Router /rdbms/support [get]
-func RestGetRDBMSSupport(c echo.Context) error {
+// @Router /rdbms/capability [get]
+func RestGetRDBMSCapability(c echo.Context) error {
 	providerName := c.QueryParam("providerName")
 	if providerName == "" {
 		providerName = c.QueryParam("provider")
@@ -78,26 +73,98 @@ func RestGetRDBMSSupport(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	result, err := resource.GetRDBMSSupport(providerName, regionName, dbEngine)
+	result, err := resource.GetRDBMSCapability(providerName, regionName, dbEngine)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get RDBMS support info (provider: '%s', region: '%s', dbEngine: '%s')", providerName, regionName, dbEngine)
+		log.Error().Err(err).Msgf("Failed to get RDBMS capability info (provider: '%s', region: '%s', dbEngine: '%s')", providerName, regionName, dbEngine)
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, result)
 }
 
+// RestGetRDBMSSupport godoc
+// @ID GetRDBMSSupport
+// @Summary Get the static, CSP-wide RDBMS support matrix
+// @Description Static per-CSP RDBMS reference (no CB-Spider call, so it cheaply covers every
+// @Description CSP). Omit providerName for all CSPs. Use this to decide what to try before
+// @Description GET /tumblebug/rdbms/capability, which gives live per-connection details.
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param providerName query string false "Provider Name to filter to a single CSP; omit for all CSPs" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt) example(aws)
+// @Success 200 {object} model.RDBMSSupportResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /rdbms/support [get]
+func RestGetRDBMSSupport(c echo.Context) error {
+	providerName := c.QueryParam("providerName")
+	if providerName == "" {
+		providerName = c.QueryParam("provider")
+	}
+
+	result, err := resource.GetRDBMSSupport(providerName)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to get RDBMS support matrix (provider: '%s')", providerName)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestValidateRDBMS godoc
+// @ID ValidateRDBMS
+// @Summary Validate an RDBMS create request without creating anything
+// @Description Dry run of the same checks POST .../rdbms performs before provisioning
+// @Description (network resolution, live CB-Spider capability checks,
+// @Description assets/rdbmsinfo.yaml storage-type constraints) — no instance is created, no
+// @Description CSP call is made to provision anything. Returns the resolved request
+// @Description (autoFillDefaults applied, if set) so the caller can preview exactly what
+// @Description POST .../rdbms would use.
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param reqBody body model.RDBMSCreateRequest true "RDBMS Create Request"
+// @Success 200 {object} model.RDBMSCreateRequest "OK — resolved request"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/rdbms/validate [post]
+func RestValidateRDBMS(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	req := model.RDBMSCreateRequest{}
+	if err := c.Bind(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to bind request body to RDBMSCreateRequest")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	resolved, err := resource.ValidateRDBMSCreateRequest(nsId, req)
+	if err != nil {
+		// Always 400: ValidateRDBMSCreateRequest only ever fails on client-input/capability
+		// validation (it never reaches the Spider provisioning call), unlike CreateRDBMS's
+		// error, which can also come from downstream Spider/CSP calls (apierr.Code territory).
+		log.Warn().Err(err).Msg("RDBMS create request validation failed")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, resolved)
+}
+
 // RestPostRDBMS godoc
 // @ID PostRDBMS
 // @Summary Create an RDBMS instance
-// @Description Create a managed RDBMS instance and wait for it to become Available (provisioning
-// @Description can take several minutes).
-// @Description
-// @Description Call GET /tumblebug/rdbms/support first to discover valid dbEngineVersion/
-// @Description dbInstanceSpec/storageType/storageSize values and Requires*/Supports* constraints
-// @Description for the target connectionName. Alternatively, set autoFillDefaults=true to have
-// @Description those four fields filled from the first supported option reported — this is a
-// @Description capability-valid pick, not a cost/performance recommendation.
+// @Description Create a managed RDBMS instance and wait for it to become Available
+// @Description (can take several minutes). Call GET /tumblebug/rdbms/capability first to
+// @Description discover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,
+// @Description or set autoFillDefaults=true to auto-pick a capability-valid (not necessarily
+// @Description optimal) default for each.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json

@@ -12,9 +12,9 @@ limitations under the License.
 */
 
 // Package main provides a CLI tool for batch-testing the RDBMS lifecycle
-// (vNet+subnets → securityGroup → rdbms/support → RDBMS create → get → list →
-// delete → securityGroup delete → subnets delete → vNet delete) across multiple
-// CSPs via the CB-Tumblebug API.
+// (rdbms/support once per batch → per case: vNet+subnets → securityGroup →
+// rdbms/capability → RDBMS create → get → list → delete → securityGroup delete →
+// subnets delete → vNet delete) across multiple CSPs via the CB-Tumblebug API.
 package main
 
 import (
@@ -105,6 +105,8 @@ type TestResult struct {
 	CreateVNetStatus    string
 	CreateSGStatus      string
 	SupportStatus       string
+	CapabilityStatus    string
+	ValidateStatus      string
 	CreateRDBMSStatus   string
 	GetRDBMSStatus      string
 	ListRDBMSStatus     string
@@ -121,8 +123,9 @@ func main() {
 		Long: `
 ##########################################################################
 ## RDBMS batch test CLI for CB-Tumblebug                                ##
-## Runs vNet+subnets -> securityGroup -> rdbms/support -> RDBMS         ##
-## create -> get -> list -> delete -> securityGroup/subnets/vNet delete ##
+## Runs rdbms/support once, then per case: vNet+subnets -> securityGroup##
+## -> rdbms/capability -> RDBMS create -> get -> list -> delete ->      ##
+## securityGroup/subnets/vNet delete                                    ##
 ##########################################################################`,
 	}
 
@@ -166,6 +169,18 @@ func runBatchTest(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	// Static, CSP-wide RDBMS support matrix (batch-level; no connection needed, so this
+	// runs once rather than per test case). Best-effort: failure here does not block the
+	// per-case lifecycle tests below; each case just reports SupportStatus as unknown.
+	var supportMatrix model.RDBMSSupportResponse
+	urlSupport := fmt.Sprintf("%s/rdbms/support", tbApiBase)
+	if respBytes, err := callApi("GET", urlSupport, tbAuth, nil, nil, "Get RDBMS Support Matrix"); err != nil {
+		log.Warn().Err(err).Msg("Get RDBMS Support Matrix failed (non-blocking)")
+	} else {
+		_ = json.Unmarshal(respBytes, &supportMatrix)
+		log.Info().Msgf("Get RDBMS Support Matrix OK (%d CSPs)", len(supportMatrix.Supports))
+	}
+
 	// Load enabled test cases
 	var allCases []TestCase
 	if err := viper.UnmarshalKey("testCases", &allCases); err != nil {
@@ -201,26 +216,28 @@ func runBatchTest(cmd *cobra.Command, args []string) {
 			wg.Add(1)
 			go func(idx int, tc TestCase) {
 				defer wg.Done()
-				results[idx] = runLifecycle(nsId, tc, tbAuth)
+				results[idx] = runLifecycle(nsId, tc, tbAuth, supportMatrix)
 			}(i, tc)
 		}
 		wg.Wait()
 	} else {
 		for i, tc := range cases {
-			results[i] = runLifecycle(nsId, tc, tbAuth)
+			results[i] = runLifecycle(nsId, tc, tbAuth, supportMatrix)
 		}
 	}
 
-	generateSummaryReport("test-results/summary.md", results)
-
-	log.Info().Msg("\n========== BATCH TEST SUMMARY ==========")
-	for _, r := range results {
-		log.Info().Msgf("  %-30s | VNet: %-20s | SG: %-20s | Support: %-20s | Create: %-25s | Get: %-20s | List: %-20s | Delete: %-20s",
-			r.RdbmsId+"("+r.ConnectionName+")", r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus,
-			r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.DeleteRDBMSStatus)
+	summaryMarkdown := buildSummaryMarkdown(results)
+	if err := os.MkdirAll("test-results", 0755); err != nil {
+		log.Warn().Err(err).Msg("Failed to create test-results directory")
+	} else if err := os.WriteFile("test-results/summary.md", []byte(summaryMarkdown), 0644); err != nil {
+		log.Warn().Err(err).Msgf("Failed to write summary report")
 	}
-	log.Info().Msg("=========================================")
-	log.Info().Msg("Detailed report saved to test-results/summary.md")
+
+	// Printed directly (not via the zerolog logger, which wraps every line in JSON) so
+	// this can be copied straight into docs/PRs as-is — it's the same markdown saved to
+	// test-results/summary.md.
+	fmt.Println()
+	fmt.Println(summaryMarkdown)
 }
 
 // runLifecycle runs the full chain for one test case and returns the result:
@@ -237,7 +254,7 @@ func runBatchTest(cmd *cobra.Command, args []string) {
 //
 // Steps 7-10 always run (best-effort, in reverse-dependency order) even if an
 // earlier step failed, so a failed run doesn't leave billed CSP resources behind.
-func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult {
+func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMatrix model.RDBMSSupportResponse) TestResult {
 	result := TestResult{RdbmsId: tc.RdbmsId, ConnectionName: tc.ConnectionName}
 	logs := []ApiLog{}
 
@@ -308,25 +325,39 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 		result.CreateSGStatus = "Skipped (no VNet)"
 	}
 
-	// 3. RDBMS support info (best-effort; failure here does not block create)
+	// 3. RDBMS support (static, CSP-wide matrix fetched once per batch — just a lookup
+	// here, no API call) and capability (live, per-connection/engine check; best-effort,
+	// failure does not block create).
 	if vNetId != "" {
 		providerName := vNetInfo.ConnectionConfig.ProviderName
 		regionName := vNetInfo.ConnectionConfig.RegionZoneInfo.AssignedRegion
-		urlSupport := fmt.Sprintf("%s/rdbms/support?providerName=%s&regionName=%s&dbEngine=%s",
-			tbApiBase, providerName, regionName, tc.DBEngine)
-		_, err = callApi("GET", urlSupport, tbAuth, nil, &logs, fmt.Sprintf("[%s] Get RDBMS Support", tc.RdbmsId))
-		if err != nil {
-			result.SupportStatus = "Failed"
-			log.Warn().Err(err).Msgf("[%s] Get RDBMS Support failed", tc.RdbmsId)
+
+		if info, ok := supportMatrix.Supports[strings.ToLower(providerName)]; ok {
+			if info.Supported {
+				result.SupportStatus = fmt.Sprintf("Supported (engines: %s)", strings.Join(info.SupportedDBEngines, ","))
+			} else {
+				result.SupportStatus = "Not Supported"
+			}
 		} else {
-			result.SupportStatus = "Success"
-			log.Info().Msgf("[%s] Get RDBMS Support OK", tc.RdbmsId)
+			result.SupportStatus = "Unknown (matrix unavailable)"
+		}
+
+		urlCapability := fmt.Sprintf("%s/rdbms/capability?providerName=%s&regionName=%s&dbEngine=%s",
+			tbApiBase, providerName, regionName, tc.DBEngine)
+		_, err = callApi("GET", urlCapability, tbAuth, nil, &logs, fmt.Sprintf("[%s] Get RDBMS Capability", tc.RdbmsId))
+		if err != nil {
+			result.CapabilityStatus = "Failed"
+			log.Warn().Err(err).Msgf("[%s] Get RDBMS Capability failed", tc.RdbmsId)
+		} else {
+			result.CapabilityStatus = "Success"
+			log.Info().Msgf("[%s] Get RDBMS Capability OK", tc.RdbmsId)
 		}
 	} else {
 		result.SupportStatus = "Skipped (no VNet)"
+		result.CapabilityStatus = "Skipped (no VNet)"
 	}
 
-	// 4. Create RDBMS (only if VNet succeeded; SecurityGroup is best-effort)
+	// 4. Validate, then create RDBMS (only if VNet succeeded; SecurityGroup is best-effort)
 	if vNetId != "" {
 		rdbmsReqBody := map[string]any{
 			"name":               tc.RdbmsId,
@@ -348,20 +379,37 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 		if sgId != "" {
 			rdbmsReqBody["securityGroupIds"] = []string{sgId}
 		}
-		urlCreateRDBMS := fmt.Sprintf("%s/ns/%s/resources/rdbms", tbApiBase, nsId)
-		log.Info().Msgf("[%s] Creating RDBMS (this can take several minutes)...", tc.RdbmsId)
-		respBytes, err = callApi("POST", urlCreateRDBMS, tbAuth, rdbmsReqBody, &logs, fmt.Sprintf("[%s] Create RDBMS", tc.RdbmsId))
+
+		// 4a. Validate first (dry run, no side effects) — catches request/capability
+		// problems (e.g. an autoFillDefaults pick that fails assets/rdbmsinfo.yaml's own
+		// storage-type constraints) without waiting on the up-to-20-minute create call.
+		urlValidate := fmt.Sprintf("%s/ns/%s/resources/rdbms/validate", tbApiBase, nsId)
+		_, err = callApi("POST", urlValidate, tbAuth, rdbmsReqBody, &logs, fmt.Sprintf("[%s] Validate RDBMS", tc.RdbmsId))
 		if err != nil {
-			result.CreateRDBMSStatus = "Failed"
-			log.Error().Err(err).Msgf("[%s] Create RDBMS failed", tc.RdbmsId)
+			result.ValidateStatus = "Failed"
+			result.CreateRDBMSStatus = "Skipped (validation failed)"
+			log.Warn().Err(err).Msgf("[%s] Validate RDBMS failed; skipping create", tc.RdbmsId)
 		} else {
-			var info model.RDBMSInfo
-			_ = json.Unmarshal(respBytes, &info)
-			rdbmsCreated = true
-			result.CreateRDBMSStatus = fmt.Sprintf("Success (status=%s, endpoint=%s)", info.Status, info.Endpoint)
-			log.Info().Msgf("[%s] Create RDBMS OK: status=%s", tc.RdbmsId, info.Status)
+			result.ValidateStatus = "Success"
+			log.Info().Msgf("[%s] Validate RDBMS OK", tc.RdbmsId)
+
+			// 4b. Create RDBMS
+			urlCreateRDBMS := fmt.Sprintf("%s/ns/%s/resources/rdbms", tbApiBase, nsId)
+			log.Info().Msgf("[%s] Creating RDBMS (this can take several minutes)...", tc.RdbmsId)
+			respBytes, err = callApi("POST", urlCreateRDBMS, tbAuth, rdbmsReqBody, &logs, fmt.Sprintf("[%s] Create RDBMS", tc.RdbmsId))
+			if err != nil {
+				result.CreateRDBMSStatus = "Failed"
+				log.Error().Err(err).Msgf("[%s] Create RDBMS failed", tc.RdbmsId)
+			} else {
+				var info model.RDBMSInfo
+				_ = json.Unmarshal(respBytes, &info)
+				rdbmsCreated = true
+				result.CreateRDBMSStatus = fmt.Sprintf("Success (status=%s, endpoint=%s)", info.Status, info.Endpoint)
+				log.Info().Msgf("[%s] Create RDBMS OK: status=%s", tc.RdbmsId, info.Status)
+			}
 		}
 	} else {
+		result.ValidateStatus = "Skipped (no VNet)"
 		result.CreateRDBMSStatus = "Skipped (no VNet)"
 	}
 
@@ -544,12 +592,16 @@ func saveDetailedReport(rdbmsId string, logs []ApiLog) {
 		if entry.RequestPayload != nil {
 			masked := maskSensitiveFields(entry.RequestPayload)
 			reqJson, _ := json.MarshalIndent(masked, "", "  ")
-			md.WriteString("### Request Body\n```json\n" + string(reqJson) + "\n```\n\n")
+			md.WriteString("### Request Body\n```json\n")
+			md.WriteString(string(reqJson))
+			md.WriteString("\n```\n\n")
 		}
 		if entry.ResponsePayload != nil {
 			masked := maskSensitiveFields(entry.ResponsePayload)
 			respJson, _ := json.MarshalIndent(masked, "", "  ")
-			md.WriteString("### Response Body\n```json\n" + string(respJson) + "\n```\n\n")
+			md.WriteString("### Response Body\n```json\n")
+			md.WriteString(string(respJson))
+			md.WriteString("\n```\n\n")
 		}
 		md.WriteString("---\n\n")
 	}
@@ -561,57 +613,63 @@ func saveDetailedReport(rdbmsId string, logs []ApiLog) {
 	log.Info().Msgf("[%s] Detailed report saved: %s", rdbmsId, filename)
 }
 
-// generateSummaryReport writes a summary markdown table to the given file.
-func generateSummaryReport(filename string, results []TestResult) {
-	if err := os.MkdirAll("test-results", 0755); err != nil {
-		log.Warn().Err(err).Msg("Failed to create test-results directory")
-		return
-	}
-
+// buildSummaryMarkdown renders the batch run as a single markdown document — the same
+// content is written to test-results/summary.md and printed directly to the console (see
+// runBatchTest), so it can be pasted as-is into docs/PRs.
+func buildSummaryMarkdown(results []TestResult) string {
 	var md strings.Builder
 	md.WriteString("# RDBMS Batch Test Summary\n\n")
 	md.WriteString("## Test Workflow\n\n")
+	md.WriteString("0. **Get RDBMS Support Matrix** (once per batch) — `GET /tumblebug/rdbms/support`\n")
 	md.WriteString("1. **Create VNet (+ subnets)** — `POST /ns/{nsId}/resources/vNet`\n")
 	md.WriteString("2. **Create SecurityGroup** — `POST /ns/{nsId}/resources/securityGroup`\n")
-	md.WriteString("3. **Get RDBMS Support** — `GET /tumblebug/rdbms/support?providerName=&regionName=&dbEngine=`\n")
-	md.WriteString("4. **Create RDBMS** — `POST /ns/{nsId}/resources/rdbms` (blocks until Available/Failed)\n")
-	md.WriteString("5. **Get RDBMS** — `GET /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
-	md.WriteString("6. **List RDBMS** — `GET /ns/{nsId}/resources/rdbms`\n")
-	md.WriteString("7. **Delete RDBMS** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
-	md.WriteString("8. **Delete SecurityGroup** — `DELETE /ns/{nsId}/resources/securityGroup/{sgId}`\n")
-	md.WriteString("9. **Delete Subnets** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}`\n")
-	md.WriteString("10. **Delete VNet** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}`\n\n")
+	md.WriteString("3. **Get RDBMS Capability** — `GET /tumblebug/rdbms/capability?providerName=&regionName=&dbEngine=`\n")
+	md.WriteString("4. **Validate RDBMS** — `POST /ns/{nsId}/resources/rdbms/validate` (dry run, no side effects; create is skipped if this fails)\n")
+	md.WriteString("5. **Create RDBMS** — `POST /ns/{nsId}/resources/rdbms` (blocks until Available/Failed)\n")
+	md.WriteString("6. **Get RDBMS** — `GET /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
+	md.WriteString("7. **List RDBMS** — `GET /ns/{nsId}/resources/rdbms`\n")
+	md.WriteString("8. **Delete RDBMS** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
+	md.WriteString("9. **Delete SecurityGroup** — `DELETE /ns/{nsId}/resources/securityGroup/{sgId}`\n")
+	md.WriteString("10. **Delete Subnets** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}`\n")
+	md.WriteString("11. **Delete VNet** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}`\n\n")
 	md.WriteString(fmt.Sprintf("Generated: %s\n\n---\n\n", time.Now().Format(time.RFC3339)))
 
 	md.WriteString("## Results\n\n")
-	md.WriteString("| rdbmsId | Connection | VNet | SecurityGroup | Support | Create RDBMS | Get | List | Delete RDBMS | Delete SG | Delete Subnets | Delete VNet | Overall |\n")
-	md.WriteString("| ------- | ---------- | ---- | ------------- | ------- | ------------ | --- | ---- | ------------ | --------- | -------------- | ----------- | ------- |\n")
 	for _, r := range results {
-		overall := "✅"
 		steps := []string{
-			r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CreateRDBMSStatus,
-			r.GetRDBMSStatus, r.ListRDBMSStatus, r.DeleteRDBMSStatus, r.DeleteSGStatus,
+			r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CapabilityStatus, r.ValidateStatus,
+			r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.DeleteRDBMSStatus, r.DeleteSGStatus,
 			r.DeleteSubnetsStatus, r.DeleteVNetStatus,
 		}
+		overall := "✅"
 		for _, s := range steps {
 			if strings.HasPrefix(s, "Failed") {
 				overall = "❌"
 				break
 			}
 		}
-		md.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
-			r.RdbmsId, r.ConnectionName, r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CreateRDBMSStatus,
-			r.GetRDBMSStatus, r.ListRDBMSStatus, r.DeleteRDBMSStatus, r.DeleteSGStatus, r.DeleteSubnetsStatus,
-			r.DeleteVNetStatus, overall))
+
+		md.WriteString(fmt.Sprintf("### %s (%s) %s\n\n", r.RdbmsId, r.ConnectionName, overall))
+		md.WriteString("| Step | Result |\n")
+		md.WriteString("| ---- | ------ |\n")
+		md.WriteString(fmt.Sprintf("| VNet | %s |\n", r.CreateVNetStatus))
+		md.WriteString(fmt.Sprintf("| SecurityGroup | %s |\n", r.CreateSGStatus))
+		md.WriteString(fmt.Sprintf("| Support | %s |\n", r.SupportStatus))
+		md.WriteString(fmt.Sprintf("| Capability | %s |\n", r.CapabilityStatus))
+		md.WriteString(fmt.Sprintf("| Validate | %s |\n", r.ValidateStatus))
+		md.WriteString(fmt.Sprintf("| Create RDBMS | %s |\n", r.CreateRDBMSStatus))
+		md.WriteString(fmt.Sprintf("| Get RDBMS | %s |\n", r.GetRDBMSStatus))
+		md.WriteString(fmt.Sprintf("| List RDBMS | %s |\n", r.ListRDBMSStatus))
+		md.WriteString(fmt.Sprintf("| Delete RDBMS | %s |\n", r.DeleteRDBMSStatus))
+		md.WriteString(fmt.Sprintf("| Delete SecurityGroup | %s |\n", r.DeleteSGStatus))
+		md.WriteString(fmt.Sprintf("| Delete Subnets | %s |\n", r.DeleteSubnetsStatus))
+		md.WriteString(fmt.Sprintf("| Delete VNet | %s |\n", r.DeleteVNetStatus))
+		md.WriteString(fmt.Sprintf("| **Overall** | %s |\n\n", overall))
 	}
-	md.WriteString("\n---\n\n")
+	md.WriteString("---\n\n")
 	md.WriteString("### Detailed Logs\n\nSee `test-results/<rdbmsId>.md` for per-CSP API trace logs.\n")
 
-	if err := os.WriteFile(filename, []byte(md.String()), 0644); err != nil {
-		log.Warn().Err(err).Msgf("Failed to write summary report: %s", filename)
-		return
-	}
-	log.Info().Msgf("Summary report saved: %s", filename)
+	return md.String()
 }
 
 // ============================================================

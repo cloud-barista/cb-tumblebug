@@ -2,8 +2,9 @@
 
 A CLI tool for batch-testing the RDBMS lifecycle via the CB-Tumblebug API:
 
-**vNet+subnets → securityGroup → rdbms/support → RDBMS create → get → list →
-delete → securityGroup delete → subnets delete → vNet delete**
+**rdbms/support (once) → per case: vNet+subnets → securityGroup → rdbms/capability
+→ RDBMS create → get → list → delete → securityGroup delete → subnets delete →
+vNet delete**
 
 Verified CSPs (see [docs/feature_guide/rdbms-management.md](../../../../docs/feature_guide/rdbms-management.md)):
 `aws`, `azure`, `gcp`, `alibaba`, `tencent`, `ibm`, `openstack`, `ncp`, `nhn`
@@ -128,7 +129,7 @@ After all test cases complete, a summary table is printed and written to
 `test-results/summary.md`:
 
 ```
-[test-rdbms-aws(aws-ap-northeast-2)]   VNet: Success (id=..., subnets=2)  SG: Success (id=..., port=3306)  Support: Success  Create: Success (status=Available, ...)  Get: Success (status=Available)  List: Success (found among 1)  Delete: Success
+[test-rdbms-aws(aws-ap-northeast-2)]   VNet: Success (id=..., subnets=2)  SG: Success (id=..., port=3306)  Capability: Success  Create: Success (status=Available, ...)  Get: Success (status=Available)  List: Success (found among 1)  Delete: Success
 ```
 
 Per-CSP detailed API traces (request/response bodies, with secrets masked) are
