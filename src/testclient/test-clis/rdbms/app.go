@@ -20,7 +20,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -31,10 +30,12 @@ import (
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/go-resty/resty/v2"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 var tbApiBase string
@@ -690,47 +691,57 @@ func isNotFoundErr(err error) bool {
 	return strings.Contains(msg, "404") || strings.Contains(msg, "not found")
 }
 
-// testDatabaseDummyData connects directly to the RDBMS instance over the MySQL wire protocol
-// (shared by mysql and mariadb) and runs a minimal write/read/verify/delete cycle against a
-// scratch table — confirming the logical database created via Tumblebug's RDBMS database API
-// is actually usable for SQL, not just present in the database list. Requires the instance to
-// be reachable from wherever this CLI runs (publicAccess=true and a security group rule
-// allowing the caller, as set up by the earlier steps in runLifecycle).
-func testDatabaseDummyData(endpoint, masterUserName, masterUserPassword, dbName string) error {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?timeout=10s", masterUserName, masterUserPassword, endpoint, dbName)
+// tumblebugTestRecord is the scratch row used by testDatabaseDummyData.
+type tumblebugTestRecord struct {
+	ID    int `gorm:"primaryKey"`
+	Value string
+}
 
-	db, err := sql.Open("mysql", dsn)
+// TableName pins the table name so it matches across CSPs regardless of GORM's pluralization.
+func (tumblebugTestRecord) TableName() string { return "tumblebug_test" }
+
+// testDatabaseDummyData connects directly to the RDBMS instance via GORM (MySQL dialect, shared
+// by mysql and mariadb) and runs a minimal write/read/verify/delete cycle against a scratch
+// table — confirming the logical database created via Tumblebug's RDBMS database API is
+// actually usable for SQL, not just present in the database list. Requires the instance to be
+// reachable from wherever this CLI runs (publicAccess=true and a security group rule allowing
+// the caller, as set up by the earlier steps in runLifecycle).
+func testDatabaseDummyData(endpoint, masterUserName, masterUserPassword, dbName string) error {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s",
+		masterUserName, masterUserPassword, endpoint, dbName)
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
 	if err != nil {
 		return fmt.Errorf("open: %w", err)
 	}
-	defer db.Close()
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("db: %w", err)
+	}
+	defer sqlDB.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+	db = db.WithContext(ctx)
 
-	if err := db.PingContext(ctx); err != nil {
-		return fmt.Errorf("ping: %w", err)
-	}
-
-	const table = "tumblebug_test"
-	if _, err := db.ExecContext(ctx, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id INT PRIMARY KEY, value VARCHAR(255))", table)); err != nil {
-		return fmt.Errorf("create table: %w", err)
+	if err := db.AutoMigrate(&tumblebugTestRecord{}); err != nil {
+		return fmt.Errorf("auto migrate: %w", err)
 	}
 
 	const wantValue = "tumblebug-dummy-data"
-	if _, err := db.ExecContext(ctx, fmt.Sprintf("INSERT INTO %s (id, value) VALUES (1, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)", table), wantValue); err != nil {
-		return fmt.Errorf("insert: %w", err)
+	if err := db.Save(&tumblebugTestRecord{ID: 1, Value: wantValue}).Error; err != nil {
+		return fmt.Errorf("save: %w", err)
 	}
 
-	var gotValue string
-	if err := db.QueryRowContext(ctx, fmt.Sprintf("SELECT value FROM %s WHERE id = 1", table)).Scan(&gotValue); err != nil {
-		return fmt.Errorf("select: %w", err)
+	var got tumblebugTestRecord
+	if err := db.First(&got, 1).Error; err != nil {
+		return fmt.Errorf("find: %w", err)
 	}
-	if gotValue != wantValue {
-		return fmt.Errorf("select: got %q, want %q", gotValue, wantValue)
+	if got.Value != wantValue {
+		return fmt.Errorf("find: got %q, want %q", got.Value, wantValue)
 	}
 
-	if _, err := db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = 1", table)); err != nil {
+	if err := db.Delete(&tumblebugTestRecord{}, 1).Error; err != nil {
 		return fmt.Errorf("delete: %w", err)
 	}
 
