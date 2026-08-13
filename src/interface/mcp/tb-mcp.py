@@ -1547,6 +1547,8 @@ def unregister_csp_definition(provider_name: str, confirm: bool = False) -> Dict
 
     Args:
         provider_name: Provider to remove, e.g. "openstack-site01"
+        confirm: Must be True to proceed. Ask the user first - this is the only
+            thing standing between a request and the destructive action.
 
     Returns:
         Removal result
@@ -1974,6 +1976,8 @@ def remove_security_group_rules(ns_id: str, sg_id: str, rules: List[Dict], confi
         ns_id: Namespace ID
         sg_id: SecurityGroup ID
         rules: List of rules to remove — same format as add_security_group_rules()
+        confirm: Must be True to proceed. Ask the user first - this is the only
+            thing standing between a request and the destructive action.
 
     Returns:
         Update result with the SecurityGroup's resulting rule set
@@ -2033,7 +2037,7 @@ def get_provisioning_risk(spec_id: str, csp_image_name: Optional[str] = None,
 # ---------------------------------------------------------------------------
 
 @tool()
-def list_infra_templates(ns_id: str = "default", template_id: Optional[str] = None) -> Dict:
+def list_infra_templates(ns_id: str = "system", template_id: Optional[str] = None) -> Dict:
     """
     List saved Infra templates, or fetch one by id.
 
@@ -2041,7 +2045,7 @@ def list_infra_templates(ns_id: str = "default", template_id: Optional[str] = No
     replayed without rebuilding the spec and image selection each time.
 
     Args:
-        ns_id: Namespace ID
+        ns_id: Namespace ID. Defaults to "system", where init loads the shipped templates.
         template_id: Return just this template instead of the whole list
 
     Returns:
@@ -2067,6 +2071,10 @@ def provision_infra_from_template(ns_id: str, template_id: str, name: str,
         template_id: Template to instantiate (see list_infra_templates)
         name: Name for the new Infra
         description: Optional description
+        budget_ack: Approval id from request_budget_increase(), to proceed past a
+            spend limit. Single-use.
+        confirm: Must be True to proceed. Ask the user first - this is the only
+            thing standing between a request and the destructive action.
 
     Returns:
         The created Infra.
@@ -2086,17 +2094,20 @@ def provision_infra_from_template(ns_id: str, template_id: str, name: str,
 
 
 @tool(mutating=True)
-def manage_infra_template(action: str, ns_id: str = "default",
+def manage_infra_template(action: str, ns_id: str = "system",
                           template_id: Optional[str] = None,
-                          template: Optional[Dict] = None) -> Dict:
+                          template: Optional[Dict] = None,
+                          confirm: bool = False) -> Dict:
     """
     Create, update or delete an Infra template.
 
     Args:
         action: "create" | "update" | "delete"
-        ns_id: Namespace ID
+        ns_id: Namespace ID. Defaults to "system", where init loads the shipped templates.
         template_id: Required for update and delete
         template: Template body for create and update
+        confirm: Must be True for action="delete". Ask the user first - a shipped template
+            is not recreated until the next init.
 
     Returns:
         The server's response.
@@ -2113,6 +2124,11 @@ def manage_infra_template(action: str, ns_id: str = "default",
     if action == "delete":
         if not template_id:
             return {"error": "template_id is required for action='delete'"}
+        guard = _require_confirmation(
+            confirm, f"deleting template {template_id!r}",
+            "a shipped template is not recreated until the next init")
+        if guard:
+            return guard
         return api_request("DELETE", f"/ns/{ns_id}/template/infra/{template_id}")
     return {"error": f"unknown action {action!r}; expected create, update or delete"}
 
@@ -2790,7 +2806,7 @@ def get_resources(kind: str, ns_id: str = DEFAULT_NAMESPACE, detail: str = "summ
 
 @tool(mutating=True)
 def manage_labels(action: str, label_type: str, uid: Optional[str] = None,
-                  labels: Optional[Dict] = None, key: Optional[str] = None) -> Dict:
+                  labels: Optional[Union[Dict, str]] = None, key: Optional[str] = None) -> Dict:
     """
     Read, set, remove or sync resource labels, and find resources by label.
 
@@ -2801,7 +2817,9 @@ def manage_labels(action: str, label_type: str, uid: Optional[str] = None,
         action: "get" | "set" | "remove" | "find" | "sync_from_csp"
         label_type: Resource type, e.g. "infra", "node", "vNet"
         uid: Resource uid - required for get, set, remove and sync_from_csp
-        labels: Key-value pairs for "set"; a label selector string for "find"
+        labels: Key-value pairs, e.g. {"role": "control"}. For "find" a selector string
+            such as "role=control,tier=web" is accepted as well, and a mapping given
+            there is joined into one.
         key: Label key to delete, for "remove"
 
     Returns:
@@ -3292,112 +3310,42 @@ def get_ssh_private_key(ns_id: str, key_id: str, reason: str) -> Dict:
 
 # Tool: Release resources
 @tool(mutating=True)
-def release_resources(ns_id: str, confirm: bool = False) -> Dict:
+def release_resources(ns_id: str, confirm: bool = False, dry_run: bool = False) -> Dict:
     """
-    Release all shared resources for a specific namespace.
-    This includes VNet, SecurityGroup, and SSHKey resources.
-    This operation is irreversible and should be used with caution.
-    
-    ⚠️  IMPORTANT: Only use this when no Infras exist in the namespace or you're sure the resources are not needed.
-    
-    **When to use:**
-    - After deleting the last Infra in a namespace
-    - When completely cleaning up a namespace
-    - When you're certain no future Infras will reuse these resources
-    
-    **When NOT to use:**
-    - Other Infras exist in the same namespace
-    - You plan to create new Infras that could reuse network configurations
-    - You're unsure about resource dependencies
-    
+    Reclaim shared resources in a namespace that nothing is using.
+
+    The server decides per resource, not per namespace: it lists the VNets, SecurityGroups
+    and SSHKeys, checks each one's associated objects, and deletes only those with none.
+    Anything a running Infra still references is preserved. So this is safe to run with
+    other Infras present - it will simply skip their resources - and it is the normal way
+    to clean up after terminating an Infra, which leaves its security group and key behind.
+
     Args:
         ns_id: Namespace ID
         confirm: Must be True to proceed. Ask the user first.
+        dry_run: Report what would be released without deleting anything. Cheap, and the
+            honest way to show the user the list before asking for confirm.
 
-    Note: this only removes CB-Tumblebug's records of shared resources. It refuses while any
-    Infra still exists in the namespace, because a record removed while the provider-side
-    resource survives leaves something billable that nothing tracks.
-    
     Returns:
-        Resource release result with safety checks and guidance
+        Per-resource results with a success/failure count. Resources still in use are not
+        listed, because they were never candidates.
     """
-    # Safety check: require explicit confirmation
-    if not confirm:
+    if not confirm and not dry_run:
         return {
             "error": "Refused: releasing shared resources was not confirmed",
-            "requirement": "Set confirm=True to proceed with shared resources deletion",
-            "warning": "⚠️  This will permanently delete ALL shared resources (VNet, SecurityGroup, SSHKey) in the namespace",
-            "safety_checklist": [
-                "✓ Confirm no Infras exist in this namespace",
-                "✓ Confirm no other infrastructure depends on these resources", 
-                "✓ Confirm you won't need these network configurations for future Infras",
-                "✓ Have backups of any important configurations"
-            ],
-            "check_command": f"get_infra_list('{ns_id}') # Verify no Infras exist before proceeding"
+            "requirement": "Set confirm=True to proceed, or dry_run=True to preview first",
+            "note": ("Only resources with no associated objects are removed; anything a "
+                     "running Infra references is left alone."),
         }
-    
-    # Pre-deletion checks
-    try:
-        # Check for existing Infras
-        infra_list_result = api_request("GET", f"/ns/{ns_id}/infra")
-        if isinstance(infra_list_result, dict) and "infra" in infra_list_result and len(infra_list_result["infra"]) > 0:
-            active_infras = [infra.get("id", "unknown") for infra in infra_list_result["infra"]]
-            return {
-                "error": "Cannot release resources while Infras exist",
-                "active_infras": active_infras,
-                "recommendation": "Terminate all Infras first using terminate_infra()",
-                "safety_note": "Shared resources are being used by active Infras"
-            }
-        
-        # Get current resources for reporting
-        try:
-            vnets_result = api_request("GET", f"/ns/{ns_id}/resources/vNet")
-            security_groups_result = api_request("GET", f"/ns/{ns_id}/resources/securityGroup")
-            ssh_keys_result = api_request("GET", f"/ns/{ns_id}/resources/sshKey")
-            
-            vnets = vnets_result.get("vNet", []) if isinstance(vnets_result, dict) else []
-            security_groups = security_groups_result.get("securityGroup", []) if isinstance(security_groups_result, dict) else []
-            ssh_keys = ssh_keys_result.get("sshKey", []) if isinstance(ssh_keys_result, dict) else []
-            
-            resources_to_delete = {
-                "vNets": [vnet.get("id", "unknown") for vnet in vnets] if vnets else [],
-                "securityGroups": [sg.get("id", "unknown") for sg in security_groups] if security_groups else [],
-                "sshKeys": [key.get("id", "unknown") for key in ssh_keys] if ssh_keys else []
-            }
-        except Exception as e:
-            resources_to_delete = {"note": f"Could not enumerate resources before deletion: {str(e)}"}
-        
-    except Exception as e:
-        return {
-            "error": f"Pre-deletion checks failed: {str(e)}",
-            "recommendation": "Check namespace status and try again"
-        }
-    
-    # Proceed with deletion
-    result = api_request("DELETE", f"/ns/{ns_id}/sharedResources")
-    
-    # Enhance result with context information
+
+    params = {"dryRun": "true"} if dry_run else None
+    result = api_request("DELETE", f"/ns/{ns_id}/sharedResources", params=params)
+
     if isinstance(result, dict) and "error" not in result:
-        # Store deletion in memory
-        _store_interaction_memory(
-            user_request=f"Release shared resources in namespace '{ns_id}'",
-            llm_response=f"Successfully released shared resources in namespace '{ns_id}'",
-            operation_type="resource_management",
-            context_data={
-                "namespace_id": ns_id, 
-                "operation": "release_shared_resources",
-                "resources_deleted": resources_to_delete
-            },
-            status="completed"
-        )
-        
-        result["deletion_summary"] = {
-            "namespace": ns_id,
-            "resources_deleted": resources_to_delete,
-            "status": "All shared resources have been permanently deleted",
-            "note": "This namespace is now clean and ready for new Infra deployments with fresh resources"
-        }
-    
+        result["_note"] = (
+            "preview only - nothing was deleted; re-run with confirm=True to apply"
+            if dry_run else
+            "resources still referenced by a running Infra were skipped, not failed")
     return result
 
 # Tool: Check resource exists
@@ -3450,7 +3398,13 @@ def get_infra_list(ns_id: str, detail: str = "summary",
     
     Args:
         ns_id: Namespace ID
-    
+        detail: "summary" (default) or "full". Summary drops the per-node command
+            history, which is where nearly all the bytes are.
+        fields: Comma-separated top-level fields to keep, e.g. "id,status". Applied
+            after detail.
+        option: Server-side view: "status" (default), "id" for ids only, or "" for the
+            full records.
+
     Returns:
         List of Infras
     """
@@ -3474,7 +3428,11 @@ def get_infra(ns_id: str, infra_id: str, detail: str = "summary",
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-    
+        detail: "summary" (default) or "full". Summary drops the per-node command
+            history, which is where nearly all the bytes are.
+        fields: Comma-separated top-level fields to keep, e.g. "id,status". Applied
+            after detail.
+
     Returns:
         Infra information
     """
@@ -3603,6 +3561,8 @@ def remove_bastion_node( ns_id: str, infra_id: str, bastion_node_id: str, bastio
         bastion_node_id: Bastion node to unregister
         bastion_infra_id: Bastion's Infra, when it differs from infra_id
         bastion_ns_id: Bastion's namespace, when it differs from ns_id
+        confirm: Must be True to proceed. Ask the user first - this is the only
+            thing standing between a request and the destructive action.
 
     Returns:
         Removal result
@@ -3705,7 +3665,9 @@ def search_images(
     Args:
         ns_id: Namespace ID (default "system")
         matched_spec_id: Spec id to match provider/region/architecture against
-        provider_name / region_name: Explicit alternatives to matched_spec_id
+        provider_name: Provider to search, e.g. "aws". An explicit alternative to
+            matched_spec_id; give region_name with it.
+        region_name: Region to search, e.g. "ap-northeast-2". Used with provider_name.
         os_type: e.g. "ubuntu 22.04", "centos"
         os_architecture: e.g. "x86_64", "arm64"
         include_basic_image_only: Clean base images only. Defaults to True unless a GPU or
@@ -3716,6 +3678,8 @@ def search_images(
         max_results: Maximum images to return (default 20)
         include_all: Disable the defaults above and return everything. Rarely wanted.
         detail: "summary" (default) or "full"
+        detail_search_keys: Extra provider-specific key/value filters applied to the
+            image details, e.g. {"Architecture": "x86_64"}.
 
     Returns:
         imageList with cspImageName, osType, osDistribution, osArchitecture, description.
@@ -3998,9 +3962,18 @@ def recommend_vm_spec(
         filter_policies: Field -> constraint, e.g.
             {"vCPU": {"min": 2, "max": 8}, "memoryGiB": {"min": 4},
              "providerName": "aws", "regionName": "ap-northeast-2"}
+            For a GPU, filter on the memory you need rather than the card's name:
+            {"acceleratorModel": "l4", "acceleratorMemoryGB": {"min": 16}}. The name alone
+            does not say how much of the card you get - AWS g6f.large reports "NVIDIA L4"
+            and costs a quarter of g6.xlarge because it is a 3 GB slice of one, and sorting
+            by cost puts it first. acceleratorCount 0 marks such a slice.
+            Full vocabulary: get_search_options(kind='spec').
         priority_policy: "location" | "cost" | "performance" | "random"
-        latitude / longitude: Required when priority_policy is "location"
+        latitude: Reference latitude. Required when priority_policy is "location".
+        longitude: Reference longitude. Required when priority_policy is "location".
         limit: Maximum number of specs to return (string)
+        include_full_details: Return every spec field instead of the summary
+            (default False; the full form is much larger).
 
     Returns:
         summarized_specs: list of specs with id, providerName, regionName, vCPU,
@@ -4501,6 +4474,12 @@ def review_infra_dynamic_request(
         policy_on_partial_failure: "continue" (default) | "rollback" | "refine"
         vnet_template_id: VNet template ID, Infra-level default
         sg_template_id: Security group template ID, Infra-level default
+        system_label: Reserved system label; leave empty unless told otherwise.
+        label: Key-value pairs applied to the Infra (enables labelSelector targeting later).
+        post_commands: Bootstrap phases to run once the nodes are up.
+        post_command_async: Return as soon as the nodes exist and let post_commands run
+            in the background (default False).
+        hold: Create the records but leave provisioning paused, to be released later.
 
     Returns:
         overallStatus ("Ready" | "Warning" | "Error"), creationViable, estimatedCost,
@@ -4607,13 +4586,12 @@ def create_infra_dynamic(
         description: Infra description
         system_label: System label for special purposes
         label: Key-value pairs for Infra labeling
-        post_commands: Bootstrap phases, e.g.
-            [{"command": ["control-setup.sh"], "nodeGroupId": "control"},
-             {"command": ["worker-join.sh"], "labelSelector": "role=node", "continueOnError": False}]
-            Target with at most one of nodeGroupId | nodeId | labelSelector. Omit userName
-            so the server resolves the verified account per node. Phases run in order and a
-            failed phase skips the rest by default. Cumulative timeoutMinutes must stay
-            under 120. Outcome comes back as postCommandStatus / postCommandResults.
+        post_commands: Bootstrap phases, each targeted by at most one of
+            nodeGroupId | nodeId | labelSelector. Omit userName so the server resolves the
+            verified account per node. Phases run in order; a failed one skips the rest by
+            default. Cumulative timeoutMinutes must stay under 120. Outcome comes back as
+            postCommandStatus / postCommandResults. Worked example:
+            get_usage_guide('provision').
         post_command_async: Return once nodes are provisioned and run the commands in the
             background. Recommended for long bootstraps - nodes bill from Running and a
             synchronous wait can hit proxy timeouts. Poll get_infra() until
@@ -4626,6 +4604,8 @@ def create_infra_dynamic(
         policy_on_partial_failure: "continue" (default) | "rollback" | "refine"
         vnet_template_id: VNet template ID, Infra-level default
         sg_template_id: Security group template ID, Infra-level default
+        budget_ack: Approval id from request_budget_increase(), to proceed past a
+            spend limit. Single-use.
 
     Returns:
         Without force_create: the review requirement and next steps.
@@ -5044,6 +5024,8 @@ def add_nodegroup_dynamic(
         vnet_template_id: VNet template ID (optional)
         sg_template_id: Security group template ID (optional)
         label: Key-value pairs for labeling (optional; enables labelSelector targeting later)
+        post_command_async: Return as soon as the nodes exist and let post_commands run
+            in the background (default False).
         post_commands: Bootstrap phases for the NEW nodes (scoped to this nodeGroup), e.g.
             [{"command": ["curl ... | bash"], "timeoutMinutes": 10, "continueOnError": False}]
     
@@ -5172,6 +5154,8 @@ def terminate_infra(ns_id: str, infra_id: str, confirm: bool = False) -> Dict:
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
+        confirm: Must be True to proceed. Ask the user first - this is the only
+            thing standing between a request and the destructive action.
     
     Returns:
         Deletion result with guidance about optional shared resources cleanup
@@ -5633,13 +5617,21 @@ def _summarize_vm_specs(specs_response: Any, include_details: bool = False) -> D
             "connectionName": spec.get("connectionName", "")
         }
         
-        # Add GPU information if available
+        # Accelerator. The model name alone does not say how much of that card you get:
+        # AWS g6f.large reports "NVIDIA L4" like g6.xlarge does, but is a fractional slice
+        # with 3 GB against the full card's 24 GB. Count and memory are therefore reported
+        # whenever the spec has an accelerator at all - including count 0, which is what a
+        # fractional slice carries and what an `if` on the value silently dropped.
         if spec.get("acceleratorModel"):
             summarized_spec["acceleratorModel"] = spec.get("acceleratorModel")
+            summarized_spec["acceleratorCount"] = spec.get("acceleratorCount", 0)
+            summarized_spec["acceleratorMemoryGB"] = spec.get("acceleratorMemoryGB", 0)
+            if not spec.get("acceleratorCount"):
+                summarized_spec["_accelerator_note"] = (
+                    "count 0 means a fractional GPU - acceleratorMemoryGB is the share you "
+                    "actually get, not the card's full memory")
         if spec.get("acceleratorType"):
             summarized_spec["acceleratorType"] = spec.get("acceleratorType")
-        if spec.get("acceleratorCount"):
-            summarized_spec["acceleratorCount"] = spec.get("acceleratorCount")
         
         # Add disk information if available
         if spec.get("diskSizeGB", -1) > 0:
@@ -5805,6 +5797,10 @@ def execute_command_infra(
         label_selector: Run on nodes matching a label, e.g. "role=node"
         timeout_minutes: Per-command timeout (server default 30, max 120)
         contains: Keep only output lines matching this regex (with 3 lines of context)
+        summarize_output: Trim each stream to max_output_lines/max_output_chars
+            (default True). Ignored when contains is given.
+        max_output_lines: Lines kept per stream when summarizing (default 5)
+        max_output_chars: Characters kept per stream when summarizing (default 1000)
             instead of summarizing. Reaches a block a tail cannot, e.g. the credentials
             an installer prints in the middle of a long log.
         run_async: Return a request_id immediately instead of waiting. Use it for anything
@@ -6142,6 +6138,25 @@ PREDEFINED_SCRIPTS = {
         "description": "Serve a Hugging Face model with vLLM on port 8000, OpenAI-compatible. model_id is the HF repo, e.g. Qwen/Qwen2.5-1.5B-Instruct, which fits a 16 GB T4 in half precision. The model is downloaded on first run, so allow time. Verifies /v1/models afterwards.",
         "timeout_minutes": 60
     },
+    "ollama_install": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh"
+        ],
+        "description": "Install Ollama on a GPU node and serve it on port 3000 (not the 11434 default). Run gpu_driver_install first, or it falls back to CPU. Pull a model afterwards with ollama_pull. Open port 3000 to reach the API from outside."
+    },
+    "ollama_pull": {
+        "commands": [
+            "export OLLAMA_HOST=127.0.0.1:3000; ollama pull {{model}} && ollama list"
+        ],
+        "description": "Download a model into an Ollama installed by ollama_install. OLLAMA_HOST is set because that install moves the server to port 3000 while the CLI still defaults to 11434 - without it every ollama command fails with 'could not connect to ollama server'. Size the model to the card: a 14B at Q4 is ~9 GB, a 32B ~20 GB. Set model, e.g. qwen2.5:14b."
+    },
+    "open_webui_ollama": {
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOpenWebUI.sh -o /tmp/deployOpenWebUI.sh && bash /tmp/deployOpenWebUI.sh ollama {{ollama_url}}",
+            "sleep 20; curl -s -o /dev/null -w 'local check: %{http_code}\\n' http://127.0.0.1/"
+        ],
+        "description": "Run Open WebUI in Docker on port 80 against an Ollama backend. ollama_url is reached from inside the container, so for an Ollama on the same node use the Docker bridge address http://172.17.0.1:3000 - localhost there is the container itself. Open port 80 in the security group."
+    },
     "open_webui_vllm": {
         "commands": [
             "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOpenWebUI.sh -o /tmp/deployOpenWebUI.sh && bash /tmp/deployOpenWebUI.sh vllm '{{vllm_url}}'",
@@ -6443,10 +6458,15 @@ def transfer_file_infra(
     """
     Transfer a file to nodes of an Infra via SCP.
 
+    The file is read from the MCP SERVER's own filesystem, not from yours - an LLM client
+    has no way to put a file there, so this is usable only for paths that already exist in
+    the server container. To place content you are holding, write it with a heredoc through
+    execute_command_infra; for anything binary or large, have the node fetch it from a URL.
+
     Args:
         ns_id: Namespace ID
         infra_id: Infra ID
-        file_path: Local file path to transfer
+        file_path: Path on the MCP server's filesystem - see the note above
         target_path: Destination path on the remote node
         nodegroup_id: NodeGroup ID to limit transfer to nodes in a nodegroup (optional)
         node_id: Node ID to transfer to a single node (optional)
@@ -6514,6 +6534,9 @@ def list_node_command_status(
         request_id: Filter by x-request-id of the command execution
         page: Page number for pagination (converted to offset)
         size: Page size for pagination (max records to return)
+        detail: "summary" (default) keeps output only for the newest record and any that
+            did not finish; "full" returns every record's output.
+        tail_lines: Lines of stdout/stderr kept per record (default 20)
 
     Returns:
         List of command status records for the node
@@ -6584,10 +6607,11 @@ def clear_all_node_command_status( ns_id: str, infra_id: str, node_id: str , con
         ns_id: Namespace ID
         infra_id: Infra ID
         node_id: Node ID (e.g., g1-1)
+        confirm: Must be True to proceed - the command history for this node is discarded,
+            including the output of failed runs.
 
     Returns:
         Result of the clear operation
-        confirm: must be True to proceed - the command history for this node is discarded
     """
     guard = _require_confirmation(confirm, "clearing command history", "the record of what ran on this node is lost, including failure output")
     if guard:

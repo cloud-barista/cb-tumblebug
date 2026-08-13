@@ -198,6 +198,8 @@ func RestGetRequest(c echo.Context) error {
 // @Param method query string false "Filter by HTTP method (GET, POST, PUT, DELETE, etc.)" Enums(GET, POST, PUT, DELETE) default()
 // @Param url query string false "Filter by request URL"
 // @Param time query string false "Filter by time in minutes from now (to get recent requests)"
+// @Param source query string false "Filter by X-Request-Source header (e.g., mcp)"
+// @Param brief query string false "Option to omit request/response bodies from the results (set 'true' to activate)" Enums(true,false) default(false)
 // @Param savefile query string false "Option to save the results to a file (set 'true' to activate)" Enums(true,false) default(false)
 // @Success 200 {object} map[string][]clientManager.RequestDetails
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -208,6 +210,8 @@ func RestGetAllRequests(c echo.Context) error {
 	methodFilter := strings.ToLower(c.QueryParam("method"))
 	urlFilter := strings.ToLower(c.QueryParam("url"))
 	timeFilter := c.QueryParam("time") // in minutes
+	sourceFilter := c.QueryParam("source")
+	brief := c.QueryParam("brief") == "true"
 
 	var timeLimit time.Time
 	if minutes, err := strconv.Atoi(timeFilter); err == nil {
@@ -222,7 +226,12 @@ func RestGetAllRequests(c echo.Context) error {
 			if (statusFilter == "" || strings.ToLower(details.Status) == statusFilter) &&
 				(methodFilter == "" || strings.ToLower(details.RequestInfo.Method) == methodFilter) &&
 				(urlFilter == "" || strings.Contains(strings.ToLower(details.RequestInfo.URL), urlFilter)) &&
-				(timeFilter == "" || details.StartTime.After(timeLimit)) {
+				(timeFilter == "" || details.StartTime.After(timeLimit)) &&
+				(sourceFilter == "" || strings.EqualFold(details.RequestInfo.Header["X-Request-Source"], sourceFilter)) {
+				if brief {
+					details.RequestInfo.Body = nil
+					details.ResponseData = nil
+				}
 				allRequests = append(allRequests, details)
 			}
 		}
