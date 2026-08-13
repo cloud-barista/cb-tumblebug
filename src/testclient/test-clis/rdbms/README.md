@@ -3,8 +3,9 @@
 A CLI tool for batch-testing the RDBMS lifecycle via the CB-Tumblebug API:
 
 **rdbms/support (once) → per case: vNet+subnets → securityGroup → rdbms/capability
-→ RDBMS create → get → list → delete → securityGroup delete → subnets delete →
-vNet delete**
+→ RDBMS create → get → list → database create → database list → dummy data
+write/read/verify/delete → database delete → RDBMS delete → securityGroup
+delete → subnets delete → vNet delete**
 
 Verified CSPs (see [docs/feature_guide/rdbms-management.md](../../../../docs/feature_guide/rdbms-management.md)):
 `aws`, `azure`, `gcp`, `alibaba`, `tencent`, `ibm`, `openstack`, `ncp`, `nhn`
@@ -125,12 +126,10 @@ go run . test --nsId my-namespace --parallel
 
 ### Step 6 — Review the results
 
-After all test cases complete, a summary table is printed and written to
-`test-results/summary.md`:
-
-```
-[test-rdbms-aws(aws-ap-northeast-2)]   VNet: Success (id=..., subnets=2)  SG: Success (id=..., port=3306)  Capability: Success  Create: Success (status=Available, ...)  Get: Success (status=Available)  List: Success (found among 1)  Delete: Success
-```
+After all test cases complete, a summary markdown document (one results table
+per CSP, covering every step from VNet creation through Database
+create/list/dummy-data-test/delete to final cleanup) is printed and written to
+`test-results/summary.md`.
 
 Per-CSP detailed API traces (request/response bodies, with secrets masked) are
 saved to `test-results/<rdbmsId>.md`.
@@ -139,8 +138,11 @@ saved to `test-results/<rdbmsId>.md`.
 
 ## Cleanup on failure
 
-Steps 7–10 (delete RDBMS, SecurityGroup, subnets, vNet) always run — even if an
-earlier step failed — so a failed run doesn't leave billed CSP resources behind.
+Steps 10–14 (delete Database, RDBMS, SecurityGroup, subnets, vNet) always run —
+even if an earlier step failed — so a failed run doesn't leave billed CSP
+resources behind. (Delete Database only runs if Create Database actually
+succeeded; the rest run whenever the corresponding create was attempted, not
+just when it reported success.)
 If a step still fails (e.g. the RDBMS instance never left `Failed`), check
 `test-results/<rdbmsId>.md` for the exact error and clean up manually via:
 

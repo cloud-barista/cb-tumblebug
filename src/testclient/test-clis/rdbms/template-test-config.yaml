@@ -7,7 +7,9 @@ tumblebug:
 
 # Multi-CSP test cases for batch testing the RDBMS lifecycle:
 # vNet+subnets -> securityGroup -> rdbms/support -> RDBMS create -> get -> list
-# -> delete -> securityGroup delete -> subnets delete -> vNet delete
+# -> database create -> database list -> dummy data write/read/verify/delete
+# -> database delete -> RDBMS delete -> securityGroup delete -> subnets delete
+# -> vNet delete
 #
 # Copy this file to test-config.yaml and adjust values for your environment.
 # Set 'execute: true' for the CSPs you want to include in the test run.
@@ -18,6 +20,9 @@ tumblebug:
 #
 # CSPs verified for RDBMS (mysql) per docs/feature_guide/rdbms-management.md §2.1:
 # aws, azure, gcp, alibaba, tencent, ibm, openstack, ncp, nhn
+#
+# databaseName: logical database created/listed/deleted inside the RDBMS instance
+# (defaults to "sampledb" if left blank).
 #
 # Password policy quirks (see rdbms-management.md §5):
 # - IBM: rejects special characters (e.g. !, @) in masterUserPassword
@@ -42,6 +47,7 @@ testCases:
     masterUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
     execute: false
 
   - rdbmsId: test-rdbms-azure

@@ -96,6 +96,31 @@ type spiderRDBMSDeleteRequest struct {
 	ConnectionName string `json:"ConnectionName"`
 }
 
+// spiderRDBMSDatabaseCreateRequest represents Spider's create-database request body
+// (PascalCase; spider.RDBMSDatabaseRequest).
+type spiderRDBMSDatabaseCreateRequest struct {
+	ConnectionName     string `json:"ConnectionName"`
+	DatabaseName       string `json:"DatabaseName"`
+	MasterUserPassword string `json:"MasterUserPassword,omitempty"`
+}
+
+// spiderRDBMSDatabaseCredentialRequest represents Spider's list/delete-database request body
+// (PascalCase; spider.RDBMSDatabaseRequest without DatabaseName — List needs no database name,
+// and Delete's target database name travels in the URL path instead). CB-Spider requires
+// MasterUserPassword on every database-management call, not just create, for drivers without a
+// native database API (SQL-fallback path).
+type spiderRDBMSDatabaseCredentialRequest struct {
+	ConnectionName     string `json:"ConnectionName"`
+	MasterUserPassword string `json:"MasterUserPassword,omitempty"`
+}
+
+// spiderRDBMSDatabaseListResponse represents Spider's response body for all three database
+// management calls (Create/List/Delete) — each returns the resulting database name list
+// (spider.RDBMSDatabaseListResponse), confirmed against CB-Spider v0.12.44's swagger.yaml.
+type spiderRDBMSDatabaseListResponse struct {
+	Databases []string `json:"Databases"`
+}
+
 // spiderRDBMSInfo represents Spider's RDBMSInfo response (PascalCase)
 type spiderRDBMSInfo struct {
 	IId                 model.IID        `json:"IId"`
@@ -1279,4 +1304,158 @@ func PruneRDBMS(nsId string) (model.ResourcePruneResults, error) {
 	}
 
 	return pruneResults, nil
+}
+
+// ========== RDBMS Internal Logical Database CRUD ==========
+//
+// Databases inside an RDBMS instance are not tracked as separate Tumblebug resources — no
+// kvstore entry, no label — mirroring objectStorage.go's GetDataObject/DeleteDataObject for
+// data objects inside a bucket. Each call resolves rdbmsId via GetRDBMS (validates nsId/rdbmsId,
+// checks CSP support, and refreshes Status live from Spider). MasterUserPassword is never
+// persisted (see docs/feature_guide/rdbms-management.md §1.6): it is forwarded to CB-Spider per
+// call only and masked before it ever reaches a log line.
+
+// CreateRDBMSDatabase creates a logical database inside an Available RDBMS instance via
+// CB-Spider.
+func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq) (model.RDBMSDatabaseInfo, error) {
+	var emptyRet model.RDBMSDatabaseInfo
+
+	if err := validate.Struct(req); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
+	if err != nil {
+		return emptyRet, err
+	}
+	if rdbmsInfo.Status != model.StorageStatusAvailable {
+		err = fmt.Errorf("RDBMS '%s' is not Available (status: %s); databases can only be created on an Available instance", rdbmsId, rdbmsInfo.Status)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	spReq := spiderRDBMSDatabaseCreateRequest{
+		ConnectionName:     rdbmsInfo.ConnectionName,
+		DatabaseName:       req.DatabaseName,
+		MasterUserPassword: req.MasterUserPassword,
+	}
+	logReq := spReq
+	logReq.MasterUserPassword = "********"
+
+	client := clientManager.NewHttpClient()
+	spResp := spiderRDBMSDatabaseListResponse{}
+	spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases", model.SpiderRestUrl, rdbmsInfo.Uid)
+	log.Debug().Msgf("[Request to Spider] Creating RDBMS database (url: %s, request: %+v)", spiderUrl, logReq)
+
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		client,
+		"POST",
+		spiderUrl,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to create database '%s' in RDBMS '%s'", req.DatabaseName, rdbmsId))
+	}
+	log.Debug().Msgf("[Response from Spider] Creating RDBMS database: %+v", spResp)
+
+	return model.RDBMSDatabaseInfo{DatabaseName: req.DatabaseName}, nil
+}
+
+// ListRDBMSDatabases lists the logical databases inside an RDBMS instance via CB-Spider.
+// masterUserPassword may be empty — CB-Spider's own MariaDB database-test results show the
+// list call succeeding with no password for at least some drivers (see
+// docs/feature_guide/rdbms-management.md §1.3); it is forwarded as-is when supplied.
+func ListRDBMSDatabases(nsId, rdbmsId, masterUserPassword string) (model.RDBMSDatabaseListResponse, error) {
+	var emptyRet model.RDBMSDatabaseListResponse
+
+	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
+	if err != nil {
+		return emptyRet, err
+	}
+
+	spReq := spiderRDBMSDatabaseCredentialRequest{
+		ConnectionName:     rdbmsInfo.ConnectionName,
+		MasterUserPassword: masterUserPassword,
+	}
+	logReq := spReq
+	logReq.MasterUserPassword = "********"
+
+	client := clientManager.NewHttpClient()
+	spResp := spiderRDBMSDatabaseListResponse{}
+	spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases", model.SpiderRestUrl, rdbmsInfo.Uid)
+	log.Debug().Msgf("[Request to Spider] Listing RDBMS databases (url: %s, request: %+v)", spiderUrl, logReq)
+
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		spiderUrl,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to list databases in RDBMS '%s'", rdbmsId))
+	}
+	log.Debug().Msgf("[Response from Spider] Listing RDBMS databases: %+v", spResp)
+
+	return model.RDBMSDatabaseListResponse{Databases: spResp.Databases}, nil
+}
+
+// DeleteRDBMSDatabase deletes a logical database inside an RDBMS instance via CB-Spider. An
+// already-gone database is tolerated as success, matching DeleteRDBMS's handling of Spider's
+// delete-on-missing-resource behavior.
+func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, masterUserPassword string) error {
+	// dbName is a SQL database identifier, not a Tumblebug/CSP resource name — it commonly
+	// contains underscores (e.g. "tumblebug_db"), which common.CheckString's dash-oriented
+	// naming rule would wrongly reject. CB-Spider/the CSP is authoritative for whether the
+	// name is actually valid; only require non-empty here (matches req.DatabaseName's own
+	// validate:"required" tag in CreateRDBMSDatabase).
+	if dbName == "" {
+		err := fmt.Errorf("dbName is required")
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
+	if err != nil {
+		return err
+	}
+
+	spReq := spiderRDBMSDatabaseCredentialRequest{
+		ConnectionName:     rdbmsInfo.ConnectionName,
+		MasterUserPassword: masterUserPassword,
+	}
+	logReq := spReq
+	logReq.MasterUserPassword = "********"
+
+	client := clientManager.NewHttpClient()
+	spResp := spiderRDBMSDatabaseListResponse{}
+	spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases/%s", model.SpiderRestUrl, rdbmsInfo.Uid, url.PathEscape(dbName))
+	log.Debug().Msgf("[Request to Spider] Deleting RDBMS database (url: %s, request: %+v)", spiderUrl, logReq)
+
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		client,
+		"DELETE",
+		spiderUrl,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil && !apierr.IsNotFound(err) {
+		log.Error().Err(err).Msg("")
+		return apierr.Wrap(err, fmt.Sprintf("failed to delete database '%s' in RDBMS '%s'", dbName, rdbmsId))
+	}
+	log.Debug().Msgf("[Response from Spider] Deleting RDBMS database: %+v", spResp)
+	return nil
 }

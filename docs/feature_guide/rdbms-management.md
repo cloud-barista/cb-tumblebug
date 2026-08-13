@@ -14,7 +14,7 @@
 | Live, per-connection capability query (`GetRDBMSCapability`) | ✅ Implemented                                           | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
 | Instance lifecycle (Create/List/Get/Delete)                  | ✅ Implemented                                           | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
 | Create-request validation (dry run, no side effects)         | ✅ Implemented                                           | `ValidateRDBMSCreateRequest` in [rdbms.go](../../src/core/resource/rdbms.go)                                |
-| Internal Logical Database CRUD                               | 🚧 Planned (Phase 2)                                     | —                                                                                                           |
+| Internal Logical Database CRUD                               | ✅ Implemented                                           | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
 | Tag management                                               | ❌ Not planned — uses the common Label mechanism instead | [label.go](../../src/core/common/label/label.go)                                                            |
 | Register/Unregister existing CSP RDBMS                       | 🚧 Planned (Phase 4)                                     | —                                                                                                           |
 | Reconciliation                                               | ✅ Implemented                                           | [rdbmsReconcile.go](../../src/core/reconcile/rdbmsReconcile.go)                                             |
@@ -54,12 +54,21 @@ Modeled after the existing VNet/SSHKey/SecurityGroup resource pattern.
   dedicated List function — served by the shared `ListResource`/`RestGetAllResources` path.
 - **Delete**: deletes via the underlying integration, then clears the kvstore record.
 
-### 1.3 Internal Logical Database Management (planned, Phase 2)
+### 1.3 Internal Logical Database Management (implemented)
 
-- Create/list/delete logical databases inside an `Available` instance.
-- `MasterUserPassword` required on every call, not just create (CSP driver may need direct SQL
-  execution when no native database API exists).
-- Not tracked as separate Tumblebug resources — no kvstore entry; queried live per call.
+- Create/list/delete logical databases inside an `Available` instance
+  (`POST`/`GET`/`DELETE .../rdbms/{rdbmsId}/database[/{dbName}]`).
+- `masterUserPassword` transport: `POST` (create) takes it in the JSON body (`RDBMSDatabaseCreateReq`,
+  it already needs a body for `databaseName`); `GET` (list) and `DELETE` (delete) both take it via a
+  custom `X-Master-User-Password` header — never a query param (would leak into access logs/URLs).
+  Required on `POST`/`DELETE`; optional on `GET` — CB-Spider's own MariaDB database-test results show
+  the list call succeeding with no password for at least some drivers.
+- Each call resolves `rdbmsId` via `GetRDBMS` (validates `nsId`/`rdbmsId`, checks CSP support, and
+  refreshes `Status` live) rather than a separate lookup; `Create` additionally requires
+  `Status == Available`.
+- Not tracked as separate Tumblebug resources — no kvstore entry, no label; queried live per call.
+  CB-Spider returns the resulting database name list from all three calls (Create/List/Delete), so
+  all three share the same `RDBMSDatabaseListResponse` shape.
 
 ### 1.4 Tag Management — Not Provided at the Tumblebug Level
 
@@ -82,10 +91,12 @@ Modeled after the existing VNet/SSHKey/SecurityGroup resource pattern.
 
 ### 1.6 Master Password Handling
 
-- Required at create time and for every database-management call; never returned by
-  `GetRDBMS`/`ListRDBMS`.
-- Not persisted in kvstore — forwarded per request; caller must resupply it for database
-  operations and deletion.
+- Required at create time and for `POST`/`DELETE` database calls (optional for `GET`/list, see
+  §1.3); never returned by `GetRDBMS`/`ListRDBMS`.
+- Not persisted in kvstore — forwarded per request only, and masked (`"********"`) before it ever
+  reaches a log line. The caller already knows this password (they set it at Create time); like a
+  CSP's own master-password reset semantics, Tumblebug is not a place to retrieve it from later —
+  the caller must resupply it for every database operation and for deletion.
 
 ### 1.7 Reconciliation (implemented)
 
@@ -194,15 +205,19 @@ types, etc.).
   `resolveAndValidateRDBMSCreateRequest` (see §1.2).
 - kvstore key: `/ns/{nsId}/resources/rdbms/{rdbmsId}`.
 
-### Phase 2 — Internal Logical Database CRUD
+### Phase 2 — Internal Logical Database CRUD (done)
 
-| Method | Path                                                      | Handler (proposed)        |
-| ------ | --------------------------------------------------------- | ------------------------- |
-| POST   | `/ns/{nsId}/resources/rdbms/{rdbmsId}/databases`          | `RestPostRDBMSDatabase`   |
-| GET    | `/ns/{nsId}/resources/rdbms/{rdbmsId}/databases`          | `RestGetRDBMSDatabases`   |
-| DELETE | `/ns/{nsId}/resources/rdbms/{rdbmsId}/databases/{dbName}` | `RestDeleteRDBMSDatabase` |
+| Method | Path                                                     | Handler                   |
+| ------ | -------------------------------------------------------- | ------------------------- |
+| POST   | `/ns/{nsId}/resources/rdbms/{rdbmsId}/database`          | `RestPostRDBMSDatabase`   |
+| GET    | `/ns/{nsId}/resources/rdbms/{rdbmsId}/database`          | `RestGetRDBMSDatabases`   |
+| DELETE | `/ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}` | `RestDeleteRDBMSDatabase` |
 
-Model additions: `RDBMSDatabaseReq` (`databaseName`, `masterUserPassword`), `RDBMSDatabaseInfo`.
+- Model additions (`model/rdbms.go`): `RDBMSDatabaseCreateReq` (`databaseName`,
+  `masterUserPassword`), `RDBMSDatabaseInfo`, `RDBMSDatabaseListResponse`.
+- Core logic (`resource/rdbms.go`): `CreateRDBMSDatabase`, `ListRDBMSDatabases`,
+  `DeleteRDBMSDatabase` — each resolves the instance via `GetRDBMS` rather than a separate lookup
+  (see §1.3).
 
 ### Phase 3 — Tag Management: Descoped
 
@@ -238,9 +253,9 @@ Model additions: `RDBMSDatabaseReq` (`databaseName`, `masterUserPassword`), `RDB
 
 ## 4. Usage Sequence (Tumblebug User Perspective)
 
-- Scenario A's steps 1–3, 7, and 9 are implemented today (Phase 0/1).
-- Steps 4–6 and 8 (logical database CRUD, Phase 2) and all of Scenario B/C (registration and
-  audit/cleanup, Phase 4) describe the target flow once those phases are built — see §3 for status.
+- Scenario A is fully implemented today (Phase 0/1/2).
+- Scenario B/C (registration and audit/cleanup, Phase 4) describe the target flow once that phase
+  is built — see §3 for status.
 
 ### 4.1 Scenario A — Provision a New RDBMS Instance and a Logical Database
 
@@ -254,11 +269,11 @@ sequenceDiagram
     User->>TB: 3. POST /ns/{nsId}/resources/rdbms
     Note over TB: blocks internally, polling every 30s<br/>(up to 20 min) until Status leaves Creating
     TB-->>User: RDBMSInfo (Status: Available or Failed)
-    User->>TB: 4. POST /ns/{nsId}/resources/rdbms/{rdbmsId}/databases (Phase 2, planned)
-    User->>TB: 5. GET .../databases (confirm) (Phase 2, planned)
+    User->>TB: 4. POST /ns/{nsId}/resources/rdbms/{rdbmsId}/database
+    User->>TB: 5. GET .../database (confirm; X-Master-User-Password optional)
     User->>TB: 6. (optional) PUT /tumblebug/label/rdbms/{rdbmsId} — common Label mechanism, see §1.4
     User->>TB: 7. Use Endpoint from step 3's response in the application
-    User->>TB: 8. DELETE .../databases/{dbName} (optional cleanup) (Phase 2, planned)
+    User->>TB: 8. DELETE .../database/{dbName} (optional cleanup; X-Master-User-Password required)
     User->>TB: 9. DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}
 ```
 
@@ -303,6 +318,11 @@ sequenceDiagram
   only.
 - **GCP**: `StorageType` is implied by machine series — mismatched combinations are rejected by the
   driver, not by Tumblebug's pre-flight validation.
+- **AWS / IBM (internal database CRUD)**: `supportedDBOperationMethod: conventionalSqlExec` (see
+  `assets/rdbmsinfo.yaml`) means CB-Spider connects directly to the instance endpoint to run
+  `CREATE`/`DROP DATABASE`. A `publicAccess=false` instance may fail database create/list/delete if
+  CB-Spider itself cannot reach the private endpoint — an inherent CB-Spider/network limitation,
+  not something Tumblebug's own validation can fully prevent.
 
 Full detail and reproduction commands are in section 9 of the CB-Spider wiki's
 [RDBMS Management Guide](<https://github.com/cloud-barista/cb-spider/wiki/RDBMS%E2%80%90Management%E2%80%90Guide(KR)>).

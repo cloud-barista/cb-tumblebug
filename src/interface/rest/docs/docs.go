@@ -15171,6 +15171,229 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/rdbms/{rdbmsId}/database": {
+            "get": {
+                "description": "Lists logical databases inside an RDBMS instance via CB-Spider.\nX-Master-User-Password is optional here — CB-Spider's own database-test\nresults show list succeeding without one for at least some drivers; supply it\nif the connection's driver requires direct SQL access (see\ndocs/feature_guide/rdbms-management.md §1.3).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "List logical databases inside an RDBMS instance",
+                "operationId": "GetRDBMSDatabases",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "rdbms-01",
+                        "description": "RDBMS ID",
+                        "name": "rdbmsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "RDBMS master user password (optional for list; not persisted by Tumblebug)",
+                        "name": "X-Master-User-Password",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSDatabaseListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a logical database inside an Available RDBMS instance via CB-Spider.\nmasterUserPassword is required in the request body and is never persisted by\nTumblebug (see docs/feature_guide/rdbms-management.md §1.6) — forwarded to\nCB-Spider for this call only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Create a logical database inside an RDBMS instance",
+                "operationId": "PostRDBMSDatabase",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "rdbms-01",
+                        "description": "RDBMS ID",
+                        "name": "rdbmsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Database Create Request",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSDatabaseCreateReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSDatabaseInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}": {
+            "delete": {
+                "description": "Deletes a logical database inside an RDBMS instance via CB-Spider.\nX-Master-User-Password is required — Tumblebug does not persist RDBMS master\npasswords (see docs/feature_guide/rdbms-management.md §1.6), so the caller must\nresupply it on every call.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Delete a logical database inside an RDBMS instance",
+                "operationId": "DeleteRDBMSDatabase",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "rdbms-01",
+                        "description": "RDBMS ID",
+                        "name": "rdbmsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "sampledb",
+                        "description": "Database Name",
+                        "name": "dbName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "RDBMS master user password (required; not persisted by Tumblebug)",
+                        "name": "X-Master-User-Password",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/rdbms/{rdbmsId}/reconcile": {
             "put": {
                 "description": "Compares Tumblebug metadata for a specific RDBMS instance with actual CSP status via Spider.",
@@ -30774,6 +30997,46 @@ const docTemplate = `{
                 "vNetId": {
                     "type": "string",
                     "example": "vnet-01"
+                }
+            }
+        },
+        "model.RDBMSDatabaseCreateReq": {
+            "type": "object",
+            "required": [
+                "databaseName",
+                "masterUserPassword"
+            ],
+            "properties": {
+                "databaseName": {
+                    "type": "string",
+                    "example": "sampledb"
+                },
+                "masterUserPassword": {
+                    "type": "string",
+                    "example": "Password123!"
+                }
+            }
+        },
+        "model.RDBMSDatabaseInfo": {
+            "type": "object",
+            "properties": {
+                "databaseName": {
+                    "type": "string",
+                    "example": "sampledb"
+                }
+            }
+        },
+        "model.RDBMSDatabaseListResponse": {
+            "type": "object",
+            "properties": {
+                "databases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sampledb"
+                    ]
                 }
             }
         },
