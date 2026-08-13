@@ -14787,7 +14787,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a managed RDBMS instance and wait for it to become Available (provisioning\ncan take several minutes).\n\nCall GET /tumblebug/rdbms/support first to discover valid dbEngineVersion/\ndbInstanceSpec/storageType/storageSize values and Requires*/Supports* constraints\nfor the target connectionName. Alternatively, set autoFillDefaults=true to have\nthose four fields filled from the first supported option reported — this is a\ncapability-valid pick, not a cost/performance recommendation.",
+                "description": "Create a managed RDBMS instance and wait for it to become Available\n(can take several minutes). Call GET /tumblebug/rdbms/capability first to\ndiscover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,\nor set autoFillDefaults=true to auto-pick a capability-valid (not necessarily\noptimal) default for each.",
                 "consumes": [
                     "application/json"
                 ],
@@ -14967,6 +14967,67 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/rdbms/validate": {
+            "post": {
+                "description": "Dry run of the same checks POST .../rdbms performs before provisioning\n(network resolution, live CB-Spider capability checks,\nassets/rdbmsinfo.yaml storage-type constraints) — no instance is created, no\nCSP call is made to provision anything. Returns the resolved request\n(autoFillDefaults applied, if set) so the caller can preview exactly what\nPOST .../rdbms would use.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Validate an RDBMS create request without creating anything",
+                "operationId": "ValidateRDBMS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "RDBMS Create Request",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSCreateRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK — resolved request",
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSCreateRequest"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -20439,9 +20500,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/rdbms/support": {
+        "/rdbms/capability": {
             "get": {
-                "description": "Get CSP support metadata and capabilities for a single connection (resolved from\nproviderName+regionName) and DB engine. This is computed live per request, so\nproviderName/regionName/dbEngine are all required to avoid a slow fan-out across\nevery registered connection and every supported engine.\n\nSome fields (e.g. storageTypeOptions, storageSizeRange) may be a fixed/approximate\nreference value rather than a live, current value for a given CSP. Check\nnotes.staticFields for which field names that applies to right now, and why; a\nfield not listed there is live.",
+                "description": "Live capability query for one connection+dbEngine (calls CB-Spider), so all\nthree params are required. Call GET /tumblebug/rdbms/support first to see\nwhich CSPs/engines are worth trying. Fields listed in notes.staticFields are\nfixed/approximate rather than live.",
                 "consumes": [
                     "application/json"
                 ],
@@ -20451,14 +20512,25 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] RDBMS Management"
                 ],
-                "summary": "Get CSP RDBMS capability support information",
-                "operationId": "GetRDBMSSupport",
+                "summary": "Get live RDBMS capability details for a specific connection",
+                "operationId": "GetRDBMSCapability",
                 "parameters": [
                     {
+                        "enum": [
+                            "aws",
+                            "gcp",
+                            "azure",
+                            "alibaba",
+                            "tencent",
+                            "ibm",
+                            "openstack",
+                            "ncp",
+                            "nhn",
+                            "kt"
+                        ],
                         "type": "string",
-                        "default": "aws",
                         "example": "aws",
-                        "description": "Provider Name (e.g., aws, gcp, azure, ncp)",
+                        "description": "Provider Name",
                         "name": "providerName",
                         "in": "query",
                         "required": true
@@ -20475,8 +20547,7 @@ const docTemplate = `{
                     {
                         "enum": [
                             "mysql",
-                            "mariadb",
-                            "postgresql"
+                            "mariadb"
                         ],
                         "type": "string",
                         "default": "mysql",
@@ -20503,7 +20574,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.RDBMSSupportResponse"
+                            "$ref": "#/definitions/model.RDBMSCapabilityResponse"
                         }
                     },
                     "400": {
@@ -20514,6 +20585,69 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/rdbms/support": {
+            "get": {
+                "description": "Static per-CSP RDBMS reference (no CB-Spider call, so it cheaply covers every\nCSP). Omit providerName for all CSPs. Use this to decide what to try before\nGET /tumblebug/rdbms/capability, which gives live per-connection details.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] RDBMS Management"
+                ],
+                "summary": "Get the static, CSP-wide RDBMS support matrix",
+                "operationId": "GetRDBMSSupport",
+                "parameters": [
+                    {
+                        "enum": [
+                            "aws",
+                            "gcp",
+                            "azure",
+                            "alibaba",
+                            "tencent",
+                            "ibm",
+                            "openstack",
+                            "ncp",
+                            "nhn",
+                            "kt"
+                        ],
+                        "type": "string",
+                        "example": "aws",
+                        "description": "Provider Name to filter to a single CSP; omit for all CSPs",
+                        "name": "providerName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Credential holder ID for selecting which credentials to use (default: system default holder)",
+                        "name": "x-credential-holder",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RDBMSSupportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -30477,6 +30611,59 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RDBMSCSPSupportInfo": {
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string"
+                },
+                "storageTypeSelectable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supported": {
+                    "description": "Supported is whether RDBMS is available on this CSP at all (per cspSupportingRDBMS in\nresource/rdbms.go). false here means every other field below is a zero value, not that\nthey weren't populated.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "supportedDBEngines": {
+                    "description": "SupportedDBEngines lists DB engines empirically verified for this CSP. Omission does\nnot mean unsupported — it means unverified.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "mysql",
+                        "mariadb"
+                    ]
+                },
+                "supportedDBOperationMethod": {
+                    "description": "SupportedDBOperationMethod is how CB-Spider implements the internal Database CRUD API\nfor this CSP, per the CB-Spider wiki's RDBMS Management Guide §4.3: a CSP-native\ndatabase API (\"cspApi\"), or connecting directly to the instance endpoint with\nMasterUserPassword (dbConn/mysql-cli-equivalent) and running CREATE/DROP DATABASE\n(\"conventionalSqlExec\").",
+                    "type": "string",
+                    "enum": [
+                        "cspApi",
+                        "conventionalSqlExec"
+                    ],
+                    "example": "conventionalSqlExec"
+                },
+                "supportsTag": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.RDBMSCapabilityResponse": {
+            "type": "object",
+            "properties": {
+                "resourceType": {
+                    "type": "string",
+                    "example": "rdbms"
+                },
+                "supports": {
+                    "$ref": "#/definitions/model.RDBMSMetaInfo"
+                }
+            }
+        },
         "model.RDBMSCreateRequest": {
             "type": "object",
             "required": [
@@ -30489,7 +30676,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "autoFillDefaults": {
-                    "description": "AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from\nGET /tumblebug/rdbms/support when left empty/zero. Selection is \"first supported\noption that passes live capability checks\" — not a cost/performance recommendation.",
+                    "description": "AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from\nGET /tumblebug/rdbms/capability when left empty/zero. Selection is \"first supported\noption that passes live capability checks\" — not a cost/performance recommendation.",
                     "type": "boolean",
                     "example": false
                 },
@@ -30505,8 +30692,7 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "mysql",
-                        "mariadb",
-                        "postgresql"
+                        "mariadb"
                     ],
                     "example": "mysql"
                 },
@@ -30633,6 +30819,15 @@ const docTemplate = `{
                 "dbInstanceSpec": {
                     "type": "string",
                     "example": "db.t3.medium"
+                },
+                "dbInstanceType": {
+                    "description": "DBInstanceType is \"Primary\" or \"ReadReplica\" (CB-Spider v0.12.44+). Informational\nonly for now — CB-Spider has no API yet to create a read replica; this only reflects\nwhat a registered/discovered instance already is.",
+                    "type": "string",
+                    "enum": [
+                        "Primary",
+                        "ReadReplica"
+                    ],
+                    "example": "Primary"
                 },
                 "deletionProtection": {
                     "type": "boolean",
@@ -30830,6 +31025,10 @@ const docTemplate = `{
                 "supportsStorageTypeSelection": {
                     "type": "boolean",
                     "example": true
+                },
+                "supportsTag": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -30873,7 +31072,10 @@ const docTemplate = `{
                     "example": "rdbms"
                 },
                 "supports": {
-                    "$ref": "#/definitions/model.RDBMSMetaInfo"
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.RDBMSCSPSupportInfo"
+                    }
                 }
             }
         },

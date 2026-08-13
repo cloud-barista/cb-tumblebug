@@ -2,14 +2,36 @@
 # This file defines storage types, DBMS requirements, and database requirements for each CSP
 
 # Last Updated: 2026-08-11
-# Source: CB-Spider storage-type-test (2026-08-03)
+# Source: CB-Spider storage-type-test (2026-08-03), CB-Spider v0.12.44 RDBMS/MariaDB test suites
+# and wiki RDBMS Management Guide
 # Reference: https://github.com/cloud-barista/cb-spider/tree/master/test/rdbms-mysql-test/storage-type-test
+#            https://github.com/cloud-barista/cb-spider/tree/master/test/rdbms-mariadb-test
+#            https://github.com/cloud-barista/cb-spider/wiki/RDBMS%E2%80%90Management%E2%80%90Guide(KR)
 
-# The file is in YAML format and contains the following fields:
+# The file is in YAML format and contains the following fields. This whole file backs
+# GET /tumblebug/rdbms/support (see resource/rdbms.go) — a static, CSP-wide reference
+# matrix served with no CB-Spider call, as opposed to GET /tumblebug/rdbms/capability,
+# which is a live, per-connection query.
 # dbms: Top level key
 #   <csp>: Name of the CSP (lowercase)
 #     description: Description of the CSP RDBMS service
 #     link: URL to the official documentation
+#     supportedDBEngines: DB engines empirically verified for this CSP (per CB-Spider's
+#       rdbms-mysql-test / rdbms-mariadb-test suites). Not listing an engine here does not
+#       necessarily mean CB-Spider rejects it — it means it hasn't been verified yet (e.g.
+#       postgresql has no dedicated CB-Spider test suite as of v0.12.44, so it is omitted
+#       for every CSP below rather than assumed to work).
+#     supportedDBOperationMethod: cspApi|conventionalSqlExec - how CB-Spider implements the
+#       internal Database CRUD API (POST/GET/DELETE .../databases) for this CSP, per the
+#       CB-Spider wiki's RDBMS Management Guide §4.3 (database-test results):
+#       "cspApi" ("CSP Native API" in the wiki) means a CSP-native database management API
+#       (e.g. Google Cloud SQL Admin API, Alibaba Cloud RDS SDK); "conventionalSqlExec"
+#       ("SQL Direct Execution" in the wiki) means CB-Spider connects directly to the
+#       instance endpoint with MasterUserPassword (dbConn / mysql-cli-equivalent) and runs
+#       CREATE/DROP DATABASE.
+#     supportsTag: true|false - whether this CSP supports CB-Spider's generic RDBMS tag API
+#       (POST/GET/DELETE /spider/tag with ResourceType=rdbms). This is a static reference
+#       value; the live, per-connection flag is RDBMSMetaInfo.SupportsTag (resource/rdbms.go).
 #     storageTypeSelectable: true|false - whether this CSP lets a caller choose a storage
 #       type at all (per CB-Spider's storage-type-test). false covers both "storage type
 #       is not user-configurable" (e.g. azure/ibm/ncp auto-assign it) and "only one type
@@ -24,13 +46,16 @@
 #         minStorageSize: Minimum storage size in GB
 #         maxStorageSize: Maximum storage size in GB (optional)
 #         note: Additional notes or constraints
-#     dbmsRequirements: DBMS engine-specific requirements (e.g., MySQL, PostgreSQL)
+#     dbmsRequirements: DBMS engine-specific requirements (e.g., MySQL, MariaDB)
 #     databaseRequirements: Database-level requirements (naming rules, reserved names, etc.)
 
 dbms:
   aws:
     description: Amazon Web Services RDS (Relational Database Service)
     link: https://docs.aws.amazon.com/rds/
+    supportedDBEngines: [mysql, mariadb]
+    supportedDBOperationMethod: conventionalSqlExec
+    supportsTag: true
     storageTypeSelectable: true
     storageTypes:
       gp2:
@@ -92,9 +117,37 @@ dbms:
         - rdsadmin
       note: "Database names are case-insensitive on MySQL. Reserved names cannot be used."
       
+  azure:
+    description: Azure Database for MySQL Flexible Server
+    link: https://learn.microsoft.com/azure/mysql/flexible-server/
+    supportedDBEngines: [mysql]
+    supportedDBOperationMethod: conventionalSqlExec
+    supportsTag: true
+    note: "Storage type selection not supported. Storage SKU is read-only and automatically set by Azure based on compute tier (Premium SSD for General Purpose/Memory Optimized tiers, locally redundant storage for Burstable tier)."
+    storageTypeSelectable: false
+    storageTypes:
+      auto:
+        name: Automatic (Azure-managed)
+        description: Storage SKU is automatically determined by Azure based on compute tier. User cannot specify storage type.
+        recommendationLevel: standard
+        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). storageSku is read-only in Azure MySQL Flexible Server API."
+        
+    dbmsRequirements:
+      mysql:
+        minStorageSize: 20
+        maxStorageSize: 16384
+        defaultPort: 3306
+        note: "Storage is managed automatically by Azure based on compute tier selection"
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"
+      
   gcp:
     description: Google Cloud Platform Cloud SQL
     link: https://cloud.google.com/sql/docs
+    supportedDBEngines: [mysql]
+    supportedDBOperationMethod: cspApi
+    supportsTag: true
     storageTypeSelectable: true
     storageTypes:
       PD_SSD:
@@ -146,6 +199,9 @@ dbms:
   alibaba:
     description: Alibaba Cloud ApsaraDB RDS
     link: https://www.alibabacloud.com/help/en/rds/
+    supportedDBEngines: [mysql, mariadb]
+    supportedDBOperationMethod: cspApi
+    supportsTag: true
     storageTypeSelectable: true
     storageTypes:
       cloud_auto:
@@ -218,6 +274,9 @@ dbms:
   tencent:
     description: Tencent Cloud TencentDB for MySQL
     link: https://www.tencentcloud.com/document/product/236
+    supportedDBEngines: [mysql]
+    supportedDBOperationMethod: cspApi
+    supportsTag: true
     storageTypeSelectable: true
     storageTypes:
       local_ssd:
@@ -261,39 +320,57 @@ dbms:
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions"
       
-  openstack:
-    description: OpenStack Trove
-    link: https://docs.openstack.org/trove/latest/
-    storageTypeSelectable: true
+  ibm:
+    description: IBM Cloud Databases for MySQL
+    link: https://cloud.ibm.com/docs/databases-for-mysql
+    supportedDBEngines: [mysql]
+    supportedDBOperationMethod: conventionalSqlExec
+    supportsTag: true
+    note: "Storage type selection not supported. IBM Cloud Databases manages storage automatically."
+    storageTypeSelectable: false
     storageTypes:
-      __DEFAULT__:
-        name: Default Storage
-        description: Default storage type provided by OpenStack deployment. Actual backend depends on deployment configuration.
+      auto:
+        name: Automatic (IBM-managed)
+        description: Storage is managed automatically by IBM Cloud Databases. User cannot specify storage type.
         recommendationLevel: standard
-        requiresIops: false
-        minStorageSize: 1
-        note: "Verified: 2026-08-03 (Spider storage-type-test). OpenStack Trove does not expose storage type in instance info after creation."
-        
-      RBD:
-        name: Ceph RBD
-        description: Ceph RADOS Block Device storage (if available in deployment).
-        recommendationLevel: standard
-        requiresIops: false
-        minStorageSize: 1
-        note: "Verified: 2026-08-03 (Spider storage-type-test). Availability depends on OpenStack deployment. Storage type not exposed post-creation."
+        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). IBM Cloud Databases does not provide storage type selection."
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 1
         defaultPort: 3306
-        note: "Storage type selection depends on OpenStack deployment configuration"
+        note: "Storage is managed automatically by IBM Cloud"
         
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions"
       
+  ncp:
+    description: Naver Cloud Platform Cloud DB for MySQL
+    link: https://www.ncloud.com/product/database/cloudDbMysql
+    supportedDBEngines: [mysql]
+    supportedDBOperationMethod: cspApi
+    supportsTag: false
+    note: "Storage type selection not supported. NCP G3 generation automatically applies SSD storage."
+    storageTypeSelectable: false
+    storageTypes:
+      ssd:
+        name: SSD (automatic)
+        description: G3 generation automatically uses SSD storage. DataStorageTypeCode cannot be specified by user.
+        recommendationLevel: standard
+        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). NCP G3 applies SSD automatically; storage type cannot be specified."
+        
+    dbmsRequirements:
+      mysql:
+        defaultPort: 3306
+        note: "G3 generation uses SSD by default; no user configuration available"
+        
+    databaseRequirements:
+      note: "Database naming follows standard MySQL conventions"
   nhn:
     description: NHN Cloud RDS for MySQL
     link: https://docs.nhncloud.com/ko/Database/RDS/ko/overview/
+    supportedDBEngines: [mysql, mariadb]
+    supportedDBOperationMethod: cspApi
+    supportsTag: false
     storageTypeSelectable: true
     storageTypes:
       General_HDD:
@@ -321,64 +398,39 @@ dbms:
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions"
       
-  azure:
-    description: Azure Database for MySQL Flexible Server
-    link: https://learn.microsoft.com/azure/mysql/flexible-server/
-    note: "Storage type selection not supported. Storage SKU is read-only and automatically set by Azure based on compute tier (Premium SSD for General Purpose/Memory Optimized tiers, locally redundant storage for Burstable tier)."
-    storageTypeSelectable: false
+  openstack:
+    description: OpenStack Trove
+    link: https://docs.openstack.org/trove/latest/
+    supportedDBEngines: [mysql, mariadb]
+    supportedDBOperationMethod: cspApi
+    supportsTag: false
+    note: "MariaDB creation failed in the referenced v0.12.44 test run: 'Datastore version
+      10.6 cannot be found' — this Trove environment lacks the MariaDB datastore, not a
+      driver-level limitation. Expected to work once the datastore is configured."
+    storageTypeSelectable: true
     storageTypes:
-      auto:
-        name: Automatic (Azure-managed)
-        description: Storage SKU is automatically determined by Azure based on compute tier. User cannot specify storage type.
+      __DEFAULT__:
+        name: Default Storage
+        description: Default storage type provided by OpenStack deployment. Actual backend depends on deployment configuration.
         recommendationLevel: standard
-        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). storageSku is read-only in Azure MySQL Flexible Server API."
+        requiresIops: false
+        minStorageSize: 1
+        note: "Verified: 2026-08-03 (Spider storage-type-test). OpenStack Trove does not expose storage type in instance info after creation."
+        
+      RBD:
+        name: Ceph RBD
+        description: Ceph RADOS Block Device storage (if available in deployment).
+        recommendationLevel: standard
+        requiresIops: false
+        minStorageSize: 1
+        note: "Verified: 2026-08-03 (Spider storage-type-test). Availability depends on OpenStack deployment. Storage type not exposed post-creation."
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 20
-        maxStorageSize: 16384
+        minStorageSize: 1
         defaultPort: 3306
-        note: "Storage is managed automatically by Azure based on compute tier selection"
+        note: "Storage type selection depends on OpenStack deployment configuration"
         
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions"
       
-  ibm:
-    description: IBM Cloud Databases for MySQL
-    link: https://cloud.ibm.com/docs/databases-for-mysql
-    note: "Storage type selection not supported. IBM Cloud Databases manages storage automatically."
-    storageTypeSelectable: false
-    storageTypes:
-      auto:
-        name: Automatic (IBM-managed)
-        description: Storage is managed automatically by IBM Cloud Databases. User cannot specify storage type.
-        recommendationLevel: standard
-        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). IBM Cloud Databases does not provide storage type selection."
-        
-    dbmsRequirements:
-      mysql:
-        defaultPort: 3306
-        note: "Storage is managed automatically by IBM Cloud"
-        
-    databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"
-      
-  ncp:
-    description: Naver Cloud Platform Cloud DB for MySQL
-    link: https://www.ncloud.com/product/database/cloudDbMysql
-    note: "Storage type selection not supported. NCP G3 generation automatically applies SSD storage."
-    storageTypeSelectable: false
-    storageTypes:
-      ssd:
-        name: SSD (automatic)
-        description: G3 generation automatically uses SSD storage. DataStorageTypeCode cannot be specified by user.
-        recommendationLevel: standard
-        note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). NCP G3 applies SSD automatically; storage type cannot be specified."
-        
-    dbmsRequirements:
-      mysql:
-        defaultPort: 3306
-        note: "G3 generation uses SSD by default; no user configuration available"
-        
-    databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"

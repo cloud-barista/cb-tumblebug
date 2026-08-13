@@ -764,11 +764,14 @@ func RunServer() {
 	// Object Storage support information
 	e.GET("/tumblebug/objectStorage/support", rest_resource.RestGetObjectStorageSupport)
 
-	// RDBMS support information
+	// RDBMS support information: static, CSP-wide reference matrix (no Spider call)
 	e.GET("/tumblebug/rdbms/support", rest_resource.RestGetRDBMSSupport)
+	// RDBMS capability information: live, per-connection query (Spider call)
+	e.GET("/tumblebug/rdbms/capability", rest_resource.RestGetRDBMSCapability)
 
 	// RDBMS instance lifecycle management
 	g.POST("/:nsId/resources/rdbms", rest_resource.RestPostRDBMS)
+	g.POST("/:nsId/resources/rdbms/validate", rest_resource.RestValidateRDBMS)
 	g.GET("/:nsId/resources/rdbms", rest_resource.RestGetAllResources)
 	g.GET("/:nsId/resources/rdbms/:rdbmsId", rest_resource.RestGetRDBMS)
 	g.DELETE("/:nsId/resources/rdbms/:rdbmsId", rest_resource.RestDeleteRDBMS)

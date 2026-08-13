@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -56,6 +57,7 @@ type spiderRDBMSMetaInfo struct {
 	SupportsEncryption               bool                   `json:"SupportsEncryption"`
 	SupportsStorageTypeSelection     bool                   `json:"SupportsStorageTypeSelection"`
 	SupportsStorageSizeConfiguration bool                   `json:"SupportsStorageSizeConfiguration"`
+	SupportsTag                      bool                   `json:"SupportsTag"`
 	RequiresSubnet                   bool                   `json:"RequiresSubnet"`
 	RequiresSecurityGroup            bool                   `json:"RequiresSecurityGroup"`
 	DataSource                       map[string]string      `json:"DataSource,omitempty"`
@@ -101,6 +103,7 @@ type spiderRDBMSInfo struct {
 	DBEngine            string           `json:"DBEngine"`
 	DBEngineVersion     string           `json:"DBEngineVersion"`
 	DBInstanceSpec      string           `json:"DBInstanceSpec"`
+	DBInstanceType      string           `json:"DBInstanceType,omitempty"`
 	StorageSize         string           `json:"StorageSize"`
 	StorageType         string           `json:"StorageType,omitempty"`
 	Iops                string           `json:"Iops,omitempty"`
@@ -264,14 +267,14 @@ func buildRDBMSStaticFields(dataSource, dataSourceNotes map[string]string) []mod
 	return fields
 }
 
-// GetRDBMSSupport retrieves Tumblebug-style RDBMS support capability details for a single
+// GetRDBMSCapability retrieves Tumblebug-style RDBMS capability details for a single
 // connection/engine by querying Spider live. providerName/regionName/dbEngine are all
-// required to keep this endpoint to one Spider call: unlike ObjectStorage's support
-// endpoint (a static in-memory map), each call here is a live query, so an unfiltered
-// "all connections/all engines" mode would fan out into many slow Spider round trips per
-// request.
-func GetRDBMSSupport(providerName, regionName, dbEngine string) (model.RDBMSSupportResponse, error) {
-	var response model.RDBMSSupportResponse
+// required to keep this endpoint to one Spider call: unlike GetRDBMSSupport (a static,
+// CSP-wide reference matrix from assets/rdbmsinfo.yaml requiring no Spider call), each
+// call here is a live query, so an unfiltered "all connections/all engines" mode would
+// fan out into many slow Spider round trips per request.
+func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSCapabilityResponse, error) {
+	var response model.RDBMSCapabilityResponse
 	response.ResourceType = model.StrRDBMS
 
 	providerName = strings.TrimSpace(providerName)
@@ -348,6 +351,7 @@ func GetRDBMSSupport(providerName, regionName, dbEngine string) (model.RDBMSSupp
 		SupportsEncryption:               spiderMeta.SupportsEncryption,
 		SupportsStorageTypeSelection:     spiderMeta.SupportsStorageTypeSelection,
 		SupportsStorageSizeConfiguration: spiderMeta.SupportsStorageSizeConfiguration,
+		SupportsTag:                      spiderMeta.SupportsTag,
 		RequiresSubnet:                   spiderMeta.RequiresSubnet,
 		RequiresSecurityGroup:            spiderMeta.RequiresSecurityGroup,
 		Notes: model.RDBMSNotes{
@@ -357,6 +361,64 @@ func GetRDBMSSupport(providerName, regionName, dbEngine string) (model.RDBMSSupp
 	}
 
 	return response, nil
+}
+
+// GetRDBMSSupport returns the static, CSP-wide RDBMS support matrix from
+// assets/rdbmsinfo.yaml (common.RuntimeRDBMSInfo) — a deliberately brief per-CSP summary
+// (which DB engines are verified, storage type selectability, how the internal Database
+// CRUD API is implemented, tag support). Unlike GetRDBMSCapability, this makes no Spider
+// call, so it can safely cover every CSP in one response (or one CSP via providerName). Use
+// this to discover what's possible before picking a provider/engine; use
+// GetRDBMSCapability for a specific connection's live, authoritative details, including
+// full storage type guidance (Notes.StorageTypes).
+//
+// Like GetObjectStorageSupport, the full response always covers every CSP in csp.AllCSPs —
+// not just the ones documented in assets/rdbmsinfo.yaml — so a CSP with no RDBMS support at
+// all (e.g. KT) still appears, with Supported: false, rather than being silently omitted.
+// A providerName filter only errors for a name unknown to csp.AllCSPs entirely; a known but
+// undocumented/unsupported CSP still returns a (Supported: false) entry, not an error.
+func GetRDBMSSupport(providerName string) (model.RDBMSSupportResponse, error) {
+	response := model.RDBMSSupportResponse{
+		ResourceType: model.StrRDBMS,
+		Supports:     map[string]model.RDBMSCSPSupportInfo{},
+	}
+
+	providerName = strings.ToLower(strings.TrimSpace(providerName))
+	if providerName != "" {
+		if !slices.Contains(csp.AllCSPs, providerName) {
+			return response, fmt.Errorf("unknown provider '%s'", providerName)
+		}
+		response.Supports[providerName] = buildCSPSupportInfo(providerName)
+		return response, nil
+	}
+
+	for _, cspKey := range csp.AllCSPs {
+		response.Supports[cspKey] = buildCSPSupportInfo(cspKey)
+	}
+	return response, nil
+}
+
+// buildCSPSupportInfo builds one CSP's model.RDBMSCSPSupportInfo entry for GetRDBMSSupport.
+// If cspKey has no assets/rdbmsinfo.yaml entry (e.g. KT, where RDBMS isn't supported at all
+// per cspSupportingRDBMS), it returns a minimal Supported: false entry instead of an empty
+// struct, so the omission reads as "not supported" rather than "forgot to document".
+func buildCSPSupportInfo(cspKey string) model.RDBMSCSPSupportInfo {
+	provider, exists := common.RuntimeRDBMSInfo.DBMS[cspKey]
+	if !exists {
+		return model.RDBMSCSPSupportInfo{
+			Supported: false,
+			Note:      "RDBMS is not supported on this CSP.",
+		}
+	}
+
+	return model.RDBMSCSPSupportInfo{
+		Supported:                  isRDBMSSupported(cspKey),
+		SupportedDBEngines:         provider.SupportedDBEngines,
+		SupportedDBOperationMethod: provider.SupportedDBOperationMethod,
+		SupportsTag:                provider.SupportsTag,
+		StorageTypeSelectable:      provider.StorageTypeSelectable,
+		Note:                       provider.Note,
+	}
 }
 
 // ========== RDBMS Instance Lifecycle (Create/List/Get/Delete) ==========
@@ -500,8 +562,21 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 		}
 	}
 
-	if req.StorageSize <= 0 && meta.StorageSizeRange.Min > 0 {
-		req.StorageSize = meta.StorageSizeRange.Min
+	// StorageSize: fill from the engine's overall minimum, but raise it to the selected
+	// storageType's own minimum (assets/rdbmsinfo.yaml) if that's higher — e.g. AWS
+	// reports an overall mysql minimum of 5GB, but gp3 itself requires 20GB. Using
+	// meta.StorageSizeRange.Min alone would auto-fill a size the type-specific
+	// validation right below immediately rejects.
+	if req.StorageSize <= 0 {
+		minSize := meta.StorageSizeRange.Min
+		if req.StorageType != "" {
+			if st, found := getStorageTypeConfig(providerName, req.StorageType); found && st.MinStorageSize > minSize {
+				minSize = st.MinStorageSize
+			}
+		}
+		if minSize > 0 {
+			req.StorageSize = minSize
+		}
 	}
 }
 
@@ -573,6 +648,7 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 	rdbmsInfo.DBEngine = sp.DBEngine
 	rdbmsInfo.DBEngineVersion = sp.DBEngineVersion
 	rdbmsInfo.DBInstanceSpec = sp.DBInstanceSpec
+	rdbmsInfo.DBInstanceType = sp.DBInstanceType
 	rdbmsInfo.StorageType = sp.StorageType
 	rdbmsInfo.Iops = sp.Iops
 	if size, err := strconv.Atoi(sp.StorageSize); err == nil {
@@ -643,6 +719,94 @@ func waitForRDBMSAvailable(rdbmsKey string, rdbmsInfo *model.RDBMSInfo) (spiderR
 	}
 }
 
+// resolveAndValidateRDBMSCreateRequest resolves the request's Tumblebug vNet/subnet/
+// securityGroup IDs to CSP names, checks the connection/CSP/dbEngine combination against
+// live RDBMSMetaInfo (always live; see §2.2), applies autoFillDefaults, and runs
+// validateRDBMSCreateRequest's assets/rdbmsinfo.yaml storage-type checks. This is the single
+// shared core behind both CreateRDBMS (which then actually provisions) and the exported
+// ValidateRDBMSCreateRequest (a dry run with no side effects) — validation logic lives in
+// exactly one place so the two can never silently disagree.
+//
+// Returns the resolved request (autoFillDefaults applied, if set) plus everything CreateRDBMS
+// additionally needs to actually provision (connConfig, vpcName, subnetNames, sgNames).
+func resolveAndValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequest) (
+	resolvedReq model.RDBMSCreateRequest,
+	connConfig model.ConnConfig,
+	vpcName string,
+	subnetNames []string,
+	sgNames []string,
+	err error,
+) {
+	if err = common.CheckString(nsId); err != nil {
+		return
+	}
+	if err = validate.Struct(req); err != nil {
+		return
+	}
+	if err = common.CheckString(req.Name); err != nil {
+		return
+	}
+
+	connConfig, err = common.GetConnConfig(req.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
+		return
+	}
+
+	if !isRDBMSSupported(connConfig.ProviderName) {
+		err = fmt.Errorf("RDBMS is not supported for CSP: %s", connConfig.ProviderName)
+		return
+	}
+
+	// Resolve Tumblebug vNet/subnet/securityGroup IDs to CSP names
+	vpcName, subnetNames, sgNames, err = resolveRDBMSNetwork(nsId, req.VNetId, req.SubnetIds, req.SecurityGroupIds)
+	if err != nil {
+		return
+	}
+
+	// Validate against live RDBMSMetaInfo (always live; see §2.2)
+	meta, metaErr := getSpiderRDBMSMetaInfo(req.ConnectionName, req.DBEngine)
+	if metaErr != nil {
+		err = metaErr
+		return
+	}
+	if meta.DBEngine == "" {
+		err = fmt.Errorf("dbEngine '%s' is not supported for connection '%s' (see GET /tumblebug/rdbms/support for %s's supportedDBEngines)",
+			req.DBEngine, req.ConnectionName, connConfig.ProviderName)
+		return
+	}
+
+	resolvedReq = req
+	applyRDBMSCreateDefaults(meta, &resolvedReq, connConfig.ProviderName)
+	if resolvedReq.DBEngineVersion == "" {
+		err = fmt.Errorf("dbEngineVersion required (or set autoFillDefaults=true)")
+		return
+	}
+	if resolvedReq.DBInstanceSpec == "" {
+		err = fmt.Errorf("dbInstanceSpec required (or set autoFillDefaults=true)")
+		return
+	}
+	if resolvedReq.StorageSize <= 0 {
+		err = fmt.Errorf("storageSize required (or set autoFillDefaults=true)")
+		return
+	}
+	if err = validateRDBMSCreateRequest(meta, resolvedReq, connConfig.ProviderName); err != nil {
+		return
+	}
+
+	return resolvedReq, connConfig, vpcName, subnetNames, sgNames, nil
+}
+
+// ValidateRDBMSCreateRequest runs the exact same checks CreateRDBMS performs before
+// provisioning — network resolution, live CB-Spider capability checks, and
+// assets/rdbmsinfo.yaml storage-type constraints — as a pure dry run: no Spider call to
+// create anything, no kvstore writes. Returns the resolved request (autoFillDefaults
+// applied, if set) so the caller can preview exactly what CreateRDBMS would use.
+func ValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequest) (model.RDBMSCreateRequest, error) {
+	resolvedReq, _, _, _, _, err := resolveAndValidateRDBMSCreateRequest(nsId, req)
+	return resolvedReq, err
+}
+
 // CreateRDBMS creates a managed RDBMS instance via CB-Spider, polling internally until
 // the instance leaves "Creating" so it returns the final Available/Failed state directly
 // rather than a caller-facing "Creating" placeholder (see docs/feature_guide/rdbms-management.md §4.1).
@@ -650,66 +814,12 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	var emptyRet model.RDBMSInfo
 	var rdbmsInfo model.RDBMSInfo
 
-	// 1. Validate input parameters
-	if err := common.CheckString(nsId); err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	if err := validate.Struct(req); err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	if err := common.CheckString(req.Name); err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-
-	connConfig, err := common.GetConnConfig(req.ConnectionName)
-	if err != nil {
-		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-
-	if !isRDBMSSupported(connConfig.ProviderName) {
-		err = fmt.Errorf("RDBMS is not supported for CSP: %s", connConfig.ProviderName)
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-
-	// 2. Resolve Tumblebug vNet/subnet/securityGroup IDs to CSP names
-	vpcName, subnetNames, sgNames, err := resolveRDBMSNetwork(nsId, req.VNetId, req.SubnetIds, req.SecurityGroupIds)
+	resolvedReq, connConfig, vpcName, subnetNames, sgNames, err := resolveAndValidateRDBMSCreateRequest(nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-
-	// 3. Validate against live RDBMSMetaInfo (always live; see §2.2)
-	meta, err := getSpiderRDBMSMetaInfo(req.ConnectionName, req.DBEngine)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	applyRDBMSCreateDefaults(meta, &req, connConfig.ProviderName)
-	if req.DBEngineVersion == "" {
-		err = fmt.Errorf("dbEngineVersion required (or set autoFillDefaults=true)")
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	if req.DBInstanceSpec == "" {
-		err = fmt.Errorf("dbInstanceSpec required (or set autoFillDefaults=true)")
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	if req.StorageSize <= 0 {
-		err = fmt.Errorf("storageSize required (or set autoFillDefaults=true)")
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	if err := validateRDBMSCreateRequest(meta, req, connConfig.ProviderName); err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
+	req = resolvedReq
 
 	// 4. Set the resource type and base info
 	resourceType := model.StrRDBMS
@@ -791,7 +901,9 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	client := clientManager.NewHttpClient()
 	spResp := spiderRDBMSInfo{}
 	url := fmt.Sprintf("%s/rdbms", model.SpiderRestUrl)
-	log.Debug().Msgf("[Request to Spider] Creating RDBMS (url: %s, request: %+v)", url, spReq)
+	logReq := spReq
+	logReq.ReqInfo.MasterUserPassword = "********"
+	log.Debug().Msgf("[Request to Spider] Creating RDBMS (url: %s, request: %+v)", url, logReq)
 
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
