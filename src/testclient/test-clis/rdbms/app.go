@@ -13,11 +13,13 @@ limitations under the License.
 
 // Package main provides a CLI tool for batch-testing the RDBMS lifecycle
 // (rdbms/support once per batch → per case: vNet+subnets → securityGroup →
-// rdbms/capability → RDBMS create → get → list → delete → securityGroup delete →
-// subnets delete → vNet delete) across multiple CSPs via the CB-Tumblebug API.
+// rdbms/capability → RDBMS create → get → list → database create/list/dummy-data-test/delete
+// → RDBMS delete → securityGroup delete → subnets delete → vNet delete) across multiple CSPs
+// via the CB-Tumblebug API.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -31,6 +33,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 var tbApiBase string
@@ -95,25 +100,32 @@ type TestCase struct {
 	MasterUserPassword string         `mapstructure:"masterUserPassword"`
 	PublicAccess       bool           `mapstructure:"publicAccess"`
 	HighAvailability   bool           `mapstructure:"highAvailability"`
-	Execute            bool           `mapstructure:"execute"`
+	// DatabaseName is the logical database created/listed/deleted inside the RDBMS instance
+	// (defaults to "sampledb" if left blank).
+	DatabaseName string `mapstructure:"databaseName"`
+	Execute      bool   `mapstructure:"execute"`
 }
 
 // TestResult holds the outcome of each lifecycle step for one CSP.
 type TestResult struct {
-	RdbmsId             string
-	ConnectionName      string
-	CreateVNetStatus    string
-	CreateSGStatus      string
-	SupportStatus       string
-	CapabilityStatus    string
-	ValidateStatus      string
-	CreateRDBMSStatus   string
-	GetRDBMSStatus      string
-	ListRDBMSStatus     string
-	DeleteRDBMSStatus   string
-	DeleteSGStatus      string
-	DeleteSubnetsStatus string
-	DeleteVNetStatus    string
+	RdbmsId              string
+	ConnectionName       string
+	CreateVNetStatus     string
+	CreateSGStatus       string
+	SupportStatus        string
+	CapabilityStatus     string
+	ValidateStatus       string
+	CreateRDBMSStatus    string
+	GetRDBMSStatus       string
+	ListRDBMSStatus      string
+	CreateDatabaseStatus string
+	ListDatabaseStatus   string
+	DummyDataStatus      string
+	DeleteDatabaseStatus string
+	DeleteRDBMSStatus    string
+	DeleteSGStatus       string
+	DeleteSubnetsStatus  string
+	DeleteVNetStatus     string
 }
 
 func main() {
@@ -124,7 +136,8 @@ func main() {
 ##########################################################################
 ## RDBMS batch test CLI for CB-Tumblebug                                ##
 ## Runs rdbms/support once, then per case: vNet+subnets -> securityGroup##
-## -> rdbms/capability -> RDBMS create -> get -> list -> delete ->      ##
+## -> rdbms/capability -> RDBMS create -> get -> list -> database       ##
+## create/list/dummy-data-test/delete -> RDBMS delete ->                ##
 ## securityGroup/subnets/vNet delete                                    ##
 ##########################################################################`,
 	}
@@ -243,16 +256,20 @@ func runBatchTest(cmd *cobra.Command, args []string) {
 // runLifecycle runs the full chain for one test case and returns the result:
 //  1. Create vNet (with embedded subnets)
 //  2. Create SecurityGroup (inbound rule for the DB engine's port)
-//  3. Get RDBMS support info for the resolved provider/region
-//  4. Create RDBMS (blocks server-side until Available/Failed)
+//  3. Look up RDBMS support (static matrix, fetched once per batch) and RDBMS capability (live)
+//  4. Validate RDBMS create request (dry run), then create RDBMS (blocks until Available/Failed)
 //  5. Get RDBMS (single)
 //  6. List RDBMS (verify the instance appears)
-//  7. Delete RDBMS
-//  8. Delete SecurityGroup
-//  9. Delete each Subnet
-//  10. Delete vNet
+//  7. Create Database
+//  8. List Database (confirm it appears)
+//  9. Dummy data test (direct SQL write/read/verify/delete against the created database)
+//  10. Delete Database
+//  11. Delete RDBMS
+//  12. Delete SecurityGroup
+//  13. Delete each Subnet
+//  14. Delete vNet
 //
-// Steps 7-10 always run (best-effort, in reverse-dependency order) even if an
+// Steps 10-14 always run (best-effort, in reverse-dependency order) even if an
 // earlier step failed, so a failed run doesn't leave billed CSP resources behind.
 func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMatrix model.RDBMSSupportResponse) TestResult {
 	result := TestResult{RdbmsId: tc.RdbmsId, ConnectionName: tc.ConnectionName}
@@ -264,6 +281,12 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	var subnetIds []string
 	var sgId string
 	var rdbmsCreated bool
+	var rdbmsEndpoint string
+	var databaseCreated bool
+	dbName := tc.DatabaseName
+	if dbName == "" {
+		dbName = "sampledb"
+	}
 
 	// 1. Create vNet (with embedded subnets)
 	subnetReqs := make([]map[string]any, 0, len(tc.Subnets))
@@ -404,6 +427,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 				var info model.RDBMSInfo
 				_ = json.Unmarshal(respBytes, &info)
 				rdbmsCreated = true
+				rdbmsEndpoint = info.Endpoint
 				result.CreateRDBMSStatus = fmt.Sprintf("Success (status=%s, endpoint=%s)", info.Status, info.Endpoint)
 				log.Info().Msgf("[%s] Create RDBMS OK: status=%s", tc.RdbmsId, info.Status)
 			}
@@ -458,7 +482,109 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.ListRDBMSStatus = "Skipped (not created)"
 	}
 
-	// 7. Delete RDBMS (best-effort cleanup; runs whenever creation was attempted,
+	// 7. Create Database (only if RDBMS was created)
+	if rdbmsCreated {
+		urlCreateDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database", tbApiBase, nsId, tc.RdbmsId)
+		dbReqBody := map[string]any{
+			"databaseName":       dbName,
+			"masterUserPassword": tc.MasterUserPassword,
+		}
+		_, err = callApi("POST", urlCreateDB, tbAuth, dbReqBody, &logs, fmt.Sprintf("[%s] Create Database", tc.RdbmsId))
+		if err != nil {
+			result.CreateDatabaseStatus = "Failed"
+			log.Error().Err(err).Msgf("[%s] Create Database failed", tc.RdbmsId)
+		} else {
+			databaseCreated = true
+			result.CreateDatabaseStatus = fmt.Sprintf("Success (name=%s)", dbName)
+			log.Info().Msgf("[%s] Create Database OK: name=%s", tc.RdbmsId, dbName)
+		}
+	} else {
+		result.CreateDatabaseStatus = "Skipped (RDBMS not created)"
+	}
+
+	// 8. List Database (verify it appears; X-Master-User-Password is optional here per
+	// docs/feature_guide/rdbms-management.md §1.3, but supplied anyway since we have it)
+	if databaseCreated {
+		urlListDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database", tbApiBase, nsId, tc.RdbmsId)
+		headers := map[string]string{"X-Master-User-Password": tc.MasterUserPassword}
+		respBytes, err = callApi("GET", urlListDB, tbAuth, nil, &logs, fmt.Sprintf("[%s] List Database", tc.RdbmsId), headers)
+		if err != nil {
+			result.ListDatabaseStatus = "Failed"
+			log.Error().Err(err).Msgf("[%s] List Database failed", tc.RdbmsId)
+		} else {
+			var dbList model.RDBMSDatabaseListResponse
+			_ = json.Unmarshal(respBytes, &dbList)
+			found := false
+			for _, d := range dbList.Databases {
+				if d == dbName {
+					found = true
+					break
+				}
+			}
+			if found {
+				result.ListDatabaseStatus = fmt.Sprintf("Success (found among %d)", len(dbList.Databases))
+			} else {
+				result.ListDatabaseStatus = fmt.Sprintf("Failed (not found among %d)", len(dbList.Databases))
+			}
+			log.Info().Msgf("[%s] List Database: %s", tc.RdbmsId, result.ListDatabaseStatus)
+		}
+	} else {
+		result.ListDatabaseStatus = "Skipped (database not created)"
+	}
+
+	// 9. Dummy data test: connect directly to the instance (MySQL wire protocol, shared by
+	// mysql and mariadb) and run a write/read/verify/delete cycle against a scratch table —
+	// confirms the created logical database is actually usable, not just present in Spider's
+	// database list. Best-effort: a connectivity failure here (e.g. a security group rule not
+	// yet propagated) does not block database/instance cleanup below. Not a Tumblebug API call,
+	// so it's logged as a synthetic entry (Method "SQL") to still appear in the per-CSP report.
+	if databaseCreated {
+		start := time.Now()
+		dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.MasterUserName, tc.MasterUserPassword, dbName)
+		entry := ApiLog{
+			Step:           fmt.Sprintf("[%s] Dummy Data Test", tc.RdbmsId),
+			Method:         "SQL",
+			URL:            fmt.Sprintf("%s/%s", rdbmsEndpoint, dbName),
+			RequestPayload: map[string]any{"table": "tumblebug_test", "operations": "CREATE TABLE, INSERT, SELECT, DELETE"},
+			ElapsedTime:    time.Since(start).Round(time.Millisecond).String(),
+		}
+		if dummyErr != nil {
+			entry.ResponseStatus = "Failed"
+			entry.ResponsePayload = map[string]any{"error": dummyErr.Error()}
+			result.DummyDataStatus = "Failed"
+			log.Warn().Err(dummyErr).Msgf("[%s] Dummy data test failed (non-blocking)", tc.RdbmsId)
+		} else {
+			entry.ResponseStatus = "OK"
+			entry.ResponsePayload = map[string]any{"result": "write/read/verify/delete succeeded"}
+			result.DummyDataStatus = "Success"
+			log.Info().Msgf("[%s] Dummy data test OK (write/read/verify/delete)", tc.RdbmsId)
+		}
+		logs = append(logs, entry)
+	} else {
+		result.DummyDataStatus = "Skipped (database not created)"
+	}
+
+	// 10. Delete Database (best-effort cleanup; X-Master-User-Password is required here)
+	if databaseCreated {
+		urlDeleteDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database/%s", tbApiBase, nsId, tc.RdbmsId, dbName)
+		headers := map[string]string{"X-Master-User-Password": tc.MasterUserPassword}
+		_, err = callApi("DELETE", urlDeleteDB, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete Database", tc.RdbmsId), headers)
+		switch {
+		case err == nil:
+			result.DeleteDatabaseStatus = "Success"
+			log.Info().Msgf("[%s] Delete Database OK", tc.RdbmsId)
+		case isNotFoundErr(err):
+			result.DeleteDatabaseStatus = "Success (nothing to delete)"
+			log.Info().Msgf("[%s] Delete Database: nothing to delete", tc.RdbmsId)
+		default:
+			result.DeleteDatabaseStatus = "Failed"
+			log.Error().Err(err).Msgf("[%s] Delete Database failed", tc.RdbmsId)
+		}
+	} else {
+		result.DeleteDatabaseStatus = "Skipped (database not created)"
+	}
+
+	// 11. Delete RDBMS (best-effort cleanup; runs whenever creation was attempted,
 	// not just when it reported success — a failed/timed-out create can still
 	// have registered a Failed-status record, or a real CSP resource, that needs
 	// cleanup. A 404 here means there was genuinely nothing to delete.
@@ -481,7 +607,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DeleteRDBMSStatus = "Skipped (no VNet)"
 	}
 
-	// 8. Delete SecurityGroup
+	// 12. Delete SecurityGroup
 	if sgId != "" {
 		urlDeleteSG := fmt.Sprintf("%s/ns/%s/resources/securityGroup/%s", tbApiBase, nsId, sgId)
 		_, err = callApi("DELETE", urlDeleteSG, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete SecurityGroup", tc.RdbmsId))
@@ -500,7 +626,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DeleteSGStatus = "Skipped (not created)"
 	}
 
-	// 9. Delete each Subnet
+	// 13. Delete each Subnet
 	if vNetId != "" && len(subnetIds) > 0 {
 		failed := 0
 		for _, subnetId := range subnetIds {
@@ -520,7 +646,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DeleteSubnetsStatus = "Skipped (no VNet)"
 	}
 
-	// 10. Delete vNet
+	// 14. Delete vNet
 	if vNetId != "" {
 		urlDeleteVNet := fmt.Sprintf("%s/ns/%s/resources/vNet/%s", tbApiBase, nsId, vNetId)
 		_, err = callApi("DELETE", urlDeleteVNet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete VNet", tc.RdbmsId))
@@ -563,6 +689,63 @@ func isNotFoundErr(err error) bool {
 	}
 	msg := strings.ToLower(err.Error())
 	return strings.Contains(msg, "404") || strings.Contains(msg, "not found")
+}
+
+// tumblebugTestRecord is the scratch row used by testDatabaseDummyData.
+type tumblebugTestRecord struct {
+	ID    int `gorm:"primaryKey"`
+	Value string
+}
+
+// TableName pins the table name so it matches across CSPs regardless of GORM's pluralization.
+func (tumblebugTestRecord) TableName() string { return "tumblebug_test" }
+
+// testDatabaseDummyData connects directly to the RDBMS instance via GORM (MySQL dialect, shared
+// by mysql and mariadb) and runs a minimal write/read/verify/delete cycle against a scratch
+// table — confirming the logical database created via Tumblebug's RDBMS database API is
+// actually usable for SQL, not just present in the database list. Requires the instance to be
+// reachable from wherever this CLI runs (publicAccess=true and a security group rule allowing
+// the caller, as set up by the earlier steps in runLifecycle).
+func testDatabaseDummyData(endpoint, masterUserName, masterUserPassword, dbName string) error {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s",
+		masterUserName, masterUserPassword, endpoint, dbName)
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
+	if err != nil {
+		return fmt.Errorf("open: %w", err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("db: %w", err)
+	}
+	defer sqlDB.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	db = db.WithContext(ctx)
+
+	if err := db.AutoMigrate(&tumblebugTestRecord{}); err != nil {
+		return fmt.Errorf("auto migrate: %w", err)
+	}
+
+	const wantValue = "tumblebug-dummy-data"
+	if err := db.Save(&tumblebugTestRecord{ID: 1, Value: wantValue}).Error; err != nil {
+		return fmt.Errorf("save: %w", err)
+	}
+
+	var got tumblebugTestRecord
+	if err := db.First(&got, 1).Error; err != nil {
+		return fmt.Errorf("find: %w", err)
+	}
+	if got.Value != wantValue {
+		return fmt.Errorf("find: got %q, want %q", got.Value, wantValue)
+	}
+
+	if err := db.Delete(&tumblebugTestRecord{}, 1).Error; err != nil {
+		return fmt.Errorf("delete: %w", err)
+	}
+
+	return nil
 }
 
 // ============================================================
@@ -628,18 +811,23 @@ func buildSummaryMarkdown(results []TestResult) string {
 	md.WriteString("5. **Create RDBMS** — `POST /ns/{nsId}/resources/rdbms` (blocks until Available/Failed)\n")
 	md.WriteString("6. **Get RDBMS** — `GET /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
 	md.WriteString("7. **List RDBMS** — `GET /ns/{nsId}/resources/rdbms`\n")
-	md.WriteString("8. **Delete RDBMS** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
-	md.WriteString("9. **Delete SecurityGroup** — `DELETE /ns/{nsId}/resources/securityGroup/{sgId}`\n")
-	md.WriteString("10. **Delete Subnets** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}`\n")
-	md.WriteString("11. **Delete VNet** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}`\n\n")
+	md.WriteString("8. **Create Database** — `POST /ns/{nsId}/resources/rdbms/{rdbmsId}/database`\n")
+	md.WriteString("9. **List Database** — `GET /ns/{nsId}/resources/rdbms/{rdbmsId}/database`\n")
+	md.WriteString("10. **Dummy Data Test** — direct SQL write/read/verify/delete against the created database\n")
+	md.WriteString("11. **Delete Database** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}`\n")
+	md.WriteString("12. **Delete RDBMS** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
+	md.WriteString("13. **Delete SecurityGroup** — `DELETE /ns/{nsId}/resources/securityGroup/{sgId}`\n")
+	md.WriteString("14. **Delete Subnets** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}`\n")
+	md.WriteString("15. **Delete VNet** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}`\n\n")
 	md.WriteString(fmt.Sprintf("Generated: %s\n\n---\n\n", time.Now().Format(time.RFC3339)))
 
 	md.WriteString("## Results\n\n")
 	for _, r := range results {
 		steps := []string{
 			r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CapabilityStatus, r.ValidateStatus,
-			r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.DeleteRDBMSStatus, r.DeleteSGStatus,
-			r.DeleteSubnetsStatus, r.DeleteVNetStatus,
+			r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.CreateDatabaseStatus,
+			r.ListDatabaseStatus, r.DummyDataStatus, r.DeleteDatabaseStatus, r.DeleteRDBMSStatus,
+			r.DeleteSGStatus, r.DeleteSubnetsStatus, r.DeleteVNetStatus,
 		}
 		overall := "✅"
 		for _, s := range steps {
@@ -660,6 +848,10 @@ func buildSummaryMarkdown(results []TestResult) string {
 		md.WriteString(fmt.Sprintf("| Create RDBMS | %s |\n", r.CreateRDBMSStatus))
 		md.WriteString(fmt.Sprintf("| Get RDBMS | %s |\n", r.GetRDBMSStatus))
 		md.WriteString(fmt.Sprintf("| List RDBMS | %s |\n", r.ListRDBMSStatus))
+		md.WriteString(fmt.Sprintf("| Create Database | %s |\n", r.CreateDatabaseStatus))
+		md.WriteString(fmt.Sprintf("| List Database | %s |\n", r.ListDatabaseStatus))
+		md.WriteString(fmt.Sprintf("| Dummy Data Test | %s |\n", r.DummyDataStatus))
+		md.WriteString(fmt.Sprintf("| Delete Database | %s |\n", r.DeleteDatabaseStatus))
 		md.WriteString(fmt.Sprintf("| Delete RDBMS | %s |\n", r.DeleteRDBMSStatus))
 		md.WriteString(fmt.Sprintf("| Delete SecurityGroup | %s |\n", r.DeleteSGStatus))
 		md.WriteString(fmt.Sprintf("| Delete Subnets | %s |\n", r.DeleteSubnetsStatus))
@@ -729,15 +921,26 @@ func callApi(
 	reqBody any,
 	logs *[]ApiLog,
 	step string,
+	extraHeaders ...map[string]string,
 ) ([]byte, error) {
 
 	client := resty.New()
 	client.SetTimeout(30 * time.Minute)
+	// The Tumblebug endpoint under test is typically plain http://localhost during local
+	// development, so resty's "Basic Auth over HTTP is insecure" warning is expected noise
+	// here, not an actual finding — the CLI never talks to a real endpoint over HTTP.
+	client.SetDisableWarn(true)
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").
 		SetBasicAuth(auth["username"], auth["password"])
+
+	for _, headers := range extraHeaders {
+		for k, v := range headers {
+			req.SetHeader(k, v)
+		}
+	}
 
 	var body []byte
 	var marshalErr error

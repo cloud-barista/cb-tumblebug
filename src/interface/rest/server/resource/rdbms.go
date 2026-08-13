@@ -410,3 +410,151 @@ func RestPruneRDBMS(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, result)
 }
+
+// RestPostRDBMSDatabase godoc
+// @ID PostRDBMSDatabase
+// @Summary Create a logical database inside an RDBMS instance
+// @Description Creates a logical database inside an Available RDBMS instance via CB-Spider.
+// @Description masterUserPassword is required in the request body and is never persisted by
+// @Description Tumblebug (see docs/feature_guide/rdbms-management.md §1.6) — forwarded to
+// @Description CB-Spider for this call only.
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param rdbmsId path string true "RDBMS ID" default(rdbms-01)
+// @Param reqBody body model.RDBMSDatabaseCreateReq true "Database Create Request"
+// @Success 200 {object} model.RDBMSDatabaseInfo "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/database [post]
+func RestPostRDBMSDatabase(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+	rdbmsId := c.Param("rdbmsId")
+	if rdbmsId == "" {
+		err := fmt.Errorf("rdbmsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	req := model.RDBMSDatabaseCreateReq{}
+	if err := c.Bind(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to bind request body to RDBMSDatabaseCreateReq")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	result, err := resource.CreateRDBMSDatabase(nsId, rdbmsId, req)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to create database in RDBMS '%s'", rdbmsId)
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestGetRDBMSDatabases godoc
+// @ID GetRDBMSDatabases
+// @Summary List logical databases inside an RDBMS instance
+// @Description Lists logical databases inside an RDBMS instance via CB-Spider.
+// @Description X-Master-User-Password is optional here — CB-Spider's own database-test
+// @Description results show list succeeding without one for at least some drivers; supply it
+// @Description if the connection's driver requires direct SQL access (see
+// @Description docs/feature_guide/rdbms-management.md §1.3).
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param rdbmsId path string true "RDBMS ID" default(rdbms-01)
+// @Param X-Master-User-Password header string false "RDBMS master user password (optional for list; not persisted by Tumblebug)"
+// @Success 200 {object} model.RDBMSDatabaseListResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/database [get]
+func RestGetRDBMSDatabases(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+	rdbmsId := c.Param("rdbmsId")
+	if rdbmsId == "" {
+		err := fmt.Errorf("rdbmsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	masterUserPassword := c.Request().Header.Get("X-Master-User-Password")
+
+	result, err := resource.ListRDBMSDatabases(nsId, rdbmsId, masterUserPassword)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to list databases in RDBMS '%s'", rdbmsId)
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestDeleteRDBMSDatabase godoc
+// @ID DeleteRDBMSDatabase
+// @Summary Delete a logical database inside an RDBMS instance
+// @Description Deletes a logical database inside an RDBMS instance via CB-Spider.
+// @Description X-Master-User-Password is required — Tumblebug does not persist RDBMS master
+// @Description passwords (see docs/feature_guide/rdbms-management.md §1.6), so the caller must
+// @Description resupply it on every call.
+// @Tags [Infra Resource] RDBMS Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param rdbmsId path string true "RDBMS ID" default(rdbms-01)
+// @Param dbName path string true "Database Name" default(sampledb)
+// @Param X-Master-User-Password header string true "RDBMS master user password (required; not persisted by Tumblebug)"
+// @Success 204 "No Content"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName} [delete]
+func RestDeleteRDBMSDatabase(c echo.Context) error {
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+	rdbmsId := c.Param("rdbmsId")
+	if rdbmsId == "" {
+		err := fmt.Errorf("rdbmsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+	dbName := c.Param("dbName")
+	if dbName == "" {
+		err := fmt.Errorf("dbName is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	masterUserPassword := c.Request().Header.Get("X-Master-User-Password")
+	if masterUserPassword == "" {
+		err := fmt.Errorf("X-Master-User-Password header is required; Tumblebug does not persist RDBMS master passwords (see docs/feature_guide/rdbms-management.md §1.6)")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	if err := resource.DeleteRDBMSDatabase(nsId, rdbmsId, dbName, masterUserPassword); err != nil {
+		log.Error().Err(err).Msgf("Failed to delete database '%s' in RDBMS '%s'", dbName, rdbmsId)
+		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}

@@ -6,6 +6,7 @@
 FROM golang:1.26.2-alpine AS builder
 
 ENV GO111MODULE=on
+ENV GOWORK=off
 
 WORKDIR /go/src/github.com/cloud-barista/cb-tumblebug
 

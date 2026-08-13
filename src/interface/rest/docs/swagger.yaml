@@ -12642,6 +12642,198 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/rdbms/{rdbmsId}/database:
+    get:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: List logical databases inside an RDBMS instance
+      description: |-
+        Lists logical databases inside an RDBMS instance via CB-Spider.
+        X-Master-User-Password is optional here — CB-Spider's own database-test
+        results show list succeeding without one for at least some drivers; supply it
+        if the connection's driver requires direct SQL access (see
+        docs/feature_guide/rdbms-management.md §1.3).
+      operationId: GetRDBMSDatabases
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: rdbmsId
+        in: path
+        description: RDBMS ID
+        required: true
+        schema:
+          type: string
+          default: rdbms-01
+      - name: X-Master-User-Password
+        in: header
+        description: RDBMS master user password (optional for list; not persisted
+          by Tumblebug)
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RDBMSDatabaseListResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Create a logical database inside an RDBMS instance
+      description: |-
+        Creates a logical database inside an Available RDBMS instance via CB-Spider.
+        masterUserPassword is required in the request body and is never persisted by
+        Tumblebug (see docs/feature_guide/rdbms-management.md §1.6) — forwarded to
+        CB-Spider for this call only.
+      operationId: PostRDBMSDatabase
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: rdbmsId
+        in: path
+        description: RDBMS ID
+        required: true
+        schema:
+          type: string
+          default: rdbms-01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      requestBody:
+        description: Database Create Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RDBMSDatabaseCreateReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RDBMSDatabaseInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: reqBody
+  /ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}:
+    delete:
+      tags:
+      - "[Infra Resource] RDBMS Management"
+      summary: Delete a logical database inside an RDBMS instance
+      description: |-
+        Deletes a logical database inside an RDBMS instance via CB-Spider.
+        X-Master-User-Password is required — Tumblebug does not persist RDBMS master
+        passwords (see docs/feature_guide/rdbms-management.md §1.6), so the caller must
+        resupply it on every call.
+      operationId: DeleteRDBMSDatabase
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: rdbmsId
+        in: path
+        description: RDBMS ID
+        required: true
+        schema:
+          type: string
+          default: rdbms-01
+      - name: dbName
+        in: path
+        description: Database Name
+        required: true
+        schema:
+          type: string
+          default: sampledb
+      - name: X-Master-User-Password
+        in: header
+        description: RDBMS master user password (required; not persisted by Tumblebug)
+        required: true
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/rdbms/{rdbmsId}/reconcile:
     put:
       tags:
@@ -25270,6 +25462,33 @@ components:
         vNetId:
           type: string
           example: vnet-01
+    model.RDBMSDatabaseCreateReq:
+      required:
+      - databaseName
+      - masterUserPassword
+      type: object
+      properties:
+        databaseName:
+          type: string
+          example: sampledb
+        masterUserPassword:
+          type: string
+          example: Password123!
+    model.RDBMSDatabaseInfo:
+      type: object
+      properties:
+        databaseName:
+          type: string
+          example: sampledb
+    model.RDBMSDatabaseListResponse:
+      type: object
+      properties:
+        databases:
+          type: array
+          example:
+          - sampledb
+          items:
+            type: string
     model.RDBMSInfo:
       type: object
       properties:

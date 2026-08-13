@@ -779,6 +779,11 @@ func RunServer() {
 	g.PUT("/:nsId/resources/rdbms/:rdbmsId/reconcile", rest_resource.RestReconcileRDBMS)
 	g.POST("/:nsId/resources/rdbms/reconcile/prune", rest_resource.RestPruneRDBMS)
 
+	// RDBMS internal logical database CRUD
+	g.POST("/:nsId/resources/rdbms/:rdbmsId/database", rest_resource.RestPostRDBMSDatabase)
+	g.GET("/:nsId/resources/rdbms/:rdbmsId/database", rest_resource.RestGetRDBMSDatabases)
+	g.DELETE("/:nsId/resources/rdbms/:rdbmsId/database/:dbName", rest_resource.RestDeleteRDBMSDatabase)
+
 	// Object Storage management
 	g.PUT("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)
 	g.GET("/:nsId/resources/objectStorage", rest_resource.RestGetAllResources)

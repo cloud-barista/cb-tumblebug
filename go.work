@@ -3,3 +3,5 @@ go 1.26.2
 toolchain go1.26.2
 
 use .
+
+use ./src/testclient/test-clis/rdbms

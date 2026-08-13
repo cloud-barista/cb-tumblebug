@@ -279,3 +279,23 @@ type RDBMSInfo struct {
 type RDBMSListResponse struct {
 	RDBMS []RDBMSInfo `json:"rdbms"`
 }
+
+// RDBMSDatabaseCreateReq is the Tumblebug-facing request to create a logical database inside
+// an Available RDBMS instance (see resource/rdbms.go's CreateRDBMSDatabase). MasterUserPassword
+// is required and forwarded to CB-Spider as-is; Tumblebug never persists it (§1.6).
+type RDBMSDatabaseCreateReq struct {
+	DatabaseName       string `json:"databaseName" validate:"required" example:"sampledb"`
+	MasterUserPassword string `json:"masterUserPassword" validate:"required" example:"Password123!"`
+}
+
+// RDBMSDatabaseInfo represents one logical database inside an RDBMS instance. Not a tracked
+// Tumblebug resource — it has no kvstore entry of its own and is always queried live from
+// CB-Spider.
+type RDBMSDatabaseInfo struct {
+	DatabaseName string `json:"databaseName" example:"sampledb"`
+}
+
+// RDBMSDatabaseListResponse wraps the Tumblebug API response for GET .../database (list).
+type RDBMSDatabaseListResponse struct {
+	Databases []string `json:"databases" example:"sampledb"`
+}
