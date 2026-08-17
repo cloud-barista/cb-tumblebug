@@ -18515,6 +18515,21 @@ paths:
         description: Filter by time in minutes from now (to get recent requests)
         schema:
           type: string
+      - name: source
+        in: query
+        description: "Filter by X-Request-Source header (e.g., mcp)"
+        schema:
+          type: string
+      - name: brief
+        in: query
+        description: Option to omit request/response bodies from the results (set
+          'true' to activate)
+        schema:
+          type: string
+          default: "false"
+          enum:
+          - "true"
+          - "false"
       - name: savefile
         in: query
         description: Option to save the results to a file (set 'true' to activate)
