@@ -1209,12 +1209,11 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		callResult.Error = err
-		// If a terminate request was definitively rejected by the CSP (e.g. AWS
-		// disableApiTermination, OperationNotPermitted), clear TargetAction on the
-		// node so that subsequent status polls reflect the actual CSP state (Running)
-		// rather than holding Terminating forever.
+		// If the control request was definitively rejected by the CSP, clear
+		// TargetAction so status polls reflect the actual CSP state rather than
+		// holding the transitional status forever (issue #2667).
 		// Transient network errors are excluded — those may recover on retry.
-		if action == model.ActionTerminate && !isTransientNetworkError(err) {
+		if !isTransientNetworkError(err) {
 			if nodeObj, fetchErr := GetNodeObject(nsId, infraId, nodeId); fetchErr == nil {
 				nodeObj.TargetAction = model.ActionComplete
 				nodeObj.TargetStatus = model.StatusComplete
@@ -1223,7 +1222,7 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 			globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
 				e.TargetAction = model.ActionComplete
 			})
-			log.Warn().Err(err).Msgf("[ControlNodeAsync] VM %s: terminate rejected by CSP — clearing TargetAction so status reflects actual CSP state", nodeId)
+			log.Warn().Err(err).Msgf("[ControlNodeAsync] VM %s: %s rejected by CSP — clearing TargetAction so status reflects actual CSP state", nodeId, action)
 		}
 		// Sync actual node state from CSP even on failure — the operation may have
 		// partially succeeded (e.g. VM terminated but Floating IP release failed).
