@@ -662,23 +662,60 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	if forceFlag == "true" {
 		url += "?force=true"
 	}
-	var callResult model.SpiderBooleanInfo
-	client := clientManager.NewHttpClient()
-	method := "DELETE"
-	//client.SetTimeout(60 * time.Second)
 
+	// Fail-closed tombstone deletion (currently dataDisk)
+	tombstoneEnabled := resourceType == model.StrDataDisk
+	var diskCspResourceId, diskCspResourceName string
+	if tombstoneEnabled {
+		diskInfo := model.DataDiskInfo{}
+		if err := json.Unmarshal([]byte(keyValue.Value), &diskInfo); err == nil {
+			diskCspResourceId, diskCspResourceName = diskInfo.CspResourceId, diskInfo.CspResourceName
+		}
+
+		inflightKey := nsId + "/" + resourceType + "/" + resourceId
+		if _, busy := deletionInFlight.LoadOrStore(inflightKey, struct{}{}); busy {
+			return fmt.Errorf("deletion of %s '%s' is already in progress (%w)", resourceType, resourceId, ErrDeletionInProgress)
+		}
+		defer deletionInFlight.Delete(inflightKey)
+
+		// Persist the tombstone before calling Spider (crash-safe; retry keeps it)
+		if err := markDataDiskDeleting(nsId, resourceId); err != nil {
+			return err
+		}
+	}
+
+	client := clientManager.NewHttpClient()
 	log.Debug().Msg("Sending DELETE request to " + url)
 
-	_, err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		clientManager.VeryShortDuration,
-	)
+	execDelete := func() (model.SpiderBooleanInfo, error) {
+		var cr model.SpiderBooleanInfo
+		_, e := clientManager.ExecuteHttpRequest(
+			client,
+			"DELETE",
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&cr,
+			clientManager.VeryShortDuration,
+		)
+		return cr, e
+	}
+	callResult, err := execDelete()
+
+	// Spider forgot the resource but the CSP still has it: retrying the DELETE alone
+	// can never succeed, so re-register and retry once
+	if err != nil && tombstoneEnabled &&
+		strings.Contains(strings.ToLower(err.Error()), "does not exist in connection") {
+		if present, gateErr := diskPresentOnCsp(requestBody.ConnectionName, diskCspResourceId, diskCspResourceName); gateErr == nil && present {
+			log.Warn().Msgf("dataDisk '%s' exists on CSP but Spider lost its registration; repairing and retrying DELETE", resourceId)
+			if regErr := repairSpiderDiskRegistration(requestBody.ConnectionName, diskCspResourceName, diskCspResourceId); regErr == nil {
+				callResult, err = execDelete()
+			} else {
+				log.Warn().Err(regErr).Msg("Spider re-registration failed")
+			}
+		}
+	}
 
 	if err != nil {
 		// Spider's own IID registry (not just the CSP) has forgotten this resource —
@@ -703,6 +740,14 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		if resourceType == model.StrVNet && vNetInfoForMark != nil {
 			markVNetDeleteFailed(nsId, resourceId, key, vNetInfoForMark, err)
 		}
+		if tombstoneEnabled {
+			if forceFlag == "true" {
+				log.Warn().Err(err).Msgf("Force deletion of %s '%s': Spider DELETE failed; removing the record anyway (the CSP resource may remain as an orphan)", resourceType, resourceId)
+				return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
+			}
+			markDataDiskDeleteFailed(nsId, resourceId, err)
+			err = fmt.Errorf("%v (%w)", err, ErrDeletionUnconfirmed)
+		}
 		log.Error().Err(err).Msg("")
 		return err
 	}
@@ -715,10 +760,55 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		if resourceType == model.StrVNet && vNetInfoForMark != nil {
 			markVNetDeleteFailed(nsId, resourceId, key, vNetInfoForMark, resultErr)
 		}
+		if tombstoneEnabled {
+			if forceFlag == "true" {
+				log.Warn().Err(resultErr).Msgf("Force deletion of %s '%s': removing the record anyway (the CSP resource may remain as an orphan)", resourceType, resourceId)
+				return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
+			}
+			markDataDiskDeleteFailed(nsId, resourceId, resultErr)
+			resultErr = fmt.Errorf("%v (%w)", resultErr, ErrDeletionUnconfirmed)
+		}
 		log.Error().Err(resultErr).Msg("Resource deletion not confirmed by Spider")
 		return resultErr
 	}
 	log.Debug().Msgf("Spider confirmed deletion (Result=%s) for %s/%s", callResult.Result, resourceType, resourceId)
+
+	if tombstoneEnabled {
+		// Eventual-consistency wait; a "gone" GET alone never authorizes purge
+		// (Spider may answer from its own registry while the CSP resource survives)
+		for attempt := 0; attempt < deleteVerifyPollAttempts; attempt++ {
+			if attempt > 0 {
+				time.Sleep(deleteVerifyPollInterval)
+			}
+			if verifyResourceDeletedOnSpider(url, requestBody.ConnectionName, resourceType, resourceId) == nil {
+				break
+			}
+		}
+
+		// Only confirmed absence from the CSP enumeration may purge the record
+		present, gateErr := diskPresentOnCsp(requestBody.ConnectionName, diskCspResourceId, diskCspResourceName)
+		if gateErr == nil && !present {
+			return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
+		}
+		if forceFlag == "true" {
+			log.Warn().Msgf("Force deletion of %s '%s': deletion unconfirmed (present=%v, gateErr=%v); removing the record anyway (the CSP resource may remain as an orphan)", resourceType, resourceId, present, gateErr)
+			return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
+		}
+		var cause error
+		sentinel := ErrDeletionUnconfirmed
+		if gateErr != nil {
+			cause = fmt.Errorf("deletion of %s '%s' unconfirmed: existence check failed: %v", resourceType, resourceId, gateErr)
+			markDataDiskDeleteFailed(nsId, resourceId, cause)
+		} else {
+			cause = fmt.Errorf("%s '%s' still exists on the CSP although Spider reported successful deletion", resourceType, resourceId)
+			if markDataDiskStillOnCsp(nsId, resourceId, cause) {
+				sentinel = ErrDeletionInProgress
+			}
+		}
+		err := fmt.Errorf("%v; the record is retained for retry — retry DELETE, or use force to discard it (%w)", cause, sentinel)
+		log.Warn().Err(err).Msg("Fail-closed deletion: record retained")
+		return err
+	}
 
 	// Re-verify with Spider that the resource is actually gone
 	// This provides defense-in-depth against inconsistencies between Spider response and actual state
@@ -777,6 +867,137 @@ func cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid string,
 	}
 
 	return nil
+}
+
+// Sentinel errors so the REST layer can map deletion outcomes to HTTP codes
+// (in-progress → 202, unconfirmed/conflict → 409) via errors.Is
+var (
+	ErrDeletionInProgress    = errors.New("deletion in progress")
+	ErrDeletionUnconfirmed   = errors.New("deletion unconfirmed; record retained")
+	ErrTombstoneNameConflict = errors.New("name held by unconfirmed deletion")
+)
+
+// deletionInFlight dedups concurrent deletions per resource; in-memory only so a
+// persisted Deleting status stays retryable after a crash
+var deletionInFlight sync.Map
+
+var (
+	deleteVerifyPollAttempts = DefaultPollMaxAttempts
+	deleteVerifyPollInterval = DefaultPollInterval
+	// Within this window a still-visible resource stays Deleting (CSP async deletion)
+	deleteFailGraceWindow = 2 * time.Minute
+)
+
+// mutateDataDiskRecord applies fn to the stored record and writes it back.
+func mutateDataDiskRecord(nsId, resourceId string, fn func(*model.DataDiskInfo)) error {
+	key := common.GenResourceKey(nsId, model.StrDataDisk, resourceId)
+	kv, exists, err := kvstore.GetKv(key)
+	if err != nil || !exists {
+		return fmt.Errorf("cannot load dataDisk '%s' record: %v", resourceId, err)
+	}
+	disk := model.DataDiskInfo{}
+	if err := json.Unmarshal([]byte(kv.Value), &disk); err != nil {
+		return err
+	}
+	fn(&disk)
+	val, err := json.Marshal(disk)
+	if err != nil {
+		return err
+	}
+	return kvstore.Put(key, string(val))
+}
+
+// markDataDiskDeleting persists the tombstone before Spider is called; the original
+// request time is kept across retries
+func markDataDiskDeleting(nsId, resourceId string) error {
+	return mutateDataDiskRecord(nsId, resourceId, func(disk *model.DataDiskInfo) {
+		disk.Status = model.DiskDeleting
+		if disk.DeletionRequestedAt == "" {
+			disk.DeletionRequestedAt = time.Now().UTC().Format(time.RFC3339)
+		}
+		disk.SystemMessage = ""
+		model.SetCondition(&disk.Conditions, model.ConditionReady, model.ConditionFalse,
+			model.ReasonDeleting, "deletion in progress")
+	})
+}
+
+// markDataDiskDeleteFailed keeps the record visible as Failed; retrying DELETE resumes
+func markDataDiskDeleteFailed(nsId, resourceId string, cause error) {
+	err := mutateDataDiskRecord(nsId, resourceId, func(disk *model.DataDiskInfo) {
+		disk.Status = model.DiskFailed
+		disk.SystemMessage = cause.Error()
+		model.SetCondition(&disk.Conditions, model.ConditionReady, model.ConditionFalse,
+			model.ReasonDeletionFailed, cause.Error())
+	})
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to mark dataDisk '%s' as DeletionFailed", resourceId)
+	}
+}
+
+// markDataDiskStillOnCsp keeps the record Deleting within the grace window
+// (slow async CSP deletion), Failed after it; reports which state was chosen
+func markDataDiskStillOnCsp(nsId, resourceId string, cause error) (stillDeleting bool) {
+	err := mutateDataDiskRecord(nsId, resourceId, func(disk *model.DataDiskInfo) {
+		requestedAt, parseErr := time.Parse(time.RFC3339, disk.DeletionRequestedAt)
+		if parseErr == nil && time.Since(requestedAt) <= deleteFailGraceWindow {
+			stillDeleting = true
+			disk.Status = model.DiskDeleting
+			disk.SystemMessage = cause.Error()
+			model.SetCondition(&disk.Conditions, model.ConditionReady, model.ConditionFalse,
+				model.ReasonDeleting, cause.Error())
+			return
+		}
+		disk.Status = model.DiskFailed
+		disk.SystemMessage = cause.Error()
+		model.SetCondition(&disk.Conditions, model.ConditionReady, model.ConditionFalse,
+			model.ReasonDeletionFailed, cause.Error())
+	})
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to mark dataDisk '%s' deletion outcome", resourceId)
+	}
+	return stillDeleting
+}
+
+// diskPresentOnCsp checks the CSP enumeration (Spider /alldisk). Matches SystemId or
+// NameId so provider ID quirks read as "present" — absence must be unambiguous to purge
+func diskPresentOnCsp(connName, cspResourceId, cspResourceName string) (bool, error) {
+	// A purge decision must never act on a response cached from before the DELETE
+	clientManager.InvalidateGetCache(model.SpiderRestUrl+"/alldisk",
+		model.CspResourceStatusRequest{ConnectionName: connName})
+	resp, err := GetCspResourceStatus(connName, model.StrDataDisk)
+	if err != nil {
+		return false, err
+	}
+	match := func(list []model.SpiderNameIdSystemId) bool {
+		for _, v := range list {
+			if (v.SystemId != "" && v.SystemId == cspResourceId) ||
+				(v.NameId != "" && v.NameId == cspResourceName) {
+				return true
+			}
+		}
+		return false
+	}
+	return match(resp.AllList.MappedList) || match(resp.AllList.OnlyCSPList), nil
+}
+
+// repairSpiderDiskRegistration re-registers a disk whose IID mapping Spider lost so a
+// retried DELETE can reach the CSP; binds to SystemId to never capture a same-named stranger
+func repairSpiderDiskRegistration(connName, cspResourceName, cspResourceId string) error {
+	if cspResourceId == "" {
+		return fmt.Errorf("no stored SystemId for the disk; refusing name-only re-registration")
+	}
+	requestBody := model.SpiderDiskReqInfoWrapper{
+		ConnectionName: connName,
+		ReqInfo:        model.SpiderDiskInfo{Name: cspResourceName, CSPid: cspResourceId},
+	}
+	var callResult model.SpiderDiskInfo
+	client := clientManager.NewHttpClient()
+	_, err := clientManager.ExecuteHttpRequest(
+		client, "POST", model.SpiderRestUrl+"/regdisk", nil,
+		clientManager.SetUseBody(requestBody), &requestBody, &callResult,
+		clientManager.MediumDuration,
+	)
+	return err
 }
 
 // verifyResourceDeletedOnSpider re-checks with Spider that a resource no longer exists after a successful DELETE.
@@ -1728,10 +1949,11 @@ func MapSpiderToTumblebugImageStatus(spiderStatus string) model.ImageStatus {
 }
 
 // isStableDiskStatus checks if DataDisk status is stable (no need to update from Spider)
-// Stable states: Available, Attached, Error - won't change without explicit user action
+// Stable states: Available, Attached, Error, Failed - won't change without explicit user action
 // Unstable states: empty, Creating, Deleting - need to check Spider for updates
 func isStableDiskStatus(status model.DiskStatus) bool {
-	return status == model.DiskAvailable || status == model.DiskAttached || status == model.DiskError
+	return status == model.DiskAvailable || status == model.DiskAttached ||
+		status == model.DiskError || status == model.DiskFailed
 }
 
 // GetResource returns the requested TB Resource object
@@ -1897,6 +2119,12 @@ func GetResource(nsId string, resourceType string, resourceId string) (any, erro
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return res, err
+			}
+
+			// Deletion tombstones are TB-owned: a Spider refresh would resurrect the
+			// status or error once the CSP resource is gone
+			if res.DeletionRequestedAt != "" {
+				return res, nil
 			}
 
 			// Skip Spider API call if status is already stable (Available, Attached, Error)
@@ -3313,6 +3541,16 @@ func GetCspResourceName(nsId string, resourceType string, resourceId string) (st
 		//log.Error().Err(err).Msg("")
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", fmt.Errorf("cannot find the key %s", key)
+	}
+
+	// A resource with pending/unconfirmed deletion must not be resolved for use
+	var tombstoneProbe struct {
+		Status              string `json:"status"`
+		DeletionRequestedAt string `json:"deletionRequestedAt"`
+	}
+	if json.Unmarshal([]byte(keyValue.Value), &tombstoneProbe) == nil && tombstoneProbe.DeletionRequestedAt != "" {
+		return "", fmt.Errorf("%s '%s' has a pending/unconfirmed deletion (status=%s); retry DELETE to complete it or recreate under another name",
+			resourceType, resourceId, tombstoneProbe.Status)
 	}
 
 	switch resourceType {

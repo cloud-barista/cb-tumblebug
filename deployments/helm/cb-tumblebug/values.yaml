@@ -7,7 +7,7 @@
 
 images:
   tumblebug: cloudbaristaorg/cb-tumblebug:0.12.30
-  spider: cloudbaristaorg/cb-spider:0.12.42
+  spider: cloudbaristaorg/cb-spider:0.13.0
   terrarium: cloudbaristaorg/mc-terrarium:0.1.4
   mapui: cloudbaristaorg/cb-mapui:0.12.57
   mcp: cloudbaristaorg/cb-tumblebug-mcp-server:0.12.26

@@ -15,7 +15,9 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -95,6 +97,14 @@ func RestDelResource(c echo.Context) error {
 		if _, recErr := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, resourceId, nil); recErr != nil {
 			log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", resourceId)
 		}
+	}
+
+	// Tombstone outcomes are not plain failures: in-progress → 202, retained → 409
+	if errors.Is(err, resource.ErrDeletionInProgress) {
+		return clientManager.EndRequestWithLogAndStatus(c, nil, map[string]string{"message": err.Error()}, http.StatusAccepted)
+	}
+	if errors.Is(err, resource.ErrDeletionUnconfirmed) {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
 	}
 
 	content := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been deleted"}

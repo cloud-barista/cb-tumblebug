@@ -2871,6 +2871,14 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 	dataDisk := model.DataDiskInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &dataDisk)
 
+	// A deletion tombstone is not usable; fail fast with the real reason
+	if dataDisk.DeletionRequestedAt != "" && !force {
+		err := fmt.Errorf("the dataDisk %s has a pending/unconfirmed deletion (status=%s); %s is not allowed — retry DELETE to complete the deletion first",
+			dataDiskId, dataDisk.Status, command)
+		log.Error().Err(err).Msg("")
+		return model.NodeInfo{}, err
+	}
+
 	// A disk cannot cross zones; fail early with a clear reason instead of a CSP error
 	if strings.EqualFold(command, model.AttachDataDisk) && !force &&
 		dataDisk.Zone != "" && node.Region.Zone != "" && dataDisk.Zone != node.Region.Zone {
@@ -2962,15 +2970,17 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 	// not depend on the follow-up read succeeding (issue #2648)
 	UpdateNodeInfo(nsId, infraId, node)
 
-	// Status first: UpdateResourceObject writes this in-memory copy as a whole, so it
-	// must not run after the association update below (it would overwrite it)
+	// Status-only patch: a whole-object write of the in-memory copy (read before the
+	// CSP call) could clobber concurrent updates, e.g. a deletion tombstone
 	switch command {
 	case model.AttachDataDisk:
 		dataDisk.Status = model.DiskAttached
 	case model.DetachDataDisk:
 		dataDisk.Status = model.DiskAvailable
 	}
-	resource.UpdateResourceObject(nsId, model.StrDataDisk, dataDisk)
+	if err := resource.UpdateResourceStatus(nsId, model.StrDataDisk, dataDiskId, string(dataDisk.Status)); err != nil {
+		log.Warn().Err(err).Msgf("Failed to persist status of dataDisk %s after %s", dataDiskId, command)
+	}
 
 	// Update TB DataDisk object's 'associatedObjects' field (re-reads the stored object)
 	resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, cmdToUpdateAsso, nodeKey)
@@ -3049,11 +3059,12 @@ func GetAvailableDataDisks(nsId string, infraId string, nodeId string, option st
 		idList := []string{}
 
 		for _, v := range tbDataDisks {
-			// Update Tb dataDisk object's status
+			// Update Tb dataDisk object's status; skip-and-continue so one broken
+			// record cannot take down the whole availability listing
 			newObj, err := resource.GetResource(nsId, model.StrDataDisk, v.Id)
 			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
+				log.Warn().Err(err).Msgf("Skipping dataDisk %s in availability listing", v.Id)
+				continue
 			}
 			tempObj := newObj.(model.DataDiskInfo)
 
