@@ -79,14 +79,8 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
-		// A deletion tombstone holds the name until CSP-side removal is confirmed
-		if kv, exists, _ := kvstore.GetKv(common.GenResourceKey(nsId, resourceType, u.Name)); exists {
-			existing := model.DataDiskInfo{}
-			if json.Unmarshal([]byte(kv.Value), &existing) == nil && existing.DeletionRequestedAt != "" {
-				return model.DataDiskInfo{}, fmt.Errorf(
-					"previous deletion of dataDisk '%s' is unconfirmed (status=%s); retry DELETE to complete it, or DELETE with force to discard the record (%w)",
-					u.Name, existing.Status, ErrTombstoneNameConflict)
-			}
+		if err := errIfNameHeldByTombstone(nsId, resourceType, u.Name); err != nil {
+			return model.DataDiskInfo{}, err
 		}
 		err := fmt.Errorf("The dataDisk %s already exists.", u.Name)
 		return model.DataDiskInfo{}, err

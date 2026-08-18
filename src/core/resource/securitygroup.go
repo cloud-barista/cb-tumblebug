@@ -194,6 +194,9 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 
 	if check {
 		temp := model.SecurityGroupInfo{}
+		if err := errIfNameHeldByTombstone(nsId, resourceType, u.Name); err != nil {
+			return temp, err
+		}
 		err := fmt.Errorf("The securityGroup %s already exists.", u.Name)
 		return temp, err
 	}

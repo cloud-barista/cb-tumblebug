@@ -15,6 +15,8 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
+	"net/http"
 	"fmt"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -56,6 +58,9 @@ func RestPostCustomImage(c echo.Context) error {
 	}
 
 	content, err := resource.RegisterCustomImageWithId(nsId, u)
+	if errors.Is(err, resource.ErrTombstoneNameConflict) {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
+	}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

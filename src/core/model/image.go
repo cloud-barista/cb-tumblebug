@@ -153,6 +153,12 @@ type ImageInfo struct {
 	SystemLabel string     `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 	Description string     `json:"description"`
 
+	SystemMessage string `json:"systemMessage,omitempty"`
+
+	// DeletionRequestedAt (RFC3339) marks a deletion tombstone (customImage only):
+	// non-empty means the row is kept until CSP-side removal is confirmed
+	DeletionRequestedAt string `json:"deletionRequestedAt,omitempty"`
+
 	// CommandHistory stores the status and history of remote commands executed on this VM
 	CommandHistory []ImageSourceCommandHistory `json:"commandHistory" gorm:"type:text;serializer:json"`
 }
