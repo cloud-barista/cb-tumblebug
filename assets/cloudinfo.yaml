@@ -715,16 +715,16 @@ cloud:
         - mx-central-1a
         - mx-central-1b
         - mx-central-1c
-      me-south-1:
-        description: Middle East (Bahrain)
-        location:
-          display: Middle East (Bahrain)
-          latitude: 25.0
-          longitude: 49.6
-        zone:
-        - me-south-1a
-        - me-south-1b
-        - me-south-1c
+      # me-south-1:
+      #   description: Middle East (Bahrain)
+      #   location:
+      #     display: Middle East (Bahrain)
+      #     latitude: 25.0
+      #     longitude: 49.6
+      #   zone:
+      #   - me-south-1a
+      #   - me-south-1b
+      #   - me-south-1c
   azure:
     description: Microsoft Azure
     driver: azure-driver-v1.0.so
