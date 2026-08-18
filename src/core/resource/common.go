@@ -380,7 +380,102 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 }
 
 // DelResource deletes the TB Resource object
+// sharedResourceVerifyTTL bounds CSP API load: a verified-alive resource is not re-checked until expiry.
+const sharedResourceVerifyTTL = 5 * time.Minute
+
+// verifiedAliveCache maps "ns/type/id" -> last successful verification time (positive results only).
+var verifiedAliveCache sync.Map
+
+// InvalidateVerifyCache drops the cached verification for a resource.
+func InvalidateVerifyCache(nsId, resType, resourceId string) {
+	verifiedAliveCache.Delete(nsId + "/" + resType + "/" + resourceId)
+}
+
+func isCspNotFoundMsg(msg string) bool {
+	m := strings.ToLower(msg)
+	return strings.Contains(m, "does not exist") ||
+		strings.Contains(m, "not found") ||
+		strings.Contains(m, "notfound")
+}
+
+// VerifySharedResourceOnCsp checks via Spider that a recorded resource still exists on the CSP.
+// Returns (exists, indeterminate): (false, nil) means definitive drift; a non-nil error means
+// the check could not conclude and must not be treated as drift.
+func VerifySharedResourceOnCsp(nsId string, resType string, resourceId string) (bool, error) {
+	cacheKey := nsId + "/" + resType + "/" + resourceId
+	if v, ok := verifiedAliveCache.Load(cacheKey); ok {
+		if t, ok := v.(time.Time); ok && time.Since(t) < sharedResourceVerifyTTL {
+			return true, nil
+		}
+		verifiedAliveCache.Delete(cacheKey)
+	}
+
+	key := common.GenResourceKey(nsId, resType, resourceId)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil || !exists {
+		return false, fmt.Errorf("cannot read resource record %s: %v", key, err)
+	}
+
+	var cspResourceName, connectionName, spiderPath string
+	switch resType {
+	case model.StrSSHKey:
+		temp := model.SshKeyInfo{}
+		if err := json.Unmarshal([]byte(keyValue.Value), &temp); err != nil {
+			return false, err
+		}
+		cspResourceName, connectionName, spiderPath = temp.CspResourceName, temp.ConnectionName, "/keypair/"
+	case model.StrVNet:
+		temp := model.VNetInfo{}
+		if err := json.Unmarshal([]byte(keyValue.Value), &temp); err != nil {
+			return false, err
+		}
+		cspResourceName, connectionName, spiderPath = temp.CspResourceName, temp.ConnectionName, "/vpc/"
+	case model.StrSecurityGroup:
+		temp := model.SecurityGroupInfo{}
+		if err := json.Unmarshal([]byte(keyValue.Value), &temp); err != nil {
+			return false, err
+		}
+		cspResourceName, connectionName, spiderPath = temp.CspResourceName, temp.ConnectionName, "/securitygroup/"
+	default:
+		return false, fmt.Errorf("unsupported resource type for CSP verification: %s", resType)
+	}
+	if cspResourceName == "" {
+		return false, nil
+	}
+
+	type connReq struct {
+		ConnectionName string
+	}
+	requestBody := connReq{ConnectionName: connectionName}
+	var callResult interface{}
+	client := clientManager.NewHttpClient()
+	client.SetTimeout(60 * time.Second)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		model.SpiderRestUrl+spiderPath+cspResourceName,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.ShortDuration,
+	)
+	if err == nil {
+		verifiedAliveCache.Store(cacheKey, time.Now())
+		return true, nil
+	}
+	if isCspNotFoundMsg(err.Error()) {
+		log.Warn().Msgf("%s '%s' (csp: %s) recorded in Tumblebug but missing behind it: %v",
+			resType, resourceId, cspResourceName, err)
+		return false, nil
+	}
+	return false, err
+}
+
 func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) error {
+
+	InvalidateVerifyCache(nsId, resourceType, resourceId)
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -790,6 +885,8 @@ func PollResourceDeletedViaSpider(getURL string, headers map[string]string, maxA
 // This function only removes the resource mapping from Spider and TB internal storage (kvstore, label, etc.)
 // The actual CSP resource remains intact and can be re-registered later
 func DeregisterResource(nsId string, resourceType string, resourceId string) error {
+
+	InvalidateVerifyCache(nsId, resourceType, resourceId)
 
 	check, err := CheckResource(nsId, resourceType, resourceId)
 

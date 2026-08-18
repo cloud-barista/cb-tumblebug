@@ -1209,10 +1209,8 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		callResult.Error = err
-		// If the control request was definitively rejected by the CSP, clear
-		// TargetAction so status polls reflect the actual CSP state rather than
-		// holding the transitional status forever (issue #2667).
-		// Transient network errors are excluded — those may recover on retry.
+		// On a definitive CSP rejection, clear TargetAction so status reflects the
+		// actual CSP state instead of holding the transitional status forever.
 		if !isTransientNetworkError(err) {
 			if nodeObj, fetchErr := GetNodeObject(nsId, infraId, nodeId); fetchErr == nil {
 				nodeObj.TargetAction = model.ActionComplete

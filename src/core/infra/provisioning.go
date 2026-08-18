@@ -4008,6 +4008,15 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 	} else {
 		log.Info().Msg("Found and utilize default vNet: " + nodeGroupReq.VNetId)
 
+		// Fail fast if the vNet was deleted out-of-band on the CSP.
+		if exists, indet := resource.VerifySharedResourceOnCsp(nsId, model.StrVNet, vNetResourceName); indet == nil && !exists {
+			detailedErr := fmt.Errorf("vNet '%s' is recorded in Tumblebug but missing on the CSP (deleted out-of-band?). "+
+				"Clear the stale record with DELETE /ns/%s/deregisterResource/vNet/%s?withSubnets=true and retry; it will be recreated on demand",
+				vNetResourceName, nsId, vNetResourceName)
+			log.Error().Err(detailedErr).Msgf("VNet drift detected for VM '%s', Connection '%s'", req.Name, nodeGroupReq.ConnectionName)
+			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, VNetId: nodeGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+		}
+
 		// Even if VNet exists, ensure it's ready for use
 		vNetInfo, err := resource.GetVNet(nsId, nodeGroupReq.VNetId)
 		if err != nil {
@@ -4182,6 +4191,29 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 		}
 	} else {
 		log.Info().Msg("Found and utilize default SSHKey: " + nodeGroupReq.SshKeyId)
+
+		// If the keypair was deleted out-of-band on the CSP, replace the stale record
+		// (rotates key material; existing VMs keep the old key).
+		if exists, indet := resource.VerifySharedResourceOnCsp(nsId, model.StrSSHKey, sshKeyResourceName); indet == nil && !exists {
+			log.Warn().Msgf("SSHKey drift detected for '%s'; deregistering stale record and recreating", sshKeyResourceName)
+			if derr := resource.DeregisterResource(nsId, model.StrSSHKey, sshKeyResourceName); derr != nil {
+				log.Warn().Err(derr).Msgf("failed to deregister drifted SSHKey '%s'", sshKeyResourceName)
+			}
+			sharedResourceOpts := &resource.SharedResourceOptions{
+				CredentialHolder: credentialHolder,
+				InfraId:          infraId,
+			}
+			if req.Zone != "" {
+				sharedResourceOpts.Zone = req.Zone
+			}
+			if err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSSHKey, nodeGroupReq.ConnectionName, sharedResourceOpts); err2 != nil {
+				detailedErr := fmt.Errorf("failed to recreate drifted SSHKey '%s' on connection '%s': %w", sshKeyResourceName, nodeGroupReq.ConnectionName, err2)
+				log.Error().Err(err2).Msgf("SSHKey recreation failed for VM '%s'", req.Name)
+				return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SshKeyId: nodeGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
+			}
+			createdResources = append(createdResources, CreatedResource{Type: model.StrSSHKey, Id: sshKeyResourceName})
+			log.Info().Msg("Recreated drifted SSHKey: " + sshKeyResourceName)
+		}
 	}
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + sgResourceName, Time: time.Now()})
@@ -4235,6 +4267,15 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 		}
 	} else {
 		log.Info().Msg("Found and utilize default securityGroup: " + securityGroup)
+
+		// Fail fast if the securityGroup was deleted out-of-band on the CSP.
+		if exists, indet := resource.VerifySharedResourceOnCsp(nsId, model.StrSecurityGroup, sgResourceName); indet == nil && !exists {
+			detailedErr := fmt.Errorf("securityGroup '%s' is recorded in Tumblebug but missing on the CSP (deleted out-of-band?). "+
+				"Clear the stale record with DELETE /ns/%s/deregisterResource/securityGroup/%s and retry; it will be recreated on demand",
+				sgResourceName, nsId, sgResourceName)
+			log.Error().Err(detailedErr).Msgf("SecurityGroup drift detected for VM '%s', Connection '%s'", req.Name, nodeGroupReq.ConnectionName)
+			return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
+		}
 	}
 
 	nodeGroupReq.Name = k.Name
@@ -5373,6 +5414,15 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		}
 	} else {
 		log.Info().Msg("Found and utilize default vNet: " + k8sReq.VNetId)
+
+		// Fail fast if the vNet was deleted out-of-band on the CSP.
+		if exists, indet := resource.VerifySharedResourceOnCsp(nsId, model.StrVNet, k8sReq.VNetId); indet == nil && !exists {
+			err := fmt.Errorf("vNet '%s' is recorded in Tumblebug but missing on the CSP (deleted out-of-band?). "+
+				"Clear the stale record with DELETE /ns/%s/deregisterResource/vNet/%s?withSubnets=true and retry; it will be recreated on demand",
+				k8sReq.VNetId, nsId, k8sReq.VNetId)
+			log.Error().Err(err).Msg("VNet drift detected for K8sCluster")
+			return emptyK8sReq, err
+		}
 	}
 	k8sReq.SubnetIds = append(k8sReq.SubnetIds, resourceName)
 	k8sReq.SubnetIds = append(k8sReq.SubnetIds, resourceName+"-01")
@@ -5399,6 +5449,19 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		}
 	} else {
 		log.Info().Msg("Found and utilize default SSHKey: " + k8sngReq.SshKeyId)
+
+		// If the keypair was deleted out-of-band on the CSP, replace the stale record.
+		if exists, indet := resource.VerifySharedResourceOnCsp(nsId, model.StrSSHKey, k8sngReq.SshKeyId); indet == nil && !exists {
+			log.Warn().Msgf("SSHKey drift detected for '%s'; deregistering stale record and recreating", k8sngReq.SshKeyId)
+			if derr := resource.DeregisterResource(nsId, model.StrSSHKey, k8sngReq.SshKeyId); derr != nil {
+				log.Warn().Err(derr).Msgf("failed to deregister drifted SSHKey '%s'", k8sngReq.SshKeyId)
+			}
+			if err2 := resource.CreateSharedResource(ctx, nsId, model.StrSSHKey, k8sReq.ConnectionName); err2 != nil {
+				log.Err(err2).Msg("Failed to recreate drifted SSHKey " + k8sngReq.SshKeyId + " from " + k8sReq.ConnectionName)
+				return emptyK8sReq, err2
+			}
+			log.Info().Msg("Recreated drifted SSHKey: " + k8sngReq.SshKeyId)
+		}
 	}
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
@@ -5428,6 +5491,15 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		}
 	} else {
 		log.Info().Msg("Found and utilize default securityGroup: " + securityGroup)
+
+		// Fail fast if the securityGroup was deleted out-of-band on the CSP.
+		if exists, indet := resource.VerifySharedResourceOnCsp(nsId, model.StrSecurityGroup, securityGroup); indet == nil && !exists {
+			err := fmt.Errorf("securityGroup '%s' is recorded in Tumblebug but missing on the CSP (deleted out-of-band?). "+
+				"Clear the stale record with DELETE /ns/%s/deregisterResource/securityGroup/%s and retry; it will be recreated on demand",
+				securityGroup, nsId, securityGroup)
+			log.Error().Err(err).Msg("SecurityGroup drift detected for K8sCluster")
+			return emptyK8sReq, err
+		}
 	}
 
 	k8sngReq.Name = dReq.NodeGroupName
@@ -5594,6 +5666,19 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 		return emptyK8sNgReq, err
 	} else {
 		log.Info().Msg("Found and utilize default SSHKey: " + k8sNgReq.SshKeyId)
+
+		// If the keypair was deleted out-of-band on the CSP, replace the stale record.
+		if exists, indet := resource.VerifySharedResourceOnCsp(nsId, model.StrSSHKey, k8sNgReq.SshKeyId); indet == nil && !exists {
+			log.Warn().Msgf("SSHKey drift detected for '%s'; deregistering stale record and recreating", k8sNgReq.SshKeyId)
+			if derr := resource.DeregisterResource(nsId, model.StrSSHKey, k8sNgReq.SshKeyId); derr != nil {
+				log.Warn().Err(derr).Msgf("failed to deregister drifted SSHKey '%s'", k8sNgReq.SshKeyId)
+			}
+			if err2 := resource.CreateSharedResource(ctx, nsId, model.StrSSHKey, k8sClusterInfo.ConnectionName); err2 != nil {
+				log.Err(err2).Msg("Failed to recreate drifted SSHKey " + k8sNgReq.SshKeyId + " from " + k8sClusterInfo.ConnectionName)
+				return emptyK8sNgReq, err2
+			}
+			log.Info().Msg("Recreated drifted SSHKey: " + k8sNgReq.SshKeyId)
+		}
 	}
 
 	k8sNgReq.Name = dReq.Name
