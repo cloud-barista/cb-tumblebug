@@ -145,6 +145,7 @@ HELM_CHART := deployments/helm/cb-tumblebug
 K8S_INIT_PORT ?= 11323
 K8S_CONTEXT ?=
 KIND_CLUSTER_NAME ?= cb-tumblebug
+KIND_VERSION ?= v0.32.0
 KUBECTL := kubectl$(if $(K8S_CONTEXT), --context $(K8S_CONTEXT))
 HELM := helm$(if $(K8S_CONTEXT), --kube-context $(K8S_CONTEXT))
 # Persistent local toggles (survive future k-up runs; gitignored)
@@ -197,15 +198,40 @@ KX := \033[0m
 endif
 
 k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no cluster is reachable)
-	@command -v helm >/dev/null || { printf '%b\n' '$(KR)\xe2\x9c\x96 helm is required$(KX) \xe2\x80\x94 https://helm.sh/docs/intro/install/'; exit 1; }
-	@command -v kubectl >/dev/null || { printf '%b\n' '$(KR)\xe2\x9c\x96 kubectl is required$(KX)'; exit 1; }
+	@command -v helm >/dev/null || { \
+		printf '%b\n' '$(KR)\xe2\x9c\x96 helm is required$(KX) \xe2\x80\x94 install with:'; \
+		printf '%b\n' '  $(KC)curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash$(KX)'; \
+		printf '%b\n' '  $(KD)(docs: https://helm.sh/docs/intro/install/)$(KX)'; \
+		exit 1; }
+	@command -v kubectl >/dev/null || { \
+		printf '%b\n' '$(KR)\xe2\x9c\x96 kubectl is required$(KX) \xe2\x80\x94 install with:'; \
+		printf '%b\n' '  $(KC)curl -fsSLO "https://dl.k8s.io/release/$$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && sudo install -m 0755 kubectl /usr/local/bin/kubectl && rm kubectl$(KX)'; \
+		printf '%b\n' '  $(KD)(docs: https://kubernetes.io/docs/tasks/tools/)$(KX)'; \
+		exit 1; }
+	@# Guard: the docker-compose stack binds the same host ports (1323/1024/1324/...) that
+	@# this deployment is reached on. Catch the common "forgot to make down" case.
+	@if [ -z "$(ALLOW_COMPOSE)" ] && command -v docker >/dev/null 2>&1; then \
+		running=$$(docker compose ps -q 2>/dev/null | grep -c .); \
+		if [ "$$running" -gt 0 ]; then \
+			printf '%b\n' "$(KR)\xe2\x9c\x96 The docker-compose stack is running$(KX) ($$running container(s)) \xe2\x80\x94 it shares host ports with this deployment."; \
+			printf '%b\n' '  Stop it first: $(KC)make down$(KX)   $(KD)(or force with $(KX)$(KC)make k-up ALLOW_COMPOSE=1$(KX)$(KD))$(KX)'; \
+			exit 1; \
+		fi; \
+	fi
 	@if ! $(KUBECTL) cluster-info >/dev/null 2>&1; then \
 		if command -v kind >/dev/null; then \
+			$(MAKE) --no-print-directory k-preflight-host; \
 			echo "No reachable cluster. Creating kind cluster '$(KIND_CLUSTER_NAME)'..."; \
-			kind create cluster --name $(KIND_CLUSTER_NAME); \
+			if ! kind create cluster --name $(KIND_CLUSTER_NAME); then \
+				$(MAKE) --no-print-directory k-diagnose-host; \
+				exit 1; \
+			fi; \
 		else \
-			echo "No reachable Kubernetes cluster and 'kind' is not installed."; \
-			echo "Install kind (https://kind.sigs.k8s.io) or configure kubectl context."; \
+			printf '%b\n' '$(KR)\xe2\x9c\x96 No reachable Kubernetes cluster and $(KX)$(KB)kind$(KX)$(KR) is not installed.$(KX)'; \
+			printf '%b\n' '  Install kind (a local cluster runs entirely in Docker), then re-run $(KC)make k-up$(KX):'; \
+			printf '%b\n' '  $(KC)go install sigs.k8s.io/kind@$(KIND_VERSION)$(KX)   $(KD)(needs Go + Docker; binary lands in $$(go env GOPATH)/bin)$(KX)'; \
+			printf '%b\n' '  $(KD)Ensure $$(go env GOPATH)/bin is on PATH. Alternatives: https://kind.sigs.k8s.io$(KX)'; \
+			printf '%b\n' '  $(KD)Or point kubectl at an existing cluster: $(KX)$(KC)make k-up K8S_CONTEXT=<ctx>$(KX)'; \
 			exit 1; \
 		fi; \
 	fi
@@ -268,9 +294,20 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 		{ $(MAKE) --no-print-directory k-diagnose; exit 1; }
 	@echo ""
 	@printf '%b' "Waiting for pods to become Ready (timeout 10m)... "
-	@$(KUBECTL) wait pods -l app.kubernetes.io/part-of=cb-tumblebug \
-		--for=condition=Ready -n $(K8S_NAMESPACE) --timeout=600s >/dev/null || \
-		{ printf '%b\n' '$(KR)\xe2\x9c\x96$(KX)'; $(MAKE) --no-print-directory k-diagnose; exit 1; }
+	@# openbao-init restarts cb-tumblebug/mc-terrarium mid-rollout to pick up the token,
+	@# so pods captured by 'kubectl wait -l' get deleted under it (NotFound). Re-resolve
+	@# and retry until the whole set settles Ready, rather than trusting one snapshot.
+	@deadline=$$(( $$(date +%s) + 600 )); \
+	while :; do \
+		if $(KUBECTL) wait pods -l app.kubernetes.io/part-of=cb-tumblebug \
+			--for=condition=Ready -n $(K8S_NAMESPACE) --timeout=20s >/dev/null 2>&1; then \
+			break; \
+		fi; \
+		if [ $$(date +%s) -ge $$deadline ]; then \
+			printf '%b\n' '$(KR)\xe2\x9c\x96$(KX)'; $(MAKE) --no-print-directory k-diagnose; exit 1; \
+		fi; \
+		sleep 5; \
+	done
 	@printf '%b\n' '$(KG)\xe2\x9c\x94 all Ready$(KX)'
 	@$(MAKE) --no-print-directory k-status
 	@rev=$$($(HELM) list -n $(K8S_NAMESPACE) --filter '^$(HELM_RELEASE)$$' 2>/dev/null | tail -1 | awk '{print $$3}'); \
@@ -294,6 +331,42 @@ k-diagnose:
 	@echo "--- openbao-init job logs (if any):"
 	@$(KUBECTL) logs -n $(K8S_NAMESPACE) job/openbao-init --tail=10 2>/dev/null || echo "  (no job logs)"
 	@echo "Check again later with: make k-status"
+
+# Internal: warn about host limits that commonly break a local kind cluster (WSL2, low inotify, cgroup v1)
+k-preflight-host:
+	@inst=$$(cat /proc/sys/fs/inotify/max_user_instances 2>/dev/null || echo 0); \
+	if [ "$$inst" -gt 0 ] && [ "$$inst" -lt 512 ]; then \
+		printf '%b\n' "$(KY)\xe2\x9a\xa0 fs.inotify.max_user_instances=$$inst (low)$(KX) \xe2\x80\x94 kind control-plane may fail to start."; \
+		printf '%b\n' '  $(KC)sudo sysctl -w fs.inotify.max_user_instances=512$(KX)   $(KD)(persist: add to /etc/sysctl.d/99-kind.conf, then sudo sysctl --system)$(KX)'; \
+	fi
+	@watch=$$(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 0); \
+	if [ "$$watch" -gt 0 ] && [ "$$watch" -lt 524288 ]; then \
+		printf '%b\n' "$(KY)\xe2\x9a\xa0 fs.inotify.max_user_watches=$$watch (low)$(KX) \xe2\x80\x94 raise to 524288:"; \
+		printf '%b\n' '  $(KC)sudo sysctl -w fs.inotify.max_user_watches=524288$(KX)   $(KD)(persist: add to /etc/sysctl.d/99-kind.conf)$(KX)'; \
+	fi
+	@if [ ! -f /sys/fs/cgroup/cgroup.controllers ]; then \
+		printf '%b\n' "$(KY)\xe2\x9a\xa0 Host is on cgroup v1$(KX) \xe2\x80\x94 deprecated by kind/Kubernetes; recent node images may fail to boot."; \
+		if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then \
+			printf '%b\n' '  WSL2 fix: add to $(KB)%UserProfile%\\.wslconfig$(KX) (Windows side), then run $(KC)wsl --shutdown$(KX) and reopen:'; \
+			printf '%b\n' '    $(KD)[wsl2]$(KX)'; \
+			printf '%b\n' '    $(KD)kernelCommandLine = cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1$(KX)'; \
+		else \
+			printf '%b\n' '  $(KD)Enable cgroup v2 (unified hierarchy) on the host \xe2\x80\x94 see distro docs.$(KX)'; \
+		fi; \
+	fi
+
+# Internal: explain a failed local kind cluster creation (used by k-up)
+k-diagnose-host:
+	@echo ""
+	@printf '%b\n' '$(KB)$(KR)\xe2\x96\x8c kind cluster creation failed$(KX)'
+	@if ! (command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1); then \
+		printf '%b\n' '  $(KY)Docker is not running/reachable$(KX) \xe2\x80\x94 start Docker and retry.'; \
+	fi
+	@printf '%b\n' 'Common causes on a fresh host (especially WSL2):'
+	@$(MAKE) --no-print-directory k-preflight-host
+	@printf '%b\n' '' 'After applying a fix, remove the half-created cluster and retry:'
+	@printf '%b\n' '  $(KC)kind delete cluster --name $(KIND_CLUSTER_NAME) && make k-up$(KX)'
+	@printf '%b\n' '  $(KD)Full logs: kind export logs \xe2\x80\x94 known issues: https://kind.sigs.k8s.io/docs/user/known-issues/$(KX)'
 
 k-init: ## Run initialization against the Kubernetes deployment (port-forward + headless-capable init)
 	@printf '%b\n' '$(KD)Port-forwarding cb-tumblebug ($(K8S_INIT_PORT) -> 1323)...$(KX)'
@@ -898,4 +971,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-diagnose
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-diagnose k-preflight-host k-diagnose-host
