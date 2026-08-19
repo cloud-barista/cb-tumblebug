@@ -1881,9 +1881,6 @@ def _normalize_node_groups(node_groups: List[Dict]) -> List[Dict]:
     request outright when they arrive as strings ("cannot unmarshal string into Go struct
     field ... of type int"). Callers - LLMs especially - naturally quote them, so convert
     here rather than surfacing a 400 they cannot act on.
-
-    Also accepts the pre-0.12.30 key spelling subGroupSize, which some older examples
-    still use, and maps it to nodeGroupSize.
     """
     INT_FIELDS = ("rootDiskSize", "nodeGroupSize")
     normalized = []

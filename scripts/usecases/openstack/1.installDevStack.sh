@@ -727,14 +727,12 @@ CLOUD_EOF
         echo " Updated $CHANGED service catalog endpoint(s): $INTERNAL_IP -> $PUBLIC_IP"
     fi
 
-    # A public catalog is only useful if the port is actually open. Since CB-Tumblebug
-    # 0.12.30 the default security group opens TCP 22 only, so the rewrite above
-    # silently produces a cloud that no external client can reach. Say so plainly.
+    # A public catalog is only useful if the port is actually open.
     if [ "$API_REACHABLE" = "no" ]; then
         echo ""
         echo " WARNING: http://${PUBLIC_IP}/identity/v3 is NOT reachable from outside."
         echo "          The OpenStack API is served on TCP 80, but this Node's security"
-        echo "          group allows only SSH (the default since CB-Tumblebug 0.12.30)."
+        echo "          group allows only SSH."
         echo "          CB-Spider cannot use this cloud until that port is opened:"
         echo ""
         echo "            POST /tumblebug/ns/{nsId}/resources/securityGroup/{sgId}/rules"
