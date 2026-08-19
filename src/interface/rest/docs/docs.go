@@ -28805,6 +28805,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
+                "deletionRequestedAt": {
+                    "description": "DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the\nrecord is kept until CSP-side removal is confirmed",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -28852,6 +28856,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
+                "systemMessage": {
+                    "type": "string"
+                },
                 "targetGroup": {
                     "$ref": "#/definitions/model.NLBTargetGroupInfo"
                 },
@@ -28893,6 +28900,10 @@ const docTemplate = `{
                     "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
+                },
+                "deletionRequestedAt": {
+                    "description": "DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the\nrecord is kept until CSP-side removal is confirmed",
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
@@ -28945,6 +28956,9 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "type": "string"
                 },
                 "targetGroup": {
                     "$ref": "#/definitions/model.NLBTargetGroupInfo"
@@ -31171,6 +31185,10 @@ const docTemplate = `{
                 "deletionProtection": {
                     "type": "boolean",
                     "example": false
+                },
+                "deletionRequestedAt": {
+                    "description": "DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the\nrecord is kept until CSP-side removal is confirmed",
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
