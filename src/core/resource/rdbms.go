@@ -1181,16 +1181,27 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 		}
 
 		if delErr == nil {
-			// RDBMS deletion can take minutes; a bounded poll only confirms the fast
-			// path, so an inconclusive result after all attempts still trusts the
-			// DELETE response and proceeds with metadata cleanup (as with ObjectStorage).
+			// The GET poll is an eventual-consistency wait only; the CSP enumeration is the
+			// purge gate. RDBMS deletion can take minutes, so a still-present instance keeps
+			// the record as Deleting for a later retry rather than purging it (issue #2685).
 			getUrl := fmt.Sprintf("%s/rdbms/%s?ConnectionName=%s", model.SpiderRestUrl, rdbmsInfo.Uid, rdbmsInfo.ConnectionName)
-			deleted, verifyErr := PollResourceDeletedViaSpider(getUrl, nil, DefaultPollMaxAttempts, DefaultPollInterval)
-			if !deleted {
-				if verifyErr != nil {
-					log.Warn().Err(verifyErr).Msgf("RDBMS %s verification GET failed; trusting DELETE response and removing metadata", rdbmsInfo.Uid)
-				} else {
-					log.Warn().Msgf("RDBMS %s still visible via GET after %d attempts; trusting DELETE response and removing metadata", rdbmsInfo.Uid, DefaultPollMaxAttempts)
+			PollResourceDeletedViaSpider(getUrl, nil, DefaultPollMaxAttempts, DefaultPollInterval)
+			if !force {
+				present, gateErr := ResourcePresentOnCsp(rdbmsInfo.ConnectionName, model.StrRDBMS, rdbmsInfo.CspResourceId, rdbmsInfo.CspResourceName)
+				if gateErr != nil || present {
+					cause := fmt.Errorf("RDBMS %s still exists on the CSP after DELETE; record retained — retry, or delete with force", rdbmsInfo.Uid)
+					reason := model.ReasonDeleting
+					if gateErr != nil {
+						cause = fmt.Errorf("RDBMS %s deletion unconfirmed: CSP existence check failed: %w", rdbmsInfo.Uid, gateErr)
+						reason = model.ReasonDeletionFailed
+					}
+					model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, reason, cause.Error())
+					rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
+					rdbmsInfo.SystemMessage = cause.Error()
+					if failVal, marshalErr := json.Marshal(rdbmsInfo); marshalErr == nil {
+						_ = kvstore.Put(rdbmsKey, string(failVal))
+					}
+					return cause
 				}
 			}
 		}

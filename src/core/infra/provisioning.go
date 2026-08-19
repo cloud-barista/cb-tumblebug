@@ -4666,6 +4666,15 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 				UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 				return err
 			}
+			// A customImage with pending/unconfirmed deletion must not be used
+			if imageInfo.DeletionRequestedAt != "" {
+				err := fmt.Errorf("image '%s' has a pending/unconfirmed deletion (status=%s); retry DELETE to complete it or use another image",
+					nodeInfoData.ImageId, imageInfo.ImageStatus)
+				nodeInfoData.Status = model.StatusFailed
+				nodeInfoData.SystemMessage = err.Error()
+				UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+				return err
+			}
 			// Resolve provider-specific "latest image" (Alibaba, Azure) right before
 			// handing the CSP image name to cb-spider.
 			imageInfo = resource.ResolveLatestImageForVMCreation(ctx, nodeInfoData.ConnectionName, imageInfo)

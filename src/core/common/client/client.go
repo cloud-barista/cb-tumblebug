@@ -37,6 +37,17 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// InvalidateGetCache removes the cached GET response for url (+ optional request body)
+// so callers that just mutated remote state are not served a pre-mutation response
+func InvalidateGetCache(url string, body any) {
+	if body != nil {
+		if b, err := json.Marshal(body); err == nil {
+			clientCache.Delete(fmt.Sprintf("GET_%s_%s", url, string(b)))
+		}
+	}
+	clientCache.Delete(fmt.Sprintf("GET_%s", url))
+}
+
 // CacheItem is a struct to store cached item
 type CacheItem[T any] struct {
 	Response  T
@@ -1037,6 +1048,34 @@ func EndRequestWithLog(c echo.Context, err error, responseData any) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 	return c.JSON(http.StatusOK, responseData)
+}
+
+// EndRequestWithLogAndStatus is EndRequestWithLog with an explicit HTTP status code
+// (e.g. 202 for accepted-but-unfinished, 409 for conflict-with-retained-state)
+func EndRequestWithLogAndStatus(c echo.Context, err error, responseData any, statusCode int) error {
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+
+	body := responseData
+	if err != nil {
+		body = map[string]string{"message": err.Error()}
+	}
+
+	if reqID != "" {
+		if v, ok := RequestMap.Load(reqID); ok {
+			details := v.(RequestDetails)
+			details.EndTime = time.Now()
+			c.Response().Header().Set(echo.HeaderXRequestID, reqID)
+			if err != nil {
+				details.Status = "Error"
+				details.ErrorResponse = err.Error()
+			} else {
+				details.Status = "Success"
+				details.ResponseData = responseData
+			}
+			RequestMap.Store(reqID, details)
+		}
+	}
+	return c.JSON(statusCode, body)
 }
 
 // UpdateRequestProgress updates the handling status of the request.

@@ -15,6 +15,8 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
+	"net/http"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -51,6 +53,9 @@ func RestPostSecurityGroup(c echo.Context) error {
 	}
 
 	content, err := resource.CreateSecurityGroup(ctx, nsId, u, optionFlag)
+	if errors.Is(err, resource.ErrTombstoneNameConflict) {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
+	}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

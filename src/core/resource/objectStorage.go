@@ -958,21 +958,20 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 			return nil
 		}
 
-		// DELETE 204 succeeded. Verify via GET.
-		// Some CSPs (e.g. AWS S3) have eventual consistency, so GET may still
-		// return the resource briefly. Retry up to 5 times;
-		// if still visible, trust the 204 and proceed (intentional policy: S3 metadata lag is transient).
+		// DELETE 204 succeeded. The GET poll is an eventual-consistency wait only; the CSP
+		// enumeration is the purge gate — a still-present bucket keeps the record (issue #2685).
 		if delErr == nil && !empty {
 			getURL := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
-			log.Debug().Msgf("[Response from Spider] Object storage %s DELETE 204; verifying via GET", uid)
-
-			osDeleted, verifyErr := PollResourceDeletedViaSpider(getURL, spiderS3JSONHeaders, DefaultPollMaxAttempts, DefaultPollInterval)
-			if !osDeleted {
-				if verifyErr != nil {
-					log.Warn().Err(verifyErr).Msgf("Object storage %s verification GET failed; trusting DELETE 204 and removing metadata", uid)
-				} else {
-					// Still visible after all retries — trust DELETE 204 and proceed
-					log.Warn().Msgf("Object storage %s still visible via GET after 5 attempts; trusting DELETE 204 and removing metadata", uid)
+			PollResourceDeletedViaSpider(getURL, spiderS3JSONHeaders, DefaultPollMaxAttempts, DefaultPollInterval)
+			if !force {
+				present, gateErr := ResourcePresentOnCsp(connName, model.StrObjectStorage, objStrgInfo.CspResourceId, objStrgInfo.CspResourceName)
+				if gateErr != nil || present {
+					cause := fmt.Errorf("object storage %s still exists on the CSP after DELETE; record retained — retry, or delete with force", uid)
+					if gateErr != nil {
+						cause = fmt.Errorf("object storage %s deletion unconfirmed: CSP existence check failed: %w", uid, gateErr)
+					}
+					markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey, &objStrgInfo, cause)
+					return cause
 				}
 			}
 		}

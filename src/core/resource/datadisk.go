@@ -79,6 +79,9 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
+		if err := errIfNameHeldByTombstone(nsId, resourceType, u.Name); err != nil {
+			return model.DataDiskInfo{}, err
+		}
 		err := fmt.Errorf("The dataDisk %s already exists.", u.Name)
 		return model.DataDiskInfo{}, err
 	}

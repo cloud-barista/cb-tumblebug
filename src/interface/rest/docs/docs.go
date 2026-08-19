@@ -25042,6 +25042,13 @@ const docTemplate = `{
                         "/ns/default/infra/infra01/node/aws-ap-southeast-1-1"
                     ]
                 },
+                "conditions": {
+                    "description": "Conditions hold structured state observations (Ready/Synced), K8s-style",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
                 },
@@ -25062,6 +25069,10 @@ const docTemplate = `{
                     "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
+                },
+                "deletionRequestedAt": {
+                    "description": "DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the\nrecord is kept until CSP-side removal is confirmed",
+                    "type": "string"
                 },
                 "description": {
                     "type": "string",
@@ -25221,14 +25232,19 @@ const docTemplate = `{
                 "Available",
                 "Attached",
                 "Deleting",
-                "Error"
+                "Error",
+                "Failed"
             ],
+            "x-enum-comments": {
+                "DiskError": "CSP-reported error state"
+            },
             "x-enum-varnames": [
                 "DiskCreating",
                 "DiskAvailable",
                 "DiskAttached",
                 "DiskDeleting",
-                "DiskError"
+                "DiskError",
+                "DiskFailed"
             ]
         },
         "model.ExecCredential": {
@@ -26071,6 +26087,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
                 },
+                "deletionRequestedAt": {
+                    "description": "DeletionRequestedAt (RFC3339) marks a deletion tombstone (customImage only):\nnon-empty means the row is kept until CSP-side removal is confirmed",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -26189,6 +26209,9 @@ const docTemplate = `{
                 "systemLabel": {
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "type": "string"
                 },
                 "uid": {
                     "type": "string",
@@ -32817,6 +32840,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "conditions": {
+                    "description": "Conditions hold structured state observations (Ready/Synced), K8s-style",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
                 },
@@ -32832,6 +32862,10 @@ const docTemplate = `{
                     "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
+                },
+                "deletionRequestedAt": {
+                    "description": "DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the\nrecord is kept until CSP-side removal is confirmed",
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
@@ -32865,10 +32899,18 @@ const docTemplate = `{
                     "description": "ResourceType is the type of the resource",
                     "type": "string"
                 },
+                "status": {
+                    "description": "Status is the lifecycle status; empty is treated as Available for backward compatibility",
+                    "type": "string",
+                    "example": "Available"
+                },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "type": "string"
                 },
                 "uid": {
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
@@ -34449,6 +34491,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "conditions": {
+                    "description": "Conditions hold structured state observations (Ready/Synced), K8s-style",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Condition"
+                    }
+                },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
                 },
@@ -34464,6 +34513,10 @@ const docTemplate = `{
                     "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
+                },
+                "deletionRequestedAt": {
+                    "description": "DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the\nrecord is kept until CSP-side removal is confirmed",
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
@@ -34500,10 +34553,18 @@ const docTemplate = `{
                     "description": "ResourceType is the type of the resource",
                     "type": "string"
                 },
+                "status": {
+                    "description": "Status is the lifecycle status; empty is treated as Available for backward compatibility",
+                    "type": "string",
+                    "example": "Available"
+                },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "type": "string"
                 },
                 "uid": {
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",

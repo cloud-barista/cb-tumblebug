@@ -2151,6 +2151,9 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 		sqlQuery = sqlQuery.Where("image_status != ?", model.ImageDeprecated)
 	}
 
+	// Deletion tombstones are not selectable
+	sqlQuery = sqlQuery.Where("deletion_requested_at IS NULL OR deletion_requested_at = ''")
+
 	if len(req.DetailSearchKeys) > 0 {
 		// Build a single query to check if all keywords are included in either os_type or details
 		for _, keyword := range req.DetailSearchKeys {

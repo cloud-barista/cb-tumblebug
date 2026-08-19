@@ -15,7 +15,9 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -54,6 +56,9 @@ func RestPostDataDisk(c echo.Context) error {
 	}
 
 	content, err := resource.CreateDataDisk(ctx, nsId, u, optionFlag)
+	if errors.Is(err, resource.ErrTombstoneNameConflict) {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
+	}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

@@ -58,6 +58,13 @@ func RegisterCustomImageWithInfo(nsId string, content model.ImageInfo) (model.Im
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
+		var existing model.ImageInfo
+		if r := model.ORM.Where("namespace = ? AND id = ? AND resource_type = ?",
+			nsId, content.Name, model.StrCustomImage).First(&existing); r.Error == nil && existing.DeletionRequestedAt != "" {
+			return model.ImageInfo{}, fmt.Errorf(
+				"previous deletion of customImage '%s' is unconfirmed (status=%s); retry DELETE to complete it, or DELETE with force to discard the record (%w)",
+				content.Name, existing.ImageStatus, ErrTombstoneNameConflict)
+		}
 		err := fmt.Errorf("The customImage %s already exists.", content.Name)
 		return model.ImageInfo{}, err
 	}

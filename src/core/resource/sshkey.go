@@ -123,6 +123,9 @@ func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option s
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
+		if err := errIfNameHeldByTombstone(nsId, resourceType, u.Name); err != nil {
+			return emptyObj, err
+		}
 		err := fmt.Errorf("The sshKey %s already exists.", u.Name)
 		return emptyObj, err
 	}

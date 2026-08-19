@@ -20995,6 +20995,12 @@ components:
           - /ns/default/infra/infra01/node/aws-ap-southeast-1-1
           items:
             type: string
+        conditions:
+          type: array
+          description: "Conditions hold structured state observations (Ready/Synced),\
+            \ K8s-style"
+          items:
+            $ref: '#/components/schemas/model.Condition'
         connectionConfig:
           $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
@@ -21012,6 +21018,11 @@ components:
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
+        deletionRequestedAt:
+          type: string
+          description: |-
+            DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the
+            record is kept until CSP-side removal is confirmed
         description:
           type: string
           example: Available
@@ -21139,12 +21150,16 @@ components:
       - Attached
       - Deleting
       - Error
+      - Failed
+      x-enum-comments:
+        DiskError: CSP-reported error state
       x-enum-varnames:
       - DiskCreating
       - DiskAvailable
       - DiskAttached
       - DiskDeleting
       - DiskError
+      - DiskFailed
     model.ExecCredential:
       type: object
       properties:
@@ -21758,6 +21773,11 @@ components:
         cspImageName:
           type: string
           example: csp-06eb41e14121c550a
+        deletionRequestedAt:
+          type: string
+          description: |-
+            DeletionRequestedAt (RFC3339) marks a deletion tombstone (customImage only):
+            non-empty means the row is kept until CSP-side removal is confirmed
         description:
           type: string
         details:
@@ -21847,6 +21867,8 @@ components:
         systemLabel:
           type: string
           example: Managed by CB-Tumblebug
+        systemMessage:
+          type: string
         uid:
           type: string
           example: wef12awefadf1221edcf
@@ -26845,6 +26867,12 @@ components:
           type: array
           items:
             type: string
+        conditions:
+          type: array
+          description: "Conditions hold structured state observations (Ready/Synced),\
+            \ K8s-style"
+          items:
+            $ref: '#/components/schemas/model.Condition'
         connectionConfig:
           $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
@@ -26858,6 +26886,11 @@ components:
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
+        deletionRequestedAt:
+          type: string
+          description: |-
+            DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the
+            record is kept until CSP-side removal is confirmed
         description:
           type: string
         firewallRules:
@@ -26881,11 +26914,18 @@ components:
         resourceType:
           type: string
           description: ResourceType is the type of the resource
+        status:
+          type: string
+          description: Status is the lifecycle status; empty is treated as Available
+            for backward compatibility
+          example: Available
         systemLabel:
           type: string
           description: SystemLabel is for describing the Resource in a keyword (any
             string can be used) for special System purpose
           example: Managed by CB-Tumblebug
+        systemMessage:
+          type: string
         uid:
           type: string
           description: "Uid is universally unique identifier for the object, used\
@@ -27999,6 +28039,12 @@ components:
           type: array
           items:
             type: string
+        conditions:
+          type: array
+          description: "Conditions hold structured state observations (Ready/Synced),\
+            \ K8s-style"
+          items:
+            $ref: '#/components/schemas/model.Condition'
         connectionConfig:
           $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
@@ -28012,6 +28058,11 @@ components:
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
+        deletionRequestedAt:
+          type: string
+          description: |-
+            DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the
+            record is kept until CSP-side removal is confirmed
         description:
           type: string
         fingerprint:
@@ -28037,11 +28088,18 @@ components:
         resourceType:
           type: string
           description: ResourceType is the type of the resource
+        status:
+          type: string
+          description: Status is the lifecycle status; empty is treated as Available
+            for backward compatibility
+          example: Available
         systemLabel:
           type: string
           description: SystemLabel is for describing the Resource in a keyword (any
             string can be used) for special System purpose
           example: Managed by CB-Tumblebug
+        systemMessage:
+          type: string
         uid:
           type: string
           description: "Uid is universally unique identifier for the object, used\
