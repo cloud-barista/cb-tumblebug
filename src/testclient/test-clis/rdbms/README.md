@@ -82,9 +82,9 @@ testCases:
         zone: ap-northeast-2c
     securityGroupName: test-rdbms-sg-aws
     dbEngine: mysql
-    autoFillDefaults: true # fills dbEngineVersion/dbInstanceSpec/storageType/storageSize
-    masterUserName: admin
-    masterUserPassword: Password123!
+    autoFillDefaults: true # fills dbEngineVersion/dbSpec/storageType/storageSize
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: true # set to true to include in the test run
@@ -95,7 +95,7 @@ CSP-specific requirements (e.g. AWS needs 2 subnets in distinct AZs; IBM
 rejects special characters in the password; NCP requires one).
 
 **`autoFillDefaults: true`** picks the first CB-Spider-reported supported option
-for `dbEngineVersion`/`dbInstanceSpec`/`storageType`/`storageSize` — a
+for `dbEngineVersion`/`dbSpec`/`storageType`/`storageSize` — a
 capability-valid pick, not a cost/performance recommendation. Set it to `false`
 and fill those four fields explicitly for full control.
 

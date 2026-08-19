@@ -12479,7 +12479,7 @@ paths:
       description: |-
         Create a managed RDBMS instance and wait for it to become Available
         (can take several minutes). Call GET /tumblebug/rdbms/capability first to
-        discover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,
+        discover valid dbEngineVersion/dbSpec/storageType/storageSize values,
         or set autoFillDefaults=true to auto-pick a capability-valid (not necessarily
         optimal) default for each.
       operationId: PostRDBMS
@@ -12649,10 +12649,10 @@ paths:
       summary: List logical databases inside an RDBMS instance
       description: |-
         Lists logical databases inside an RDBMS instance via CB-Spider.
-        X-Master-User-Password is optional here — CB-Spider's own database-test
+        X-Admin-User-Password is optional here — CB-Spider's own database-test
         results show list succeeding without one for at least some drivers; supply it
         if the connection's driver requires direct SQL access (see
-        docs/feature_guide/rdbms-management.md §1.3).
+        docs/feature_guide/rdbms-management.md's Features section).
       operationId: GetRDBMSDatabases
       parameters:
       - name: nsId
@@ -12669,9 +12669,9 @@ paths:
         schema:
           type: string
           default: rdbms-01
-      - name: X-Master-User-Password
+      - name: X-Admin-User-Password
         in: header
-        description: RDBMS master user password (optional for list; not persisted
+        description: RDBMS instance admin login password (optional for list; not persisted
           by Tumblebug)
         schema:
           type: string
@@ -12711,8 +12711,9 @@ paths:
       summary: Create a logical database inside an RDBMS instance
       description: |-
         Creates a logical database inside an Available RDBMS instance via CB-Spider.
-        masterUserPassword is required in the request body and is never persisted by
-        Tumblebug (see docs/feature_guide/rdbms-management.md §1.6) — forwarded to
+        adminUserPassword (the instance's admin login password) is required in the
+        request body and is never persisted by Tumblebug (see
+        docs/feature_guide/rdbms-management.md's Features section) — forwarded to
         CB-Spider for this call only.
       operationId: PostRDBMSDatabase
       parameters:
@@ -12775,9 +12776,9 @@ paths:
       summary: Delete a logical database inside an RDBMS instance
       description: |-
         Deletes a logical database inside an RDBMS instance via CB-Spider.
-        X-Master-User-Password is required — Tumblebug does not persist RDBMS master
-        passwords (see docs/feature_guide/rdbms-management.md §1.6), so the caller must
-        resupply it on every call.
+        X-Admin-User-Password is required — Tumblebug does not persist the RDBMS
+        instance's admin login password (see docs/feature_guide/rdbms-management.md's
+        Features section), so the caller must resupply it on every call.
       operationId: DeleteRDBMSDatabase
       parameters:
       - name: nsId
@@ -12801,9 +12802,10 @@ paths:
         schema:
           type: string
           default: sampledb
-      - name: X-Master-User-Password
+      - name: X-Admin-User-Password
         in: header
-        description: RDBMS master user password (required; not persisted by Tumblebug)
+        description: RDBMS instance admin login password (required; not persisted
+          by Tumblebug)
         required: true
         schema:
           type: string
@@ -17434,7 +17436,10 @@ paths:
         Live capability query for one connection+dbEngine (calls CB-Spider), so all
         three params are required. Call GET /tumblebug/rdbms/support first to see
         which CSPs/engines are worth trying. Fields listed in notes.staticFields are
-        fixed/approximate rather than live.
+        fixed/approximate rather than live. dbSpecs is a richer per-option catalog
+        (vCPU/memory/storage range) than dbSpecOptions; liveSupportedEngines is this
+        connection's live-verified engine list, independent of the dbEngine queried.
+        Both are best-effort and may be empty if their underlying live call failed.
       operationId: GetRDBMSCapability
       parameters:
       - name: providerName
@@ -25373,6 +25378,15 @@ components:
     model.RDBMSCSPSupportInfo:
       type: object
       properties:
+        dbOperationMethod:
+          type: string
+          description: "DBOperationMethod is the fixed method CB-Spider uses for this\
+            \ CSP's internal Database CRUD API: \"cspNativeApi\" or \"sqlFallback\"\
+            ."
+          example: sqlFallback
+          enum:
+          - cspNativeApi
+          - sqlFallback
         note:
           type: string
         storageTypeSelectable:
@@ -25380,33 +25394,18 @@ components:
           example: true
         supported:
           type: boolean
-          description: |-
-            Supported is whether RDBMS is available on this CSP at all (per cspSupportingRDBMS in
-            resource/rdbms.go). false here means every other field below is a zero value, not that
-            they weren't populated.
+          description: Supported is whether RDBMS is available on this CSP at all;
+            false means every field below is a zero value.
           example: true
         supportedDBEngines:
           type: array
-          description: |-
-            SupportedDBEngines lists DB engines empirically verified for this CSP. Omission does
-            not mean unsupported — it means unverified.
+          description: "SupportedDBEngines lists DB engines empirically verified for\
+            \ this CSP; omission means unverified, not unsupported."
           example:
           - mysql
           - mariadb
           items:
             type: string
-        supportedDBOperationMethod:
-          type: string
-          description: |-
-            SupportedDBOperationMethod is how CB-Spider implements the internal Database CRUD API
-            for this CSP, per the CB-Spider wiki's RDBMS Management Guide §4.3: a CSP-native
-            database API ("cspApi"), or connecting directly to the instance endpoint with
-            MasterUserPassword (dbConn/mysql-cli-equivalent) and running CREATE/DROP DATABASE
-            ("conventionalSqlExec").
-          example: conventionalSqlExec
-          enum:
-          - cspApi
-          - conventionalSqlExec
         supportsTag:
           type: boolean
           example: true
@@ -25420,20 +25419,24 @@ components:
           $ref: '#/components/schemas/model.RDBMSMetaInfo'
     model.RDBMSCreateRequest:
       required:
+      - adminUserName
+      - adminUserPassword
       - connectionName
       - dbEngine
-      - masterUserName
-      - masterUserPassword
       - name
       - vNetId
       type: object
       properties:
+        adminUserName:
+          type: string
+          example: admin
+        adminUserPassword:
+          type: string
+          example: Password123!
         autoFillDefaults:
           type: boolean
-          description: |-
-            AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from
-            GET /tumblebug/rdbms/capability when left empty/zero. Selection is "first supported
-            option that passes live capability checks" — not a cost/performance recommendation.
+          description: AutoFillDefaults fills DBEngineVersion/DBSpec/StorageType/StorageSize
+            from GET /tumblebug/rdbms/capability when left empty/zero.
           example: false
         backupRetentionDays:
           type: integer
@@ -25452,9 +25455,9 @@ components:
           description: DBEngineVersion may be left empty when AutoFillDefaults is
             true.
           example: "8.0"
-        dbInstanceSpec:
+        dbSpec:
           type: string
-          description: DBInstanceSpec may be left empty when AutoFillDefaults is true.
+          description: DBSpec may be left empty when AutoFillDefaults is true.
           example: db.t3.medium
         deletionProtection:
           type: boolean
@@ -25468,12 +25471,6 @@ components:
         iops:
           type: string
           example: "3000"
-        masterUserName:
-          type: string
-          example: admin
-        masterUserPassword:
-          type: string
-          example: Password123!
         name:
           type: string
           example: rdbms-01
@@ -25506,18 +25503,35 @@ components:
         vNetId:
           type: string
           example: vnet-01
-    model.RDBMSDatabaseCreateReq:
-      required:
-      - databaseName
-      - masterUserPassword
+    model.RDBMSDBSpecInfo:
       type: object
       properties:
+        memSizeMiB:
+          type: string
+          example: "4096"
+        name:
+          type: string
+          example: db.t3.medium
+        storageSizeRangeGB:
+          $ref: '#/components/schemas/model.StorageSizeRange'
+        vCpuClockGHz:
+          type: string
+          example: "2.5"
+        vCpuCount:
+          type: string
+          example: "2"
+    model.RDBMSDatabaseCreateReq:
+      required:
+      - adminUserPassword
+      - databaseName
+      type: object
+      properties:
+        adminUserPassword:
+          type: string
+          example: Password123!
         databaseName:
           type: string
           example: sampledb
-        masterUserPassword:
-          type: string
-          example: Password123!
     model.RDBMSDatabaseInfo:
       type: object
       properties:
@@ -25536,6 +25550,9 @@ components:
     model.RDBMSInfo:
       type: object
       properties:
+        adminUserName:
+          type: string
+          example: admin
         backupRetentionDays:
           type: integer
           example: 7
@@ -25563,19 +25580,17 @@ components:
         dbEngineVersion:
           type: string
           example: "8.0"
-        dbInstanceSpec:
-          type: string
-          example: db.t3.medium
         dbInstanceType:
           type: string
-          description: |-
-            DBInstanceType is "Primary" or "ReadReplica" (CB-Spider v0.12.44+). Informational
-            only for now — CB-Spider has no API yet to create a read replica; this only reflects
-            what a registered/discovered instance already is.
+          description: DBInstanceType is "Primary" or "ReadReplica"; informational
+            only — CB-Spider has no API yet to create a read replica.
           example: Primary
           enum:
           - Primary
           - ReadReplica
+        dbSpec:
+          type: string
+          example: db.t3.medium
         deletionProtection:
           type: boolean
           example: false
@@ -25596,9 +25611,6 @@ components:
         iops:
           type: string
           example: "3000"
-        masterUserName:
-          type: string
-          example: admin
         name:
           type: string
           description: Name is human-readable string to represent the object
@@ -25658,18 +25670,29 @@ components:
         dbEngine:
           type: string
           example: mysql
-        dbInstanceSpecOptions:
+        dbSpecOptions:
           type: array
           example:
           - db.t3.medium
           items:
             type: string
+        dbSpecs:
+          type: array
+          description: "DBSpecs is the richer per-option spec catalog from live GET\
+            \ /dbspec (superset of DBSpecOptions); best-effort, empty if the live\
+            \ call failed."
+          items:
+            $ref: '#/components/schemas/model.RDBMSDBSpecInfo'
+        liveSupportedEngines:
+          type: array
+          description: "LiveSupportedEngines is this connection's live-verified engine\
+            \ list from GET /rdbmsengine, independent of the DBEngine queried; best-effort."
+          items:
+            type: string
         notes:
           type: object
-          description: |-
-            Notes carries Tumblebug's own advisory annotations about this response (storage
-            type guidance, which fields above are static/approximate), as opposed to the live
-            capability fields above, which come straight from CB-Spider.
+          description: "Notes carries Tumblebug's own advisory annotations (storage\
+            \ type guidance, static/approximate fields), unlike the live fields above."
           allOf:
           - $ref: '#/components/schemas/model.RDBMSNotes'
         providerName:

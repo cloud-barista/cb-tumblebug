@@ -14787,7 +14787,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a managed RDBMS instance and wait for it to become Available\n(can take several minutes). Call GET /tumblebug/rdbms/capability first to\ndiscover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,\nor set autoFillDefaults=true to auto-pick a capability-valid (not necessarily\noptimal) default for each.",
+                "description": "Create a managed RDBMS instance and wait for it to become Available\n(can take several minutes). Call GET /tumblebug/rdbms/capability first to\ndiscover valid dbEngineVersion/dbSpec/storageType/storageSize values,\nor set autoFillDefaults=true to auto-pick a capability-valid (not necessarily\noptimal) default for each.",
                 "consumes": [
                     "application/json"
                 ],
@@ -15173,7 +15173,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/rdbms/{rdbmsId}/database": {
             "get": {
-                "description": "Lists logical databases inside an RDBMS instance via CB-Spider.\nX-Master-User-Password is optional here — CB-Spider's own database-test\nresults show list succeeding without one for at least some drivers; supply it\nif the connection's driver requires direct SQL access (see\ndocs/feature_guide/rdbms-management.md §1.3).",
+                "description": "Lists logical databases inside an RDBMS instance via CB-Spider.\nX-Admin-User-Password is optional here — CB-Spider's own database-test\nresults show list succeeding without one for at least some drivers; supply it\nif the connection's driver requires direct SQL access (see\ndocs/feature_guide/rdbms-management.md's Features section).",
                 "consumes": [
                     "application/json"
                 ],
@@ -15204,8 +15204,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "RDBMS master user password (optional for list; not persisted by Tumblebug)",
-                        "name": "X-Master-User-Password",
+                        "description": "RDBMS instance admin login password (optional for list; not persisted by Tumblebug)",
+                        "name": "X-Admin-User-Password",
                         "in": "header"
                     },
                     {
@@ -15243,7 +15243,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a logical database inside an Available RDBMS instance via CB-Spider.\nmasterUserPassword is required in the request body and is never persisted by\nTumblebug (see docs/feature_guide/rdbms-management.md §1.6) — forwarded to\nCB-Spider for this call only.",
+                "description": "Creates a logical database inside an Available RDBMS instance via CB-Spider.\nadminUserPassword (the instance's admin login password) is required in the\nrequest body and is never persisted by Tumblebug (see\ndocs/feature_guide/rdbms-management.md's Features section) — forwarded to\nCB-Spider for this call only.",
                 "consumes": [
                     "application/json"
                 ],
@@ -15318,7 +15318,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}": {
             "delete": {
-                "description": "Deletes a logical database inside an RDBMS instance via CB-Spider.\nX-Master-User-Password is required — Tumblebug does not persist RDBMS master\npasswords (see docs/feature_guide/rdbms-management.md §1.6), so the caller must\nresupply it on every call.",
+                "description": "Deletes a logical database inside an RDBMS instance via CB-Spider.\nX-Admin-User-Password is required — Tumblebug does not persist the RDBMS\ninstance's admin login password (see docs/feature_guide/rdbms-management.md's\nFeatures section), so the caller must resupply it on every call.",
                 "consumes": [
                     "application/json"
                 ],
@@ -15357,8 +15357,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "RDBMS master user password (required; not persisted by Tumblebug)",
-                        "name": "X-Master-User-Password",
+                        "description": "RDBMS instance admin login password (required; not persisted by Tumblebug)",
+                        "name": "X-Admin-User-Password",
                         "in": "header",
                         "required": true
                     },
@@ -20725,7 +20725,7 @@ const docTemplate = `{
         },
         "/rdbms/capability": {
             "get": {
-                "description": "Live capability query for one connection+dbEngine (calls CB-Spider), so all\nthree params are required. Call GET /tumblebug/rdbms/support first to see\nwhich CSPs/engines are worth trying. Fields listed in notes.staticFields are\nfixed/approximate rather than live.",
+                "description": "Live capability query for one connection+dbEngine (calls CB-Spider), so all\nthree params are required. Call GET /tumblebug/rdbms/support first to see\nwhich CSPs/engines are worth trying. Fields listed in notes.staticFields are\nfixed/approximate rather than live. dbSpecs is a richer per-option catalog\n(vCPU/memory/storage range) than dbSpecOptions; liveSupportedEngines is this\nconnection's live-verified engine list, independent of the dbEngine queried.\nBoth are best-effort and may be empty if their underlying live call failed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -30885,6 +30885,15 @@ const docTemplate = `{
         "model.RDBMSCSPSupportInfo": {
             "type": "object",
             "properties": {
+                "dbOperationMethod": {
+                    "description": "DBOperationMethod is the fixed method CB-Spider uses for this CSP's internal Database CRUD API: \"cspNativeApi\" or \"sqlFallback\".",
+                    "type": "string",
+                    "enum": [
+                        "cspNativeApi",
+                        "sqlFallback"
+                    ],
+                    "example": "sqlFallback"
+                },
                 "note": {
                     "type": "string"
                 },
@@ -30893,12 +30902,12 @@ const docTemplate = `{
                     "example": true
                 },
                 "supported": {
-                    "description": "Supported is whether RDBMS is available on this CSP at all (per cspSupportingRDBMS in\nresource/rdbms.go). false here means every other field below is a zero value, not that\nthey weren't populated.",
+                    "description": "Supported is whether RDBMS is available on this CSP at all; false means every field below is a zero value.",
                     "type": "boolean",
                     "example": true
                 },
                 "supportedDBEngines": {
-                    "description": "SupportedDBEngines lists DB engines empirically verified for this CSP. Omission does\nnot mean unsupported — it means unverified.",
+                    "description": "SupportedDBEngines lists DB engines empirically verified for this CSP; omission means unverified, not unsupported.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -30907,15 +30916,6 @@ const docTemplate = `{
                         "mysql",
                         "mariadb"
                     ]
-                },
-                "supportedDBOperationMethod": {
-                    "description": "SupportedDBOperationMethod is how CB-Spider implements the internal Database CRUD API\nfor this CSP, per the CB-Spider wiki's RDBMS Management Guide §4.3: a CSP-native\ndatabase API (\"cspApi\"), or connecting directly to the instance endpoint with\nMasterUserPassword (dbConn/mysql-cli-equivalent) and running CREATE/DROP DATABASE\n(\"conventionalSqlExec\").",
-                    "type": "string",
-                    "enum": [
-                        "cspApi",
-                        "conventionalSqlExec"
-                    ],
-                    "example": "conventionalSqlExec"
                 },
                 "supportsTag": {
                     "type": "boolean",
@@ -30938,16 +30938,24 @@ const docTemplate = `{
         "model.RDBMSCreateRequest": {
             "type": "object",
             "required": [
+                "adminUserName",
+                "adminUserPassword",
                 "connectionName",
                 "dbEngine",
-                "masterUserName",
-                "masterUserPassword",
                 "name",
                 "vNetId"
             ],
             "properties": {
+                "adminUserName": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "adminUserPassword": {
+                    "type": "string",
+                    "example": "Password123!"
+                },
                 "autoFillDefaults": {
-                    "description": "AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from\nGET /tumblebug/rdbms/capability when left empty/zero. Selection is \"first supported\noption that passes live capability checks\" — not a cost/performance recommendation.",
+                    "description": "AutoFillDefaults fills DBEngineVersion/DBSpec/StorageType/StorageSize from GET /tumblebug/rdbms/capability when left empty/zero.",
                     "type": "boolean",
                     "example": false
                 },
@@ -30972,8 +30980,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "8.0"
                 },
-                "dbInstanceSpec": {
-                    "description": "DBInstanceSpec may be left empty when AutoFillDefaults is true.",
+                "dbSpec": {
+                    "description": "DBSpec may be left empty when AutoFillDefaults is true.",
                     "type": "string",
                     "example": "db.t3.medium"
                 },
@@ -30992,14 +31000,6 @@ const docTemplate = `{
                 "iops": {
                     "type": "string",
                     "example": "3000"
-                },
-                "masterUserName": {
-                    "type": "string",
-                    "example": "admin"
-                },
-                "masterUserPassword": {
-                    "type": "string",
-                    "example": "Password123!"
                 },
                 "name": {
                     "type": "string",
@@ -31048,20 +31048,44 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RDBMSDBSpecInfo": {
+            "type": "object",
+            "properties": {
+                "memSizeMiB": {
+                    "type": "string",
+                    "example": "4096"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "db.t3.medium"
+                },
+                "storageSizeRangeGB": {
+                    "$ref": "#/definitions/model.StorageSizeRange"
+                },
+                "vCpuClockGHz": {
+                    "type": "string",
+                    "example": "2.5"
+                },
+                "vCpuCount": {
+                    "type": "string",
+                    "example": "2"
+                }
+            }
+        },
         "model.RDBMSDatabaseCreateReq": {
             "type": "object",
             "required": [
-                "databaseName",
-                "masterUserPassword"
+                "adminUserPassword",
+                "databaseName"
             ],
             "properties": {
+                "adminUserPassword": {
+                    "type": "string",
+                    "example": "Password123!"
+                },
                 "databaseName": {
                     "type": "string",
                     "example": "sampledb"
-                },
-                "masterUserPassword": {
-                    "type": "string",
-                    "example": "Password123!"
                 }
             }
         },
@@ -31091,6 +31115,10 @@ const docTemplate = `{
         "model.RDBMSInfo": {
             "type": "object",
             "properties": {
+                "adminUserName": {
+                    "type": "string",
+                    "example": "admin"
+                },
                 "backupRetentionDays": {
                     "type": "integer",
                     "example": 7
@@ -31127,18 +31155,18 @@ const docTemplate = `{
                     "type": "string",
                     "example": "8.0"
                 },
-                "dbInstanceSpec": {
-                    "type": "string",
-                    "example": "db.t3.medium"
-                },
                 "dbInstanceType": {
-                    "description": "DBInstanceType is \"Primary\" or \"ReadReplica\" (CB-Spider v0.12.44+). Informational\nonly for now — CB-Spider has no API yet to create a read replica; this only reflects\nwhat a registered/discovered instance already is.",
+                    "description": "DBInstanceType is \"Primary\" or \"ReadReplica\"; informational only — CB-Spider has no API yet to create a read replica.",
                     "type": "string",
                     "enum": [
                         "Primary",
                         "ReadReplica"
                     ],
                     "example": "Primary"
+                },
+                "dbSpec": {
+                    "type": "string",
+                    "example": "db.t3.medium"
                 },
                 "deletionProtection": {
                     "type": "boolean",
@@ -31166,10 +31194,6 @@ const docTemplate = `{
                 "iops": {
                     "type": "string",
                     "example": "3000"
-                },
-                "masterUserName": {
-                    "type": "string",
-                    "example": "admin"
                 },
                 "name": {
                     "description": "Name is human-readable string to represent the object",
@@ -31253,7 +31277,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "mysql"
                 },
-                "dbInstanceSpecOptions": {
+                "dbSpecOptions": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -31262,8 +31286,22 @@ const docTemplate = `{
                         "db.t3.medium"
                     ]
                 },
+                "dbSpecs": {
+                    "description": "DBSpecs is the richer per-option spec catalog from live GET /dbspec (superset of DBSpecOptions); best-effort, empty if the live call failed.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RDBMSDBSpecInfo"
+                    }
+                },
+                "liveSupportedEngines": {
+                    "description": "LiveSupportedEngines is this connection's live-verified engine list from GET /rdbmsengine, independent of the DBEngine queried; best-effort.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "notes": {
-                    "description": "Notes carries Tumblebug's own advisory annotations about this response (storage\ntype guidance, which fields above are static/approximate), as opposed to the live\ncapability fields above, which come straight from CB-Spider.",
+                    "description": "Notes carries Tumblebug's own advisory annotations (storage type guidance, static/approximate fields), unlike the live fields above.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.RDBMSNotes"

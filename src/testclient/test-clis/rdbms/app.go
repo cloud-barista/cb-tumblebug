@@ -84,22 +84,22 @@ type SubnetConfig struct {
 
 // TestCase represents a single CSP test case from the config file.
 type TestCase struct {
-	RdbmsId            string         `mapstructure:"rdbmsId"`
-	ConnectionName     string         `mapstructure:"connectionName"`
-	VNetName           string         `mapstructure:"vNetName"`
-	CidrBlock          string         `mapstructure:"cidrBlock"`
-	Subnets            []SubnetConfig `mapstructure:"subnets"`
-	SecurityGroupName  string         `mapstructure:"securityGroupName"`
-	DBEngine           string         `mapstructure:"dbEngine"`
-	DBEngineVersion    string         `mapstructure:"dbEngineVersion"`
-	DBInstanceSpec     string         `mapstructure:"dbInstanceSpec"`
-	StorageType        string         `mapstructure:"storageType"`
-	StorageSize        int            `mapstructure:"storageSize"`
-	AutoFillDefaults   bool           `mapstructure:"autoFillDefaults"`
-	MasterUserName     string         `mapstructure:"masterUserName"`
-	MasterUserPassword string         `mapstructure:"masterUserPassword"`
-	PublicAccess       bool           `mapstructure:"publicAccess"`
-	HighAvailability   bool           `mapstructure:"highAvailability"`
+	RdbmsId           string         `mapstructure:"rdbmsId"`
+	ConnectionName    string         `mapstructure:"connectionName"`
+	VNetName          string         `mapstructure:"vNetName"`
+	CidrBlock         string         `mapstructure:"cidrBlock"`
+	Subnets           []SubnetConfig `mapstructure:"subnets"`
+	SecurityGroupName string         `mapstructure:"securityGroupName"`
+	DBEngine          string         `mapstructure:"dbEngine"`
+	DBEngineVersion   string         `mapstructure:"dbEngineVersion"`
+	DBSpec            string         `mapstructure:"dbSpec"`
+	StorageType       string         `mapstructure:"storageType"`
+	StorageSize       int            `mapstructure:"storageSize"`
+	AutoFillDefaults  bool           `mapstructure:"autoFillDefaults"`
+	AdminUserName     string         `mapstructure:"adminUserName"`
+	AdminUserPassword string         `mapstructure:"adminUserPassword"`
+	PublicAccess      bool           `mapstructure:"publicAccess"`
+	HighAvailability  bool           `mapstructure:"highAvailability"`
 	// DatabaseName is the logical database created/listed/deleted inside the RDBMS instance
 	// (defaults to "sampledb" if left blank).
 	DatabaseName string `mapstructure:"databaseName"`
@@ -110,6 +110,7 @@ type TestCase struct {
 type TestResult struct {
 	RdbmsId              string
 	ConnectionName       string
+	DBEngine             string
 	CreateVNetStatus     string
 	CreateSGStatus       string
 	SupportStatus        string
@@ -246,6 +247,31 @@ func runBatchTest(cmd *cobra.Command, args []string) {
 		log.Warn().Err(err).Msgf("Failed to write summary report")
 	}
 
+	// One CSP-by-step pass/fail matrix per dbEngine present in this run (e.g.
+	// test-results/summary-mysql.md, test-results/summary-mariadb.md), complementing
+	// summary.md's per-CSP vertical view with an at-a-glance comparison across CSPs.
+	byEngine := make(map[string][]TestResult)
+	var engineOrder []string
+	for _, r := range results {
+		key := strings.ToLower(r.DBEngine)
+		if key == "" {
+			key = "unknown"
+		}
+		if _, seen := byEngine[key]; !seen {
+			engineOrder = append(engineOrder, key)
+		}
+		byEngine[key] = append(byEngine[key], r)
+	}
+	for _, engine := range engineOrder {
+		matrixMarkdown := buildEngineMatrixMarkdown(byEngine[engine], engine)
+		filename := fmt.Sprintf("test-results/summary-%s.md", engine)
+		if err := os.WriteFile(filename, []byte(matrixMarkdown), 0644); err != nil {
+			log.Warn().Err(err).Msgf("Failed to write %s", filename)
+		} else {
+			log.Info().Msgf("Wrote CSP-by-step matrix: %s", filename)
+		}
+	}
+
 	// Printed directly (not via the zerolog logger, which wraps every line in JSON) so
 	// this can be copied straight into docs/PRs as-is — it's the same markdown saved to
 	// test-results/summary.md.
@@ -272,7 +298,7 @@ func runBatchTest(cmd *cobra.Command, args []string) {
 // Steps 10-14 always run (best-effort, in reverse-dependency order) even if an
 // earlier step failed, so a failed run doesn't leave billed CSP resources behind.
 func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMatrix model.RDBMSSupportResponse) TestResult {
-	result := TestResult{RdbmsId: tc.RdbmsId, ConnectionName: tc.ConnectionName}
+	result := TestResult{RdbmsId: tc.RdbmsId, ConnectionName: tc.ConnectionName, DBEngine: tc.DBEngine}
 	logs := []ApiLog{}
 
 	log.Info().Msgf("[%s] ====== START (connection=%s) ======", tc.RdbmsId, tc.ConnectionName)
@@ -367,13 +393,22 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 
 		urlCapability := fmt.Sprintf("%s/rdbms/capability?providerName=%s&regionName=%s&dbEngine=%s",
 			tbApiBase, providerName, regionName, tc.DBEngine)
-		_, err = callApi("GET", urlCapability, tbAuth, nil, &logs, fmt.Sprintf("[%s] Get RDBMS Capability", tc.RdbmsId))
+		capBytes, err := callApi("GET", urlCapability, tbAuth, nil, &logs, fmt.Sprintf("[%s] Get RDBMS Capability", tc.RdbmsId))
 		if err != nil {
 			result.CapabilityStatus = "Failed"
 			log.Warn().Err(err).Msgf("[%s] Get RDBMS Capability failed", tc.RdbmsId)
 		} else {
 			result.CapabilityStatus = "Success"
 			log.Info().Msgf("[%s] Get RDBMS Capability OK", tc.RdbmsId)
+			// Content sanity check, not just HTTP status — a Spider wire-format mismatch can return 200 with silently zeroed/empty data.
+			var capResp model.RDBMSCapabilityResponse
+			if jsonErr := json.Unmarshal(capBytes, &capResp); jsonErr == nil {
+				s := capResp.Supports
+				if s.SupportsStorageSizeConfiguration && s.StorageSizeRange.Min == 0 && s.StorageSizeRange.Max == 0 {
+					log.Warn().Msgf("[%s] Capability response looks suspicious: supportsStorageSizeConfiguration=true but storageSizeRange is {0,0} (possible Spider wire-format mismatch)", tc.RdbmsId)
+				}
+				log.Info().Msgf("[%s] Capability data: dbSpecs=%d liveSupportedEngines=%v", tc.RdbmsId, len(s.DBSpecs), s.LiveSupportedEngines)
+			}
 		}
 	} else {
 		result.SupportStatus = "Skipped (no VNet)"
@@ -383,21 +418,21 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	// 4. Validate, then create RDBMS (only if VNet succeeded; SecurityGroup is best-effort)
 	if vNetId != "" {
 		rdbmsReqBody := map[string]any{
-			"name":               tc.RdbmsId,
-			"connectionName":     tc.ConnectionName,
-			"vNetId":             vNetId,
-			"subnetIds":          subnetIds,
-			"dbEngine":           tc.DBEngine,
-			"dbEngineVersion":    tc.DBEngineVersion,
-			"dbInstanceSpec":     tc.DBInstanceSpec,
-			"storageType":        tc.StorageType,
-			"storageSize":        tc.StorageSize,
-			"masterUserName":     tc.MasterUserName,
-			"masterUserPassword": tc.MasterUserPassword,
-			"highAvailability":   tc.HighAvailability,
-			"publicAccess":       tc.PublicAccess,
-			"autoFillDefaults":   tc.AutoFillDefaults,
-			"description":        "created by RDBMS batch test CLI",
+			"name":              tc.RdbmsId,
+			"connectionName":    tc.ConnectionName,
+			"vNetId":            vNetId,
+			"subnetIds":         subnetIds,
+			"dbEngine":          tc.DBEngine,
+			"dbEngineVersion":   tc.DBEngineVersion,
+			"dbSpec":            tc.DBSpec,
+			"storageType":       tc.StorageType,
+			"storageSize":       tc.StorageSize,
+			"adminUserName":     tc.AdminUserName,
+			"adminUserPassword": tc.AdminUserPassword,
+			"highAvailability":  tc.HighAvailability,
+			"publicAccess":      tc.PublicAccess,
+			"autoFillDefaults":  tc.AutoFillDefaults,
+			"description":       "created by RDBMS batch test CLI",
 		}
 		if sgId != "" {
 			rdbmsReqBody["securityGroupIds"] = []string{sgId}
@@ -486,8 +521,8 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	if rdbmsCreated {
 		urlCreateDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database", tbApiBase, nsId, tc.RdbmsId)
 		dbReqBody := map[string]any{
-			"databaseName":       dbName,
-			"masterUserPassword": tc.MasterUserPassword,
+			"databaseName":      dbName,
+			"adminUserPassword": tc.AdminUserPassword,
 		}
 		_, err = callApi("POST", urlCreateDB, tbAuth, dbReqBody, &logs, fmt.Sprintf("[%s] Create Database", tc.RdbmsId))
 		if err != nil {
@@ -502,11 +537,12 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.CreateDatabaseStatus = "Skipped (RDBMS not created)"
 	}
 
-	// 8. List Database (verify it appears; X-Master-User-Password is optional here per
-	// docs/feature_guide/rdbms-management.md §1.3, but supplied anyway since we have it)
+	// 8. List Database (verify it appears; X-Admin-User-Password is optional here per
+	// docs/feature_guide/rdbms-management.md's Features section, but supplied anyway since
+	// we have it)
 	if databaseCreated {
 		urlListDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database", tbApiBase, nsId, tc.RdbmsId)
-		headers := map[string]string{"X-Master-User-Password": tc.MasterUserPassword}
+		headers := map[string]string{"X-Admin-User-Password": tc.AdminUserPassword}
 		respBytes, err = callApi("GET", urlListDB, tbAuth, nil, &logs, fmt.Sprintf("[%s] List Database", tc.RdbmsId), headers)
 		if err != nil {
 			result.ListDatabaseStatus = "Failed"
@@ -540,7 +576,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	// so it's logged as a synthetic entry (Method "SQL") to still appear in the per-CSP report.
 	if databaseCreated {
 		start := time.Now()
-		dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.MasterUserName, tc.MasterUserPassword, dbName)
+		dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.AdminUserName, tc.AdminUserPassword, dbName)
 		entry := ApiLog{
 			Step:           fmt.Sprintf("[%s] Dummy Data Test", tc.RdbmsId),
 			Method:         "SQL",
@@ -564,10 +600,10 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DummyDataStatus = "Skipped (database not created)"
 	}
 
-	// 10. Delete Database (best-effort cleanup; X-Master-User-Password is required here)
+	// 10. Delete Database (best-effort cleanup; X-Admin-User-Password is required here)
 	if databaseCreated {
 		urlDeleteDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database/%s", tbApiBase, nsId, tc.RdbmsId, dbName)
-		headers := map[string]string{"X-Master-User-Password": tc.MasterUserPassword}
+		headers := map[string]string{"X-Admin-User-Password": tc.AdminUserPassword}
 		_, err = callApi("DELETE", urlDeleteDB, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete Database", tc.RdbmsId), headers)
 		switch {
 		case err == nil:
@@ -706,9 +742,12 @@ func (tumblebugTestRecord) TableName() string { return "tumblebug_test" }
 // actually usable for SQL, not just present in the database list. Requires the instance to be
 // reachable from wherever this CLI runs (publicAccess=true and a security group rule allowing
 // the caller, as set up by the earlier steps in runLifecycle).
-func testDatabaseDummyData(endpoint, masterUserName, masterUserPassword, dbName string) error {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s",
-		masterUserName, masterUserPassword, endpoint, dbName)
+func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName string) error {
+	// tls=preferred: use TLS if the server offers it, fall back to plaintext if not — CSP
+	// requirements vary (Azure rejects a plaintext connection outright; AWS/GCP don't require
+	// TLS but support it) and this single setting adapts to either without per-CSP branching.
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s&tls=preferred",
+		adminUserName, adminUserPassword, endpoint, dbName)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
 	if err != nil {
@@ -796,6 +835,56 @@ func saveDetailedReport(rdbmsId string, logs []ApiLog) {
 	log.Info().Msgf("[%s] Detailed report saved: %s", rdbmsId, filename)
 }
 
+// stepLabels lists the row labels used by both buildSummaryMarkdown and
+// buildEngineMatrixMarkdown, in the same order as stepValues.
+var stepLabels = []string{
+	"VNet", "SecurityGroup", "Support", "Capability", "Validate",
+	"Create RDBMS", "Get RDBMS", "List RDBMS", "Create Database", "List Database",
+	"Dummy Data Test", "Delete Database", "Delete RDBMS", "Delete SecurityGroup",
+	"Delete Subnets", "Delete VNet",
+}
+
+// stepValues returns one TestResult's step statuses, in the same order as stepLabels.
+func stepValues(r TestResult) []string {
+	return []string{
+		r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CapabilityStatus, r.ValidateStatus,
+		r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.CreateDatabaseStatus,
+		r.ListDatabaseStatus, r.DummyDataStatus, r.DeleteDatabaseStatus, r.DeleteRDBMSStatus,
+		r.DeleteSGStatus, r.DeleteSubnetsStatus, r.DeleteVNetStatus,
+	}
+}
+
+// overallStatus reports "❌" if any step status starts with "Failed", else "✅".
+func overallStatus(steps []string) string {
+	for _, s := range steps {
+		if strings.HasPrefix(s, "Failed") {
+			return "❌"
+		}
+	}
+	return "✅"
+}
+
+// statusEmoji classifies one step's status string for the matrix view:
+// ✅ success, ❌ failure, "-" skipped/unknown. Most steps report "Success"/"Failed"/
+// "Skipped" prefixes, but SupportStatus is a special case ("Supported (engines: ...)",
+// "Not Supported", "Unknown (matrix unavailable)") handled explicitly here too.
+func statusEmoji(s string) string {
+	switch {
+	case strings.HasPrefix(s, "Success"), strings.HasPrefix(s, "Supported"):
+		return "✅"
+	case strings.HasPrefix(s, "Failed"), s == "Not Supported":
+		return "❌"
+	default:
+		return "-"
+	}
+}
+
+// cspLabel derives a short column header from a test case's rdbmsId (e.g.
+// "test-rdbms-aws" -> "aws"), falling back to the full id if the prefix isn't present.
+func cspLabel(rdbmsId string) string {
+	return strings.TrimPrefix(rdbmsId, "test-rdbms-")
+}
+
 // buildSummaryMarkdown renders the batch run as a single markdown document — the same
 // content is written to test-results/summary.md and printed directly to the console (see
 // runBatchTest), so it can be pasted as-is into docs/PRs.
@@ -823,43 +912,60 @@ func buildSummaryMarkdown(results []TestResult) string {
 
 	md.WriteString("## Results\n\n")
 	for _, r := range results {
-		steps := []string{
-			r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CapabilityStatus, r.ValidateStatus,
-			r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.CreateDatabaseStatus,
-			r.ListDatabaseStatus, r.DummyDataStatus, r.DeleteDatabaseStatus, r.DeleteRDBMSStatus,
-			r.DeleteSGStatus, r.DeleteSubnetsStatus, r.DeleteVNetStatus,
-		}
-		overall := "✅"
-		for _, s := range steps {
-			if strings.HasPrefix(s, "Failed") {
-				overall = "❌"
-				break
-			}
-		}
+		steps := stepValues(r)
+		overall := overallStatus(steps)
 
 		md.WriteString(fmt.Sprintf("### %s (%s) %s\n\n", r.RdbmsId, r.ConnectionName, overall))
 		md.WriteString("| Step | Result |\n")
 		md.WriteString("| ---- | ------ |\n")
-		md.WriteString(fmt.Sprintf("| VNet | %s |\n", r.CreateVNetStatus))
-		md.WriteString(fmt.Sprintf("| SecurityGroup | %s |\n", r.CreateSGStatus))
-		md.WriteString(fmt.Sprintf("| Support | %s |\n", r.SupportStatus))
-		md.WriteString(fmt.Sprintf("| Capability | %s |\n", r.CapabilityStatus))
-		md.WriteString(fmt.Sprintf("| Validate | %s |\n", r.ValidateStatus))
-		md.WriteString(fmt.Sprintf("| Create RDBMS | %s |\n", r.CreateRDBMSStatus))
-		md.WriteString(fmt.Sprintf("| Get RDBMS | %s |\n", r.GetRDBMSStatus))
-		md.WriteString(fmt.Sprintf("| List RDBMS | %s |\n", r.ListRDBMSStatus))
-		md.WriteString(fmt.Sprintf("| Create Database | %s |\n", r.CreateDatabaseStatus))
-		md.WriteString(fmt.Sprintf("| List Database | %s |\n", r.ListDatabaseStatus))
-		md.WriteString(fmt.Sprintf("| Dummy Data Test | %s |\n", r.DummyDataStatus))
-		md.WriteString(fmt.Sprintf("| Delete Database | %s |\n", r.DeleteDatabaseStatus))
-		md.WriteString(fmt.Sprintf("| Delete RDBMS | %s |\n", r.DeleteRDBMSStatus))
-		md.WriteString(fmt.Sprintf("| Delete SecurityGroup | %s |\n", r.DeleteSGStatus))
-		md.WriteString(fmt.Sprintf("| Delete Subnets | %s |\n", r.DeleteSubnetsStatus))
-		md.WriteString(fmt.Sprintf("| Delete VNet | %s |\n", r.DeleteVNetStatus))
+		for i, label := range stepLabels {
+			md.WriteString(fmt.Sprintf("| %s | %s |\n", label, steps[i]))
+		}
 		md.WriteString(fmt.Sprintf("| **Overall** | %s |\n\n", overall))
 	}
 	md.WriteString("---\n\n")
 	md.WriteString("### Detailed Logs\n\nSee `test-results/<rdbmsId>.md` for per-CSP API trace logs.\n")
+
+	return md.String()
+}
+
+// buildEngineMatrixMarkdown renders a CSP-by-step pass/fail matrix for one dbEngine:
+// columns are CSPs, rows are test steps, cells are ✅/❌/"-" (skipped or unknown).
+// Complements buildSummaryMarkdown's per-CSP vertical view with an at-a-glance
+// comparison across CSPs for a single engine (e.g. test-results/summary-mysql.md).
+func buildEngineMatrixMarkdown(results []TestResult, engine string) string {
+	var md strings.Builder
+	md.WriteString(fmt.Sprintf("# RDBMS Batch Test Summary — %s\n\n", engine))
+	md.WriteString(fmt.Sprintf("Generated: %s\n\n", time.Now().Format(time.RFC3339)))
+
+	allSteps := make([][]string, len(results))
+	for i, r := range results {
+		allSteps[i] = stepValues(r)
+	}
+
+	md.WriteString("| Step |")
+	for _, r := range results {
+		md.WriteString(fmt.Sprintf(" %s |", cspLabel(r.RdbmsId)))
+	}
+	md.WriteString("\n| ---- |")
+	for range results {
+		md.WriteString(" :--: |")
+	}
+	md.WriteString("\n")
+
+	for stepIdx, label := range stepLabels {
+		md.WriteString(fmt.Sprintf("| %s |", label))
+		for _, steps := range allSteps {
+			md.WriteString(fmt.Sprintf(" %s |", statusEmoji(steps[stepIdx])))
+		}
+		md.WriteString("\n")
+	}
+
+	md.WriteString("| **Overall** |")
+	for _, steps := range allSteps {
+		md.WriteString(fmt.Sprintf(" %s |", overallStatus(steps)))
+	}
+	md.WriteString("\n")
 
 	return md.String()
 }
@@ -877,7 +983,7 @@ func maskSensitiveFields(v any) any {
 		"token": true, "accesstoken": true, "access_token": true,
 		"apikey": true, "api_key": true, "secretkey": true, "secret_key": true,
 		"privatekey": true, "private_key": true,
-		"masteruserpassword": true,
+		"adminuserpassword": true,
 	}
 	switch val := v.(type) {
 	case map[string]any:
@@ -974,6 +1080,23 @@ func callApi(
 	elapsed := time.Since(start).Round(time.Millisecond)
 
 	if err != nil {
+		// A transport-level failure (connection reset, DNS, timeout) never reaches
+		// tumblebug.log — record it here or it vanishes entirely from the saved report.
+		if logs != nil {
+			var reqPayload any
+			if body != nil {
+				json.Unmarshal(body, &reqPayload)
+			}
+			*logs = append(*logs, ApiLog{
+				Step:            step,
+				Method:          method,
+				URL:             apiUrl,
+				RequestPayload:  maskSensitiveFields(reqPayload),
+				ResponsePayload: map[string]any{"error": err.Error()},
+				ResponseStatus:  "transport error",
+				ElapsedTime:     elapsed.String(),
+			})
+		}
 		return nil, fmt.Errorf("[%s] request failed: %v", step, err)
 	}
 

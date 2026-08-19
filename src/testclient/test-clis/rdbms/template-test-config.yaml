@@ -14,19 +14,20 @@ tumblebug:
 # Copy this file to test-config.yaml and adjust values for your environment.
 # Set 'execute: true' for the CSPs you want to include in the test run.
 #
-# autoFillDefaults: true fills dbEngineVersion/dbInstanceSpec/storageType/storageSize
+# autoFillDefaults: true fills dbEngineVersion/dbSpec/storageType/storageSize
 # from GET /tumblebug/rdbms/support (first supported option) — see
 # docs/feature_guide/rdbms-management.md. Leave the four fields blank when using it.
 #
-# CSPs verified for RDBMS (mysql) per docs/feature_guide/rdbms-management.md §2.1:
-# aws, azure, gcp, alibaba, tencent, ibm, openstack, ncp, nhn
+# CSPs verified for RDBMS (mysql) per docs/feature_guide/rdbms-management.md's
+# CSP Capability Summary (MySQL) section: aws, azure, gcp, alibaba, tencent, ibm,
+# openstack, ncp, nhn
 #
 # databaseName: logical database created/listed/deleted inside the RDBMS instance
 # (defaults to "sampledb" if left blank).
 #
-# Password policy quirks (see rdbms-management.md §5):
-# - IBM: rejects special characters (e.g. !, @) in masterUserPassword
-# - NCP: requires a special character in masterUserPassword
+# Password policy quirks (see rdbms-management.md's CSP-Specific Risks and Notes section):
+# - IBM: rejects special characters (e.g. !, @) in adminUserPassword
+# - NCP: requires a special character in adminUserPassword
 testCases:
   - rdbmsId: test-rdbms-aws
     connectionName: aws-ap-northeast-2
@@ -43,8 +44,8 @@ testCases:
     securityGroupName: test-rdbms-sg-aws
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
-    masterUserPassword: Password123!
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
@@ -61,8 +62,8 @@ testCases:
     securityGroupName: test-rdbms-sg-azure
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
-    masterUserPassword: Password123!
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: false
@@ -78,8 +79,8 @@ testCases:
     securityGroupName: test-rdbms-sg-gcp
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
-    masterUserPassword: Password123!
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: false
@@ -95,8 +96,8 @@ testCases:
     securityGroupName: test-rdbms-sg-alibaba
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
-    masterUserPassword: Password123!
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: false
@@ -112,8 +113,8 @@ testCases:
     securityGroupName: test-rdbms-sg-tencent
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
-    masterUserPassword: Password123!
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: false
@@ -129,9 +130,9 @@ testCases:
     securityGroupName: test-rdbms-sg-ibm
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
+    adminUserName: admin
     # IBM rejects special characters in the password.
-    masterUserPassword: Password123
+    adminUserPassword: Password123
     publicAccess: true
     highAvailability: false
     execute: false
@@ -147,8 +148,8 @@ testCases:
     securityGroupName: test-rdbms-sg-openstack
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
-    masterUserPassword: Password123!
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: false
@@ -164,9 +165,9 @@ testCases:
     securityGroupName: test-rdbms-sg-ncp
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
+    adminUserName: admin
     # NCP requires a special character in the password.
-    masterUserPassword: Password123!
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: false
@@ -182,8 +183,8 @@ testCases:
     securityGroupName: test-rdbms-sg-nhn
     dbEngine: mysql
     autoFillDefaults: true
-    masterUserName: admin
-    masterUserPassword: Password123!
+    adminUserName: admin
+    adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
     execute: false

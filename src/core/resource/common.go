@@ -1249,9 +1249,7 @@ func PollResourceDeletedViaSpider(getURL string, headers map[string]string, maxA
 
 		if err != nil {
 			if apierr.IsNotFound(err) {
-				if attempt > 1 {
-					log.Debug().Msgf("PollResourceDeletedViaSpider: confirmed deleted on attempt %d/%d: %s", attempt, maxAttempts, getURL)
-				}
+				log.Debug().Msgf("PollResourceDeletedViaSpider: confirmed deleted on attempt %d/%d: %s", attempt, maxAttempts, getURL)
 				return true, nil
 			}
 			// Other error (5xx, network) — inconclusive; continue polling
@@ -1261,12 +1259,10 @@ func PollResourceDeletedViaSpider(getURL string, headers map[string]string, maxA
 			// HTTP 200 — check for GCP-style Result:false (resource is actually gone)
 			bodyBytes, _ := json.Marshal(rawResult)
 			if result := gjson.GetBytes(bodyBytes, "Result").String(); strings.EqualFold(result, "false") {
-				if attempt > 1 {
-					log.Debug().Msgf("PollResourceDeletedViaSpider: confirmed deleted (Result:false) on attempt %d/%d: %s", attempt, maxAttempts, getURL)
-				}
+				log.Debug().Msgf("PollResourceDeletedViaSpider: confirmed deleted (Result:false) on attempt %d/%d: %s", attempt, maxAttempts, getURL)
 				return true, nil
 			}
-			// Resource still visible
+			log.Info().Msgf("PollResourceDeletedViaSpider: still visible on attempt %d/%d: %s", attempt, maxAttempts, getURL)
 			lastErr = nil
 		}
 
@@ -1275,6 +1271,63 @@ func PollResourceDeletedViaSpider(getURL string, headers map[string]string, maxA
 		}
 	}
 	return false, lastErr
+}
+
+// PollResourceDeletedOnCSP polls GetCspResourceStatus (e.g. GET /allrdbms) confirming systemId is gone from OnlyCSPList; mirrors PollResourceDeletedViaSpider's (bool, error) shape.
+func PollResourceDeletedOnCSP(connConfig string, resourceType string, systemId string, maxAttempts int, interval time.Duration) (bool, error) {
+	if systemId == "" {
+		return true, nil
+	}
+	var lastErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if attempt > 1 {
+			time.Sleep(interval)
+		}
+		status, err := GetCspResourceStatus(connConfig, resourceType)
+		if err != nil {
+			log.Warn().Err(err).Msgf("PollResourceDeletedOnCSP: inconclusive on attempt %d/%d for %s", attempt, maxAttempts, systemId)
+			lastErr = err
+			continue
+		}
+		lastErr = nil
+		stillOnCSP := false
+		for _, r := range status.AllList.OnlyCSPList {
+			if r.SystemId == systemId {
+				stillOnCSP = true
+				break
+			}
+		}
+		if !stillOnCSP {
+			log.Debug().Msgf("PollResourceDeletedOnCSP: %s confirmed gone from CSP on attempt %d/%d", systemId, attempt, maxAttempts)
+			return true, nil
+		}
+		log.Info().Msgf("PollResourceDeletedOnCSP: %s still present on CSP (OnlyCSPList), attempt %d/%d", systemId, attempt, maxAttempts)
+	}
+	return false, lastErr
+}
+
+// Sentinel errors PollResourceFullyDeleted wraps (match via errors.Is) so callers can tell which check never cleared.
+var (
+	ErrStillTrackedBySpider = errors.New("still tracked by Spider")
+	ErrStillOnCSP           = errors.New("still present on CSP (OnlyCSPList)")
+)
+
+// PollResourceFullyDeleted confirms a resource is gone from both Spider's tracking and the CSP itself, wrapping ErrStillTrackedBySpider/ErrStillOnCSP if not.
+func PollResourceFullyDeleted(getURL string, connConfig string, resourceType string, systemId string,
+	spiderMaxAttempts int, spiderInterval time.Duration, cspMaxAttempts int, cspInterval time.Duration) (deleted bool, err error) {
+	if ok, verifyErr := PollResourceDeletedViaSpider(getURL, nil, spiderMaxAttempts, spiderInterval); !ok {
+		if verifyErr != nil {
+			return false, fmt.Errorf("%w: %w", ErrStillTrackedBySpider, verifyErr)
+		}
+		return false, ErrStillTrackedBySpider
+	}
+	if ok, cspErr := PollResourceDeletedOnCSP(connConfig, resourceType, systemId, cspMaxAttempts, cspInterval); !ok {
+		if cspErr != nil {
+			return false, fmt.Errorf("%w: %w", ErrStillOnCSP, cspErr)
+		}
+		return false, ErrStillOnCSP
+	}
+	return true, nil
 }
 
 // DeregisterResource deregisters the TB Resource object from Spider and TB without deleting the actual CSP resource
