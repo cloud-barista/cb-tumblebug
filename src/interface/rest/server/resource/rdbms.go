@@ -32,7 +32,10 @@ import (
 // @Description Live capability query for one connection+dbEngine (calls CB-Spider), so all
 // @Description three params are required. Call GET /tumblebug/rdbms/support first to see
 // @Description which CSPs/engines are worth trying. Fields listed in notes.staticFields are
-// @Description fixed/approximate rather than live.
+// @Description fixed/approximate rather than live. dbSpecs is a richer per-option catalog
+// @Description (vCPU/memory/storage range) than dbSpecOptions; liveSupportedEngines is this
+// @Description connection's live-verified engine list, independent of the dbEngine queried.
+// @Description Both are best-effort and may be empty if their underlying live call failed.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
@@ -162,7 +165,7 @@ func RestValidateRDBMS(c echo.Context) error {
 // @Summary Create an RDBMS instance
 // @Description Create a managed RDBMS instance and wait for it to become Available
 // @Description (can take several minutes). Call GET /tumblebug/rdbms/capability first to
-// @Description discover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,
+// @Description discover valid dbEngineVersion/dbSpec/storageType/storageSize values,
 // @Description or set autoFillDefaults=true to auto-pick a capability-valid (not necessarily
 // @Description optimal) default for each.
 // @Tags [Infra Resource] RDBMS Management
@@ -415,8 +418,9 @@ func RestPruneRDBMS(c echo.Context) error {
 // @ID PostRDBMSDatabase
 // @Summary Create a logical database inside an RDBMS instance
 // @Description Creates a logical database inside an Available RDBMS instance via CB-Spider.
-// @Description masterUserPassword is required in the request body and is never persisted by
-// @Description Tumblebug (see docs/feature_guide/rdbms-management.md §1.6) — forwarded to
+// @Description adminUserPassword (the instance's admin login password) is required in the
+// @Description request body and is never persisted by Tumblebug (see
+// @Description docs/feature_guide/rdbms-management.md's Features section) — forwarded to
 // @Description CB-Spider for this call only.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
@@ -463,16 +467,16 @@ func RestPostRDBMSDatabase(c echo.Context) error {
 // @ID GetRDBMSDatabases
 // @Summary List logical databases inside an RDBMS instance
 // @Description Lists logical databases inside an RDBMS instance via CB-Spider.
-// @Description X-Master-User-Password is optional here — CB-Spider's own database-test
+// @Description X-Admin-User-Password is optional here — CB-Spider's own database-test
 // @Description results show list succeeding without one for at least some drivers; supply it
 // @Description if the connection's driver requires direct SQL access (see
-// @Description docs/feature_guide/rdbms-management.md §1.3).
+// @Description docs/feature_guide/rdbms-management.md's Features section).
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param rdbmsId path string true "RDBMS ID" default(rdbms-01)
-// @Param X-Master-User-Password header string false "RDBMS master user password (optional for list; not persisted by Tumblebug)"
+// @Param X-Admin-User-Password header string false "RDBMS instance admin login password (optional for list; not persisted by Tumblebug)"
 // @Success 200 {object} model.RDBMSDatabaseListResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
@@ -493,9 +497,9 @@ func RestGetRDBMSDatabases(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	masterUserPassword := c.Request().Header.Get("X-Master-User-Password")
+	adminUserPassword := c.Request().Header.Get("X-Admin-User-Password")
 
-	result, err := resource.ListRDBMSDatabases(nsId, rdbmsId, masterUserPassword)
+	result, err := resource.ListRDBMSDatabases(nsId, rdbmsId, adminUserPassword)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to list databases in RDBMS '%s'", rdbmsId)
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
@@ -508,16 +512,16 @@ func RestGetRDBMSDatabases(c echo.Context) error {
 // @ID DeleteRDBMSDatabase
 // @Summary Delete a logical database inside an RDBMS instance
 // @Description Deletes a logical database inside an RDBMS instance via CB-Spider.
-// @Description X-Master-User-Password is required — Tumblebug does not persist RDBMS master
-// @Description passwords (see docs/feature_guide/rdbms-management.md §1.6), so the caller must
-// @Description resupply it on every call.
+// @Description X-Admin-User-Password is required — Tumblebug does not persist the RDBMS
+// @Description instance's admin login password (see docs/feature_guide/rdbms-management.md's
+// @Description Features section), so the caller must resupply it on every call.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param rdbmsId path string true "RDBMS ID" default(rdbms-01)
 // @Param dbName path string true "Database Name" default(sampledb)
-// @Param X-Master-User-Password header string true "RDBMS master user password (required; not persisted by Tumblebug)"
+// @Param X-Admin-User-Password header string true "RDBMS instance admin login password (required; not persisted by Tumblebug)"
 // @Success 204 "No Content"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
@@ -544,14 +548,14 @@ func RestDeleteRDBMSDatabase(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	masterUserPassword := c.Request().Header.Get("X-Master-User-Password")
-	if masterUserPassword == "" {
-		err := fmt.Errorf("X-Master-User-Password header is required; Tumblebug does not persist RDBMS master passwords (see docs/feature_guide/rdbms-management.md §1.6)")
+	adminUserPassword := c.Request().Header.Get("X-Admin-User-Password")
+	if adminUserPassword == "" {
+		err := fmt.Errorf("X-Admin-User-Password header is required; Tumblebug does not persist the RDBMS instance's admin login password (see docs/feature_guide/rdbms-management.md's Features section)")
 		log.Warn().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	if err := resource.DeleteRDBMSDatabase(nsId, rdbmsId, dbName, masterUserPassword); err != nil {
+	if err := resource.DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserPassword); err != nil {
 		log.Error().Err(err).Msgf("Failed to delete database '%s' in RDBMS '%s'", dbName, rdbmsId)
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}

@@ -41,6 +41,7 @@ const (
 var normalNotFoundPatterns = []string{
 	"not found",
 	"does not exist",
+	"doesn't exist",
 	"no such",
 	"resource not found",
 }

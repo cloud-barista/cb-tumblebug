@@ -20,9 +20,7 @@ type StorageSizeRange struct {
 	Max int `json:"max" example:"1000"`
 }
 
-// StorageTypeNote provides user-facing guidance for a specific storage type, derived from
-// assets/rdbmsinfo.yaml (itself sourced from CB-Spider's storage-type-test results and CSP
-// documentation; see resource/rdbms.go).
+// StorageTypeNote provides user-facing guidance for a storage type, derived from assets/rdbmsinfo.yaml.
 type StorageTypeNote struct {
 	StorageType         string            `json:"storageType" example:"gp3"`
 	DisplayName         string            `json:"displayName" example:"General Purpose SSD v3"`
@@ -38,10 +36,7 @@ type StorageTypeNote struct {
 	Constraints         string            `json:"constraints,omitempty" example:"Requires 'iops' parameter (e.g., '3000')"`
 }
 
-// RDBMSInfoConfig mirrors assets/rdbmsinfo.yaml, the static per-CSP RDBMS reference data
-// (storage type knowledge base, DBMS/database requirements) that CB-Spider's live
-// RDBMSMetaInfo query does not itself carry. See resource/rdbms.go for how it is loaded
-// and applied.
+// RDBMSInfoConfig mirrors assets/rdbmsinfo.yaml, static per-CSP reference data not carried by CB-Spider's live RDBMSMetaInfo.
 type RDBMSInfoConfig struct {
 	DBMS map[string]RDBMSProviderConfig `yaml:"dbms"`
 }
@@ -49,32 +44,42 @@ type RDBMSInfoConfig struct {
 // RDBMSProviderConfig is one CSP's entry under "dbms" in assets/rdbmsinfo.yaml.
 type RDBMSProviderConfig struct {
 	Description string `yaml:"description"`
-	Link        string `yaml:"link"`
-	Note        string `yaml:"note,omitempty"`
-	// SupportedDBEngines lists DB engines empirically verified for this CSP (per CB-Spider's
-	// rdbms-mysql-test / rdbms-mariadb-test suites). Omission does not mean unsupported —
-	// it means unverified (e.g. postgresql has no dedicated CB-Spider test suite yet).
+	// Links holds this CSP's reference URLs by label (e.g. "docs", "console") — never exposed via the Tumblebug API.
+	Links map[string]string `yaml:"links,omitempty"`
+	Note  string            `yaml:"note,omitempty"`
+	// SupportedDBEngines lists DB engines empirically verified for this CSP; omission means unverified, not unsupported.
 	SupportedDBEngines []string `yaml:"supportedDBEngines,omitempty"`
-	// SupportedDBOperationMethod is how CB-Spider implements the internal Database CRUD API
-	// for this CSP, per the CB-Spider wiki's RDBMS Management Guide §4.3 (database-test
-	// results): "cspApi" ("CSP Native API" in the wiki) uses a CSP-native database
-	// management API (e.g. Google Cloud SQL Admin API); "conventionalSqlExec" ("SQL Direct
-	// Execution" in the wiki) connects directly to the instance endpoint with
-	// MasterUserPassword (dbConn/mysql-cli-equivalent) and runs CREATE/DROP DATABASE.
-	SupportedDBOperationMethod string `yaml:"supportedDBOperationMethod,omitempty" enums:"cspApi,conventionalSqlExec"`
-	// SupportsTag is a static reference value for whether this CSP supports CB-Spider's
-	// generic RDBMS tag API. The live, per-connection flag is RDBMSMetaInfo.SupportsTag.
+	// DBOperationMethod is the fixed method CB-Spider uses for this CSP's internal Database CRUD API: "cspNativeApi" or "sqlFallback".
+	DBOperationMethod string `yaml:"dbOperationMethod,omitempty" enums:"cspNativeApi,sqlFallback"`
+	// SupportsTag is a static reference value; the live, per-connection flag is RDBMSMetaInfo.SupportsTag.
 	SupportsTag bool `yaml:"supportsTag,omitempty"`
-	// StorageTypeSelectable is a static reference value (per CB-Spider's
-	// storage-type-test results) for whether this CSP lets a caller choose a storage
-	// type at all: false covers both "not supported" (e.g. azure, ibm, ncp auto-assign
-	// storage) and "only one type exists" CSPs. This documents CB-Spider's tested
-	// behavior; the live, authoritative flag for a given connection is
-	// RDBMSMetaInfo.SupportsStorageTypeSelection (see resource/rdbms.go).
+	// StorageTypeSelectable is a static reference for whether this CSP lets a caller choose a storage type; the live flag is RDBMSMetaInfo.SupportsStorageTypeSelection.
 	StorageTypeSelectable bool                              `yaml:"storageTypeSelectable"`
 	StorageTypes          map[string]RDBMSStorageTypeConfig `yaml:"storageTypes"`
 	DBMSRequirements      map[string]RDBMSDBMSRequirement   `yaml:"dbmsRequirements,omitempty"`
 	DatabaseRequirements  RDBMSDatabaseRequirement          `yaml:"databaseRequirements,omitempty"`
+	// AdminUserNameRequirement/AdminUserPasswordRequirement capture CSP-level admin credential constraints (e.g. Tencent forces "root"), enforced by validateAdminCredentials.
+	AdminUserNameRequirement     *RDBMSAdminUserNameRequirement     `yaml:"adminUserNameRequirement,omitempty"`
+	AdminUserPasswordRequirement *RDBMSAdminUserPasswordRequirement `yaml:"adminUserPasswordRequirement,omitempty"`
+}
+
+// RDBMSAdminUserNameRequirement is a CSP's constraint on RDBMSCreateRequest.AdminUserName,
+// from assets/rdbmsinfo.yaml's "adminUserNameRequirement".
+type RDBMSAdminUserNameRequirement struct {
+	// FixedValue, if set, is the only value this CSP accepts (e.g. Tencent: "root").
+	FixedValue string `yaml:"fixedValue,omitempty"`
+	// ReservedValues are values this CSP rejects (case-insensitive), confirmed via live CSP rejection — not necessarily exhaustive.
+	ReservedValues []string `yaml:"reservedValues,omitempty"`
+	Note           string   `yaml:"note,omitempty"`
+}
+
+// RDBMSAdminUserPasswordRequirement is a CSP's constraint on AdminUserPassword, from assets/rdbmsinfo.yaml's "adminUserPasswordRequirement".
+type RDBMSAdminUserPasswordRequirement struct {
+	MinLength           int    `yaml:"minLength,omitempty"`
+	MaxLength           int    `yaml:"maxLength,omitempty"`
+	RequiresSpecialChar bool   `yaml:"requiresSpecialChar,omitempty"`
+	ForbidsSpecialChar  bool   `yaml:"forbidsSpecialChar,omitempty"`
+	Note                string `yaml:"note,omitempty"`
 }
 
 // RDBMSStorageTypeConfig is one storage type entry under a CSP's "storageTypes" in
@@ -100,6 +105,10 @@ type RDBMSDBMSRequirement struct {
 	MaxStorageSize int    `yaml:"maxStorageSize,omitempty"`
 	DefaultPort    int    `yaml:"defaultPort,omitempty"`
 	Note           string `yaml:"note,omitempty"`
+	// ReferenceEngineVersion is CB-Spider's own test-verified engine version for this CSP/engine, preferred over guessing from the live SupportedVersions list.
+	ReferenceEngineVersion string `yaml:"referenceEngineVersion,omitempty"`
+	// ReferenceDBSpec is CB-Spider's own test-verified dbSpec for this CSP/engine, preferred over the live /dbspec catalog's "smallest" pick.
+	ReferenceDBSpec string `yaml:"referenceDBSpec,omitempty"`
 }
 
 // RDBMSDatabaseRequirement is a CSP's "databaseRequirements" entry in assets/rdbmsinfo.yaml.
@@ -116,7 +125,7 @@ type RDBMSMetaInfo struct {
 	ConnectionName                   string           `json:"connectionName" example:"aws-ap-northeast-2-config"`
 	DBEngine                         string           `json:"dbEngine" example:"mysql"`
 	SupportedVersions                []string         `json:"supportedVersions" example:"8.0,8.4"`
-	DBInstanceSpecOptions            []string         `json:"dbInstanceSpecOptions" example:"db.t3.medium"`
+	DBSpecOptions                    []string         `json:"dbSpecOptions" example:"db.t3.medium"`
 	StorageTypeOptions               []string         `json:"storageTypeOptions" example:"gp2,gp3"`
 	StorageSizeRange                 StorageSizeRange `json:"storageSizeRange"`
 	SupportsHighAvailability         bool             `json:"supportsHighAvailability" example:"true"`
@@ -131,10 +140,22 @@ type RDBMSMetaInfo struct {
 	RequiresSubnet                   bool             `json:"requiresSubnet" example:"true"`
 	RequiresSecurityGroup            bool             `json:"requiresSecurityGroup" example:"true"`
 
-	// Notes carries Tumblebug's own advisory annotations about this response (storage
-	// type guidance, which fields above are static/approximate), as opposed to the live
-	// capability fields above, which come straight from CB-Spider.
+	// DBSpecs is the richer per-option spec catalog from live GET /dbspec (superset of DBSpecOptions); best-effort, empty if the live call failed.
+	DBSpecs []RDBMSDBSpecInfo `json:"dbSpecs,omitempty"`
+	// LiveSupportedEngines is this connection's live-verified engine list from GET /rdbmsengine, independent of the DBEngine queried; best-effort.
+	LiveSupportedEngines []string `json:"liveSupportedEngines,omitempty"`
+
+	// Notes carries Tumblebug's own advisory annotations (storage type guidance, static/approximate fields), unlike the live fields above.
 	Notes RDBMSNotes `json:"notes,omitempty"`
+}
+
+// RDBMSDBSpecInfo is one instance spec option from live GET /dbspec, kept lean (no DataSource/KeyValueList).
+type RDBMSDBSpecInfo struct {
+	Name               string           `json:"name" example:"db.t3.medium"`
+	VCpuCount          string           `json:"vCpuCount,omitempty" example:"2"`
+	VCpuClockGHz       string           `json:"vCpuClockGHz,omitempty" example:"2.5"`
+	MemSizeMiB         string           `json:"memSizeMiB,omitempty" example:"4096"`
+	StorageSizeRangeGB StorageSizeRange `json:"storageSizeRangeGB,omitempty"`
 }
 
 // RDBMSNotes groups Tumblebug's advisory annotations for one RDBMSMetaInfo response.
@@ -153,48 +174,29 @@ type RDBMSStaticField struct {
 	Note  string `json:"note,omitempty" example:"NCP G3 generation sets storage type (SSD) automatically; not user-selectable or queryable via API."`
 }
 
-// RDBMSCapabilityResponse represents the Tumblebug API response containing a live RDBMS
-// capability query for a single connection (providerName+regionName+dbEngine resolves to
-// one connection; see resource/rdbms.go's GetRDBMSCapability). As opposed to
-// RDBMSSupportResponse, which is a static, CSP-wide reference matrix requiring no CB-Spider
-// call.
+// RDBMSCapabilityResponse is a live RDBMS capability query for one connection, unlike the static RDBMSSupportResponse.
 type RDBMSCapabilityResponse struct {
 	ResourceType string        `json:"resourceType" example:"rdbms"`
 	Supports     RDBMSMetaInfo `json:"supports"`
 }
 
-// RDBMSSupportResponse represents the Tumblebug API response for the static, CSP-wide RDBMS
-// support matrix (assets/rdbmsinfo.yaml), listing which capabilities each CSP supports in
-// general — as opposed to RDBMSCapabilityResponse, which is a live, per-connection query.
+// RDBMSSupportResponse is the static, CSP-wide RDBMS support matrix (assets/rdbmsinfo.yaml), unlike the live RDBMSCapabilityResponse.
 type RDBMSSupportResponse struct {
 	ResourceType string                         `json:"resourceType" example:"rdbms"`
 	Supports     map[string]RDBMSCSPSupportInfo `json:"supports"`
 }
 
-// RDBMSCSPSupportInfo is one CSP's entry in the static RDBMS support matrix
-// (assets/rdbmsinfo.yaml), returned by GET /tumblebug/rdbms/support. Every CSP in
-// csp.AllCSPs gets an entry, even ones with no RDBMS support at all (e.g. KT) — those
-// appear with Supported: false and every other field at its zero value, rather than being
-// omitted, matching GetObjectStorageSupport's pattern of always covering the full CSP list.
-// Deliberately brief — full storage type guidance (descriptions, constraints, recommendation)
-// lives in RDBMSMetaInfo.Notes.StorageTypes (GET /tumblebug/rdbms/capability), not here.
+// RDBMSCSPSupportInfo is one CSP's entry in the static RDBMS support matrix; every CSP in csp.AllCSPs appears, even unsupported ones (Supported: false).
 type RDBMSCSPSupportInfo struct {
-	// Supported is whether RDBMS is available on this CSP at all (per cspSupportingRDBMS in
-	// resource/rdbms.go). false here means every other field below is a zero value, not that
-	// they weren't populated.
+	// Supported is whether RDBMS is available on this CSP at all; false means every field below is a zero value.
 	Supported bool `json:"supported" example:"true"`
-	// SupportedDBEngines lists DB engines empirically verified for this CSP. Omission does
-	// not mean unsupported — it means unverified.
+	// SupportedDBEngines lists DB engines empirically verified for this CSP; omission means unverified, not unsupported.
 	SupportedDBEngines []string `json:"supportedDBEngines" example:"mysql,mariadb"`
-	// SupportedDBOperationMethod is how CB-Spider implements the internal Database CRUD API
-	// for this CSP, per the CB-Spider wiki's RDBMS Management Guide §4.3: a CSP-native
-	// database API ("cspApi"), or connecting directly to the instance endpoint with
-	// MasterUserPassword (dbConn/mysql-cli-equivalent) and running CREATE/DROP DATABASE
-	// ("conventionalSqlExec").
-	SupportedDBOperationMethod string `json:"supportedDBOperationMethod" example:"conventionalSqlExec" enums:"cspApi,conventionalSqlExec"`
-	SupportsTag                bool   `json:"supportsTag" example:"true"`
-	StorageTypeSelectable      bool   `json:"storageTypeSelectable" example:"true"`
-	Note                       string `json:"note,omitempty"`
+	// DBOperationMethod is the fixed method CB-Spider uses for this CSP's internal Database CRUD API: "cspNativeApi" or "sqlFallback".
+	DBOperationMethod     string `json:"dbOperationMethod" example:"sqlFallback" enums:"cspNativeApi,sqlFallback"`
+	SupportsTag           bool   `json:"supportsTag" example:"true"`
+	StorageTypeSelectable bool   `json:"storageTypeSelectable" example:"true"`
+	Note                  string `json:"note,omitempty"`
 }
 
 // RDBMSCreateRequest is the Tumblebug-facing request to create an RDBMS instance.
@@ -207,22 +209,20 @@ type RDBMSCreateRequest struct {
 	DBEngine         string   `json:"dbEngine" validate:"required" example:"mysql" enums:"mysql,mariadb"`
 	// DBEngineVersion may be left empty when AutoFillDefaults is true.
 	DBEngineVersion string `json:"dbEngineVersion,omitempty" example:"8.0"`
-	// DBInstanceSpec may be left empty when AutoFillDefaults is true.
-	DBInstanceSpec string `json:"dbInstanceSpec,omitempty" example:"db.t3.medium"`
-	StorageType    string `json:"storageType,omitempty" example:"gp3"`
+	// DBSpec may be left empty when AutoFillDefaults is true.
+	DBSpec      string `json:"dbSpec,omitempty" example:"db.t3.medium"`
+	StorageType string `json:"storageType,omitempty" example:"gp3"`
 	// StorageSize may be left as 0 when AutoFillDefaults is true.
 	StorageSize         int    `json:"storageSize,omitempty" example:"100"`
 	Iops                string `json:"iops,omitempty" example:"3000"`
-	MasterUserName      string `json:"masterUserName" validate:"required" example:"admin"`
-	MasterUserPassword  string `json:"masterUserPassword" validate:"required" example:"Password123!"`
+	AdminUserName       string `json:"adminUserName" validate:"required" example:"admin"`
+	AdminUserPassword   string `json:"adminUserPassword" validate:"required" example:"Password123!"`
 	HighAvailability    bool   `json:"highAvailability,omitempty" example:"false"`
 	BackupRetentionDays int    `json:"backupRetentionDays,omitempty" example:"7"`
 	PublicAccess        bool   `json:"publicAccess,omitempty" example:"true"`
 	DeletionProtection  bool   `json:"deletionProtection,omitempty" example:"false"`
 	Description         string `json:"description,omitempty" example:"managed by CB-Tumblebug"`
-	// AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from
-	// GET /tumblebug/rdbms/capability when left empty/zero. Selection is "first supported
-	// option that passes live capability checks" — not a cost/performance recommendation.
+	// AutoFillDefaults fills DBEngineVersion/DBSpec/StorageType/StorageSize from GET /tumblebug/rdbms/capability when left empty/zero.
 	AutoFillDefaults bool       `json:"autoFillDefaults,omitempty" example:"false"`
 	TagList          []KeyValue `json:"tagList,omitempty"`
 }
@@ -256,15 +256,13 @@ type RDBMSInfo struct {
 
 	DBEngine        string `json:"dbEngine" example:"mysql"`
 	DBEngineVersion string `json:"dbEngineVersion" example:"8.0"`
-	DBInstanceSpec  string `json:"dbInstanceSpec" example:"db.t3.medium"`
-	// DBInstanceType is "Primary" or "ReadReplica" (CB-Spider v0.12.44+). Informational
-	// only for now — CB-Spider has no API yet to create a read replica; this only reflects
-	// what a registered/discovered instance already is.
+	DBSpec          string `json:"dbSpec" example:"db.t3.medium"`
+	// DBInstanceType is "Primary" or "ReadReplica"; informational only — CB-Spider has no API yet to create a read replica.
 	DBInstanceType      string     `json:"dbInstanceType,omitempty" example:"Primary" enums:"Primary,ReadReplica"`
 	StorageType         string     `json:"storageType,omitempty" example:"gp3"`
 	StorageSize         int        `json:"storageSize" example:"100"`
 	Iops                string     `json:"iops,omitempty" example:"3000"`
-	MasterUserName      string     `json:"masterUserName" example:"admin"`
+	AdminUserName       string     `json:"adminUserName" example:"admin"`
 	HighAvailability    bool       `json:"highAvailability" example:"false"`
 	BackupRetentionDays int        `json:"backupRetentionDays,omitempty" example:"7"`
 	BackupTime          string     `json:"backupTime,omitempty" example:"03:00"`
@@ -280,17 +278,13 @@ type RDBMSListResponse struct {
 	RDBMS []RDBMSInfo `json:"rdbms"`
 }
 
-// RDBMSDatabaseCreateReq is the Tumblebug-facing request to create a logical database inside
-// an Available RDBMS instance (see resource/rdbms.go's CreateRDBMSDatabase). MasterUserPassword
-// is required and forwarded to CB-Spider as-is; Tumblebug never persists it (§1.6).
+// RDBMSDatabaseCreateReq creates a logical database inside an Available RDBMS instance; AdminUserPassword is forwarded as-is, never persisted (§1.6).
 type RDBMSDatabaseCreateReq struct {
-	DatabaseName       string `json:"databaseName" validate:"required" example:"sampledb"`
-	MasterUserPassword string `json:"masterUserPassword" validate:"required" example:"Password123!"`
+	DatabaseName      string `json:"databaseName" validate:"required" example:"sampledb"`
+	AdminUserPassword string `json:"adminUserPassword" validate:"required" example:"Password123!"`
 }
 
-// RDBMSDatabaseInfo represents one logical database inside an RDBMS instance. Not a tracked
-// Tumblebug resource — it has no kvstore entry of its own and is always queried live from
-// CB-Spider.
+// RDBMSDatabaseInfo represents one logical database inside an RDBMS instance; not a tracked Tumblebug resource, always queried live.
 type RDBMSDatabaseInfo struct {
 	DatabaseName string `json:"databaseName" example:"sampledb"`
 }

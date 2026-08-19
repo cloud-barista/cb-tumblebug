@@ -17,7 +17,9 @@ package resource
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"net/url"
 	"path/filepath"
 	"slices"
@@ -25,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
@@ -42,13 +45,40 @@ type spiderStorageSizeRange struct {
 	Max int `json:"Max"`
 }
 
+// spiderVCpuInfo represents Spider's VCpuInfo (PascalCase; shared by VMSpec/DBSpec)
+type spiderVCpuInfo struct {
+	Count    string `json:"Count"`
+	ClockGHz string `json:"ClockGHz,omitempty"`
+}
+
+// spiderDBSpecInfo represents Spider's DBSpecInfo (PascalCase), from GET /dbspec (CB-Spider
+// v0.12.45+). Count/MemSizeMiB are "-1" placeholders when a driver can't determine them.
+type spiderDBSpecInfo struct {
+	Region             string                 `json:"Region"`
+	DBEngine           string                 `json:"DBEngine"`
+	Name               string                 `json:"Name"`
+	VCpu               spiderVCpuInfo         `json:"VCpu"`
+	MemSizeMiB         string                 `json:"MemSizeMiB"`
+	StorageSizeRangeGB spiderStorageSizeRange `json:"StorageSizeRangeGB,omitempty"`
+}
+
+// spiderDBSpecListResponse represents Spider's response body for GET /dbspec (PascalCase)
+type spiderDBSpecListResponse struct {
+	Result []spiderDBSpecInfo `json:"dbspec"`
+}
+
+// spiderRDBMSEngineListResponse represents Spider's response body for GET /rdbmsengine
+type spiderRDBMSEngineListResponse struct {
+	Result []string `json:"rdbmsengine"`
+}
+
 // spiderRDBMSMetaInfo represents Spider's RDBMSMetaInfo (PascalCase)
 type spiderRDBMSMetaInfo struct {
 	DBEngine                         string                 `json:"DBEngine"`
 	SupportedVersions                []string               `json:"SupportedVersions"`
-	DBInstanceSpecOptions            []string               `json:"DBInstanceSpecOptions"`
+	DBSpecOptions                    []string               `json:"DBSpecOptions"`
 	StorageTypeOptions               []string               `json:"StorageTypeOptions"`
-	StorageSizeRange                 spiderStorageSizeRange `json:"StorageSizeRange"`
+	StorageSizeRangeGB               spiderStorageSizeRange `json:"StorageSizeRangeGB"`
 	SupportsHighAvailability         bool                   `json:"SupportsHighAvailability"`
 	SupportsBackup                   bool                   `json:"SupportsBackup"`
 	BackupRetentionRange             string                 `json:"BackupRetentionRange"`
@@ -70,7 +100,7 @@ type spiderRDBMSCreateReqInfo struct {
 	VPCName             string           `json:"VPCName"`
 	DBEngine            string           `json:"DBEngine"`
 	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBInstanceSpec      string           `json:"DBInstanceSpec"`
+	DBSpec              string           `json:"DBSpec"`
 	StorageSize         string           `json:"StorageSize"`
 	StorageType         string           `json:"StorageType,omitempty"`
 	Iops                string           `json:"Iops,omitempty"`
@@ -104,21 +134,21 @@ type spiderRDBMSDatabaseCreateRequest struct {
 	MasterUserPassword string `json:"MasterUserPassword,omitempty"`
 }
 
-// spiderRDBMSDatabaseCredentialRequest represents Spider's list/delete-database request body
-// (PascalCase; spider.RDBMSDatabaseRequest without DatabaseName — List needs no database name,
-// and Delete's target database name travels in the URL path instead). CB-Spider requires
-// MasterUserPassword on every database-management call, not just create, for drivers without a
-// native database API (SQL-fallback path).
+// spiderRDBMSDatabaseCredentialRequest is Spider's list/delete-database request body (no DatabaseName; List needs none, Delete's travels in the URL).
 type spiderRDBMSDatabaseCredentialRequest struct {
 	ConnectionName     string `json:"ConnectionName"`
 	MasterUserPassword string `json:"MasterUserPassword,omitempty"`
 }
 
-// spiderRDBMSDatabaseListResponse represents Spider's response body for all three database
-// management calls (Create/List/Delete) — each returns the resulting database name list
-// (spider.RDBMSDatabaseListResponse), confirmed against CB-Spider v0.12.44's swagger.yaml.
+// spiderRDBMSDatabaseListResponse represents Spider's response body for GET .../databases
+// (ListRDBMSDatabases) — confirmed against CB-Spider v0.12.45's RDBMSRest.go.
 type spiderRDBMSDatabaseListResponse struct {
 	Databases []string `json:"Databases"`
+}
+
+// spiderSimpleMsgResp is Spider's {"message": "created"/"deleted"} response for CreateRDBMSDatabase/DeleteRDBMSDatabase.
+type spiderSimpleMsgResp struct {
+	Message string `json:"message"`
 }
 
 // spiderRDBMSInfo represents Spider's RDBMSInfo response (PascalCase)
@@ -127,7 +157,7 @@ type spiderRDBMSInfo struct {
 	VpcIID              model.IID        `json:"VpcIID"`
 	DBEngine            string           `json:"DBEngine"`
 	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBInstanceSpec      string           `json:"DBInstanceSpec"`
+	DBSpec              string           `json:"DBSpec"`
 	DBInstanceType      string           `json:"DBInstanceType,omitempty"`
 	StorageSize         string           `json:"StorageSize"`
 	StorageType         string           `json:"StorageType,omitempty"`
@@ -148,24 +178,18 @@ type spiderRDBMSInfo struct {
 	TagList             []model.KeyValue `json:"TagList,omitempty"`
 }
 
-// rdbmsDataSourceKeyNames maps Spider's PascalCase RDBMSMetaInfo field names (as used in
-// DataSource/DataSourceNotes map keys) to this API's own camelCase field names, so a
-// caller reading dataSource never sees a key that doesn't match any field in the same
-// response.
+// rdbmsDataSourceKeyNames maps Spider's PascalCase DataSource/DataSourceNotes keys to this API's camelCase field names.
 var rdbmsDataSourceKeyNames = map[string]string{
-	"SupportedVersions":       "supportedVersions",
-	"DBInstanceSpecOptions":   "dbInstanceSpecOptions",
-	"StorageTypeOptions":      "storageTypeOptions",
-	"StorageSizeRange":        "storageSizeRange",
-	"StorageSizeRange.Min":    "storageSizeRange.min",
-	"StorageSizeRange.Max":    "storageSizeRange.max",
-	"BackupRetentionRange":    "backupRetentionRange",
-	"DBInstanceSpecOptionsV2": "dbInstanceSpecOptions", // defensive: tolerate a future renamed variant
+	"SupportedVersions":      "supportedVersions",
+	"DBSpecOptions":          "dbSpecOptions",
+	"StorageTypeOptions":     "storageTypeOptions",
+	"StorageSizeRangeGB":     "storageSizeRange",
+	"StorageSizeRangeGB.Min": "storageSizeRange.min",
+	"StorageSizeRangeGB.Max": "storageSizeRange.max",
+	"BackupRetentionRange":   "backupRetentionRange",
 }
 
-// translateRDBMSDataSourceKey renames a Spider-side DataSource/DataSourceNotes map key to
-// this API's own field name via rdbmsDataSourceKeyNames, falling back to a lowercased
-// first letter for any key not in that table.
+// translateRDBMSDataSourceKey renames a Spider DataSource/DataSourceNotes key via rdbmsDataSourceKeyNames, else lowercases its first letter.
 func translateRDBMSDataSourceKey(key string) string {
 	if mapped, ok := rdbmsDataSourceKeyNames[key]; ok {
 		return mapped
@@ -176,10 +200,7 @@ func translateRDBMSDataSourceKey(key string) string {
 	return strings.ToLower(key[:1]) + key[1:]
 }
 
-// normalizeStorageTypeKey canonicalizes a storage type identifier for lookup, so that
-// formatting differences between assets/rdbmsinfo.yaml's YAML keys and CB-Spider's literal
-// StorageTypeOptions strings (e.g. "General_HDD" vs "General HDD") don't cause a real,
-// documented entry to be missed just because it isn't a byte-for-byte match.
+// normalizeStorageTypeKey canonicalizes a storage type string for lookup (e.g. "General_HDD" vs "General HDD").
 func normalizeStorageTypeKey(s string) string {
 	s = strings.ToLower(s)
 	for _, sep := range []string{"_", " ", "-"} {
@@ -188,11 +209,7 @@ func normalizeStorageTypeKey(s string) string {
 	return s
 }
 
-// getStorageTypeConfig retrieves the assets/rdbmsinfo.yaml entry (loaded into
-// common.RuntimeRDBMSInfo at server startup; see main.go's setConfig) for a specific
-// provider/storage type. Shared by buildStorageTypeNotes (user-facing notes) and
-// validateRDBMSCreateRequest (size/iops/spec constraint checks). Tries an exact key match
-// first, then falls back to a normalized match (see normalizeStorageTypeKey).
+// getStorageTypeConfig looks up a provider's storage type in assets/rdbmsinfo.yaml, exact match first then normalized.
 func getStorageTypeConfig(providerName, storageType string) (model.RDBMSStorageTypeConfig, bool) {
 	provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]
 	if !exists {
@@ -211,9 +228,7 @@ func getStorageTypeConfig(providerName, storageType string) (model.RDBMSStorageT
 	return model.RDBMSStorageTypeConfig{}, false
 }
 
-// buildStorageTypeConstraints renders a storage type's machine-checkable constraints
-// (iops range, size floor, spec/machine-series compatibility) as one human-readable
-// sentence, for the StorageTypeNote.Constraints field.
+// buildStorageTypeConstraints renders a storage type's constraints (iops, size, spec compatibility) as one sentence.
 func buildStorageTypeConstraints(st model.RDBMSStorageTypeConfig) string {
 	var parts []string
 	if st.RequiresIops {
@@ -227,10 +242,10 @@ func buildStorageTypeConstraints(st model.RDBMSStorageTypeConfig) string {
 		parts = append(parts, fmt.Sprintf("Minimum %dGB storage.", st.MinStorageSize))
 	}
 	if len(st.CompatibleSpecs) > 0 {
-		parts = append(parts, fmt.Sprintf("Requires dbInstanceSpec matching one of: %s.", strings.Join(st.CompatibleSpecs, ", ")))
+		parts = append(parts, fmt.Sprintf("Requires dbSpec matching one of: %s.", strings.Join(st.CompatibleSpecs, ", ")))
 	}
 	if len(st.IncompatibleSpecs) > 0 {
-		parts = append(parts, fmt.Sprintf("Not compatible with dbInstanceSpec(s): %s.", strings.Join(st.IncompatibleSpecs, ", ")))
+		parts = append(parts, fmt.Sprintf("Not compatible with dbSpec(s): %s.", strings.Join(st.IncompatibleSpecs, ", ")))
 	}
 	if len(st.CompatibleMachineSeries) > 0 {
 		parts = append(parts, fmt.Sprintf("Only available on machine series: %s.", strings.Join(st.CompatibleMachineSeries, ", ")))
@@ -238,10 +253,7 @@ func buildStorageTypeConstraints(st model.RDBMSStorageTypeConfig) string {
 	return strings.Join(parts, " ")
 }
 
-// buildStorageTypeNotes enriches Spider's raw storageTypeOptions list with user-facing
-// metadata from assets/rdbmsinfo.yaml (display names, descriptions, constraints,
-// recommendations) to help Portal/UI users and automation scripts make informed storage
-// type selections before RDBMS creation.
+// buildStorageTypeNotes enriches Spider's storageTypeOptions with display/description/constraint metadata from assets/rdbmsinfo.yaml.
 func buildStorageTypeNotes(providerName string, storageTypeOptions []string) []model.StorageTypeNote {
 	if _, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]; !exists {
 		return nil
@@ -292,12 +304,7 @@ func buildRDBMSStaticFields(dataSource, dataSourceNotes map[string]string) []mod
 	return fields
 }
 
-// GetRDBMSCapability retrieves Tumblebug-style RDBMS capability details for a single
-// connection/engine by querying Spider live. providerName/regionName/dbEngine are all
-// required to keep this endpoint to one Spider call: unlike GetRDBMSSupport (a static,
-// CSP-wide reference matrix from assets/rdbmsinfo.yaml requiring no Spider call), each
-// call here is a live query, so an unfiltered "all connections/all engines" mode would
-// fan out into many slow Spider round trips per request.
+// GetRDBMSCapability queries Spider live for one connection/engine's capability details (unlike the static GetRDBMSSupport).
 func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSCapabilityResponse, error) {
 	var response model.RDBMSCapabilityResponse
 	response.ResourceType = model.StrRDBMS
@@ -310,9 +317,7 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 		return response, fmt.Errorf("providerName, regionName, and dbEngine are required")
 	}
 
-	// 1. Resolve the target connection (providerName + regionName normally resolves to a
-	// single connection within the caller's credential-holder scope; if more than one
-	// matches, the first (name-sorted) is used deterministically).
+	// 1. Resolve the target connection (first name-sorted match if more than one).
 	connNames, err := common.GetConnConfigListByProviderRegionZone(providerName, regionName, "")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list connection configs for RDBMS support")
@@ -365,9 +370,9 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 		ConnectionName:                   connConfig.ConfigName,
 		DBEngine:                         spiderMeta.DBEngine,
 		SupportedVersions:                spiderMeta.SupportedVersions,
-		DBInstanceSpecOptions:            spiderMeta.DBInstanceSpecOptions,
+		DBSpecOptions:                    spiderMeta.DBSpecOptions,
 		StorageTypeOptions:               spiderMeta.StorageTypeOptions,
-		StorageSizeRange:                 model.StorageSizeRange{Min: spiderMeta.StorageSizeRange.Min, Max: spiderMeta.StorageSizeRange.Max},
+		StorageSizeRange:                 model.StorageSizeRange{Min: spiderMeta.StorageSizeRangeGB.Min, Max: spiderMeta.StorageSizeRangeGB.Max},
 		SupportsHighAvailability:         spiderMeta.SupportsHighAvailability,
 		SupportsBackup:                   spiderMeta.SupportsBackup,
 		BackupRetentionRange:             spiderMeta.BackupRetentionRange,
@@ -385,23 +390,33 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 		},
 	}
 
+	// 3. Best-effort enrichment from /dbspec and /rdbmsengine (CB-Spider v0.12.45+) — a failure here must not fail the whole capability call; the fields just stay empty.
+	if dbSpecs, dbSpecErr := getSpiderDBSpecs(connConfig.ConfigName, dbEngine); dbSpecErr != nil {
+		log.Warn().Err(dbSpecErr).Msgf("GetRDBMSCapability: /dbspec enrichment failed for connection '%s' (non-fatal)", connConfig.ConfigName)
+	} else {
+		usable := filterUsableDBSpecs(dbSpecs)
+		specs := make([]model.RDBMSDBSpecInfo, 0, len(usable))
+		for _, s := range usable {
+			specs = append(specs, model.RDBMSDBSpecInfo{
+				Name:               s.Name,
+				VCpuCount:          s.VCpu.Count,
+				VCpuClockGHz:       s.VCpu.ClockGHz,
+				MemSizeMiB:         s.MemSizeMiB,
+				StorageSizeRangeGB: model.StorageSizeRange{Min: s.StorageSizeRangeGB.Min, Max: s.StorageSizeRangeGB.Max},
+			})
+		}
+		response.Supports.DBSpecs = specs
+	}
+	if engines, engineErr := getSpiderRDBMSEngines(connConfig.ConfigName); engineErr != nil {
+		log.Warn().Err(engineErr).Msgf("GetRDBMSCapability: /rdbmsengine enrichment failed for connection '%s' (non-fatal)", connConfig.ConfigName)
+	} else {
+		response.Supports.LiveSupportedEngines = engines
+	}
+
 	return response, nil
 }
 
-// GetRDBMSSupport returns the static, CSP-wide RDBMS support matrix from
-// assets/rdbmsinfo.yaml (common.RuntimeRDBMSInfo) — a deliberately brief per-CSP summary
-// (which DB engines are verified, storage type selectability, how the internal Database
-// CRUD API is implemented, tag support). Unlike GetRDBMSCapability, this makes no Spider
-// call, so it can safely cover every CSP in one response (or one CSP via providerName). Use
-// this to discover what's possible before picking a provider/engine; use
-// GetRDBMSCapability for a specific connection's live, authoritative details, including
-// full storage type guidance (Notes.StorageTypes).
-//
-// Like GetObjectStorageSupport, the full response always covers every CSP in csp.AllCSPs —
-// not just the ones documented in assets/rdbmsinfo.yaml — so a CSP with no RDBMS support at
-// all (e.g. KT) still appears, with Supported: false, rather than being silently omitted.
-// A providerName filter only errors for a name unknown to csp.AllCSPs entirely; a known but
-// undocumented/unsupported CSP still returns a (Supported: false) entry, not an error.
+// GetRDBMSSupport returns the static, CSP-wide RDBMS support matrix from assets/rdbmsinfo.yaml, covering every CSP in csp.AllCSPs (Supported: false for undocumented ones) unless filtered by providerName.
 func GetRDBMSSupport(providerName string) (model.RDBMSSupportResponse, error) {
 	response := model.RDBMSSupportResponse{
 		ResourceType: model.StrRDBMS,
@@ -423,10 +438,7 @@ func GetRDBMSSupport(providerName string) (model.RDBMSSupportResponse, error) {
 	return response, nil
 }
 
-// buildCSPSupportInfo builds one CSP's model.RDBMSCSPSupportInfo entry for GetRDBMSSupport.
-// If cspKey has no assets/rdbmsinfo.yaml entry (e.g. KT, where RDBMS isn't supported at all
-// per cspSupportingRDBMS), it returns a minimal Supported: false entry instead of an empty
-// struct, so the omission reads as "not supported" rather than "forgot to document".
+// buildCSPSupportInfo builds one CSP's RDBMSCSPSupportInfo, returning Supported: false if cspKey has no assets/rdbmsinfo.yaml entry.
 func buildCSPSupportInfo(cspKey string) model.RDBMSCSPSupportInfo {
 	provider, exists := common.RuntimeRDBMSInfo.DBMS[cspKey]
 	if !exists {
@@ -437,12 +449,12 @@ func buildCSPSupportInfo(cspKey string) model.RDBMSCSPSupportInfo {
 	}
 
 	return model.RDBMSCSPSupportInfo{
-		Supported:                  isRDBMSSupported(cspKey),
-		SupportedDBEngines:         provider.SupportedDBEngines,
-		SupportedDBOperationMethod: provider.SupportedDBOperationMethod,
-		SupportsTag:                provider.SupportsTag,
-		StorageTypeSelectable:      provider.StorageTypeSelectable,
-		Note:                       provider.Note,
+		Supported:             isRDBMSSupported(cspKey),
+		SupportedDBEngines:    provider.SupportedDBEngines,
+		DBOperationMethod:     provider.DBOperationMethod,
+		SupportsTag:           provider.SupportsTag,
+		StorageTypeSelectable: provider.StorageTypeSelectable,
+		Note:                  provider.Note,
 	}
 }
 
@@ -472,9 +484,7 @@ func isRDBMSSupported(cspType string) bool {
 	return supported
 }
 
-// getSpiderRDBMSMetaInfo queries Spider live for a single connection/engine's RDBMSMetaInfo.
-// Used at create time so validation always reflects the CSP's current capabilities
-// (see docs/feature_guide/rdbms-management.md §2.2 for why this is not backed by static config).
+// getSpiderRDBMSMetaInfo queries Spider live for a connection/engine's RDBMSMetaInfo (see docs/feature_guide/rdbms-management.md's CSP-Specific Capability Reference intro).
 func getSpiderRDBMSMetaInfo(connectionName, dbEngine string) (spiderRDBMSMetaInfo, error) {
 	var spiderMeta spiderRDBMSMetaInfo
 	client := clientManager.NewHttpClient()
@@ -496,6 +506,125 @@ func getSpiderRDBMSMetaInfo(connectionName, dbEngine string) (spiderRDBMSMetaInf
 		return spiderMeta, apierr.Wrap(err, fmt.Sprintf("failed to query RDBMS metainfo for connection '%s'", connectionName))
 	}
 	return spiderMeta, nil
+}
+
+// getSpiderDBSpecs queries GET /dbspec, the richer per-spec catalog behind rdbmsmetainfo's flat DBSpecOptions name list.
+func getSpiderDBSpecs(connectionName, dbEngine string) ([]spiderDBSpecInfo, error) {
+	var specResp spiderDBSpecListResponse
+	client := clientManager.NewHttpClient()
+	noBody := clientManager.NoBody
+	spiderUrl := fmt.Sprintf("%s/dbspec?ConnectionName=%s&DBEngine=%s",
+		model.SpiderRestUrl, url.QueryEscape(connectionName), url.QueryEscape(dbEngine))
+
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		spiderUrl,
+		nil,
+		clientManager.SetUseBody(noBody),
+		&noBody,
+		&specResp,
+		clientManager.MediumDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		return nil, apierr.Wrap(err, fmt.Sprintf("failed to query DB specs for connection '%s'", connectionName))
+	}
+	return specResp.Result, nil
+}
+
+// getSpiderRDBMSEngines queries GET /rdbmsengine for which engines this connection's driver claims to support.
+func getSpiderRDBMSEngines(connectionName string) ([]string, error) {
+	var engineResp spiderRDBMSEngineListResponse
+	client := clientManager.NewHttpClient()
+	noBody := clientManager.NoBody
+	spiderUrl := fmt.Sprintf("%s/rdbmsengine?ConnectionName=%s", model.SpiderRestUrl, url.QueryEscape(connectionName))
+
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		spiderUrl,
+		nil,
+		clientManager.SetUseBody(noBody),
+		&noBody,
+		&engineResp,
+		clientManager.ShortDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		return nil, apierr.Wrap(err, fmt.Sprintf("failed to query supported RDBMS engines for connection '%s'", connectionName))
+	}
+	return engineResp.Result, nil
+}
+
+// filterUsableDBSpecs drops entries with no real spec data (vCPU/memory reported as "-1").
+func filterUsableDBSpecs(specs []spiderDBSpecInfo) []spiderDBSpecInfo {
+	usable := make([]spiderDBSpecInfo, 0, len(specs))
+	for _, s := range specs {
+		if s.VCpu.Count == "-1" && s.MemSizeMiB == "-1" {
+			continue
+		}
+		usable = append(usable, s)
+	}
+	return usable
+}
+
+// dbSpecSortKey parses a DBSpecInfo's vCPU count/memory for size-ascending sorting; an
+// unparseable value sorts last rather than first, so a malformed entry never wins by default.
+func dbSpecSortKey(s string) int {
+	n, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil {
+		return math.MaxInt32
+	}
+	return n
+}
+
+// pickSmallestDBSpec returns the smallest usable spec by (vCPU count, memory) ascending, or "" if specs is empty.
+func pickSmallestDBSpec(specs []spiderDBSpecInfo) string {
+	usable := filterUsableDBSpecs(specs)
+	if len(usable) == 0 {
+		return ""
+	}
+	sort.Slice(usable, func(i, j int) bool {
+		ci, cj := dbSpecSortKey(usable[i].VCpu.Count), dbSpecSortKey(usable[j].VCpu.Count)
+		if ci != cj {
+			return ci < cj
+		}
+		return dbSpecSortKey(usable[i].MemSizeMiB) < dbSpecSortKey(usable[j].MemSizeMiB)
+	})
+	return usable[0].Name
+}
+
+// newestSupportedVersion returns the numerically-greatest dot-separated version string (e.g. "8.0" > "5.5"); fallback when no referenceEngineVersion is set.
+func newestSupportedVersion(versions []string) string {
+	if len(versions) == 0 {
+		return ""
+	}
+	newest := versions[0]
+	for _, v := range versions[1:] {
+		if compareVersionStrings(v, newest) > 0 {
+			newest = v
+		}
+	}
+	return newest
+}
+
+// compareVersionStrings compares two dot-separated version strings segment by segment
+// (numerically); an unparseable segment is treated as 0.
+func compareVersionStrings(a, b string) int {
+	as := strings.Split(a, ".")
+	bs := strings.Split(b, ".")
+	for i := 0; i < len(as) || i < len(bs); i++ {
+		var an, bn int
+		if i < len(as) {
+			an, _ = strconv.Atoi(strings.TrimSpace(as[i]))
+		}
+		if i < len(bs) {
+			bn, _ = strconv.Atoi(strings.TrimSpace(bs[i]))
+		}
+		if an != bn {
+			return an - bn
+		}
+	}
+	return 0
 }
 
 // resolveRDBMSNetwork resolves Tumblebug vNetId/subnetIds/securityGroupIds to their CSP names.
@@ -532,14 +661,8 @@ func resolveRDBMSNetwork(nsId, vNetId string, subnetIds, securityGroupIds []stri
 	return vNetInfo.CspResourceName, subnetNames, sgNames, nil
 }
 
-// applyRDBMSCreateDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from
-// live RDBMSMetaInfo when req.AutoFillDefaults is set and the field was left empty/zero.
-// Selection is always "first supported option" — CB-Spider's option lists carry no
-// cost/performance ordering, so this is a capability-valid pick, not a recommendation.
-// StorageSize falls back to StorageSizeRange.Min even when SupportsStorageSizeConfiguration
-// is false, since CB-Spider's create schema still requires a StorageSize value for those CSPs.
-// safeStorageTypePreference defines preferred storage type selection order for autoFillDefaults,
-// prioritizing types that don't require additional parameters (e.g., iops) or have special size constraints.
+// applyRDBMSCreateDefaults fills DBEngineVersion/DBSpec/StorageType/StorageSize from live RDBMSMetaInfo when AutoFillDefaults is set and the field is empty.
+// safeStorageTypePreference orders preferred storage types for autoFillDefaults, favoring ones needing no extra params (e.g. iops).
 var safeStorageTypePreference = map[string][]string{
 	"aws":       {"gp3", "gp2", "standard"},   // avoid io1/io2 (requires iops, min 100GB)
 	"alibaba":   {"cloud_auto", "cloud_essd"}, // avoid cloud_essd2/3 (500GB/1500GB min), local_ssd (spec constraint)
@@ -556,20 +679,48 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 	if !req.AutoFillDefaults {
 		return
 	}
-	if req.DBEngineVersion == "" && len(meta.SupportedVersions) > 0 {
-		req.DBEngineVersion = meta.SupportedVersions[0]
+	if req.DBEngineVersion == "" {
+		// Prefer the CB-Spider-verified reference version (assets/rdbmsinfo.yaml) over the live list, since some CSPs restrict valid dbSpec/version pairs.
+		if provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]; exists {
+			if reqmt, ok := provider.DBMSRequirements[strings.ToLower(req.DBEngine)]; ok && reqmt.ReferenceEngineVersion != "" {
+				req.DBEngineVersion = reqmt.ReferenceEngineVersion
+			}
+		}
+		if req.DBEngineVersion == "" && len(meta.SupportedVersions) > 0 {
+			req.DBEngineVersion = newestSupportedVersion(meta.SupportedVersions)
+		}
 	}
-	if req.DBInstanceSpec == "" && len(meta.DBInstanceSpecOptions) > 0 {
-		req.DBInstanceSpec = meta.DBInstanceSpecOptions[0]
+	if req.DBSpec == "" {
+		// Prefer the CB-Spider-verified reference dbSpec (assets/rdbmsinfo.yaml) over the live catalog's "smallest" pick, which CreateRDBMS can still reject.
+		if provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]; exists {
+			if reqmt, ok := provider.DBMSRequirements[strings.ToLower(req.DBEngine)]; ok && reqmt.ReferenceDBSpec != "" {
+				req.DBSpec = reqmt.ReferenceDBSpec
+			}
+		}
+	}
+	if req.DBSpec == "" {
+		// Pick the smallest usable spec from the live /dbspec catalog instead of index 0 of the flat DBSpecOptions list (see §5's Azure/IBM picks); falls back to the old behavior on failure.
+		if specs, specErr := getSpiderDBSpecs(req.ConnectionName, req.DBEngine); specErr != nil {
+			log.Warn().Err(specErr).Msg("AutoFillDefaults: /dbspec lookup failed, falling back to DBSpecOptions[0]")
+			if len(meta.DBSpecOptions) > 0 {
+				req.DBSpec = meta.DBSpecOptions[0]
+			}
+		} else if picked := pickSmallestDBSpec(specs); picked != "" {
+			req.DBSpec = picked
+			log.Info().Msgf("AutoFillDefaults: selected smallest usable dbSpec=%s", picked)
+		} else if len(meta.DBSpecOptions) > 0 {
+			log.Warn().Msg("AutoFillDefaults: /dbspec returned no usable entries, falling back to DBSpecOptions[0]")
+			req.DBSpec = meta.DBSpecOptions[0]
+		}
 	}
 
-	// StorageType: prefer safe defaults that don't require iops or have size constraints
+	// StorageType: prefer safe defaults with no iops/size constraints that are also compatible with the resolved DBSpec's machine series (isStorageTypeCompatibleWithDBSpec; prevents GCP's PD_SSD-vs-C4A mismatch).
 	if req.StorageType == "" && meta.SupportsStorageTypeSelection && len(meta.StorageTypeOptions) > 0 {
 		providerKey := strings.ToLower(providerName)
 		if preferences, exists := safeStorageTypePreference[providerKey]; exists {
 			for _, preferred := range preferences {
 				for _, available := range meta.StorageTypeOptions {
-					if strings.EqualFold(preferred, available) {
+					if strings.EqualFold(preferred, available) && isStorageTypeCompatibleWithDBSpec(providerName, available, req.DBSpec) {
 						req.StorageType = available
 						log.Info().Msgf("AutoFillDefaults: selected safe storageType=%s", available)
 						break
@@ -580,20 +731,21 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 				}
 			}
 		}
-		// fallback: use first available if no safe preference matched
-		if req.StorageType == "" && len(meta.StorageTypeOptions) > 0 {
-			req.StorageType = meta.StorageTypeOptions[0]
-			log.Warn().Msgf("AutoFillDefaults: no safe preference, using first storageType=%s", req.StorageType)
+		// fallback: first available storage type compatible with the resolved DBSpec, if no safe preference matched (or none were compatible)
+		if req.StorageType == "" {
+			for _, available := range meta.StorageTypeOptions {
+				if isStorageTypeCompatibleWithDBSpec(providerName, available, req.DBSpec) {
+					req.StorageType = available
+					log.Warn().Msgf("AutoFillDefaults: no safe preference, using first compatible storageType=%s", req.StorageType)
+					break
+				}
+			}
 		}
 	}
 
-	// StorageSize: fill from the engine's overall minimum, but raise it to the selected
-	// storageType's own minimum (assets/rdbmsinfo.yaml) if that's higher — e.g. AWS
-	// reports an overall mysql minimum of 5GB, but gp3 itself requires 20GB. Using
-	// meta.StorageSizeRange.Min alone would auto-fill a size the type-specific
-	// validation right below immediately rejects.
+	// StorageSize: fill from the engine minimum, raised to the storageType's own minimum if higher (e.g. AWS gp3 needs 20GB, not mysql's overall 5GB).
 	if req.StorageSize <= 0 {
-		minSize := meta.StorageSizeRange.Min
+		minSize := meta.StorageSizeRangeGB.Min
 		if req.StorageType != "" {
 			if st, found := getStorageTypeConfig(providerName, req.StorageType); found && st.MinStorageSize > minSize {
 				minSize = st.MinStorageSize
@@ -605,9 +757,7 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 	}
 }
 
-// matchesAnySpecPattern reports whether spec matches any of the glob patterns (e.g.
-// "mysql.n4.*") from a storage type's compatibleSpecs/incompatibleSpecs in
-// assets/rdbmsinfo.yaml. An empty pattern list matches nothing.
+// matchesAnySpecPattern reports whether spec matches any glob pattern (e.g. "mysql.n4.*") from assets/rdbmsinfo.yaml; an empty list matches nothing.
 func matchesAnySpecPattern(spec string, patterns []string) bool {
 	for _, pattern := range patterns {
 		if matched, err := filepath.Match(pattern, spec); err == nil && matched {
@@ -617,9 +767,45 @@ func matchesAnySpecPattern(spec string, patterns []string) bool {
 	return false
 }
 
-// validateRDBMSCreateRequest checks the request against the CSP's live capability flags
-// and assets/rdbmsinfo.yaml's storage type constraints, so unsupported combinations fail
-// fast before provisioning.
+// matchesAnyMachineSeries reports whether dbSpec contains any machine-series code (e.g. "C4A") case-insensitively, as a substring check.
+func matchesAnyMachineSeries(dbSpec string, series []string) bool {
+	lowerSpec := strings.ToLower(dbSpec)
+	for _, s := range series {
+		if strings.Contains(lowerSpec, strings.ToLower(s)) {
+			return true
+		}
+	}
+	return false
+}
+
+// isStorageTypeCompatibleWithDBSpec checks assets/rdbmsinfo.yaml's compatibleMachineSeries: a restricted type needs a series match; an unrestricted type is incompatible only if another type reserves that series (e.g. GCP's C4A/N4 reserved by HYPERDISK_BALANCED).
+func isStorageTypeCompatibleWithDBSpec(providerName, storageType, dbSpec string) bool {
+	if storageType == "" || dbSpec == "" {
+		return true
+	}
+	provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]
+	if !exists {
+		return true
+	}
+	target, found := getStorageTypeConfig(providerName, storageType)
+	if !found {
+		return true
+	}
+	if len(target.CompatibleMachineSeries) > 0 {
+		return matchesAnyMachineSeries(dbSpec, target.CompatibleMachineSeries)
+	}
+	for key, other := range provider.StorageTypes {
+		if strings.EqualFold(key, storageType) {
+			continue
+		}
+		if len(other.CompatibleMachineSeries) > 0 && matchesAnyMachineSeries(dbSpec, other.CompatibleMachineSeries) {
+			return false
+		}
+	}
+	return true
+}
+
+// validateRDBMSCreateRequest checks the request against live capability flags and assets/rdbmsinfo.yaml's storage type constraints before provisioning.
 func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateRequest, providerName string) error {
 	if meta.RequiresSubnet && len(req.SubnetIds) == 0 {
 		return fmt.Errorf("subnetIds required for %s", providerName)
@@ -633,8 +819,8 @@ func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateR
 
 	// General storage size range check
 	if meta.SupportsStorageSizeConfiguration {
-		if req.StorageSize < meta.StorageSizeRange.Min || (meta.StorageSizeRange.Max > 0 && req.StorageSize > meta.StorageSizeRange.Max) {
-			return fmt.Errorf("storageSize %d out of range [%d-%d] for %s", req.StorageSize, meta.StorageSizeRange.Min, meta.StorageSizeRange.Max, providerName)
+		if req.StorageSize < meta.StorageSizeRangeGB.Min || (meta.StorageSizeRangeGB.Max > 0 && req.StorageSize > meta.StorageSizeRangeGB.Max) {
+			return fmt.Errorf("storageSize %d out of range [%d-%d] for %s", req.StorageSize, meta.StorageSizeRangeGB.Min, meta.StorageSizeRangeGB.Max, providerName)
 		}
 	}
 
@@ -650,36 +836,85 @@ func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateR
 			if st.RequiresIops && req.Iops == "" {
 				return fmt.Errorf("storageType '%s' requires 'iops' parameter (e.g., '3000')", req.StorageType)
 			}
-			if req.DBInstanceSpec != "" {
-				if len(st.CompatibleSpecs) > 0 && !matchesAnySpecPattern(req.DBInstanceSpec, st.CompatibleSpecs) {
-					return fmt.Errorf("storageType '%s' requires dbInstanceSpec matching one of %v (got: %s)", req.StorageType, st.CompatibleSpecs, req.DBInstanceSpec)
+			if req.DBSpec != "" {
+				if len(st.CompatibleSpecs) > 0 && !matchesAnySpecPattern(req.DBSpec, st.CompatibleSpecs) {
+					return fmt.Errorf("storageType '%s' requires dbSpec matching one of %v (got: %s)", req.StorageType, st.CompatibleSpecs, req.DBSpec)
 				}
-				if matchesAnySpecPattern(req.DBInstanceSpec, st.IncompatibleSpecs) {
-					return fmt.Errorf("storageType '%s' is not compatible with dbInstanceSpec '%s'", req.StorageType, req.DBInstanceSpec)
+				if matchesAnySpecPattern(req.DBSpec, st.IncompatibleSpecs) {
+					return fmt.Errorf("storageType '%s' is not compatible with dbSpec '%s'", req.StorageType, req.DBSpec)
 				}
 			}
+		}
+		if req.DBSpec != "" && !isStorageTypeCompatibleWithDBSpec(providerName, req.StorageType, req.DBSpec) {
+			return fmt.Errorf("storageType '%s' is not compatible with dbSpec '%s' for %s (its machine series requires a different storage type — see assets/rdbmsinfo.yaml's compatibleMachineSeries)", req.StorageType, req.DBSpec, providerName)
 		}
 	}
 
 	return nil
 }
 
-// updateRDBMSInfoFromSpider copies Spider's response fields into a Tumblebug RDBMSInfo.
-// Status is set verbatim from Spider (Creating/Available/Deleting/Stopped/Error) since,
-// once CB-Spider is successfully reached, it is authoritative for the CSP-reported state.
+// validateAdminCredentials checks AdminUserName/AdminUserPassword against assets/rdbmsinfo.yaml's per-CSP requirement (e.g. Tencent forces "root") before provisioning.
+func validateAdminCredentials(providerName string, req model.RDBMSCreateRequest) error {
+	provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]
+	if !exists {
+		return nil
+	}
+
+	if nameReq := provider.AdminUserNameRequirement; nameReq != nil {
+		if nameReq.FixedValue != "" && !strings.EqualFold(req.AdminUserName, nameReq.FixedValue) {
+			return fmt.Errorf("adminUserName must be '%s' for %s (got: '%s')", nameReq.FixedValue, providerName, req.AdminUserName)
+		}
+		for _, reserved := range nameReq.ReservedValues {
+			if strings.EqualFold(req.AdminUserName, reserved) {
+				return fmt.Errorf("adminUserName '%s' is reserved on %s; choose a different value", req.AdminUserName, providerName)
+			}
+		}
+	}
+
+	if pwReq := provider.AdminUserPasswordRequirement; pwReq != nil {
+		pwLen := len(req.AdminUserPassword)
+		if pwReq.MinLength > 0 && pwLen < pwReq.MinLength {
+			return fmt.Errorf("adminUserPassword must be at least %d characters for %s (got: %d)", pwReq.MinLength, providerName, pwLen)
+		}
+		if pwReq.MaxLength > 0 && pwLen > pwReq.MaxLength {
+			return fmt.Errorf("adminUserPassword must be at most %d characters for %s (got: %d)", pwReq.MaxLength, providerName, pwLen)
+		}
+		hasSpecial := hasSpecialChar(req.AdminUserPassword)
+		if pwReq.RequiresSpecialChar && !hasSpecial {
+			return fmt.Errorf("adminUserPassword requires at least one special character for %s", providerName)
+		}
+		if pwReq.ForbidsSpecialChar && hasSpecial {
+			return fmt.Errorf("adminUserPassword must not contain special characters for %s", providerName)
+		}
+	}
+
+	return nil
+}
+
+// hasSpecialChar reports whether s contains any character outside letters and digits.
+func hasSpecialChar(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			return true
+		}
+	}
+	return false
+}
+
+// updateRDBMSInfoFromSpider copies Spider's response fields (including Status, verbatim) into a Tumblebug RDBMSInfo.
 func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 	rdbmsInfo.CspResourceName = sp.IId.NameId
 	rdbmsInfo.CspResourceId = sp.IId.SystemId
 	rdbmsInfo.DBEngine = sp.DBEngine
 	rdbmsInfo.DBEngineVersion = sp.DBEngineVersion
-	rdbmsInfo.DBInstanceSpec = sp.DBInstanceSpec
+	rdbmsInfo.DBSpec = sp.DBSpec
 	rdbmsInfo.DBInstanceType = sp.DBInstanceType
 	rdbmsInfo.StorageType = sp.StorageType
 	rdbmsInfo.Iops = sp.Iops
 	if size, err := strconv.Atoi(sp.StorageSize); err == nil {
 		rdbmsInfo.StorageSize = size
 	}
-	rdbmsInfo.MasterUserName = sp.MasterUserName
+	rdbmsInfo.AdminUserName = sp.MasterUserName
 	rdbmsInfo.PublicAccess = sp.PublicAccess
 	rdbmsInfo.HighAvailability = sp.HighAvailability
 	rdbmsInfo.BackupRetentionDays = sp.BackupRetentionDays
@@ -692,27 +927,18 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 }
 
 const (
-	// rdbmsCreationPollInterval matches the poll cadence CB-Spider's own
-	// rdbms-mysql-test suite uses while waiting for Status to leave "Creating".
-	rdbmsCreationPollInterval = 30 * time.Second
-	// rdbmsCreationTimeout is sized off observed CB-Spider test results, not the
-	// suite's own MAX_WAIT_SEC=3600 (a CI safety net, not a typical duration):
-	// times ranged ~2m30s (Alibaba) to ~11m24s (NCP/NHN) across 9 CSPs. 20 minutes
-	// gives ~2x margin over the slowest observed CSP.
-	rdbmsCreationTimeout = 20 * time.Minute
+	rdbmsCreationPollInterval = 10 * time.Second
+	rdbmsCreationMaxAttempts  = 30 // 5 minutes total
+	rdbmsCreationTimeout      = rdbmsCreationMaxAttempts * rdbmsCreationPollInterval
 )
 
-// waitForRDBMSAvailable polls Spider GET until Status leaves "Creating", persisting
-// progress to kvstore on each poll so a concurrent GetRDBMS call observes it while
-// this call blocks. Returns the terminal spiderRDBMSInfo, or an error if the poll
-// times out; a non-"Available" terminal status is left for the caller to handle.
-func waitForRDBMSAvailable(rdbmsKey string, rdbmsInfo *model.RDBMSInfo) (spiderRDBMSInfo, error) {
+// ConfirmRDBMSCreated polls Spider GET until Status reaches "Available" or attempts run out, retrying regardless of the status seen in between — Creating, or a possibly-transient Error (e.g. Alibaba's driver mis-mapping ACCOUNT_MODE_UPGRADING) — persisting progress to kvstore so a concurrent GetRDBMS observes it.
+func ConfirmRDBMSCreated(rdbmsKey string, rdbmsInfo *model.RDBMSInfo) (spiderRDBMSInfo, error) {
 	client := clientManager.NewHttpClient()
 	noBody := clientManager.NoBody
 	getUrl := fmt.Sprintf("%s/rdbms/%s?ConnectionName=%s", model.SpiderRestUrl, rdbmsInfo.Uid, rdbmsInfo.ConnectionName)
-	deadline := time.Now().Add(rdbmsCreationTimeout)
 
-	for {
+	for attempt := 1; attempt <= rdbmsCreationMaxAttempts; attempt++ {
 		var spResp spiderRDBMSInfo
 		restyResp, err := clientManager.ExecuteHttpRequest(
 			client,
@@ -726,34 +952,25 @@ func waitForRDBMSAvailable(rdbmsKey string, rdbmsInfo *model.RDBMSInfo) (spiderR
 		)
 
 		if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
-			log.Warn().Err(err).Msgf("RDBMS %s status poll failed; retrying", rdbmsInfo.Uid)
-		} else if spResp.Status != "Creating" {
+			log.Warn().Err(err).Msgf("RDBMS %s status poll failed on attempt %d/%d; retrying", rdbmsInfo.Uid, attempt, rdbmsCreationMaxAttempts)
+		} else if spResp.Status == "Available" {
 			return spResp, nil
 		} else {
-			log.Info().Msgf("RDBMS %s still creating; will poll again in %s", rdbmsInfo.Uid, rdbmsCreationPollInterval)
+			log.Info().Msgf("RDBMS %s not yet Available (status: %s), attempt %d/%d; will poll again in %s", rdbmsInfo.Uid, spResp.Status, attempt, rdbmsCreationMaxAttempts, rdbmsCreationPollInterval)
 			updateRDBMSInfoFromSpider(rdbmsInfo, spResp)
 			if val, mErr := json.Marshal(rdbmsInfo); mErr == nil {
 				_ = kvstore.Put(rdbmsKey, string(val))
 			}
 		}
 
-		if time.Now().After(deadline) {
-			return spiderRDBMSInfo{}, fmt.Errorf("timed out after %s waiting for RDBMS %s to leave Creating", rdbmsCreationTimeout, rdbmsInfo.Uid)
+		if attempt < rdbmsCreationMaxAttempts {
+			time.Sleep(rdbmsCreationPollInterval)
 		}
-		time.Sleep(rdbmsCreationPollInterval)
 	}
+	return spiderRDBMSInfo{}, fmt.Errorf("timed out after %s waiting for RDBMS %s to become Available", rdbmsCreationTimeout, rdbmsInfo.Uid)
 }
 
-// resolveAndValidateRDBMSCreateRequest resolves the request's Tumblebug vNet/subnet/
-// securityGroup IDs to CSP names, checks the connection/CSP/dbEngine combination against
-// live RDBMSMetaInfo (always live; see §2.2), applies autoFillDefaults, and runs
-// validateRDBMSCreateRequest's assets/rdbmsinfo.yaml storage-type checks. This is the single
-// shared core behind both CreateRDBMS (which then actually provisions) and the exported
-// ValidateRDBMSCreateRequest (a dry run with no side effects) — validation logic lives in
-// exactly one place so the two can never silently disagree.
-//
-// Returns the resolved request (autoFillDefaults applied, if set) plus everything CreateRDBMS
-// additionally needs to actually provision (connConfig, vpcName, subnetNames, sgNames).
+// resolveAndValidateRDBMSCreateRequest resolves IDs, validates against live RDBMSMetaInfo, and applies defaults — the single shared core behind CreateRDBMS and the dry-run ValidateRDBMSCreateRequest.
 func resolveAndValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequest) (
 	resolvedReq model.RDBMSCreateRequest,
 	connConfig model.ConnConfig,
@@ -796,8 +1013,12 @@ func resolveAndValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequ
 		return
 	}
 	if meta.DBEngine == "" {
-		err = fmt.Errorf("dbEngine '%s' is not supported for connection '%s' (see GET /tumblebug/rdbms/support for %s's supportedDBEngines)",
-			req.DBEngine, req.ConnectionName, connConfig.ProviderName)
+		liveHint := ""
+		if engines, engineErr := getSpiderRDBMSEngines(req.ConnectionName); engineErr == nil && len(engines) > 0 {
+			liveHint = fmt.Sprintf("; this connection's live-supported engines are: %v", engines)
+		}
+		err = fmt.Errorf("dbEngine '%s' is not supported for connection '%s' (see GET /tumblebug/rdbms/support for %s's supportedDBEngines)%s",
+			req.DBEngine, req.ConnectionName, connConfig.ProviderName, liveHint)
 		return
 	}
 
@@ -807,8 +1028,8 @@ func resolveAndValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequ
 		err = fmt.Errorf("dbEngineVersion required (or set autoFillDefaults=true)")
 		return
 	}
-	if resolvedReq.DBInstanceSpec == "" {
-		err = fmt.Errorf("dbInstanceSpec required (or set autoFillDefaults=true)")
+	if resolvedReq.DBSpec == "" {
+		err = fmt.Errorf("dbSpec required (or set autoFillDefaults=true)")
 		return
 	}
 	if resolvedReq.StorageSize <= 0 {
@@ -818,23 +1039,20 @@ func resolveAndValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequ
 	if err = validateRDBMSCreateRequest(meta, resolvedReq, connConfig.ProviderName); err != nil {
 		return
 	}
+	if err = validateAdminCredentials(connConfig.ProviderName, resolvedReq); err != nil {
+		return
+	}
 
 	return resolvedReq, connConfig, vpcName, subnetNames, sgNames, nil
 }
 
-// ValidateRDBMSCreateRequest runs the exact same checks CreateRDBMS performs before
-// provisioning — network resolution, live CB-Spider capability checks, and
-// assets/rdbmsinfo.yaml storage-type constraints — as a pure dry run: no Spider call to
-// create anything, no kvstore writes. Returns the resolved request (autoFillDefaults
-// applied, if set) so the caller can preview exactly what CreateRDBMS would use.
+// ValidateRDBMSCreateRequest runs CreateRDBMS's exact validation as a pure dry run — no Spider create call, no kvstore writes.
 func ValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequest) (model.RDBMSCreateRequest, error) {
 	resolvedReq, _, _, _, _, err := resolveAndValidateRDBMSCreateRequest(nsId, req)
 	return resolvedReq, err
 }
 
-// CreateRDBMS creates a managed RDBMS instance via CB-Spider, polling internally until
-// the instance leaves "Creating" so it returns the final Available/Failed state directly
-// rather than a caller-facing "Creating" placeholder (see docs/feature_guide/rdbms-management.md §4.1).
+// CreateRDBMS creates a managed RDBMS instance via CB-Spider, polling until it leaves "Creating" so it returns the final state directly (see §4.1).
 func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest) (model.RDBMSInfo, error) {
 	var emptyRet model.RDBMSInfo
 	var rdbmsInfo model.RDBMSInfo
@@ -859,11 +1077,11 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	rdbmsInfo.SecurityGroupIds = req.SecurityGroupIds
 	rdbmsInfo.DBEngine = req.DBEngine
 	rdbmsInfo.DBEngineVersion = req.DBEngineVersion
-	rdbmsInfo.DBInstanceSpec = req.DBInstanceSpec
+	rdbmsInfo.DBSpec = req.DBSpec
 	rdbmsInfo.StorageType = req.StorageType
 	rdbmsInfo.StorageSize = req.StorageSize
 	rdbmsInfo.Iops = req.Iops
-	rdbmsInfo.MasterUserName = req.MasterUserName
+	rdbmsInfo.AdminUserName = req.AdminUserName
 	rdbmsInfo.HighAvailability = req.HighAvailability
 	rdbmsInfo.BackupRetentionDays = req.BackupRetentionDays
 	rdbmsInfo.PublicAccess = req.PublicAccess
@@ -907,14 +1125,14 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 			VPCName:             vpcName,
 			DBEngine:            req.DBEngine,
 			DBEngineVersion:     req.DBEngineVersion,
-			DBInstanceSpec:      req.DBInstanceSpec,
+			DBSpec:              req.DBSpec,
 			StorageSize:         strconv.Itoa(req.StorageSize),
 			StorageType:         req.StorageType,
 			Iops:                req.Iops,
 			SubnetNames:         subnetNames,
 			SecurityGroupNames:  sgNames,
-			MasterUserName:      req.MasterUserName,
-			MasterUserPassword:  req.MasterUserPassword,
+			MasterUserName:      req.AdminUserName,
+			MasterUserPassword:  req.AdminUserPassword,
 			HighAvailability:    req.HighAvailability,
 			BackupRetentionDays: req.BackupRetentionDays,
 			PublicAccess:        req.PublicAccess,
@@ -953,16 +1171,18 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 
 	log.Debug().Msgf("[Response from Spider] Creating RDBMS: %+v", spResp)
 
-	// 8. If Spider returned before the instance left "Creating", poll until it does;
-	// this call blocks so the caller receives the final Available/Failed state directly.
-	if spResp.Status == "Creating" {
-		log.Info().Msgf("RDBMS %s creation started; polling until Available (timeout: %s)", rdbmsInfo.Id, rdbmsCreationTimeout)
+	// 8. If Spider returned before the instance reached "Available", poll until it does or
+	// times out — this call blocks so the caller receives the final Available/Failed state
+	// directly, retrying through any status in between (Creating, or a possibly-transient
+	// Error such as Alibaba's driver mis-mapping ACCOUNT_MODE_UPGRADING).
+	if spResp.Status != "Available" {
+		log.Info().Msgf("RDBMS %s not yet Available (status: %s); confirming (timeout: %s)", rdbmsInfo.Id, spResp.Status, rdbmsCreationTimeout)
 		updateRDBMSInfoFromSpider(&rdbmsInfo, spResp)
 		if val, mErr := json.Marshal(rdbmsInfo); mErr == nil {
 			_ = kvstore.Put(rdbmsKey, string(val))
 		}
 
-		polled, pollErr := waitForRDBMSAvailable(rdbmsKey, &rdbmsInfo)
+		confirmed, pollErr := ConfirmRDBMSCreated(rdbmsKey, &rdbmsInfo)
 		if pollErr != nil {
 			log.Error().Err(pollErr).Msg("")
 			model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, pollErr.Error())
@@ -973,20 +1193,7 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 			}
 			return emptyRet, apierr.Wrap(pollErr, fmt.Sprintf("RDBMS '%s' did not become available", rdbmsInfo.Id))
 		}
-		spResp = polled
-	}
-
-	if spResp.Status != "Available" {
-		err = fmt.Errorf("RDBMS '%s' reached status '%s' after creation, expected 'Available'", rdbmsInfo.Id, spResp.Status)
-		log.Error().Err(err).Msg("")
-		updateRDBMSInfoFromSpider(&rdbmsInfo, spResp)
-		model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-		rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
-		rdbmsInfo.SystemMessage = err.Error()
-		if failVal, marshalErr := json.Marshal(rdbmsInfo); marshalErr == nil {
-			_ = kvstore.Put(rdbmsKey, string(failVal))
-		}
-		return emptyRet, err
+		spResp = confirmed
 	}
 
 	// 9. Map Spider's final response and mark the create operation as succeeded
@@ -1148,28 +1355,48 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 	}
 
 	if rdbmsInfo.Uid != "" {
-		client := clientManager.NewHttpClient()
-		deleteURL := fmt.Sprintf("%s/rdbms/%s", model.SpiderRestUrl, rdbmsInfo.Uid)
-		if force {
-			deleteURL += "?force=true"
+		// Retry the DELETE call itself only on failure; confirming eventual consistency is PollResourceFullyDeleted's job, kept separate so budgets don't nest.
+		const maxDeleteCallAttempts = 3
+		const deleteCallRetryWait = 20 * time.Second
+
+		var lastErr error
+		for attempt := 1; attempt <= maxDeleteCallAttempts; attempt++ {
+			if attempt > 1 {
+				log.Warn().Msgf("RDBMS %s DELETE call failed; retrying (attempt %d/%d) after %s...", rdbmsInfo.Uid, attempt, maxDeleteCallAttempts, deleteCallRetryWait)
+				time.Sleep(deleteCallRetryWait)
+			}
+
+			client := clientManager.NewHttpClient()
+			deleteURL := fmt.Sprintf("%s/rdbms/%s", model.SpiderRestUrl, rdbmsInfo.Uid)
+			if force {
+				deleteURL += "?force=true"
+			}
+			spReq := spiderRDBMSDeleteRequest{ConnectionName: rdbmsInfo.ConnectionName}
+			var spResp spiderBooleanInfoResp
+
+			restyResp, delErr := clientManager.ExecuteHttpRequest(
+				client,
+				"DELETE",
+				deleteURL,
+				nil,
+				clientManager.SetUseBody(spReq),
+				&spReq,
+				&spResp,
+				clientManager.ShortDuration,
+			)
+			delErr = clientManager.HandleHttpResponse(restyResp, delErr)
+
+			if delErr != nil && !apierr.IsNotFound(delErr) {
+				lastErr = fmt.Errorf("DELETE failed for RDBMS %s: %w", rdbmsInfo.Uid, delErr)
+				log.Warn().Err(lastErr).Msgf("RDBMS %s delete attempt %d/%d failed", rdbmsInfo.Uid, attempt, maxDeleteCallAttempts)
+				continue
+			}
+			lastErr = nil
+			break
 		}
-		spReq := spiderRDBMSDeleteRequest{ConnectionName: rdbmsInfo.ConnectionName}
-		var spResp spiderBooleanInfoResp
 
-		restyResp, delErr := clientManager.ExecuteHttpRequest(
-			client,
-			"DELETE",
-			deleteURL,
-			nil,
-			clientManager.SetUseBody(spReq),
-			&spReq,
-			&spResp,
-			clientManager.ShortDuration,
-		)
-		delErr = clientManager.HandleHttpResponse(restyResp, delErr)
-
-		if delErr != nil && !apierr.IsNotFound(delErr) {
-			err = fmt.Errorf("DELETE failed for RDBMS %s: %w", rdbmsInfo.Uid, delErr)
+		if lastErr != nil {
+			err = lastErr
 			log.Error().Err(err).Msg("")
 			model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
 			rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
@@ -1180,31 +1407,39 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 			return err
 		}
 
-		if delErr == nil {
-			// The GET poll is an eventual-consistency wait only; the CSP enumeration is the
-			// purge gate. RDBMS deletion can take minutes, so a still-present instance keeps
-			// the record as Deleting for a later retry rather than purging it (issue #2685).
-			getUrl := fmt.Sprintf("%s/rdbms/%s?ConnectionName=%s", model.SpiderRestUrl, rdbmsInfo.Uid, rdbmsInfo.ConnectionName)
-			PollResourceDeletedViaSpider(getUrl, nil, DefaultPollMaxAttempts, DefaultPollInterval)
-			if !force {
-				present, gateErr := ResourcePresentOnCsp(rdbmsInfo.ConnectionName, model.StrRDBMS, rdbmsInfo.CspResourceId, rdbmsInfo.CspResourceName)
-				if gateErr != nil || present {
-					cause := fmt.Errorf("RDBMS %s still exists on the CSP after DELETE; record retained — retry, or delete with force", rdbmsInfo.Uid)
-					reason := model.ReasonDeleting
-					if gateErr != nil {
-						cause = fmt.Errorf("RDBMS %s deletion unconfirmed: CSP existence check failed: %w", rdbmsInfo.Uid, gateErr)
-						reason = model.ReasonDeletionFailed
-					}
-					model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, reason, cause.Error())
-					rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
-					rdbmsInfo.SystemMessage = cause.Error()
-					if failVal, marshalErr := json.Marshal(rdbmsInfo); marshalErr == nil {
-						_ = kvstore.Put(rdbmsKey, string(failVal))
-					}
-					return cause
-				}
+		// Confirm the RDBMS is completely gone from Spider and CSP
+		var deleted bool
+		var pollErr error
+		getUrl := fmt.Sprintf("%s/rdbms/%s?ConnectionName=%s", model.SpiderRestUrl, rdbmsInfo.Uid, rdbmsInfo.ConnectionName)
+		// CSP-side teardown (e.g. Alibaba's DependencyViolation.Rds) lags Spider's own record, so it gets its own, more patient budget.
+		const (
+			rdbmsCSPGoneMaxAttempts = 10
+			rdbmsCSPGoneInterval    = 10 * time.Second
+		)
+		deleted, pollErr = PollResourceFullyDeleted(getUrl, rdbmsInfo.ConnectionName, model.StrRDBMS, rdbmsInfo.CspResourceId,
+			DefaultPollMaxAttempts, DefaultPollInterval, rdbmsCSPGoneMaxAttempts, rdbmsCSPGoneInterval)
+
+		if !deleted {
+			// Trust the last DELETE response rather than blocking indefinitely; flag ErrStillOnCSP specifically since it predicts a subsequent Subnet/VNet delete may still fail.
+			if errors.Is(pollErr, ErrStillOnCSP) {
+				log.Warn().Err(pollErr).Msgf("RDBMS %s still present on CSP; a following Subnet/VNet delete may fail until CSP-side cleanup completes. Removing metadata anyway.", rdbmsInfo.Uid)
+			} else {
+				log.Warn().Err(pollErr).Msgf("RDBMS %s not confirmed deleted; trusting DELETE response and removing metadata.", rdbmsInfo.Uid)
 			}
 		}
+
+		// Wait to allow the CSP to stabilize before a caller's likely-next Subnet/VNet delete.
+		// Tencent: 90s confirmed sufficient. Alibaba: 90s was still observed failing, so it gets
+		// its own, longer wait — its VPC-level dependency clears on an even slower timeline.
+		postDeleteWait := 10 * time.Second
+		switch {
+		case strings.EqualFold(rdbmsInfo.ConnectionConfig.ProviderName, csp.Alibaba):
+			postDeleteWait = 180 * time.Second
+		case strings.EqualFold(rdbmsInfo.ConnectionConfig.ProviderName, csp.Tencent):
+			postDeleteWait = 90 * time.Second
+		}
+		time.Sleep(postDeleteWait)
+
 	} else {
 		log.Warn().Msgf("RDBMS %s has no CSP resource (Uid is empty). Skipping Spider DELETE and removing metadata only.", rdbmsId)
 	}
@@ -1221,9 +1456,7 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 	return nil
 }
 
-// PruneRDBMS purges Tumblebug metadata for RDBMS instances diagnosed by Reconcile
-// as missing on CSP (ConditionSynced.Reason == ReasonCspResourceMissing). This is
-// the only place, besides an explicit DeleteRDBMS call, that removes RDBMS metadata.
+// PruneRDBMS purges Tumblebug metadata for RDBMS instances Reconcile diagnosed as missing on CSP.
 func PruneRDBMS(nsId string) (model.ResourcePruneResults, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1318,13 +1551,7 @@ func PruneRDBMS(nsId string) (model.ResourcePruneResults, error) {
 }
 
 // ========== RDBMS Internal Logical Database CRUD ==========
-//
-// Databases inside an RDBMS instance are not tracked as separate Tumblebug resources — no
-// kvstore entry, no label — mirroring objectStorage.go's GetDataObject/DeleteDataObject for
-// data objects inside a bucket. Each call resolves rdbmsId via GetRDBMS (validates nsId/rdbmsId,
-// checks CSP support, and refreshes Status live from Spider). MasterUserPassword is never
-// persisted (see docs/feature_guide/rdbms-management.md §1.6): it is forwarded to CB-Spider per
-// call only and masked before it ever reaches a log line.
+// Databases aren't tracked as Tumblebug resources (no kvstore/label); AdminUserPassword is never persisted, only forwarded per call (see §1.6).
 
 // CreateRDBMSDatabase creates a logical database inside an Available RDBMS instance via
 // CB-Spider.
@@ -1349,13 +1576,13 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq)
 	spReq := spiderRDBMSDatabaseCreateRequest{
 		ConnectionName:     rdbmsInfo.ConnectionName,
 		DatabaseName:       req.DatabaseName,
-		MasterUserPassword: req.MasterUserPassword,
+		MasterUserPassword: req.AdminUserPassword,
 	}
 	logReq := spReq
 	logReq.MasterUserPassword = "********"
 
 	client := clientManager.NewHttpClient()
-	spResp := spiderRDBMSDatabaseListResponse{}
+	spResp := spiderSimpleMsgResp{}
 	spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases", model.SpiderRestUrl, rdbmsInfo.Uid)
 	log.Debug().Msgf("[Request to Spider] Creating RDBMS database (url: %s, request: %+v)", spiderUrl, logReq)
 
@@ -1374,15 +1601,17 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq)
 		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to create database '%s' in RDBMS '%s'", req.DatabaseName, rdbmsId))
 	}
 	log.Debug().Msgf("[Response from Spider] Creating RDBMS database: %+v", spResp)
+	if spResp.Message != "created" {
+		err = fmt.Errorf("unexpected response creating database '%s' in RDBMS '%s': message=%q", req.DatabaseName, rdbmsId, spResp.Message)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
 
 	return model.RDBMSDatabaseInfo{DatabaseName: req.DatabaseName}, nil
 }
 
-// ListRDBMSDatabases lists the logical databases inside an RDBMS instance via CB-Spider.
-// masterUserPassword may be empty — CB-Spider's own MariaDB database-test results show the
-// list call succeeding with no password for at least some drivers (see
-// docs/feature_guide/rdbms-management.md §1.3); it is forwarded as-is when supplied.
-func ListRDBMSDatabases(nsId, rdbmsId, masterUserPassword string) (model.RDBMSDatabaseListResponse, error) {
+// ListRDBMSDatabases lists the logical databases inside an RDBMS instance; adminUserPassword may be empty (some drivers don't require it, see §1.3).
+func ListRDBMSDatabases(nsId, rdbmsId, adminUserPassword string) (model.RDBMSDatabaseListResponse, error) {
 	var emptyRet model.RDBMSDatabaseListResponse
 
 	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
@@ -1392,7 +1621,7 @@ func ListRDBMSDatabases(nsId, rdbmsId, masterUserPassword string) (model.RDBMSDa
 
 	spReq := spiderRDBMSDatabaseCredentialRequest{
 		ConnectionName:     rdbmsInfo.ConnectionName,
-		MasterUserPassword: masterUserPassword,
+		MasterUserPassword: adminUserPassword,
 	}
 	logReq := spReq
 	logReq.MasterUserPassword = "********"
@@ -1421,15 +1650,9 @@ func ListRDBMSDatabases(nsId, rdbmsId, masterUserPassword string) (model.RDBMSDa
 	return model.RDBMSDatabaseListResponse{Databases: spResp.Databases}, nil
 }
 
-// DeleteRDBMSDatabase deletes a logical database inside an RDBMS instance via CB-Spider. An
-// already-gone database is tolerated as success, matching DeleteRDBMS's handling of Spider's
-// delete-on-missing-resource behavior.
-func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, masterUserPassword string) error {
-	// dbName is a SQL database identifier, not a Tumblebug/CSP resource name — it commonly
-	// contains underscores (e.g. "tumblebug_db"), which common.CheckString's dash-oriented
-	// naming rule would wrongly reject. CB-Spider/the CSP is authoritative for whether the
-	// name is actually valid; only require non-empty here (matches req.DatabaseName's own
-	// validate:"required" tag in CreateRDBMSDatabase).
+// DeleteRDBMSDatabase deletes a logical database inside an RDBMS instance; an already-gone database is tolerated as success.
+func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserPassword string) error {
+	// dbName is a SQL identifier (may contain underscores), not a Tumblebug resource name, so only non-empty is required here.
 	if dbName == "" {
 		err := fmt.Errorf("dbName is required")
 		log.Error().Err(err).Msg("")
@@ -1441,32 +1664,72 @@ func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, masterUserPassword string) error
 		return err
 	}
 
-	spReq := spiderRDBMSDatabaseCredentialRequest{
-		ConnectionName:     rdbmsInfo.ConnectionName,
-		MasterUserPassword: masterUserPassword,
-	}
-	logReq := spReq
-	logReq.MasterUserPassword = "********"
+	// Repeat delete-then-confirm a few times rather than trusting a single DELETE response —
+	// mirrors DeleteRDBMS's own retry cycle for the same class of CSP-side delay.
+	const maxDeleteCycles = 10
+	const deleteCycleWait = 10 * time.Second
 
-	client := clientManager.NewHttpClient()
-	spResp := spiderRDBMSDatabaseListResponse{}
-	spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases/%s", model.SpiderRestUrl, rdbmsInfo.Uid, url.PathEscape(dbName))
-	log.Debug().Msgf("[Request to Spider] Deleting RDBMS database (url: %s, request: %+v)", spiderUrl, logReq)
+	var lastErr error
+	confirmed := false
+	for cycle := 1; cycle <= maxDeleteCycles; cycle++ {
+		if cycle > 1 {
+			log.Warn().Msgf("Database '%s' in RDBMS '%s' not yet confirmed deleted; retrying delete (cycle %d/%d) after %s...", dbName, rdbmsId, cycle, maxDeleteCycles, deleteCycleWait)
+			time.Sleep(deleteCycleWait)
+		}
 
-	restyResp, err := clientManager.ExecuteHttpRequest(
-		client,
-		"DELETE",
-		spiderUrl,
-		nil,
-		clientManager.SetUseBody(spReq),
-		&spReq,
-		&spResp,
-		clientManager.ShortDuration,
-	)
-	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil && !apierr.IsNotFound(err) {
-		log.Error().Err(err).Msg("")
-		return apierr.Wrap(err, fmt.Sprintf("failed to delete database '%s' in RDBMS '%s'", dbName, rdbmsId))
+		spReq := spiderRDBMSDatabaseCredentialRequest{
+			ConnectionName:     rdbmsInfo.ConnectionName,
+			MasterUserPassword: adminUserPassword,
+		}
+		logReq := spReq
+		logReq.MasterUserPassword = "********"
+
+		client := clientManager.NewHttpClient()
+		spResp := spiderSimpleMsgResp{}
+		spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases/%s", model.SpiderRestUrl, rdbmsInfo.Uid, url.PathEscape(dbName))
+		log.Debug().Msgf("[Request to Spider] Deleting RDBMS database (url: %s, request: %+v)", spiderUrl, logReq)
+
+		restyResp, delErr := clientManager.ExecuteHttpRequest(
+			client,
+			"DELETE",
+			spiderUrl,
+			nil,
+			clientManager.SetUseBody(spReq),
+			&spReq,
+			&spResp,
+			clientManager.ShortDuration,
+		)
+		if delErr = clientManager.HandleHttpResponse(restyResp, delErr); delErr != nil && !apierr.IsNotFound(delErr) {
+			lastErr = apierr.Wrap(delErr, fmt.Sprintf("failed to delete database '%s' in RDBMS '%s'", dbName, rdbmsId))
+			log.Warn().Err(lastErr).Msgf("Delete attempt %d/%d failed", cycle, maxDeleteCycles)
+			continue
+		}
+		log.Debug().Msgf("[Response from Spider] Deleting RDBMS database: %+v", spResp)
+		if delErr == nil && spResp.Message != "deleted" {
+			lastErr = fmt.Errorf("unexpected response deleting database '%s' in RDBMS '%s': message=%q", dbName, rdbmsId, spResp.Message)
+			log.Warn().Err(lastErr).Msgf("Delete attempt %d/%d failed", cycle, maxDeleteCycles)
+			continue
+		}
+		lastErr = nil
+
+		listResp, listErr := ListRDBMSDatabases(nsId, rdbmsId, adminUserPassword)
+		if listErr != nil {
+			log.Warn().Err(listErr).Msgf("Delete verify: failed to list databases on cycle %d/%d", cycle, maxDeleteCycles)
+			continue
+		}
+		if !slices.Contains(listResp.Databases, dbName) {
+			confirmed = true
+			break
+		}
+		log.Warn().Msgf("Database '%s' still present after delete attempt %d/%d", dbName, cycle, maxDeleteCycles)
 	}
-	log.Debug().Msgf("[Response from Spider] Deleting RDBMS database: %+v", spResp)
+
+	if lastErr != nil {
+		log.Error().Err(lastErr).Msg("")
+		return lastErr
+	}
+	if !confirmed {
+		log.Warn().Msgf("Database '%s' in RDBMS '%s' not confirmed deleted after %d cycles; trusting last DELETE response", dbName, rdbmsId, maxDeleteCycles)
+	}
 	return nil
 }
