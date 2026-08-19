@@ -130,6 +130,25 @@ func RestDeregisterResource(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestRestoreResource cancels a deletion tombstone and returns the resource to Available,
+// only when the CSP resource is confirmed present. Undoes a deletion issued by mistake or
+// blocked by a live dependency, instead of purging (which would orphan a live resource).
+func RestRestoreResource(c echo.Context) error {
+	nsId := c.Param("nsId")
+	resourceType := strings.Split(c.Path(), "/")[5]
+	resourceId := c.Param("resourceId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
+
+	if resourceId == "" {
+		resourceId = c.Param("vNetId")
+	}
+
+	err := resource.RestoreResource(nsId, resourceType, resourceId)
+	content := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been restored to Available"}
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 // Todo: need to reimplment the following invalid function
 
 // RestDelChildResource is a common function to handle 'DelChildResource' REST API requests.

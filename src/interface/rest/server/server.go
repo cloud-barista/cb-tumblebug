@@ -649,6 +649,7 @@ func RunServer() {
 	g.GET("/:nsId/resources/dataDisk", rest_resource.RestGetAllResources)
 	g.PUT("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestPutDataDisk)
 	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestDelResource)
+	g.PUT("/:nsId/resources/dataDisk/:resourceId/restore", rest_resource.RestRestoreResource)
 	g.DELETE("/:nsId/resources/dataDisk", rest_resource.RestDelAllResources)
 	g.DELETE("/:nsId/deregisterResource/dataDisk/:resourceId", rest_resource.RestDeregisterResource)
 	g.GET("/:nsId/infra/:infraId/node/:nodeId/dataDisk", rest_resource.RestGetNodeDataDisk)
@@ -676,6 +677,7 @@ func RunServer() {
 	g.PUT("/:nsId/resources/sshKey/:resourceId", rest_resource.RestPutSshKey)
 	g.PUT("/:nsId/resources/sshKey/:resourceId/complement", rest_resource.RestComplementSshKey)
 	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_resource.RestDelResource)
+	g.PUT("/:nsId/resources/sshKey/:resourceId/restore", rest_resource.RestRestoreResource)
 	g.DELETE("/:nsId/resources/sshKey", rest_resource.RestDelAllResources)
 	g.DELETE("/:nsId/deregisterResource/sshKey/:resourceId", rest_resource.RestDeregisterResource)
 
@@ -705,6 +707,7 @@ func RunServer() {
 	g.GET("/:nsId/resources/securityGroup", rest_resource.RestGetAllResources)
 	g.PUT("/:nsId/resources/securityGroup/:resourceId", rest_resource.RestPutSecurityGroup)
 	g.DELETE("/:nsId/resources/securityGroup/:resourceId", rest_resource.RestDelResource)
+	g.PUT("/:nsId/resources/securityGroup/:resourceId/restore", rest_resource.RestRestoreResource)
 	g.DELETE("/:nsId/resources/securityGroup", rest_resource.RestDelAllResources)
 	g.DELETE("/:nsId/deregisterResource/securityGroup/:resourceId", rest_resource.RestDeregisterResource)
 
@@ -728,6 +731,7 @@ func RunServer() {
 	g.GET("/:nsId/resources/vNet", rest_resource.RestGetAllResources)
 	// g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
 	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet)
+	g.PUT("/:nsId/resources/vNet/:vNetId/restore", rest_resource.RestRestoreResource)
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
 	g.PUT("/:nsId/resources/vNet/reconcile", rest_resource.RestReconcileAllVNets)
 	g.PUT("/:nsId/resources/vNet/:vNetId/reconcile", rest_resource.RestReconcileVNet)

@@ -1054,17 +1054,20 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		return emptyRet, delErr
 	}
 
-	// Poll via Spider GET after Result:true, because some CSPs delete asynchronously;
-	// the resource may still be visible briefly after Spider reports success (eventual consistency).
-	// Spider's DELETE success is authoritative; polling failures are warnings only (trust DELETE policy).
+	// The GET poll is an eventual-consistency wait only; the CSP enumeration is the purge
+	// gate — a still-present vNet keeps the record for a later retry rather than orphaning it (issue #2685).
 	verifyURL := fmt.Sprintf("%s/vpc/%s?ConnectionName=%s",
 		model.SpiderRestUrl, vNetInfo.CspResourceName, vNetInfo.ConnectionName)
-	deleted, verifyErr := PollResourceDeletedViaSpider(verifyURL, nil, DefaultPollMaxAttempts, DefaultPollInterval)
-	if !deleted {
-		if verifyErr != nil {
-			log.Warn().Err(verifyErr).Msgf("vNet (%s): GET inconclusive after DELETE; trusting DELETE and removing metadata", vNetId)
-		} else {
-			log.Warn().Msgf("vNet (%s) still visible via Spider after polling; trusting DELETE and removing metadata", vNetId)
+	PollResourceDeletedViaSpider(verifyURL, nil, DefaultPollMaxAttempts, DefaultPollInterval)
+	if action != ActionForce {
+		present, gateErr := ResourcePresentOnCsp(vNetInfo.ConnectionName, model.StrVNet, vNetInfo.CspResourceId, vNetInfo.CspResourceName)
+		if gateErr != nil || present {
+			cause := fmt.Errorf("vNet (%s) still exists on the CSP after DELETE; record retained — retry, or delete with action=force", vNetId)
+			if gateErr != nil {
+				cause = fmt.Errorf("vNet (%s) deletion unconfirmed: CSP existence check failed: %w", vNetId, gateErr)
+			}
+			markVNetDeleteFailed(nsId, vNetId, vNetKey, &vNetInfo, cause)
+			return emptyRet, cause
 		}
 	}
 

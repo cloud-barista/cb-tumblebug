@@ -135,7 +135,15 @@ func (r *VNetReconciler) reconcileFailed(nsId string, vNetInfo *model.VNetInfo, 
 
 	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
 
-	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(vNetInfo.Conditions) {
+	// A user-owned deletion tombstone is sticky: never self-heal it back to Available
+	// (only auto-managed shared resources are restorable for reuse). §3 ownership rule.
+	restoreOk := model.ShouldRestoreToAvailable(vNetInfo.Conditions)
+	if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil &&
+		cond.Reason == model.ReasonDeletionFailed && !resource.IsAutoManagedResource(nsId, vNetInfo.Id, nil) {
+		restoreOk = false
+	}
+
+	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && restoreOk {
 		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason
@@ -176,13 +184,14 @@ func (r *VNetReconciler) reconcileCreating(nsId string, vNetInfo *model.VNetInfo
 	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) creation recovery logic is under construction (skeleton)", vNetInfo.Id)}, nil
 }
 
-// reconcileDeleting handles stuck deletion status (skeleton for future implementation).
-// TODO: Implement deletion recovery after detailed verification:
-// 1. If resource missing on CSP -> purge metadata and complete deletion.
-// 2. If resource still exists on CSP -> retry deletion or mark Failed (Reason: DeletionFailed / HasDependency).
+// reconcileDeleting retries the fail-closed delete for a vNet stuck in Deleting: it purges
+// the record if the CSP resource is now gone, or keeps it if still present. Idempotent.
 func (r *VNetReconciler) reconcileDeleting(nsId string, vNetInfo *model.VNetInfo, vpcStatusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
-	log.Info().Msgf("reconcileDeleting called for vNet (%s); logic is under construction", vNetInfo.Id)
-	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) deletion recovery logic is under construction (skeleton)", vNetInfo.Id)}, nil
+	if _, err := resource.DeleteVNet(nsId, vNetInfo.Id, resource.ActionWithSubnets.String()); err != nil {
+		log.Warn().Err(err).Msgf("vNet (%s) deletion still unconfirmed; record retained for retry", vNetInfo.Id)
+		return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) deletion retried; still present, retained", vNetInfo.Id)}, nil
+	}
+	return model.SimpleMsg{Message: fmt.Sprintf("vNet (%s) deletion completed (record purged)", vNetInfo.Id)}, nil
 }
 
 // reconcileChildSubnets reconciles child subnets for a parent VNet.

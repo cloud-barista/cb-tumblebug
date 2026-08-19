@@ -113,7 +113,14 @@ func (r *RDBMSReconciler) reconcileFailed(nsId string, rdbmsInfo *model.RDBMSInf
 	rdbmsKey := common.GenResourceKey(nsId, model.StrRDBMS, rdbmsInfo.Id)
 	syncState := resource.GetResourceSyncState(rdbmsInfo.CspResourceName, rdbmsInfo.CspResourceId, *statusResp)
 
-	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(rdbmsInfo.Conditions) {
+	// A user-owned deletion tombstone is sticky: never self-heal it back to Available (§3).
+	restoreOk := model.ShouldRestoreToAvailable(rdbmsInfo.Conditions)
+	if cond := model.GetCondition(rdbmsInfo.Conditions, model.ConditionReady); cond != nil &&
+		cond.Reason == model.ReasonDeletionFailed && !resource.IsAutoManagedResource(nsId, rdbmsInfo.Id, nil) {
+		restoreOk = false
+	}
+
+	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && restoreOk {
 		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(rdbmsInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason
@@ -150,10 +157,14 @@ func (r *RDBMSReconciler) reconcileCreating(nsId string, rdbmsInfo *model.RDBMSI
 	return model.SimpleMsg{Message: fmt.Sprintf("RDBMS (%s) creation recovery logic is under construction (skeleton)", rdbmsInfo.Id)}, nil
 }
 
-// reconcileDeleting handles stuck deletion status for RDBMS (skeleton for future implementation).
+// reconcileDeleting retries the fail-closed delete for an RDBMS stuck in Deleting: it purges
+// the record if the CSP resource is now gone, or keeps it if still present.
 func (r *RDBMSReconciler) reconcileDeleting(nsId string, rdbmsInfo *model.RDBMSInfo, statusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
-	log.Info().Msgf("reconcileDeleting called for RDBMS (%s); logic is under construction", rdbmsInfo.Id)
-	return model.SimpleMsg{Message: fmt.Sprintf("RDBMS (%s) deletion recovery logic is under construction (skeleton)", rdbmsInfo.Id)}, nil
+	if err := resource.DeleteRDBMS(nsId, rdbmsInfo.Id, false); err != nil {
+		log.Warn().Err(err).Msgf("RDBMS (%s) deletion still unconfirmed; record retained for retry", rdbmsInfo.Id)
+		return model.SimpleMsg{Message: fmt.Sprintf("RDBMS (%s) deletion retried; still present, retained", rdbmsInfo.Id)}, nil
+	}
+	return model.SimpleMsg{Message: fmt.Sprintf("RDBMS (%s) deletion completed (record purged)", rdbmsInfo.Id)}, nil
 }
 
 // ReconcileAll reconciles all RDBMS instances in the namespace.

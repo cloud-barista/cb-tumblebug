@@ -909,7 +909,7 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 	url := fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, nlbInfo.CspResourceName)
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
-	var callResult any
+	var callResult model.SpiderBooleanInfo
 
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
@@ -948,12 +948,49 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 		}
 	}
 
+	// Purge the local record only after confirming the NLB is gone from the CSP; a
+	// trusted-DELETE alone can leave a billed orphan (issue #2685). force purges regardless.
+	if forceFlag != "true" {
+		if !strings.EqualFold(callResult.Result, "true") {
+			cause := fmt.Errorf("Spider returned Result=%q for NLB %q delete; the CSP resource may still exist", callResult.Result, resourceId)
+			markNLBDeletionUnconfirmed(key, &nlbInfo, cause)
+			return fmt.Errorf("%v; record retained — retry DELETE, or delete with option=force to discard it", cause)
+		}
+		present, gateErr := resource.ResourcePresentOnCsp(nlbInfo.ConnectionName, model.StrNLB, nlbInfo.CspResourceId, nlbInfo.CspResourceName)
+		if gateErr != nil || present {
+			var cause error
+			if gateErr != nil {
+				cause = fmt.Errorf("deletion of NLB %q unconfirmed: CSP existence check failed: %v", resourceId, gateErr)
+			} else {
+				cause = fmt.Errorf("NLB %q still exists on the CSP although Spider reported successful deletion", resourceId)
+			}
+			markNLBDeletionUnconfirmed(key, &nlbInfo, cause)
+			return fmt.Errorf("%v; record retained — retry DELETE, or delete with option=force to discard it", cause)
+		}
+	} else if !strings.EqualFold(callResult.Result, "true") {
+		log.Warn().Msgf("Force deletion of NLB %q: Spider Result=%q; removing the record anyway (the CSP resource may remain as an orphan)", resourceId, callResult.Result)
+	}
+
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 	return nil
+}
+
+// markNLBDeletionUnconfirmed retains the NLB record as Failed so a retried DELETE resumes.
+func markNLBDeletionUnconfirmed(key string, nlbInfo *model.NLBInfo, cause error) {
+	nlbInfo.Status = model.ResourceStatusFailed
+	val, err := json.Marshal(nlbInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal NLB for fail-closed deletion marking")
+		return
+	}
+	if err := kvstore.Put(key, string(val)); err != nil {
+		log.Error().Err(err).Msgf("Failed to mark NLB %q as DeletionFailed", nlbInfo.Id)
+	}
+	log.Warn().Err(cause).Msgf("Fail-closed deletion: NLB %q record retained", nlbInfo.Id)
 }
 
 // DelAllNLB deletes all TB NLB object of given nsId

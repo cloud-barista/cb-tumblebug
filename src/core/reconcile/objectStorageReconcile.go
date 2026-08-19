@@ -100,7 +100,14 @@ func (r *ObjectStorageReconciler) reconcileFailed(nsId string, osInfo *model.Obj
 	osKey := common.GenResourceKey(nsId, model.StrObjectStorage, osInfo.Id)
 	syncState := resource.GetResourceSyncState(osInfo.CspResourceName, osInfo.CspResourceId, *statusResp)
 
-	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(osInfo.Conditions) {
+	// A user-owned deletion tombstone is sticky: never self-heal it back to Available (§3).
+	restoreOk := model.ShouldRestoreToAvailable(osInfo.Conditions)
+	if cond := model.GetCondition(osInfo.Conditions, model.ConditionReady); cond != nil &&
+		cond.Reason == model.ReasonDeletionFailed && !resource.IsAutoManagedResource(nsId, osInfo.Id, nil) {
+		restoreOk = false
+	}
+
+	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && restoreOk {
 		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(osInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason
@@ -140,13 +147,14 @@ func (r *ObjectStorageReconciler) reconcileCreating(nsId string, osInfo *model.O
 	return model.SimpleMsg{Message: fmt.Sprintf("ObjectStorage (%s) creation recovery logic is under construction (skeleton)", osInfo.Id)}, nil
 }
 
-// reconcileDeleting handles stuck deletion status for ObjectStorage (skeleton for future implementation).
-// TODO: Implement deletion recovery after detailed verification:
-// 1. If resource missing on CSP -> purge metadata and complete deletion.
-// 2. If resource still exists on CSP -> retry deletion or mark Failed (Reason: DeletionFailed / HasDependency).
+// reconcileDeleting retries the fail-closed delete for an ObjectStorage stuck in Deleting:
+// it purges the record if the CSP resource is now gone, or keeps it if still present.
 func (r *ObjectStorageReconciler) reconcileDeleting(nsId string, osInfo *model.ObjectStorageInfo, statusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
-	log.Info().Msgf("reconcileDeleting called for ObjectStorage (%s); logic is under construction", osInfo.Id)
-	return model.SimpleMsg{Message: fmt.Sprintf("ObjectStorage (%s) deletion recovery logic is under construction (skeleton)", osInfo.Id)}, nil
+	if err := resource.DeleteObjectStorage(nsId, osInfo.Id, false, false); err != nil {
+		log.Warn().Err(err).Msgf("ObjectStorage (%s) deletion still unconfirmed; record retained for retry", osInfo.Id)
+		return model.SimpleMsg{Message: fmt.Sprintf("ObjectStorage (%s) deletion retried; still present, retained", osInfo.Id)}, nil
+	}
+	return model.SimpleMsg{Message: fmt.Sprintf("ObjectStorage (%s) deletion completed (record purged)", osInfo.Id)}, nil
 }
 
 // ReconcileAll reconciles all ObjectStorages in the namespace.
