@@ -113,14 +113,18 @@ func (r *RDBMSReconciler) reconcileFailed(nsId string, rdbmsInfo *model.RDBMSInf
 	rdbmsKey := common.GenResourceKey(nsId, model.StrRDBMS, rdbmsInfo.Id)
 	syncState := resource.GetResourceSyncState(rdbmsInfo.CspResourceName, rdbmsInfo.CspResourceId, *statusResp)
 
-	// A user-owned deletion tombstone is sticky: never self-heal it back to Available (§3).
-	restoreOk := model.ShouldRestoreToAvailable(rdbmsInfo.Conditions)
-	if cond := model.GetCondition(rdbmsInfo.Conditions, model.ConditionReady); cond != nil &&
-		cond.Reason == model.ReasonDeletionFailed && !resource.IsAutoManagedResource(nsId, rdbmsInfo.Id, nil) {
-		restoreOk = false
+	// A user-owned deletion tombstone is sticky: never self-heal it back to Available.
+	// The label lookup does I/O, so evaluate it only when a restore is on the table.
+	restoreOk := (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) &&
+		model.ShouldRestoreToAvailable(rdbmsInfo.Conditions)
+	if restoreOk {
+		if cond := model.GetCondition(rdbmsInfo.Conditions, model.ConditionReady); cond != nil &&
+			cond.Reason == model.ReasonDeletionFailed && !resource.IsAutoManagedResource(nsId, rdbmsInfo.Id, model.StrRDBMS, rdbmsInfo.Uid) {
+			restoreOk = false
+		}
 	}
 
-	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && restoreOk {
+	if restoreOk {
 		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(rdbmsInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason

@@ -136,14 +136,18 @@ func (r *VNetReconciler) reconcileFailed(nsId string, vNetInfo *model.VNetInfo, 
 	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
 
 	// A user-owned deletion tombstone is sticky: never self-heal it back to Available
-	// (only auto-managed shared resources are restorable for reuse). §3 ownership rule.
-	restoreOk := model.ShouldRestoreToAvailable(vNetInfo.Conditions)
-	if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil &&
-		cond.Reason == model.ReasonDeletionFailed && !resource.IsAutoManagedResource(nsId, vNetInfo.Id, nil) {
-		restoreOk = false
+	// (only auto-managed shared resources are restorable for reuse). The label lookup
+	// does I/O, so evaluate it only when a restore is actually on the table.
+	restoreOk := (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) &&
+		model.ShouldRestoreToAvailable(vNetInfo.Conditions)
+	if restoreOk {
+		if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil &&
+			cond.Reason == model.ReasonDeletionFailed && !resource.IsAutoManagedResource(nsId, vNetInfo.Id, model.StrVNet, vNetInfo.Uid) {
+			restoreOk = false
+		}
 	}
 
-	if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && restoreOk {
+	if restoreOk {
 		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason

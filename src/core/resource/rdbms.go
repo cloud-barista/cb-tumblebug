@@ -17,7 +17,6 @@ package resource
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"net/url"
@@ -100,7 +99,7 @@ type spiderRDBMSCreateReqInfo struct {
 	VPCName             string           `json:"VPCName"`
 	DBEngine            string           `json:"DBEngine"`
 	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBSpec              string           `json:"DBSpec"`
+	DBSpec              string           `json:"DBInstanceSpec"`
 	StorageSize         string           `json:"StorageSize"`
 	StorageType         string           `json:"StorageType,omitempty"`
 	Iops                string           `json:"Iops,omitempty"`
@@ -157,7 +156,7 @@ type spiderRDBMSInfo struct {
 	VpcIID              model.IID        `json:"VpcIID"`
 	DBEngine            string           `json:"DBEngine"`
 	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBSpec              string           `json:"DBSpec"`
+	DBSpec              string           `json:"DBInstanceSpec"`
 	DBInstanceType      string           `json:"DBInstanceType,omitempty"`
 	StorageSize         string           `json:"StorageSize"`
 	StorageType         string           `json:"StorageType,omitempty"`
@@ -459,6 +458,17 @@ func buildCSPSupportInfo(cspKey string) model.RDBMSCSPSupportInfo {
 }
 
 // ========== RDBMS Instance Lifecycle (Create/List/Get/Delete) ==========
+
+// CSP-side teardown (e.g. Alibaba's DependencyViolation.Rds) lags Spider's own record,
+// so the CSP-gone confirmation gets its own, more patient budget (vars for tests).
+var (
+	rdbmsCSPGoneMaxAttempts = 10
+	rdbmsCSPGoneInterval    = 10 * time.Second
+
+	rdbmsPostDeleteWaitDefault = 10 * time.Second
+	rdbmsPostDeleteWaitAlibaba = 180 * time.Second
+	rdbmsPostDeleteWaitTencent = 90 * time.Second
+)
 
 // cspSupportingRDBMS lists CSPs verified against CB-Spider's rdbms-mysql-test suite (v0.12.42).
 // KT is not covered by that suite and is marked unsupported until verified.
@@ -1398,11 +1408,8 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 		if lastErr != nil {
 			err = lastErr
 			log.Error().Err(err).Msg("")
-			model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-			rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
-			rdbmsInfo.SystemMessage = err.Error()
-			if failVal, marshalErr := json.Marshal(rdbmsInfo); marshalErr == nil {
-				_ = kvstore.Put(rdbmsKey, string(failVal))
+			if markErr := patchKvTombstone(nsId, resourceType, rdbmsInfo.Id, model.ResourceStatusFailed, model.ReasonDeletionFailed, err.Error()); markErr != nil {
+				log.Error().Err(markErr).Msgf("Failed to mark RDBMS %q as DeletionFailed", rdbmsId)
 			}
 			return err
 		}
@@ -1411,32 +1418,37 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 		var deleted bool
 		var pollErr error
 		getUrl := fmt.Sprintf("%s/rdbms/%s?ConnectionName=%s", model.SpiderRestUrl, rdbmsInfo.Uid, rdbmsInfo.ConnectionName)
-		// CSP-side teardown (e.g. Alibaba's DependencyViolation.Rds) lags Spider's own record, so it gets its own, more patient budget.
-		const (
-			rdbmsCSPGoneMaxAttempts = 10
-			rdbmsCSPGoneInterval    = 10 * time.Second
-		)
 		deleted, pollErr = PollResourceFullyDeleted(getUrl, rdbmsInfo.ConnectionName, model.StrRDBMS, rdbmsInfo.CspResourceId,
 			DefaultPollMaxAttempts, DefaultPollInterval, rdbmsCSPGoneMaxAttempts, rdbmsCSPGoneInterval)
 
-		if !deleted {
-			// Trust the last DELETE response rather than blocking indefinitely; flag ErrStillOnCSP specifically since it predicts a subsequent Subnet/VNet delete may still fail.
-			if errors.Is(pollErr, ErrStillOnCSP) {
-				log.Warn().Err(pollErr).Msgf("RDBMS %s still present on CSP; a following Subnet/VNet delete may fail until CSP-side cleanup completes. Removing metadata anyway.", rdbmsInfo.Uid)
-			} else {
-				log.Warn().Err(pollErr).Msgf("RDBMS %s not confirmed deleted; trusting DELETE response and removing metadata.", rdbmsInfo.Uid)
+		if !deleted && !force {
+			// Fail-closed: a billed RDBMS must not be purged on an unconfirmed deletion.
+			// The record stays Deleting (not Failed) so the reconciler keeps retrying;
+			// slow CSP teardown routinely outlives the poll budget.
+			cause := fmt.Errorf("RDBMS %q deletion unconfirmed: %v; record retained — retry DELETE, or delete with force to discard it (%w)", rdbmsId, pollErr, ErrDeletionInProgress)
+			if markErr := patchKvTombstone(nsId, resourceType, rdbmsInfo.Id, model.ResourceStatusDeleting, model.ReasonDeleting, cause.Error()); markErr != nil {
+				log.Error().Err(markErr).Msgf("Failed to mark RDBMS %q deletion outcome", rdbmsId)
 			}
+			log.Warn().Err(cause).Msg("Fail-closed deletion: record retained")
+			return cause
+		}
+		if !deleted {
+			log.Warn().Err(pollErr).Msgf("Force deletion of RDBMS %q: deletion unconfirmed; removing the record anyway (the CSP resource may remain as an orphan)", rdbmsId)
 		}
 
 		// Wait to allow the CSP to stabilize before a caller's likely-next Subnet/VNet delete.
 		// Tencent: 90s confirmed sufficient. Alibaba: 90s was still observed failing, so it gets
 		// its own, longer wait — its VPC-level dependency clears on an even slower timeline.
-		postDeleteWait := 10 * time.Second
+		postDeleteWait := rdbmsPostDeleteWaitDefault
 		switch {
 		case strings.EqualFold(rdbmsInfo.ConnectionConfig.ProviderName, csp.Alibaba):
-			postDeleteWait = 180 * time.Second
+			postDeleteWait = rdbmsPostDeleteWaitAlibaba
 		case strings.EqualFold(rdbmsInfo.ConnectionConfig.ProviderName, csp.Tencent):
-			postDeleteWait = 90 * time.Second
+			postDeleteWait = rdbmsPostDeleteWaitTencent
+		}
+		if !deleted {
+			// nothing was confirmed torn down, so there is no dependency release to wait for
+			postDeleteWait = 0
 		}
 		time.Sleep(postDeleteWait)
 

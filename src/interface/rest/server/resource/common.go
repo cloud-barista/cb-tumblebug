@@ -145,6 +145,12 @@ func RestRestoreResource(c echo.Context) error {
 	}
 
 	err := resource.RestoreResource(nsId, resourceType, resourceId)
+	if errors.Is(err, resource.ErrDeletionInProgress) {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
+	}
+	if errors.Is(err, resource.ErrNoPendingDeletion) {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusBadRequest)
+	}
 	content := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been restored to Available"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }

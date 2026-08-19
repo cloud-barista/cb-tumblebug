@@ -966,9 +966,9 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 			if !force {
 				present, gateErr := ResourcePresentOnCsp(connName, model.StrObjectStorage, objStrgInfo.CspResourceId, objStrgInfo.CspResourceName)
 				if gateErr != nil || present {
-					cause := fmt.Errorf("object storage %s still exists on the CSP after DELETE; record retained — retry, or delete with force", uid)
+					cause := fmt.Errorf("object storage %s still exists on the CSP after DELETE; record retained — retry, or delete with force (%w)", uid, ErrDeletionUnconfirmed)
 					if gateErr != nil {
-						cause = fmt.Errorf("object storage %s deletion unconfirmed: CSP existence check failed: %w", uid, gateErr)
+						cause = fmt.Errorf("object storage %s deletion unconfirmed: CSP existence check failed: %v (%w)", uid, gateErr, ErrDeletionUnconfirmed)
 					}
 					markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey, &objStrgInfo, cause)
 					return cause

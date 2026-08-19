@@ -250,6 +250,10 @@ type RDBMSInfo struct {
 	SystemMessage    string      `json:"systemMessage,omitempty"`
 	Conditions       []Condition `json:"conditions,omitempty"`
 
+	// DeletionRequestedAt (RFC3339) marks a deletion tombstone: non-empty means the
+	// record is kept until CSP-side removal is confirmed
+	DeletionRequestedAt string `json:"deletionRequestedAt,omitempty"`
+
 	VNetId           string   `json:"vNetId"`
 	SubnetIds        []string `json:"subnetIds,omitempty"`
 	SecurityGroupIds []string `json:"securityGroupIds,omitempty"`

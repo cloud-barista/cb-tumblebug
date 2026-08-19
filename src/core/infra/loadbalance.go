@@ -943,6 +943,14 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 				return err
 			}
 		} else {
+			// Spider forgot the NLB (e.g. a retried tombstone whose CSP deletion has since
+			// completed): purge only once the CSP enumeration confirms absence
+			if strings.Contains(strings.ToLower(err.Error()), "not exist") {
+				if present, gateErr := resource.ResourcePresentOnCsp(nlbInfo.ConnectionName, model.StrNLB, nlbInfo.CspResourceId, nlbInfo.CspResourceName); gateErr == nil && !present {
+					log.Warn().Msgf("NLB %q confirmed gone from Spider and CSP; removing stale record", resourceId)
+					return kvstore.Delete(key)
+				}
+			}
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -954,7 +962,7 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 		if !strings.EqualFold(callResult.Result, "true") {
 			cause := fmt.Errorf("Spider returned Result=%q for NLB %q delete; the CSP resource may still exist", callResult.Result, resourceId)
 			markNLBDeletionUnconfirmed(key, &nlbInfo, cause)
-			return fmt.Errorf("%v; record retained — retry DELETE, or delete with option=force to discard it", cause)
+			return fmt.Errorf("%v; record retained — retry DELETE, or delete with option=force to discard it (%w)", cause, resource.ErrDeletionUnconfirmed)
 		}
 		present, gateErr := resource.ResourcePresentOnCsp(nlbInfo.ConnectionName, model.StrNLB, nlbInfo.CspResourceId, nlbInfo.CspResourceName)
 		if gateErr != nil || present {
@@ -965,7 +973,7 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 				cause = fmt.Errorf("NLB %q still exists on the CSP although Spider reported successful deletion", resourceId)
 			}
 			markNLBDeletionUnconfirmed(key, &nlbInfo, cause)
-			return fmt.Errorf("%v; record retained — retry DELETE, or delete with option=force to discard it", cause)
+			return fmt.Errorf("%v; record retained — retry DELETE, or delete with option=force to discard it (%w)", cause, resource.ErrDeletionUnconfirmed)
 		}
 	} else if !strings.EqualFold(callResult.Result, "true") {
 		log.Warn().Msgf("Force deletion of NLB %q: Spider Result=%q; removing the record anyway (the CSP resource may remain as an orphan)", resourceId, callResult.Result)
@@ -981,14 +989,24 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 
 // markNLBDeletionUnconfirmed retains the NLB record as Failed so a retried DELETE resumes.
 func markNLBDeletionUnconfirmed(key string, nlbInfo *model.NLBInfo, cause error) {
-	nlbInfo.Status = model.ResourceStatusFailed
-	val, err := json.Marshal(nlbInfo)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal NLB for fail-closed deletion marking")
-		return
-	}
-	if err := kvstore.Put(key, string(val)); err != nil {
-		log.Error().Err(err).Msgf("Failed to mark NLB %q as DeletionFailed", nlbInfo.Id)
+	// Patch on a fresh read so a concurrent update since the caller's load is not clobbered
+	if err := resource.MarkTombstoneByKey(key, model.ResourceStatusFailed, cause.Error()); err != nil {
+		// The tombstone must not be lost to a transient read failure: fall back to
+		// writing the in-memory snapshot (clobber risk < unmarked half-deleted NLB)
+		log.Error().Err(err).Msgf("Failed to patch NLB %q tombstone; falling back to snapshot write", nlbInfo.Id)
+		nlbInfo.Status = model.ResourceStatusFailed
+		nlbInfo.SystemMessage = cause.Error()
+		if nlbInfo.DeletionRequestedAt == "" {
+			nlbInfo.DeletionRequestedAt = time.Now().UTC().Format(time.RFC3339)
+		}
+		if val, mErr := json.Marshal(nlbInfo); mErr == nil {
+			if pErr := kvstore.Put(key, string(val)); pErr != nil {
+				log.Error().Err(pErr).Msgf("Failed to mark NLB %q as DeletionFailed", nlbInfo.Id)
+				return
+			}
+		} else {
+			return
+		}
 	}
 	log.Warn().Err(cause).Msgf("Fail-closed deletion: NLB %q record retained", nlbInfo.Id)
 }

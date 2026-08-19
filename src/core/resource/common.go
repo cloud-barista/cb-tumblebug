@@ -674,7 +674,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	// Fail-closed tombstone deletion
 	tombstoneEnabled := tombstoneSupported(resourceType)
 	if tombstoneEnabled {
-		inflightKey := nsId + "/" + resourceType + "/" + resourceId
+		inflightKey := deletionSlotKey(nsId, resourceType, resourceId)
 		if _, busy := deletionInFlight.LoadOrStore(inflightKey, struct{}{}); busy {
 			return fmt.Errorf("deletion of %s '%s' is already in progress (%w)", resourceType, resourceId, ErrDeletionInProgress)
 		}
@@ -816,9 +816,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	// rollback): purge only once the CSP enumeration confirms the resource is gone (issue #2685).
 	if _, gateable := spiderAllListPath[resourceType]; gateable && forceFlag != "true" && tsCspName != "" {
 		if present, gateErr := ResourcePresentOnCsp(requestBody.ConnectionName, resourceType, tsCspId, tsCspName); gateErr != nil || present {
-			cause := fmt.Errorf("%s '%s' still exists on the CSP after DELETE; record retained — retry, or use force to discard it", resourceType, resourceId)
+			cause := fmt.Errorf("%s '%s' still exists on the CSP after DELETE; record retained — retry, or use force to discard it (%w)", resourceType, resourceId, ErrDeletionUnconfirmed)
 			if gateErr != nil {
-				cause = fmt.Errorf("%s '%s' deletion unconfirmed: CSP existence check failed: %v", resourceType, resourceId, gateErr)
+				cause = fmt.Errorf("%s '%s' deletion unconfirmed: CSP existence check failed: %v (%w)", resourceType, resourceId, gateErr, ErrDeletionUnconfirmed)
 			}
 			if resourceType == model.StrVNet && vNetInfoForMark != nil {
 				markVNetDeleteFailed(nsId, resourceId, key, vNetInfoForMark, cause)
@@ -889,6 +889,7 @@ var (
 	ErrDeletionInProgress    = errors.New("deletion in progress")
 	ErrDeletionUnconfirmed   = errors.New("deletion unconfirmed; record retained")
 	ErrTombstoneNameConflict = errors.New("name held by unconfirmed deletion")
+	ErrNoPendingDeletion     = errors.New("no pending deletion")
 )
 
 // deletionInFlight dedups concurrent deletions per resource; in-memory only so a
@@ -925,11 +926,19 @@ func tombstoneSupported(resourceType string) bool {
 // IsAutoManagedResource reports whether a resource is auto-managed: created on demand for
 // provisioning and released when unused (deletion means "release if unused" — restorable),
 // versus user-owned (deletion is sticky). Detected by the shared-name prefix or purpose label.
-func IsAutoManagedResource(nsId, resourceId string, labels map[string]string) bool {
+func IsAutoManagedResource(nsId, resourceId, labelType, uid string) bool {
 	if strings.HasPrefix(resourceId, nsId+model.StrSharedResourceName) {
 		return true
 	}
-	return labels[model.LabelPurpose] == model.PurposeInfraDynamic
+	if labelType == "" || uid == "" {
+		return false
+	}
+	labelInfo, err := label.GetLabels(labelType, uid)
+	if err != nil {
+		log.Warn().Err(err).Msgf("label lookup failed for %s/%s; treating %s as user-owned", labelType, uid, resourceId)
+		return false
+	}
+	return labelInfo.Labels[model.LabelPurpose] == model.PurposeInfraDynamic
 }
 
 // tombstoneStatus returns the per-type status vocabulary for a tombstone state
@@ -940,20 +949,39 @@ func tombstoneStatus(resourceType string, failed bool) string {
 	return model.ResourceStatusDeleting
 }
 
-// patchKvTombstone updates only the tombstone fields on the raw stored JSON, so
+// deletionSlotKey is the mutual-exclusion key shared by delete and restore
+func deletionSlotKey(nsId, resourceType, resourceId string) string {
+	return nsId + "/" + resourceType + "/" + resourceId
+}
+
+// patchTombstoneFields updates only the tombstone fields on the raw stored JSON, so
 // fields unknown to this code path are never dropped
+func patchTombstoneFields(val, status, message string) string {
+	val, _ = sjson.Set(val, "status", status)
+	val, _ = sjson.Set(val, "systemMessage", message)
+	if gjson.Get(val, "deletionRequestedAt").String() == "" {
+		val, _ = sjson.Set(val, "deletionRequestedAt", time.Now().UTC().Format(time.RFC3339))
+	}
+	return val
+}
+
+// MarkTombstoneByKey marks a kvstore record (by raw key) as a deletion tombstone;
+// for records whose key is not GenResourceKey-shaped (e.g. NLB under its Infra)
+func MarkTombstoneByKey(key, status, message string) error {
+	kv, exists, err := kvstore.GetKv(key)
+	if err != nil || !exists {
+		return fmt.Errorf("cannot load record %s: %v", key, err)
+	}
+	return kvstore.Put(key, patchTombstoneFields(kv.Value, status, message))
+}
+
 func patchKvTombstone(nsId, resourceType, resourceId, status, reason, message string) error {
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	kv, exists, err := kvstore.GetKv(key)
 	if err != nil || !exists {
 		return fmt.Errorf("cannot load %s '%s' record: %v", resourceType, resourceId, err)
 	}
-	val := kv.Value
-	val, _ = sjson.Set(val, "status", status)
-	val, _ = sjson.Set(val, "systemMessage", message)
-	if gjson.Get(val, "deletionRequestedAt").String() == "" {
-		val, _ = sjson.Set(val, "deletionRequestedAt", time.Now().UTC().Format(time.RFC3339))
-	}
+	val := patchTombstoneFields(kv.Value, status, message)
 	var conds []model.Condition
 	if raw := gjson.Get(val, "conditions").Raw; raw != "" {
 		json.Unmarshal([]byte(raw), &conds)
@@ -997,6 +1025,30 @@ func RestoreResource(nsId, resourceType, resourceId string) error {
 	if err != nil || !exists {
 		return fmt.Errorf("%s '%s' not found", resourceType, resourceId)
 	}
+	// Only a deletion tombstone is restorable; anything else would be forced to
+	// Available. Some producers (e.g. vNet's own delete path) mark tombstones via
+	// conditions only, so the Ready-condition reason is accepted as evidence too.
+	isTombstone := gjson.Get(kv.Value, "deletionRequestedAt").String() != ""
+	if !isTombstone {
+		for _, c := range gjson.Get(kv.Value, "conditions").Array() {
+			if c.Get("type").String() == string(model.ConditionReady) {
+				r := c.Get("reason").String()
+				isTombstone = r == model.ReasonDeleting || r == model.ReasonDeletionFailed
+			}
+		}
+	}
+	if !isTombstone {
+		return fmt.Errorf("%s '%s' has no pending deletion to restore from (status=%s) (%w)",
+			resourceType, resourceId, gjson.Get(kv.Value, "status").String(), ErrNoPendingDeletion)
+	}
+	// Claim the same slot as deletion so a restore cannot interleave with an in-flight
+	// generic-path delete. Own-path deletes (vNet/NLB/RDBMS) do not claim this slot yet.
+	inflightKey := deletionSlotKey(nsId, resourceType, resourceId)
+	if _, busy := deletionInFlight.LoadOrStore(inflightKey, struct{}{}); busy {
+		return fmt.Errorf("cannot restore %s '%s' while its deletion is in progress (%w)", resourceType, resourceId, ErrDeletionInProgress)
+	}
+	defer deletionInFlight.Delete(inflightKey)
+
 	connName := gjson.Get(kv.Value, "connectionName").String()
 	cspId := gjson.Get(kv.Value, "cspResourceId").String()
 	cspName := gjson.Get(kv.Value, "cspResourceName").String()
