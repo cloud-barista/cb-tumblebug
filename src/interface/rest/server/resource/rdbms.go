@@ -15,10 +15,12 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -305,6 +307,12 @@ func RestDeleteRDBMS(c echo.Context) error {
 
 	if err := resource.DeleteRDBMS(nsId, rdbmsId, force); err != nil {
 		log.Error().Err(err).Msg("Failed to delete RDBMS")
+		if errors.Is(err, resource.ErrDeletionInProgress) {
+			return clientManager.EndRequestWithLogAndStatus(c, nil, model.SimpleMsg{Message: err.Error()}, http.StatusAccepted)
+		}
+		if errors.Is(err, resource.ErrDeletionUnconfirmed) {
+			return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
+		}
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 

@@ -15,11 +15,13 @@ limitations under the License.
 package infra
 
 import (
+	"errors"
 	"net/http"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -295,6 +297,9 @@ func RestDelNLB(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	err := infra.DelNLB(nsId, infraId, resourceId, forceFlag)
+	if errors.Is(err, resource.ErrDeletionUnconfirmed) {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
+	}
 	content := map[string]string{"message": "The NLB " + resourceId + " has been deleted"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
