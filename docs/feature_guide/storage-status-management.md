@@ -155,31 +155,41 @@ On failure, `SystemMessage` is set with the error detail and the resource is per
 
 Reconcile is **non-destructive diagnosis only** — it never deletes metadata or calls a
 destructive Spider API. It is implemented by `ObjectStorageReconciler`
-(`src/core/reconcile/objectStorageReconcile.go`), using the same shared
-`GetResourceSyncState`/`ApplySyncState` helpers (`src/core/resource/common.go`) as VNet
-and RDBMS. See `docs/feature_guide/resource-reconciliation.md` for the full design,
-including why Reconcile must never call Spider `DELETE`.
+(`src/core/reconcile/objectStorageReconcile.go`), using the shared `GetResourceSyncState`
+helper (`src/core/resource/common.go`) as VNet and RDBMS do, then setting `Ready`/`Synced`
+directly via `SetCondition` and recomputing `Status` via `DeriveObjectStorageStatus`. See
+`docs/feature_guide/resource-reconciliation.md` for the full design, including why
+Reconcile must never call Spider `DELETE`.
 
 | Scenario                            | Metadata           | CSP bucket    | Synced Reason set        | Result                                                                       |
 | ------------------------------------ | ------------------- | ------------- | -------------------------- | ------------------------------------------------------------------------------ |
 | Healthy                             | exists / `Available` | exists        | `InSync`                  | unchanged                                                                     |
 | Never created / Orphaned metadata   | exists              | missing (404) | `CspResourceMissing`      | `Status=Failed`, **metadata preserved** — only `Prune` (a separate, explicit `POST .../reconcile/prune` call) removes it |
 | Spider lost its IID, CSP still alive | exists              | exists        | `SpMetaMissing`           | `Synced=False/SpMetaMissing`; `Status` left as-is (not forced to `Failed`)     |
-| **Stuck in terminal-failure state** | `Failed(DeletionFailed)` | exists    | `Available` (restored)    | `Ready=True/Restored` (previous failure kept in the message), `Status=Available` |
+| **Stuck in terminal-failure state (auto-managed)** | `Failed(DeletionFailed)` | exists | `Available` (restored) | `Ready=True/Restored` (previous failure kept in the message), `Status=Available` |
+| **Stuck in terminal-failure state (user-owned)** | `Failed(DeletionFailed)` | exists | `NoActionNeeded` (sticky) | `Ready`/`Status` unchanged — recovery path is **TBD** (`PUT .../restore` isn't wired up for Object Storage yet, see Open Items in resource-reconciliation.md); see Restore guard |
 | Spider transient outage             | any                 | 5xx / network | (none)                    | error returned, status unchanged                                             |
 
 **Restore guard:** Status is restored to `Available` only when the CSP bucket is
 confirmed to exist AND `ConditionReady` is `False` with `Reason` in
-`{DeletionFailed, DeregisterFailed}` (`model.ShouldRestoreToAvailable`).
+`{DeletionFailed, DeregisterFailed}` (`model.ShouldRestoreToAvailable`), AND — for
+`DeletionFailed` specifically — the object storage is auto-managed
+(`IsAutoManagedResource`: shared-name prefix or `sys.purpose=infra-dynamic` label). A
+user-owned bucket's `DeletionFailed` tombstone is sticky and does **not** auto-restore.
+Recovery path is **TBD** — `PUT .../restore` exists generically (`RestRestoreResource`)
+but isn't yet wired up for Object Storage; see Open Items in resource-reconciliation.md.
 `CreationFailed` and in-flight states are intentionally excluded.
 
-**Auto-trigger after delete failure:** When `DeleteObjectStorage` fails and records the
-resource as `Failed(DeletionFailed)`, `markObjectStorageDeleteFailedThenReconcile`
-(`src/core/resource/objectStorage.go`) runs the same diagnose-and-restore-if-applicable
-check **once**, inline, immediately after the failure is persisted — it only ever calls
-`kvstore.Put`, never `kvstore.Delete` or Spider `DELETE`. The original delete error is
-still returned to the caller unchanged; diagnosis errors are logged at WARN only. There
-is no internal retry loop or background scheduler.
+**Auto-trigger after delete failure:** When `DeleteObjectStorage` fails, it marks the
+resource `Failed(DeletionFailed)` and returns the error — it never calls `kvstore.Delete`
+or Spider `DELETE`. The REST handler (`RestDeleteObjectStorage`,
+`src/interface/rest/server/resource/objectStorage.go`) then calls
+`reconcile.GetManager().RunReconcile(...)` **once**, immediately after the failure is
+persisted, matching VNet's pattern — this runs the same diagnose-and-restore-if-applicable
+check as the on-demand `PUT .../reconcile` endpoint (`ObjectStorageReconciler.reconcileFailed`).
+The original delete error is still returned to the caller unchanged; the auto-reconcile is
+opportunistic and any error from it is logged at WARN level only. There is no internal
+retry loop or background scheduler.
 
 **Cleaning up orphaned metadata:** Reconcile only diagnoses `CspResourceMissing`; actually
 removing that metadata requires a separate, explicit `POST /ns/{nsId}/resources/objectStorage/reconcile/prune`
@@ -188,6 +198,9 @@ call (`PruneObjectStorages`), which only touches items whose `ConditionSynced.Re
 ---
 
 ## 6. Status Derivation
+
+> [!IMPORTANT]
+> **Never assign `Status` directly, in any code path.** A reconciler or resource function that sets `Status` independently of `Ready` can silently mark a resource `Available` (or any other value) that Conditions don't actually support. This exact mistake (`ApplySyncState` setting `Status` regardless of `Ready`) let sticky, non-restorable deletion tombstones silently heal back to `Available` before it was fixed. Always: update `Ready`/`Synced` via `SetCondition()`, then recompute `Status = DeriveObjectStorageStatus(Conditions)`.
 
 Status is never set directly. It is always computed by `DeriveObjectStorageStatus()` after Conditions are updated.
 
@@ -237,5 +250,5 @@ Domain-specific differences:
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `src/core/model/condition.go`        | `Condition` struct, `ResourceStatus*` base constants, `StorageStatus*` aliases, `DeriveObjectStorageStatus()` |
 | `src/core/model/objectStorage.go`    | `ObjectStorageInfo.Conditions []Condition`, `ObjectStorageInfo.SystemMessage string`                          |
-| `src/core/resource/objectStorage.go` | Conditions transitions for `CreateObjectStorage`, `DeleteObjectStorage`, `markObjectStorageDeleteFailedThenReconcile`, `PruneObjectStorages` |
+| `src/core/resource/objectStorage.go` | Conditions transitions for `CreateObjectStorage`, `DeleteObjectStorage`, `PruneObjectStorages` |
 | `src/core/reconcile/objectStorageReconcile.go` | `ObjectStorageReconciler` — the `Reconcile`/`ReconcileAll` entry points used by `PUT .../reconcile` |

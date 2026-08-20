@@ -253,10 +253,10 @@ CSP/Spider/Terrarium resource (Actual). Behavior currently differs by resource:
 
 - **VNet and Subnet** are on the non-destructive `Reconcile`/`Prune` pattern (see
   `docs/feature_guide/resource-reconciliation.md` for the full design): `VNetReconciler`
-  (`src/core/reconcile/vnetReconcile.go`) diagnoses via the shared
-  `GetResourceSyncState`/`ApplySyncState` helpers and **never deletes metadata**. Orphaned
-  metadata is only removed by a separate, explicit `POST /ns/{nsId}/resources/vNet/reconcile/prune`
-  call (`PruneVNets`).
+  (`src/core/reconcile/vnetReconcile.go`) diagnoses via the shared `GetResourceSyncState`
+  helper, sets `Ready`/`Synced` directly via `SetCondition`, then recomputes `Status` via
+  `DeriveVNetStatus` — it **never deletes metadata**. Orphaned metadata is only removed by
+  a separate, explicit `POST /ns/{nsId}/resources/vNet/reconcile/prune` call (`PruneVNets`).
 - **VPN** has not been migrated yet — `ReconcileSiteToSiteVPN` (`src/core/resource/vpn.go`)
   still deletes metadata immediately once it confirms the CSP/Terrarium resource is gone, as
   shown below.
@@ -266,7 +266,8 @@ CSP/Spider/Terrarium resource (Actual). Behavior currently differs by resource:
 | Healthy                             | exists / `Available`                           | exists        | `NoActionNeeded`                        | unchanged                                                                           |
 | Orphaned metadata (VPN)             | exists                                         | missing (404) | `MetadataRemoved`                       | metadata + label deleted immediately                                               |
 | Orphaned metadata (VNet/Subnet)     | exists                                         | missing (404) | diagnosis only (`CspResourceMissing`)   | `Status=Failed`, metadata **preserved** until an explicit `Prune` call             |
-| **Stuck in terminal-failure state** | `Failed(DeletionFailed` or `DeregisterFailed)` | exists        | **`StatusRestored`**                    | `Ready=True / Restored`, `Synced` reflects the real sync state, `Status=Available` |
+| **Stuck in terminal-failure state (auto-managed `DeletionFailed`, or any `DeregisterFailed`)** | `Failed(DeletionFailed` or `DeregisterFailed)` | exists | **`StatusRestored`** | `Ready=True / Restored`, `Synced` reflects the real sync state, `Status=Available` |
+| **Stuck in terminal-failure state (user-owned VNet, `DeletionFailed`)** | `Failed(DeletionFailed)` | exists | `NoActionNeeded` (sticky) | `Ready`/`Status` unchanged — `PUT .../restore` clears it (**TBD**, see Open Items in resource-reconciliation.md); see Restore guard |
 | Spider/Terrarium transient outage   | any                                            | 5xx / network | (none)                                   | error returned, status unchanged                                                    |
 
 **Restore guard (conservative):** Status is restored to `Available` only when **all** of
@@ -276,6 +277,12 @@ the following hold:
 2. `ConditionReady.Status == False`.
 3. `ConditionReady.Reason ∈ { DeletionFailed, DeregisterFailed }` — only terminal-failure
    states are restored.
+4. **VNet only** — if `ConditionReady.Reason == DeletionFailed`, the VNet must also be
+   auto-managed (`IsAutoManagedResource`: shared-name prefix or `sys.purpose=infra-dynamic`
+   label). A user-owned VNet's `DeletionFailed` tombstone is sticky and does **not**
+   auto-restore even when the CSP resource is confirmed alive — an explicit
+   `PUT .../restore` call clears it (**TBD**: not yet documented in Swagger; see Open
+   Items in resource-reconciliation.md). Subnet has no such ownership gate.
 
 In-flight states (`Creating`, `Deleting`, `Registering`, `Deregistering`) and
 `CreationFailed` are intentionally **excluded** to avoid masking concurrent operations
@@ -305,6 +312,9 @@ retry loop or background scheduler.
 ---
 
 ## 6. Status Derivation
+
+> [!IMPORTANT]
+> **Never assign `Status` directly, in any code path.** A reconciler or resource function that sets `Status` independently of `Ready` can silently mark a resource `Available` (or any other value) that Conditions don't actually support. This exact mistake (`ApplySyncState` setting `Status` regardless of `Ready`) let sticky, non-restorable deletion tombstones silently heal back to `Available` before it was fixed. Always: update `Ready`/`Synced` via `SetCondition()`, then recompute `Status = Derive*Status(Conditions)`.
 
 Status is never set directly. It is always computed by a `Derive*Status()` function after Conditions are updated.
 
