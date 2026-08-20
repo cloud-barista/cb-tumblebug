@@ -793,52 +793,6 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 	return false
 }
 
-// markObjectStorageDeleteFailedThenReconcile persists the object storage as
-// Failed(DeletionFailed) and then diagnoses (and restores, if applicable)
-// its sync state against the CSP — the same non-destructive check the
-// ObjectStorageReconciler performs. It only ever calls kvstore.Put; it never
-// deletes metadata or calls Spider DELETE (see docs/feature_guide/
-// resource-reconciliation.md, "Spider Delete Behavior").
-//
-// `cause` is the original delete error; it populates both the Condition
-// message and SystemMessage. The caller decides what error to return.
-func markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey string, objStrgInfo *model.ObjectStorageInfo, cause error) {
-	log.Error().Err(cause).Msg("")
-	// [Conditions] Deletion failed → mark as Failed to prevent stuck state
-	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
-	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
-	objStrgInfo.SystemMessage = cause.Error()
-
-	statusResp, fetchErr := GetCspResourceStatus(objStrgInfo.ConnectionName, model.StrObjectStorage)
-	if fetchErr != nil {
-		log.Warn().Err(fetchErr).Msgf("auto-diagnose after delete failure could not fetch CSP status for objectStorage %s/%s", nsId, osId)
-	} else {
-		syncState := GetResourceSyncState(objStrgInfo.CspResourceName, objStrgInfo.CspResourceId, statusResp)
-		if (syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing) && model.ShouldRestoreToAvailable(objStrgInfo.Conditions) {
-			prevReason, prevMessage := "", ""
-			if cond := model.GetCondition(objStrgInfo.Conditions, model.ConditionReady); cond != nil {
-				prevReason = cond.Reason
-				prevMessage = cond.Message
-			}
-			restoredMsg := fmt.Sprintf("Restored from %s; CSP resource exists", prevReason)
-			if prevMessage != "" {
-				restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
-			}
-			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
-			// Record Synced from the real syncState, not a hardcoded "Synchronized with CSP" — keeps SpMetaMissing visible during restore.
-			ApplySyncState(&objStrgInfo.Conditions, &objStrgInfo.Status, &objStrgInfo.SystemMessage, syncState)
-			// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
-			objStrgInfo.Status = model.StorageStatusAvailable
-		} else {
-			ApplySyncState(&objStrgInfo.Conditions, &objStrgInfo.Status, &objStrgInfo.SystemMessage, syncState)
-		}
-	}
-
-	if failVal, marshalErr := json.Marshal(objStrgInfo); marshalErr == nil {
-		_ = kvstore.Put(objStrgKey, string(failVal))
-	}
-}
-
 // DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace.
 // If force is true, Spider force-deletes the bucket with all its contents.
 // If empty is true, Spider empties the bucket contents first, then deletes it.
@@ -937,7 +891,13 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 					opDesc = "EMPTY"
 				}
 				err = fmt.Errorf("%s failed for object storage %s: %w", opDesc, uid, delErr)
-				markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey, &objStrgInfo, err)
+				log.Error().Err(err).Msg("")
+				model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
+				objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+				objStrgInfo.SystemMessage = err.Error()
+				if failVal, marshalErr := json.Marshal(objStrgInfo); marshalErr == nil {
+					_ = kvstore.Put(objStrgKey, string(failVal))
+				}
 				return err
 			}
 			// 404 → already deleted on CSP
@@ -970,7 +930,13 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 					if gateErr != nil {
 						cause = fmt.Errorf("object storage %s deletion unconfirmed: CSP existence check failed: %v (%w)", uid, gateErr, ErrDeletionUnconfirmed)
 					}
-					markObjectStorageDeleteFailedThenReconcile(nsId, osId, objStrgKey, &objStrgInfo, cause)
+					log.Error().Err(cause).Msg("")
+					model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
+					objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+					objStrgInfo.SystemMessage = cause.Error()
+					if failVal, marshalErr := json.Marshal(objStrgInfo); marshalErr == nil {
+						_ = kvstore.Put(objStrgKey, string(failVal))
+					}
 					return cause
 				}
 			}

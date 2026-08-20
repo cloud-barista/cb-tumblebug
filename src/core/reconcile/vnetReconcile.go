@@ -111,9 +111,21 @@ func (r *VNetReconciler) reconcileAvailable(nsId string, vNetInfo *model.VNetInf
 	r.reconcileChildSubnets(nsId, vNetInfo, vpcStatusResp)
 
 	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
-
-	// Never fold SpMetaMissing into InSync — ApplySyncState leaves Status untouched for it, so this stays accurate.
-	resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
+	switch syncState {
+	case model.SyncStateInSync:
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+	case model.SyncStateSpMetaMissing:
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Spider metadata missing; TB metadata preserved")
+	case model.SyncStateCspResourceMissing:
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		vNetInfo.SystemMessage = "Reconcile Diagnostic: CSP resource missing."
+	case model.SyncStateTbMetaOnly:
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		vNetInfo.SystemMessage = "Reconcile Diagnostic: Ghost metadata detected."
+	}
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
 
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
@@ -147,7 +159,8 @@ func (r *VNetReconciler) reconcileFailed(nsId string, vNetInfo *model.VNetInfo, 
 		}
 	}
 
-	if restoreOk {
+	switch {
+	case restoreOk:
 		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(vNetInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason
@@ -160,13 +173,27 @@ func (r *VNetReconciler) reconcileFailed(nsId string, vNetInfo *model.VNetInfo, 
 			restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
 		}
 		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
-		// Record Synced from the real syncState, not a hardcoded "Synchronized with CSP" — keeps SpMetaMissing visible during restore.
-		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
-		// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
-		vNetInfo.Status = model.NetworkStatusAvailable
-	} else {
-		resource.ApplySyncState(&vNetInfo.Conditions, &vNetInfo.Status, &vNetInfo.SystemMessage, syncState)
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+		vNetInfo.SystemMessage = ""
+
+	case syncState == model.SyncStateCspResourceMissing:
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		vNetInfo.SystemMessage = "Reconcile Diagnostic: CSP resource missing."
+
+	case syncState == model.SyncStateTbMetaOnly:
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		vNetInfo.SystemMessage = "Reconcile Diagnostic: Ghost metadata detected."
+
+	case syncState == model.SyncStateSpMetaMissing:
+		// Not authorized to restore — record the diagnosis only; Ready/Status/SystemMessage stay untouched.
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Spider metadata missing; TB metadata preserved")
+
+	default: // SyncStateInSync, not authorized to restore (sticky tombstone)
+		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
 	}
+	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
 
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {

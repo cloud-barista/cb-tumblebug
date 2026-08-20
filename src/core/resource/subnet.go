@@ -969,34 +969,43 @@ func syncSubnetState(nsId string, subnetInfo *model.SubnetInfo, vNetInfo *model.
 	subnetSyncState := GetResourceSyncState(subnetInfo.CspResourceName, subnetInfo.CspResourceId, subnetStatusResp)
 	log.Debug().Msgf("Subnet '%s' sync state: %q", subnetInfo.CspResourceName, subnetSyncState)
 
-	switch subnetSyncState {
-	case model.SyncStateInSync, model.SyncStateSpMetaMissing:
-		if model.ShouldRestoreToAvailable(subnetInfo.Conditions) {
-			prevReason, prevMessage := "", ""
-			if r := model.GetCondition(subnetInfo.Conditions, model.ConditionReady); r != nil {
-				prevReason = r.Reason
-				prevMessage = r.Message
-			}
-			restoredMsg := fmt.Sprintf("Restored from %s; CSP resource exists", prevReason)
-			if prevMessage != "" {
-				restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
-			}
-			model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
-			// Record Synced from the real syncState, not a hardcoded "Available" — keeps SpMetaMissing visible during restore.
-			ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, subnetSyncState)
-			// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
-			subnetInfo.Status = model.NetworkStatusAvailable
-			ret.Message = fmt.Sprintf("subnet (%s) status restored to Available from %s; CSP resource exists", subnetInfo.Id, prevReason)
-		} else {
-			// Never fold SpMetaMissing into InSync — ApplySyncState leaves Status untouched for it, so this stays accurate.
-			ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, subnetSyncState)
-			ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetInfo.Id)
+	switch {
+	case (subnetSyncState == model.SyncStateInSync || subnetSyncState == model.SyncStateSpMetaMissing) &&
+		model.ShouldRestoreToAvailable(subnetInfo.Conditions):
+		prevReason, prevMessage := "", ""
+		if r := model.GetCondition(subnetInfo.Conditions, model.ConditionReady); r != nil {
+			prevReason = r.Reason
+			prevMessage = r.Message
 		}
+		restoredMsg := fmt.Sprintf("Restored from %s; CSP resource exists", prevReason)
+		if prevMessage != "" {
+			restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
+		}
+		model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
+		model.SetCondition(&subnetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+		subnetInfo.SystemMessage = ""
+		ret.Message = fmt.Sprintf("subnet (%s) status restored to Available from %s; CSP resource exists", subnetInfo.Id, prevReason)
 
-	case model.SyncStateCspResourceMissing, model.SyncStateTbMetaOnly:
-		ApplySyncState(&subnetInfo.Conditions, &subnetInfo.Status, &subnetInfo.SystemMessage, subnetSyncState)
+	case subnetSyncState == model.SyncStateCspResourceMissing || subnetSyncState == model.SyncStateTbMetaOnly:
+		msg := "Resource missing on CSP provider"
+		if subnetSyncState == model.SyncStateTbMetaOnly {
+			msg = "Ghost metadata: resource absent on Spider and CSP"
+		}
+		model.SetCondition(&subnetInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(subnetSyncState), msg)
+		model.SetCondition(&subnetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(subnetSyncState), msg)
+		subnetInfo.SystemMessage = "Reconcile Diagnostic: " + msg
 		ret.Message = fmt.Sprintf("subnet (%s) missing on CSP; marked as Failed", subnetInfo.Id)
+
+	case subnetSyncState == model.SyncStateSpMetaMissing:
+		// Not authorized to restore — record the diagnosis only; Ready/Status/SystemMessage stay untouched.
+		model.SetCondition(&subnetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(subnetSyncState), "Spider metadata missing; TB metadata preserved")
+		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetInfo.Id)
+
+	default: // SyncStateInSync, not authorized to restore
+		model.SetCondition(&subnetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+		ret.Message = fmt.Sprintf("subnet (%s) exists on CSP; metadata is consistent (no action needed)", subnetInfo.Id)
 	}
+	subnetInfo.Status = model.DeriveSubnetStatus(subnetInfo.Conditions)
 
 	// Persist updated subnet info in KV store
 	if subnetKey != "" {
