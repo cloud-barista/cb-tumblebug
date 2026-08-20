@@ -317,6 +317,9 @@ func RestDeleteObjectStorage(c echo.Context) error {
 	err := resource.DeleteObjectStorage(nsId, osId, force, empty)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to delete object storage")
+		if _, recErr := reconcile.GetManager().RunReconcile(c.Request().Context(), nsId, model.StrObjectStorage, osId, nil); recErr != nil {
+			log.Warn().Err(recErr).Msgf("auto-reconcile failed for ObjectStorage: %s", osId)
+		}
 		if errors.Is(err, resource.ErrDeletionUnconfirmed) {
 			return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusConflict)
 		}

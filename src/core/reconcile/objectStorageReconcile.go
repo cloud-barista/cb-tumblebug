@@ -81,9 +81,21 @@ func (r *ObjectStorageReconciler) Reconcile(ctx context.Context, nsId string, re
 func (r *ObjectStorageReconciler) reconcileAvailable(nsId string, osInfo *model.ObjectStorageInfo, statusResp *model.CspResourceStatusResponse) (model.SimpleMsg, error) {
 	osKey := common.GenResourceKey(nsId, model.StrObjectStorage, osInfo.Id)
 	syncState := resource.GetResourceSyncState(osInfo.CspResourceName, osInfo.CspResourceId, *statusResp)
-
-	// Never fold SpMetaMissing into InSync — ApplySyncState leaves Status untouched for it, so this stays accurate.
-	resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, syncState)
+	switch syncState {
+	case model.SyncStateInSync:
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+	case model.SyncStateSpMetaMissing:
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Spider metadata missing; TB metadata preserved")
+	case model.SyncStateCspResourceMissing:
+		model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		osInfo.SystemMessage = "Reconcile Diagnostic: CSP resource missing."
+	case model.SyncStateTbMetaOnly:
+		model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		osInfo.SystemMessage = "Reconcile Diagnostic: Ghost metadata detected."
+	}
+	osInfo.Status = model.DeriveObjectStorageStatus(osInfo.Conditions)
 
 	val, err := json.Marshal(osInfo)
 	if err != nil {
@@ -111,7 +123,8 @@ func (r *ObjectStorageReconciler) reconcileFailed(nsId string, osInfo *model.Obj
 		}
 	}
 
-	if restoreOk {
+	switch {
+	case restoreOk:
 		prevReason, prevMessage := "", ""
 		if cond := model.GetCondition(osInfo.Conditions, model.ConditionReady); cond != nil {
 			prevReason = cond.Reason
@@ -124,13 +137,27 @@ func (r *ObjectStorageReconciler) reconcileFailed(nsId string, osInfo *model.Obj
 			restoredMsg = fmt.Sprintf("%s (previous failure: %s)", restoredMsg, prevMessage)
 		}
 		model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored, restoredMsg)
-		// Record Synced from the real syncState, not a hardcoded "Synchronized with CSP" — keeps SpMetaMissing visible during restore.
-		resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, syncState)
-		// ApplySyncState won't set Status for SpMetaMissing, but CSP is confirmed alive here, so force Available.
-		osInfo.Status = model.StorageStatusAvailable
-	} else {
-		resource.ApplySyncState(&osInfo.Conditions, &osInfo.Status, &osInfo.SystemMessage, syncState)
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+		osInfo.SystemMessage = ""
+
+	case syncState == model.SyncStateCspResourceMissing:
+		model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Resource missing on CSP provider")
+		osInfo.SystemMessage = "Reconcile Diagnostic: CSP resource missing."
+
+	case syncState == model.SyncStateTbMetaOnly:
+		model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
+		osInfo.SystemMessage = "Reconcile Diagnostic: Ghost metadata detected."
+
+	case syncState == model.SyncStateSpMetaMissing:
+		// Not authorized to restore — record the diagnosis only; Ready/Status/SystemMessage stay untouched.
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Spider metadata missing; TB metadata preserved")
+
+	default: // SyncStateInSync, not authorized to restore (sticky tombstone)
+		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
 	}
+	osInfo.Status = model.DeriveObjectStorageStatus(osInfo.Conditions)
 
 	val, err := json.Marshal(osInfo)
 	if err != nil {

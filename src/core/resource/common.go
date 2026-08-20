@@ -4228,32 +4228,6 @@ func GetResourceSyncState(resourceName string, resourceSystemId string, statusRe
 	return model.SyncStateTbMetaOnly // Absent (TB: O, SP: X, CSP: X)
 }
 
-// ApplySyncState updates resource Conditions, Status, and SystemMessage in place based on ResourceSyncState.
-func ApplySyncState(conditions *[]model.Condition, status *string, sysMsg *string, syncState model.ResourceSyncState) {
-	reason := string(syncState)
-
-	switch syncState {
-	case model.SyncStateInSync:
-		model.SetCondition(conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
-		*status = model.ResourceStatusAvailable
-		*sysMsg = ""
-
-	case model.SyncStateCspResourceMissing:
-		model.SetCondition(conditions, model.ConditionSynced, model.ConditionFalse, reason, "Resource missing on CSP provider")
-		*status = model.ResourceStatusFailed
-		*sysMsg = "Reconcile Diagnostic: CSP resource missing."
-
-	case model.SyncStateSpMetaMissing:
-		model.SetCondition(conditions, model.ConditionSynced, model.ConditionFalse, reason, "Spider metadata missing; TB metadata preserved")
-		*sysMsg = "Reconcile Diagnostic: Spider metadata missing."
-
-	case model.SyncStateTbMetaOnly:
-		model.SetCondition(conditions, model.ConditionSynced, model.ConditionFalse, reason, "Ghost metadata: resource absent on Spider and CSP")
-		*status = model.ResourceStatusFailed
-		*sysMsg = "Reconcile Diagnostic: Ghost metadata detected."
-	}
-}
-
 // GetCspResourceStatusBatch retrieves resource status for multiple resource types in a single connection
 //
 // This is a convenience function that calls GetCspResourceStatus for multiple resource types
