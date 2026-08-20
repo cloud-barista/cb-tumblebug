@@ -49,7 +49,11 @@ API (v0.13.0+) — an implementation detail, not this document's focus (see Refe
   VNet/SecurityGroup register/deregister pattern.
 - **Reconciliation**: detects drift via the shared
   [resource-reconciliation.md](resource-reconciliation.md) contract; the creating/deleting repair
-  paths are logging-only skeletons today (same as VNet/ObjectStorage).
+  paths are logging-only skeletons today (same as VNet/ObjectStorage). A `DeletionFailed`
+  instance only auto-restores to `Available` if it's auto-managed (`IsAutoManagedResource`) —
+  a user-owned instance's tombstone is sticky, and its recovery path is **TBD**
+  (`PUT .../restore` exists generically but isn't yet wired up for RDBMS; see Open Items
+  in [resource-reconciliation.md](resource-reconciliation.md)).
 
 ## Creation and Deletion Reliability
 
