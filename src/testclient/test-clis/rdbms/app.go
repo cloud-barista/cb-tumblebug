@@ -92,6 +92,7 @@ type TestCase struct {
 	SecurityGroupName string         `mapstructure:"securityGroupName"`
 	DBEngine          string         `mapstructure:"dbEngine"`
 	DBEngineVersion   string         `mapstructure:"dbEngineVersion"`
+	DBInstanceSpec    string         `mapstructure:"dbInstanceSpec"`
 	DBSpec            string         `mapstructure:"dbSpec"`
 	StorageType       string         `mapstructure:"storageType"`
 	StorageSize       int            `mapstructure:"storageSize"`
@@ -407,7 +408,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 				if s.SupportsStorageSizeConfiguration && s.StorageSizeRange.Min == 0 && s.StorageSizeRange.Max == 0 {
 					log.Warn().Msgf("[%s] Capability response looks suspicious: supportsStorageSizeConfiguration=true but storageSizeRange is {0,0} (possible Spider wire-format mismatch)", tc.RdbmsId)
 				}
-				log.Info().Msgf("[%s] Capability data: dbSpecs=%d liveSupportedEngines=%v", tc.RdbmsId, len(s.DBSpecs), s.LiveSupportedEngines)
+				log.Info().Msgf("[%s] Capability data: dbInstanceSpecs=%d liveSupportedEngines=%v", tc.RdbmsId, len(s.DBInstanceSpecs), s.LiveSupportedEngines)
 			}
 		}
 	} else {
@@ -417,6 +418,10 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 
 	// 4. Validate, then create RDBMS (only if VNet succeeded; SecurityGroup is best-effort)
 	if vNetId != "" {
+		specVal := tc.DBInstanceSpec
+		if specVal == "" {
+			specVal = tc.DBSpec
+		}
 		rdbmsReqBody := map[string]any{
 			"name":              tc.RdbmsId,
 			"connectionName":    tc.ConnectionName,
@@ -424,7 +429,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			"subnetIds":         subnetIds,
 			"dbEngine":          tc.DBEngine,
 			"dbEngineVersion":   tc.DBEngineVersion,
-			"dbSpec":            tc.DBSpec,
+			"dbInstanceSpec":    specVal,
 			"storageType":       tc.StorageType,
 			"storageSize":       tc.StorageSize,
 			"adminUserName":     tc.AdminUserName,

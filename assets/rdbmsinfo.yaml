@@ -3,8 +3,8 @@
 
 # Last Updated: 2026-08-19
 # Source: CB-Spider storage-type-test (2026-08-03), CB-Spider v0.12.44 RDBMS/MariaDB test suites
-# and wiki RDBMS Management Guide. Field naming (dbSpec, adminUserName/adminUserPassword)
-# reflects CB-Spider v0.12.45's DBSpec rename (PR #1806). CB-Spider v0.13.0 was diffed against
+# and wiki RDBMS Management Guide. Field naming (dbInstanceSpec, adminUserName/adminUserPassword)
+# reflects Tumblebug's DBInstanceSpec model and Spider's DBSpec contract. CB-Spider v0.13.0 was diffed against
 # v0.12.45 (9 commits/51 files): the only RDBMS-relevant changes are internal pagination fixes
 # in GCP's and IBM's RDBMSHandler.go (ListRDBMS previously missed results beyond page 1) — no
 # change to RDBMSRest.go, RDBMSHandler.go, DBSpecRest.go, or DBSpecHandler.go, so this file's
@@ -59,7 +59,7 @@
 #         maxStorageSize: Maximum storage size in GB (optional)
 #         note: Additional notes or constraints
 #     dbmsRequirements: DBMS engine-specific requirements (e.g., MySQL, MariaDB)
-#       <engine>.referenceEngineVersion / referenceDBSpec: the exact engine version / dbSpec
+#       <engine>.referenceEngineVersion / referenceDBInstanceSpec: the exact engine version / dbInstanceSpec
 #         CB-Spider's own test suite verifies as Available for this CSP/engine — preferred by
 #         applyRDBMSCreateDefaults over guessing from the live SupportedVersions/dbspec lists,
 #         since a live-reported value can still be rejected by the real CreateRDBMS API for
@@ -139,13 +139,13 @@ dbms:
         maxStorageSize: 65536
         defaultPort: 3306
         referenceEngineVersion: "8.0"
-        referenceDBSpec: db.t3.medium
+        referenceDBInstanceSpec: db.t3.medium
         note: "Storage size requirements apply to all MySQL versions on AWS RDS. Reference values
           per CB-Spider's rdbms-mysql-test README (verified Available, 2026-08-03)."
       mariadb:
         defaultPort: 3306
         referenceEngineVersion: "10.6"
-        referenceDBSpec: db.t3.medium
+        referenceDBInstanceSpec: db.t3.medium
         note: "Reference values per CB-Spider's rdbms-mariadb-test README (verified Available,
           2026-08-18, 100GB)."
 
@@ -182,7 +182,7 @@ dbms:
         maxStorageSize: 16384
         defaultPort: 3306
         referenceEngineVersion: "8.0.21"
-        referenceDBSpec: Standard_B1ms
+        referenceDBInstanceSpec: Standard_B1ms
         note: "Storage is managed automatically by Azure based on compute tier selection.
           Reference values per CB-Spider's rdbms-mysql-test README (verified Available,
           2026-08-03)."
@@ -243,7 +243,7 @@ dbms:
         maxStorageSize: 65536
         defaultPort: 3306
         referenceEngineVersion: "8.0"
-        referenceDBSpec: db-custom-2-8192
+        referenceDBInstanceSpec: db-custom-2-8192
         note: "Storage type is determined by machine series selection (N2, C4A, N4, etc.), not
           directly by user input. Reference values per CB-Spider's rdbms-mysql-test README
           (verified Available with PD_SSD, 2026-08-03)."
@@ -324,7 +324,7 @@ dbms:
         maxStorageSize: 32768
         defaultPort: 3306
         referenceEngineVersion: "8.0"
-        referenceDBSpec: mysql.n4.large.1
+        referenceDBInstanceSpec: mysql.n4.large.1
         note: "Storage type compatibility depends on instance specification series (mysql.n4.*,
           mysql.n2.*, rds.mysql.*). Reference values per CB-Spider's rdbms-mysql-test README
           (verified Available, 2026-08-03) — an older version (e.g. 5.5) or a live-picked
@@ -333,7 +333,7 @@ dbms:
       mariadb:
         defaultPort: 3306
         referenceEngineVersion: "10.6"
-        referenceDBSpec: mariadb.n2.medium.2c
+        referenceDBInstanceSpec: mariadb.n2.medium.2c
         note: "Reference values per CB-Spider's rdbms-mariadb-test README (verified Available,
           2026-08-18, 20GB)."
         
@@ -399,7 +399,7 @@ dbms:
         minStorageSize: 50
         defaultPort: 3306
         referenceEngineVersion: "8.0"
-        referenceDBSpec: "8000"
+        referenceDBInstanceSpec: "8000"
         note: "DBSpec is specified in MB (e.g., 8000 = 8 GB memory). Concurrent order rejection may
           occur (OperationDenied.OtherOderInProcess); driver auto-retries. Reference values per
           CB-Spider's rdbms-mysql-test README (verified Available, 2026-08-03) — a live-picked
@@ -436,7 +436,7 @@ dbms:
       mysql:
         defaultPort: 3306
         referenceEngineVersion: "8.4"
-        referenceDBSpec: multitenant
+        referenceDBInstanceSpec: multitenant
         note: "Storage is managed automatically by IBM Cloud. Reference values per CB-Spider's
           rdbms-mysql-test README (verified Available, 2026-08-03)."
         
@@ -466,12 +466,12 @@ dbms:
     supportedDBEngines: [mysql]
     dbOperationMethod: cspNativeApi
     supportsTag: false
-    note: "Storage type selection not supported. NCP G3 generation automatically applies SSD storage."
+    note: "Storage type and storage size configuration not supported. NCP G3 generation automatically applies SSD storage, starts at 10GB, and auto-scales by 10GB increments up to 6000GB."
     storageTypeSelectable: false
     storageTypes:
       ssd:
         name: SSD (automatic)
-        description: G3 generation automatically uses SSD storage. DataStorageTypeCode cannot be specified by user.
+        description: "NCP G3 automatically applies SSD storage (starts at 10GB and auto-scales by 10GB increments up to 6000GB). Storage size and type are not user-configurable."
         recommendationLevel: standard
         note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). NCP G3 applies SSD automatically; storage type cannot be specified."
         
@@ -479,13 +479,28 @@ dbms:
       mysql:
         defaultPort: 3306
         referenceEngineVersion: "8.0.36"
-        referenceDBSpec: SVR.VDBAS.AMD.STAND.C002.M008.NET.SSD.B050.G003
-        note: "G3 generation uses SSD by default; no user configuration available.
+        referenceDBInstanceSpec: SVR.VDBAS.AMD.STAND.C002.M008.NET.SSD.B050.G003
+        note: "G3 generation uses SSD by default and starts at 10GB auto-scaling storage; no user configuration available.
           Reference values per CB-Spider's rdbms-mysql-test README (verified Available,
           2026-08-03)."
         
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions"
+
+    adminUserNameRequirement:
+      reservedValues:
+        - root
+        - admin
+        - radmin
+        - agent
+        - api_admin
+        - ha_admin
+        - ragent
+        - repl_admin
+        - "mysql.session"
+        - "mysql.sys"
+      note: "Confirmed via live rejection (2026-08-21): NCP rejects system account names
+        (root, admin, radmin, agent, api_admin, ha_admin, ragent, repl_admin, mysql.session, mysql.sys)."
 
     adminUserPasswordRequirement:
       requiresSpecialChar: true
@@ -526,7 +541,7 @@ dbms:
         minStorageSize: 20
         defaultPort: 3306
         referenceEngineVersion: "MYSQL_V8408"
-        referenceDBSpec: m2.c2m4
+        referenceDBInstanceSpec: m2.c2m4
         note: "Storage type options are queried dynamically from NHN Cloud RDS API.
           Reference values per CB-Spider's rdbms-mysql-test README (verified Available,
           2026-08-03)."
@@ -534,7 +549,7 @@ dbms:
         minStorageSize: 20
         defaultPort: 3306
         referenceEngineVersion: "MARIADB_V101118"
-        referenceDBSpec: m2.c2m4
+        referenceDBInstanceSpec: m2.c2m4
         note: "Reference values per CB-Spider's rdbms-mariadb-test README (verified Available,
           2026-08-18, 20GB)."
         
@@ -577,7 +592,7 @@ dbms:
         minStorageSize: 1
         defaultPort: 3306
         referenceEngineVersion: "5.7.29"
-        referenceDBSpec: m1.small
+        referenceDBInstanceSpec: m1.small
         note: "Storage type selection depends on OpenStack deployment configuration.
           Reference values per CB-Spider's rdbms-mysql-test README (verified Available,
           2026-08-03)."
@@ -585,7 +600,7 @@ dbms:
         minStorageSize: 1
         defaultPort: 3306
         referenceEngineVersion: "10.4"
-        referenceDBSpec: m1.small
+        referenceDBInstanceSpec: m1.small
         note: "Reference values per CB-Spider's rdbms-mariadb-test README (verified Available,
           2026-08-18, 20GB) — not version 10.6, which this Trove deployment's datastore does
           not have registered."

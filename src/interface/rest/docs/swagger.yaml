@@ -12479,7 +12479,7 @@ paths:
       description: |-
         Create a managed RDBMS instance and wait for it to become Available
         (can take several minutes). Call GET /tumblebug/rdbms/capability first to
-        discover valid dbEngineVersion/dbSpec/storageType/storageSize values,
+        discover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,
         or set autoFillDefaults=true to auto-pick a capability-valid (not necessarily
         optimal) default for each.
       operationId: PostRDBMS
@@ -17436,8 +17436,8 @@ paths:
         Live capability query for one connection+dbEngine (calls CB-Spider), so all
         three params are required. Call GET /tumblebug/rdbms/support first to see
         which CSPs/engines are worth trying. Fields listed in notes.staticFields are
-        fixed/approximate rather than live. dbSpecs is a richer per-option catalog
-        (vCPU/memory/storage range) than dbSpecOptions; liveSupportedEngines is this
+        fixed/approximate rather than live. dbInstanceSpecs is a richer per-option catalog
+        (vCPU/memory/storage range) than dbInstanceSpecOptions; liveSupportedEngines is this
         connection's live-verified engine list, independent of the dbEngine queried.
         Both are best-effort and may be empty if their underlying live call failed.
       operationId: GetRDBMSCapability
@@ -25394,27 +25394,21 @@ components:
       properties:
         dbOperationMethod:
           type: string
-          description: "DBOperationMethod is the fixed method CB-Spider uses for this\
-            \ CSP's internal Database CRUD API: \"cspNativeApi\" or \"sqlFallback\"\
-            ."
-          example: sqlFallback
+          example: cspNativeApi
           enum:
           - cspNativeApi
           - sqlFallback
         note:
           type: string
+          example: Storage type selection is not supported on this CSP.
         storageTypeSelectable:
           type: boolean
           example: true
         supported:
           type: boolean
-          description: Supported is whether RDBMS is available on this CSP at all;
-            false means every field below is a zero value.
           example: true
         supportedDBEngines:
           type: array
-          description: "SupportedDBEngines lists DB engines empirically verified for\
-            \ this CSP; omission means unverified, not unsupported."
           example:
           - mysql
           - mariadb
@@ -25449,7 +25443,7 @@ components:
           example: Password123!
         autoFillDefaults:
           type: boolean
-          description: AutoFillDefaults fills DBEngineVersion/DBSpec/StorageType/StorageSize
+          description: AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize
             from GET /tumblebug/rdbms/capability when left empty/zero.
           example: false
         backupRetentionDays:
@@ -25469,9 +25463,9 @@ components:
           description: DBEngineVersion may be left empty when AutoFillDefaults is
             true.
           example: "8.0"
-        dbSpec:
+        dbInstanceSpec:
           type: string
-          description: DBSpec may be left empty when AutoFillDefaults is true.
+          description: DBInstanceSpec may be left empty when AutoFillDefaults is true.
           example: db.t3.medium
         deletionProtection:
           type: boolean
@@ -25517,7 +25511,7 @@ components:
         vNetId:
           type: string
           example: vnet-01
-    model.RDBMSDBSpecInfo:
+    model.RDBMSDBInstanceSpecInfo:
       type: object
       properties:
         memSizeMiB:
@@ -25594,6 +25588,9 @@ components:
         dbEngineVersion:
           type: string
           example: "8.0"
+        dbInstanceSpec:
+          type: string
+          example: db.t3.medium
         dbInstanceType:
           type: string
           description: DBInstanceType is "Primary" or "ReadReplica"; informational
@@ -25602,9 +25599,6 @@ components:
           enum:
           - Primary
           - ReadReplica
-        dbSpec:
-          type: string
-          example: db.t3.medium
         deletionProtection:
           type: boolean
           example: false
@@ -25689,19 +25683,19 @@ components:
         dbEngine:
           type: string
           example: mysql
-        dbSpecOptions:
+        dbInstanceSpecOptions:
           type: array
           example:
           - db.t3.medium
           items:
             type: string
-        dbSpecs:
+        dbInstanceSpecs:
           type: array
-          description: "DBSpecs is the richer per-option spec catalog from live GET\
-            \ /dbspec (superset of DBSpecOptions); best-effort, empty if the live\
-            \ call failed."
+          description: "DBInstanceSpecs is the richer per-option spec catalog from\
+            \ live GET /dbspec (superset of DBInstanceSpecOptions); best-effort, empty\
+            \ if the live call failed."
           items:
-            $ref: '#/components/schemas/model.RDBMSDBSpecInfo'
+            $ref: '#/components/schemas/model.RDBMSDBInstanceSpecInfo'
         liveSupportedEngines:
           type: array
           description: "LiveSupportedEngines is this connection's live-verified engine\
@@ -25772,10 +25766,10 @@ components:
         staticFields:
           type: array
           description: |-
-            StaticFields lists which fields of the surrounding RDBMSMetaInfo are fixed/approximate
-            reference values right now, and why; a field not listed there is live.
+            StaticFields lists capability fields whose values are static/approximate rather than live;
+            see buildRDBMSStaticFields.
           items:
-            $ref: '#/components/schemas/model.RDBMSStaticField'
+            $ref: '#/components/schemas/model.StaticFieldNote'
         storageTypes:
           type: array
           description: |-
@@ -25783,16 +25777,6 @@ components:
             recommendation) for each entry in StorageTypeOptions above; see buildStorageTypeNotes.
           items:
             $ref: '#/components/schemas/model.StorageTypeNote'
-    model.RDBMSStaticField:
-      type: object
-      properties:
-        field:
-          type: string
-          example: storageTypeOptions
-        note:
-          type: string
-          example: NCP G3 generation sets storage type (SSD) automatically; not user-selectable
-            or queryable via API.
     model.RDBMSSupportResponse:
       type: object
       properties:
@@ -28200,6 +28184,15 @@ components:
           type: string
         verifiedUsername:
           type: string
+    model.StaticFieldNote:
+      type: object
+      properties:
+        field:
+          type: string
+          example: storageSizeRange
+        note:
+          type: string
+          example: Static fallback value (CB-Spider does not query this live)
     model.StatusCountInfo:
       type: object
       properties:
