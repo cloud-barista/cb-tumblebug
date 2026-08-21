@@ -99,8 +99,8 @@ type spiderRDBMSCreateReqInfo struct {
 	VPCName             string           `json:"VPCName"`
 	DBEngine            string           `json:"DBEngine"`
 	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBSpec              string           `json:"DBInstanceSpec"`
-	StorageSize         string           `json:"StorageSize"`
+	DBSpec              string           `json:"DBSpec"`
+	StorageSize         string           `json:"StorageSize,omitempty"`
 	StorageType         string           `json:"StorageType,omitempty"`
 	Iops                string           `json:"Iops,omitempty"`
 	SubnetNames         []string         `json:"SubnetNames,omitempty"`
@@ -156,7 +156,7 @@ type spiderRDBMSInfo struct {
 	VpcIID              model.IID        `json:"VpcIID"`
 	DBEngine            string           `json:"DBEngine"`
 	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBSpec              string           `json:"DBInstanceSpec"`
+	DBSpec              string           `json:"DBSpec"`
 	DBInstanceType      string           `json:"DBInstanceType,omitempty"`
 	StorageSize         string           `json:"StorageSize"`
 	StorageType         string           `json:"StorageType,omitempty"`
@@ -180,7 +180,7 @@ type spiderRDBMSInfo struct {
 // rdbmsDataSourceKeyNames maps Spider's PascalCase DataSource/DataSourceNotes keys to this API's camelCase field names.
 var rdbmsDataSourceKeyNames = map[string]string{
 	"SupportedVersions":      "supportedVersions",
-	"DBSpecOptions":          "dbSpecOptions",
+	"DBSpecOptions":          "dbInstanceSpecOptions",
 	"StorageTypeOptions":     "storageTypeOptions",
 	"StorageSizeRangeGB":     "storageSizeRange",
 	"StorageSizeRangeGB.Min": "storageSizeRange.min",
@@ -224,6 +224,13 @@ func getStorageTypeConfig(providerName, storageType string) (model.RDBMSStorageT
 			return st, true
 		}
 	}
+
+	// Fallback to the sole configured storage type when Spider returns "NA"/empty for non-selectable providers.
+	if (target == "na" || target == "" || !provider.StorageTypeSelectable) && len(provider.StorageTypes) == 1 {
+		for _, st := range provider.StorageTypes {
+			return st, true
+		}
+	}
 	return model.RDBMSStorageTypeConfig{}, false
 }
 
@@ -241,10 +248,10 @@ func buildStorageTypeConstraints(st model.RDBMSStorageTypeConfig) string {
 		parts = append(parts, fmt.Sprintf("Minimum %dGB storage.", st.MinStorageSize))
 	}
 	if len(st.CompatibleSpecs) > 0 {
-		parts = append(parts, fmt.Sprintf("Requires dbSpec matching one of: %s.", strings.Join(st.CompatibleSpecs, ", ")))
+		parts = append(parts, fmt.Sprintf("Requires dbInstanceSpec matching one of: %s.", strings.Join(st.CompatibleSpecs, ", ")))
 	}
 	if len(st.IncompatibleSpecs) > 0 {
-		parts = append(parts, fmt.Sprintf("Not compatible with dbSpec(s): %s.", strings.Join(st.IncompatibleSpecs, ", ")))
+		parts = append(parts, fmt.Sprintf("Not compatible with dbInstanceSpec(s): %s.", strings.Join(st.IncompatibleSpecs, ", ")))
 	}
 	if len(st.CompatibleMachineSeries) > 0 {
 		parts = append(parts, fmt.Sprintf("Only available on machine series: %s.", strings.Join(st.CompatibleMachineSeries, ", ")))
@@ -286,17 +293,24 @@ func buildStorageTypeNotes(providerName string, storageTypeOptions []string) []m
 	return notes
 }
 
-// buildRDBMSStaticFields collapses Spider's DataSource/DataSourceNotes maps into a single
-// list of only the fields marked "Static", so callers only ever see fields worth distrusting.
-func buildRDBMSStaticFields(dataSource, dataSourceNotes map[string]string) []model.RDBMSStaticField {
-	var fields []model.RDBMSStaticField
-	for k, v := range dataSource {
-		if !strings.EqualFold(v, "Static") {
+// buildRDBMSStaticFields converts Spider's DataSource/DataSourceNotes to []model.StaticFieldNote, sorted by Field.
+func buildRDBMSStaticFields(dataSource, dataSourceNotes map[string]string) []model.StaticFieldNote {
+	if len(dataSource) == 0 {
+		return nil
+	}
+	fields := make([]model.StaticFieldNote, 0, len(dataSource))
+	for rawField, source := range dataSource {
+		if strings.EqualFold(source, "live") {
 			continue
 		}
-		fields = append(fields, model.RDBMSStaticField{
-			Field: translateRDBMSDataSourceKey(k),
-			Note:  dataSourceNotes[k],
+		field := translateRDBMSDataSourceKey(rawField)
+		note := dataSourceNotes[rawField]
+		if note == "" {
+			note = fmt.Sprintf("Source: %s", source)
+		}
+		fields = append(fields, model.StaticFieldNote{
+			Field: field,
+			Note:  note,
 		})
 	}
 	sort.Slice(fields, func(i, j int) bool { return fields[i].Field < fields[j].Field })
@@ -369,7 +383,7 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 		ConnectionName:                   connConfig.ConfigName,
 		DBEngine:                         spiderMeta.DBEngine,
 		SupportedVersions:                spiderMeta.SupportedVersions,
-		DBSpecOptions:                    spiderMeta.DBSpecOptions,
+		DBInstanceSpecOptions:            spiderMeta.DBSpecOptions,
 		StorageTypeOptions:               spiderMeta.StorageTypeOptions,
 		StorageSizeRange:                 model.StorageSizeRange{Min: spiderMeta.StorageSizeRangeGB.Min, Max: spiderMeta.StorageSizeRangeGB.Max},
 		SupportsHighAvailability:         spiderMeta.SupportsHighAvailability,
@@ -394,9 +408,9 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 		log.Warn().Err(dbSpecErr).Msgf("GetRDBMSCapability: /dbspec enrichment failed for connection '%s' (non-fatal)", connConfig.ConfigName)
 	} else {
 		usable := filterUsableDBSpecs(dbSpecs)
-		specs := make([]model.RDBMSDBSpecInfo, 0, len(usable))
+		specs := make([]model.RDBMSDBInstanceSpecInfo, 0, len(usable))
 		for _, s := range usable {
-			specs = append(specs, model.RDBMSDBSpecInfo{
+			specs = append(specs, model.RDBMSDBInstanceSpecInfo{
 				Name:               s.Name,
 				VCpuCount:          s.VCpu.Count,
 				VCpuClockGHz:       s.VCpu.ClockGHz,
@@ -404,7 +418,7 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 				StorageSizeRangeGB: model.StorageSizeRange{Min: s.StorageSizeRangeGB.Min, Max: s.StorageSizeRangeGB.Max},
 			})
 		}
-		response.Supports.DBSpecs = specs
+		response.Supports.DBInstanceSpecs = specs
 	}
 	if engines, engineErr := getSpiderRDBMSEngines(connConfig.ConfigName); engineErr != nil {
 		log.Warn().Err(engineErr).Msgf("GetRDBMSCapability: /rdbmsengine enrichment failed for connection '%s' (non-fatal)", connConfig.ConfigName)
@@ -462,7 +476,9 @@ func buildCSPSupportInfo(cspKey string) model.RDBMSCSPSupportInfo {
 // CSP-side teardown (e.g. Alibaba's DependencyViolation.Rds) lags Spider's own record,
 // so the CSP-gone confirmation gets its own, more patient budget (vars for tests).
 var (
-	rdbmsCSPGoneMaxAttempts = 10
+	rdbmsSpiderMaxAttempts  = 30
+	rdbmsSpiderInterval     = 10 * time.Second
+	rdbmsCSPGoneMaxAttempts = 60
 	rdbmsCSPGoneInterval    = 10 * time.Second
 
 	rdbmsPostDeleteWaitDefault = 10 * time.Second
@@ -690,7 +706,7 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 		return
 	}
 	if req.DBEngineVersion == "" {
-		// Prefer the CB-Spider-verified reference version (assets/rdbmsinfo.yaml) over the live list, since some CSPs restrict valid dbSpec/version pairs.
+		// Prefer the CB-Spider-verified reference version (assets/rdbmsinfo.yaml) over the live list, since some CSPs restrict valid dbInstanceSpec/version pairs.
 		if provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]; exists {
 			if reqmt, ok := provider.DBMSRequirements[strings.ToLower(req.DBEngine)]; ok && reqmt.ReferenceEngineVersion != "" {
 				req.DBEngineVersion = reqmt.ReferenceEngineVersion
@@ -700,37 +716,41 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 			req.DBEngineVersion = newestSupportedVersion(meta.SupportedVersions)
 		}
 	}
-	if req.DBSpec == "" {
-		// Prefer the CB-Spider-verified reference dbSpec (assets/rdbmsinfo.yaml) over the live catalog's "smallest" pick, which CreateRDBMS can still reject.
+	if req.DBInstanceSpec == "" {
+		// Prefer the CB-Spider-verified reference dbInstanceSpec (assets/rdbmsinfo.yaml) over the live catalog's "smallest" pick, which CreateRDBMS can still reject.
 		if provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]; exists {
-			if reqmt, ok := provider.DBMSRequirements[strings.ToLower(req.DBEngine)]; ok && reqmt.ReferenceDBSpec != "" {
-				req.DBSpec = reqmt.ReferenceDBSpec
+			if reqmt, ok := provider.DBMSRequirements[strings.ToLower(req.DBEngine)]; ok {
+				if reqmt.ReferenceDBInstanceSpec != "" {
+					req.DBInstanceSpec = reqmt.ReferenceDBInstanceSpec
+				} else if reqmt.ReferenceDBSpec != "" {
+					req.DBInstanceSpec = reqmt.ReferenceDBSpec
+				}
 			}
 		}
 	}
-	if req.DBSpec == "" {
+	if req.DBInstanceSpec == "" {
 		// Pick the smallest usable spec from the live /dbspec catalog instead of index 0 of the flat DBSpecOptions list (see §5's Azure/IBM picks); falls back to the old behavior on failure.
 		if specs, specErr := getSpiderDBSpecs(req.ConnectionName, req.DBEngine); specErr != nil {
 			log.Warn().Err(specErr).Msg("AutoFillDefaults: /dbspec lookup failed, falling back to DBSpecOptions[0]")
 			if len(meta.DBSpecOptions) > 0 {
-				req.DBSpec = meta.DBSpecOptions[0]
+				req.DBInstanceSpec = meta.DBSpecOptions[0]
 			}
 		} else if picked := pickSmallestDBSpec(specs); picked != "" {
-			req.DBSpec = picked
-			log.Info().Msgf("AutoFillDefaults: selected smallest usable dbSpec=%s", picked)
+			req.DBInstanceSpec = picked
+			log.Info().Msgf("AutoFillDefaults: selected smallest usable dbInstanceSpec=%s", picked)
 		} else if len(meta.DBSpecOptions) > 0 {
 			log.Warn().Msg("AutoFillDefaults: /dbspec returned no usable entries, falling back to DBSpecOptions[0]")
-			req.DBSpec = meta.DBSpecOptions[0]
+			req.DBInstanceSpec = meta.DBSpecOptions[0]
 		}
 	}
 
-	// StorageType: prefer safe defaults with no iops/size constraints that are also compatible with the resolved DBSpec's machine series (isStorageTypeCompatibleWithDBSpec; prevents GCP's PD_SSD-vs-C4A mismatch).
+	// StorageType: prefer safe defaults with no iops/size constraints that are also compatible with the resolved DBInstanceSpec's machine series (isStorageTypeCompatibleWithDBSpec; prevents GCP's PD_SSD-vs-C4A mismatch).
 	if req.StorageType == "" && meta.SupportsStorageTypeSelection && len(meta.StorageTypeOptions) > 0 {
 		providerKey := strings.ToLower(providerName)
 		if preferences, exists := safeStorageTypePreference[providerKey]; exists {
 			for _, preferred := range preferences {
 				for _, available := range meta.StorageTypeOptions {
-					if strings.EqualFold(preferred, available) && isStorageTypeCompatibleWithDBSpec(providerName, available, req.DBSpec) {
+					if strings.EqualFold(preferred, available) && isStorageTypeCompatibleWithDBSpec(providerName, available, req.DBInstanceSpec) {
 						req.StorageType = available
 						log.Info().Msgf("AutoFillDefaults: selected safe storageType=%s", available)
 						break
@@ -741,10 +761,10 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 				}
 			}
 		}
-		// fallback: first available storage type compatible with the resolved DBSpec, if no safe preference matched (or none were compatible)
+		// fallback: first available storage type compatible with the resolved DBInstanceSpec, if no safe preference matched (or none were compatible)
 		if req.StorageType == "" {
 			for _, available := range meta.StorageTypeOptions {
-				if isStorageTypeCompatibleWithDBSpec(providerName, available, req.DBSpec) {
+				if isStorageTypeCompatibleWithDBSpec(providerName, available, req.DBInstanceSpec) {
 					req.StorageType = available
 					log.Warn().Msgf("AutoFillDefaults: no safe preference, using first compatible storageType=%s", req.StorageType)
 					break
@@ -753,8 +773,8 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 		}
 	}
 
-	// StorageSize: fill from the engine minimum, raised to the storageType's own minimum if higher (e.g. AWS gp3 needs 20GB, not mysql's overall 5GB).
-	if req.StorageSize <= 0 {
+	// StorageSize: fill from the engine minimum only when configurable.
+	if req.StorageSize <= 0 && meta.SupportsStorageSizeConfiguration {
 		minSize := meta.StorageSizeRangeGB.Min
 		if req.StorageType != "" {
 			if st, found := getStorageTypeConfig(providerName, req.StorageType); found && st.MinStorageSize > minSize {
@@ -826,6 +846,9 @@ func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateR
 	if !meta.SupportsStorageTypeSelection && req.StorageType != "" {
 		return fmt.Errorf("storageType is not configurable for %s; omit it", providerName)
 	}
+	if !meta.SupportsStorageSizeConfiguration && req.StorageSize > 0 {
+		log.Info().Msgf("validateRDBMSCreateRequest: %s uses auto-scaling storage; user-provided storageSize (%dGB) will be ignored", providerName, req.StorageSize)
+	}
 
 	// General storage size range check
 	if meta.SupportsStorageSizeConfiguration {
@@ -846,17 +869,17 @@ func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateR
 			if st.RequiresIops && req.Iops == "" {
 				return fmt.Errorf("storageType '%s' requires 'iops' parameter (e.g., '3000')", req.StorageType)
 			}
-			if req.DBSpec != "" {
-				if len(st.CompatibleSpecs) > 0 && !matchesAnySpecPattern(req.DBSpec, st.CompatibleSpecs) {
-					return fmt.Errorf("storageType '%s' requires dbSpec matching one of %v (got: %s)", req.StorageType, st.CompatibleSpecs, req.DBSpec)
+			if req.DBInstanceSpec != "" {
+				if len(st.CompatibleSpecs) > 0 && !matchesAnySpecPattern(req.DBInstanceSpec, st.CompatibleSpecs) {
+					return fmt.Errorf("storageType '%s' requires dbInstanceSpec matching one of %v (got: %s)", req.StorageType, st.CompatibleSpecs, req.DBInstanceSpec)
 				}
-				if matchesAnySpecPattern(req.DBSpec, st.IncompatibleSpecs) {
-					return fmt.Errorf("storageType '%s' is not compatible with dbSpec '%s'", req.StorageType, req.DBSpec)
+				if matchesAnySpecPattern(req.DBInstanceSpec, st.IncompatibleSpecs) {
+					return fmt.Errorf("storageType '%s' is not compatible with dbInstanceSpec '%s'", req.StorageType, req.DBInstanceSpec)
 				}
 			}
 		}
-		if req.DBSpec != "" && !isStorageTypeCompatibleWithDBSpec(providerName, req.StorageType, req.DBSpec) {
-			return fmt.Errorf("storageType '%s' is not compatible with dbSpec '%s' for %s (its machine series requires a different storage type — see assets/rdbmsinfo.yaml's compatibleMachineSeries)", req.StorageType, req.DBSpec, providerName)
+		if req.DBInstanceSpec != "" && !isStorageTypeCompatibleWithDBSpec(providerName, req.StorageType, req.DBInstanceSpec) {
+			return fmt.Errorf("storageType '%s' is not compatible with dbInstanceSpec '%s' for %s (its machine series requires a different storage type — see assets/rdbmsinfo.yaml's compatibleMachineSeries)", req.StorageType, req.DBInstanceSpec, providerName)
 		}
 	}
 
@@ -917,7 +940,7 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 	rdbmsInfo.CspResourceId = sp.IId.SystemId
 	rdbmsInfo.DBEngine = sp.DBEngine
 	rdbmsInfo.DBEngineVersion = sp.DBEngineVersion
-	rdbmsInfo.DBSpec = sp.DBSpec
+	rdbmsInfo.DBInstanceSpec = sp.DBSpec
 	rdbmsInfo.DBInstanceType = sp.DBInstanceType
 	rdbmsInfo.StorageType = sp.StorageType
 	rdbmsInfo.Iops = sp.Iops
@@ -1038,13 +1061,17 @@ func resolveAndValidateRDBMSCreateRequest(nsId string, req model.RDBMSCreateRequ
 		err = fmt.Errorf("dbEngineVersion required (or set autoFillDefaults=true)")
 		return
 	}
-	if resolvedReq.DBSpec == "" {
-		err = fmt.Errorf("dbSpec required (or set autoFillDefaults=true)")
+	if resolvedReq.DBInstanceSpec == "" {
+		err = fmt.Errorf("dbInstanceSpec required (or set autoFillDefaults=true)")
 		return
 	}
-	if resolvedReq.StorageSize <= 0 {
-		err = fmt.Errorf("storageSize required (or set autoFillDefaults=true)")
-		return
+	if meta.SupportsStorageSizeConfiguration {
+		if resolvedReq.StorageSize <= 0 {
+			err = fmt.Errorf("storageSize required (or set autoFillDefaults=true)")
+			return
+		}
+	} else {
+		resolvedReq.StorageSize = 0
 	}
 	if err = validateRDBMSCreateRequest(meta, resolvedReq, connConfig.ProviderName); err != nil {
 		return
@@ -1087,7 +1114,7 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	rdbmsInfo.SecurityGroupIds = req.SecurityGroupIds
 	rdbmsInfo.DBEngine = req.DBEngine
 	rdbmsInfo.DBEngineVersion = req.DBEngineVersion
-	rdbmsInfo.DBSpec = req.DBSpec
+	rdbmsInfo.DBInstanceSpec = req.DBInstanceSpec
 	rdbmsInfo.StorageType = req.StorageType
 	rdbmsInfo.StorageSize = req.StorageSize
 	rdbmsInfo.Iops = req.Iops
@@ -1127,6 +1154,11 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 		return emptyRet, err
 	}
 
+	var storageSizeStr string
+	if req.StorageSize > 0 {
+		storageSizeStr = strconv.Itoa(req.StorageSize)
+	}
+
 	// 7. Call Spider API to create the RDBMS instance
 	spReq := spiderRDBMSCreateRequest{
 		ConnectionName: req.ConnectionName,
@@ -1135,8 +1167,8 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 			VPCName:             vpcName,
 			DBEngine:            req.DBEngine,
 			DBEngineVersion:     req.DBEngineVersion,
-			DBSpec:              req.DBSpec,
-			StorageSize:         strconv.Itoa(req.StorageSize),
+			DBSpec:              req.DBInstanceSpec,
+			StorageSize:         storageSizeStr,
 			StorageType:         req.StorageType,
 			Iops:                req.Iops,
 			SubnetNames:         subnetNames,
@@ -1419,7 +1451,7 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 		var pollErr error
 		getUrl := fmt.Sprintf("%s/rdbms/%s?ConnectionName=%s", model.SpiderRestUrl, rdbmsInfo.Uid, rdbmsInfo.ConnectionName)
 		deleted, pollErr = PollResourceFullyDeleted(getUrl, rdbmsInfo.ConnectionName, model.StrRDBMS, rdbmsInfo.CspResourceId,
-			DefaultPollMaxAttempts, DefaultPollInterval, rdbmsCSPGoneMaxAttempts, rdbmsCSPGoneInterval)
+			rdbmsSpiderMaxAttempts, rdbmsSpiderInterval, rdbmsCSPGoneMaxAttempts, rdbmsCSPGoneInterval)
 
 		if !deleted && !force {
 			// Fail-closed: a billed RDBMS must not be purged on an unconfirmed deletion.
