@@ -119,6 +119,34 @@ func (a *NodeStatusAgent) startBatchSweeper(ctx context.Context) {
 }
 
 // runBatchSweep collects all PollNormal (Running) nodes that have a registered
+// batchNotFoundStreakMax is the number of consecutive not-found polls before a
+// batch-capable CSP node is settled as Terminated. At the 5-min sweep cadence this is
+// ~15 min; a clean direct-SDK omission is a reliable "gone" signal, so a small streak
+// only needs to guard against a rare transient batch omission.
+const batchNotFoundStreakMax = 3
+
+// recordBatchNotFound advances the shared not-found streak (stored on the node's
+// StatusEntry so the BatchSweeper and the individual FetchNodeStatus path agree) and
+// returns the status to apply: Terminated once the streak is reached — the CSP instance
+// is gone — else Undefined while the streak accrues.
+func recordBatchNotFound(nsId, infraId, nodeId string) string {
+	status := model.StatusUndefined
+	globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+		e.NotFoundStreak++
+		if e.NotFoundStreak >= batchNotFoundStreakMax {
+			status = model.StatusTerminated
+		}
+	})
+	return status
+}
+
+// resetBatchNotFound clears the streak once the instance is seen present again.
+func resetBatchNotFound(nsId, infraId, nodeId string) {
+	globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+		e.NotFoundStreak = 0
+	})
+}
+
 // batch SDK handler, groups them by (provider, credentialHolder, region), and
 // fires one SDK call per group. Results update StatusStore in-memory.
 // Nodes whose status changed are promoted to PollHigh so individual workers
@@ -202,8 +230,13 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 			updated := 0
 			for _, n := range grp {
 				newStatus, found := statuses[n.instanceId]
-				if !found {
-					newStatus = model.StatusUndefined
+				if found {
+					resetBatchNotFound(n.nsId, n.infraId, n.nodeId)
+				} else {
+					// A clean batch response without the id means the CSP instance is gone:
+					// advance the shared streak and settle as Terminated once reached, instead
+					// of leaving it Undefined forever (which keeps it polling / flip-flopping).
+					newStatus = recordBatchNotFound(n.nsId, n.infraId, n.nodeId)
 				}
 				globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
 					if e.Status != newStatus {

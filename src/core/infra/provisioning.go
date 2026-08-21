@@ -4633,8 +4633,11 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			} else {
 				instanceStatus, found := preCheckStatuses[nodeInfoData.CspResourceId]
 				if !found || strings.EqualFold(instanceStatus, model.StatusTerminated) {
+					// The direct SDK confirmed the instance is gone from the CSP (clean
+					// response, id absent) — a definitive not-found, so mark Terminated
+					// (not Failed): the record reflects reality and is a clean GC target.
 					msg := fmt.Sprintf("instance %s is not found or already terminated in CSP; skipping registration", nodeInfoData.CspResourceId)
-					nodeInfoData.Status = model.StatusFailed
+					nodeInfoData.Status = model.StatusTerminated
 					nodeInfoData.SystemMessage = msg
 					UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 					log.Warn().Msgf("[register] %s", msg)
@@ -4875,18 +4878,15 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 	if option == "register" {
 		// Reconstuct resource IDs
-		// Spec
+		// Spec: resolve from DB, or fetch from the CSP and register on demand (as with Image).
 		if callResult.VMSpecName != "" {
-			resourceListInNs, err := resource.ListResource(model.SystemCommonNs, model.StrSpec, "csp_spec_name", callResult.VMSpecName)
+			specInfo, isAutoRegistered, err := resource.EnsureSpecAvailable(requestBody.ConnectionName, callResult.VMSpecName)
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to list Spec")
+				log.Warn().Err(err).Msgf("Cannot resolve spec '%s' for registered VM; leaving spec unset", callResult.VMSpecName)
 			} else {
-				resourcesInNs := resourceListInNs.([]model.SpecInfo)
-				for _, res := range resourcesInNs {
-					if res.ConnectionName == requestBody.ConnectionName {
-						nodeInfoData.SpecId = res.Id
-						break
-					}
+				nodeInfoData.SpecId = specInfo.Id
+				if isAutoRegistered {
+					log.Info().Msgf("Auto-registered spec '%s' (ID: %s) from CSP during registration", callResult.VMSpecName, specInfo.Id)
 				}
 			}
 		}
@@ -4900,9 +4900,9 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(ctx, nsId, requestBody.ConnectionName, targetImageName)
 
 			if err != nil {
-				log.Error().Err(err).Msgf("Failed to ensure image availability: %s", targetImageName)
-				errMsg := fmt.Sprintf("Dependency Missing: Cannot find or register Image (CSP ID: %s) in TB.", targetImageName)
-				log.Error().Msg(errMsg)
+				// Best-effort: registration continues with the image left unset, so keep this a
+				// warning rather than an error that reads like a failed registration.
+				log.Warn().Err(err).Msgf("Cannot resolve image '%s' for registered VM; leaving image unset", targetImageName)
 			} else {
 				nodeInfoData.ImageId = imageInfo.Id
 

@@ -285,6 +285,7 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 			printf '%b\n' '$(KD)MapUI popup params loaded from .env (override: values-local.yaml)$(KX)'; \
 		fi; \
 	fi
+	@[ -n "$(PF_DEFER)" ] || $(MAKE) --no-print-directory k-port-forward-save
 	@# --reset-values: state comes only from chart defaults + current flags
 	@# (otherwise helm silently carries over user-supplied values from the previous revision)
 	@$(HELM) upgrade --install $(HELM_RELEASE) $(HELM_CHART) \
@@ -316,6 +317,7 @@ k-up: ## Install/upgrade the stack on Kubernetes (creates a kind cluster if no c
 	fi
 	@echo ""
 	@$(MAKE) --no-print-directory k-info
+	@[ -n "$(PF_DEFER)" ] || $(MAKE) --no-print-directory k-port-forward-restore
 
 # Internal: dump why the deployment is unhealthy (used by k-up failure paths)
 k-diagnose:
@@ -652,6 +654,7 @@ mcp-budget-off: ## Disable spend limits
 	@printf '%b\n' 'Spend limits disabled.'
 
 k-build: ## Build LOCAL source and run it in the cluster (C=tb|mapui|mcp) — compose `--build` equivalent
+	@$(MAKE) --no-print-directory k-port-forward-save
 	@case "$(C)" in \
 		cb-tumblebug|tb)      canon="cb-tumblebug"; ctx="."; key="tumblebug"; deploy="cb-tumblebug" ;; \
 		cb-mapui|mapui)       canon="cb-mapui"; ctx="../cb-mapui"; key="mapui"; deploy="cb-mapui" ;; \
@@ -670,11 +673,12 @@ k-build: ## Build LOCAL source and run it in the cluster (C=tb|mapui|mcp) — co
 	docker build -t "$$img" "$$ctx2" && \
 	kind load docker-image --name $(KIND_CLUSTER_NAME) "$$img" && \
 	printf 'images:\n  %s: %s\n' "$$key2" "$$img" > deployments/helm/cb-tumblebug/values-dev-image-$$canon.yaml && \
-	$(MAKE) --no-print-directory k-up && \
+	$(MAKE) --no-print-directory k-up PF_DEFER=1 && \
 	echo "Restarting deploy/$$deploy2 to pick up the rebuilt image..." && \
 	$(KUBECTL) rollout restart deploy/$$deploy2 -n $(K8S_NAMESPACE) && \
 	$(KUBECTL) rollout status deploy/$$deploy2 -n $(K8S_NAMESPACE) --timeout=600s && \
 	echo "Local build active for $$canon (persists across k-up). Revert: make k-build-off C=$$canon"
+	@$(MAKE) --no-print-directory k-port-forward-restore
 
 k-build-off: ## Revert to published images (C=tb|mapui|mcp for one; omit C for all)
 	@case "$(C)" in \
@@ -689,6 +693,7 @@ k-build-off: ## Revert to published images (C=tb|mapui|mcp for one; omit C for a
 	@$(MAKE) --no-print-directory k-up
 
 k-assets: ## Apply LOCAL assets/ (cloudinfo.yaml etc.) to the cluster — compose bind-mount equivalent
+	@$(MAKE) --no-print-directory k-port-forward-save
 	@files="$(K8S_ASSETS_FILES)"; \
 	[ -n "$$files" ] || { echo "No assets/*.yaml or assets/*.csv found."; exit 1; }; \
 	total=$$(cat $$files | wc -c); \
@@ -706,22 +711,25 @@ k-assets: ## Apply LOCAL assets/ (cloudinfo.yaml etc.) to the cluster — compos
 	{ printf 'assetsOverride:\n  configMapName: %s\n  files:\n' "$(K8S_ASSETS_CM)"; \
 	  for f in $$files; do printf '    - %s\n' "$$(basename $$f)"; done; } > $(K8S_ASSETS_VALUES) && \
 	printf '%b\n' "$(KD)ConfigMap $(K8S_ASSETS_CM) updated ($$(echo $$files | wc -w) files, $$total bytes)$(KX)" && \
-	$(MAKE) --no-print-directory k-up && \
+	$(MAKE) --no-print-directory k-up PF_DEFER=1 && \
 	echo "Restarting deploy/cb-tumblebug to re-read the assets..." && \
 	$(KUBECTL) rollout restart deploy/cb-tumblebug -n $(K8S_NAMESPACE) && \
 	$(KUBECTL) rollout status deploy/cb-tumblebug -n $(K8S_NAMESPACE) --timeout=600s && \
 	echo "Local assets active (persists across k-up). Revert: make k-assets-off"
+	@$(MAKE) --no-print-directory k-port-forward-restore
 
 k-assets-off: ## Revert to the assets baked into the container image
 	@rm -f $(K8S_ASSETS_VALUES)
 	@echo "Reverting to image assets. Applying..."
-	@$(MAKE) --no-print-directory k-up
+	@$(MAKE) --no-print-directory k-port-forward-save
+	@$(MAKE) --no-print-directory k-up PF_DEFER=1
 	@$(KUBECTL) delete configmap $(K8S_ASSETS_CM) -n $(K8S_NAMESPACE) --ignore-not-found
 	@$(KUBECTL) rollout restart deploy/cb-tumblebug -n $(K8S_NAMESPACE)
 	@$(KUBECTL) rollout status deploy/cb-tumblebug -n $(K8S_NAMESPACE) --timeout=600s
+	@$(MAKE) --no-print-directory k-port-forward-restore
 
 k-gateway-forward: ## Port-forward the gateway entrypoint to localhost:8080 (+8443 when TLS is on; idempotent)
-	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && $$3 == "port-forward" && /envoy-gateway-system/{print $$1}' | xargs); \
+	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && / port-forward / && /envoy-gateway-system/{print $$1}' | xargs); \
 	[ -z "$$pids" ] || kill $$pids 2>/dev/null || true
 	@svc=$$($(KUBECTL) get svc -n envoy-gateway-system \
 		-l gateway.envoyproxy.io/owning-gateway-name=cb-tumblebug-gateway -o name 2>/dev/null | head -1); \
@@ -766,12 +774,30 @@ k-token: ## Create an admin token file for K8s UIs like Headlamp (cluster-admin;
 	@echo "Note: cluster-admin, no expiry — local dev only. Revoke: $(KUBECTL) delete secret headlamp-admin-token -n kube-system"
 
 k-port-forward-stop: ## Stop this deployment's port-forwards incl. the gateway entrypoint (others untouched)
-	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && $$3 == "port-forward" && \
+	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && / port-forward / && \
 		(/ $(K8S_NAMESPACE) / || (/envoy-gateway-system/ && /cb-tumblebug-gateway/)) {print $$1}' | xargs); \
 	if [ -n "$$pids" ]; then \
 		echo "Stopping port-forwards for this deployment (PID: $$pids)"; \
 		kill $$pids 2>/dev/null || true; \
 	fi
+
+# Internal: a port-forward is bound to one pod, so any rollout silently breaks it.
+# k-up/k-build save what is live beforehand and re-establish the same set afterwards.
+# Callers that restart pods again after k-up pass PF_DEFER=1 and restore themselves.
+K8S_PF_STATE := /tmp/.cb-tumblebug-port-forward.$(K8S_NAMESPACE)
+
+k-port-forward-save:
+	@rm -f $(K8S_PF_STATE); \
+	pf=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && / port-forward /'); \
+	printf '%s\n' "$$pf" | grep -q " $(K8S_NAMESPACE) " && echo svc >> $(K8S_PF_STATE) || true; \
+	printf '%s\n' "$$pf" | grep -q "envoy-gateway-system" && echo gw >> $(K8S_PF_STATE) || true
+
+k-port-forward-restore:
+	@[ -f $(K8S_PF_STATE) ] || exit 0; \
+	printf '%b\n' '' '$(KD)Refreshing the port-forwards that were open before this run...$(KX)'; \
+	grep -qx svc $(K8S_PF_STATE) && $(MAKE) --no-print-directory k-port-forward || true; \
+	grep -qx gw $(K8S_PF_STATE) && $(MAKE) --no-print-directory k-gateway-forward || true; \
+	rm -f $(K8S_PF_STATE)
 
 K8S_DNS_SERVERS ?= 8.8.8.8 1.1.1.1
 
@@ -971,4 +997,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-diagnose k-preflight-host k-diagnose-host
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-diagnose k-preflight-host k-diagnose-host

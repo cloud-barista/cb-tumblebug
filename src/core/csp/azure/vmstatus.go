@@ -15,13 +15,9 @@ package azure
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
 	"strings"
-	"sync"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	armcompute "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
@@ -62,19 +58,17 @@ func parseAzureArmID(armID string) (azureArmIDParts, error) {
 	}, nil
 }
 
-// azureStatusConcurrency is the maximum number of concurrent VM status calls
-// issued by BatchDescribeInstanceStatuses.  Azure has no native batch-status API,
-// so each VM requires an individual REST call.  Without a cap, calling this with
-// 200 VMs would launch 200 goroutines simultaneously, risking Azure API throttling
-// (HTTP 429) and connection-reset bursts on startup.
-const azureStatusConcurrency = 20
-
-// BatchDescribeInstanceStatuses queries Azure Compute for the given VM ARM resource IDs
-// and returns a map of armResourceID → TB status string.
+// BatchDescribeInstanceStatuses returns a map of the requested VM identifiers → TB status.
 //
-// VMs are fetched in parallel (up to azureStatusConcurrency concurrent calls) using
-// individual Get calls with InstanceView expansion (which returns the power state).
-// Azure has no batch-status API in the standard SDK.
+// It issues a single subscription-wide VirtualMachines ListAll with statusOnly=true, which
+// returns every VM's runtime InstanceView (power state) in one paged call, and matches each
+// requested identifier against that snapshot. Identifiers may be a full ARM resource ID or a
+// bare VM name — TB register records sometimes hold only the name — and both resolve because
+// the snapshot is keyed by ARM ID and by name.
+//
+// A requested VM absent from the snapshot is omitted from the result: the clean "not found"
+// signal callers treat as gone (the AWS handler follows the same contract). Using ListAll
+// rather than a per-VM Get also lets a bare name resolve without knowing its resource group.
 func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceIds []string) (map[string]string, error) {
 	if len(instanceIds) == 0 {
 		return map[string]string{}, nil
@@ -90,63 +84,40 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("Azure vmstatus: failed to get VM client: %w", err)
 	}
 
-	// Fetch VMs in parallel, bounded by azureStatusConcurrency.
-	// Azure has no batch status API, so each VM needs an individual REST call.
-	// The semaphore prevents launching hundreds of goroutines simultaneously
-	// (e.g. at startup with 200 nodes), which would cause HTTP 429 / connection-reset bursts.
-	type vmResult struct {
-		armID  string
-		status string
-		err    error
-	}
-	ch := make(chan vmResult, len(instanceIds))
-	sem := make(chan struct{}, azureStatusConcurrency)
-
-	var wg sync.WaitGroup
-	for _, armID := range instanceIds {
-		wg.Add(1)
-		go func(id string) {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-
-			parts, perr := parseAzureArmID(id)
-			if perr != nil {
-				ch <- vmResult{armID: id, err: perr}
-				return
+	statusOnly := "true"
+	pager := vmClient.NewListAllPager(&armcompute.VirtualMachinesClientListAllOptions{StatusOnly: &statusOnly})
+	byKey := make(map[string]string)
+	for pager.More() {
+		page, perr := pager.NextPage(ctx)
+		if perr != nil {
+			return nil, fmt.Errorf("Azure vmstatus: ListAll failed (region=%s): %w", region, perr)
+		}
+		for _, vm := range page.Value {
+			if vm == nil {
+				continue
 			}
-			expand := armcompute.InstanceViewTypesInstanceView
-			resp, gerr := vmClient.Get(ctx, parts.resourceGroup, parts.vmName,
-				&armcompute.VirtualMachinesClientGetOptions{Expand: &expand})
-			if gerr != nil {
-				var respErr *azcore.ResponseError
-				if errors.As(gerr, &respErr) && respErr.StatusCode == http.StatusNotFound {
-					ch <- vmResult{armID: id, status: model.StatusTerminated}
-					return
-				}
-				ch <- vmResult{armID: id, err: gerr}
-				return
+			status := azurePowerStateToTBStatus(vm.Properties)
+			if vm.ID != nil {
+				byKey[strings.ToLower(*vm.ID)] = status
 			}
-			ch <- vmResult{armID: id, status: azurePowerStateToTBStatus(resp.Properties)}
-		}(armID)
+			if vm.Name != nil {
+				byKey[strings.ToLower(*vm.Name)] = status
+			}
+		}
 	}
-
-	wg.Wait()
-	close(ch)
 
 	result := make(map[string]string, len(instanceIds))
-	var firstErr error
-	for r := range ch {
-		if r.err != nil {
-			if firstErr == nil {
-				firstErr = r.err
-			}
-			continue
+	for _, id := range instanceIds {
+		keys := []string{strings.ToLower(id)}
+		if parts, perr := parseAzureArmID(id); perr == nil {
+			keys = append(keys, strings.ToLower(parts.vmName))
 		}
-		result[r.armID] = r.status
-	}
-	if firstErr != nil && len(result) == 0 {
-		return nil, fmt.Errorf("Azure vmstatus: all requests failed; first error: %w", firstErr)
+		for _, k := range keys {
+			if s, ok := byKey[k]; ok {
+				result[id] = s
+				break
+			}
+		}
 	}
 
 	log.Trace().
