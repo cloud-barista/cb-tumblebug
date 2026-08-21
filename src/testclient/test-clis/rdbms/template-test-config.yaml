@@ -14,7 +14,7 @@ tumblebug:
 # Copy this file to test-config.yaml and adjust values for your environment.
 # Set 'execute: true' for the CSPs you want to include in the test run.
 #
-# autoFillDefaults: true fills dbEngineVersion/dbSpec/storageType/storageSize
+# autoFillDefaults: true fills dbEngineVersion/dbInstanceSpec/storageType/storageSize
 # from GET /tumblebug/rdbms/support (first supported option) — see
 # docs/feature_guide/rdbms-management.md. Leave the four fields blank when using it.
 #
@@ -165,7 +165,8 @@ testCases:
     securityGroupName: test-rdbms-sg-ncp
     dbEngine: mysql
     autoFillDefaults: true
-    adminUserName: admin
+    # NCP rejects "admin" (system account name reserved by NCP).
+    adminUserName: dbadmin
     # NCP requires a special character in the password.
     adminUserPassword: Password123!
     publicAccess: true

@@ -34,8 +34,8 @@ import (
 // @Description Live capability query for one connection+dbEngine (calls CB-Spider), so all
 // @Description three params are required. Call GET /tumblebug/rdbms/support first to see
 // @Description which CSPs/engines are worth trying. Fields listed in notes.staticFields are
-// @Description fixed/approximate rather than live. dbSpecs is a richer per-option catalog
-// @Description (vCPU/memory/storage range) than dbSpecOptions; liveSupportedEngines is this
+// @Description fixed/approximate rather than live. dbInstanceSpecs is a richer per-option catalog
+// @Description (vCPU/memory/storage range) than dbInstanceSpecOptions; liveSupportedEngines is this
 // @Description connection's live-verified engine list, independent of the dbEngine queried.
 // @Description Both are best-effort and may be empty if their underlying live call failed.
 // @Tags [Infra Resource] RDBMS Management
@@ -167,7 +167,7 @@ func RestValidateRDBMS(c echo.Context) error {
 // @Summary Create an RDBMS instance
 // @Description Create a managed RDBMS instance and wait for it to become Available
 // @Description (can take several minutes). Call GET /tumblebug/rdbms/capability first to
-// @Description discover valid dbEngineVersion/dbSpec/storageType/storageSize values,
+// @Description discover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,
 // @Description or set autoFillDefaults=true to auto-pick a capability-valid (not necessarily
 // @Description optimal) default for each.
 // @Tags [Infra Resource] RDBMS Management

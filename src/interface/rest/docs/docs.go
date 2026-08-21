@@ -14787,7 +14787,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a managed RDBMS instance and wait for it to become Available\n(can take several minutes). Call GET /tumblebug/rdbms/capability first to\ndiscover valid dbEngineVersion/dbSpec/storageType/storageSize values,\nor set autoFillDefaults=true to auto-pick a capability-valid (not necessarily\noptimal) default for each.",
+                "description": "Create a managed RDBMS instance and wait for it to become Available\n(can take several minutes). Call GET /tumblebug/rdbms/capability first to\ndiscover valid dbEngineVersion/dbInstanceSpec/storageType/storageSize values,\nor set autoFillDefaults=true to auto-pick a capability-valid (not necessarily\noptimal) default for each.",
                 "consumes": [
                     "application/json"
                 ],
@@ -20725,7 +20725,7 @@ const docTemplate = `{
         },
         "/rdbms/capability": {
             "get": {
-                "description": "Live capability query for one connection+dbEngine (calls CB-Spider), so all\nthree params are required. Call GET /tumblebug/rdbms/support first to see\nwhich CSPs/engines are worth trying. Fields listed in notes.staticFields are\nfixed/approximate rather than live. dbSpecs is a richer per-option catalog\n(vCPU/memory/storage range) than dbSpecOptions; liveSupportedEngines is this\nconnection's live-verified engine list, independent of the dbEngine queried.\nBoth are best-effort and may be empty if their underlying live call failed.",
+                "description": "Live capability query for one connection+dbEngine (calls CB-Spider), so all\nthree params are required. Call GET /tumblebug/rdbms/support first to see\nwhich CSPs/engines are worth trying. Fields listed in notes.staticFields are\nfixed/approximate rather than live. dbInstanceSpecs is a richer per-option catalog\n(vCPU/memory/storage range) than dbInstanceSpecOptions; liveSupportedEngines is this\nconnection's live-verified engine list, independent of the dbEngine queried.\nBoth are best-effort and may be empty if their underlying live call failed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -30900,28 +30900,26 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "dbOperationMethod": {
-                    "description": "DBOperationMethod is the fixed method CB-Spider uses for this CSP's internal Database CRUD API: \"cspNativeApi\" or \"sqlFallback\".",
                     "type": "string",
                     "enum": [
                         "cspNativeApi",
                         "sqlFallback"
                     ],
-                    "example": "sqlFallback"
+                    "example": "cspNativeApi"
                 },
                 "note": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Storage type selection is not supported on this CSP."
                 },
                 "storageTypeSelectable": {
                     "type": "boolean",
                     "example": true
                 },
                 "supported": {
-                    "description": "Supported is whether RDBMS is available on this CSP at all; false means every field below is a zero value.",
                     "type": "boolean",
                     "example": true
                 },
                 "supportedDBEngines": {
-                    "description": "SupportedDBEngines lists DB engines empirically verified for this CSP; omission means unverified, not unsupported.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -30969,7 +30967,7 @@ const docTemplate = `{
                     "example": "Password123!"
                 },
                 "autoFillDefaults": {
-                    "description": "AutoFillDefaults fills DBEngineVersion/DBSpec/StorageType/StorageSize from GET /tumblebug/rdbms/capability when left empty/zero.",
+                    "description": "AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from GET /tumblebug/rdbms/capability when left empty/zero.",
                     "type": "boolean",
                     "example": false
                 },
@@ -30994,8 +30992,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "8.0"
                 },
-                "dbSpec": {
-                    "description": "DBSpec may be left empty when AutoFillDefaults is true.",
+                "dbInstanceSpec": {
+                    "description": "DBInstanceSpec may be left empty when AutoFillDefaults is true.",
                     "type": "string",
                     "example": "db.t3.medium"
                 },
@@ -31062,7 +31060,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RDBMSDBSpecInfo": {
+        "model.RDBMSDBInstanceSpecInfo": {
             "type": "object",
             "properties": {
                 "memSizeMiB": {
@@ -31169,6 +31167,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "8.0"
                 },
+                "dbInstanceSpec": {
+                    "type": "string",
+                    "example": "db.t3.medium"
+                },
                 "dbInstanceType": {
                     "description": "DBInstanceType is \"Primary\" or \"ReadReplica\"; informational only — CB-Spider has no API yet to create a read replica.",
                     "type": "string",
@@ -31177,10 +31179,6 @@ const docTemplate = `{
                         "ReadReplica"
                     ],
                     "example": "Primary"
-                },
-                "dbSpec": {
-                    "type": "string",
-                    "example": "db.t3.medium"
                 },
                 "deletionProtection": {
                     "type": "boolean",
@@ -31295,7 +31293,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "mysql"
                 },
-                "dbSpecOptions": {
+                "dbInstanceSpecOptions": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -31304,11 +31302,11 @@ const docTemplate = `{
                         "db.t3.medium"
                     ]
                 },
-                "dbSpecs": {
-                    "description": "DBSpecs is the richer per-option spec catalog from live GET /dbspec (superset of DBSpecOptions); best-effort, empty if the live call failed.",
+                "dbInstanceSpecs": {
+                    "description": "DBInstanceSpecs is the richer per-option spec catalog from live GET /dbspec (superset of DBInstanceSpecOptions); best-effort, empty if the live call failed.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.RDBMSDBSpecInfo"
+                        "$ref": "#/definitions/model.RDBMSDBInstanceSpecInfo"
                     }
                 },
                 "liveSupportedEngines": {
@@ -31403,10 +31401,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "staticFields": {
-                    "description": "StaticFields lists which fields of the surrounding RDBMSMetaInfo are fixed/approximate\nreference values right now, and why; a field not listed there is live.",
+                    "description": "StaticFields lists capability fields whose values are static/approximate rather than live;\nsee buildRDBMSStaticFields.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.RDBMSStaticField"
+                        "$ref": "#/definitions/model.StaticFieldNote"
                     }
                 },
                 "storageTypes": {
@@ -31415,19 +31413,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.StorageTypeNote"
                     }
-                }
-            }
-        },
-        "model.RDBMSStaticField": {
-            "type": "object",
-            "properties": {
-                "field": {
-                    "type": "string",
-                    "example": "storageTypeOptions"
-                },
-                "note": {
-                    "type": "string",
-                    "example": "NCP G3 generation sets storage type (SSD) automatically; not user-selectable or queryable via API."
                 }
             }
         },
@@ -34700,6 +34685,19 @@ const docTemplate = `{
                 },
                 "verifiedUsername": {
                     "type": "string"
+                }
+            }
+        },
+        "model.StaticFieldNote": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string",
+                    "example": "storageSizeRange"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "Static fallback value (CB-Spider does not query this live)"
                 }
             }
         },

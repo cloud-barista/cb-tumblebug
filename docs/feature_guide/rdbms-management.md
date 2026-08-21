@@ -30,7 +30,7 @@ API (v0.13.0+) — an implementation detail, not this document's focus (see Refe
   - Dry run, no provisioning (`POST .../rdbms/validate`).
   - Create: resolves network names, validates against live capability data (see CSP-Specific
     Capability Reference) and CSP admin-credential policy (see Admin Credential Constraints),
-    auto-fills the smallest usable `dbSpec` and a compatible storage type if requested, and
+    auto-fills the smallest usable `dbInstanceSpec` and a compatible storage type if requested, and
     blocks server-side until the instance reaches `Available` (`POST .../rdbms`; see Creation and
     Deletion Reliability for why).
   - Delete: confirms via two independent checks before clearing the kvstore record
@@ -67,12 +67,14 @@ is for.
   - Alibaba: can return `Error` transiently before settling into `Available`.
 
 - **Delete (`PollResourceFullyDeleted`)**: confirms deletion by checking both Spider and the CSP.
+  - NCP: Cloud DB instance teardown takes ~3-4 minutes and is actively confirmed via `OnlyCSPList` (`PollResourceDeletedOnCSP`, polled every 10s for up to 10 min).
   - Alibaba: a real VPC/vSwitch attachment releases asynchronously (`DependencyViolation.Rds`).
   - Tencent: VPC/subnet IP release lags instance deletion (`ResourceInUse`).
 
 - **Delete — CSP-specific stabilization buffer**: 10s normally
   - Alibaba: 180s
   - Tencent: 90s
+  - NCP: uses standard 10s buffer because dynamic `OnlyCSPList` polling actively tracks full CSP-side teardown.
 
 ## Usage Sequence (Tumblebug User Perspective)
 
@@ -184,17 +186,17 @@ limitation.)
 Enforced client-side by `validateAdminCredentials` before Create reaches CB-Spider. `—` = no
 constraint recorded.
 
-| CSP       | Admin Username Constraint | Admin Password Constraint               |
-| --------- | ------------------------- | --------------------------------------- |
-| AWS       | —                         | —                                       |
-| Azure     | Rejects: `admin`          | —                                       |
-| GCP       | —                         | —                                       |
-| Alibaba   | Rejects: `admin`          | —                                       |
-| Tencent   | Fixed: `root`             | —                                       |
-| IBM       | Fixed: `admin`            | 15-72 characters, no special characters |
-| OpenStack | —                         | —                                       |
-| NCP       | —                         | Requires ≥1 special character           |
-| NHN       | —                         | —                                       |
+| CSP       | Admin Username Constraint                        | Admin Password Constraint               |
+| --------- | ------------------------------------------------ | --------------------------------------- |
+| AWS       | —                                                | —                                       |
+| Azure     | Rejects: `admin`                                 | —                                       |
+| GCP       | —                                                | —                                       |
+| Alibaba   | Rejects: `admin`                                 | —                                       |
+| Tencent   | Fixed: `root`                                    | —                                       |
+| IBM       | Fixed: `admin`                                   | 15-72 characters, no special characters |
+| OpenStack | —                                                | —                                       |
+| NCP       | Rejects: `admin`, `root`, etc. (system accounts) | Requires ≥1 special character           |
+| NHN       | —                                                | —                                       |
 
 ### Direct SQL Connection (TLS) Requirements
 
@@ -226,8 +228,7 @@ Admin credential policy is in Admin Credential Constraints, not repeated here.
 - **Azure / IBM / NCP**: `SupportsStorageTypeSelection=false` — omit `StorageType`; the CSP sets
   it automatically.
 - **IBM**: provisions only the Gen1 platform.
-- **NCP**: rejects requests specifying `StorageSize`/`StorageType`; public domain access needs a
-  separate manual step in the console after creation.
+- **NCP**: `StorageSize` is auto-managed by CSP (starts at 10GB and auto-scales up to 6000GB in 10GB increments); Tumblebug defends against custom `StorageSize` input by zeroing it before sending to CB-Spider. Storage type defaults to `SSD`. Admin accounts must not use system reserved names (`root`, `admin`, `radmin`, etc.) and password requires at least 1 special character. Full deletion is confirmed via dynamic `OnlyCSPList` polling (~3-4 min).
 - **NHN**: requires a dedicated RDS credential in addition to the base Connection credential.
 - **OpenStack**: doesn't expose `StorageType` after creation — verify success via `Available`
   status only.
@@ -261,15 +262,15 @@ Tumblebug `rdbmsId`. 🔁 marks a field CB-Spider still calls `MasterUserName`/`
 on the wire, translated to/from Tumblebug's `adminUserName`/`adminUserPassword` at the call site
 and never exposed as `Master*` to a Tumblebug API caller.
 
-| Tumblebug API                                  | CB-Spider API(s) Called                                                                                          | Notes                                                             |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `GET /rdbms/support`                           | — (none)                                                                                                         | Static from `assets/rdbmsinfo.yaml`.                              |
-| `GET /rdbms/capability`                        | `GET /rdbmsmetainfo` (required); `GET /dbspec`, `GET /rdbmsengine` (best-effort)                                 | Best-effort calls populate `dbSpecs`/`liveSupportedEngines` only. |
-| `POST .../rdbms/validate`                      | Same as `/capability`'s required call, plus `GET /dbspec` if autofilling `dbSpec`                                | Dry run — never reaches create/delete.                            |
-| `POST .../rdbms`                               | Same as Validate, plus `POST /rdbms`; `GET /rdbms/{Uid}` (poll every 10s up to 5 min, through Creating or Error) | 🔁 in the create request body.                                    |
-| `GET .../rdbms` (list)                         | — (none)                                                                                                         | Served from kvstore.                                              |
-| `GET .../rdbms/{rdbmsId}`                      | `GET /rdbms/{Uid}`                                                                                               | 🔁 in the response (password never returned).                     |
-| `DELETE .../rdbms/{rdbmsId}`                   | `DELETE /rdbms/{Uid}`; `GET /rdbms/{Uid}` + `GET /allrdbms` (dual verify)                                        | See Creation and Deletion Reliability.                            |
-| `POST .../rdbms/{rdbmsId}/database`            | `GET /rdbms/{Uid}` (Status check); `POST /rdbms/{Uid}/databases`                                                 | 🔁 in the request body.                                           |
-| `GET .../rdbms/{rdbmsId}/database`             | `GET /rdbms/{Uid}`; `GET /rdbms/{Uid}/databases`                                                                 | 🔁 via `X-Admin-User-Password` header.                            |
-| `DELETE .../rdbms/{rdbmsId}/database/{dbName}` | `GET /rdbms/{Uid}`; `DELETE /rdbms/{Uid}/databases/{dbName}`                                                     | 🔁 via `X-Admin-User-Password` header.                            |
+| Tumblebug API                                  | CB-Spider API(s) Called                                                                                          | Notes                                                                     |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `GET /rdbms/support`                           | — (none)                                                                                                         | Static from `assets/rdbmsinfo.yaml`.                                      |
+| `GET /rdbms/capability`                        | `GET /rdbmsmetainfo` (required); `GET /dbspec`, `GET /rdbmsengine` (best-effort)                                 | Best-effort calls populate `dbInstanceSpecs`/`liveSupportedEngines` only. |
+| `POST .../rdbms/validate`                      | Same as `/capability`'s required call, plus `GET /dbspec` if autofilling `dbInstanceSpec`                        | Dry run — never reaches create/delete.                                    |
+| `POST .../rdbms`                               | Same as Validate, plus `POST /rdbms`; `GET /rdbms/{Uid}` (poll every 10s up to 5 min, through Creating or Error) | 🔁 in the create request body.                                            |
+| `GET .../rdbms` (list)                         | — (none)                                                                                                         | Served from kvstore.                                                      |
+| `GET .../rdbms/{rdbmsId}`                      | `GET /rdbms/{Uid}`                                                                                               | 🔁 in the response (password never returned).                             |
+| `DELETE .../rdbms/{rdbmsId}`                   | `DELETE /rdbms/{Uid}`; `GET /rdbms/{Uid}` + `GET /allrdbms` (dual verify)                                        | See Creation and Deletion Reliability.                                    |
+| `POST .../rdbms/{rdbmsId}/database`            | `GET /rdbms/{Uid}` (Status check); `POST /rdbms/{Uid}/databases`                                                 | 🔁 in the request body.                                                   |
+| `GET .../rdbms/{rdbmsId}/database`             | `GET /rdbms/{Uid}`; `GET /rdbms/{Uid}/databases`                                                                 | 🔁 via `X-Admin-User-Password` header.                                    |
+| `DELETE .../rdbms/{rdbmsId}/database/{dbName}` | `GET /rdbms/{Uid}`; `DELETE /rdbms/{Uid}/databases/{dbName}`                                                     | 🔁 via `X-Admin-User-Password` header.                                    |
