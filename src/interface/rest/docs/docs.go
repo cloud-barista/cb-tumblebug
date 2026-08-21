@@ -1428,7 +1428,7 @@ const docTemplate = `{
         },
         "/fetchPrice": {
             "post": {
-                "description": "Fetch price from all CSP connections and update the price information for associated specs in the system.",
+                "description": "Fetch price from CSP connections and update the price information for associated specs in the system.\n\n**Provider Selection Options (optional body):**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- Empty body fetches prices for all connections.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1438,9 +1438,17 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Spec Management"
                 ],
-                "summary": "Fetch price from all CSP connections and update the price information for associated specs in the system.",
+                "summary": "Fetch price from CSP connections and update the price information for associated specs in the system.",
                 "operationId": "FetchPrice",
                 "parameters": [
+                    {
+                        "description": "Fetch option (optional)",
+                        "name": "fetchOption",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.PriceFetchOption"
+                        }
+                    },
                     {
                         "type": "string",
                         "description": "Custom request ID for tracking",
@@ -30586,6 +30594,32 @@ const docTemplate = `{
                 "PostCommandStatusCompletedWithErrors",
                 "PostCommandStatusFailed"
             ]
+        },
+        "model.PriceFetchOption": {
+            "type": "object",
+            "properties": {
+                "excludedProviders": {
+                    "description": "providers to skip (ex: [\"azure\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "azure"
+                    ]
+                },
+                "targetProviders": {
+                    "description": "Specific providers to target (ex: [\"aws\", \"gcp\"]); when set, excludedProviders is ignored",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "aws",
+                        "gcp"
+                    ]
+                }
+            }
         },
         "model.PriorityCondition": {
             "type": "object",
