@@ -25,7 +25,7 @@ A **Credential** is a set of CSP-specific API keys required for authentication. 
 | IBM | `ApiKey`, `S3AccessKey`, `S3SecretKey` |
 | KT | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `ProjectID`, `S3AccessKey`, `S3SecretKey` |
 | NCP | `ncloud_access_key`, `ncloud_secret_key` |
-| NHN | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `TenantId`, `S3AccessKey`, `S3SecretKey` |
+| NHN | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `TenantId`, `S3AccessKey`, `S3SecretKey`, `User Access Key`, `Secret Access Key`, `mysqlAppKey`, `mariadbAppKey` |
 | OpenStack | `IdentityEndpoint`, `Username`, `Password`, `DomainName`, `ProjectID` |
 | Tencent | `SecretId`, `SecretKey` |
 
