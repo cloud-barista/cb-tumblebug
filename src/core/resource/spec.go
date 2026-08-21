@@ -1351,9 +1351,37 @@ func mergeSpecWithCSVData(existingSpec model.SpecInfo, csvSpec model.SpecInfo) m
 	return mergedSpec
 }
 
+// filterConnConfigsByProvider keeps targetProviders only; otherwise drops excludedProviders.
+func filterConnConfigsByProvider(configs []model.ConnConfig, targetProviders, excludedProviders []string) []model.ConnConfig {
+	if len(targetProviders) == 0 && len(excludedProviders) == 0 {
+		return configs
+	}
+	matches := func(provider string, list []string) bool {
+		for _, p := range list {
+			if strings.EqualFold(provider, p) {
+				return true
+			}
+		}
+		return false
+	}
+	filtered := make([]model.ConnConfig, 0, len(configs))
+	for _, c := range configs {
+		if len(targetProviders) > 0 {
+			if matches(c.ProviderName, targetProviders) {
+				filtered = append(filtered, c)
+			}
+			continue
+		}
+		if !matches(c.ProviderName, excludedProviders) {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered
+}
+
 // FetchPriceForAllConnConfigs gets all conn configs from Spider, lookups all Price for each region of conn config,
 // and saves into TB Price objects. This implementation uses parallel processing with concurrency control and retries failed connections once.
-func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err error) {
+func FetchPriceForAllConnConfigs(option *model.PriceFetchOption) (connConfigCount uint, priceCount uint, err error) {
 	// Get connection configurations
 	connConfigs, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
@@ -1361,13 +1389,18 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 		return 0, 0, err
 	}
 
+	if option == nil {
+		option = &model.PriceFetchOption{}
+	}
+	targetConfigs := filterConnConfigsByProvider(connConfigs.Connectionconfig, option.TargetProviders, option.ExcludedProviders)
+
 	// Skip processing if no connections found
-	if len(connConfigs.Connectionconfig) == 0 {
+	if len(targetConfigs) == 0 {
 		log.Info().Msg("No connection configurations found")
 		return 0, 0, nil
 	}
 
-	connConfigCount = uint(len(connConfigs.Connectionconfig))
+	connConfigCount = uint(len(targetConfigs))
 	log.Info().Msgf("Starting parallel price fetching for %d connections", connConfigCount)
 
 	startTime := time.Now()
@@ -1382,7 +1415,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 	var awsConfigs []model.ConnConfig
 	var alibabaConfigs []model.ConnConfig
 	var otherConfigs []model.ConnConfig
-	for _, c := range connConfigs.Connectionconfig {
+	for _, c := range targetConfigs {
 		switch {
 		case strings.EqualFold(c.ProviderName, csp.GCP):
 			gcpConfigs = append(gcpConfigs, c)

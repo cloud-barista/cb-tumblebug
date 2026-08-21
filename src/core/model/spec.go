@@ -266,6 +266,15 @@ type SpecFetchOption struct {
 	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp" description:"Providers that are not region-specific."`
 }
 
+// PriceFetchOption is struct for Price Fetch Options
+type PriceFetchOption struct {
+	// Specific providers to target (ex: ["aws", "gcp"]); when set, excludedProviders is ignored
+	TargetProviders []string `json:"targetProviders,omitempty" example:"aws,gcp" description:"Specific providers to target. If specified, only these providers will be processed."`
+
+	// providers to skip (ex: ["azure"])
+	ExcludedProviders []string `json:"excludedProviders,omitempty" example:"azure" description:"Providers to be excluded from the price fetching operation."`
+}
+
 // RecommendSpecRequestOptions is struct for RecommendSpec Request Options
 type RecommendSpecRequestOptions struct {
 	// Filter options - available filtering fields and their example values
