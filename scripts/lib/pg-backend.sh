@@ -150,44 +150,59 @@ pg_psql() {
     esac
 }
 
-# pg_restore_file <local-dump-file> <db>  (plain custom-format dump, not gzipped)
+# pg_psql_value <db> <sql>  — tuples-only, unaligned: clean scalar/line output for scripts
+pg_psql_value() {
+    local db="$1" sql="$2"
+    case "$PG_BACKEND" in
+        docker)  docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$db" -tAc "$sql" ;;
+        kubectl) kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- psql -U "$PG_USER" -d "$db" -tAc "$sql" ;;
+        direct)  psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" -tAc "$sql" ;;
+    esac
+}
+
+# pg_restore_file <local-dump-file> <db>  (custom-format, data-only, not gzipped)
+# Data-only so the schema always comes from the app's AutoMigrate, never from the
+# (possibly older) dump — the target tables must already exist. Restore clears the
+# target data first (see restore-assets.sh), so this only loads rows.
 pg_restore_file() {
     local dump="$1" db="$2" remote="/tmp/tb_restore_$$.dump"
     case "$PG_BACKEND" in
         docker)
             docker cp "$dump" "$PG_CONTAINER:$remote"
-            docker exec "$PG_CONTAINER" pg_restore -U "$PG_USER" -d "$db" -v "$remote"
+            docker exec "$PG_CONTAINER" pg_restore -U "$PG_USER" -d "$db" --data-only -v "$remote"
             local rc=$?
             docker exec "$PG_CONTAINER" rm -f "$remote"
             return $rc ;;
         kubectl)
             kubectl cp "$dump" "$PG_K8S_NS/$PG_POD:$remote"
-            kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- pg_restore -U "$PG_USER" -d "$db" -v "$remote"
+            kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- pg_restore -U "$PG_USER" -d "$db" --data-only -v "$remote"
             local rc=$?
             kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- rm -f "$remote"
             return $rc ;;
         direct)
-            pg_restore -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" -v "$dump" ;;
+            pg_restore -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" --data-only -v "$dump" ;;
     esac
 }
 
-# pg_dump_file <db> <local-out-file>  (custom-format dump)
+# pg_dump_file <db> <local-out-file>  (custom-format, data-only)
+# Data-only: the dump carries rows, not schema — schema is owned by the app's
+# AutoMigrate. This keeps the dump schema-version-agnostic (see pg_restore_file).
 pg_dump_file() {
     local db="$1" out="$2" remote="/tmp/tb_backup_$$.dump"
     case "$PG_BACKEND" in
         docker)
-            docker exec "$PG_CONTAINER" pg_dump -U "$PG_USER" -d "$db" -F c -f "$remote"
+            docker exec "$PG_CONTAINER" pg_dump -U "$PG_USER" -d "$db" -F c --data-only -f "$remote"
             docker cp "$PG_CONTAINER:$remote" "$out"
             local rc=$?
             docker exec "$PG_CONTAINER" rm -f "$remote"
             return $rc ;;
         kubectl)
-            kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- pg_dump -U "$PG_USER" -d "$db" -F c -f "$remote"
+            kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- pg_dump -U "$PG_USER" -d "$db" -F c --data-only -f "$remote"
             kubectl cp "$PG_K8S_NS/$PG_POD:$remote" "$out"
             local rc=$?
             kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- rm -f "$remote"
             return $rc ;;
         direct)
-            pg_dump -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" -F c -f "$out" ;;
+            pg_dump -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" -F c --data-only -f "$out" ;;
     esac
 }

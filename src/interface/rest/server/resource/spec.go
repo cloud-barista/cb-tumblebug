@@ -214,11 +214,17 @@ func RestFetchSpecs(c echo.Context) error {
 
 // RestFetchPrice godoc
 // @ID FetchPrice
-// @Summary Fetch price from all CSP connections and update the price information for associated specs in the system.
-// @Description Fetch price from all CSP connections and update the price information for associated specs in the system.
+// @Summary Fetch price from CSP connections and update the price information for associated specs in the system.
+// @Description Fetch price from CSP connections and update the price information for associated specs in the system.
+// @Description
+// @Description **Provider Selection Options (optional body):**
+// @Description - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+// @Description - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+// @Description - Empty body fetches prices for all connections.
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
+// @Param fetchOption body model.PriceFetchOption false "Fetch option (optional)"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -227,7 +233,14 @@ func RestFetchSpecs(c echo.Context) error {
 // @Router /fetchPrice [post]
 func RestFetchPrice(c echo.Context) error {
 
-	connConfigCount, _, err := resource.FetchPriceForAllConnConfigs()
+	reqBody := &model.PriceFetchOption{}
+	if c.Request().ContentLength != 0 {
+		if err := c.Bind(reqBody); err != nil {
+			return clientManager.EndRequestWithLog(c, err, nil)
+		}
+	}
+
+	connConfigCount, _, err := resource.FetchPriceForAllConnConfigs(reqBody)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

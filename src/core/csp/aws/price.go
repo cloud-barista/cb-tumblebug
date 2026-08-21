@@ -139,6 +139,12 @@ func FetchAllNodePrices(ctx context.Context) (map[string]model.SpiderCloudPrice,
 			return nil, fmt.Errorf("AWS pricing API error fetching page %d: %w", pageCount+1, pageErr)
 		}
 		pageCount++
+		// Progress log: the global catalog spans many pages; without this a slow/stuck
+		// paginator is indistinguishable from progress.
+		if pageCount%50 == 0 {
+			log.Debug().Int("pages", pageCount).Int("uniqueRegionSpecPairs", len(bestByKey)).
+				Msg("AWS: pricing global fetch in progress")
+		}
 
 		for _, jsonStr := range page.PriceList {
 			entry, ok := parseAWSPriceItem(jsonStr)
