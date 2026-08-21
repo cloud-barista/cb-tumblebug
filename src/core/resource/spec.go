@@ -2770,6 +2770,45 @@ func UpdateExistingSpecListByAvailableRegionZones(ctx context.Context, nsId stri
 	return result, nil
 }
 
+// EnsureSpecAvailable resolves a CSP spec (by its CSP spec name on the given connection) to
+// a TB SpecInfo, registering it into SystemCommonNs on demand when it is not already in the DB.
+// It mirrors EnsureImageAvailable so a discovered VM can be registered with a real spec instead
+// of an unresolved placeholder. The bool return reports whether the spec was auto-registered.
+// Price/cost is not fetched here (that is a connection-wide bulk operation); the on-demand spec
+// carries the canonical key, so the regular price-fetch flow fills its cost when it next runs.
+func EnsureSpecAvailable(connectionName, cspSpecName string) (model.SpecInfo, bool, error) {
+	if connectionName == "" {
+		return model.SpecInfo{}, false, fmt.Errorf("connectionName is required for EnsureSpecAvailable")
+	}
+	if cspSpecName == "" {
+		return model.SpecInfo{}, false, fmt.Errorf("cspSpecName is required for EnsureSpecAvailable")
+	}
+
+	connConfig, err := common.GetConnConfig(connectionName)
+	if err != nil {
+		return model.SpecInfo{}, false, fmt.Errorf("cannot GetConnConfig for %s: %w", connectionName, err)
+	}
+
+	// Same key the bulk fetch path uses, so an on-demand spec is indistinguishable from a
+	// fetched one and later price updates match it by key.
+	specKey := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", cspSpecName)
+
+	if spec, err := GetSpec(model.SystemCommonNs, specKey); err == nil {
+		return spec, false, nil
+	}
+
+	log.Info().Msgf("Spec '%s' not in DB; fetching from CSP and registering on demand", specKey)
+	spec, err := RegisterSpecWithCspResourceId(model.SystemCommonNs, &model.SpecReq{
+		Name:           specKey,
+		ConnectionName: connectionName,
+		CspSpecName:    cspSpecName,
+	}, false)
+	if err != nil {
+		return model.SpecInfo{}, false, fmt.Errorf("failed to fetch/register spec '%s' from CSP: %w", cspSpecName, err)
+	}
+	return spec, true, nil
+}
+
 // RegisterSpecWithCspResourceId accepts spec creation request, creates and returns an TB spec object
 func RegisterSpecWithCspResourceId(nsId string, u *model.SpecReq, update bool) (model.SpecInfo, error) {
 

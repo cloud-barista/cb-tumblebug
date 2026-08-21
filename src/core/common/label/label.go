@@ -478,7 +478,9 @@ func UpdateCSPResourceLabel(ctx context.Context, labelType, uid string, labels m
 			ctx = context.WithValue(ctx, model.CtxKeyCredentialHolder, cc.CredentialHolder)
 			handled, batchErr := cspdirect.TryBatchUpsertTags(ctx, cc.ProviderName, cc.RegionZoneInfo.AssignedRegion, cc.RegionZoneInfo.AssignedZone, cspResourceId, labelType, labels)
 			if batchErr != nil {
-				log.Warn().Err(batchErr).Str("provider", cc.ProviderName).Str("connectionName", connectionName).Msg("[Label] Direct CSP batch tag failed, falling back to CB-Spider")
+				// Best-effort tag sync with an automatic CB-Spider fallback below; not a
+				// registration failure, so keep it at debug to avoid a misleading warning.
+				log.Debug().Err(batchErr).Str("provider", cc.ProviderName).Str("connectionName", connectionName).Msg("[Label] direct CSP tag sync unavailable; using CB-Spider tag API instead")
 			}
 			if handled {
 				return
@@ -516,7 +518,7 @@ func UpdateCSPResourceLabel(ctx context.Context, labelType, uid string, labels m
 		// this is a best-effort operation, so we don't return an error if it fails
 		// drop if we meet the first error
 		if err != nil {
-			log.Info().Err(err).Msg("Cannot update CSP label/tag")
+			log.Info().Err(err).Msg("[Label] best-effort CSP tag sync failed; resource stays registered without CSP-side tags")
 			break
 		}
 	}
