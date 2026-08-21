@@ -1165,10 +1165,15 @@ paths:
     post:
       tags:
       - "[Infra Resource] Spec Management"
-      summary: Fetch price from all CSP connections and update the price information
-        for associated specs in the system.
-      description: Fetch price from all CSP connections and update the price information
-        for associated specs in the system.
+      summary: Fetch price from CSP connections and update the price information for
+        associated specs in the system.
+      description: |-
+        Fetch price from CSP connections and update the price information for associated specs in the system.
+
+        **Provider Selection Options (optional body):**
+        - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+        - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+        - Empty body fetches prices for all connections.
       operationId: FetchPrice
       parameters:
       - name: x-request-id
@@ -1182,6 +1187,13 @@ paths:
           \ (default: system default holder)"
         schema:
           type: string
+      requestBody:
+        description: Fetch option (optional)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.PriceFetchOption'
+        required: false
       responses:
         "200":
           description: OK
@@ -1201,6 +1213,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: fetchOption
   /fetchSpecs:
     post:
       tags:
@@ -25167,6 +25180,25 @@ components:
       - PostCommandStatusCompleted
       - PostCommandStatusCompletedWithErrors
       - PostCommandStatusFailed
+    model.PriceFetchOption:
+      type: object
+      properties:
+        excludedProviders:
+          type: array
+          description: "providers to skip (ex: [\"azure\"])"
+          example:
+          - azure
+          items:
+            type: string
+        targetProviders:
+          type: array
+          description: "Specific providers to target (ex: [\"aws\", \"gcp\"]); when\
+            \ set, excludedProviders is ignored"
+          example:
+          - aws
+          - gcp
+          items:
+            type: string
     model.PriorityCondition:
       type: object
       properties:
