@@ -79,6 +79,12 @@ type StatusEntry struct {
 	NextPollAt time.Time
 	Priority   PollPriority
 
+	// NotFoundStreak counts consecutive polls (from either the BatchSweeper or the
+	// individual FetchNodeStatus path) in which the CSP instance was absent from a
+	// successful direct-SDK response. Shared here so both writers advance one counter
+	// and agree; reaching batchNotFoundStreakMax settles the node as Terminated.
+	NotFoundStreak int
+
 	// Operation lock.
 	// Zero value = not locked.
 	// When set and within operationLockTTL, the daemon skips this node because

@@ -4633,8 +4633,11 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			} else {
 				instanceStatus, found := preCheckStatuses[nodeInfoData.CspResourceId]
 				if !found || strings.EqualFold(instanceStatus, model.StatusTerminated) {
+					// The direct SDK confirmed the instance is gone from the CSP (clean
+					// response, id absent) — a definitive not-found, so mark Terminated
+					// (not Failed): the record reflects reality and is a clean GC target.
 					msg := fmt.Sprintf("instance %s is not found or already terminated in CSP; skipping registration", nodeInfoData.CspResourceId)
-					nodeInfoData.Status = model.StatusFailed
+					nodeInfoData.Status = model.StatusTerminated
 					nodeInfoData.SystemMessage = msg
 					UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 					log.Warn().Msgf("[register] %s", msg)

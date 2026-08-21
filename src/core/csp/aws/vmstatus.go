@@ -17,7 +17,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -59,8 +61,12 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		end := min(i+describeInstancesBatchSize, len(instanceIds))
 		batch := instanceIds[i:end]
 
+		// Filter by instance-id rather than InstanceIds: unknown or long-terminated ids are
+		// silently omitted from the result instead of failing the whole call with
+		// InvalidInstanceID.NotFound — so a "not found" reads as a clean omission (the
+		// existence signal callers rely on), while real errors still surface.
 		out, err := client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-			InstanceIds: batch,
+			Filters: []ec2types.Filter{{Name: aws.String("instance-id"), Values: batch}},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("DescribeInstances failed (region=%s, ids=%d): %w", region, len(batch), err)

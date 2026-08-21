@@ -2092,7 +2092,11 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 	// the Suspend/Resume/Reboot circuit breaker (see suspendResumeRebootFailStreak).
 	pollFailed := false
 
-	if nodeInfo.Status != model.StatusTerminated && cspResourceName != "" {
+	// Enter on a CspResourceId even when cspResourceName is empty: a register/discovery
+	// target on a batch-capable CSP resolves via the direct SDK by CspResourceId, so it
+	// must reach the SDK path below rather than being skipped (the Spider sub-path, which
+	// needs cspResourceName, is guarded separately).
+	if nodeInfo.Status != model.StatusTerminated && (cspResourceName != "" || nodeInfo.CspResourceId != "") {
 		// Direct SDK fast path: bypass Spider for CSPs with a registered BatchVMStatusFunc.
 		// Benefits: connection pooling, cached OAuth tokens, no extra Spider network hop.
 		// On failure we do NOT fall back to Spider: Spider calls the same CSP API, so a
@@ -2107,22 +2111,14 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 					callResult.Status = s
 					terminatingFailStreak.Delete(sdkStreakKey)
 					terminatingReTerminateSent.Delete(sdkStreakKey)
+					resetBatchNotFound(nsId, infraId, nodeId)
 					goto applyStatus
 				}
-				// Missing from a successful batch response: require the same consecutive-miss
-				// streak as SDK errors before promoting a Terminating node to Terminated.
-				callResult.Status = model.StatusUndefined
-				if nodeInfo.Status == model.StatusTerminating {
-					prev, _ := terminatingFailStreak.LoadOrStore(sdkStreakKey, 0)
-					streak := prev.(int) + 1
-					if streak >= terminatingFailStreakMax {
-						terminatingFailStreak.Delete(sdkStreakKey)
-						callResult.Status = model.StatusTerminated
-					} else {
-						terminatingFailStreak.Store(sdkStreakKey, streak)
-						callResult.Status = nodeInfo.Status
-					}
-				}
+				// Missing from a successful batch response: the CSP instance is gone. Advance
+				// the shared not-found streak and settle as Terminated once reached — uniform
+				// with the BatchSweeper, so the two paths agree instead of oscillating.
+				terminatingFailStreak.Delete(sdkStreakKey)
+				callResult.Status = recordBatchNotFound(nsId, infraId, nodeId)
 				goto applyStatus
 			}
 
@@ -2153,6 +2149,13 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 					terminatingFailStreak.Store(streakKey, streak)
 				}
 			}
+			goto applyStatus
+		}
+
+		// The Spider sub-path needs a cspResourceName. A node that reached here on a
+		// CspResourceId alone (batch-capable CSPs handled above; non-batch CSPs have no
+		// direct SDK) has nothing to query via Spider — leave the status as-is.
+		if cspResourceName == "" {
 			goto applyStatus
 		}
 
@@ -2446,14 +2449,15 @@ applyStatus:
 	// once the resource resolves to a real end state:
 	//   - live (Running/Suspended): late-bind TargetStatus to it so the standard
 	//     finalization below (TargetStatus==Status) records the actual state.
-	//   - terminated/terminating: not a manageable target (and about to be purged by
-	//     the CSP) — settle directly as Failed so refine removes it, avoiding a ghost.
+	//   - terminated/terminating: not a manageable target, but a real end state —
+	//     settle as Terminated (final, no longer re-polled) so refine removes it,
+	//     rather than mislabeling a gone resource as Failed.
 	if isDiscoveryAction(nodeStatusTmp.TargetAction) {
 		if isStableObservedStatus(nodeStatusTmp.Status) {
 			nodeStatusTmp.TargetStatus = nodeStatusTmp.Status
 		} else if strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminated) ||
 			strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminating) {
-			nodeStatusTmp.Status = model.StatusFailed
+			nodeStatusTmp.Status = model.StatusTerminated
 			nodeStatusTmp.TargetStatus = model.StatusComplete
 			nodeStatusTmp.TargetAction = model.ActionComplete
 			nodeStatusTmp.SystemMessage = "target CSP resource is terminated; cannot be managed (run refine to remove)"
