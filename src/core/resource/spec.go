@@ -1715,8 +1715,12 @@ func fetchAWSPricesDirect(awsConfigs []model.ConnConfig) (successCount uint, err
 	awsStart := time.Now()
 	maxConcurrent := 8
 
-	// One global API call fetches pricing for ALL AWS regions at once.
-	priceMap, err := awsPricing.FetchAllNodePrices(context.Background())
+	// One global API call fetches pricing for ALL AWS regions at once. Bound it with a
+	// timeout: without one, a hung/slow AWS Pricing API call blocks this goroutine
+	// indefinitely and AWS specs silently stay unpriced while the other providers finish.
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+	priceMap, err := awsPricing.FetchAllNodePrices(ctx)
 	if err != nil {
 		errMsg := fmt.Sprintf("AWS direct pricing fetch failed: %v", err)
 		log.Error().Msg(errMsg)

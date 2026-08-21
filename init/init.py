@@ -218,6 +218,8 @@ backup_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", 
 backup_available = os.path.isfile(backup_db_path)
 backup_size_mb = 0
 backup_age_days = 0
+backup_summary = None   # From the backup manifest sidecar, if present
+backup_created = None   # From the backup manifest sidecar, if present
 use_backup = False  # Decision variable
 patch_after_restore = False  # Decision variable: patch CSV assets after backup restore
 include_azure = False  # Decision variable for Azure image fetch
@@ -247,6 +249,20 @@ if backup_available:
         # Fallback to file mtime if git is not available or command fails
         backup_mtime = os.path.getmtime(backup_db_path)
         backup_age_days = int((time.time() - backup_mtime) / 86400)
+
+    # Read the manifest sidecar (written next to the dump by backup-assets.sh) so the
+    # menu can show what this specific backup holds, not a generic description.
+    info_path = backup_db_path + ".info"
+    if os.path.isfile(info_path):
+        try:
+            with open(info_path, encoding="utf-8") as info_file:
+                for line in info_file:
+                    if line.startswith("summary:"):
+                        backup_summary = line.split(":", 1)[1].strip()
+                    elif line.startswith("created:"):
+                        backup_created = line.split(":", 1)[1].strip()
+        except OSError:
+            pass
 
 def prompt_for_providers():
     """Ask which providers to fetch, listing the ones actually registered.
@@ -305,7 +321,12 @@ elif run_load_assets and backup_available and not args.yes:
         print(Fore.YELLOW + f"     ⚠️  Backup is {backup_age_days} days old - data may be outdated")
     elif backup_age_days > 7:
         print(Fore.YELLOW + f"     ℹ️  Backup is {backup_age_days} days old - consider fetching fresh data for latest info")
-    print(Fore.WHITE + "     Contains: Specs, Images, and Pricing data")
+    if backup_summary:
+        print(Fore.WHITE + f"     Contains: {backup_summary}")
+    else:
+        print(Fore.WHITE + "     Contains: Specs, Images, and Pricing data")
+    if backup_created:
+        print(Fore.WHITE + f"     Backup taken: {backup_created}")
     print(Fore.WHITE + "     → Steps 2 & 3 will be skipped")
     print("")
     print(Fore.GREEN + "  a+. ⏩ Restore from backup + patch CSV assets (~2 minutes)")
@@ -624,6 +645,10 @@ def register_credential(holder_name, provider, credentials):
 # Collects per-credential OpenBao registration failures for the final summary.
 openbao_issues = []
 
+# Collects regions that failed verification with the reason the server reported
+# (ConnConfig.verifiedMessage), so the ✗ marks can be explained in one summary.
+unverified_regions = []
+
 
 def print_credential_info(response):
     if "credentialName" in response and "credentialHolder" in response:
@@ -673,7 +698,11 @@ def print_credential_info(response):
                         "zones": set(),  # Use set for O(1) lookups
                         "all_verified": True,  # Track if all connections are verified
                         "any_verified": False,  # Track if any connection is verified
+                        "reasons": set(),  # Why verification failed (from the server)
                     }
+
+                if not is_verified:
+                    region_groups[region]["reasons"].add(" ".join(conn.get("verifiedMessage", "").split()))
 
                 # Update base_config_name to use shortest name (usually the base without zone suffix)
                 if len(config_name) < len(region_groups[region]["base_config_name"]):
@@ -713,6 +742,8 @@ def print_credential_info(response):
 
             # Use green check if all verified, red X if none verified, yellow ~ if mixed
             config_name = data["base_config_name"]
+            if not data["all_verified"]:
+                unverified_regions.append({"name": config_name, "reasons": sorted(r for r in data["reasons"] if r)})
             if data["all_verified"]:
                 print(f"{Fore.GREEN}✓{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
             elif not data["any_verified"]:
@@ -720,6 +751,26 @@ def print_credential_info(response):
             else:
                 # Mixed verification status
                 print(f"{Fore.YELLOW}~{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
+
+
+def print_unverified_summary():
+    """Explain the ✗ marks above, grouped by the reason the server reported."""
+    if not unverified_regions:
+        return
+
+    no_reason = "no reason reported (check the cb-tumblebug server log)"
+    by_reason = {}
+    for item in unverified_regions:
+        reason = " | ".join(item["reasons"]) or no_reason
+        by_reason.setdefault(reason, []).append(item["name"])
+
+    total = len(unverified_regions)
+    print(Fore.YELLOW + f"\n⚠ {total} connection(s) failed verification (✗ above) and are excluded from provisioning:")
+    for reason, names in sorted(by_reason.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        print(Fore.RED + f"  - {', '.join(sorted(names))}")
+        print(Fore.RED + f"      {reason[:300]}")
+    print(Fore.YELLOW + "  Re-run 'make init' to retry; a timeout here is usually transient load on CB-Spider.")
+    print(Fore.RESET)
 
 
 # Function to fetch price information from CSPs
@@ -842,6 +893,8 @@ if run_credentials:
                     # Only call print_credential_info if registration was successful (message is a dict)
                     if color == Fore.GREEN and isinstance(message, dict):
                         print_credential_info(message)
+
+print_unverified_summary()
 
 # Load assets (specs and images) if requested
 if run_load_assets:
