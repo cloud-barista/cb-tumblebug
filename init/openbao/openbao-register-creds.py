@@ -168,6 +168,10 @@ KEY_MAP = {
         "TenantId": "NHN_TENANT_ID",
         "S3AccessKey": "NHN_S3_ACCESS_KEY",
         "S3SecretKey": "NHN_S3_SECRET_KEY",
+        "User Access Key": "NHN_USER_ACCESS_KEY",
+        "Secret Access Key": "NHN_SECRET_ACCESS_KEY",
+        "mysqlAppKey": "NHN_MYSQL_APPKEY",
+        "mariadbAppKey": "NHN_MARIADB_APPKEY",
     },
     "openstack": {
         "IdentityEndpoint": "OS_AUTH_URL",
