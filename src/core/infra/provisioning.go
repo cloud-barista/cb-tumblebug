@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math/rand"
 	"net/url"
 	"os"
 	"slices"
@@ -29,9 +30,9 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba" // register Alibaba handlers (availability, vmstatus)
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/aws"     // register AWS handlers (vmstatus)
@@ -64,6 +65,11 @@ func isQuotaOrCapacityError(err error) bool {
 	if err == nil {
 		return false
 	}
+	// Transport failures and API throttling are transient: never treat them as a
+	// region-wide quota rejection (they would cancel every remaining VM in the region).
+	if isTransientNetworkError(err) || isApiThrottlingError(err) {
+		return false
+	}
 	msg := strings.ToLower(err.Error())
 	for _, pattern := range []string{
 		"quota",
@@ -86,6 +92,56 @@ func isQuotaOrCapacityError(err error) bool {
 		}
 	}
 	return false
+}
+
+// isApiThrottlingError reports whether err is a CSP API rate-limit rejection (retryable).
+func isApiThrottlingError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	for _, p := range []string{"requestlimitexceeded", "throttling", "toomanyrequests", "too many requests", "frequency limit", "reduce the frequency", "429"} {
+		if strings.Contains(msg, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// createSharedResourceWithRetry retries shared-resource creation on transient network errors and
+// API throttling (a single IBM API timeout once dropped a whole 40-node group before any VM was
+// created). A retry that finds the resource already created by the earlier attempt is a success.
+func createSharedResourceWithRetry(ctx context.Context, nsId, resType, connectionName string, opts *resource.SharedResourceOptions) error {
+	var err error
+	for attempt := 1; attempt <= 3; attempt++ {
+		err = resource.CreateSharedResourceWithOptions(ctx, nsId, resType, connectionName, opts)
+		if err == nil {
+			return nil
+		}
+		if attempt > 1 && strings.Contains(strings.ToLower(err.Error()), "already exist") {
+			log.Info().Msgf("[SharedResource] %s on %s exists after a retried attempt; continuing", resType, connectionName)
+			return nil
+		}
+		if !(isTransientNetworkError(err) || isApiThrottlingError(err)) || ctx.Err() != nil {
+			return err
+		}
+		wait := time.Duration(10*attempt) * time.Second
+		log.Warn().Err(err).Msgf("[SharedResource] transient error creating %s on %s (attempt %d/3); retrying in %s", resType, connectionName, attempt, wait)
+		time.Sleep(wait)
+	}
+	return err
+}
+
+// createThrottleMaxAttempts bounds Spider create retries on CSP API throttling.
+const createThrottleMaxAttempts = 6
+
+// createThrottleBackoff returns an exponential backoff with jitter: ~5s, 10s, 20s, 40s, 60s (cap).
+func createThrottleBackoff(attempt int) time.Duration {
+	base := 5 * time.Second << uint(attempt-1)
+	if base > 60*time.Second {
+		base = 60 * time.Second
+	}
+	return base + time.Duration(rand.Intn(3000))*time.Millisecond
 }
 
 // getNodeCreateRateLimitsForCSP returns rate limiting configuration for Node creation.
@@ -370,16 +426,16 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 	}
 
 	infraInfo := model.InfraInfo{
-		ResourceType:    model.StrInfra,
-		Id:              infraId,
-		Name:            req.Name,
-		Uid:             uid,
-		Description:     req.Description,
-		Status:          initStatus,
-		TargetAction:    initTargetAction,
-		TargetStatus:    model.StatusRunning,
-		InstallMonAgent: req.InstallMonAgent,
-		SystemLabel:     req.SystemLabel,
+		ResourceType:     model.StrInfra,
+		Id:               infraId,
+		Name:             req.Name,
+		Uid:              uid,
+		Description:      req.Description,
+		Status:           initStatus,
+		TargetAction:     initTargetAction,
+		TargetStatus:     model.StatusRunning,
+		InstallMonAgent:  req.InstallMonAgent,
+		SystemLabel:      req.SystemLabel,
 		PostCommands:     req.PostCommands,
 		PostCommandAsync: req.PostCommandAsync,
 	}
@@ -3985,7 +4041,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 				// without a per-zone checker return no zones and keep default placement.
 				sharedResourceOpts.PreferredZones = specAvailableZonesOrdered(ctx, specInfo)
 			}
-			err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrVNet, nodeGroupReq.ConnectionName, sharedResourceOpts)
+			err2 := createSharedResourceWithRetry(ctx, nsId, model.StrVNet, nodeGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default VNet for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or network configuration issues",
 					req.Name, nsId, nodeGroupReq.ConnectionName, err2)
@@ -4176,7 +4232,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SSHKey with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
-			err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSSHKey, nodeGroupReq.ConnectionName, sharedResourceOpts)
+			err2 := createSharedResourceWithRetry(ctx, nsId, model.StrSSHKey, nodeGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SSHKey for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or key generation issues",
 					req.Name, nsId, nodeGroupReq.ConnectionName, err2)
@@ -4206,7 +4262,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
 			}
-			if err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSSHKey, nodeGroupReq.ConnectionName, sharedResourceOpts); err2 != nil {
+			if err2 := createSharedResourceWithRetry(ctx, nsId, model.StrSSHKey, nodeGroupReq.ConnectionName, sharedResourceOpts); err2 != nil {
 				detailedErr := fmt.Errorf("failed to recreate drifted SSHKey '%s' on connection '%s': %w", sshKeyResourceName, nodeGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("SSHKey recreation failed for VM '%s'", req.Name)
 				return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName, SshKeyId: nodeGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
@@ -4252,7 +4308,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 				sharedResourceOpts.Zone = req.Zone
 				log.Info().Msgf("Creating SecurityGroup with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
 			}
-			err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSecurityGroup, nodeGroupReq.ConnectionName, sharedResourceOpts)
+			err2 := createSharedResourceWithRetry(ctx, nsId, model.StrSecurityGroup, nodeGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SecurityGroup for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or firewall rule configuration issues",
 					req.Name, nsId, nodeGroupReq.ConnectionName, err2)
@@ -4417,6 +4473,12 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 
 					var quotaOnce sync.Once
 					var quotaErrMsg string
+					skipReason := func() string {
+						if quotaErrMsg != "" {
+							return fmt.Sprintf("region quota/capacity exhausted (%s)", quotaErrMsg)
+						}
+						return fmt.Sprintf("creation cancelled (%v)", ctx.Err())
+					}
 
 					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
 					var nodeWg sync.WaitGroup
@@ -4432,30 +4494,34 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 							select {
 							case nodeSemaphore <- struct{}{}:
 							case <-regionCtx.Done():
-								msg := quotaErrMsg
+								reason := skipReason()
 								nodeInfoData := *nodeInfo
 								nodeInfoData.Status = model.StatusFailed
 								nodeInfoData.TargetAction = model.ActionComplete
 								nodeInfoData.TargetStatus = ""
-								nodeInfoData.SystemMessage = fmt.Sprintf("VM creation skipped: region quota/capacity exhausted (%s)", msg)
+								nodeInfoData.SystemMessage = "VM creation skipped: " + reason
 								UpdateNodeInfo(nsId, infraId, nodeInfoData)
-								log.Warn().Msgf("[CreateNode] VM %s skipped: region %s/%s quota/capacity exhausted",
-									nodeInfo.Name, providerName, regionName)
+								log.Warn().Msgf("[CreateNode] VM %s skipped in %s/%s: %s", nodeInfo.Name, providerName, regionName, reason)
+								nodeMutex.Lock()
+								regionErrors = append(regionErrors, fmt.Errorf("VM %s: creation skipped: %s", nodeInfo.Name, reason))
+								nodeMutex.Unlock()
 								return
 							}
 							defer func() { <-nodeSemaphore }()
 
 							// Re-check after acquiring slot (another goroutine may have just cancelled).
 							if regionCtx.Err() != nil {
-								msg := quotaErrMsg
+								reason := skipReason()
 								nodeInfoData := *nodeInfo
 								nodeInfoData.Status = model.StatusFailed
 								nodeInfoData.TargetAction = model.ActionComplete
 								nodeInfoData.TargetStatus = ""
-								nodeInfoData.SystemMessage = fmt.Sprintf("VM creation skipped: region quota/capacity exhausted (%s)", msg)
+								nodeInfoData.SystemMessage = "VM creation skipped: " + reason
 								UpdateNodeInfo(nsId, infraId, nodeInfoData)
-								log.Warn().Msgf("[CreateNode] VM %s skipped: region %s/%s quota/capacity exhausted",
-									nodeInfo.Name, providerName, regionName)
+								log.Warn().Msgf("[CreateNode] VM %s skipped in %s/%s: %s", nodeInfo.Name, providerName, regionName, reason)
+								nodeMutex.Lock()
+								regionErrors = append(regionErrors, fmt.Errorf("VM %s: creation skipped: %s", nodeInfo.Name, reason))
+								nodeMutex.Unlock()
 								return
 							}
 
@@ -4802,16 +4868,26 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		url = model.SpiderRestUrl + "/regvm"
 	}
 
-	_, err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		clientManager.MediumDuration,
-	)
+	// API throttling (e.g. AWS RequestLimitExceeded on RunInstances) rejects the request before
+	// anything is created, so it is safe to retry with backoff instead of failing the node.
+	for attempt := 1; ; attempt++ {
+		_, err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			clientManager.MediumDuration,
+		)
+		if err == nil || attempt >= createThrottleMaxAttempts || !isApiThrottlingError(err) || ctx.Err() != nil {
+			break
+		}
+		wait := createThrottleBackoff(attempt)
+		log.Warn().Msgf("[CreateNode] VM %s throttled by the CSP API (attempt %d/%d); retrying in %s", nodeInfoData.Name, attempt, createThrottleMaxAttempts, wait)
+		time.Sleep(wait)
+	}
 
 	if err != nil {
 		err = fmt.Errorf("%v", err)
@@ -5081,18 +5157,23 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	nodeInfoData.TargetAction = model.ActionComplete
 	nodeInfoData.TargetStatus = model.StatusComplete
 
-	// get and set current node status
-	nodeStatusInfoTmp, err := FetchNodeStatus(nsId, infraId, nodeInfoData.Id)
-
+	// get and set current node status (the VM exists now: a status-poll failure must not mark it Failed)
+	var nodeStatusInfoTmp model.NodeStatusInfo
+	for attempt := 1; attempt <= 3; attempt++ {
+		nodeStatusInfoTmp, err = FetchNodeStatus(nsId, infraId, nodeInfoData.Id)
+		if err == nil {
+			break
+		}
+		log.Warn().Err(err).Msgf("[CreateNode] status fetch failed for %s after creation (attempt %d/3)", nodeInfoData.Id, attempt)
+		time.Sleep(time.Duration(attempt*5) * time.Second)
+	}
 	if err != nil {
-		err = fmt.Errorf("cannot Fetch Vm Status from CSP: %v", err)
-		nodeInfoData.Status = model.StatusFailed
-		nodeInfoData.SystemMessage = err.Error()
+		// Keep Creating; the status poller converges once the CSP API is reachable again.
+		nodeInfoData.Status = model.StatusCreating
+		nodeInfoData.SystemMessage = fmt.Sprintf("VM created; status not yet confirmed: %v", err)
 		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
-
-		log.Error().Err(err).Msg("")
-
-		return err
+		log.Warn().Err(err).Msgf("[CreateNode] %s created but status unconfirmed; leaving Creating for the poller", nodeInfoData.Id)
+		return nil
 	}
 
 	nodeInfoData.Status = nodeStatusInfoTmp.Status
@@ -5490,7 +5571,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + securityGroup, Time: time.Now()})
 
-		err2 := resource.CreateSharedResourceWithOptions(ctx, nsId, model.StrSecurityGroup, k8sReq.ConnectionName,
+		err2 := createSharedResourceWithRetry(ctx, nsId, model.StrSecurityGroup, k8sReq.ConnectionName,
 			&resource.SharedResourceOptions{SgTemplateId: model.K8sSecurityGroupTemplateId})
 		if err2 != nil {
 			log.Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + k8sReq.ConnectionName)

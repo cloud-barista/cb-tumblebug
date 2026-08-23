@@ -347,6 +347,7 @@ func RunServer() {
 	e.POST("/tumblebug/lookupImage", rest_resource.RestLookupImage)
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
+	e.POST("/tumblebug/auditCspResources", rest_infra.RestPostAuditCspResources)
 	e.GET("/tumblebug/inspectResourcesOverview", rest_common.RestInspectResourcesOverview)
 	e.GET("/tumblebug/assetsSummary", rest_common.RestGetAssetsSummary)
 
@@ -489,6 +490,7 @@ func RunServer() {
 	//g.POST("/:nsId/infra/recommend", rest_infra.RestPostInfraRecommend)
 
 	g.GET("/:nsId/control/infra/:infraId", rest_infra.RestGetControlInfra)
+	g.POST("/:nsId/infra/:infraId/audit", rest_infra.RestPostInfraAudit)
 	g.GET("/:nsId/control/infra/:infraId/node/:nodeId", rest_infra.RestGetControlInfraNode)
 
 	g.POST("/:nsId/cmd/infra/:infraId", rest_infra.RestPostCmdInfra)

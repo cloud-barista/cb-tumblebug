@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -111,6 +112,15 @@ func (r *VNetReconciler) reconcileAvailable(nsId string, vNetInfo *model.VNetInf
 	r.reconcileChildSubnets(nsId, vNetInfo, vpcStatusResp)
 
 	syncState := resource.GetResourceSyncState(vNetInfo.CspResourceName, vNetInfo.CspResourceId, *vpcStatusResp)
+	// KT: the VPC is the account default network and always "exists"; restore only if tiers remain.
+	if syncState == model.SyncStateInSync || syncState == model.SyncStateSpMetaMissing {
+		if conn, cerr := common.GetConnConfig(vNetInfo.ConnectionName); cerr == nil && strings.EqualFold(conn.ProviderName, "kt") {
+			if present, perr := resource.VNetPresentOnCsp(*vNetInfo); perr == nil && !present {
+				log.Info().Msgf("vNet (%s): KT default network present but no tiers remain; treating as CspResourceMissing", vNetInfo.Id)
+				syncState = model.SyncStateCspResourceMissing
+			}
+		}
+	}
 	switch syncState {
 	case model.SyncStateInSync:
 		model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")

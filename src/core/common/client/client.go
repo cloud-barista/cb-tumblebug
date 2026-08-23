@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -92,6 +93,8 @@ var transientErrorPatterns = []string{
 	"connection refused",
 	"network is unreachable",
 	"server misbehaving", // DNS SERVFAIL
+	"no such host",
+	"unable to resolve",
 	"i/o timeout",
 	"tls handshake timeout",
 	"sdk.timeouterror", // Alibaba SDK connect timeout
@@ -709,14 +712,14 @@ var requestMapEntryCount int64
 const (
 	// requestMapTTL is the maximum age of entries in RequestMap before automatic cleanup.
 	// Entries older than this are saved to file and then deleted from memory.
-	requestMapTTL = 1 * time.Hour
+	requestMapTTL = 30 * time.Minute
 
 	// requestMapCleanupInterval is how often the cleanup goroutine runs.
-	requestMapCleanupInterval = 10 * time.Minute
+	requestMapCleanupInterval = 5 * time.Minute
 
 	// requestMapMaxEntries is the maximum number of entries allowed in RequestMap.
 	// When exceeded, the oldest entries are saved to file and evicted.
-	requestMapMaxEntries = 1000
+	requestMapMaxEntries = 300
 
 	// requestMapDumpInterval is how often RequestMap is auto-saved to a JSON file.
 	requestMapDumpInterval = 30 * time.Minute
@@ -882,6 +885,21 @@ func autoSaveRequestMap() {
 // requestDumpEnabled gates request-history file dumps (set TB_REQUEST_DUMP_ENABLED=false to disable)
 var requestDumpEnabled = os.Getenv("TB_REQUEST_DUMP_ENABLED") != "false"
 
+// RequestHistoryMaxBodyBytes caps request/response bodies kept in RequestMap (TB_REQUEST_HISTORY_MAX_BODY_BYTES).
+var RequestHistoryMaxBodyBytes = parseEnvInt("TB_REQUEST_HISTORY_MAX_BODY_BYTES", 256*1024)
+
+func parseEnvInt(key string, def int) int {
+	if v, err := strconv.Atoi(os.Getenv(key)); err == nil && v > 0 {
+		return v
+	}
+	return def
+}
+
+// OmittedBodyPlaceholder describes a body dropped from request history for exceeding the size cap.
+func OmittedBodyPlaceholder(size int) map[string]any {
+	return map[string]any{"message": fmt.Sprintf("body omitted from request history (%d bytes > %d byte limit)", size, RequestHistoryMaxBodyBytes)}
+}
+
 // saveRequestEntriesToFile writes request entries to a JSON file in the log directory.
 // The filename includes the reason (e.g., "ttl_cleanup", "max_entries_evict", "auto_snapshot").
 func saveRequestEntriesToFile(entries []RequestDetails, reason string) {
@@ -903,14 +921,20 @@ func saveRequestEntriesToFile(entries []RequestDetails, reason string) {
 	filename := fmt.Sprintf("request_%s_%s.json", reason, time.Now().Format("20060102_150405"))
 	filePath := filepath.Join(logDir, filename)
 
-	data, err := json.MarshalIndent(entries, "", "  ")
+	// Stream-encode to avoid holding the whole dump in memory
+	f, err := os.Create(filePath)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal RequestMap entries for file dump")
+		log.Error().Err(err).Str("path", filePath).Msg("Failed to create RequestMap dump file")
 		return
 	}
-
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		log.Error().Err(err).Str("path", filePath).Msg("Failed to write RequestMap dump file")
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
+	encErr := enc.Encode(entries)
+	if closeErr := f.Close(); encErr == nil {
+		encErr = closeErr
+	}
+	if encErr != nil {
+		log.Error().Err(encErr).Str("path", filePath).Msg("Failed to write RequestMap dump file")
 		return
 	}
 
@@ -963,8 +987,11 @@ func ExtractRequestInfo(r *http.Request) RequestInfo {
 	if r.Body != nil { // Check if the body is not nil
 		bodyBytes, err := io.ReadAll(r.Body)
 		if err == nil {
-			//bodyString = string(bodyBytes)
-			json.Unmarshal(bodyBytes, &bodyObject) // Try to unmarshal to a JSON object
+			if len(bodyBytes) > RequestHistoryMaxBodyBytes {
+				bodyObject = OmittedBodyPlaceholder(len(bodyBytes))
+			} else {
+				json.Unmarshal(bodyBytes, &bodyObject) // Try to unmarshal to a JSON object
+			}
 
 			// Important: Write the body back for further processing
 			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))

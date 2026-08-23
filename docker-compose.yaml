@@ -184,6 +184,7 @@ services:
       - SPIDER_METADB_DATABASE=${SP_POSTGRES_DB}
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
+      - GOMEMLIMIT=8GiB # Go GC soft target (no hard limit); see helm values spider.goMemLimit
       - ID_TRANSFORM_MODE=OFF
       - PLUGIN_SW=OFF
       - ADMINWEB=OFF

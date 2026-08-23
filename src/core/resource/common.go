@@ -705,6 +705,19 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 	callResult, err := execDelete()
 
+	// KT vNet: the CSP "VPC" is the account's undeletable default network, so the generic
+	// presence checks below always say it exists. Decide by its tiers instead.
+	if err != nil && resourceType == model.StrVNet && vNetInfoForMark != nil &&
+		strings.Contains(strings.ToLower(err.Error()), "does not exist in connection") {
+		if present, perr := VNetPresentOnCsp(*vNetInfoForMark); perr == nil && !present {
+			log.Warn().Msgf("vNet '%s': Spider has no record and no CSP network remains; removing stale CB-TB record", resourceId)
+			if cleanupErr := cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources); cleanupErr != nil {
+				return cleanupErr
+			}
+			return nil
+		}
+	}
+
 	// Spider forgot the resource but the CSP still has it: retrying the DELETE alone
 	// can never succeed, so re-register and retry once
 	if err != nil && tombstoneEnabled &&
@@ -788,7 +801,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 
 		// Only confirmed absence from the CSP enumeration may purge the record
-		present, gateErr := ResourcePresentOnCsp(requestBody.ConnectionName, resourceType, tsCspId, tsCspName)
+		present, gateErr := presentOnCspAfterDelete(requestBody.ConnectionName, resourceType, tsCspId, tsCspName, vNetInfoForMark)
 		if gateErr == nil && !present {
 			return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
 		}
@@ -815,7 +828,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	// Fail-closed gate for own-path types routed through here (e.g. vNet via provisioning
 	// rollback): purge only once the CSP enumeration confirms the resource is gone (issue #2685).
 	if _, gateable := spiderAllListPath[resourceType]; gateable && forceFlag != "true" && tsCspName != "" {
-		if present, gateErr := ResourcePresentOnCsp(requestBody.ConnectionName, resourceType, tsCspId, tsCspName); gateErr != nil || present {
+		if present, gateErr := presentOnCspAfterDelete(requestBody.ConnectionName, resourceType, tsCspId, tsCspName, vNetInfoForMark); gateErr != nil || present {
 			cause := fmt.Errorf("%s '%s' still exists on the CSP after DELETE; record retained — retry, or use force to discard it (%w)", resourceType, resourceId, ErrDeletionUnconfirmed)
 			if gateErr != nil {
 				cause = fmt.Errorf("%s '%s' deletion unconfirmed: CSP existence check failed: %v (%w)", resourceType, resourceId, gateErr, ErrDeletionUnconfirmed)
@@ -835,6 +848,36 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
 }
+
+// presentOnCspAfterDelete is the post-DELETE purge gate. vNets use the KT-aware check
+// (KT's VPC is the undeletable account default network); async CSP deletions (e.g. NCP VPC)
+// are polled for a while before the record is retained as "still exists".
+func presentOnCspAfterDelete(connName, resourceType, cspId, cspName string, vNetInfo *model.VNetInfo) (bool, error) {
+	check := func() (bool, error) {
+		if resourceType == model.StrVNet && vNetInfo != nil {
+			return VNetPresentOnCsp(*vNetInfo)
+		}
+		return ResourcePresentOnCsp(connName, resourceType, cspId, cspName)
+	}
+	var present bool
+	var err error
+	for attempt := 0; attempt < deleteGatePollAttempts; attempt++ {
+		if attempt > 0 {
+			time.Sleep(deleteGatePollInterval)
+		}
+		present, err = check()
+		if err == nil && !present {
+			return false, nil
+		}
+	}
+	return present, err
+}
+
+// deleteGatePollAttempts/Interval bound how long the purge gate waits for an asynchronous CSP deletion.
+const (
+	deleteGatePollAttempts = 10
+	deleteGatePollInterval = 6 * time.Second
+)
 
 // cleanupLocalResourceRecord removes CB-TB's own local record for a resource
 // (kvstore entry, or DB row for DB-backed types like CustomImage), plus its
@@ -3272,6 +3315,17 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 
 			common.PrintJsonPretty(reqTmp)
 			resultInfo, err := CreateVNet(ctx, nsId, &reqTmp)
+			// KT has a single account-wide VPC whose tiers persist; a leftover tier with the same
+			// auto-assigned CIDR yields 409 "duplicate network cidr" — retry with a different /16.
+			for attempt := 1; err != nil && tmpl.VNetPolicy != nil && isDuplicateCidrError(err) && attempt <= 3; attempt++ {
+				altIndex := (sliceIndex+attempt*61)%254 + 1
+				log.Warn().Msgf("vNet CIDR conflict at the CSP for connection '%s' (attempt %d); retrying with 10.%d.0.0/16", connectionName, attempt, altIndex)
+				reqTmp.SubnetInfoList = nil
+				if perr := applyVNetPolicy(nsId, &reqTmp, tmpl.VNetPolicy, provider, connectionName, altIndex, explicitZone, preferredZonesOf(options)); perr != nil {
+					break
+				}
+				resultInfo, err = CreateVNet(ctx, nsId, &reqTmp)
+			}
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to create vNet from template '%s'", effectiveVNetTemplateId)
 				return err
@@ -4365,4 +4419,21 @@ func CheckAssociatedCspResourceExistence(nsId string, resourceType string, resou
 	log.Debug().Str("cspResourceId", cspResourceId).Str("connection", connConfig).
 		Str("resourceType", resourceType).Msg("Resource not found in any list")
 	return false, false, nil
+}
+
+// isDuplicateCidrError reports a CSP-side CIDR collision (e.g. KT "duplicate network cidr").
+func isDuplicateCidrError(err error) bool {
+	if err == nil {
+		return false
+	}
+	m := strings.ToLower(err.Error())
+	return strings.Contains(m, "duplicate network cidr") || strings.Contains(m, "cidr") && strings.Contains(m, "conflict")
+}
+
+// preferredZonesOf extracts preferred zones from shared-resource options (nil-safe).
+func preferredZonesOf(options *SharedResourceOptions) []string {
+	if options == nil {
+		return nil
+	}
+	return options.PreferredZones
 }

@@ -62,6 +62,7 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 			ptrs[j] = new(batch[j])
 		}
 		req.InstanceIds = ptrs
+		req.Limit = new(int64(len(batch))) // API default page size is 20; without this ids past 20 look "gone"
 
 		resp, err := client.DescribeInstances(req)
 		if err != nil {

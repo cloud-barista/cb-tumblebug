@@ -54,6 +54,17 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 				// Set "X-Request-Id" in response header
 				c.Response().Header().Set(echo.HeaderXRequestID, reqID)
 
+				// Oversized bodies are not retained (large list responses blow up memory)
+				if len(resBody) > clientManager.RequestHistoryMaxBodyBytes {
+					details.Status = "Success"
+					if c.Response().Status >= 400 {
+						details.Status = "Error"
+					}
+					details.ResponseData = clientManager.OmittedBodyPlaceholder(len(resBody))
+					clientManager.RequestMap.Store(reqID, details)
+					return
+				}
+
 				// Split the response body by newlines to handle multiple JSON objects (i.e., streaming response)
 				parts := bytes.Split(resBody, []byte("\n"))
 				if len(parts) == 0 {
