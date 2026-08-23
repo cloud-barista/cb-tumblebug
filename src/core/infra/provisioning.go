@@ -56,7 +56,8 @@ import (
 //
 //	Azure:   "quota" (standardXxxFamily Cores quota), "operationnotallowed" (policy/quota),
 //	         "insufficientcapacity", "skunotavailable"
-//	AWS:     "insufficientinstancecapacity", "vcpulimitexceeded", "instancelimitexceeded"
+//	AWS:     "vcpulimitexceeded", "instancelimitexceeded" (InsufficientInstanceCapacity is
+//	         deliberately NOT matched: it is per-AZ and transient, cancelling a region for it is wrong)
 //	GCP:     "quota_exceeded", "zone_resource_pool_exhausted", "rateLimitExceeded"
 //	Alibaba: "instancequotaexceed", "operationdenied.quotaexceed"
 //	NHN:     "overlimit"
@@ -4415,7 +4416,16 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 
 	for _, nodeInfo := range nodeInfoList {
 		providerName := nodeInfo.ConnectionConfig.ProviderName
-		regionName := nodeInfo.Region.Region
+		// nodeInfo.Region is filled from Spider's create response, so it is empty here; key by
+		// the connection's region or every node of a CSP lands in one "" bucket (one region's
+		// concurrency limit for all regions, and one region's quota error cancels all of them).
+		regionName := nodeInfo.ConnectionConfig.RegionDetail.RegionName
+		if regionName == "" {
+			regionName = nodeInfo.Region.Region
+		}
+		if regionName == "" {
+			regionName = nodeInfo.ConnectionName
+		}
 
 		// Initialize CSP map if not exists
 		if nodeGroups[providerName] == nil {
