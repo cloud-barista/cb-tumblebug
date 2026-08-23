@@ -1765,12 +1765,95 @@ var terminatingReTerminateSent sync.Map
 // within a few minutes once the VM is confirmed gone at the CSP side.
 const terminatingFailStreakMax = 10
 
+// isNodeGoneError reports whether a Spider error means the VM no longer exists at the CSP.
+func isNodeGoneError(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	for _, p := range []string{"does not exist", "not found", "notfound", "notexist", "no such", "could not be found", "has been deleted"} {
+		if strings.Contains(s, p) {
+			return true
+		}
+	}
+	return false
+}
+
 // terminatingReTerminateAt is the streak count at which a background re-terminate
 // is fired before the final promotion. This guards against the rare case where
 // the original terminate request timed out before reaching the CSP.
 // The vmstatus circuit breaker and the terminate (DELETE) circuit breaker are
 // keyed separately, so re-terminate can succeed even when vmstatus is blocked.
 const terminatingReTerminateAt = terminatingFailStreakMax / 2
+
+// terminatingHoldSince records when a node with TargetAction=terminate was first seen still alive at
+// the CSP. Key format: "nsId/infraId/nodeId". Time-based (not poll-count-based) so UI polling
+// amplification cannot trigger re-terminates within seconds.
+var terminatingHoldSince sync.Map
+
+// terminatingHoldReTerminateAfter is how long a live status may persist before terminate is re-issued.
+const terminatingHoldReTerminateAfter = 4 * time.Minute
+
+// trackTerminatingHold re-issues terminate when the CSP keeps reporting a live status long after the
+// terminate was dispatched (e.g. the DELETE never reached the CSP).
+func trackTerminatingHold(nsId, infraId, nodeId, cspStatus string) {
+	key := nsId + "/" + infraId + "/" + nodeId
+	first, _ := terminatingHoldSince.LoadOrStore(key, time.Now())
+	held := time.Since(first.(time.Time))
+	if held < terminatingHoldReTerminateAfter {
+		return
+	}
+	terminatingHoldSince.Store(key, time.Now())
+	fireReTerminate(nsId, infraId, nodeId, fmt.Sprintf("CSP still reports %s %s after terminate", cspStatus, held.Round(time.Second)))
+}
+
+// reTerminateMinInterval bounds how often a background re-terminate may fire per node, and
+// reTerminateSem bounds how many run at once — status polls can repeat every few seconds.
+const reTerminateMinInterval = 3 * time.Minute
+
+var (
+	reTerminateLastSent sync.Map // "nsId/infraId/nodeId" -> time.Time
+	reTerminateSem      = make(chan struct{}, 20)
+)
+
+// fireReTerminate re-issues terminate for a node unless one was sent recently or too many are in flight.
+func fireReTerminate(nsId, infraId, nodeId, reason string) {
+	key := nsId + "/" + infraId + "/" + nodeId
+	if last, ok := reTerminateLastSent.Load(key); ok && time.Since(last.(time.Time)) < reTerminateMinInterval {
+		return
+	}
+	select {
+	case reTerminateSem <- struct{}{}:
+	default:
+		return // too many in flight; the next poll round retries
+	}
+	reTerminateLastSent.Store(key, time.Now())
+	log.Info().Msgf("[FetchNodeStatus] Node %s: %s — re-issuing terminate to ensure CSP delivery", nodeId, reason)
+	go func() {
+		defer func() { <-reTerminateSem }()
+		if _, rtErr := HandleInfraNodeAction(nsId, infraId, nodeId, model.ActionTerminate, true); rtErr != nil {
+			log.Warn().Err(rtErr).Msgf("[FetchNodeStatus] Node %s: background re-terminate failed", nodeId)
+		}
+	}()
+}
+
+// trackTerminatingPollFailure advances the poll-failure streak of a Terminating node,
+// re-issues terminate at terminatingReTerminateAt, and re-arms at terminatingFailStreakMax.
+// It never promotes the node: a transport error cannot confirm the VM is gone.
+func trackTerminatingPollFailure(nsId, infraId, nodeId, source string) {
+	streakKey := nsId + "/" + infraId + "/" + nodeId
+	prev, _ := terminatingFailStreak.LoadOrStore(streakKey, 0)
+	streak := prev.(int) + 1
+	if streak == terminatingReTerminateAt {
+		fireReTerminate(nsId, infraId, nodeId, fmt.Sprintf("%s streak=%d", source, streak))
+	}
+	if streak >= terminatingFailStreakMax {
+		terminatingFailStreak.Delete(streakKey)
+		log.Debug().Msgf("[FetchNodeStatus] Node %s: %d consecutive %s errors (Terminating); CSP state unknown, keeping Terminating", nodeId, streak, source)
+		return
+	}
+	terminatingFailStreak.Store(streakKey, streak)
+}
 
 // suspendResumeRebootFailStreak counts consecutive failed status polls for a
 // node while it is Suspending, Resuming, or Rebooting. Without this, a node
@@ -2104,10 +2187,12 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 		// Spider round-trip latency (up to 60 s) with no reliability gain.
 		if handler, ok := cspdirect.GetBatchVMStatusHandler(nodeInfo.ConnectionConfig.ProviderName); ok && nodeInfo.CspResourceId != "" {
 			sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, nodeInfo.ConnectionConfig.CredentialHolder)
-			statuses, sdkErr := handler(sdkCtx, nodeInfo.ConnectionConfig.RegionDetail.RegionName, []string{nodeInfo.CspResourceId})
+			// Shared per-region cache: N node polls within BatchStatusCacheTTL cost one batch call.
+			s, found, sdkErr := cspdirect.BatchVMStatusCached(sdkCtx, nodeInfo.ConnectionConfig.ProviderName,
+				nodeInfo.ConnectionConfig.RegionDetail.RegionName, handler, nodeInfo.CspResourceId)
 			if sdkErr == nil {
 				sdkStreakKey := nsId + "/" + infraId + "/" + nodeId
-				if s, ok := statuses[nodeInfo.CspResourceId]; ok {
+				if found {
 					callResult.Status = s
 					terminatingFailStreak.Delete(sdkStreakKey)
 					terminatingReTerminateSent.Delete(sdkStreakKey)
@@ -2135,19 +2220,11 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 			default:
 				callResult.Status = model.StatusUndefined
 			}
-			// Track consecutive failures for Terminating nodes: if the VM is gone from the
-			// CSP, repeated SDK errors are the signal to promote it to Terminated.
+			// A direct SDK transport error says nothing about CSP state: a gone VM shows up
+			// as a successful batch response without the id (handled above). Never promote
+			// on errors; re-issue terminate mid-streak and re-arm at the max.
 			if nodeInfo.Status == model.StatusTerminating {
-				streakKey := nsId + "/" + infraId + "/" + nodeId
-				prev, _ := terminatingFailStreak.LoadOrStore(streakKey, 0)
-				streak := prev.(int) + 1
-				if streak >= terminatingFailStreakMax {
-					terminatingFailStreak.Delete(streakKey)
-					log.Info().Msgf("[FetchNodeStatus] Node %s: direct SDK error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
-					callResult.Status = model.StatusTerminated
-				} else {
-					terminatingFailStreak.Store(streakKey, streak)
-				}
+				trackTerminatingPollFailure(nsId, infraId, nodeId, "direct SDK")
 			}
 			goto applyStatus
 		}
@@ -2230,23 +2307,22 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 					// can succeed even when vmstatus polling is blocked.
 					// Runs in a goroutine to avoid blocking the current status-poll cycle.
 					if streak == terminatingReTerminateAt {
-						if _, alreadySent := terminatingReTerminateSent.LoadOrStore(streakKey, true); !alreadySent {
-							log.Info().Msgf("[FetchNodeStatus] Node %s: streak=%d — re-issuing terminate to ensure CSP delivery (vmstatus unreachable)", nodeId, streak)
-							go func() {
-								if _, rtErr := HandleInfraNodeAction(nsId, infraId, nodeId, model.ActionTerminate, true); rtErr != nil {
-									log.Warn().Err(rtErr).Msgf("[FetchNodeStatus] Node %s: background re-terminate failed", nodeId)
-								} else {
-									log.Info().Msgf("[FetchNodeStatus] Node %s: background re-terminate sent successfully", nodeId)
-								}
-							}()
-						}
+						fireReTerminate(nsId, infraId, nodeId, fmt.Sprintf("Spider streak=%d", streak))
 					}
 
 					if streak >= terminatingFailStreakMax {
-						terminatingFailStreak.Delete(streakKey)
-						terminatingReTerminateSent.Delete(streakKey)
-						log.Info().Msgf("[FetchNodeStatus] Node %s: Spider error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
-						callResult.Status = model.StatusTerminated
+						if isNodeGoneError(err) {
+							terminatingFailStreak.Delete(streakKey)
+							terminatingReTerminateSent.Delete(streakKey)
+							log.Info().Msgf("[FetchNodeStatus] Node %s: Spider error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
+							callResult.Status = model.StatusTerminated
+						} else {
+							// Network/DNS failures say nothing about CSP state: keep Terminating and
+							// restart the streak so the re-terminate fires again on the next round.
+							terminatingFailStreak.Delete(streakKey)
+							terminatingReTerminateSent.Delete(streakKey)
+							log.Warn().Msgf("[FetchNodeStatus] Node %s: %d consecutive non-not-found Spider errors (Terminating); CSP state unknown, keeping Terminating and re-arming re-terminate", nodeId, streak)
+						}
 					} else {
 						terminatingFailStreak.Store(streakKey, streak)
 					}
@@ -2352,18 +2428,26 @@ applyStatus:
 		switch {
 		case strings.EqualFold(callResult.Status, model.StatusTerminated):
 			// confirmed terminated — pass through
+			terminatingHoldSince.Delete(nsId + "/" + infraId + "/" + nodeId)
 		case strings.EqualFold(callResult.Status, model.StatusTerminating):
 			// deletion in progress — pass through
+			terminatingHoldSince.Delete(nsId + "/" + infraId + "/" + nodeId)
+		case strings.EqualFold(callResult.Status, model.StatusSuspending):
+			// stopping phase of a delete (e.g. GCP STOPPING) — in progress, no re-terminate
+			terminatingHoldSince.Delete(nsId + "/" + infraId + "/" + nodeId)
+			callResult.Status = model.StatusTerminating
 		case strings.EqualFold(callResult.Status, model.StatusUndefined):
 			// VM no longer found at CSP — treat as confirmed terminated
+			terminatingHoldSince.Delete(nsId + "/" + infraId + "/" + nodeId)
 			callResult.Status = model.StatusTerminated
 		default:
 			// CSP returned Running, Suspended, Suspending, etc.
-			// The terminate request has already been dispatched; any non-terminal
-			// status from the CSP is a transient artifact (e.g. Azure briefly reports
-			// Running after DELETE is accepted). Hold Terminating.
+			// Usually a transient artifact (e.g. Azure briefly reports Running after
+			// DELETE is accepted) — but if the terminate never reached the CSP the node
+			// would hold forever, so re-issue terminate after repeated observations.
 			log.Debug().Msgf("[FetchNodeStatus] VM %s: TargetAction=terminate but CSP returned %s; holding Terminating",
 				nodeId, callResult.Status)
+			trackTerminatingHold(nsId, infraId, nodeId, callResult.Status)
 			callResult.Status = model.StatusTerminating
 		}
 	}
@@ -3215,6 +3299,12 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	}
 
 	key := common.GenInfraKey(nsId, infraId, "")
+
+	// CSP truth guard: never drop records while VMs of this infra are still alive at the CSP
+	if gerr := guardOrphansBeforeDelete(nsId, infraId, option); gerr != nil {
+		log.Error().Err(gerr).Msg("")
+		return deletedResources, gerr
+	}
 
 	// delete associated Infra Policy
 	check, _ := CheckInfraPolicy(nsId, infraId)

@@ -24,6 +24,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -87,6 +88,32 @@ var (
 	batchVMControlMu       sync.RWMutex
 	batchVMControlHandlers = make(map[string]BatchVMControlHandlers)
 )
+
+var (
+	remediationTerminateMu       sync.RWMutex
+	remediationTerminateHandlers = make(map[string]BatchVMControlFunc)
+)
+
+// RegisterRemediationTerminateHandler registers a direct terminate used ONLY by audit remediation
+// (ghost/untracked VMs). Normal node control keeps going through CB-Spider for this CSP because
+// Spider's terminate performs CSP-specific follow-up cleanup (floating IPs, NICs, firewall, ...).
+func RegisterRemediationTerminateHandler(provider string, fn BatchVMControlFunc) {
+	remediationTerminateMu.Lock()
+	defer remediationTerminateMu.Unlock()
+	remediationTerminateHandlers[strings.ToLower(provider)] = fn
+}
+
+// GetRemediationTerminateHandler returns the remediation terminate for a CSP, falling back to the
+// bulk control Terminate when the CSP's direct terminate is a complete replacement for Spider's.
+func GetRemediationTerminateHandler(provider string) (BatchVMControlFunc, bool) {
+	remediationTerminateMu.RLock()
+	fn, ok := remediationTerminateHandlers[strings.ToLower(provider)]
+	remediationTerminateMu.RUnlock()
+	if ok {
+		return fn, true
+	}
+	return GetBatchVMControlHandler(provider, "terminate")
+}
 
 // RegisterBatchVMControlHandlers registers bulk lifecycle control functions for a CSP.
 // Each CSP package calls this from its init() function.
@@ -292,6 +319,7 @@ func BuildSecretPathForHolder(holder, provider string) string {
 // WriteOpenBaoSecret writes key-value data to OpenBao at the given KV v2 path (upsert).
 // ctx allows request-scoped cancellation and timeout, consistent with ReadOpenBaoSecret.
 func WriteOpenBaoSecret(ctx context.Context, path string, data map[string]any) error {
+	defer InvalidateSecretCache(path)
 	if model.VaultToken == "" {
 		return fmt.Errorf("VAULT_TOKEN is not set")
 	}
@@ -414,14 +442,13 @@ func ReadOpenBaoSecret(ctx context.Context, path string) (map[string]any, error)
 	if model.VaultToken == "" {
 		return nil, fmt.Errorf("VAULT_TOKEN is not set")
 	}
-
-	vaultConfig := api.DefaultConfig()
-	vaultConfig.Address = model.VaultAddr
-	client, err := api.NewClient(vaultConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create OpenBao client: %w", err)
+	if data, ok := cachedSecret(path); ok {
+		return data, nil
 	}
-	client.SetToken(model.VaultToken)
+	client, err := sharedVaultClient()
+	if err != nil {
+		return nil, err
+	}
 
 	secret, err := client.Logical().ReadWithContext(ctx, path)
 	if err != nil {
@@ -435,8 +462,62 @@ func ReadOpenBaoSecret(ctx context.Context, path string) (map[string]any, error)
 	if !ok {
 		return nil, fmt.Errorf("invalid secret format at %s: 'data' field missing or not a map", path)
 	}
-
+	storeSecretCache(path, data)
 	return data, nil
+}
+
+// Status polls read credentials on every call; a per-call api.NewClient (own transport, no
+// keep-alive reuse) exhausted ephemeral ports under load. Share one client and cache reads briefly.
+var (
+	vaultClientOnce sync.Once
+	vaultClient     *api.Client
+	vaultClientErr  error
+	secretCacheMu   sync.RWMutex
+	secretCache     = map[string]secretCacheEntry{}
+)
+
+const secretCacheTTL = 5 * time.Minute
+
+type secretCacheEntry struct {
+	data   map[string]any
+	expiry time.Time
+}
+
+func sharedVaultClient() (*api.Client, error) {
+	vaultClientOnce.Do(func() {
+		cfg := api.DefaultConfig()
+		cfg.Address = model.VaultAddr
+		vaultClient, vaultClientErr = api.NewClient(cfg)
+		if vaultClientErr != nil {
+			vaultClientErr = fmt.Errorf("failed to create OpenBao client: %w", vaultClientErr)
+			return
+		}
+		vaultClient.SetToken(model.VaultToken)
+	})
+	return vaultClient, vaultClientErr
+}
+
+func cachedSecret(path string) (map[string]any, bool) {
+	secretCacheMu.RLock()
+	defer secretCacheMu.RUnlock()
+	e, ok := secretCache[path]
+	if !ok || time.Now().After(e.expiry) {
+		return nil, false
+	}
+	return e.data, true
+}
+
+func storeSecretCache(path string, data map[string]any) {
+	secretCacheMu.Lock()
+	secretCache[path] = secretCacheEntry{data: data, expiry: time.Now().Add(secretCacheTTL)}
+	secretCacheMu.Unlock()
+}
+
+// InvalidateSecretCache drops a cached secret (call after writes).
+func InvalidateSecretCache(path string) {
+	secretCacheMu.Lock()
+	delete(secretCache, path)
+	secretCacheMu.Unlock()
 }
 
 // CheckOpenBaoStatus verifies that the OpenBao secret store is usable by

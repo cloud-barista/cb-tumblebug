@@ -9,7 +9,11 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6 v6.4.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v6 v6.2.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0
+	github.com/IBM/go-sdk-core/v5 v5.21.2
+	github.com/IBM/vpc-go-sdk v0.82.1
+	github.com/NaverCloudPlatform/ncloud-sdk-go-v2 v1.6.30
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
@@ -17,7 +21,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.296.2
 	github.com/aws/aws-sdk-go-v2/service/pricing v1.41.0
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.62.5
+	github.com/cloud-barista/ktcloudvpc-sdk-go v0.0.0-20260713072217-58ff4a0ab139
 	github.com/cloud-barista/mc-terrarium v0.1.4
+	github.com/cloud-barista/nhncloud-sdk-go v0.0.2-0.20260522111605-48d0ba7e7251
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/go-resty/resty/v2 v2.17.2
@@ -27,13 +33,14 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/m-cmp/mc-iam-manager v0.3.0
 	github.com/openbao/openbao/api/v2 v2.5.1
-	github.com/rs/zerolog v1.32.0
+	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/swaggo/echo-swagger v1.5.2
 	github.com/swaggo/swag v1.16.6
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.84
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.157
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.3.78
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.3.157
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/crypto v0.52.0
@@ -67,6 +74,7 @@ require (
 	github.com/aws/smithy-go v1.24.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/cloud-barista/cb-log v0.9.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -74,6 +82,8 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-openapi/errors v0.22.4 // indirect
+	github.com/go-openapi/strfmt v0.25.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
@@ -100,12 +110,16 @@ require (
 	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
+	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/snowzach/rotatefilehook v0.0.0-20220211133110-53752135082d // indirect
 	github.com/sv-tools/openapi v0.2.1 // indirect
 	github.com/swaggo/swag/v2 v2.0.0-rc4 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	go.mongodb.org/mongo-driver v1.17.6 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
 	go.opentelemetry.io/otel v1.43.0 // indirect

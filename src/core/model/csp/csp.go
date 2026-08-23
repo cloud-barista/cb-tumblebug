@@ -140,7 +140,7 @@ var rateLimitConfigs = map[string]RateLimitConfig{
 		RegistrationDelayMinMs:        2000,
 		RegistrationDelayMaxMs:        5000, // strict 10 req/sec limit
 		MaxConcurrentRegions:          30,
-		MaxNodesPerRegion:             20,
+		MaxNodesPerRegion:             5, // each create is several API calls; 20 tripped RequestLimitExceeded
 		MaxConcurrentRegionsForStatus: 6,
 		MaxNodesPerRegionForStatus:    20,
 	},

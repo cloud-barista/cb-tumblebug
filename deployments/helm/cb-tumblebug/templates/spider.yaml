@@ -59,6 +59,9 @@ spec:
             - { name: ID_TRANSFORM_MODE, value: "OFF" }
             - { name: SPIDER_LOG_LEVEL, value: {{ .Values.spider.logLevel | quote }} }
             - { name: SPIDER_HISCALL_LOG_LEVEL, value: {{ .Values.spider.hiscallLogLevel | quote }} }
+            {{- with .Values.spider.goMemLimit }}
+            - { name: GOMEMLIMIT, value: {{ . | quote }} }
+            {{- end }}
             - name: SPIDER_USERNAME
               valueFrom: { secretKeyRef: { name: cb-stack-secret, key: SP_API_USERNAME } }
             - name: SPIDER_PASSWORD

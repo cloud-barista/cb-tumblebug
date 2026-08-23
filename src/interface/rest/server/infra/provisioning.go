@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -74,7 +75,7 @@ import (
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/infra [post]
 func RestPostInfra(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 
@@ -137,7 +138,7 @@ func RestPostInfra(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/registerCspNode [post]
 func RestPostRegisterCSPNativeNode(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 
@@ -304,7 +305,7 @@ func RestPostSystemInfra(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal deployment error, CSP API failures, or resource creation timeouts"
 // @Router /ns/{nsId}/infraDynamic [post]
 func RestPostInfraDynamic(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
@@ -362,7 +363,7 @@ func RestPostInfraDynamic(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal server error during validation"
 // @Router /ns/{nsId}/infraDynamicReview [post]
 func RestPostInfraDynamicReview(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
@@ -445,7 +446,7 @@ func RestPostInfraDynamicReview(c echo.Context) error {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /ns/{nsId}/infra/{infraId}/nodeGroupDynamic [post]
 func RestPostInfraNodeGroupDynamic(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
@@ -504,7 +505,7 @@ func RestPostInfraNodeGroupDynamic(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal server error during validation"
 // @Router /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview [post]
 func RestPostInfraDynamicNodeGroupNodeReview(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
@@ -561,7 +562,7 @@ func RestPostInfraDynamicNodeGroupNodeReview(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /specImagePairReview [post]
 func RestPostSpecImagePairReview(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	req := &model.SpecImagePairReviewReq{}
 	if err := c.Bind(req); err != nil {
@@ -646,7 +647,7 @@ func RestPostSpecImagePairReview(c echo.Context) error {
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Router /infraDynamicCheckRequest [post]
 func RestPostInfraDynamicCheckRequest(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	req := &model.InfraConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
@@ -724,7 +725,7 @@ func RestPostInfraDynamicCheckRequest(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/infra/{infraId}/node [post]
 func RestPostInfraNode(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")
@@ -812,7 +813,7 @@ func RestPostInfraNode(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/infra/{infraId}/nodegroup/{nodegroupId} [post]
 func RestPostInfraNodeGroupScaleOut(c echo.Context) error {
-	ctx := c.Request().Context()
+	ctx := context.WithoutCancel(c.Request().Context()) // a dropped client must not abort provisioning
 
 	nsId := c.Param("nsId")
 	infraId := c.Param("infraId")

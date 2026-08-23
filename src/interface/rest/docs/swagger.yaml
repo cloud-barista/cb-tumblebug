@@ -102,6 +102,65 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /auditCspResources:
+    post:
+      tags:
+      - "[Admin] System Management"
+      summary: Audit every TB-managed VM at a connection's CSP region against all
+        TB records (all namespaces)
+      description: |-
+        Lists VMs directly from the CSP and reports TB-managed VMs (tb-uid names or sys.manager tag) that no TB record tracks, plus residual sub-resources.
+        `remediate=true` terminates untracked VMs; `cleanResiduals=attributed|all` deletes residuals.
+      operationId: PostAuditCspResources
+      parameters:
+      - name: remediate
+        in: query
+        description: Terminate untracked TB-managed VMs
+        schema:
+          type: boolean
+          default: false
+      - name: cleanResiduals
+        in: query
+        description: Delete residual sub-resources
+        schema:
+          type: string
+          default: none
+          enum:
+          - none
+          - attributed
+          - all
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Connection to audit
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/infra.RestAuditCspResourcesRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/infra.AuditResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: auditReq
   /auth/test:
     get:
       tags:
@@ -4274,6 +4333,77 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: securityGroupInfo
+  /ns/{nsId}/infra/{infraId}/audit:
+    post:
+      tags:
+      - "[Infra] Provisioning and Management"
+      summary: Audit an Infra against the CSP truth (direct SDK) and optionally remediate
+        orphans
+      description: |-
+        Lists VMs directly from each CSP used by the Infra (never via CB-Spider metadata) and classifies them:
+        - `trackedAlive`: TB node exists and the CSP VM is alive (expected)
+        - `ghostAlive`: TB recorded the node as Terminated/Failed but the CSP VM is still alive
+        - `trackedGone`: TB node has a CSP id but the CSP has no such VM
+        - `untrackedAlive`: a CSP VM of this Infra (by name/uid or sys.infraId tag) that TB never recorded
+        - `residuals`: NIC / public IP / disk / ENI left behind (attributed = named after a node of this Infra)
+
+        `remediate=true` terminates ghost/untracked VMs directly at the CSP. `cleanResiduals=attributed|all` deletes residuals.
+      operationId: PostInfraAudit
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: remediate
+        in: query
+        description: Terminate ghost/untracked VMs at the CSP
+        schema:
+          type: boolean
+          default: false
+      - name: cleanResiduals
+        in: query
+        description: Delete residual sub-resources
+        schema:
+          type: string
+          default: none
+          enum:
+          - none
+          - attributed
+          - all
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/infra.AuditResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/infra/{infraId}/bastion/{bastionInfraId}/{bastionNodeId}:
     delete:
       tags:
@@ -19481,8 +19611,166 @@ components:
       properties:
         connectionName:
           type: string
+    infra.AuditConnectionResult:
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspVmTotal:
+          type: integer
+        error:
+          type: string
+        ghostAlive:
+          type: array
+          description: TB says Terminated/Failed but CSP VM is alive
+          items:
+            $ref: '#/components/schemas/infra.AuditVM'
+        otherTbManaged:
+          type: integer
+          description: TB-managed VMs outside the audited scope (ignored)
+        provider:
+          type: string
+        region:
+          type: string
+        registeredExternal:
+          type: integer
+          description: VMs TB only imported (sys.registered=true); never remediated
+        residuals:
+          type: array
+          items:
+            $ref: '#/components/schemas/infra.AuditResidual'
+        supported:
+          type: boolean
+        trackedAlive:
+          type: array
+          description: TB node exists and CSP VM is alive (expected)
+          items:
+            $ref: '#/components/schemas/infra.AuditVM'
+        trackedGone:
+          type: array
+          description: TB node has a CSP id but the CSP has no such VM
+          items:
+            $ref: '#/components/schemas/infra.AuditVM'
+        trackedNetworks:
+          type: integer
+          description: network residual candidates skipped because TB still tracks
+            them
+        untrackedAlive:
+          type: array
+          description: CSP VM belongs to the scope but TB has no record
+          items:
+            $ref: '#/components/schemas/infra.AuditVM'
+        zone:
+          type: string
+    infra.AuditOptions:
+      type: object
+      properties:
+        cleanResiduals:
+          type: string
+          description: "CleanResiduals: \"\" | \"none\" (report only), \"attributed\"\
+            \ (delete residuals named after this infra's nodes), \"all\" (also unnamed\
+            \ ones)."
+        remediate:
+          type: boolean
+          description: Remediate terminates VMs that are alive at the CSP but unknown
+            to TB or recorded as Terminated/Failed.
+    infra.AuditResidual:
+      type: object
+      properties:
+        action:
+          type: string
+        attributed:
+          type: boolean
+          description: named after a node of the audited scope
+        detail:
+          type: string
+        error:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          description: "nic, publicIp, disk, eni, eip, volume, floatingIp"
+        zone:
+          type: string
+    infra.AuditResult:
+      type: object
+      properties:
+        clean:
+          type: boolean
+          description: "no ghost/untracked VMs, no attributed residuals, no errors"
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/infra.AuditConnectionResult'
+        elapsedTime:
+          type: string
+        infraId:
+          type: string
+        nsId:
+          type: string
+        options:
+          $ref: '#/components/schemas/infra.AuditOptions'
+        scope:
+          type: string
+          description: infra | connection
+        summary:
+          $ref: '#/components/schemas/infra.AuditSummary'
+    infra.AuditSummary:
+      type: object
+      properties:
+        connections:
+          type: integer
+        errors:
+          type: integer
+        ghostAlive:
+          type: integer
+        residualsDeleted:
+          type: integer
+        residualsFound:
+          type: integer
+        terminateRequested:
+          type: integer
+        trackedAlive:
+          type: integer
+        trackedGone:
+          type: integer
+        unsupported:
+          type: integer
+        untrackedAlive:
+          type: integer
+    infra.AuditVM:
+      type: object
+      properties:
+        action:
+          type: string
+        cspResourceId:
+          type: string
+        cspStatus:
+          type: string
+        error:
+          type: string
+        name:
+          type: string
+        nodeId:
+          type: string
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: CSP tags (untracked VMs only; reveals origin)
+        tbStatus:
+          type: string
     infra.JSONResult:
       type: object
+    infra.RestAuditCspResourcesRequest:
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2
     infra.RestGetAllBenchmarkRequest:
       type: object
       properties:

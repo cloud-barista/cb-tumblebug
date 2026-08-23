@@ -1332,7 +1332,13 @@ func isTransientNetworkError(err error) bool {
 		strings.Contains(s, "context deadline exceeded") ||
 		strings.Contains(s, "Client.Timeout") ||
 		strings.Contains(s, "TLS handshake timeout") ||
-		strings.Contains(s, "ClientError.NetworkError")
+		strings.Contains(s, "ClientError.NetworkError") ||
+		strings.Contains(s, "no such host") ||
+		strings.Contains(s, "server misbehaving") ||
+		strings.Contains(s, "unable to resolve") ||
+		strings.Contains(s, "SDK.TimeoutError") ||
+		strings.Contains(s, "connection timed out") ||
+		strings.Contains(s, "connection refused")
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable

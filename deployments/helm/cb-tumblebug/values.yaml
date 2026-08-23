@@ -73,11 +73,20 @@ tumblebug:
   postgresSslMode: ""
   selfEndpoint: ""
   allowOrigins: "*"
-  resources: {}
+  # Memory limit contains request-history/status-cache growth on large infras
+  resources:
+    requests:
+      memory: 1Gi
+    limits:
+      memory: 8Gi
 
 spider:
   logLevel: error
   hiscallLogLevel: error
+  # Go GC soft target (no hard limit): in-flight VM creations hold ~15 MB each,
+  # so RSS peaked at 13 GB during an 800-node run. Keeps RSS near this value
+  # under load; exceeding it only slows GC, it never kills the process.
+  goMemLimit: 8GiB
   resources: {}
 
 terrarium:

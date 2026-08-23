@@ -212,6 +212,9 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 
 			sdkCtx := context.WithValue(ctx, model.CtxKeyCredentialHolder, k.credentialHolder)
 			statuses, err := handler(sdkCtx, k.region, ids)
+			if err == nil {
+				cspdirect.StoreBatchStatuses(k.provider, k.region, ids, statuses) // seed the per-node fast path
+			}
 			if err != nil {
 				log.Warn().Err(err).
 					Str("provider", k.provider).

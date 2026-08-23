@@ -29,8 +29,10 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
+	ktcsp "github.com/cloud-barista/cb-tumblebug/src/core/csp/kt"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
+	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -850,6 +852,32 @@ func markVNetDeleteFailed(nsId, vNetId, vNetKey string, vNetInfo *model.VNetInfo
 }
 
 // DeleteVNet accepts vNet creation request, creates and returns an TB vNet object
+// VNetPresentOnCsp is the purge gate after a vNet DELETE. KT has no VPC of its own — Spider maps
+// the account's default network — so the VPC always "exists"; there the gate asks whether any of
+// the vNet's tiers (subnets) still exist instead.
+func VNetPresentOnCsp(vNetInfo model.VNetInfo) (bool, error) {
+	connConfig, err := common.GetConnConfig(vNetInfo.ConnectionName)
+	if err == nil && strings.EqualFold(connConfig.ProviderName, csptypes.KT) {
+		ctx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, connConfig.CredentialHolder)
+		tiers, terr := ktcsp.ListCustomTiers(ctx, connConfig.RegionZoneInfo.AssignedRegion, connConfig.RegionZoneInfo.AssignedZone)
+		if terr != nil {
+			return false, terr
+		}
+		for _, sn := range vNetInfo.SubnetInfoList {
+			if _, ok := tiers[sn.CspResourceId]; ok {
+				return true, nil
+			}
+			for id, name := range tiers {
+				if name == sn.CspResourceName || id == sn.CspResourceName {
+					return true, nil
+				}
+			}
+		}
+		return false, nil
+	}
+	return ResourcePresentOnCsp(vNetInfo.ConnectionName, model.StrVNet, vNetInfo.CspResourceId, vNetInfo.CspResourceName)
+}
+
 func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg, error) {
 	log.Info().Msg("DeleteVNet")
 
@@ -1060,7 +1088,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		model.SpiderRestUrl, vNetInfo.CspResourceName, vNetInfo.ConnectionName)
 	PollResourceDeletedViaSpider(verifyURL, nil, DefaultPollMaxAttempts, DefaultPollInterval)
 	if action != ActionForce {
-		present, gateErr := ResourcePresentOnCsp(vNetInfo.ConnectionName, model.StrVNet, vNetInfo.CspResourceId, vNetInfo.CspResourceName)
+		present, gateErr := VNetPresentOnCsp(vNetInfo)
 		if gateErr != nil || present {
 			cause := fmt.Errorf("vNet (%s) still exists on the CSP after DELETE; record retained — retry, or delete with action=force", vNetId)
 			if gateErr != nil {

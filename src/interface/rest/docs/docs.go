@@ -67,6 +67,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/auditCspResources": {
+            "post": {
+                "description": "Lists VMs directly from the CSP and reports TB-managed VMs (tb-uid names or sys.manager tag) that no TB record tracks, plus residual sub-resources.\n` + "`" + `remediate=true` + "`" + ` terminates untracked VMs; ` + "`" + `cleanResiduals=attributed|all` + "`" + ` deletes residuals.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System Management"
+                ],
+                "summary": "Audit every TB-managed VM at a connection's CSP region against all TB records (all namespaces)",
+                "operationId": "PostAuditCspResources",
+                "parameters": [
+                    {
+                        "description": "Connection to audit",
+                        "name": "auditReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/infra.RestAuditCspResourcesRequest"
+                        }
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Terminate untracked TB-managed VMs",
+                        "name": "remediate",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "none",
+                            "attributed",
+                            "all"
+                        ],
+                        "type": "string",
+                        "default": "none",
+                        "description": "Delete residual sub-resources",
+                        "name": "cleanResiduals",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/infra.AuditResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/test": {
             "get": {
                 "security": [
@@ -5236,6 +5308,85 @@ const docTemplate = `{
                         "description": "Updated Security Group info list with synchronized firewall rules",
                         "schema": {
                             "$ref": "#/definitions/model.RestWrapperSecurityGroupUpdateResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/infra/{infraId}/audit": {
+            "post": {
+                "description": "Lists VMs directly from each CSP used by the Infra (never via CB-Spider metadata) and classifies them:\n- ` + "`" + `trackedAlive` + "`" + `: TB node exists and the CSP VM is alive (expected)\n- ` + "`" + `ghostAlive` + "`" + `: TB recorded the node as Terminated/Failed but the CSP VM is still alive\n- ` + "`" + `trackedGone` + "`" + `: TB node has a CSP id but the CSP has no such VM\n- ` + "`" + `untrackedAlive` + "`" + `: a CSP VM of this Infra (by name/uid or sys.infraId tag) that TB never recorded\n- ` + "`" + `residuals` + "`" + `: NIC / public IP / disk / ENI left behind (attributed = named after a node of this Infra)\n\n` + "`" + `remediate=true` + "`" + ` terminates ghost/untracked VMs directly at the CSP. ` + "`" + `cleanResiduals=attributed|all` + "`" + ` deletes residuals.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra] Provisioning and Management"
+                ],
+                "summary": "Audit an Infra against the CSP truth (direct SDK) and optionally remediate orphans",
+                "operationId": "PostInfraAudit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "infra01",
+                        "description": "Infra ID",
+                        "name": "infraId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Terminate ghost/untracked VMs at the CSP",
+                        "name": "remediate",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "none",
+                            "attributed",
+                            "all"
+                        ],
+                        "type": "string",
+                        "default": "none",
+                        "description": "Delete residual sub-resources",
+                        "name": "cleanResiduals",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/infra.AuditResult"
                         }
                     },
                     "404": {
@@ -23077,8 +23228,235 @@ const docTemplate = `{
                 }
             }
         },
+        "infra.AuditConnectionResult": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspVmTotal": {
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "ghostAlive": {
+                    "description": "TB says Terminated/Failed but CSP VM is alive",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.AuditVM"
+                    }
+                },
+                "otherTbManaged": {
+                    "description": "TB-managed VMs outside the audited scope (ignored)",
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "registeredExternal": {
+                    "description": "VMs TB only imported (sys.registered=true); never remediated",
+                    "type": "integer"
+                },
+                "residuals": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.AuditResidual"
+                    }
+                },
+                "supported": {
+                    "type": "boolean"
+                },
+                "trackedAlive": {
+                    "description": "TB node exists and CSP VM is alive (expected)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.AuditVM"
+                    }
+                },
+                "trackedGone": {
+                    "description": "TB node has a CSP id but the CSP has no such VM",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.AuditVM"
+                    }
+                },
+                "trackedNetworks": {
+                    "description": "network residual candidates skipped because TB still tracks them",
+                    "type": "integer"
+                },
+                "untrackedAlive": {
+                    "description": "CSP VM belongs to the scope but TB has no record",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.AuditVM"
+                    }
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.AuditOptions": {
+            "type": "object",
+            "properties": {
+                "cleanResiduals": {
+                    "description": "CleanResiduals: \"\" | \"none\" (report only), \"attributed\" (delete residuals named after this infra's nodes), \"all\" (also unnamed ones).",
+                    "type": "string"
+                },
+                "remediate": {
+                    "description": "Remediate terminates VMs that are alive at the CSP but unknown to TB or recorded as Terminated/Failed.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "infra.AuditResidual": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "attributed": {
+                    "description": "named after a node of the audited scope",
+                    "type": "boolean"
+                },
+                "detail": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "nic, publicIp, disk, eni, eip, volume, floatingIp",
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.AuditResult": {
+            "type": "object",
+            "properties": {
+                "clean": {
+                    "description": "no ghost/untracked VMs, no attributed residuals, no errors",
+                    "type": "boolean"
+                },
+                "connections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.AuditConnectionResult"
+                    }
+                },
+                "elapsedTime": {
+                    "type": "string"
+                },
+                "infraId": {
+                    "type": "string"
+                },
+                "nsId": {
+                    "type": "string"
+                },
+                "options": {
+                    "$ref": "#/definitions/infra.AuditOptions"
+                },
+                "scope": {
+                    "description": "infra | connection",
+                    "type": "string"
+                },
+                "summary": {
+                    "$ref": "#/definitions/infra.AuditSummary"
+                }
+            }
+        },
+        "infra.AuditSummary": {
+            "type": "object",
+            "properties": {
+                "connections": {
+                    "type": "integer"
+                },
+                "errors": {
+                    "type": "integer"
+                },
+                "ghostAlive": {
+                    "type": "integer"
+                },
+                "residualsDeleted": {
+                    "type": "integer"
+                },
+                "residualsFound": {
+                    "type": "integer"
+                },
+                "terminateRequested": {
+                    "type": "integer"
+                },
+                "trackedAlive": {
+                    "type": "integer"
+                },
+                "trackedGone": {
+                    "type": "integer"
+                },
+                "unsupported": {
+                    "type": "integer"
+                },
+                "untrackedAlive": {
+                    "type": "integer"
+                }
+            }
+        },
+        "infra.AuditVM": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "type": "string"
+                },
+                "cspStatus": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nodeId": {
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "CSP tags (untracked VMs only; reveals origin)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "tbStatus": {
+                    "type": "string"
+                }
+            }
+        },
         "infra.JSONResult": {
             "type": "object"
+        },
+        "infra.RestAuditCspResourcesRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                }
+            }
         },
         "infra.RestGetAllBenchmarkRequest": {
             "type": "object",
