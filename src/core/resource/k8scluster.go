@@ -1910,8 +1910,7 @@ func RemoteCommandToK8sClusterContainer(nsId string, k8sClusterId string, k8sClu
 	}
 
 	// Execute commands
-	results, err := runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName, req.Command)
-	return results, nil
+	return runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName, req.Command)
 }
 
 // TransferFileToK8sClusterContainer is func to transfer a file to specified Container in K8sCluster by Kubernetes API
