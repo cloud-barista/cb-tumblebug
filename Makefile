@@ -399,6 +399,8 @@ k-down: ## Uninstall the Helm release and wait for pods to terminate (PVCs/data 
 		-n $(K8S_NAMESPACE) --timeout=120s 2>/dev/null && printf '%b\n' '$(KG)\xe2\x9c\x94$(KX)' || \
 		printf '%b\n' '$(KY)\xe2\x9a\xa0 some pods are still terminating \xe2\x80\x94 check later with: make k-status$(KX)'
 	@printf '%b\n' '$(KG)\xe2\x9c\x94 Stopped.$(KX) Data PVCs are kept $(KD)(restart: $(KX)$(KC)make k-up$(KX)$(KD); full reset: $(KX)$(KC)make k-clean$(KX)$(KD))$(KX)'
+	@$(HELM) status $(K8S_OBS_RELEASE) -n $(K8S_OBS_NS) >/dev/null 2>&1 && \
+		printf '%b\n' '$(KD)\xe2\x84\xb9 Observability is still running in $(K8S_OBS_NS) (kept on purpose). Remove with: $(KX)$(KC)make k-observability-off$(KX)' || true
 
 k-clean: ## Full K8s reset: uninstall + delete PVCs and OpenBao key Secret
 	@$(HELM) uninstall $(HELM_RELEASE) -n $(K8S_NAMESPACE) 2>/dev/null || true
@@ -409,6 +411,8 @@ k-clean: ## Full K8s reset: uninstall + delete PVCs and OpenBao key Secret
 	@$(KUBECTL) delete secret openbao-keys -n $(K8S_NAMESPACE) 2>/dev/null || true
 	@$(MAKE) --no-print-directory k-port-forward-stop
 	@printf '%b\n' '$(KG)\xe2\x9c\x94 Cleaned.$(KX) Re-deploy with: $(KC)make k-up$(KX) then $(KC)make k-init$(KX)'
+	@$(HELM) status $(K8S_OBS_RELEASE) -n $(K8S_OBS_NS) >/dev/null 2>&1 && \
+		printf '%b\n' '$(KD)\xe2\x84\xb9 Observability ($(K8S_OBS_NS)) is separate and still running. Remove with: $(KX)$(KC)make k-observability-off$(KX)' || true
 	@printf '%b\n' '$(KD)(a kind cluster is kept; remove with: kind delete cluster --name $(KIND_CLUSTER_NAME))$(KX)'
 
 k-port-forward: ## Start port-forwards for API (1323), MapUI (1324) + Grafana (3000, if observability is on); idempotent
@@ -915,6 +919,14 @@ k-status: ## Show K8s deployment status (release/pods/services/port-forwards)
 		echo "$$pf" | sed 's/^/  /'; \
 	else \
 		printf '%b\n' '  (none) \xe2\x80\x94 start with: $(KC)make k-port-forward$(KX)'; \
+	fi
+	@echo ""
+	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Observability$(KX) $(KD)(separate release in $(K8S_OBS_NS); survives k-up/k-down)$(KX)'
+	@if $(HELM) status $(K8S_OBS_RELEASE) -n $(K8S_OBS_NS) >/dev/null 2>&1; then \
+		printf '%b\n' '  $(KG)on$(KX) $(KD)\xe2\x80\x94 disable with: $(KX)$(KC)make k-observability-off$(KX)'; \
+		$(KUBECTL) get pods -n $(K8S_OBS_NS) --no-headers 2>/dev/null | awk '{print "  " $$1 "  " $$3}'; \
+	else \
+		printf '%b\n' '  $(KY)off$(KX) $(KD)\xe2\x80\x94 enable with: $(KX)$(KC)make k-observability-on$(KX)'; \
 	fi
 
 k-ps: ## Show K8s deployment status (alias for k-status)
