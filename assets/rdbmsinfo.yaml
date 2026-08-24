@@ -485,7 +485,7 @@ dbms:
           2026-08-03)."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"
+      note: "Database naming follows standard MySQL conventions. Direct SQL connection from external machines is not supported by default because NCP Cloud DB provides only private VPC endpoints (*.vpc-cdb.ntruss.com). Direct SQL access requires an internal VPC VM or manual public domain request via NCP console."
 
     adminUserNameRequirement:
       reservedValues:
@@ -542,9 +542,9 @@ dbms:
         defaultPort: 3306
         referenceEngineVersion: "MYSQL_V8408"
         referenceDBInstanceSpec: m2.c2m4
-        note: "Storage type options are queried dynamically from NHN Cloud RDS API.
-          Reference values per CB-Spider's rdbms-mysql-test README (verified Available,
-          2026-08-03)."
+        note: "Subnet with explicit Zone (e.g. kr-pub-a) required for RDS placement; behavior when Zone is omitted during subnet creation is currently under investigation with the CB-Spider team. Storage type options are queried dynamically from NHN Cloud RDS API.
+          Reference values per CB-Spider's rdbms-mysql-test README (verified Available with PublicAccess,
+          2026-08-24)."
       mariadb:
         minStorageSize: 20
         defaultPort: 3306
@@ -553,8 +553,32 @@ dbms:
         note: "Reference values per CB-Spider's rdbms-mariadb-test README (verified Available,
           2026-08-18, 20GB)."
         
+    securityGroupRequirements:
+      note: "NHN Cloud uses a dedicated DB Security Group distinct from VPC Security Groups. In production, users configure inbound access rules in NHN Cloud Console (Database > RDS for MySQL > DB 보안 그룹).
+        - As-Is: If the SecurityGroup field is left empty during RDBMS creation (AllowAllTrafficForTesting behavior), CB-Spider internally creates a DB SG allowing remote access from 0.0.0.0/0.
+        - To-Be: CB-Spider agreed to provide a dedicated keyword parameter to explicitly enable test-mode remote access DB SG creation (planned for next release, keyword TBD)."
+
+    endpointStructure:
+      fqdnPattern: "{instance-uuid}.external.{region}.{engine}.rds.nhncloudservice.com"
+      note: "NHN Cloud RDS assigns a single public FQDN endpoint when PublicAccess is enabled. Access control to this endpoint (from both external networks and VPC internal VMs) is governed by NHN Cloud's dedicated DB Security Group (DB 보안 그룹)."
+        
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"
+      note: "Database naming follows standard MySQL conventions. Direct client access (port 3306) from both external networks and VPC internal VMs requires inbound permit rules configured in NHN Cloud Console's dedicated DB Security Group (RDS for MySQL > DB 보안 그룹), or enabling test-mode AllowAllTrafficForTesting."
+
+    adminUserNameRequirement:
+      reservedValues:
+        - admin
+        - root
+        - rds_admin
+        - rds_mha
+        - rds_repl
+        - sqlgw
+        - etladm
+        - alertman
+        - prom
+        - mysql.session
+        - mysql.sys
+        - mysql.infoschema
       
   openstack:
     description: OpenStack Trove
