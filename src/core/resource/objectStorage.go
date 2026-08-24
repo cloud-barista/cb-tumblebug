@@ -383,7 +383,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	_, err = common.GetConnConfig(req.ConnectionName)
+	connConfig, err := common.GetConnConfig(req.ConnectionName)
 	if err != nil {
 		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
 		log.Error().Err(err).Msg("")
@@ -391,7 +391,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	}
 
 	// Check if the input CSP is supported for object storage
-	cspType := strings.Split(req.ConnectionName, "-")[0]
+	cspType := connConfig.ProviderName
 	if !isObjectStorageSupported(cspType) {
 		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
 		log.Error().Err(err).Msg("")
