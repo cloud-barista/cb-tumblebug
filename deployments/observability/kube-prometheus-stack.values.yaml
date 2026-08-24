@@ -1,0 +1,83 @@
+# Lean kube-prometheus-stack values for cb-tumblebug metrics observability.
+# Goal: watch cb-tumblebug / cb-spider / etcd / node load during large provisioning
+# runs, with a modest footprint on the same (dev/kind) cluster it observes.
+#
+# Enable:  make k-observability-on      Disable: make k-observability-off
+# Grafana: make k-observability-forward (http://localhost:3000, admin / cbtumblebug)
+
+# Alertmanager is not needed to "see trends" — disable it to save resources.
+alertmanager:
+  enabled: false
+
+# kube-state-metrics (pod restarts, OOMKilled, waiting reasons, requests/limits) and
+# node-exporter (host CPU/mem/disk/FD) are the core resource-exhaustion signals — keep on.
+kube-state-metrics:
+  enabled: true
+prometheus-node-exporter:
+  enabled: true
+
+# On kind these managed control-plane targets are unscrapable/noisy — turn them off.
+# (kubeEtcd here means the *Kubernetes* control-plane etcd, not our app etcd, which we
+#  scrape ourselves via additionalScrapeConfigs below.)
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    # Short retention on ephemeral storage: enough for a multi-hour run, no PVC needed.
+    retention: 24h
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    resources:
+      requests:
+        cpu: 100m
+        memory: 400Mi
+      limits:
+        cpu: "1"
+        memory: 1500Mi
+    # Discover ServiceMonitors/PodMonitors/Rules in ALL namespaces (so app-level
+    # /metrics scrapers added later, in the cb-tumblebug namespace, are picked up).
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    # App etcd exposes /metrics on the client port (plain HTTP) — scrape it directly.
+    # cb-tumblebug and cb-spider do not expose /metrics yet (Phase 2); their CPU/memory
+    # come from cAdvisor via the kubelet scrape, no app change required.
+    additionalScrapeConfigs:
+      - job_name: cb-etcd
+        metrics_path: /metrics
+        static_configs:
+          - targets: ['cb-tumblebug-etcd.cb-tumblebug.svc.cluster.local:2379']
+            labels:
+              component: etcd
+              part_of: cb-tumblebug
+
+grafana:
+  # Ship the Grafana default (admin / admin) on purpose. On first login Grafana prompts
+  # you to set a password; because storage is ephemeral (emptyDir), that password lasts
+  # only for the life of this Grafana pod — a per-session temporary credential for dev.
+  # It resets to admin/admin whenever the pod restarts (redeploy / OOM / off->on).
+  # For a durable, git-safe, shared password use admin.existingSecret instead (see README).
+  adminPassword: admin
+  defaultDashboardsTimezone: browser
+  # Auto-load any ConfigMap labeled grafana_dashboard across all namespaces
+  # (this is how our custom cb-control-plane dashboard gets provisioned).
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
