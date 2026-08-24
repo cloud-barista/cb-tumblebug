@@ -26,7 +26,7 @@
         },
         "description": "CPU-based observability node (e2-standard-8, 8 vCPU, 32 GiB)",
         "specId": "gcp+us-west3+e2-standard-8",
-        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260731",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820",
         "rootDiskType": "default",
         "rootDiskSize": 200
       },

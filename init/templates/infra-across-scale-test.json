@@ -20,7 +20,7 @@
         "nodeGroupSize": 200,
         "description": "AWS - Seoul (ap-northeast-2) | 200 confirmed (2026-08-22, 2026-08-23); account limit not yet reached",
         "specId": "aws+ap-northeast-2+t3a.nano",
-        "imageId": "ami-0828e678be4b791cc",
+        "imageId": "ami-040267ba24c35a49c",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -29,7 +29,7 @@
         "nodeGroupSize": 50,
         "description": "Azure - Korea Central | Limit: 50 VMs (standardBSFamily vCPU quota 50 cores; B1ls=1vCPU); 50 confirmed 2026-08-23",
         "specId": "azure+koreacentral+standard_b1ls",
-        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202605030",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -38,7 +38,7 @@
         "nodeGroupSize": 200,
         "description": "GCP - Seoul (asia-northeast3) | 200 confirmed (2026-08-22, 2026-08-23); account limit not yet reached",
         "specId": "gcp+asia-northeast3+n1-standard-1",
-        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260520",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -47,7 +47,7 @@
         "nodeGroupSize": 36,
         "description": "IBM - Osaka (jp-osa) | Limit: Floating IP quota 40 per region; 36 provisioned on 2026-08-23 (4 rejected: 'Creating a new floating IP address will put the user over quota'); set 36",
         "specId": "ibm+jp-osa+nxf-2x1",
-        "imageId": "r034-ed053bf7-43c9-4b64-844b-77918ac3d597",
+        "imageId": "r034-8ac504c3-af7c-4def-9731-491910196565",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
