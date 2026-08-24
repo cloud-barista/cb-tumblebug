@@ -1980,19 +1980,19 @@ cloud:
         zone:
         - jp-pub-a
         - jp-pub-b
-      KR3:
-        id: KR3
-        description: Gwangju (South Korea)
-        location:
-          display: Gwangju (South Korea)
-          latitude: 35.1595
-          longitude: 126.8526
-        zone:
-        - kr3-pub-a
-        - kr3-pub-b
+      # KR3:
+      #   id: KR3
+      #   description: Gwangju (South Korea)
+      #   location:
+      #     display: Gwangju (South Korea)
+      #     latitude: 35.1595
+      #     longitude: 126.8526
+      #   zone:
+      #   - kr3-pub-a
+      #   - kr3-pub-b
       # US1:
       #   id: US1
-      #   desc: US West (California)
+      #   description: US West (California)
       #   location:
       #     display: California, USA
       #     latitude: 37.7749
