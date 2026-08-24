@@ -24,6 +24,7 @@ import (
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/pricing"
 	pricetypes "github.com/aws/aws-sdk-go-v2/service/pricing/types"
+	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
 )
@@ -77,7 +78,10 @@ type specKey struct{ region, instanceType string }
 //
 // Only one call chain is made regardless of how many AWS regions are configured in CB-TB.
 // Returns map[regionCode] → SpiderCloudPrice, compatible with the existing BulkUpdateSpec path.
-func FetchAllNodePrices(ctx context.Context) (map[string]model.SpiderCloudPrice, error) {
+func FetchAllNodePrices(ctx context.Context) (prices map[string]model.SpiderCloudPrice, retErr error) {
+	span := csp.BeginDirect("aws", "pricing", "global", 0)
+	defer func() { span.End(retErr) }()
+
 	accessKey, secretKey, err := getAWSCreds(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("AWS pricing: cannot get credentials: %w", err)

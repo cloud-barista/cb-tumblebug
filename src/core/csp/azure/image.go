@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
+	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
@@ -217,7 +218,10 @@ func matchPattern(text string, pattern string) bool {
 
 // GetImage fetches a specific Azure VM image by URN format (publisher:offer:sku:version).
 // Used for lookups of pre-identified images without full enumeration.
-func GetImage(ctx context.Context, region, urn string) (model.SpiderImageInfo, error) {
+func GetImage(ctx context.Context, region, urn string) (outImage model.SpiderImageInfo, retErr error) {
+	span := csp.BeginDirect("azure", "image-get", region, 1)
+	defer func() { span.End(retErr) }()
+
 	startTime := time.Now()
 	if DEBUG_AZURE_IMAGE {
 		log.Info().Str("region", region).Str("imageURN", urn).Msg("[AzureImage:DEBUG] GetImage started")
@@ -276,7 +280,10 @@ func GetImage(ctx context.Context, region, urn string) (model.SpiderImageInfo, e
 
 // ListImages fetches Azure VM images directly from Azure ARM API.
 // It returns one latest version per (publisher, offer, sku), following Spider's behavior.
-func ListImages(ctx context.Context, region string) ([]model.SpiderImageInfo, error) {
+func ListImages(ctx context.Context, region string) (outImages []model.SpiderImageInfo, retErr error) {
+	span := csp.BeginDirect("azure", "image-list", region, 0)
+	defer func() { span.End(retErr) }()
+
 	startTime := time.Now()
 	if DEBUG_AZURE_IMAGE {
 		log.Info().Str("region", region).Msg("[AzureImage:DEBUG] ListImages started")

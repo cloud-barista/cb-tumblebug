@@ -59,12 +59,13 @@ func RegisterBatchVMStatusHandler(provider string, fn BatchVMStatusFunc) {
 	batchVMStatusHandlers[strings.ToLower(provider)] = fn
 }
 
-// GetBatchVMStatusHandler returns the registered BatchVMStatusFunc for the given provider.
+// GetBatchVMStatusHandler returns the registered BatchVMStatusFunc for the given provider,
+// wrapped with uniform direct-SDK tracing. Existence checks that don't invoke are unaffected.
 func GetBatchVMStatusHandler(provider string) (BatchVMStatusFunc, bool) {
 	batchVMStatusMu.RLock()
 	defer batchVMStatusMu.RUnlock()
 	fn, ok := batchVMStatusHandlers[strings.ToLower(provider)]
-	return fn, ok
+	return observeBatchVMStatus(provider, "vmstatus", fn), ok
 }
 
 // BatchVMControlFunc sends a lifecycle control action to multiple instances in one SDK call.
@@ -110,7 +111,7 @@ func GetRemediationTerminateHandler(provider string) (BatchVMControlFunc, bool) 
 	fn, ok := remediationTerminateHandlers[strings.ToLower(provider)]
 	remediationTerminateMu.RUnlock()
 	if ok {
-		return fn, true
+		return observeBatchVMControl(provider, "terminate-remediation", fn), true
 	}
 	return GetBatchVMControlHandler(provider, "terminate")
 }
@@ -132,15 +133,16 @@ func GetBatchVMControlHandler(provider, action string) (BatchVMControlFunc, bool
 	if !ok {
 		return nil, false
 	}
-	switch strings.ToLower(action) {
+	action = strings.ToLower(action)
+	switch action {
 	case "suspend":
-		return h.Suspend, h.Suspend != nil
+		return observeBatchVMControl(provider, action, h.Suspend), h.Suspend != nil
 	case "resume":
-		return h.Resume, h.Resume != nil
+		return observeBatchVMControl(provider, action, h.Resume), h.Resume != nil
 	case "terminate":
-		return h.Terminate, h.Terminate != nil
+		return observeBatchVMControl(provider, action, h.Terminate), h.Terminate != nil
 	case "reboot":
-		return h.Reboot, h.Reboot != nil
+		return observeBatchVMControl(provider, action, h.Reboot), h.Reboot != nil
 	default:
 		return nil, false
 	}

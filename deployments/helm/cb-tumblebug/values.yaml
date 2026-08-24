@@ -63,7 +63,10 @@ assetsOverride:
 tumblebug:
   # K8s-recommended settings (compose keeps its own defaults)
   logWriter: stdout
-  logFormat: console
+  # json (not console) so log collectors render cleanly and the interaction dashboard can
+  # parse requests/calls with `| json`. Console output emits ANSI color codes that show as
+  # garbage in Loki. Switch back to console for raw human-readable kubectl logs if preferred.
+  logFormat: json
   logLevel: debug
   readyzCheckDeps: "true"
   shutdownTimeoutMs: "300000"
