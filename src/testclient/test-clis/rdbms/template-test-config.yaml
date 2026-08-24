@@ -49,6 +49,12 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-azure
@@ -66,6 +72,13 @@ testCases:
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-gcp
@@ -83,6 +96,13 @@ testCases:
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-alibaba
@@ -100,6 +120,13 @@ testCases:
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-tencent
@@ -117,6 +144,13 @@ testCases:
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-ibm
@@ -135,6 +169,13 @@ testCases:
     adminUserPassword: Password123
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-openstack
@@ -152,6 +193,13 @@ testCases:
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-ncp
@@ -171,6 +219,13 @@ testCases:
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 22.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false
 
   - rdbmsId: test-rdbms-nhn
@@ -180,12 +235,19 @@ testCases:
     subnets:
       - name: subnet-1
         cidr: 10.8.1.0/24
-        zone: ""
+        zone: "kr-pub-a"
     securityGroupName: test-rdbms-sg-nhn
     dbEngine: mysql
     autoFillDefaults: true
-    adminUserName: admin
+    adminUserName: myadmin
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    internalDataIOTest: false
+    vmOSType: "ubuntu 24.04"
+    vmvCPU: "2"
+    vmMemoryGiB: "4"
+    vmImageId: ""
+    vmSpecId: ""
     execute: false

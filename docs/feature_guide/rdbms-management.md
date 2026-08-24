@@ -186,38 +186,41 @@ limitation.)
 Enforced client-side by `validateAdminCredentials` before Create reaches CB-Spider. `—` = no
 constraint recorded.
 
-| CSP       | Admin Username Constraint                        | Admin Password Constraint               |
-| --------- | ------------------------------------------------ | --------------------------------------- |
-| AWS       | —                                                | —                                       |
-| Azure     | Rejects: `admin`                                 | —                                       |
-| GCP       | —                                                | —                                       |
-| Alibaba   | Rejects: `admin`                                 | —                                       |
-| Tencent   | Fixed: `root`                                    | —                                       |
-| IBM       | Fixed: `admin`                                   | 15-72 characters, no special characters |
-| OpenStack | —                                                | —                                       |
-| NCP       | Rejects: `admin`, `root`, etc. (system accounts) | Requires ≥1 special character           |
-| NHN       | —                                                | —                                       |
+| CSP       | Admin Username Constraint                                                                                                                                          | Admin Password Constraint               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| AWS       | —                                                                                                                                                                  | —                                       |
+| Azure     | Rejects: `admin`                                                                                                                                                   | —                                       |
+| GCP       | —                                                                                                                                                                  | —                                       |
+| Alibaba   | Rejects: `admin`                                                                                                                                                   | —                                       |
+| Tencent   | Fixed: `root`                                                                                                                                                      | —                                       |
+| IBM       | Fixed: `admin`                                                                                                                                                     | 15-72 characters, no special characters |
+| OpenStack | —                                                                                                                                                                  | —                                       |
+| NCP       | Rejects: `admin`, `root`, etc. (system accounts)                                                                                                                   | Requires ≥1 special character           |
+| NHN       | Rejects: `admin`, `root`, `rds_admin`, `rds_mha`, `rds_repl`, `sqlgw`, `etladm`, `alertman`, `prom`, `mysql.session`, `mysql.sys`, `mysql.infoschema` (1-32 chars) | —                                       |
 
-### Direct SQL Connection (TLS) Requirements
+### Direct SQL Connection & Reachability (External vs Internal VPC)
 
-About a caller's own application connecting straight to the instance endpoint — different from
-the table above's `DB Op. Method`, which is CB-Spider's own database-management mechanism, not
-row-level data access. `—` = not verified either way.
+About a caller's own application or test client connecting straight to the database endpoint via MySQL wire protocol (port 3306) — distinct from Tumblebug/Spider's REST-based database management (`DB Op. Method`).
 
-| CSP       | Requires TLS | Evidence                                                                                                           |
-| --------- | :----------: | ------------------------------------------------------------------------------------------------------------------ |
-| AWS       |      No      | Plain connection succeeded (test-cli dummy-data test)                                                              |
-| Azure     |     Yes      | Plain connection rejected: `Error 3159 ... require_secure_transport=ON`                                            |
-| GCP       |      No      | Plain connection succeeded (test-cli dummy-data test)                                                              |
-| Alibaba   |      —       | Not verified                                                                                                       |
-| Tencent   |      —       | Not verified                                                                                                       |
-| IBM       |     Yes      | Inferred: CB-Spider's SQL-fallback code hardcodes `tls=skip-verify` for IBM's `*.databases.appdomain.cloud` domain |
-| OpenStack |      —       | Not verified                                                                                                       |
-| NCP       |      —       | Not verified                                                                                                       |
-| NHN       |      —       | Not verified                                                                                                       |
+| CSP       | External Public Access  | Internal (VPC) Access | Requires TLS | Reachability Constraints & Evidence                                                                                                                                                                                                                              |
+| --------- | :---------------------: | :-------------------: | :----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AWS       |         🟢 Pass         |     🟢 Supported      |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                  |
+| Azure     |         🟢 Pass         |     🟢 Supported      |     Yes      | Plain rejected (`Error 3159 ... require_secure_transport=ON`); requires TLS (`tls=preferred` or `true`).                                                                                                                                                         |
+| GCP       |         🟢 Pass         |     🟢 Supported      |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                  |
+| Alibaba   |      🟡 Restricted      |     🟢 Supported      |      —       | External access requires whitelist and Public IP binding on Alibaba RDS.                                                                                                                                                                                         |
+| Tencent   |      🟡 Restricted      |     🟢 Supported      |      —       | External access requires Public Domain activation in Tencent console.                                                                                                                                                                                            |
+| IBM       |         🟢 Pass         |     🟢 Supported      |     Yes      | Public endpoint supported; TLS required (`*.databases.appdomain.cloud`).                                                                                                                                                                                         |
+| OpenStack |      🟡 Dependent       |     🟢 Supported      |      —       | Depends on tenant network external router and floating IP assignment.                                                                                                                                                                                            |
+| NCP       |    🔴 Blocked (N/A)     |     🟢 Supported      |      —       | **No external public IP provided by default**; endpoint is private VPC-only (`*.vpc-cdb.ntruss.com`). External access requires manual public domain request via NCP console.                                                                                     |
+| NHN       | 🔴 Blocked (by default) / 🟢 Pass (with DB SG) | 🟢 Supported (requires DB SG rule) |      —       | **Public FQDN/IP is assigned, but port 3306 is blocked by default** by NHN Cloud's dedicated DB Security Group (positive security model). Access from both external networks and VPC internal VMs requires adding an inbound permit rule in the NHN Console (`Database > RDS for MySQL > DB 보안 그룹`) or enabling test-mode `AllowAllTrafficForTesting`. |
 
-A connection mode that adapts either way (e.g. `go-sql-driver/mysql`'s `tls=preferred`) avoids
-needing this table at all.
+> [!NOTE]
+> **Dual Testing Strategy (External vs Internal VPC)**:
+>
+> - **External Remote Test**: Validates client-side connectivity over public internet (applicable to AWS, Azure, GCP, IBM).
+> - **Internal VPC VM Test (via Remote Command API)**: Validates SQL CRUD from within the same VPC network, overcoming CSP-specific public IP/firewall constraints (essential for NCP, NHN, and private production database deployments).
+
+A connection mode that adapts either way (e.g. `go-sql-driver/mysql`'s `tls=preferred`) avoids TLS negotiation errors.
 
 ## CSP-Specific Risks and Notes
 
@@ -228,8 +231,18 @@ Admin credential policy is in Admin Credential Constraints, not repeated here.
 - **Azure / IBM / NCP**: `SupportsStorageTypeSelection=false` — omit `StorageType`; the CSP sets
   it automatically.
 - **IBM**: provisions only the Gen1 platform.
-- **NCP**: `StorageSize` is auto-managed by CSP (starts at 10GB and auto-scales up to 6000GB in 10GB increments); Tumblebug defends against custom `StorageSize` input by zeroing it before sending to CB-Spider. Storage type defaults to `SSD`. Admin accounts must not use system reserved names (`root`, `admin`, `radmin`, etc.) and password requires at least 1 special character. Full deletion is confirmed via dynamic `OnlyCSPList` polling (~3-4 min).
-- **NHN**: requires a dedicated RDS credential in addition to the base Connection credential.
+- **NCP**:
+  - **Storage Auto-scaling**: `StorageSize` is auto-managed by CSP (starts at 10GB and auto-scales up to 6000GB in 10GB increments); Tumblebug defends against custom `StorageSize` input by zeroing it before sending to CB-Spider. Storage type defaults to `SSD`.
+  - **Admin Account Policy**: Admin accounts must not use system reserved names (`root`, `admin`, `radmin`, etc.) and password requires at least 1 special character.
+  - **Dynamic Deletion Verification**: Full deletion is confirmed via dynamic `OnlyCSPList` polling (~3-4 min).
+- **NHN**:
+  - **Dedicated Credentials**: Requires dedicated RDS credentials (`User Access Key`, `Secret Access Key`, `mysqlAppKey`/`mariadbAppKey`).
+  - **Subnet Zone Placement**: Subnet requires an explicit Availability Zone (e.g. `kr-pub-a`) for RDS placement (behavior when Zone is omitted during subnet creation is currently under investigation with the CB-Spider team).
+  - **Admin Username Constraints**: Admin username (1-32 characters) rejects official system reserved names (`admin`, `root`, `rds_admin`, `rds_mha`, `rds_repl`, `sqlgw`, `etladm`, `alertman`, `prom`, `mysql.session`, `mysql.sys`, `mysql.infoschema`; use e.g. `myadmin`/`dbadmin`).
+    - _As-Is_: When the SecurityGroup field is left empty during RDBMS creation (test-mode `AllowAllTrafficForTesting` behavior), CB-Spider internally creates a DB SG allowing remote access from `0.0.0.0/0`.
+    - _To-Be_: CB-Spider agreed to provide a dedicated keyword parameter to explicitly enable test-mode remote access DB SG creation (planned for next release, keyword TBD).
+  - **Endpoint & Access Control**: NHN Cloud RDS returns a single public FQDN endpoint (`{uuid}.external.{region}.{engine}.rds.nhncloudservice.com`) when `PublicAccess: true`. Both external connections and internal VPC connections are subject to NHN Cloud's dedicated DB Security Group (**DB 보안 그룹**).
+  - **Public Access & Database Operations**: Supports `PublicAccess: true` with an external endpoint. Database CRUD uses `cspNativeApi`.
 - **OpenStack**: doesn't expose `StorageType` after creation — verify success via `Available`
   status only.
 - **GCP**: `StorageType` is implied by machine series (`HYPERDISK_BALANCED` for C4A/N4,

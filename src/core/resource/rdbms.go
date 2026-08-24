@@ -478,8 +478,8 @@ func buildCSPSupportInfo(cspKey string) model.RDBMSCSPSupportInfo {
 var (
 	rdbmsSpiderMaxAttempts  = 30
 	rdbmsSpiderInterval     = 10 * time.Second
-	rdbmsCSPGoneMaxAttempts = 60
-	rdbmsCSPGoneInterval    = 10 * time.Second
+	rdbmsCSPGoneMaxAttempts = 20
+	rdbmsCSPGoneInterval    = 30 * time.Second
 
 	rdbmsPostDeleteWaitDefault = 10 * time.Second
 	rdbmsPostDeleteWaitAlibaba = 180 * time.Second

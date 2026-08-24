@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 	"sync"
@@ -105,29 +106,39 @@ type TestCase struct {
 	// (defaults to "sampledb" if left blank).
 	DatabaseName string `mapstructure:"databaseName"`
 	Execute      bool   `mapstructure:"execute"`
+
+	// Internal VM test configuration (runs SQL from a test VM inside the same VPC via Remote Command)
+	InternalDataIOTest bool   `mapstructure:"internalDataIOTest"`
+	VmImageId          string `mapstructure:"vmImageId"`
+	VmSpecId           string `mapstructure:"vmSpecId"`
+	VmOSType           string `mapstructure:"vmOSType"`
+	VmvCPU             string `mapstructure:"vmvCPU"`
+	VmMemoryGiB        string `mapstructure:"vmMemoryGiB"`
 }
 
 // TestResult holds the outcome of each lifecycle step for one CSP.
 type TestResult struct {
-	RdbmsId              string
-	ConnectionName       string
-	DBEngine             string
-	CreateVNetStatus     string
-	CreateSGStatus       string
-	SupportStatus        string
-	CapabilityStatus     string
-	ValidateStatus       string
-	CreateRDBMSStatus    string
-	GetRDBMSStatus       string
-	ListRDBMSStatus      string
-	CreateDatabaseStatus string
-	ListDatabaseStatus   string
-	DummyDataStatus      string
-	DeleteDatabaseStatus string
-	DeleteRDBMSStatus    string
-	DeleteSGStatus       string
-	DeleteSubnetsStatus  string
-	DeleteVNetStatus     string
+	RdbmsId                   string
+	ConnectionName            string
+	DBEngine                  string
+	CreateVNetStatus          string
+	CreateSGStatus            string
+	SupportStatus             string
+	CapabilityStatus          string
+	ValidateStatus            string
+	CreateRDBMSStatus         string
+	GetRDBMSStatus            string
+	ListRDBMSStatus           string
+	CreateDatabaseStatus      string
+	ListDatabaseStatus        string
+	RemoteDataIOTestStatus    string
+	InternalDataIOTestStatus  string
+	DeleteDatabaseStatus      string
+	DeleteRDBMSStatus         string
+	DeleteSGStatus            string
+	DeleteSubnetsStatus       string
+	DeleteVNetStatus          string
+	Note                   string
 }
 
 func main() {
@@ -315,6 +326,9 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		dbName = "sampledb"
 	}
 
+	// 0b. Pre-flight Spec & Image Discovery, Recommendation, and Review (if InternalDataIOTest is enabled)
+	resolveAndReviewSpecAndImage(tbApiBase, nsId, &tc, tbAuth, &logs)
+
 	// 1. Create vNet (with embedded subnets)
 	subnetReqs := make([]map[string]any, 0, len(tc.Subnets))
 	for _, s := range tc.Subnets {
@@ -350,14 +364,20 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	// 2. Create SecurityGroup (only if VNet succeeded)
 	if vNetId != "" {
 		port := dbPortForEngine(tc.DBEngine)
+		firewallRules := []map[string]any{
+			{"Ports": port, "Protocol": "TCP", "Direction": "inbound", "CIDR": "0.0.0.0/0"},
+		}
+		if tc.InternalDataIOTest {
+			firewallRules = append(firewallRules, map[string]any{
+				"Ports": "22", "Protocol": "TCP", "Direction": "inbound", "CIDR": "0.0.0.0/0",
+			})
+		}
 		sgReqBody := map[string]any{
 			"name":           tc.SecurityGroupName,
 			"connectionName": tc.ConnectionName,
 			"vNetId":         vNetId,
 			"description":    "created by RDBMS batch test CLI",
-			"firewallRules": []map[string]any{
-				{"Ports": port, "Protocol": "TCP", "Direction": "inbound", "CIDR": "0.0.0.0/0"},
-			},
+			"firewallRules":  firewallRules,
 		}
 		urlCreateSG := fmt.Sprintf("%s/ns/%s/resources/securityGroup", tbApiBase, nsId)
 		respBytes, err = callApi("POST", urlCreateSG, tbAuth, sgReqBody, &logs, fmt.Sprintf("[%s] Create SecurityGroup", tc.RdbmsId))
@@ -408,7 +428,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 				if s.SupportsStorageSizeConfiguration && s.StorageSizeRange.Min == 0 && s.StorageSizeRange.Max == 0 {
 					log.Warn().Msgf("[%s] Capability response looks suspicious: supportsStorageSizeConfiguration=true but storageSizeRange is {0,0} (possible Spider wire-format mismatch)", tc.RdbmsId)
 				}
-				log.Info().Msgf("[%s] Capability data: dbInstanceSpecs=%d liveSupportedEngines=%v", tc.RdbmsId, len(s.DBInstanceSpecs), s.LiveSupportedEngines)
+				log.Info().Msgf("[%s] Capability data: dbInstanceSpecs=%d liveSupportedEngines=%v requiresSG=%v", tc.RdbmsId, len(s.DBInstanceSpecs), s.LiveSupportedEngines, s.RequiresSecurityGroup)
 			}
 		}
 	} else {
@@ -418,6 +438,12 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 
 	// 4. Validate, then create RDBMS (only if VNet succeeded; SecurityGroup is best-effort)
 	if vNetId != "" {
+		providerName := vNetInfo.ConnectionConfig.ProviderName
+		// For NHN (which uses a dedicated DB SecurityGroup distinct from VPC SecurityGroups),
+		// omit securityGroupIds during test-cli execution to trigger Spider's test-mode open DB SG creation
+		// (AllowAllTrafficForTesting) until a dedicated keyword parameter is finalized with the CB-Spider team.
+		allowAllTrafficForTesting := (strings.ToLower(providerName) == "nhn")
+
 		specVal := tc.DBInstanceSpec
 		if specVal == "" {
 			specVal = tc.DBSpec
@@ -439,7 +465,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			"autoFillDefaults":  tc.AutoFillDefaults,
 			"description":       "created by RDBMS batch test CLI",
 		}
-		if sgId != "" {
+		if sgId != "" && !allowAllTrafficForTesting {
 			rdbmsReqBody["securityGroupIds"] = []string{sgId}
 		}
 
@@ -573,36 +599,62 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.ListDatabaseStatus = "Skipped (database not created)"
 	}
 
-	// 9. Dummy data test: connect directly to the instance (MySQL wire protocol, shared by
-	// mysql and mariadb) and run a write/read/verify/delete cycle against a scratch table —
-	// confirms the created logical database is actually usable, not just present in Spider's
-	// database list. Best-effort: a connectivity failure here (e.g. a security group rule not
-	// yet propagated) does not block database/instance cleanup below. Not a Tumblebug API call,
-	// so it's logged as a synthetic entry (Method "SQL") to still appear in the per-CSP report.
+	// 9. Data Tests (External Remote vs Internal VPC)
+	providerKey := strings.ToLower(vNetInfo.ConnectionConfig.ProviderName)
+
+	// 9a. Remote Data I/O Test: connect directly from local machine (MySQL wire protocol)
 	if databaseCreated {
-		start := time.Now()
-		dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.AdminUserName, tc.AdminUserPassword, dbName)
-		entry := ApiLog{
-			Step:           fmt.Sprintf("[%s] Dummy Data Test", tc.RdbmsId),
-			Method:         "SQL",
-			URL:            fmt.Sprintf("%s/%s", rdbmsEndpoint, dbName),
-			RequestPayload: map[string]any{"table": "tumblebug_test", "operations": "CREATE TABLE, INSERT, SELECT, DELETE"},
-			ElapsedTime:    time.Since(start).Round(time.Millisecond).String(),
-		}
-		if dummyErr != nil {
-			entry.ResponseStatus = "Failed"
-			entry.ResponsePayload = map[string]any{"error": dummyErr.Error()}
-			result.DummyDataStatus = "Failed"
-			log.Warn().Err(dummyErr).Msgf("[%s] Dummy data test failed (non-blocking)", tc.RdbmsId)
+		if providerKey == "ncp" || (!tc.PublicAccess && !strings.Contains(rdbmsEndpoint, ".external.")) {
+			result.RemoteDataIOTestStatus = "N/A (Private endpoint only)"
+			log.Info().Msgf("[%s] Remote Data I/O Test: N/A (Private VPC endpoint only: %s)", tc.RdbmsId, rdbmsEndpoint)
 		} else {
-			entry.ResponseStatus = "OK"
-			entry.ResponsePayload = map[string]any{"result": "write/read/verify/delete succeeded"}
-			result.DummyDataStatus = "Success"
-			log.Info().Msgf("[%s] Dummy data test OK (write/read/verify/delete)", tc.RdbmsId)
+			start := time.Now()
+			dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.AdminUserName, tc.AdminUserPassword, dbName)
+			entry := ApiLog{
+				Step:           fmt.Sprintf("[%s] Remote Data I/O Test", tc.RdbmsId),
+				Method:         "SQL",
+				URL:            fmt.Sprintf("%s/%s", rdbmsEndpoint, dbName),
+				RequestPayload: map[string]any{"table": "tumblebug_test", "operations": "CREATE TABLE, INSERT, SELECT, DELETE"},
+				ElapsedTime:    time.Since(start).Round(time.Millisecond).String(),
+			}
+			if dummyErr != nil {
+				entry.ResponseStatus = "Failed"
+				entry.ResponsePayload = map[string]any{"error": dummyErr.Error()}
+				if providerKey == "nhn" {
+					result.RemoteDataIOTestStatus = "Fail (Note: Requires DB Security Group rule in NHN Console)"
+					result.Note = "NHN 콘솔의 [RDS for MySQL > DB 보안 그룹]에서 3306 인바운드 허용 규칙 설정 필요 (기본 포지티브 시큐리티 차단 정책)"
+				} else {
+					result.RemoteDataIOTestStatus = "Fail"
+				}
+				log.Warn().Err(dummyErr).Msgf("[%s] Remote Data I/O Test failed (non-blocking)", tc.RdbmsId)
+			} else {
+				entry.ResponseStatus = "OK"
+				entry.ResponsePayload = map[string]any{"result": "write/read/verify/delete succeeded"}
+				result.RemoteDataIOTestStatus = "Pass"
+				log.Info().Msgf("[%s] Remote Data I/O Test OK (write/read/verify/delete)", tc.RdbmsId)
+			}
+			logs = append(logs, entry)
 		}
-		logs = append(logs, entry)
 	} else {
-		result.DummyDataStatus = "Skipped (database not created)"
+		result.RemoteDataIOTestStatus = "N/A (database not created)"
+	}
+
+	// 9b. Internal Data I/O Test: run SQL commands from inside the VPC using a test VM via Remote Command
+	if databaseCreated && tc.InternalDataIOTest && tc.VmImageId != "" && tc.VmSpecId != "" {
+		internalStatus, internalErr := runInternalDataTest(
+			tbApiBase, nsId, tc, vNetId, subnetIds[0], sgId, rdbmsEndpoint, dbName, tbAuth, &logs,
+		)
+		result.InternalDataIOTestStatus = internalStatus
+		if internalErr != nil {
+			log.Warn().Err(internalErr).Msgf("[%s] Internal Data I/O Test failed: %s", tc.RdbmsId, internalStatus)
+		} else {
+			log.Info().Msgf("[%s] Internal Data I/O Test OK: %s", tc.RdbmsId, internalStatus)
+		}
+	} else if databaseCreated && tc.InternalDataIOTest {
+		result.InternalDataIOTestStatus = "Skipped (vmImageId/vmSpecId not set)"
+		log.Warn().Msgf("[%s] Internal Data I/O Test skipped: vmImageId/vmSpecId not set", tc.RdbmsId)
+	} else {
+		result.InternalDataIOTestStatus = "N/A (internal test disabled)"
 	}
 
 	// 10. Delete Database (best-effort cleanup; X-Admin-User-Password is required here)
@@ -792,6 +844,250 @@ func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName st
 	return nil
 }
 
+// resolveAndReviewSpecAndImage uses recommendSpec, searchImage, and specImagePairReview
+// to dynamically discover, recommend, and validate VM specs and images before resource creation.
+func resolveAndReviewSpecAndImage(
+	tbApiBase string,
+	nsId string,
+	tc *TestCase,
+	tbAuth map[string]string,
+	logs *[]ApiLog,
+) {
+	if !tc.InternalDataIOTest {
+		return
+	}
+
+	providerName := ""
+	regionName := ""
+	urlConn := fmt.Sprintf("%s/connConfig/%s", tbApiBase, tc.ConnectionName)
+	respBytes, err := callApi("GET", urlConn, tbAuth, nil, logs, fmt.Sprintf("[%s] Get Connection Config", tc.RdbmsId))
+	if err == nil {
+		var connInfo model.ConnConfig
+		if jsonErr := json.Unmarshal(respBytes, &connInfo); jsonErr == nil {
+			providerName = connInfo.ProviderName
+			regionName = connInfo.RegionDetail.RegionName
+		}
+	}
+	if providerName == "" {
+		parts := strings.Split(tc.ConnectionName, "-")
+		if len(parts) >= 2 {
+			providerName = parts[0]
+			regionName = strings.Join(parts[1:], "-")
+		}
+	}
+
+	// 1. Recommend Spec via POST /recommendSpec if vmSpecId is empty
+	if tc.VmSpecId == "" && providerName != "" {
+		vCPU := tc.VmvCPU
+		if vCPU == "" {
+			vCPU = "2"
+		}
+		mem := tc.VmMemoryGiB
+		if mem == "" {
+			mem = "4"
+		}
+		recReq := map[string]any{
+			"filter": map[string]any{
+				"policy": []map[string]any{
+					{"metric": "providerName", "condition": []map[string]any{{"operand": providerName}}},
+					{"metric": "regionName", "condition": []map[string]any{{"operand": regionName}}},
+					{"metric": "vCPU", "condition": []map[string]any{{"operator": ">=", "operand": vCPU}}},
+					{"metric": "memoryGiB", "condition": []map[string]any{{"operator": ">=", "operand": mem}}},
+				},
+			},
+			"priority": map[string]any{
+				"policy": []map[string]any{{"metric": "cost", "weight": 1.0}},
+			},
+			"limit": 1,
+		}
+		urlRec := fmt.Sprintf("%s/recommendSpec", tbApiBase)
+		respBytes, err := callApi("POST", urlRec, tbAuth, recReq, logs, fmt.Sprintf("[%s] Recommend VM Spec", tc.RdbmsId))
+		if err == nil {
+			var specList []model.SpecInfo
+			if jsonErr := json.Unmarshal(respBytes, &specList); jsonErr == nil && len(specList) > 0 {
+				tc.VmSpecId = specList[0].Id
+				log.Info().Msgf("[%s] Recommended VM Spec: %s (cspSpecName=%s, vcpu=%d, mem=%.1fGB)",
+					tc.RdbmsId, specList[0].Id, specList[0].CspSpecName, specList[0].VCPU, specList[0].MemoryGiB)
+			}
+		}
+	}
+
+	// 2. Search Image via POST /ns/{nsId}/resources/searchImage if vmImageId is empty
+	if tc.VmImageId == "" && providerName != "" {
+		osType := tc.VmOSType
+		if osType == "" {
+			osType = "ubuntu 24.04"
+		}
+		searchReq := map[string]any{
+			"providerName":   providerName,
+			"regionName":     regionName,
+			"osType":         osType,
+			"osArchitecture": "x86_64",
+		}
+		urlSearch := fmt.Sprintf("%s/ns/%s/resources/searchImage", tbApiBase, nsId)
+		respBytes, err := callApi("POST", urlSearch, tbAuth, searchReq, logs, fmt.Sprintf("[%s] Search VM Image", tc.RdbmsId))
+		if err == nil {
+			var searchResp model.SearchImageResponse
+			if jsonErr := json.Unmarshal(respBytes, &searchResp); jsonErr == nil && searchResp.ImageCount > 0 {
+				tc.VmImageId = searchResp.ImageList[0].Id
+				log.Info().Msgf("[%s] Discovered VM Image: %s (cspImage=%s, os=%s)",
+					tc.RdbmsId, searchResp.ImageList[0].Id, searchResp.ImageList[0].CspImageName, searchResp.ImageList[0].OSDistribution)
+			}
+		}
+	}
+
+	// 3. Review Spec & Image Pair Compatibility via POST /specImagePairReview
+	if tc.VmSpecId != "" && tc.VmImageId != "" {
+		zone := ""
+		if len(tc.Subnets) > 0 {
+			zone = tc.Subnets[0].Zone
+		}
+		specReviewId := tc.VmSpecId
+		if !strings.Contains(specReviewId, "+") && providerName != "" && regionName != "" {
+			specReviewId = fmt.Sprintf("%s+%s+%s", providerName, regionName, tc.VmSpecId)
+		}
+		reviewReq := map[string]any{
+			"specId":       specReviewId,
+			"imageId":      tc.VmImageId,
+			"rootDiskType": tc.StorageType,
+			"zone":         zone,
+		}
+		urlReview := fmt.Sprintf("%s/specImagePairReview", tbApiBase)
+		respBytes, err := callApi("POST", urlReview, tbAuth, reviewReq, logs, fmt.Sprintf("[%s] Pre-flight Spec & Image Review", tc.RdbmsId))
+		if err != nil {
+			log.Warn().Err(err).Msgf("[%s] Spec & Image Review returned warning: %v", tc.RdbmsId, err)
+		} else {
+			var reviewResp model.SpecImagePairReviewResult
+			if jsonErr := json.Unmarshal(respBytes, &reviewResp); jsonErr == nil {
+				if reviewResp.IsValid {
+					log.Info().Msgf("[%s] Pre-flight Spec & Image Review OK: status=%s, valid=%t, cost=%s",
+						tc.RdbmsId, reviewResp.Status, reviewResp.IsValid, reviewResp.EstimatedCost)
+				} else {
+					log.Warn().Msgf("[%s] Pre-flight Spec & Image Review warning: %s (errors=%v)",
+						tc.RdbmsId, reviewResp.Message, reviewResp.Errors)
+				}
+			}
+		}
+	}
+}
+
+// runInternalDataTest provisions a test VM in the same VNet and Subnet as the RDBMS,
+// then uses Tumblebug's Remote Command API to execute SQL queries directly against
+// the RDBMS private endpoint from inside the VPC network.
+func runInternalDataTest(
+	tbApiBase string,
+	nsId string,
+	tc TestCase,
+	vNetId string,
+	subnetId string,
+	sgId string,
+	rdbmsEndpoint string,
+	dbName string,
+	tbAuth map[string]string,
+	logs *[]ApiLog,
+) (status string, err error) {
+	label := cspLabel(tc.RdbmsId)
+	sshKeyId := fmt.Sprintf("test-rdbms-sshkey-%s", label)
+	infraId := fmt.Sprintf("test-rdbms-infra-%s", label)
+
+	// Ensure cleanup of test VM and SSHKey upon completion
+	defer func() {
+		urlDeleteInfra := fmt.Sprintf("%s/ns/%s/infra/%s?option=terminate", tbApiBase, nsId, infraId)
+		_, _ = callApi("DELETE", urlDeleteInfra, tbAuth, nil, logs, fmt.Sprintf("[%s] Teardown Test Infra", tc.RdbmsId))
+
+		urlDeleteSSH := fmt.Sprintf("%s/ns/%s/resources/sshKey/%s", tbApiBase, nsId, sshKeyId)
+		_, _ = callApi("DELETE", urlDeleteSSH, tbAuth, nil, logs, fmt.Sprintf("[%s] Teardown Test SSHKey", tc.RdbmsId))
+	}()
+
+	// 1. Create or retrieve SSH Key
+	sshReq := map[string]any{
+		"name":           sshKeyId,
+		"connectionName": tc.ConnectionName,
+		"description":    "created by RDBMS test-cli for internal test",
+	}
+	urlSSH := fmt.Sprintf("%s/ns/%s/resources/sshKey", tbApiBase, nsId)
+	if _, err := callApi("POST", urlSSH, tbAuth, sshReq, logs, fmt.Sprintf("[%s] Create Test SSHKey", tc.RdbmsId)); err != nil {
+		urlGetSSH := fmt.Sprintf("%s/ns/%s/resources/sshKey/%s", tbApiBase, nsId, sshKeyId)
+		if _, getErr := callApi("GET", urlGetSSH, tbAuth, nil, logs, fmt.Sprintf("[%s] Get Existing SSHKey", tc.RdbmsId)); getErr != nil {
+			return "Failed (SSHKey create failed)", err
+		}
+	}
+
+	// 2. Create Infra (VM) in same VNet/Subnet using looked-up spec and image directly
+	rootDiskType := tc.StorageType
+	if rootDiskType == "" {
+		rootDiskType = "default"
+	}
+	infraReq := model.InfraReq{
+		Name:            infraId,
+		Description:     "test runner VM for internal RDBMS SQL test",
+		InstallMonAgent: "no",
+		NodeGroups: []model.CreateNodeGroupReq{
+			{
+				Name:             "ng1",
+				NodeGroupSize:    1,
+				ConnectionName:   tc.ConnectionName,
+				VNetId:           vNetId,
+				SubnetId:         subnetId,
+				SecurityGroupIds: []string{sgId},
+				SshKeyId:         sshKeyId,
+				SpecId:           tc.VmSpecId,
+				ImageId:          tc.VmImageId,
+				RootDiskSize:     20,
+				RootDiskType:     rootDiskType,
+			},
+		},
+	}
+	urlInfra := fmt.Sprintf("%s/ns/%s/infra", tbApiBase, nsId)
+	if _, err := callApi("POST", urlInfra, tbAuth, infraReq, logs, fmt.Sprintf("[%s] Create Test Infra", tc.RdbmsId)); err != nil {
+		return "Failed (Infra create failed)", err
+	}
+
+	host, port, splitErr := net.SplitHostPort(rdbmsEndpoint)
+	if splitErr != nil {
+		host = rdbmsEndpoint
+		port = "3306"
+	}
+
+	// 3. Send Remote Command via POST /ns/{nsId}/cmd/infra/{infraId}
+	sqlCmd := fmt.Sprintf("mysql -h %s -P %s -u %s -p'%s' %s -e \"DROP TABLE IF EXISTS tumblebug_internal_test; CREATE TABLE tumblebug_internal_test (id INT PRIMARY KEY, val VARCHAR(255)); INSERT INTO tumblebug_internal_test (id, val) VALUES (1, 'internal-test-ok'); SELECT val FROM tumblebug_internal_test WHERE id=1; DROP TABLE tumblebug_internal_test;\"",
+		host, port, tc.AdminUserName, tc.AdminUserPassword, dbName)
+
+	cmdReq := model.InfraCmdReq{
+		Command: []string{
+			"which mysql || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq default-mysql-client || sudo yum install -y mysql)",
+			sqlCmd,
+		},
+		TimeoutMinutes: 5,
+	}
+
+	urlCmd := fmt.Sprintf("%s/ns/%s/cmd/infra/%s", tbApiBase, nsId, infraId)
+	respBytes, err := callApi("POST", urlCmd, tbAuth, cmdReq, logs, fmt.Sprintf("[%s] Execute Internal SQL via Remote Cmd", tc.RdbmsId))
+	if err != nil {
+		return "Failed (Remote command failed)", err
+	}
+
+	var cmdResp model.InfraSshCmdResultForAPI
+	_ = json.Unmarshal(respBytes, &cmdResp)
+	cmdSucceeded := false
+	for _, res := range cmdResp.Results {
+		for _, out := range res.Stdout {
+			if strings.Contains(out, "internal-test-ok") {
+				cmdSucceeded = true
+				break
+			}
+		}
+		if cmdSucceeded {
+			break
+		}
+	}
+
+	if cmdSucceeded {
+		return "Pass", nil
+	}
+	return "Failed (SQL verification failed)", fmt.Errorf("SQL verification response did not contain expected output")
+}
+
 // ============================================================
 // Reporting
 // ============================================================
@@ -845,7 +1141,7 @@ func saveDetailedReport(rdbmsId string, logs []ApiLog) {
 var stepLabels = []string{
 	"VNet", "SecurityGroup", "Support", "Capability", "Validate",
 	"Create RDBMS", "Get RDBMS", "List RDBMS", "Create Database", "List Database",
-	"Dummy Data Test", "Delete Database", "Delete RDBMS", "Delete SecurityGroup",
+	"Remote Data I/O Test", "Internal Data I/O Test", "Delete Database", "Delete RDBMS", "Delete SecurityGroup",
 	"Delete Subnets", "Delete VNet",
 }
 
@@ -854,15 +1150,28 @@ func stepValues(r TestResult) []string {
 	return []string{
 		r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CapabilityStatus, r.ValidateStatus,
 		r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.CreateDatabaseStatus,
-		r.ListDatabaseStatus, r.DummyDataStatus, r.DeleteDatabaseStatus, r.DeleteRDBMSStatus,
+		r.ListDatabaseStatus, r.RemoteDataIOTestStatus, r.InternalDataIOTestStatus, r.DeleteDatabaseStatus, r.DeleteRDBMSStatus,
 		r.DeleteSGStatus, r.DeleteSubnetsStatus, r.DeleteVNetStatus,
 	}
 }
 
-// overallStatus reports "❌" if any step status starts with "Failed", else "✅".
-func overallStatus(steps []string) string {
-	for _, s := range steps {
-		if strings.HasPrefix(s, "Failed") {
+// overallStatus reports "❌" if any core step status starts with "Failed" or "Fail",
+// with an exception for Remote Data I/O Test on CSPs where a known console setting is required
+// or where public endpoint is N/A, so that Tumblebug's own API lifecycle success is not masked.
+func overallStatus(r TestResult) string {
+	steps := stepValues(r)
+	for i, s := range steps {
+		label := stepLabels[i]
+		if label == "Remote Data I/O Test" && strings.Contains(s, "Note:") {
+			continue
+		}
+		if label == "Remote Data I/O Test" && strings.HasPrefix(s, "N/A") {
+			continue
+		}
+		if label == "Internal Data I/O Test" && strings.HasPrefix(s, "N/A") {
+			continue
+		}
+		if strings.HasPrefix(s, "Failed") || strings.HasPrefix(s, "Fail") {
 			return "❌"
 		}
 	}
@@ -870,14 +1179,16 @@ func overallStatus(steps []string) string {
 }
 
 // statusEmoji classifies one step's status string for the matrix view:
-// ✅ success, ❌ failure, "-" skipped/unknown. Most steps report "Success"/"Failed"/
-// "Skipped" prefixes, but SupportStatus is a special case ("Supported (engines: ...)",
-// "Not Supported", "Unknown (matrix unavailable)") handled explicitly here too.
+// ✅ success/pass, ❌ failure, "-" skipped/unknown, N/A not applicable.
 func statusEmoji(s string) string {
 	switch {
-	case strings.HasPrefix(s, "Success"), strings.HasPrefix(s, "Supported"):
+	case strings.HasPrefix(s, "Success"), strings.HasPrefix(s, "Supported"), strings.HasPrefix(s, "Pass"):
 		return "✅"
-	case strings.HasPrefix(s, "Failed"), s == "Not Supported":
+	case strings.Contains(s, "Note:"):
+		return "❌ (Note)"
+	case strings.HasPrefix(s, "N/A"), strings.HasPrefix(s, "Not Supported"), strings.HasPrefix(s, "Skipped"):
+		return "N/A"
+	case strings.HasPrefix(s, "Failed"), strings.HasPrefix(s, "Fail"):
 		return "❌"
 	default:
 		return "-"
@@ -907,18 +1218,19 @@ func buildSummaryMarkdown(results []TestResult) string {
 	md.WriteString("7. **List RDBMS** — `GET /ns/{nsId}/resources/rdbms`\n")
 	md.WriteString("8. **Create Database** — `POST /ns/{nsId}/resources/rdbms/{rdbmsId}/database`\n")
 	md.WriteString("9. **List Database** — `GET /ns/{nsId}/resources/rdbms/{rdbmsId}/database`\n")
-	md.WriteString("10. **Dummy Data Test** — direct SQL write/read/verify/delete against the created database\n")
-	md.WriteString("11. **Delete Database** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}`\n")
-	md.WriteString("12. **Delete RDBMS** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
-	md.WriteString("13. **Delete SecurityGroup** — `DELETE /ns/{nsId}/resources/securityGroup/{sgId}`\n")
-	md.WriteString("14. **Delete Subnets** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}`\n")
-	md.WriteString("15. **Delete VNet** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}`\n\n")
+	md.WriteString("10. **Remote Data I/O Test** — direct SQL write/read/verify/delete from remote client over public endpoint\n")
+	md.WriteString("11. **Internal Data I/O Test** — SQL write/read/verify/delete from internal VPC network/VM\n")
+	md.WriteString("12. **Delete Database** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}/database/{dbName}`\n")
+	md.WriteString("13. **Delete RDBMS** — `DELETE /ns/{nsId}/resources/rdbms/{rdbmsId}`\n")
+	md.WriteString("14. **Delete SecurityGroup** — `DELETE /ns/{nsId}/resources/securityGroup/{sgId}`\n")
+	md.WriteString("15. **Delete Subnets** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}`\n")
+	md.WriteString("16. **Delete VNet** — `DELETE /ns/{nsId}/resources/vNet/{vNetId}`\n\n")
 	md.WriteString(fmt.Sprintf("Generated: %s\n\n---\n\n", time.Now().Format(time.RFC3339)))
 
 	md.WriteString("## Results\n\n")
 	for _, r := range results {
 		steps := stepValues(r)
-		overall := overallStatus(steps)
+		overall := overallStatus(r)
 
 		md.WriteString(fmt.Sprintf("### %s (%s) %s\n\n", r.RdbmsId, r.ConnectionName, overall))
 		md.WriteString("| Step | Result |\n")
@@ -926,7 +1238,11 @@ func buildSummaryMarkdown(results []TestResult) string {
 		for i, label := range stepLabels {
 			md.WriteString(fmt.Sprintf("| %s | %s |\n", label, steps[i]))
 		}
-		md.WriteString(fmt.Sprintf("| **Overall** | %s |\n\n", overall))
+		md.WriteString(fmt.Sprintf("| **Overall** | %s |\n", overall))
+		if r.Note != "" {
+			md.WriteString(fmt.Sprintf("| **Note** | %s |\n", r.Note))
+		}
+		md.WriteString("\n")
 	}
 	md.WriteString("---\n\n")
 	md.WriteString("### Detailed Logs\n\nSee `test-results/<rdbmsId>.md` for per-CSP API trace logs.\n")
@@ -967,10 +1283,26 @@ func buildEngineMatrixMarkdown(results []TestResult, engine string) string {
 	}
 
 	md.WriteString("| **Overall** |")
-	for _, steps := range allSteps {
-		md.WriteString(fmt.Sprintf(" %s |", overallStatus(steps)))
+	for _, r := range results {
+		md.WriteString(fmt.Sprintf(" %s |", overallStatus(r)))
 	}
 	md.WriteString("\n")
+
+	hasNotes := false
+	for _, r := range results {
+		if r.Note != "" {
+			hasNotes = true
+			break
+		}
+	}
+	if hasNotes {
+		md.WriteString("\n### Notes\n\n")
+		for _, r := range results {
+			if r.Note != "" {
+				md.WriteString(fmt.Sprintf("- **%s**: %s\n", cspLabel(r.RdbmsId), r.Note))
+			}
+		}
+	}
 
 	return md.String()
 }
