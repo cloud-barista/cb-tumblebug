@@ -2648,15 +2648,14 @@ func UpdateExistingSpecListByAvailableRegionZones(ctx context.Context, nsId stri
 		var instancesMarkedForDeletion int
 		// Check each spec instance and mark for deletion if not available in its region
 		for _, spec := range specsInUnavailableRegions {
-			// Extract region from spec ID (format: provider+region+cspSpecName)
-			parts := strings.Split(spec.Id, "+")
-			if len(parts) < 3 {
+			// Use the spec's own region field rather than parsing its ID.
+			region := spec.RegionName
+			if region == "" {
 				log.Warn().
 					Str("specId", spec.Id).
-					Msg("Invalid spec ID format - skipping")
+					Msg("Spec has no region - skipping")
 				continue
 			}
-			region := parts[1]
 
 			// Check if this spec is available in its region
 			if !availableRegions[region] {

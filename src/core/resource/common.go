@@ -57,16 +57,11 @@ var validate *validator.Validate
 // getResourceConnectionName extracts the connection name for a given resource.
 // This function is used to group resources by their CSP connection for semaphore-based processing.
 func getResourceConnectionName(nsId, resourceType, resourceId string) (string, error) {
-	// For performance, try to extract connection name from resourceId pattern first
-	// Many resources follow the pattern: {connectionName}-{resourceName}
+	// Resolve the real connection name from the resource record. Do NOT guess it from the
+	// resourceId: connection names themselves contain hyphens (e.g. "aws-ap-northeast-2")
+	// and IDs may be prefixed by an infra/namespace name, so a "{connectionName}-..." split
+	// mis-groups resources. `parts` is kept only as a last-resort fallback if the lookups fail.
 	parts := strings.Split(resourceId, "-")
-	if len(parts) >= 2 {
-		// Quick validation: check if the first part looks like a connection name
-		potentialConnName := parts[0]
-		if len(potentialConnName) > 0 && potentialConnName != "shared" {
-			return potentialConnName, nil
-		}
-	}
 
 	// For Image, CustomImage, and Spec, use PostgreSQL (GORM)
 	switch resourceType {
@@ -193,10 +188,101 @@ func init() {
 }
 
 // DelAllResources deletes all TB Resource objects of the given resourceType.
+// deleteResourceIdsParallel deletes the given resource IDs of one type in parallel,
+// grouped per CSP connection under a bounded semaphore, reusing DelResource (which
+// includes the post-deletion CSP verification). Callers do their own selection/guards
+// and hand the final delete set here, so the parallel engine lives in one place.
+func deleteResourceIdsParallel(nsId string, resourceType string, ids []string, forceFlag string) []model.ResourceDeleteResult {
+	var resultList []model.ResourceDeleteResult
+	if len(ids) == 0 {
+		return resultList
+	}
+	var mutex sync.Mutex
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(ids))
+	var errChanClosed int32
+
+	// Group resources by CSP connection to apply a per-CSP concurrency limit.
+	connectionGroups := make(map[string][]string)
+	for _, resourceId := range ids {
+		connectionName, err := getResourceConnectionName(nsId, resourceType, resourceId)
+		if err != nil {
+			log.Warn().Err(err).Str("resourceId", resourceId).Msg("Failed to get connection name, using default group")
+			connectionName = "unknown"
+		}
+		connectionGroups[connectionName] = append(connectionGroups[connectionName], resourceId)
+	}
+
+	const maxConcurrentPerCSP = 20
+	connectionSemaphores := make(map[string]chan struct{})
+	totalResources := 0
+	for connectionName := range connectionGroups {
+		connectionSemaphores[connectionName] = make(chan struct{}, maxConcurrentPerCSP)
+		totalResources += len(connectionGroups[connectionName])
+		log.Info().Msgf("Connection %s: %d %s resources", connectionName, len(connectionGroups[connectionName]), resourceType)
+	}
+	log.Info().Msgf("Starting deletion of %d %s resources across %d connections", totalResources, resourceType, len(connectionGroups))
+
+	// Process ALL connection groups in parallel; within each, bounded by its semaphore.
+	for connectionName, resourceIds := range connectionGroups {
+		for range resourceIds {
+			wg.Add(1)
+		}
+		go func(connName string, resourceList []string, semaphore chan struct{}) {
+			for _, resourceId := range resourceList {
+				go func(resourceId string) {
+					defer wg.Done()
+					semaphore <- struct{}{}
+					defer func() { <-semaphore }()
+
+					startTime := time.Now()
+					common.RandomSleep(0, 1*1000) // avoid thundering herd
+
+					success := true
+					errMessage := ""
+					if err := DelResource(nsId, resourceType, resourceId, forceFlag); err != nil {
+						success = false
+						errMessage = err.Error()
+						if atomic.LoadInt32(&errChanClosed) == 0 {
+							select {
+							case errChan <- err:
+							case <-time.After(10 * time.Millisecond):
+							default:
+							}
+						}
+					}
+
+					mutex.Lock()
+					resultList = append(resultList, model.ResourceDeleteResult{
+						ResourceType: resourceType, ResourceId: resourceId, Success: success, Message: errMessage,
+					})
+					mutex.Unlock()
+
+					deleteStatus := "[Done]"
+					if !success {
+						deleteStatus = "[Failed]"
+					}
+					log.Debug().Str("connectionName", connName).Str("resourceId", resourceId).
+						Str("status", deleteStatus).Dur("elapsed", time.Since(startTime)).Msg("Resource deletion completed")
+				}(resourceId)
+			}
+		}(connectionName, resourceIds, connectionSemaphores[connectionName])
+	}
+
+	wg.Wait()
+	if atomic.CompareAndSwapInt32(&errChanClosed, 0, 1) {
+		close(errChan)
+	}
+	for err := range errChan {
+		if err != nil {
+			log.Info().Err(err).Msg("error deleting resource")
+		}
+	}
+	return resultList
+}
+
 func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) (model.ResourceDeleteResults, error) {
 	var resultList []model.ResourceDeleteResult
-	var mutex sync.Mutex  // Protect shared slice access
-	var wg sync.WaitGroup // Synchronize all goroutines
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -216,130 +302,15 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 		return model.ResourceDeleteResults{Results: resultList}, err
 	}
 
-	// Channel to capture errors
-	errChan := make(chan error, len(resourceIdList))
-	var errChanClosed int32 // atomic flag to track if channel is closed
-
-	// Group resources by CSP connection to apply per-CSP semaphore
-	connectionGroups := make(map[string][]string)
-
-	// Group resources by their connection configuration
+	// Filter by subString, then delete the selected resources in parallel per CSP.
+	var ids []string
 	for _, resourceId := range resourceIdList {
-		// Check if the resourceId matches the subString criteria
 		if subString != "" && !strings.Contains(resourceId, subString) {
 			continue
 		}
-
-		// Get connection name for this resource (optimized to reduce KV calls)
-		connectionName, err := getResourceConnectionName(nsId, resourceType, resourceId)
-		if err != nil {
-			log.Warn().Err(err).Str("resourceId", resourceId).Msg("Failed to get connection name, using default group")
-			connectionName = "unknown"
-		}
-
-		connectionGroups[connectionName] = append(connectionGroups[connectionName], resourceId)
+		ids = append(ids, resourceId)
 	}
-
-	// Create semaphores for each connection (limit concurrent operations per CSP)
-	const maxConcurrentPerCSP = 20
-	connectionSemaphores := make(map[string]chan struct{})
-	totalResources := 0
-	for connectionName := range connectionGroups {
-		connectionSemaphores[connectionName] = make(chan struct{}, maxConcurrentPerCSP)
-		totalResources += len(connectionGroups[connectionName])
-		log.Info().Msgf("Connection %s: %d resources", connectionName, len(connectionGroups[connectionName]))
-	}
-
-	log.Info().Msgf("Starting deletion of %d resources across %d connections", totalResources, len(connectionGroups))
-
-	// Process ALL connection groups in parallel (not sequentially!)
-	for connectionName, resourceIds := range connectionGroups {
-		// Pre-increment WaitGroup counter for all resources in this connection group
-		for range resourceIds {
-			wg.Add(1)
-		}
-
-		// Launch a goroutine for each connection group to process in parallel
-		go func(connName string, resourceList []string, semaphore chan struct{}) {
-			log.Info().Msgf("Starting parallel deletion for connection %s with %d resources (max concurrent: %d)",
-				connName, len(resourceList), maxConcurrentPerCSP)
-
-			// Process each resource in this connection group
-			for _, resourceId := range resourceList {
-				// Launch a goroutine for each resource deletion
-				go func(resourceId string) {
-					defer wg.Done()
-
-					// Acquire semaphore (limit concurrent operations for this CSP)
-					semaphore <- struct{}{}
-					defer func() { <-semaphore }() // Release semaphore when done
-
-					startTime := time.Now()
-					log.Debug().Msgf("Starting deletion of %s:%s (connection: %s)", resourceType, resourceId, connName)
-
-					// Minimal random sleep to avoid thundering herd (reduced significantly)
-					common.RandomSleep(0, 1*1000)
-
-					// Attempt to delete the resource
-					success := true
-					errMessage := ""
-
-					err := DelResource(nsId, resourceType, resourceId, forceFlag)
-					if err != nil {
-						success = false
-						errMessage = err.Error()
-
-						// Safe error channel send - check if channel is still open
-						if atomic.LoadInt32(&errChanClosed) == 0 {
-							select {
-							case errChan <- err:
-								// Successfully sent error to channel
-							case <-time.After(10 * time.Millisecond):
-								// Channel is likely blocked, skip sending
-							default:
-								// Channel is full, skip sending
-							}
-						}
-					}
-
-					// Safely append the result to resultList using mutex
-					mutex.Lock()
-					resultList = append(resultList, model.ResourceDeleteResult{
-						ResourceType: resourceType,
-						ResourceId:   resourceId,
-						Success:      success,
-						Message:      errMessage,
-					})
-					mutex.Unlock()
-
-					deleteStatus := "[Done]"
-					if !success {
-						deleteStatus = "[Failed]"
-					}
-					elapsedTime := time.Since(startTime)
-					log.Debug().Str("connectionName", connName).Str("resourceId", resourceId).
-						Str("status", deleteStatus).Dur("elapsed", elapsedTime).Msg("Resource deletion completed")
-				}(resourceId)
-			}
-		}(connectionName, resourceIds, connectionSemaphores[connectionName])
-	}
-
-	// Wait for all goroutines to complete
-	log.Info().Msgf("Waiting for %d resource deletion tasks to complete", totalResources)
-	wg.Wait()
-	log.Info().Msgf("All %d resource deletion tasks completed", totalResources)
-
-	// Safely close the error channel with atomic flag
-	if atomic.CompareAndSwapInt32(&errChanClosed, 0, 1) {
-		close(errChan)
-	}
-
-	// Collect any errors from the error channel
-	for err := range errChan {
-		if err != nil {
-			log.Info().Err(err).Msg("error deleting resource")
-		}
-	}
+	resultList = deleteResourceIdsParallel(nsId, resourceType, ids, forceFlag)
 
 	log.Info().Msgf("DelAllResources completed. Total results: %d", len(resultList))
 	for i, result := range resultList {
@@ -3588,7 +3559,13 @@ func DeleteSharedResources(nsId string, dryRun bool) (model.ResourceDeleteResult
 	}
 
 	// release deletes (or, in dryRun, reports) only resources with no associated objects.
+	// release selects the deletable resources of one type (those with no associated objects),
+	// then deletes them in parallel per CSP via the shared engine — while the caller keeps the
+	// dependency-ordered type staging (SG -> SSHKey -> VNet) by calling release() per type.
+	// The association check is done up front: types are staged, so by the time a type runs its
+	// earlier-stage dependencies are already gone and the association state is stable.
 	release := func(resourceType string, ids []string) {
+		var deletable []string
 		for _, id := range ids {
 			assoc, assocErr := GetAssociatedObjectList(nsId, resourceType, id)
 			if assocErr != nil {
@@ -3606,12 +3583,10 @@ func DeleteSharedResources(nsId string, dryRun bool) (model.ResourceDeleteResult
 				})
 				continue
 			}
-			delErr := DelResource(nsId, resourceType, id, "false")
-			res := model.ResourceDeleteResult{ResourceType: resourceType, ResourceId: id, Success: delErr == nil}
-			if delErr != nil {
-				res.Message = delErr.Error()
-			}
-			output.Results = append(output.Results, res)
+			deletable = append(deletable, id)
+		}
+		if len(deletable) > 0 {
+			output.Results = append(output.Results, deleteResourceIdsParallel(nsId, resourceType, deletable, "false")...)
 		}
 	}
 

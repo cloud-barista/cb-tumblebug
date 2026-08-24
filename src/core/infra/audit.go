@@ -539,7 +539,7 @@ func guardOrphansBeforeDelete(nsId, infraId, option string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("infra %s: %d VM(s) still alive at the CSP after direct terminate; retry deletion later or use option=force", infraId, alive)
+	return fmt.Errorf("infra %s: %d VM(s) still alive at the CSP after direct terminate; retry deletion later once the CSP finishes terminating them. Do NOT use option=force while VMs are alive — it drops the CB-TB records but leaves the VMs running and billing as orphans", infraId, alive)
 }
 
 // eligibleForAllMode limits cleanResiduals=all to unnamed VM-adjacent leftovers (IPs, NICs, disks).

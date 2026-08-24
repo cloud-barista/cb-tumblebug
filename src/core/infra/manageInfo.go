@@ -3204,7 +3204,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	// Check Infra status is Terminated so that approve deletion
 	infraStatus, _ := GetInfraStatus(nsId, infraId)
 	if infraStatus == nil {
-		err := fmt.Errorf("Infra %s status nil, Deletion is not allowed (use option=force for force deletion)", infraId)
+		err := fmt.Errorf("Infra %s status is unavailable, so deletion is not allowed. Use option=terminate to refine and terminate it before deletion; avoid option=force unless you must — it can leave orphaned (billable) CSP resources", infraId)
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err
@@ -3282,7 +3282,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 			// The caller should retry deletion after a while.
 			err = fmt.Errorf("Infra %s is still %s — termination is in progress. Please retry deletion in a few minutes", infraId, infraStatus.Status)
 		} else {
-			err = fmt.Errorf("Infra %s is %s, which is not a deletable status (Terminated/Undefined/Failed/Preparing/Prepared/Empty). Use option=force for forced deletion", infraId, infraStatus.Status)
+			err = fmt.Errorf("Infra %s is %s, which is not directly deletable. Use option=terminate to safely clean it up: it refines Failed/Undefined nodes (terminating any that still exist on the CSP) and terminates the rest before deletion. Avoid option=force unless you must — it drops the CB-TB records without terminating the CSP resources and can leave billable orphans", infraId, infraStatus.Status)
 		}
 		log.Error().Err(err).Msg("")
 		if option != "force" {

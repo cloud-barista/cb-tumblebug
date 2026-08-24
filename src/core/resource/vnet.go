@@ -96,35 +96,18 @@ func ValidateVNetReq(vNetReq *model.VNetReq) error {
 		return err
 	}
 
-	// * 3. Validates that each subnet's zone is valid in the region
-	// TODO: Update the validation logic
-	// It's a temporary validation logic due to the connection name pattern
-
-	// Split the connection name into provider and region/zone
-	parts := strings.SplitN(vNetReq.ConnectionName, "-", 2)
-	provider := parts[0]
-	regionZone := parts[1]
-
-	// Get the region list
-	regionsObj, err := common.GetRegions(provider)
+	// * 3. Validates that each subnet's zone is valid in the region.
+	// Resolve the region detail from the connection's config (its actual provider/region),
+	// not by splitting the connection name.
+	connConfig, err := common.GetConnConfig(vNetReq.ConnectionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-
-	// Try to match and get the region detail
-	var regionDetail model.RegionDetail
-	for _, region := range regionsObj.Regions {
-		exists := strings.HasPrefix(regionZone, region.RegionName)
-		if exists {
-			regionDetail = region
-			break
-		}
-	}
-
-	// Check if the region detail exists or not
+	provider := connConfig.ProviderName
+	regionDetail := connConfig.RegionDetail
 	if regionDetail.RegionName == "" && len(regionDetail.Zones) == 0 {
-		err := fmt.Errorf("invalid region/zone: %s", regionZone)
+		err := fmt.Errorf("invalid region/zone for connection: %s", vNetReq.ConnectionName)
 		log.Error().Err(err).Msg("")
 		return err
 	}

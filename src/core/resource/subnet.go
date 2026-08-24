@@ -57,34 +57,16 @@ func ValidateSubnetReq(subnetReq *model.SubnetReq, existingVNet model.VNetInfo) 
 		return err
 	}
 
-	// Validate zone in each subnet
-	// TODO: Update the validation logic
-	// It's a temporary validation logic due to the connection name pattern
-	// Split the connection name into provider and region/zone
-	parts := strings.SplitN(existingVNet.ConnectionName, "-", 2)
-	provider := parts[0]
-	regionZone := parts[1]
-
-	// Get the region list
-	regionsObj, err := common.GetRegions(provider)
+	// Validate zone in each subnet. Resolve the region detail from the connection's config
+	// (its actual provider/region), not by splitting the connection name.
+	connConfig, err := common.GetConnConfig(existingVNet.ConnectionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-
-	// Try to match and get the region detail
-	var regionDetail model.RegionDetail
-	for _, region := range regionsObj.Regions {
-		exists := strings.HasPrefix(regionZone, region.RegionName)
-		if exists {
-			regionDetail = region
-			break
-		}
-	}
-
-	// Check if the region detail exists or not
+	regionDetail := connConfig.RegionDetail
 	if regionDetail.RegionName == "" && len(regionDetail.Zones) == 0 {
-		err := fmt.Errorf("invalid region/zone: %s", regionZone)
+		err := fmt.Errorf("invalid region/zone for connection: %s", existingVNet.ConnectionName)
 		log.Error().Err(err).Msg("")
 		return err
 	}
@@ -1534,30 +1516,16 @@ func GetFirstNZones(connectionName string, firstN int) ([]string, int, error) {
 	// TODO: Update the validation logic
 	// It's a temporary validation logic due to the connection name pattern
 
-	// Splite the connectionName into provider and region
-	parts := strings.SplitN(connectionName, "-", 2)
-	provider := parts[0]
-	regionZone := parts[1]
-
-	// Get the region details
-	regionsObj, err := common.GetRegions(provider)
+	// Resolve the region detail from the connection's config, not by splitting its name.
+	connConfig, err := common.GetConnConfig(connectionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, 0, err
 	}
-
-	// Try to match and get the region detail
-	var regionDetail model.RegionDetail
-	for _, region := range regionsObj.Regions {
-		exists := strings.HasPrefix(regionZone, region.RegionName)
-		if exists {
-			regionDetail = region
-			break
-		}
-	}
+	regionDetail := connConfig.RegionDetail
 	// Check if the region detail exists or not
 	if regionDetail.RegionName == "" && len(regionDetail.Zones) == 0 {
-		err := fmt.Errorf("invalid region/zone: %s", regionZone)
+		err := fmt.Errorf("invalid region/zone for connection: %s", connectionName)
 		log.Error().Err(err).Msg("")
 		return nil, 0, err
 	}
