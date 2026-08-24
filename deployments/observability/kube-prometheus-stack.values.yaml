@@ -3,7 +3,7 @@
 # runs, with a modest footprint on the same (dev/kind) cluster it observes.
 #
 # Enable:  make k-observability-on      Disable: make k-observability-off
-# Grafana: make k-observability-forward (http://localhost:3000, admin / cbtumblebug)
+# Grafana: make k-port-forward (http://localhost:3000, admin / admin)
 
 # Alertmanager is not needed to "see trends" — disable it to save resources.
 alertmanager:
@@ -74,10 +74,24 @@ grafana:
       enabled: true
       searchNamespace: ALL
       label: grafana_dashboard
+  # Loki datasource for log-derived interaction metrics (inbound API, cb-spider calls,
+  # direct-SDK calls). Provisioned only when the loki-stack release is installed alongside
+  # (make k-observability-on installs both); harmless if Loki is absent — panels show empty.
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
+      jsonData:
+        maxLines: 1000
+  # Grafana here bundles many plugins + all kube-prometheus dashboards, and our Loki panels
+  # parse logs (json/regexp/unwrap) — 512Mi OOMKills it, which surfaces as flaky "No data"
+  # (the heavier Loki queries fail first under memory pressure). 1Gi keeps it stable.
   resources:
     requests:
       cpu: 50m
-      memory: 128Mi
+      memory: 256Mi
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 1Gi

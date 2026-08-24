@@ -1,0 +1,49 @@
+# Lean grafana/loki-stack values: Loki (log store) + Promtail (collector) only.
+#
+# Purpose: turn cb-tumblebug's own logs into interaction signals and correlate them with
+# resource usage on one Grafana timeline. Three layers are parsed from the log stream:
+#   - inbound API requests    (zerologger "request", Method=/URI=/status=/latency=)
+#   - cb-spider calls         (client "Internal Call Start/OK/Failed", Method=/URI=/latency=)
+#   - direct-SDK calls        (csp "Direct SDK Start/OK/Failed", op=/region=/latency=)
+#
+# Grafana and Prometheus come from kube-prometheus-stack, so they are disabled here; Loki is
+# wired as a Grafana datasource by kube-prometheus-stack.values.yaml (additionalDataSources).
+#
+# Enable:  make k-observability-on      Disable: make k-observability-off
+
+loki:
+  enabled: true
+  isDefault: false
+  # Ephemeral store, matching the rest of the lean stack — no PVC. Disk (and the node's
+  # ephemeral storage) naturally bounds how much log history is kept for a dev session.
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Promtail tails all pod logs on the node and ships them to Loki, labeled by namespace/pod/
+# container — so cb-tumblebug and cb-spider logs are queryable without any app change.
+promtail:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# Provided by kube-prometheus-stack — don't deploy duplicates.
+grafana:
+  enabled: false
+prometheus:
+  enabled: false
+filebeat:
+  enabled: false
+fluent-bit:
+  enabled: false

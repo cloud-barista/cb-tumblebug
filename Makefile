@@ -173,6 +173,9 @@ DEV_ASSETS_FLAG = $(if $(wildcard $(K8S_ASSETS_VALUES)),-f $(K8S_ASSETS_VALUES))
 K8S_OBS_NS := monitoring
 K8S_OBS_RELEASE := mon
 K8S_OBS_VALUES := deployments/observability/kube-prometheus-stack.values.yaml
+# Logs stack (Loki + Promtail): turns cb-tumblebug's own logs into interaction signals
+K8S_LOKI_RELEASE := loki
+K8S_LOKI_VALUES := deployments/observability/loki-stack.values.yaml
 K8S_ASSETS_CM ?= cb-tumblebug-assets
 # Everything under assets/ that the server reads at runtime. Excludes assets.dump.gz
 # (34MB DB dump, host-side only) which would blow past the 1MiB ConfigMap limit.
@@ -849,10 +852,11 @@ k-dns-check: ## Show which DNS the cluster forwards to, and resolve a CSP endpoi
 K8S_DNS_PROBE_HOSTS ?= ec2.ap-northeast-2.amazonaws.com jp-tok.iaas.cloud.ibm.com login.microsoftonline.com
 
 k-observability-on: ## Enable the metrics stack (Prometheus + Grafana + exporters) to watch cb-*/etcd/node load
-	@echo "Adding/updating helm repos (prometheus-community, metrics-server)..."
+	@echo "Adding/updating helm repos (prometheus-community, metrics-server, grafana)..."
 	@$(HELM) repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null 2>&1 || true
 	@$(HELM) repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/ >/dev/null 2>&1 || true
-	@$(HELM) repo update prometheus-community metrics-server >/dev/null 2>&1 || true
+	@$(HELM) repo add grafana https://grafana.github.io/helm-charts >/dev/null 2>&1 || true
+	@$(HELM) repo update prometheus-community metrics-server grafana >/dev/null 2>&1 || true
 	@printf '%b\n' '$(KD)Installing metrics-server (enables kubectl top; kind needs --kubelet-insecure-tls)...$(KX)'
 	@$(HELM) upgrade --install metrics-server metrics-server/metrics-server -n kube-system \
 		--set 'args[0]=--kubelet-insecure-tls' --wait --timeout 3m >/dev/null
@@ -860,6 +864,9 @@ k-observability-on: ## Enable the metrics stack (Prometheus + Grafana + exporter
 	@printf '%b\n' '$(KD)Installing kube-prometheus-stack into $(K8S_OBS_NS) (lean) — this can take a few minutes...$(KX)'
 	@$(HELM) upgrade --install $(K8S_OBS_RELEASE) prometheus-community/kube-prometheus-stack \
 		-n $(K8S_OBS_NS) -f $(K8S_OBS_VALUES) --wait --timeout 8m
+	@printf '%b\n' '$(KD)Installing loki-stack (Loki + Promtail) for log-derived interaction metrics...$(KX)'
+	@$(HELM) upgrade --install $(K8S_LOKI_RELEASE) grafana/loki-stack \
+		-n $(K8S_OBS_NS) -f $(K8S_LOKI_VALUES) --wait --timeout 5m
 	@printf '%b\n' '$(KD)Provisioning cb-tumblebug dashboards...$(KX)'
 	@$(KUBECTL) create configmap cb-dashboards -n $(K8S_OBS_NS) \
 		--from-file=deployments/observability/dashboards/ \
@@ -869,6 +876,7 @@ k-observability-on: ## Enable the metrics stack (Prometheus + Grafana + exporter
 
 k-observability-off: ## Remove the metrics stack (frees resources)
 	@$(HELM) uninstall $(K8S_OBS_RELEASE) -n $(K8S_OBS_NS) 2>/dev/null || true
+	@$(HELM) uninstall $(K8S_LOKI_RELEASE) -n $(K8S_OBS_NS) 2>/dev/null || true
 	@$(HELM) uninstall metrics-server -n kube-system 2>/dev/null || true
 	@$(KUBECTL) delete ns $(K8S_OBS_NS) --ignore-not-found >/dev/null 2>&1 || true
 	@printf '%b\n' '$(KG)\xe2\x9c\x94 Observability removed$(KX)'

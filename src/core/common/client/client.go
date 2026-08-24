@@ -190,6 +190,22 @@ func shouldTruncateBody(body []byte) bool {
 	return len(body) > MaxDebugBodyLength
 }
 
+// singleLineJSON returns body as compact, single-line JSON suitable for RawJSON logging.
+// External request/response bodies may be pretty-printed (embedded newlines), which would
+// split one log entry across several lines and break line-based collectors (e.g. Loki's
+// per-line JSON parsing). Valid JSON is compacted; non-JSON is encoded as a JSON string so
+// the log line always stays single-line and parseable.
+func singleLineJSON(body []byte) []byte {
+	var buf bytes.Buffer
+	if json.Compact(&buf, body) == nil {
+		return buf.Bytes()
+	}
+	if s, err := json.Marshal(string(body)); err == nil {
+		return s
+	}
+	return []byte(`"<unloggable body>"`)
+}
+
 // createTruncationMessage creates a message indicating body was truncated
 func createTruncationMessage(bodyLength int) string {
 	// Fast integer approximation: ~7 bytes per word in JSON
@@ -368,7 +384,7 @@ func ExecuteHttpRequest[B any, T any](
 				Str("URI", url)
 			if useBody && body != nil {
 				if bodyBytes, err := json.Marshal(body); err == nil {
-					requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+					requestLogEvent = requestLogEvent.RawJSON("requestBody", singleLineJSON(bodyBytes))
 				}
 			}
 			requestLogEvent.Msg("Internal Call Start")
@@ -378,7 +394,7 @@ func ExecuteHttpRequest[B any, T any](
 				Str("URI", url)
 			if useBody && body != nil {
 				if bodyBytes, err := json.Marshal(body); err == nil {
-					requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+					requestLogEvent = requestLogEvent.RawJSON("requestBody", singleLineJSON(bodyBytes))
 				}
 			}
 			requestLogEvent.Msg("Internal Call Start")
@@ -573,7 +589,7 @@ func ExecuteHttpRequest[B any, T any](
 				Int("status", resp.StatusCode())
 
 			if len(resp.Body()) > 0 {
-				errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+				errorLogEvent = errorLogEvent.RawJSON("responseBody", singleLineJSON(resp.Body()))
 			}
 			errorLogEvent.Msg("Internal Call Error")
 		} else {
@@ -595,11 +611,11 @@ func ExecuteHttpRequest[B any, T any](
 						Str("URI", url).
 						Dur("latency", duration).
 						Int("status", resp.StatusCode()).
-						RawJSON("responseBody", resp.Body()).
+						RawJSON("responseBody", singleLineJSON(resp.Body())).
 						Msg("Internal Call Error (Full Response)")
 				} else {
 					// Body is small enough for debug level
-					errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+					errorLogEvent = errorLogEvent.RawJSON("responseBody", singleLineJSON(resp.Body()))
 				}
 			}
 			errorLogEvent.Msg("Internal Call Error")
@@ -627,7 +643,7 @@ func ExecuteHttpRequest[B any, T any](
 				Int("status", resp.StatusCode())
 
 			if len(resp.Body()) > 0 {
-				successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+				successLogEvent = successLogEvent.RawJSON("responseBody", singleLineJSON(resp.Body()))
 			}
 			successLogEvent.Msg("Internal Call OK")
 		} else {
@@ -649,11 +665,11 @@ func ExecuteHttpRequest[B any, T any](
 						Str("URI", url).
 						Dur("latency", duration).
 						Int("status", resp.StatusCode()).
-						RawJSON("responseBody", resp.Body()).
+						RawJSON("responseBody", singleLineJSON(resp.Body())).
 						Msg("Internal Call OK (Full Response)")
 				} else {
 					// Body is small enough for debug level
-					successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+					successLogEvent = successLogEvent.RawJSON("responseBody", singleLineJSON(resp.Body()))
 				}
 			}
 			successLogEvent.Msg("Internal Call OK")

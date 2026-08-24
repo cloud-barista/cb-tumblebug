@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	csptypes "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
-	"github.com/rs/zerolog/log"
 )
 
 // BatchTagHandler defines the function signature for CSP-specific batch tag upsert.
@@ -60,15 +59,10 @@ func TryBatchUpsertTags(ctx context.Context, providerName, region, zone, cspReso
 		return true, nil // nothing to sync
 	}
 
-	log.Debug().
-		Str("provider", platform).
-		Str("region", region).
-		Str("zone", zone).
-		Str("cspResourceId", cspResourceId).
-		Int("tagCount", len(tags)).
-		Msg("[CSP] Batch upsert tags via direct CSP API")
-
-	if err := handler(ctx, region, zone, cspResourceId, resourceType, tags); err != nil {
+	dc := beginDirect(platform, "tags", region, len(tags))
+	err := handler(ctx, region, zone, cspResourceId, resourceType, tags)
+	dc.end(err)
+	if err != nil {
 		return false, err
 	}
 
