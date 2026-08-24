@@ -168,6 +168,11 @@ DEV_IMAGE_FLAGS = $(foreach f,$(wildcard deployments/helm/cb-tumblebug/values-de
 # Local assets/ overlaid via ConfigMap instead of the image copy (see k-assets)
 K8S_ASSETS_VALUES := deployments/helm/cb-tumblebug/values-dev-assets.yaml
 DEV_ASSETS_FLAG = $(if $(wildcard $(K8S_ASSETS_VALUES)),-f $(K8S_ASSETS_VALUES))
+
+# Observability (optional metrics stack: Prometheus + Grafana + exporters)
+K8S_OBS_NS := monitoring
+K8S_OBS_RELEASE := mon
+K8S_OBS_VALUES := deployments/observability/kube-prometheus-stack.values.yaml
 K8S_ASSETS_CM ?= cb-tumblebug-assets
 # Everything under assets/ that the server reads at runtime. Excludes assets.dump.gz
 # (34MB DB dump, host-side only) which would blow past the 1MiB ConfigMap limit.
@@ -403,15 +408,19 @@ k-clean: ## Full K8s reset: uninstall + delete PVCs and OpenBao key Secret
 	@printf '%b\n' '$(KG)\xe2\x9c\x94 Cleaned.$(KX) Re-deploy with: $(KC)make k-up$(KX) then $(KC)make k-init$(KX)'
 	@printf '%b\n' '$(KD)(a kind cluster is kept; remove with: kind delete cluster --name $(KIND_CLUSTER_NAME))$(KX)'
 
-k-port-forward: ## Start port-forwards for API (1323) and MapUI (1324); idempotent (restarts stale ones)
+k-port-forward: ## Start port-forwards for API (1323), MapUI (1324) + Grafana (3000, if observability is on); idempotent
 	@$(MAKE) --no-print-directory k-port-forward-stop
 	@$(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug 1323:1323 >/dev/null 2>&1 &
 	@$(KUBECTL) get svc cb-mapui -n $(K8S_NAMESPACE) >/dev/null 2>&1 && \
 		{ $(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-mapui 1324:1324 >/dev/null 2>&1 & } || true
+	@$(KUBECTL) get svc $(K8S_OBS_RELEASE)-grafana -n $(K8S_OBS_NS) >/dev/null 2>&1 && \
+		{ $(KUBECTL) port-forward -n $(K8S_OBS_NS) svc/$(K8S_OBS_RELEASE)-grafana 3000:80 >/dev/null 2>&1 & } || true
 	@sleep 2
 	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Port-forwards started$(KX)'
 	@printf '%b\n' '  API / Swagger : $(KC)http://localhost:1323/tumblebug/api$(KX)'
 	@printf '%b\n' '  MapUI         : $(KC)http://localhost:1324$(KX)'
+	@$(KUBECTL) get svc $(K8S_OBS_RELEASE)-grafana -n $(K8S_OBS_NS) >/dev/null 2>&1 && \
+		printf '%b\n' '  Grafana       : $(KC)http://localhost:3000$(KX) $(KD)(admin / admin \xe2\x80\x94 set on first login)$(KX)' || true
 	@printf '%b\n' '$(KD)Stop with: make k-port-forward-stop$(KX)'
 	@$(KUBECTL) get svc cb-tumblebug-mcp-server -n $(K8S_NAMESPACE) >/dev/null 2>&1 && \
 		printf '%b\n' 'MCP is enabled \xe2\x80\x94 connection guide: $(KC)make k-info$(KX)' || true
@@ -775,7 +784,7 @@ k-token: ## Create an admin token file for K8s UIs like Headlamp (cluster-admin;
 
 k-port-forward-stop: ## Stop this deployment's port-forwards incl. the gateway entrypoint (others untouched)
 	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && / port-forward / && \
-		(/ $(K8S_NAMESPACE) / || (/envoy-gateway-system/ && /cb-tumblebug-gateway/)) {print $$1}' | xargs); \
+		(/ $(K8S_NAMESPACE) / || (/envoy-gateway-system/ && /cb-tumblebug-gateway/) || (/ $(K8S_OBS_NS) / && /grafana/)) {print $$1}' | xargs); \
 	if [ -n "$$pids" ]; then \
 		echo "Stopping port-forwards for this deployment (PID: $$pids)"; \
 		kill $$pids 2>/dev/null || true; \
@@ -839,6 +848,46 @@ k-dns-check: ## Show which DNS the cluster forwards to, and resolve a CSP endpoi
 
 K8S_DNS_PROBE_HOSTS ?= ec2.ap-northeast-2.amazonaws.com jp-tok.iaas.cloud.ibm.com login.microsoftonline.com
 
+k-observability-on: ## Enable the metrics stack (Prometheus + Grafana + exporters) to watch cb-*/etcd/node load
+	@echo "Adding/updating helm repos (prometheus-community, metrics-server)..."
+	@$(HELM) repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null 2>&1 || true
+	@$(HELM) repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/ >/dev/null 2>&1 || true
+	@$(HELM) repo update prometheus-community metrics-server >/dev/null 2>&1 || true
+	@printf '%b\n' '$(KD)Installing metrics-server (enables kubectl top; kind needs --kubelet-insecure-tls)...$(KX)'
+	@$(HELM) upgrade --install metrics-server metrics-server/metrics-server -n kube-system \
+		--set 'args[0]=--kubelet-insecure-tls' --wait --timeout 3m >/dev/null
+	@$(KUBECTL) get ns $(K8S_OBS_NS) >/dev/null 2>&1 || $(KUBECTL) create ns $(K8S_OBS_NS)
+	@printf '%b\n' '$(KD)Installing kube-prometheus-stack into $(K8S_OBS_NS) (lean) — this can take a few minutes...$(KX)'
+	@$(HELM) upgrade --install $(K8S_OBS_RELEASE) prometheus-community/kube-prometheus-stack \
+		-n $(K8S_OBS_NS) -f $(K8S_OBS_VALUES) --wait --timeout 8m
+	@printf '%b\n' '$(KD)Provisioning cb-tumblebug dashboards...$(KX)'
+	@$(KUBECTL) create configmap cb-dashboards -n $(K8S_OBS_NS) \
+		--from-file=deployments/observability/dashboards/ \
+		--dry-run=client -o yaml | $(KUBECTL) apply -f - >/dev/null
+	@$(KUBECTL) label configmap cb-dashboards -n $(K8S_OBS_NS) grafana_dashboard=1 --overwrite >/dev/null
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Observability enabled$(KX) $(KD)\xe2\x80\x94 open Grafana: $(KC)make k-port-forward$(KX)$(KD) (admin / admin — set your own on first login; resets on pod restart)$(KX)'
+
+k-observability-off: ## Remove the metrics stack (frees resources)
+	@$(HELM) uninstall $(K8S_OBS_RELEASE) -n $(K8S_OBS_NS) 2>/dev/null || true
+	@$(HELM) uninstall metrics-server -n kube-system 2>/dev/null || true
+	@$(KUBECTL) delete ns $(K8S_OBS_NS) --ignore-not-found >/dev/null 2>&1 || true
+	@printf '%b\n' '$(KG)\xe2\x9c\x94 Observability removed$(KX)'
+
+k-images: ## Show every workload's running image (apps + infra) and whether it is a local build or released
+	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Component images$(KX) $(KD)(local-dev = local build via k-build; revert: make k-build-off)$(KX)'
+	@rows=$$($(KUBECTL) get deploy,statefulset -n $(K8S_NAMESPACE) -o jsonpath='{range .items[*]}{.metadata.name}={.spec.template.spec.containers[0].image}{"\n"}{end}' 2>/dev/null); \
+	if [ -z "$$rows" ]; then printf '%b\n' '  $(KD)(no workloads \xe2\x80\x94 run $(KC)make k-up$(KD))$(KX)'; else \
+	echo "$$rows" | while IFS='=' read -r name img; do \
+		[ -n "$$img" ] || continue; \
+		case "$$img" in \
+			*:local-dev) label='$(KY)local build$(KX)' ;; \
+			*)           label='$(KG)released$(KX)' ;; \
+		esac; \
+		printf '  %b%-26s%b %-42s %b\n' '$(KC)' "$$name" '$(KX)' "$$img" "$$label"; \
+	done; fi
+	@ovr=$$(ls deployments/helm/cb-tumblebug/values-dev-image-*.yaml 2>/dev/null | sed 's|.*/values-dev-image-||; s|\.yaml$$||' | paste -sd' ' -); \
+	if [ -n "$$ovr" ]; then printf '%b\n' "  $(KY)\xe2\x9a\xa0 build-mode override active$(KX) $(KD)(kept across k-up: $$ovr)$(KX)"; fi
+
 k-status: ## Show K8s deployment status (release/pods/services/port-forwards)
 	@if $(HELM) status $(HELM_RELEASE) -n $(K8S_NAMESPACE) >/dev/null 2>&1; then \
 		printf '%b' '$(KB)$(KC)\xe2\x96\x8c Helm release$(KX) '; \
@@ -847,6 +896,8 @@ k-status: ## Show K8s deployment status (release/pods/services/port-forwards)
 	else \
 		printf '%b\n' '$(KY)\xe2\x96\x8c Helm release: not installed$(KX) \xe2\x80\x94 run $(KC)make k-up$(KX)'; \
 	fi
+	@echo ""
+	@$(MAKE) --no-print-directory k-images
 	@echo ""
 	@$(KUBECTL) get pods,svc -n $(K8S_NAMESPACE) 2>/dev/null || true
 	@echo ""
@@ -997,4 +1048,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-diagnose k-preflight-host k-diagnose-host
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host
