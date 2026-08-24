@@ -1206,7 +1206,17 @@ if run_load_templates:
                     if resp.status_code == 200:
                         print(Fore.GREEN + f"  ✅ Template loaded: {template_name} (type: {template_type}, ns: {ns_id})")
                     elif "already exists" in resp.text:
-                        print(Fore.CYAN + f"  ℹ️  Template already exists: {template_name} (type: {template_type}, ns: {ns_id})")
+                        # Already present: update it in place (PUT, id == name) so re-running init
+                        # refreshes edited template files instead of silently keeping the old copy.
+                        put_url = f"{url}/{template_name}"
+                        put_resp = requests.put(put_url, json=template_data, headers=HEADERS, timeout=30)
+                        if put_resp.status_code == 429:
+                            time.sleep(1)
+                            put_resp = requests.put(put_url, json=template_data, headers=HEADERS, timeout=30)
+                        if put_resp.status_code == 200:
+                            print(Fore.GREEN + f"  🔄 Template updated: {template_name} (type: {template_type}, ns: {ns_id})")
+                        else:
+                            print(Fore.RED + f"  ❌ Failed to update template {template_name}: {put_resp.text}")
                     else:
                         print(Fore.RED + f"  ❌ Failed to load template {template_name}: {resp.text}")
                 except Exception as e:
