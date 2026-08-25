@@ -1,7 +1,7 @@
 # Configuration for RDBMS (Relational Database Management System) of Cloud Service Providers (CSPs)
 # This file defines storage types, DBMS requirements, and database requirements for each CSP
 
-# Last Updated: 2026-08-19
+# Last Updated: 2026-08-25
 # Source: CB-Spider storage-type-test (2026-08-03), CB-Spider v0.12.44 RDBMS/MariaDB test suites
 # and wiki RDBMS Management Guide. Field naming (dbInstanceSpec, adminUserName/adminUserPassword)
 # reflects Tumblebug's DBInstanceSpec model and Spider's DBSpec contract. CB-Spider v0.13.0 was diffed against
@@ -542,9 +542,9 @@ dbms:
         defaultPort: 3306
         referenceEngineVersion: "MYSQL_V8408"
         referenceDBInstanceSpec: m2.c2m4
-        note: "Subnet with explicit Zone (e.g. kr-pub-a) required for RDS placement; behavior when Zone is omitted during subnet creation is currently under investigation with the CB-Spider team. Storage type options are queried dynamically from NHN Cloud RDS API.
+        note: "Storage type options are queried dynamically from NHN Cloud RDS API.
           Reference values per CB-Spider's rdbms-mysql-test README (verified Available with PublicAccess,
-          2026-08-24)."
+          2026-08-25)."
       mariadb:
         minStorageSize: 20
         defaultPort: 3306

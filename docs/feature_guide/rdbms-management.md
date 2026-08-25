@@ -61,8 +61,8 @@ Some CSPs run internal processing during create/delete that CB-Spider's own API 
 report accurately — this section covers the resulting defensive logic and which CSPs each part
 is for.
 
-- **Create (`ConfirmRDBMSCreated`)**: polls every 10s for up to 5 minutes until `Available`.
-  - AWS: returns `Creating` immediately, needing the poll.
+- **Create (`ConfirmRDBMSCreated`)**: polls every 20s for up to 10 minutes (30 attempts) until `Available`.
+  - AWS: returns `Creating` immediately, needing the poll (RDS MySQL creation typically takes 5–7 minutes).
   - IBM: returns `Creating` and variable creation time.
   - Alibaba: can return `Error` transiently before settling into `Available`.
 
@@ -89,7 +89,7 @@ sequenceDiagram
     User->>TB: 2. POST /ns/{nsId}/resources/rdbms/validate (dry run)
     TB-->>User: resolved request (autoFillDefaults applied, if set)
     User->>TB: 3. POST /ns/{nsId}/resources/rdbms
-    Note over TB: blocks internally, polling every 10s<br/>(up to 5 min) until Status reaches Available
+    Note over TB: blocks internally, polling every 20s<br/>(up to 10 min) until Status reaches Available
     TB-->>User: RDBMSInfo (Status: Available or Failed)
     User->>TB: 4. POST /ns/{nsId}/resources/rdbms/{rdbmsId}/database
     User->>TB: 5. GET .../database (confirm, X-Admin-User-Password optional)
@@ -149,7 +149,7 @@ only after minutes of CSP provisioning.
 ### CSP Capability Summary (MySQL)
 
 `DB Op. Method` — `cspNativeApi` (CSP-native database API) or `sqlFallback` (direct SQL via the
-admin login; see CSP-Specific Risks and Notes for the network-reachability caveat).
+admin login; see [CSP-Specific Requirements and Constraints](#csp-specific-requirements-and-constraints) for the network-reachability caveat).
 
 | CSP       | Engine Version | DB Spec                                         | Storage            | Requires Subnet | Requires SG | Storage Type Selectable | Tag Support | DB Op. Method |
 | --------- | -------------- | ----------------------------------------------- | ------------------ | :-------------: | :---------: | :---------------------: | :---------: | ------------- |
@@ -202,17 +202,17 @@ constraint recorded.
 
 About a caller's own application or test client connecting straight to the database endpoint via MySQL wire protocol (port 3306) — distinct from Tumblebug/Spider's REST-based database management (`DB Op. Method`).
 
-| CSP       | External Public Access  | Internal (VPC) Access | Requires TLS | Reachability Constraints & Evidence                                                                                                                                                                                                                              |
-| --------- | :---------------------: | :-------------------: | :----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AWS       |         🟢 Pass         |     🟢 Supported      |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                  |
-| Azure     |         🟢 Pass         |     🟢 Supported      |     Yes      | Plain rejected (`Error 3159 ... require_secure_transport=ON`); requires TLS (`tls=preferred` or `true`).                                                                                                                                                         |
-| GCP       |         🟢 Pass         |     🟢 Supported      |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                  |
-| Alibaba   |      🟡 Restricted      |     🟢 Supported      |      —       | External access requires whitelist and Public IP binding on Alibaba RDS.                                                                                                                                                                                         |
-| Tencent   |      🟡 Restricted      |     🟢 Supported      |      —       | External access requires Public Domain activation in Tencent console.                                                                                                                                                                                            |
-| IBM       |         🟢 Pass         |     🟢 Supported      |     Yes      | Public endpoint supported; TLS required (`*.databases.appdomain.cloud`).                                                                                                                                                                                         |
-| OpenStack |      🟡 Dependent       |     🟢 Supported      |      —       | Depends on tenant network external router and floating IP assignment.                                                                                                                                                                                            |
-| NCP       |    🔴 Blocked (N/A)     |     🟢 Supported      |      —       | **No external public IP provided by default**; endpoint is private VPC-only (`*.vpc-cdb.ntruss.com`). External access requires manual public domain request via NCP console.                                                                                     |
-| NHN       | 🔴 Blocked (by default) / 🟢 Pass (with DB SG) | 🟢 Supported (requires DB SG rule) |      —       | **Public FQDN/IP is assigned, but port 3306 is blocked by default** by NHN Cloud's dedicated DB Security Group (positive security model). Access from both external networks and VPC internal VMs requires adding an inbound permit rule in the NHN Console (`Database > RDS for MySQL > DB 보안 그룹`) or enabling test-mode `AllowAllTrafficForTesting`. |
+| CSP       |      External Public Access       |  Internal (VPC) Access   | Requires TLS | Reachability Constraints & Evidence                                                                                                                                                                                                                                                                                                                        |
+| --------- | :-------------------------------: | :----------------------: | :----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AWS       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                                                            |
+| Azure     |                🟢                 |            🟢            |     Yes      | Plain rejected (`Error 3159 ... require_secure_transport=ON`); requires TLS (`tls=preferred` or `true`).                                                                                                                                                                                                                                                   |
+| GCP       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                                                            |
+| Alibaba   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically allocates Public Connection and configures IP Whitelist.                                                                                                                                                                                                                                                 |
+| Tencent   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically opens Public WAN access.                                                                                                                                                                                                                                                                                 |
+| IBM       |                🟢                 |            🟢            |     Yes      | Public endpoint supported; TLS required (`*.databases.appdomain.cloud`).                                                                                                                                                                                                                                                                                   |
+| OpenStack |   🟢 (if FIP/router configured)   |            🟢            |      —       | Depends on tenant network external router and floating IP assignment.                                                                                                                                                                                                                                                                                      |
+| NCP       |             🔴 (N/A)              |            🟢            |      —       | **No external public IP provided by default**; endpoint is private VPC-only (`*.vpc-cdb.ntruss.com`). External access requires manual public domain request via NCP console.                                                                                                                                                                               |
+| NHN       | 🔴 (by default) / 🟢 (with DB SG) | 🟢 (requires DB SG rule) |      —       | **Public FQDN/IP is assigned, but port 3306 is blocked by default** by NHN Cloud's dedicated DB Security Group (positive security model). Access from both external networks and VPC internal VMs requires adding an inbound permit rule in the NHN Console (`Database > RDS for MySQL > DB 보안 그룹`) or enabling test-mode `AllowAllTrafficForTesting`. |
 
 > [!NOTE]
 > **Dual Testing Strategy (External vs Internal VPC)**:
@@ -222,39 +222,37 @@ About a caller's own application or test client connecting straight to the datab
 
 A connection mode that adapts either way (e.g. `go-sql-driver/mysql`'s `tls=preferred`) avoids TLS negotiation errors.
 
-## CSP-Specific Risks and Notes
+## CSP-Specific Requirements and Constraints
 
-Admin credential policy is in Admin Credential Constraints, not repeated here.
+Account username and password rules are summarized in [Admin Credential Constraints](#admin-credential-constraints).
 
-- **AWS**: requires a pre-existing Security Group; `io1`/`io2` need `Iops >= 1000` and
-  `StorageSize >= 100GB`.
-- **Azure / IBM / NCP**: `SupportsStorageTypeSelection=false` — omit `StorageType`; the CSP sets
-  it automatically.
-- **IBM**: provisions only the Gen1 platform.
+- **AWS**:
+  - Requires 2 subnets in distinct AZs (SubnetGroup) and a pre-existing Security Group.
+  - `io1`/`io2` storage types require `Iops >= 1000` and `StorageSize >= 100GB`.
+  - Database CRUD uses `sqlFallback` (direct SQL connection via admin login) — private instances require network reachability to the private endpoint.
+- **Azure**:
+  - `SupportsStorageTypeSelection=false` — storage SKU is auto-managed by Azure based on the compute tier.
+  - Enforces TLS encryption (`require_secure_transport=ON`); clients must connect with TLS enabled.
+- **GCP**:
+  - `StorageType` is bound to the machine series (`HYPERDISK_BALANCED` for C4A/N4 series, `PD_SSD`/`PD_HDD` for others) — pre-flight validation catches mismatches before provisioning.
+- **Alibaba**:
+  - Requires selecting an instance specification compatible with the target storage type (e.g. `mysql.n4.*` supports `cloud_essd`, while `local_ssd` requires `rds.mysql.*`).
+  - Network interface release lags instance deletion; teardown incorporates stabilization retry buffers.
+- **Tencent**:
+  - DBSpec memory size is specified in MB (e.g. `8000` for 8GB).
+  - Background ENI release lags instance deletion; teardown incorporates stabilization retry buffers.
+- **IBM**:
+  - Provisions on the shared/multitenant platform with auto-managed storage (`SupportsStorageTypeSelection=false`).
+  - Database CRUD uses `sqlFallback` and requires TLS connection.
 - **NCP**:
-  - **Storage Auto-scaling**: `StorageSize` is auto-managed by CSP (starts at 10GB and auto-scales up to 6000GB in 10GB increments); Tumblebug defends against custom `StorageSize` input by zeroing it before sending to CB-Spider. Storage type defaults to `SSD`.
-  - **Admin Account Policy**: Admin accounts must not use system reserved names (`root`, `admin`, `radmin`, etc.) and password requires at least 1 special character.
-  - **Dynamic Deletion Verification**: Full deletion is confirmed via dynamic `OnlyCSPList` polling (~3-4 min).
+  - `StorageSize` is auto-managed (starts at 10GB and auto-scales up to 6000GB in 10GB increments); custom size inputs are ignored. Storage type defaults to `SSD`.
+  - Assigns private VPC endpoints only (`*.vpc-cdb.ntruss.com`); direct external access requires manual public domain assignment via NCP console.
+  - Full instance deletion is actively tracked via dynamic CSP-side polling (~3–4 min).
 - **NHN**:
-  - **Dedicated Credentials**: Requires dedicated RDS credentials (`User Access Key`, `Secret Access Key`, `mysqlAppKey`/`mariadbAppKey`).
-  - **Subnet Zone Placement**: Subnet requires an explicit Availability Zone (e.g. `kr-pub-a`) for RDS placement (behavior when Zone is omitted during subnet creation is currently under investigation with the CB-Spider team).
-  - **Admin Username Constraints**: Admin username (1-32 characters) rejects official system reserved names (`admin`, `root`, `rds_admin`, `rds_mha`, `rds_repl`, `sqlgw`, `etladm`, `alertman`, `prom`, `mysql.session`, `mysql.sys`, `mysql.infoschema`; use e.g. `myadmin`/`dbadmin`).
-    - _As-Is_: When the SecurityGroup field is left empty during RDBMS creation (test-mode `AllowAllTrafficForTesting` behavior), CB-Spider internally creates a DB SG allowing remote access from `0.0.0.0/0`.
-    - _To-Be_: CB-Spider agreed to provide a dedicated keyword parameter to explicitly enable test-mode remote access DB SG creation (planned for next release, keyword TBD).
-  - **Endpoint & Access Control**: NHN Cloud RDS returns a single public FQDN endpoint (`{uuid}.external.{region}.{engine}.rds.nhncloudservice.com`) when `PublicAccess: true`. Both external connections and internal VPC connections are subject to NHN Cloud's dedicated DB Security Group (**DB 보안 그룹**).
-  - **Public Access & Database Operations**: Supports `PublicAccess: true` with an external endpoint. Database CRUD uses `cspNativeApi`.
-- **OpenStack**: doesn't expose `StorageType` after creation — verify success via `Available`
-  status only.
-- **GCP**: `StorageType` is implied by machine series (`HYPERDISK_BALANCED` for C4A/N4,
-  `PD_SSD`/`PD_HDD` for others) — Tumblebug's pre-flight validation catches a mismatch before it
-  reaches the driver.
-- **AWS / IBM**: internal database CRUD (`sqlFallback`) connects directly to the instance
-  endpoint — a `publicAccess=false` instance may fail database create/list/delete if CB-Spider
-  can't reach the private endpoint. (Azure's database CRUD is `cspNativeApi`, an ARM call not a
-  SQL connection, so this doesn't apply to it.)
-- **Alibaba / Tencent**: deleting an instance's VNet/Subnet immediately after deleting the
-  instance can fail with a dependency error even after Tumblebug confirms the instance is fully
-  gone — see Creation and Deletion Reliability.
+  - Requires dedicated RDS credentials (`User Access Key`, `Secret Access Key`, and engine AppKey).
+  - Returns a single public FQDN endpoint when `PublicAccess: true`. Access control is governed by NHN Cloud's dedicated **DB Security Group** (DB 보안 그룹) rather than standard VPC security groups.
+- **OpenStack**:
+  - Storage type is not reported after creation — verify provisioning success via `Available` status.
 
 ## References
 
@@ -275,15 +273,15 @@ Tumblebug `rdbmsId`. 🔁 marks a field CB-Spider still calls `MasterUserName`/`
 on the wire, translated to/from Tumblebug's `adminUserName`/`adminUserPassword` at the call site
 and never exposed as `Master*` to a Tumblebug API caller.
 
-| Tumblebug API                                  | CB-Spider API(s) Called                                                                                          | Notes                                                                     |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `GET /rdbms/support`                           | — (none)                                                                                                         | Static from `assets/rdbmsinfo.yaml`.                                      |
-| `GET /rdbms/capability`                        | `GET /rdbmsmetainfo` (required); `GET /dbspec`, `GET /rdbmsengine` (best-effort)                                 | Best-effort calls populate `dbInstanceSpecs`/`liveSupportedEngines` only. |
-| `POST .../rdbms/validate`                      | Same as `/capability`'s required call, plus `GET /dbspec` if autofilling `dbInstanceSpec`                        | Dry run — never reaches create/delete.                                    |
-| `POST .../rdbms`                               | Same as Validate, plus `POST /rdbms`; `GET /rdbms/{Uid}` (poll every 10s up to 5 min, through Creating or Error) | 🔁 in the create request body.                                            |
-| `GET .../rdbms` (list)                         | — (none)                                                                                                         | Served from kvstore.                                                      |
-| `GET .../rdbms/{rdbmsId}`                      | `GET /rdbms/{Uid}`                                                                                               | 🔁 in the response (password never returned).                             |
-| `DELETE .../rdbms/{rdbmsId}`                   | `DELETE /rdbms/{Uid}`; `GET /rdbms/{Uid}` + `GET /allrdbms` (dual verify)                                        | See Creation and Deletion Reliability.                                    |
-| `POST .../rdbms/{rdbmsId}/database`            | `GET /rdbms/{Uid}` (Status check); `POST /rdbms/{Uid}/databases`                                                 | 🔁 in the request body.                                                   |
-| `GET .../rdbms/{rdbmsId}/database`             | `GET /rdbms/{Uid}`; `GET /rdbms/{Uid}/databases`                                                                 | 🔁 via `X-Admin-User-Password` header.                                    |
-| `DELETE .../rdbms/{rdbmsId}/database/{dbName}` | `GET /rdbms/{Uid}`; `DELETE /rdbms/{Uid}/databases/{dbName}`                                                     | 🔁 via `X-Admin-User-Password` header.                                    |
+| Tumblebug API                                  | CB-Spider API(s) Called                                                                                           | Notes                                                                     |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `GET /rdbms/support`                           | — (none)                                                                                                          | Static from `assets/rdbmsinfo.yaml`.                                      |
+| `GET /rdbms/capability`                        | `GET /rdbmsmetainfo` (required); `GET /dbspec`, `GET /rdbmsengine` (best-effort)                                  | Best-effort calls populate `dbInstanceSpecs`/`liveSupportedEngines` only. |
+| `POST .../rdbms/validate`                      | Same as `/capability`'s required call, plus `GET /dbspec` if autofilling `dbInstanceSpec`                         | Dry run — never reaches create/delete.                                    |
+| `POST .../rdbms`                               | Same as Validate, plus `POST /rdbms`; `GET /rdbms/{Uid}` (poll every 20s up to 10 min, through Creating or Error) | 🔁 in the create request body.                                            |
+| `GET .../rdbms` (list)                         | — (none)                                                                                                          | Served from kvstore.                                                      |
+| `GET .../rdbms/{rdbmsId}`                      | `GET /rdbms/{Uid}`                                                                                                | 🔁 in the response (password never returned).                             |
+| `DELETE .../rdbms/{rdbmsId}`                   | `DELETE /rdbms/{Uid}`; `GET /rdbms/{Uid}` + `GET /allrdbms` (dual verify)                                         | See Creation and Deletion Reliability.                                    |
+| `POST .../rdbms/{rdbmsId}/database`            | `GET /rdbms/{Uid}` (Status check); `POST /rdbms/{Uid}/databases`                                                  | 🔁 in the request body.                                                   |
+| `GET .../rdbms/{rdbmsId}/database`             | `GET /rdbms/{Uid}`; `GET /rdbms/{Uid}/databases`                                                                  | 🔁 via `X-Admin-User-Password` header.                                    |
+| `DELETE .../rdbms/{rdbmsId}/database/{dbName}` | `GET /rdbms/{Uid}`; `DELETE /rdbms/{Uid}/databases/{dbName}`                                                      | 🔁 via `X-Admin-User-Password` header.                                    |

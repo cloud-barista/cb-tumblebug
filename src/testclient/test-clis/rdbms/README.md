@@ -2,19 +2,18 @@
 
 A CLI tool for batch-testing the RDBMS lifecycle via the CB-Tumblebug API:
 
-**rdbms/support (once) → per case: vNet+subnets → securityGroup → rdbms/capability
-→ RDBMS create → get → list → database create → database list → dummy data
-write/read/verify/delete → database delete → RDBMS delete → securityGroup
-delete → subnets delete → vNet delete**
+**rdbms/support (once) → per case: Create VNet+subnets → Create SecurityGroup → rdbms/capability
+→ Validate RDBMS → Create RDBMS → Get RDBMS → List RDBMS → Create Database → List Database
+→ Remote Data I/O Test (Public SQL) → Internal Data I/O Test (VPC VM SQL)
+→ Delete Database → Delete RDBMS → Delete SecurityGroup → Delete Subnets → Delete VNet**
 
 Verified CSPs (see [docs/feature_guide/rdbms-management.md](../../../../docs/feature_guide/rdbms-management.md)):
 `aws`, `azure`, `gcp`, `alibaba`, `tencent`, `ibm`, `openstack`, `ncp`, `nhn`
 
 > **RDBMS creation takes minutes.** CB-Tumblebug blocks the `POST` call server-side
-> (polling every 30s, up to a 20-minute timeout) until the instance reaches
-> `Available` or `Failed`, so each test case can take several minutes to a bit
-> over an hour when run with multiple CSPs sequentially. Use `--parallel` to run
-> CSPs concurrently.
+> (polling every 20s, up to a 10-minute timeout) until the instance reaches
+> `Available` or `Failed`, so each test case can take several minutes when run
+> with multiple CSPs sequentially. Use `--parallel` to run CSPs concurrently.
 
 ---
 
