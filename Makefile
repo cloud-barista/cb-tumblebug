@@ -117,6 +117,10 @@ restore-assets: ## Restore PostgreSQL database from assets backup (or FILE=<path
 		TB_K8S_NAMESPACE=$${TB_K8S_NAMESPACE:-$(K8S_NAMESPACE)} ./scripts/restore-assets.sh $(FILE); \
 	fi
 
+set-versions: ## Interactively set core component release versions (cb-tumblebug/cb-spider/cb-mapui/mc-terrarium) across compose + k8s
+	@chmod +x ./scripts/misc/set-release-versions.sh 2>/dev/null || true
+	@./scripts/misc/set-release-versions.sh
+
 # ===== Utility Aliases =====
 # TARGET=k8s switches up/init/down to the Kubernetes (Helm) deployment.
 # Default (no TARGET) keeps the existing docker compose behavior unchanged.
@@ -1068,4 +1072,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host

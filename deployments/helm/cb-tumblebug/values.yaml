@@ -6,11 +6,11 @@
 # Install ONE release per namespace.
 
 images:
-  tumblebug: cloudbaristaorg/cb-tumblebug:0.13.0
+  tumblebug: cloudbaristaorg/cb-tumblebug:0.13.1
   spider: cloudbaristaorg/cb-spider:0.13.0
   terrarium: cloudbaristaorg/mc-terrarium:0.1.4
-  mapui: cloudbaristaorg/cb-mapui:0.13.0
-  mcp: cloudbaristaorg/cb-tumblebug-mcp-server:0.12.26
+  mapui: cloudbaristaorg/cb-mapui:0.13.1
+  mcp: cloudbaristaorg/cb-tumblebug-mcp-server:0.13.1
   etcd: gcr.io/etcd-development/etcd:v3.6.11
   postgres: postgres:16-alpine
   openbao: openbao/openbao:2.5.1
@@ -84,6 +84,13 @@ tumblebug:
       memory: 8Gi
 
 spider:
+  # Number of cb-spider replicas. cb-spider is the outbound CSP-call worker; scaling it out
+  # spreads concurrent multi-CSP/region call load across nodes (requests round-robin per call
+  # because the client uses Connection: close). All replicas share one cb-spider-postgres.
+  # NOTE: multi-replica over a shared metadb is not yet a validated cb-spider mode — smoke-test
+  # (scale to 2-3, provision a multi-region infra, watch per-pod load + check for errors/dupes)
+  # before relying on it. Keep at 1 for the standard single-instance behavior.
+  replicas: 1
   logLevel: error
   hiscallLogLevel: error
   # Go GC soft target (no hard limit): in-flight VM creations hold ~15 MB each,
