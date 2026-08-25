@@ -118,27 +118,27 @@ type TestCase struct {
 
 // TestResult holds the outcome of each lifecycle step for one CSP.
 type TestResult struct {
-	RdbmsId                   string
-	ConnectionName            string
-	DBEngine                  string
-	CreateVNetStatus          string
-	CreateSGStatus            string
-	SupportStatus             string
-	CapabilityStatus          string
-	ValidateStatus            string
-	CreateRDBMSStatus         string
-	GetRDBMSStatus            string
-	ListRDBMSStatus           string
-	CreateDatabaseStatus      string
-	ListDatabaseStatus        string
-	RemoteDataIOTestStatus    string
-	InternalDataIOTestStatus  string
-	DeleteDatabaseStatus      string
-	DeleteRDBMSStatus         string
-	DeleteSGStatus            string
-	DeleteSubnetsStatus       string
-	DeleteVNetStatus          string
-	Note                   string
+	RdbmsId                  string
+	ConnectionName           string
+	DBEngine                 string
+	CreateVNetStatus         string
+	CreateSGStatus           string
+	SupportStatus            string
+	CapabilityStatus         string
+	ValidateStatus           string
+	CreateRDBMSStatus        string
+	GetRDBMSStatus           string
+	ListRDBMSStatus          string
+	CreateDatabaseStatus     string
+	ListDatabaseStatus       string
+	RemoteDataIOTestStatus   string
+	InternalDataIOTestStatus string
+	DeleteDatabaseStatus     string
+	DeleteRDBMSStatus        string
+	DeleteSGStatus           string
+	DeleteSubnetsStatus      string
+	DeleteVNetStatus         string
+	Note                     string
 }
 
 func main() {
@@ -700,34 +700,52 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DeleteRDBMSStatus = "Skipped (no VNet)"
 	}
 
-	// 12. Delete SecurityGroup
+	// 12. Delete SecurityGroup (with retry for eventual consistency on CSPs like Tencent)
 	if sgId != "" {
 		urlDeleteSG := fmt.Sprintf("%s/ns/%s/resources/securityGroup/%s", tbApiBase, nsId, sgId)
-		_, err = callApi("DELETE", urlDeleteSG, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete SecurityGroup", tc.RdbmsId))
-		switch {
-		case err == nil:
-			result.DeleteSGStatus = "Success"
-			log.Info().Msgf("[%s] Delete SecurityGroup OK", tc.RdbmsId)
-		case isNotFoundErr(err):
-			result.DeleteSGStatus = "Success (nothing to delete)"
-			log.Info().Msgf("[%s] Delete SecurityGroup: nothing to delete", tc.RdbmsId)
-		default:
-			result.DeleteSGStatus = "Failed"
-			log.Error().Err(err).Msgf("[%s] Delete SecurityGroup failed", tc.RdbmsId)
+		for attempt := 1; attempt <= 3; attempt++ {
+			_, err = callApi("DELETE", urlDeleteSG, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete SecurityGroup", tc.RdbmsId))
+			if err == nil {
+				result.DeleteSGStatus = "Success"
+				log.Info().Msgf("[%s] Delete SecurityGroup OK", tc.RdbmsId)
+				break
+			} else if isNotFoundErr(err) {
+				result.DeleteSGStatus = "Success (nothing to delete)"
+				log.Info().Msgf("[%s] Delete SecurityGroup: nothing to delete", tc.RdbmsId)
+				break
+			}
+			if attempt < 3 {
+				log.Info().Msgf("[%s] Delete SecurityGroup attempt %d/3 returned error; waiting 15s for CSP interface release...", tc.RdbmsId, attempt)
+				time.Sleep(15 * time.Second)
+			} else {
+				result.DeleteSGStatus = "Failed"
+				log.Error().Err(err).Msgf("[%s] Delete SecurityGroup failed", tc.RdbmsId)
+			}
 		}
 	} else {
 		result.DeleteSGStatus = "Skipped (not created)"
 	}
 
-	// 13. Delete each Subnet
+	// 13. Delete each Subnet (with retry for eventual consistency)
 	if vNetId != "" && len(subnetIds) > 0 {
 		failed := 0
 		for _, subnetId := range subnetIds {
 			urlDeleteSubnet := fmt.Sprintf("%s/ns/%s/resources/vNet/%s/subnet/%s", tbApiBase, nsId, vNetId, subnetId)
-			_, err = callApi("DELETE", urlDeleteSubnet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete Subnet %s", tc.RdbmsId, subnetId))
-			if err != nil && !isNotFoundErr(err) {
+			var subErr error
+			for attempt := 1; attempt <= 3; attempt++ {
+				_, subErr = callApi("DELETE", urlDeleteSubnet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete Subnet %s", tc.RdbmsId, subnetId))
+				if subErr == nil || isNotFoundErr(subErr) {
+					subErr = nil
+					break
+				}
+				if attempt < 3 {
+					log.Info().Msgf("[%s] Delete Subnet %s attempt %d/3 returned error; waiting 15s...", tc.RdbmsId, subnetId, attempt)
+					time.Sleep(15 * time.Second)
+				}
+			}
+			if subErr != nil {
 				failed++
-				log.Error().Err(err).Msgf("[%s] Delete Subnet %s failed", tc.RdbmsId, subnetId)
+				log.Error().Err(subErr).Msgf("[%s] Delete Subnet %s failed", tc.RdbmsId, subnetId)
 			}
 		}
 		if failed == 0 {
@@ -739,20 +757,27 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DeleteSubnetsStatus = "Skipped (no VNet)"
 	}
 
-	// 14. Delete vNet
+	// 14. Delete vNet (with retry for eventual consistency on CSPs like NCP)
 	if vNetId != "" {
 		urlDeleteVNet := fmt.Sprintf("%s/ns/%s/resources/vNet/%s", tbApiBase, nsId, vNetId)
-		_, err = callApi("DELETE", urlDeleteVNet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete VNet", tc.RdbmsId))
-		switch {
-		case err == nil:
-			result.DeleteVNetStatus = "Success"
-			log.Info().Msgf("[%s] Delete VNet OK", tc.RdbmsId)
-		case isNotFoundErr(err):
-			result.DeleteVNetStatus = "Success (nothing to delete)"
-			log.Info().Msgf("[%s] Delete VNet: nothing to delete", tc.RdbmsId)
-		default:
-			result.DeleteVNetStatus = "Failed"
-			log.Error().Err(err).Msgf("[%s] Delete VNet failed", tc.RdbmsId)
+		for attempt := 1; attempt <= 3; attempt++ {
+			_, err = callApi("DELETE", urlDeleteVNet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete VNet", tc.RdbmsId))
+			if err == nil {
+				result.DeleteVNetStatus = "Success"
+				log.Info().Msgf("[%s] Delete VNet OK", tc.RdbmsId)
+				break
+			} else if isNotFoundErr(err) {
+				result.DeleteVNetStatus = "Success (nothing to delete)"
+				log.Info().Msgf("[%s] Delete VNet: nothing to delete", tc.RdbmsId)
+				break
+			}
+			if attempt < 3 {
+				log.Info().Msgf("[%s] Delete VNet attempt %d/3 returned error; waiting 15s for CSP interface release...", tc.RdbmsId, attempt)
+				time.Sleep(15 * time.Second)
+			} else {
+				result.DeleteVNetStatus = "Failed"
+				log.Error().Err(err).Msgf("[%s] Delete VNet failed", tc.RdbmsId)
+			}
 		}
 	} else {
 		result.DeleteVNetStatus = "Skipped (not created)"
@@ -919,12 +944,12 @@ func resolveAndReviewSpecAndImage(
 			osType = "ubuntu 24.04"
 		}
 		searchReq := map[string]any{
-			"providerName":   providerName,
-			"regionName":     regionName,
-			"osType":         osType,
-			"osArchitecture": "x86_64",
+			"providerName":  providerName,
+			"regionName":    regionName,
+			"osType":        osType,
+			"matchedSpecId": tc.VmSpecId,
 		}
-		urlSearch := fmt.Sprintf("%s/ns/%s/resources/searchImage", tbApiBase, nsId)
+		urlSearch := fmt.Sprintf("%s/ns/%s/resources/searchImage", tbApiBase, model.SystemCommonNs)
 		respBytes, err := callApi("POST", urlSearch, tbAuth, searchReq, logs, fmt.Sprintf("[%s] Search VM Image", tc.RdbmsId))
 		if err == nil {
 			var searchResp model.SearchImageResponse
@@ -932,6 +957,22 @@ func resolveAndReviewSpecAndImage(
 				tc.VmImageId = searchResp.ImageList[0].Id
 				log.Info().Msgf("[%s] Discovered VM Image: %s (cspImage=%s, os=%s)",
 					tc.RdbmsId, searchResp.ImageList[0].Id, searchResp.ImageList[0].CspImageName, searchResp.ImageList[0].OSDistribution)
+			}
+		}
+		if tc.VmImageId == "" {
+			searchReqFallback := map[string]any{
+				"providerName": providerName,
+				"regionName":   regionName,
+				"osType":       osType,
+			}
+			respBytes, err = callApi("POST", urlSearch, tbAuth, searchReqFallback, logs, fmt.Sprintf("[%s] Search VM Image (Fallback)", tc.RdbmsId))
+			if err == nil {
+				var searchResp model.SearchImageResponse
+				if jsonErr := json.Unmarshal(respBytes, &searchResp); jsonErr == nil && searchResp.ImageCount > 0 {
+					tc.VmImageId = searchResp.ImageList[0].Id
+					log.Info().Msgf("[%s] Discovered Fallback VM Image: %s (cspImage=%s, os=%s)",
+						tc.RdbmsId, searchResp.ImageList[0].Id, searchResp.ImageList[0].CspImageName, searchResp.ImageList[0].OSDistribution)
+				}
 			}
 		}
 	}
@@ -949,7 +990,7 @@ func resolveAndReviewSpecAndImage(
 		reviewReq := map[string]any{
 			"specId":       specReviewId,
 			"imageId":      tc.VmImageId,
-			"rootDiskType": tc.StorageType,
+			"rootDiskType": "default",
 			"zone":         zone,
 		}
 		urlReview := fmt.Sprintf("%s/specImagePairReview", tbApiBase)
@@ -995,6 +1036,16 @@ func runInternalDataTest(
 		urlDeleteInfra := fmt.Sprintf("%s/ns/%s/infra/%s?option=terminate", tbApiBase, nsId, infraId)
 		_, _ = callApi("DELETE", urlDeleteInfra, tbAuth, nil, logs, fmt.Sprintf("[%s] Teardown Test Infra", tc.RdbmsId))
 
+		// Poll until test infra is fully terminated so CSP releases SecurityGroup/Subnet ENIs
+		urlGetInfra := fmt.Sprintf("%s/ns/%s/infra/%s", tbApiBase, nsId, infraId)
+		for attempt := 1; attempt <= 12; attempt++ {
+			time.Sleep(5 * time.Second)
+			_, getErr := callApi("GET", urlGetInfra, tbAuth, nil, logs, fmt.Sprintf("[%s] Verify Infra Termination", tc.RdbmsId))
+			if getErr != nil && isNotFoundErr(getErr) {
+				break
+			}
+		}
+
 		urlDeleteSSH := fmt.Sprintf("%s/ns/%s/resources/sshKey/%s", tbApiBase, nsId, sshKeyId)
 		_, _ = callApi("DELETE", urlDeleteSSH, tbAuth, nil, logs, fmt.Sprintf("[%s] Teardown Test SSHKey", tc.RdbmsId))
 	}()
@@ -1014,10 +1065,6 @@ func runInternalDataTest(
 	}
 
 	// 2. Create Infra (VM) in same VNet/Subnet using looked-up spec and image directly
-	rootDiskType := tc.StorageType
-	if rootDiskType == "" {
-		rootDiskType = "default"
-	}
 	infraReq := model.InfraReq{
 		Name:            infraId,
 		Description:     "test runner VM for internal RDBMS SQL test",
@@ -1033,8 +1080,8 @@ func runInternalDataTest(
 				SshKeyId:         sshKeyId,
 				SpecId:           tc.VmSpecId,
 				ImageId:          tc.VmImageId,
-				RootDiskSize:     20,
-				RootDiskType:     rootDiskType,
+				RootDiskSize:     100,
+				RootDiskType:     "default",
 			},
 		},
 	}
@@ -1049,15 +1096,24 @@ func runInternalDataTest(
 		port = "3306"
 	}
 
+	// Give sshd a brief grace period to start accepting connections after VM reaches Running
+	time.Sleep(15 * time.Second)
+
 	// 3. Send Remote Command via POST /ns/{nsId}/cmd/infra/{infraId}
 	sqlCmd := fmt.Sprintf("mysql -h %s -P %s -u %s -p'%s' %s -e \"DROP TABLE IF EXISTS tumblebug_internal_test; CREATE TABLE tumblebug_internal_test (id INT PRIMARY KEY, val VARCHAR(255)); INSERT INTO tumblebug_internal_test (id, val) VALUES (1, 'internal-test-ok'); SELECT val FROM tumblebug_internal_test WHERE id=1; DROP TABLE tumblebug_internal_test;\"",
 		host, port, tc.AdminUserName, tc.AdminUserPassword, dbName)
 
+	cmdUserName := ""
+	if strings.Contains(strings.ToLower(tc.ConnectionName), "alibaba") || strings.Contains(strings.ToLower(tc.ConnectionName), "tencent") {
+		cmdUserName = "root"
+	}
+
 	cmdReq := model.InfraCmdReq{
 		Command: []string{
-			"which mysql || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq default-mysql-client || sudo yum install -y mysql)",
+			"command -v mysql || command -v mariadb || (command -v apt-get >/dev/null 2>&1 && sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq default-mysql-client) || (command -v dnf >/dev/null 2>&1 && sudo dnf install -y mariadb) || (command -v yum >/dev/null 2>&1 && sudo yum install -y mariadb) || sudo yum install -y mysql",
 			sqlCmd,
 		},
+		UserName:       cmdUserName,
 		TimeoutMinutes: 5,
 	}
 
@@ -1139,7 +1195,7 @@ func saveDetailedReport(rdbmsId string, logs []ApiLog) {
 // stepLabels lists the row labels used by both buildSummaryMarkdown and
 // buildEngineMatrixMarkdown, in the same order as stepValues.
 var stepLabels = []string{
-	"VNet", "SecurityGroup", "Support", "Capability", "Validate",
+	"Create VNet", "Create SecurityGroup", "Support", "Capability", "Validate",
 	"Create RDBMS", "Get RDBMS", "List RDBMS", "Create Database", "List Database",
 	"Remote Data I/O Test", "Internal Data I/O Test", "Delete Database", "Delete RDBMS", "Delete SecurityGroup",
 	"Delete Subnets", "Delete VNet",
