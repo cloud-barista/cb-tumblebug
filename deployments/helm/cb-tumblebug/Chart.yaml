@@ -3,7 +3,7 @@ name: cb-tumblebug
 description: CB-Tumblebug multi-cloud infrastructure management stack (Tumblebug, Spider, Terrarium, MapUI, OpenBao, etcd, PostgreSQL)
 type: application
 version: 0.1.0
-appVersion: "0.13.0"
+appVersion: "0.13.1"
 keywords:
   - cloud-barista
   - multi-cloud

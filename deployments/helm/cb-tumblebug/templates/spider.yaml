@@ -25,7 +25,7 @@ metadata:
   labels:
     {{- include "cb.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.spider.replicas | default 1 }}
   strategy:
     type: Recreate
   selector:
@@ -38,6 +38,19 @@ spec:
         {{- include "cb.labels" . | nindent 8 }}
     spec:
       terminationGracePeriodSeconds: 30
+      {{- if gt (int (.Values.spider.replicas | default 1)) 1 }}
+      # Scaled out to share the outbound CSP-call load. Spread replicas across nodes (soft, so
+      # it still schedules when nodes < replicas) so the load lands on different hosts, not one.
+      # All replicas share the single cb-spider-postgres metadb (state is DB-backed; the
+      # bottleneck being distributed is CSP-call CPU/network, not the DB).
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: cb-spider
+      {{- end }}
       initContainers:
         # Four cb-spider packages panic in init() if the metadb is down at start
         - name: wait-for-metadb
