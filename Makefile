@@ -121,6 +121,14 @@ set-versions: ## Interactively set core component release versions (cb-tumblebug
 	@chmod +x ./scripts/misc/set-release-versions.sh 2>/dev/null || true
 	@./scripts/misc/set-release-versions.sh
 
+k-tunnel: ## Interactively open an SSH tunnel to a remote cb-tumblebug cluster (gateway/direct, TLS-aware); prints browser links
+	@chmod +x ./scripts/misc/ssh-tunnel.sh 2>/dev/null || true
+	@./scripts/misc/ssh-tunnel.sh
+
+k-tunnel-stop: ## Stop the SSH tunnel opened by k-tunnel
+	@chmod +x ./scripts/misc/ssh-tunnel.sh 2>/dev/null || true
+	@./scripts/misc/ssh-tunnel.sh stop
+
 # ===== Utility Aliases =====
 # TARGET=k8s switches up/init/down to the Kubernetes (Helm) deployment.
 # Default (no TARGET) keeps the existing docker compose behavior unchanged.
@@ -419,13 +427,21 @@ k-clean: ## Full K8s reset: uninstall + delete PVCs and OpenBao key Secret
 		printf '%b\n' '$(KD)\xe2\x84\xb9 Observability ($(K8S_OBS_NS)) is separate and still running. Remove with: $(KX)$(KC)make k-observability-off$(KX)' || true
 	@printf '%b\n' '$(KD)(a kind cluster is kept; remove with: kind delete cluster --name $(KIND_CLUSTER_NAME))$(KX)'
 
-k-port-forward: ## Start port-forwards for API (1323), MapUI (1324) + Grafana (3000, if observability is on); idempotent
+# Resilient port-forwards via scripts/misc/pf-watch.sh: each forward is detached (setsid →
+# survives the launching shell / an ephemeral SSH session) and self-healing (retry loop →
+# reconnects after a drop from a long request or a pod rollout). PGIDs are recorded per file
+# so the stop targets tear down exactly the recorded forwards.
+PF := KUBECTL='$(KUBECTL)' bash scripts/misc/pf-watch.sh
+K8S_PF_SVC_PIDS := /tmp/.cb-pf-watch-svc.$(K8S_NAMESPACE)
+K8S_PF_GW_PIDS  := /tmp/.cb-pf-watch-gw.$(K8S_NAMESPACE)
+
+k-port-forward: ## Start resilient port-forwards for API (1323), MapUI (1324) + Grafana (3000, if obs on); auto-reconnect; idempotent
 	@$(MAKE) --no-print-directory k-port-forward-stop
-	@$(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug 1323:1323 >/dev/null 2>&1 &
+	@$(PF) start $(K8S_PF_SVC_PIDS) -n $(K8S_NAMESPACE) svc/cb-tumblebug 1323:1323
 	@$(KUBECTL) get svc cb-mapui -n $(K8S_NAMESPACE) >/dev/null 2>&1 && \
-		{ $(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-mapui 1324:1324 >/dev/null 2>&1 & } || true
+		$(PF) start $(K8S_PF_SVC_PIDS) -n $(K8S_NAMESPACE) svc/cb-mapui 1324:1324 || true
 	@$(KUBECTL) get svc $(K8S_OBS_RELEASE)-grafana -n $(K8S_OBS_NS) >/dev/null 2>&1 && \
-		{ $(KUBECTL) port-forward -n $(K8S_OBS_NS) svc/$(K8S_OBS_RELEASE)-grafana 3000:80 >/dev/null 2>&1 & } || true
+		$(PF) start $(K8S_PF_SVC_PIDS) -n $(K8S_OBS_NS) svc/$(K8S_OBS_RELEASE)-grafana 3000:80 || true
 	@sleep 2
 	@printf '%b\n' '$(KB)$(KC)\xe2\x96\x8c Port-forwards started$(KX)'
 	@printf '%b\n' '  API / Swagger : $(KC)http://localhost:1323/tumblebug/api$(KX)'
@@ -565,20 +581,16 @@ k-agentgateway-off: ## Disable agentgateway (MCP server stays enabled)
 	@printf '%b\n' '$(KG)\xe2\x9c\x94 agentgateway disabled$(KX) $(KD)(MCP server kept) \xe2\x80\x94 applying...$(KX)'
 	@$(MAKE) --no-print-directory k-up
 
-k-gateway-on: ## Enable the Gateway API entrypoint (/, /tumblebug, /mcp); installs Envoy Gateway on kind if missing
+k-gateway-on: ## Enable the Gateway API entrypoint (/, /tumblebug, /mcp); installs Envoy Gateway if none is present
 	@if ! $(KUBECTL) get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; then \
 		ctx="$(K8S_CONTEXT)"; [ -n "$$ctx" ] || ctx=$$(kubectl config current-context 2>/dev/null); \
-		case "$$ctx" in \
-		kind-*) \
-			echo "No Gateway API implementation found — installing Envoy Gateway $(ENVOY_GATEWAY_VERSION)..."; \
-			$(HELM) install eg oci://docker.io/envoyproxy/gateway-helm --version $(ENVOY_GATEWAY_VERSION) \
-				-n envoy-gateway-system --create-namespace --wait --timeout 6m ;; \
-		*) \
-			echo "No Gateway API implementation found in this cluster."; \
-			echo "Install one first (e.g., Envoy Gateway):"; \
-			echo "  helm install eg oci://docker.io/envoyproxy/gateway-helm --version $(ENVOY_GATEWAY_VERSION) -n envoy-gateway-system --create-namespace"; \
-			exit 1 ;; \
+		case "$$ctx" in kind-*) ;; *) \
+			printf '%b\n' "$(KY)\xe2\x9a\xa0 No Gateway API implementation found \xe2\x80\x94 installing Envoy Gateway $(ENVOY_GATEWAY_VERSION) into cluster '$$ctx'.$(KX)"; \
+			printf '%b\n' "  $(KD)(only runs because none exists; an already-installed implementation is left untouched. Use your own instead of this: install it before k-gateway-on.)$(KX)" ;; \
 		esac; \
+		echo "Installing Envoy Gateway $(ENVOY_GATEWAY_VERSION)..."; \
+		$(HELM) install eg oci://docker.io/envoyproxy/gateway-helm --version $(ENVOY_GATEWAY_VERSION) \
+			-n envoy-gateway-system --create-namespace --wait --timeout 6m; \
 	fi
 	@# Preserve an existing state file (it may carry extra flags like tls.enabled)
 	@[ -f $(K8S_GW_VALUES) ] || printf 'gateway:\n  enabled: true\n' > $(K8S_GW_VALUES)
@@ -749,16 +761,15 @@ k-assets-off: ## Revert to the assets baked into the container image
 	@$(MAKE) --no-print-directory k-port-forward-restore
 
 k-gateway-forward: ## Port-forward the gateway entrypoint to localhost:8080 (+8443 when TLS is on; idempotent)
-	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && / port-forward / && /envoy-gateway-system/{print $$1}' | xargs); \
+	@$(PF) stop $(K8S_PF_GW_PIDS); \
+	pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && / port-forward / && /envoy-gateway-system/{print $$1}' | xargs); \
 	[ -z "$$pids" ] || kill $$pids 2>/dev/null || true
 	@svc=$$($(KUBECTL) get svc -n envoy-gateway-system \
 		-l gateway.envoyproxy.io/owning-gateway-name=cb-tumblebug-gateway -o name 2>/dev/null | head -1); \
 	[ -n "$$svc" ] || { echo "Gateway service not found — run 'make k-gateway-on' first."; exit 1; }; \
-	$(KUBECTL) port-forward -n envoy-gateway-system $$svc 8080:80 >/dev/null 2>&1 & \
-	svc=$$($(KUBECTL) get svc -n envoy-gateway-system \
-		-l gateway.envoyproxy.io/owning-gateway-name=cb-tumblebug-gateway -o name 2>/dev/null | head -1); \
+	$(PF) start $(K8S_PF_GW_PIDS) -n envoy-gateway-system $$svc 8080:80; \
 	if $(KUBECTL) get -n envoy-gateway-system $$svc -o jsonpath='{.spec.ports[*].port}' 2>/dev/null | grep -qw 443; then \
-		$(KUBECTL) port-forward -n envoy-gateway-system $$svc 8443:443 >/dev/null 2>&1 & \
+		$(PF) start $(K8S_PF_GW_PIDS) -n envoy-gateway-system $$svc 8443:443; \
 		https=" / https://localhost:8443"; \
 	fi; \
 	sleep 2; \
@@ -794,6 +805,7 @@ k-token: ## Create an admin token file for K8s UIs like Headlamp (cluster-admin;
 	@echo "Note: cluster-admin, no expiry — local dev only. Revoke: $(KUBECTL) delete secret headlamp-admin-token -n kube-system"
 
 k-port-forward-stop: ## Stop this deployment's port-forwards incl. the gateway entrypoint (others untouched)
+	@$(PF) stop $(K8S_PF_SVC_PIDS); $(PF) stop $(K8S_PF_GW_PIDS)
 	@pids=$$(ps -eo pid=,args= | awk '$$2 ~ /(^|\/)kubectl$$/ && / port-forward / && \
 		(/ $(K8S_NAMESPACE) / || (/envoy-gateway-system/ && /cb-tumblebug-gateway/) || (/ $(K8S_OBS_NS) / && /grafana/)) {print $$1}' | xargs); \
 	if [ -n "$$pids" ]; then \
@@ -1072,4 +1084,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host
+.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop gen-cred enc-cred dec-cred bcrypt certs help k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host
