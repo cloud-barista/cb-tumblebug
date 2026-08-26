@@ -111,7 +111,7 @@ testCases:
     execute: true
 
   - rdbmsId: test-rdbms-alibaba
-    connectionName: alibaba-ap-northeast-1
+    connectionName: alibaba-ap-northeast-2
     vNetName: test-rdbms-vnet-alibaba
     cidrBlock: 10.3.0.0/16
     subnets:
@@ -129,7 +129,7 @@ testCases:
     highAvailability: false
     databaseName: sampledb
     internalDataIOTest: true
-    vmOSType: "Alibaba Cloud Linux 3"
+    vmOSType: "ubuntu 24.04"
     vmvCPU: "2"
     vmMemoryGiB: "4"
     vmImageId: ""

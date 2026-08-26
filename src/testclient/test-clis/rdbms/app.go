@@ -726,21 +726,21 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DeleteSGStatus = "Skipped (not created)"
 	}
 
-	// 13. Delete each Subnet (with retry for eventual consistency)
+	// 13. Delete each Subnet (with retry for eventual consistency across CSPs like Alibaba/Tencent)
 	if vNetId != "" && len(subnetIds) > 0 {
 		failed := 0
 		for _, subnetId := range subnetIds {
 			urlDeleteSubnet := fmt.Sprintf("%s/ns/%s/resources/vNet/%s/subnet/%s", tbApiBase, nsId, vNetId, subnetId)
 			var subErr error
-			for attempt := 1; attempt <= 3; attempt++ {
+			for attempt := 1; attempt <= 6; attempt++ {
 				_, subErr = callApi("DELETE", urlDeleteSubnet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete Subnet %s", tc.RdbmsId, subnetId))
 				if subErr == nil || isNotFoundErr(subErr) {
 					subErr = nil
 					break
 				}
-				if attempt < 3 {
-					log.Info().Msgf("[%s] Delete Subnet %s attempt %d/3 returned error; waiting 15s...", tc.RdbmsId, subnetId, attempt)
-					time.Sleep(15 * time.Second)
+				if attempt < 6 {
+					log.Info().Msgf("[%s] Delete Subnet %s attempt %d/6 returned error; waiting 20s for CSP resource release...", tc.RdbmsId, subnetId, attempt)
+					time.Sleep(20 * time.Second)
 				}
 			}
 			if subErr != nil {
@@ -757,10 +757,10 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.DeleteSubnetsStatus = "Skipped (no VNet)"
 	}
 
-	// 14. Delete vNet (with retry for eventual consistency on CSPs like NCP)
+	// 14. Delete vNet (with retry for eventual consistency on CSPs like Alibaba/NCP)
 	if vNetId != "" {
 		urlDeleteVNet := fmt.Sprintf("%s/ns/%s/resources/vNet/%s", tbApiBase, nsId, vNetId)
-		for attempt := 1; attempt <= 3; attempt++ {
+		for attempt := 1; attempt <= 6; attempt++ {
 			_, err = callApi("DELETE", urlDeleteVNet, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete VNet", tc.RdbmsId))
 			if err == nil {
 				result.DeleteVNetStatus = "Success"
@@ -768,16 +768,18 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 				break
 			} else if isNotFoundErr(err) {
 				result.DeleteVNetStatus = "Success (nothing to delete)"
-				log.Info().Msgf("[%s] Delete VNet: nothing to delete", tc.RdbmsId)
+				log.Info().Msgf("[%s] Delete VNet OK (already deleted)", tc.RdbmsId)
+				err = nil
 				break
 			}
-			if attempt < 3 {
-				log.Info().Msgf("[%s] Delete VNet attempt %d/3 returned error; waiting 15s for CSP interface release...", tc.RdbmsId, attempt)
-				time.Sleep(15 * time.Second)
-			} else {
-				result.DeleteVNetStatus = "Failed"
-				log.Error().Err(err).Msgf("[%s] Delete VNet failed", tc.RdbmsId)
+			if attempt < 6 {
+				log.Info().Msgf("[%s] Delete VNet attempt %d/6 returned error; waiting 20s...", tc.RdbmsId, attempt)
+				time.Sleep(20 * time.Second)
 			}
+		}
+		if err != nil {
+			result.DeleteVNetStatus = "Failed"
+			log.Error().Err(err).Msgf("[%s] Delete VNet failed", tc.RdbmsId)
 		}
 	} else {
 		result.DeleteVNetStatus = "Skipped (not created)"
@@ -954,9 +956,16 @@ func resolveAndReviewSpecAndImage(
 		if err == nil {
 			var searchResp model.SearchImageResponse
 			if jsonErr := json.Unmarshal(respBytes, &searchResp); jsonErr == nil && searchResp.ImageCount > 0 {
-				tc.VmImageId = searchResp.ImageList[0].Id
-				log.Info().Msgf("[%s] Discovered VM Image: %s (cspImage=%s, os=%s)",
-					tc.RdbmsId, searchResp.ImageList[0].Id, searchResp.ImageList[0].CspImageName, searchResp.ImageList[0].OSDistribution)
+				for _, img := range searchResp.ImageList {
+					if !img.IsKubernetesImage && !strings.Contains(strings.ToLower(img.InfraType), "k8s") && !strings.Contains(strings.ToLower(img.InfraType), "kubernetes") {
+						tc.VmImageId = img.Id
+						break
+					}
+				}
+				if tc.VmImageId == "" {
+					tc.VmImageId = searchResp.ImageList[0].Id
+				}
+				log.Info().Msgf("[%s] Discovered VM Image: %s", tc.RdbmsId, tc.VmImageId)
 			}
 		}
 		if tc.VmImageId == "" {
@@ -969,9 +978,16 @@ func resolveAndReviewSpecAndImage(
 			if err == nil {
 				var searchResp model.SearchImageResponse
 				if jsonErr := json.Unmarshal(respBytes, &searchResp); jsonErr == nil && searchResp.ImageCount > 0 {
-					tc.VmImageId = searchResp.ImageList[0].Id
-					log.Info().Msgf("[%s] Discovered Fallback VM Image: %s (cspImage=%s, os=%s)",
-						tc.RdbmsId, searchResp.ImageList[0].Id, searchResp.ImageList[0].CspImageName, searchResp.ImageList[0].OSDistribution)
+					for _, img := range searchResp.ImageList {
+						if !img.IsKubernetesImage && !strings.Contains(strings.ToLower(img.InfraType), "k8s") && !strings.Contains(strings.ToLower(img.InfraType), "kubernetes") {
+							tc.VmImageId = img.Id
+							break
+						}
+					}
+					if tc.VmImageId == "" {
+						tc.VmImageId = searchResp.ImageList[0].Id
+					}
+					log.Info().Msgf("[%s] Discovered Fallback VM Image: %s", tc.RdbmsId, tc.VmImageId)
 				}
 			}
 		}
@@ -987,34 +1003,37 @@ func resolveAndReviewSpecAndImage(
 		if !strings.Contains(specReviewId, "+") && providerName != "" && regionName != "" {
 			specReviewId = fmt.Sprintf("%s+%s+%s", providerName, regionName, tc.VmSpecId)
 		}
+		imageReviewId := tc.VmImageId
+		if !strings.Contains(imageReviewId, "+") && providerName != "" && regionName != "" {
+			imageReviewId = fmt.Sprintf("%s+%s+%s", providerName, regionName, tc.VmImageId)
+		}
 		reviewReq := map[string]any{
-			"specId":       specReviewId,
-			"imageId":      tc.VmImageId,
-			"rootDiskType": "default",
-			"zone":         zone,
+			"specId":  specReviewId,
+			"imageId": imageReviewId,
+			"zone":    zone,
 		}
 		urlReview := fmt.Sprintf("%s/specImagePairReview", tbApiBase)
-		respBytes, err := callApi("POST", urlReview, tbAuth, reviewReq, logs, fmt.Sprintf("[%s] Pre-flight Spec & Image Review", tc.RdbmsId))
-		if err != nil {
-			log.Warn().Err(err).Msgf("[%s] Spec & Image Review returned warning: %v", tc.RdbmsId, err)
-		} else {
-			var reviewResp model.SpecImagePairReviewResult
-			if jsonErr := json.Unmarshal(respBytes, &reviewResp); jsonErr == nil {
-				if reviewResp.IsValid {
-					log.Info().Msgf("[%s] Pre-flight Spec & Image Review OK: status=%s, valid=%t, cost=%s",
-						tc.RdbmsId, reviewResp.Status, reviewResp.IsValid, reviewResp.EstimatedCost)
+		respBytes, err := callApi("POST", urlReview, tbAuth, reviewReq, logs, fmt.Sprintf("[%s] Review Spec-Image Pair", tc.RdbmsId))
+		if err == nil {
+			var reviewResult model.SpecImagePairReviewResult
+			if jsonErr := json.Unmarshal(respBytes, &reviewResult); jsonErr == nil {
+				if reviewResult.ImageValidation.CspResourceId != "" {
+					log.Info().Msgf("[%s] Spec-Image Pair Review succeeded (valid=%v, status=%s, resolved CSP image=%s)",
+						tc.RdbmsId, reviewResult.IsValid, reviewResult.Status, reviewResult.ImageValidation.CspResourceId)
 				} else {
-					log.Warn().Msgf("[%s] Pre-flight Spec & Image Review warning: %s (errors=%v)",
-						tc.RdbmsId, reviewResp.Message, reviewResp.Errors)
+					log.Info().Msgf("[%s] Spec-Image Pair Review result: valid=%v, status=%s, msg=%s",
+						tc.RdbmsId, reviewResult.IsValid, reviewResult.Status, reviewResult.Message)
+				}
+				if !reviewResult.IsValid || reviewResult.Status == "Error" {
+					log.Warn().Msgf("[%s] Spec-Image Pair Review flagged issues: %s (errors: %v)",
+						tc.RdbmsId, reviewResult.Message, reviewResult.Errors)
 				}
 			}
 		}
 	}
+
 }
 
-// runInternalDataTest provisions a test VM in the same VNet and Subnet as the RDBMS,
-// then uses Tumblebug's Remote Command API to execute SQL queries directly against
-// the RDBMS private endpoint from inside the VPC network.
 func runInternalDataTest(
 	tbApiBase string,
 	nsId string,
@@ -1027,9 +1046,8 @@ func runInternalDataTest(
 	tbAuth map[string]string,
 	logs *[]ApiLog,
 ) (status string, err error) {
-	label := cspLabel(tc.RdbmsId)
-	sshKeyId := fmt.Sprintf("test-rdbms-sshkey-%s", label)
-	infraId := fmt.Sprintf("test-rdbms-infra-%s", label)
+	infraId := fmt.Sprintf("test-rdbms-infra-%s", tc.RdbmsId)
+	sshKeyId := fmt.Sprintf("test-rdbms-sshkey-%s", tc.RdbmsId)
 
 	// Ensure cleanup of test VM and SSHKey upon completion
 	defer func() {
@@ -1038,7 +1056,7 @@ func runInternalDataTest(
 
 		// Poll until test infra is fully terminated so CSP releases SecurityGroup/Subnet ENIs
 		urlGetInfra := fmt.Sprintf("%s/ns/%s/infra/%s", tbApiBase, nsId, infraId)
-		for attempt := 1; attempt <= 12; attempt++ {
+		for attempt := 1; attempt <= 18; attempt++ {
 			time.Sleep(5 * time.Second)
 			_, getErr := callApi("GET", urlGetInfra, tbAuth, nil, logs, fmt.Sprintf("[%s] Verify Infra Termination", tc.RdbmsId))
 			if getErr != nil && isNotFoundErr(getErr) {
@@ -1046,8 +1064,20 @@ func runInternalDataTest(
 			}
 		}
 
+		// Brief stabilization pause after VM termination to allow CSP-side key unbinding
+		time.Sleep(15 * time.Second)
+
+		// Delete SSHKey with retry (normal DELETE confirms genuine CSP-side keypair deletion)
 		urlDeleteSSH := fmt.Sprintf("%s/ns/%s/resources/sshKey/%s", tbApiBase, nsId, sshKeyId)
-		_, _ = callApi("DELETE", urlDeleteSSH, tbAuth, nil, logs, fmt.Sprintf("[%s] Teardown Test SSHKey", tc.RdbmsId))
+		for attempt := 1; attempt <= 4; attempt++ {
+			_, delErr := callApi("DELETE", urlDeleteSSH, tbAuth, nil, logs, fmt.Sprintf("[%s] Teardown Test SSHKey", tc.RdbmsId))
+			if delErr == nil || isNotFoundErr(delErr) {
+				break
+			}
+			if attempt < 4 {
+				time.Sleep(10 * time.Second)
+			}
+		}
 	}()
 
 	// 1. Create or retrieve SSH Key
@@ -1096,17 +1126,14 @@ func runInternalDataTest(
 		port = "3306"
 	}
 
-	// Give sshd a brief grace period to start accepting connections after VM reaches Running
-	time.Sleep(15 * time.Second)
+	// Give sshd and cloud-init sufficient grace period to start accepting connections after VM reaches Running
+	time.Sleep(50 * time.Second)
 
 	// 3. Send Remote Command via POST /ns/{nsId}/cmd/infra/{infraId}
 	sqlCmd := fmt.Sprintf("mysql -h %s -P %s -u %s -p'%s' %s -e \"DROP TABLE IF EXISTS tumblebug_internal_test; CREATE TABLE tumblebug_internal_test (id INT PRIMARY KEY, val VARCHAR(255)); INSERT INTO tumblebug_internal_test (id, val) VALUES (1, 'internal-test-ok'); SELECT val FROM tumblebug_internal_test WHERE id=1; DROP TABLE tumblebug_internal_test;\"",
 		host, port, tc.AdminUserName, tc.AdminUserPassword, dbName)
 
-	cmdUserName := ""
-	if strings.Contains(strings.ToLower(tc.ConnectionName), "alibaba") || strings.Contains(strings.ToLower(tc.ConnectionName), "tencent") {
-		cmdUserName = "root"
-	}
+	cmdUserName := "cb-user"
 
 	cmdReq := model.InfraCmdReq{
 		Command: []string{

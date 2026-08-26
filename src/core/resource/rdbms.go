@@ -482,7 +482,7 @@ var (
 	rdbmsCSPGoneInterval    = 30 * time.Second
 
 	rdbmsPostDeleteWaitDefault = 10 * time.Second
-	rdbmsPostDeleteWaitAlibaba = 180 * time.Second
+	rdbmsPostDeleteWaitAlibaba = 510 * time.Second
 	rdbmsPostDeleteWaitTencent = 90 * time.Second
 )
 
@@ -970,6 +970,7 @@ func ConfirmRDBMSCreated(rdbmsKey string, rdbmsInfo *model.RDBMSInfo) (spiderRDB
 	client := clientManager.NewHttpClient()
 	noBody := clientManager.NoBody
 	getUrl := fmt.Sprintf("%s/rdbms/%s?ConnectionName=%s", model.SpiderRestUrl, rdbmsInfo.Uid, rdbmsInfo.ConnectionName)
+	log.Info().Msgf("Waiting for RDBMS %s to reach Available state (polling every %s up to %s)...", rdbmsInfo.Id, rdbmsCreationPollInterval, rdbmsCreationTimeout)
 
 	for attempt := 1; attempt <= rdbmsCreationMaxAttempts; attempt++ {
 		var spResp spiderRDBMSInfo
@@ -987,6 +988,7 @@ func ConfirmRDBMSCreated(rdbmsKey string, rdbmsInfo *model.RDBMSInfo) (spiderRDB
 		if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
 			log.Warn().Err(err).Msgf("RDBMS %s status poll failed on attempt %d/%d; retrying", rdbmsInfo.Uid, attempt, rdbmsCreationMaxAttempts)
 		} else if spResp.Status == "Available" {
+			log.Info().Msgf("RDBMS %s reached Available state on attempt %d/%d", rdbmsInfo.Id, attempt, rdbmsCreationMaxAttempts)
 			return spResp, nil
 		} else {
 			log.Info().Msgf("RDBMS %s not yet Available (status: %s), attempt %d/%d; will poll again in %s", rdbmsInfo.Uid, spResp.Status, attempt, rdbmsCreationMaxAttempts, rdbmsCreationPollInterval)
@@ -1482,7 +1484,11 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 			// nothing was confirmed torn down, so there is no dependency release to wait for
 			postDeleteWait = 0
 		}
-		time.Sleep(postDeleteWait)
+		if postDeleteWait > 0 {
+			log.Info().Msgf("Waiting %s for CSP post-delete stabilization (%s) to release background network bindings...", postDeleteWait, rdbmsInfo.ConnectionConfig.ProviderName)
+			time.Sleep(postDeleteWait)
+			log.Info().Msgf("Post-delete stabilization wait of %s completed for %s (%s)", postDeleteWait, rdbmsInfo.ConnectionConfig.ProviderName, rdbmsId)
+		}
 
 	} else {
 		log.Warn().Msgf("RDBMS %s has no CSP resource (Uid is empty). Skipping Spider DELETE and removing metadata only.", rdbmsId)

@@ -86,9 +86,11 @@ uv.lock
 .env
 
 # test-cli: local configs and results (applies to all CLIs under test-clis/)
-src/testclient/test-clis/**/test-config.yaml
 src/testclient/test-clis/**/test-results/*
 !src/testclient/test-clis/**/test-results/.gitkeep
+src/testclient/test-clis/**/test-config*.yaml
+!src/testclient/test-clis/**/template-test-config.yaml
+src/testclient/test-clis/**/rdbms
 
 # VPN test (local only)
 # (no additional exceptions)
