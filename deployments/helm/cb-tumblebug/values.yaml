@@ -61,6 +61,9 @@ assetsOverride:
   files: []
 
 tumblebug:
+  # Prefer a node running cb-tumblebug's metadb (etcd + postgres), keeping that frequent
+  # coordination/DB traffic node-local (soft, so it still schedules on a single-node cluster).
+  colocateWithMetadb: true
   # K8s-recommended settings (compose keeps its own defaults)
   logWriter: stdout
   # json (not console) so log collectors render cleanly and the interaction dashboard can
@@ -91,6 +94,11 @@ spider:
   # (scale to 2-3, provision a multi-region infra, watch per-pod load + check for errors/dupes)
   # before relying on it. Keep at 1 for the standard single-instance behavior.
   replicas: 1
+  # Prefer scheduling cb-spider and cb-tumblebug onto different nodes (soft anti-affinity, so
+  # it still schedules on a single-node cluster). Isolates the heavy CSP-call worker from the API.
+  separateFromTumblebug: false
+  # Prefer the node running cb-spider-postgres, so the frequent metadb traffic stays node-local (soft).
+  colocateWithPostgres: true
   logLevel: error
   hiscallLogLevel: error
   # Go GC soft target (no hard limit): in-flight VM creations hold ~15 MB each,
