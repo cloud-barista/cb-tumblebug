@@ -51,6 +51,31 @@ spec:
             matchLabels:
               app: cb-spider
       {{- end }}
+      {{- if or .Values.spider.separateFromTumblebug .Values.spider.colocateWithPostgres }}
+      affinity:
+        {{- if .Values.spider.separateFromTumblebug }}
+        # Prefer a node not running cb-tumblebug (soft, so it still schedules on a single-node cluster).
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: cb-tumblebug
+        {{- end }}
+        {{- if .Values.spider.colocateWithPostgres }}
+        # Prefer the node running cb-spider-postgres to keep metadb traffic node-local (soft).
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: cb-spider-postgres
+        {{- end }}
+      {{- end }}
       initContainers:
         # Four cb-spider packages panic in init() if the metadb is down at start
         - name: wait-for-metadb

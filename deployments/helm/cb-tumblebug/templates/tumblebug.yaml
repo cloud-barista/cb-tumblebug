@@ -33,6 +33,37 @@ spec:
         {{- include "cb.labels" . | nindent 8 }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.tumblebug.terminationGracePeriodSeconds }}
+      {{- if or .Values.spider.separateFromTumblebug .Values.tumblebug.colocateWithMetadb }}
+      affinity:
+        {{- if .Values.spider.separateFromTumblebug }}
+        # Prefer a node not running cb-spider (soft, so it still schedules on a single-node cluster).
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: cb-spider
+        {{- end }}
+        {{- if .Values.tumblebug.colocateWithMetadb }}
+        # Prefer a node running cb-tumblebug's metadb (etcd/postgres) to keep that traffic node-local (soft).
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: cb-tumblebug-etcd
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: cb-tumblebug-postgres
+        {{- end }}
+      {{- end }}
       containers:
         - name: cb-tumblebug
           image: {{ .Values.images.tumblebug }}
