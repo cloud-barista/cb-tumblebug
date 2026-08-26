@@ -16,6 +16,7 @@ package client
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -334,7 +335,7 @@ func limitConcurrentRequests(requestKey string, limit int) bool {
 	currentCount := count.(int)
 
 	if currentCount >= limit {
-		fmt.Printf("[%d] requests for %s \n", currentCount, requestKey)
+		log.Debug().Msgf("concurrent request limit reached (%d) for %s", currentCount, requestKey)
 		return false
 	}
 
@@ -411,8 +412,9 @@ func ExecuteHttpRequest[B any, T any](
 			if err != nil {
 				return nil, fmt.Errorf("JSON marshaling failed: %w", err)
 			}
-			// Create cache key using both URL and body
-			requestKey = fmt.Sprintf("%s_%s_%s", method, url, string(bodyString))
+			// Hash the body into the cache key so identity is preserved without ever
+			// carrying request-body plaintext (which may hold credentials) into logs.
+			requestKey = fmt.Sprintf("%s_%s_%x", method, url, sha256.Sum256(bodyString))
 		} else {
 			// Create cache key using only URL
 			requestKey = fmt.Sprintf("%s_%s", method, url)
