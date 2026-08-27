@@ -579,24 +579,6 @@ type K8sNodeGroupDynamicReq struct {
 	MaxNodeSize     int    `json:"maxNodeSize,omitempty" example:"3"`
 }
 
-// K8sClusterContainerCmdReq is struct for remote command
-type K8sClusterContainerCmdReq struct {
-	Command []string `json:"command" validate:"required" example:"echo hello"`
-}
-
-// K8sClusterContainerCmdResult is struct for K8sClusterContainerCmd Result
-type K8sClusterContainerCmdResult struct {
-	Command string `json:"command"`
-	Stdout  string `json:"stdout"`
-	Stderr  string `json:"stderr"`
-	Err     error  `json:"err"`
-}
-
-// K8sClusterContainerCmdResultMap is struct maps for K8sClusterContainerCmd Result
-type K8sClusterContainerCmdResults struct {
-	Results []*K8sClusterContainerCmdResult `json:"results"`
-}
-
 /*
  * Multi K8sCluster Request/Response (for parallel creation)
  */
