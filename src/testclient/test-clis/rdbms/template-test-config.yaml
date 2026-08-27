@@ -256,6 +256,8 @@ testCases:
     adminUserName: myadmin
     adminUserPassword: Password123!
     publicAccess: true
+    # nhnDBSGToAllowAllInbound: true auto-creates/deletes an open (0.0.0.0/0) DB Security Group on NHN for test access.
+    nhnDBSGToAllowAllInbound: true
     highAvailability: false
     databaseName: sampledb
     internalDataIOTest: true
