@@ -2581,8 +2581,10 @@ applyStatus:
 
 	// Apply current status to nodeInfo only if VM is not already terminated
 	// Prevent overwriting Terminated status with empty or other states
-	originalNodeInfo, _ := GetNodeObject(nsId, infraId, nodeId)
-	if originalNodeInfo.Status != model.StatusTerminated {
+	// A concurrent DelInfra may remove the node during the (slow) CSP status call
+	// above; skip the write-back so we don't act on a not-found zero object.
+	originalNodeInfo, getErr := GetNodeObject(nsId, infraId, nodeId)
+	if getErr == nil && originalNodeInfo.Status != model.StatusTerminated {
 		nodeInfo.Status = nodeStatusTmp.Status
 		nodeInfo.TargetAction = nodeStatusTmp.TargetAction
 		nodeInfo.TargetStatus = nodeStatusTmp.TargetStatus
@@ -2688,6 +2690,12 @@ func GetInfraNodeCurrentStatus(nsId string, infraId string, nodeId string) (*mod
 
 // UpdateInfraInfo is func to update Infra Info (without Node info in Infra)
 func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
+	// An empty Id collapses GenInfraKey onto the namespace key; reject to avoid
+	// writing a stray/empty infra object.
+	if infraInfoData.Id == "" {
+		log.Warn().Msgf("UpdateInfraInfo skipped: empty Infra Id (ns %s)", nsId)
+		return
+	}
 	infraInfoMutex.Lock()
 	defer infraInfoMutex.Unlock()
 
@@ -2717,6 +2725,12 @@ func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
 
 // UpdateNodeInfo is func to update Node Info
 func UpdateNodeInfo(nsId string, infraId string, nodeInfoData model.NodeInfo) {
+	// An empty node Id collapses GenInfraKey onto the parent infra key, so this
+	// write would overwrite the infra object with node data. Refuse it.
+	if nodeInfoData.Id == "" {
+		log.Warn().Msgf("UpdateNodeInfo skipped: empty node Id (Infra %s/%s)", nsId, infraId)
+		return
+	}
 	infraInfoMutex.Lock()
 	defer func() {
 		infraInfoMutex.Unlock()

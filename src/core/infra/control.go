@@ -490,50 +490,60 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 	// whose CspResourceId is known. Reboot is always routed through Spider.
 	bulkEntries := make(map[string]bulkControlEntry) // NodeId -> bulkControlEntry
 
+	// Per-node metadata reads (CheckAllowedTransition + GetNodeObject) are run concurrently:
+	// on a large infra the sequential version issued ~2 KV reads per node and dominated the
+	// control latency. A single bulk read is not an option — all node values at once exceed
+	// etcd's gRPC message limit (see ListNodeId) — so bound the concurrency instead.
+	var preWg sync.WaitGroup
+	var preMu sync.Mutex
+	preSem := make(chan struct{}, 50)
 	for _, nodeId := range nodeList {
-		// Skip if control is not needed
-		err := CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: nodeId}, action)
-		if err != nil && !force {
-			log.Debug().Msgf("Skipping VM %s for action %s: %v", nodeId, action, err)
-			continue
-		}
+		preWg.Add(1)
+		preSem <- struct{}{}
+		go func(nodeId string) {
+			defer preWg.Done()
+			defer func() { <-preSem }()
 
-		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
-		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", nodeId)
-			continue
-		}
+			// Skip if control is not needed
+			if err := CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: nodeId}, action); err != nil && !force {
+				log.Debug().Msgf("Skipping VM %s for action %s: %v", nodeId, action, err)
+				return
+			}
 
-		// For Terminate: skip VMs already in Terminated state.
-		// CheckAllowedTransition returns nil for Terminate+Terminated (idempotent),
-		// so without this guard the bulk path would overwrite their status back to
-		// Terminating, causing StatusAgent to poll a deleted CSP resource and flip
-		// the VM to Undefined.
-		if strings.EqualFold(action, model.ActionTerminate) &&
-			strings.EqualFold(nodeInfo.Status, model.StatusTerminated) {
-			log.Debug().Msgf("[ControlNodesInParallel] Skipping already-terminated VM %s", nodeId)
-			continue
-		}
+			nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
+			if err != nil {
+				log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", nodeId)
+				return
+			}
 
-		providerName := nodeInfo.ConnectionConfig.ProviderName
-		regionName := nodeInfo.Region.Region
+			// For Terminate: skip VMs already in Terminated state.
+			// CheckAllowedTransition returns nil for Terminate+Terminated (idempotent),
+			// so without this guard the bulk path would overwrite their status back to
+			// Terminating, causing StatusAgent to poll a deleted CSP resource and flip
+			// the VM to Undefined.
+			if strings.EqualFold(action, model.ActionTerminate) &&
+				strings.EqualFold(nodeInfo.Status, model.StatusTerminated) {
+				log.Debug().Msgf("[ControlNodesInParallel] Skipping already-terminated VM %s", nodeId)
+				return
+			}
 
-		// Initialize CSP map if not exists
-		if nodeGroups[providerName] == nil {
-			nodeGroups[providerName] = make(map[string][]string)
-		}
+			providerName := nodeInfo.ConnectionConfig.ProviderName
+			regionName := nodeInfo.Region.Region
 
-		// Add VM to the appropriate group
-		nodeGroups[providerName][regionName] = append(nodeGroups[providerName][regionName], nodeId)
-		nodeGroupInfos[nodeId] = NodeControlInfo{
-			NodeId:       nodeId,
-			ProviderName: providerName,
-			RegionName:   regionName,
-		}
+			// Register as bulk-eligible if the CSP has a bulk handler and the node has a CSP resource ID.
+			_, hasBulk := cspdirect.GetBatchVMControlHandler(providerName, action)
 
-		// Register as bulk-eligible if the CSP has a bulk handler and the node has a CSP resource ID.
-		if nodeInfo.CspResourceId != "" {
-			if _, hasBulk := cspdirect.GetBatchVMControlHandler(providerName, action); hasBulk {
+			preMu.Lock()
+			if nodeGroups[providerName] == nil {
+				nodeGroups[providerName] = make(map[string][]string)
+			}
+			nodeGroups[providerName][regionName] = append(nodeGroups[providerName][regionName], nodeId)
+			nodeGroupInfos[nodeId] = NodeControlInfo{
+				NodeId:       nodeId,
+				ProviderName: providerName,
+				RegionName:   regionName,
+			}
+			if nodeInfo.CspResourceId != "" && hasBulk {
 				bulkEntries[nodeId] = bulkControlEntry{
 					nodeId:           nodeId,
 					cspResourceId:    nodeInfo.CspResourceId,
@@ -544,8 +554,10 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					nodeInfo:         nodeInfo,
 				}
 			}
-		}
+			preMu.Unlock()
+		}(nodeId)
 	}
+	preWg.Wait()
 
 	// Step 2: Process CSPs in parallel
 	var wg sync.WaitGroup
@@ -940,10 +952,9 @@ func postBulkControlCleanup(nsId, infraId string, be bulkControlEntry, action st
 	asyncSpiderForceDeleteVM(be.connectionName, be.cspResourceName)
 }
 
-// asyncSpiderForceDeleteVM deletes Spider's vm_iid_infos record for a VM that was terminated
-// directly via the AWS SDK. The instance may still be in "shutting-down" state when called;
-// Spider will poll until "terminated" (fast path since AWS completes in < 60 s typically).
-// Errors are non-fatal: the instance is already gone from AWS, only Spider's DB record is stale.
+// asyncSpiderForceDeleteVM removes Spider's stale vm_iid_infos record for a VM already terminated
+// via the direct SDK, using Spider's unregister API (metadb-only, no CSP call or status polling).
+// Errors are non-fatal: the instance is already gone from the CSP, only Spider's DB record is stale.
 func asyncSpiderForceDeleteVM(connectionName, cspResourceName string) {
 	if cspResourceName == "" {
 		return
@@ -953,8 +964,8 @@ func asyncSpiderForceDeleteVM(connectionName, cspResourceName string) {
 		defer func() { <-globalControlSem }()
 
 		client := clientManager.NewHttpClient()
-		client.SetTimeout(15 * time.Minute)
-		url := model.SpiderRestUrl + "/vm/" + cspResourceName + "?force=true"
+		client.SetTimeout(1 * time.Minute)
+		url := model.SpiderRestUrl + "/regvm/" + cspResourceName
 		requestBody := model.SpiderConnectionName{ConnectionName: connectionName}
 		var ignored struct{}
 		_, err := clientManager.ExecuteHttpRequest(

@@ -200,6 +200,14 @@ func setupAndWaitForInternalServices() {
 				sqlDB, sqlErr := db.DB()
 				if sqlErr == nil {
 					if pingErr := sqlDB.Ping(); pingErr == nil {
+						// Bound the connection pool so a bursty fan-out (e.g. large infra provisioning
+						// issuing thousands of concurrent spec/image lookups) queues on a fixed set of
+						// connections instead of exhausting PostgreSQL's max_connections and surfacing
+						// transient errors that upper layers mistake for "resource not found".
+						sqlDB.SetMaxOpenConns(80)
+						sqlDB.SetMaxIdleConns(20)
+						sqlDB.SetConnMaxLifetime(30 * time.Minute)
+						sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 						model.ORM = db
 						log.Info().Msgf("setup: PostgreSQL is ready (attempt %d)", i+1)
 						return
