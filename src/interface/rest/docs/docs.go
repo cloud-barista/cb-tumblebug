@@ -31429,9 +31429,14 @@ const docTemplate = `{
                     "type": "string",
                     "example": "rdbms-01"
                 },
+                "nhnDBSGToAllowAllInbound": {
+                    "description": "NHNDBSGToAllowAllInbound (NHN only): when true with publicAccess=true, auto-creates/attaches a 0.0.0.0/0 DB SG.",
+                    "type": "boolean",
+                    "example": false
+                },
                 "publicAccess": {
                     "type": "boolean",
-                    "example": true
+                    "example": false
                 },
                 "securityGroupIds": {
                     "type": "array",
@@ -31628,9 +31633,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "rdbms-01"
                 },
+                "nhnDBSGToAllowAllInbound": {
+                    "type": "boolean"
+                },
                 "publicAccess": {
                     "type": "boolean",
-                    "example": true
+                    "example": false
                 },
                 "resourceType": {
                     "description": "ResourceType is the type of this resource",

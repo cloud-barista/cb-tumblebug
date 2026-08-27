@@ -1,16 +1,15 @@
 # Configuration for RDBMS (Relational Database Management System) of Cloud Service Providers (CSPs)
 # This file defines storage types, DBMS requirements, and database requirements for each CSP
 
-# Last Updated: 2026-08-25
-# Source: CB-Spider storage-type-test (2026-08-03), CB-Spider v0.12.44 RDBMS/MariaDB test suites
+# Last Updated: 2026-08-27
+# Source: CB-Spider storage-type-test, CB-Spider v0.13.1 RDBMS/MariaDB test suites
 # and wiki RDBMS Management Guide. Field naming (dbInstanceSpec, adminUserName/adminUserPassword)
-# reflects Tumblebug's DBInstanceSpec model and Spider's DBSpec contract. CB-Spider v0.13.0 was diffed against
-# v0.12.45 (9 commits/51 files): the only RDBMS-relevant changes are internal pagination fixes
-# in GCP's and IBM's RDBMSHandler.go (ListRDBMS previously missed results beyond page 1) — no
-# change to RDBMSRest.go, RDBMSHandler.go, DBSpecRest.go, or DBSpecHandler.go, so this file's
-# empirical capability data (storage types, supportedDBEngines) carries over unchanged.
+# reflects Tumblebug's DBInstanceSpec model and Spider's DBSpec contract. CB-Spider v0.13.1
+# introduced NHNAutoOpenDBSecurityGroup (exposed in Tumblebug as nhnDBSGToAllowAllInbound),
+# clarified SG requirements (AWS: required, Tencent: optional, other 7 CSPs: ignored), and
+# clarified Azure Subnet requirement under VPC-private mode (publicAccess=false).
 # dbmsRequirements.<engine>.referenceEngineVersion values come from CB-Spider's own
-# rdbms-mysql-test (verified 2026-08-03) and rdbms-mariadb-test (verified 2026-08-18) READMEs,
+# rdbms-mysql-test and rdbms-mariadb-test READMEs,
 # which each document the exact (engine, version, spec, storage) combination CB-Spider's team
 # has confirmed reaches Available per CSP.
 # Reference: https://github.com/cloud-barista/cb-spider/tree/master/test/rdbms-mysql-test/storage-type-test
@@ -167,7 +166,7 @@ dbms:
     supportedDBEngines: [mysql]
     dbOperationMethod: cspNativeApi
     supportsTag: true
-    note: "Storage type selection not supported. Storage SKU is read-only and automatically set by Azure based on compute tier (Premium SSD for General Purpose/Memory Optimized tiers, locally redundant storage for Burstable tier). dbOperationMethod is cspNativeApi (armmysqlfs.DatabasesClient, confirmed in driver source) — the CB-Spider wiki's §4.3 table lists Azure as SQL fallback, which doesn't match."
+    note: "Storage type selection not supported. Storage SKU is read-only and automatically set by Azure based on compute tier (Premium SSD for General Purpose/Memory Optimized tiers, locally redundant storage for Burstable tier). dbOperationMethod is cspNativeApi (armmysqlfs.DatabasesClient). Azure uses SubnetNames only in VPC-private mode (PublicAccess=false); when PublicAccess=true, subnet is not used."
     storageTypeSelectable: false
     storageTypes:
       auto:
@@ -360,6 +359,7 @@ dbms:
     supportedDBEngines: [mysql]
     dbOperationMethod: cspNativeApi
     supportsTag: true
+    note: "SecurityGroup is optional (shares the VM's security group if provided). Other CSPs except AWS ignore securityGroupIds."
     storageTypeSelectable: true
     storageTypes:
       local_ssd:
@@ -554,16 +554,14 @@ dbms:
           2026-08-18, 20GB)."
         
     securityGroupRequirements:
-      note: "NHN Cloud uses a dedicated DB Security Group distinct from VPC Security Groups. In production, users configure inbound access rules in NHN Cloud Console (Database > RDS for MySQL > DB 보안 그룹).
-        - As-Is: If the SecurityGroup field is left empty during RDBMS creation (AllowAllTrafficForTesting behavior), CB-Spider internally creates a DB SG allowing remote access from 0.0.0.0/0.
-        - To-Be: CB-Spider agreed to provide a dedicated keyword parameter to explicitly enable test-mode remote access DB SG creation (planned for next release, keyword TBD)."
+      note: "NHN Cloud uses a dedicated DB Security Group distinct from VPC Security Groups. SecurityGroupNames is ignored by Spider. In production, configure inbound rules in NHN Cloud Console (Database > RDS for MySQL > DB 보안 그룹). For testing, set nhnDBSGToAllowAllInbound=true (NHNAutoOpenDBSecurityGroup=true) with publicAccess=true to auto-create and attach a 0.0.0.0/0 open DB Security Group."
 
     endpointStructure:
       fqdnPattern: "{instance-uuid}.external.{region}.{engine}.rds.nhncloudservice.com"
       note: "NHN Cloud RDS assigns a single public FQDN endpoint when PublicAccess is enabled. Access control to this endpoint (from both external networks and VPC internal VMs) is governed by NHN Cloud's dedicated DB Security Group (DB 보안 그룹)."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions. Direct client access (port 3306) from both external networks and VPC internal VMs requires inbound permit rules configured in NHN Cloud Console's dedicated DB Security Group (RDS for MySQL > DB 보안 그룹), or enabling test-mode AllowAllTrafficForTesting."
+      note: "Database naming follows standard MySQL conventions. Direct client access (port 3306) requires inbound permit rules configured in NHN Cloud Console's dedicated DB Security Group, or enabling nhnDBSGToAllowAllInbound (for testing)."
 
     adminUserNameRequirement:
       reservedValues:

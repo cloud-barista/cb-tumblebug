@@ -2,7 +2,7 @@
 
 CB-Tumblebug's RDBMS (managed relational database) feature: capability discovery, instance
 lifecycle, logical database management, and CSP-specific defaults. Backed by CB-Spider's RDBMS
-API (v0.13.0+) — an implementation detail, not this document's focus (see References).
+API (v0.13.1+) — an implementation detail, not this document's focus (see References).
 
 ## CSP-Wide Engine Support Matrix
 
@@ -129,17 +129,17 @@ Reference values and per-CSP rules — `CreateRDBMS` always re-checks live capab
 
 `DB Op. Method` — `cspNativeApi` (CSP-native database API) or `sqlFallback` (direct SQL via the admin login; see [Direct SQL Connection & Reachability](#direct-sql-connection--reachability-external-vs-internal-vpc) for network-reachability details).
 
-| CSP       | Engine Version | DB Spec                                         | Storage            | Requires Subnet | Requires SG | Storage Type Selectable | Tag Support | DB Op. Method |
-| --------- | -------------- | ----------------------------------------------- | ------------------ | :-------------: | :---------: | :---------------------: | :---------: | ------------- |
-| AWS       | 8.0            | db.t3.medium                                    | 100GB / gp3        |   🟢 (2 AZs)    |     🟢      |           🟢            |     🟢      | sqlFallback   |
-| Azure     | 8.0.21         | Standard_B1ms                                   | 20GB / auto        |       🔴        |     🔴      |           🔴            |     🟢      | cspNativeApi  |
-| GCP       | 8.0            | db-custom-2-8192                                | 20GB / PD_SSD      |       🔴        |     🔴      | 🟢 (via machine series) |     🟢      | cspNativeApi  |
-| Alibaba   | 8.0            | mysql.n4.large.1                                | 20GB / cloud_essd  |       🟢        |     🔴      |           🟢            |     🟢      | cspNativeApi  |
-| Tencent   | 8.0            | 8000 (MB)                                       | 50GB / local_ssd   |       🟢        |     🔴      |           🟢            |     🟢      | cspNativeApi  |
-| IBM       | 8.4            | multitenant                                     | 30GB / auto        |       🔴        |     🔴      |           🔴            |     🟢      | sqlFallback   |
-| OpenStack | 5.7.29         | m1.small                                        | 20GB / auto        |       🔴        |     🔴      |           🟢            |     🔴      | cspNativeApi  |
-| NCP       | 8.0.36         | SVR.VDBAS.AMD.STAND.C002.M008.NET.SSD.B050.G003 | CSP-managed        |       🟢        |     🔴      |           🔴            |     🔴      | cspNativeApi  |
-| NHN       | MYSQL_V8408    | m2.c2m4                                         | 20GB / General SSD |       🟢        |     🔴      |           🟢            |     🔴      | cspNativeApi  |
+| CSP           | Engine Version | DB Spec                                           | Storage            | Storage Type Selection |        Subnet Requirement         | Security Group Requirement | Tag Support | DB Op. Method  |
+| :------------ | :------------- | :------------------------------------------------ | :----------------- | :--------------------: | :-------------------------------: | :------------------------: | :---------: | :------------- |
+| **AWS**       | `8.0`          | `db.t3.medium`                                    | 100GB / gp3        |       Selectable       |         Required (2 AZs)          |          Required          |  Supported  | `sqlFallback`  |
+| **Azure**     | `8.0.21`       | `Standard_B1ms`                                   | 20GB / auto        |      Auto-managed      | Required (Private) / N/A (Public) |            N/A             |  Supported  | `cspNativeApi` |
+| **GCP**       | `8.0`          | `db-custom-2-8192`                                | 20GB / PD_SSD      |      Series-bound      |                N/A                |            N/A             |  Supported  | `cspNativeApi` |
+| **Alibaba**   | `8.0`          | `mysql.n4.large.1`                                | 20GB / cloud_essd  |       Selectable       |             Required              |            N/A             |  Supported  | `cspNativeApi` |
+| **Tencent**   | `8.0`          | `8000` (MB)                                       | 50GB / local_ssd   |       Selectable       |             Required              |          Optional          |  Supported  | `cspNativeApi` |
+| **IBM**       | `8.4`          | `multitenant`                                     | 30GB / auto        |      Auto-managed      |                N/A                |            N/A             |  Supported  | `sqlFallback`  |
+| **OpenStack** | `5.7.29`       | `m1.small`                                        | 20GB / auto        |       Selectable       |                N/A                |            N/A             | Unsupported | `cspNativeApi` |
+| **NCP**       | `8.0.36`       | `SVR.VDBAS.AMD.STAND.C002.M008.NET.SSD.B050.G003` | CSP-managed        |      Auto-managed      |             Required              |            N/A             | Unsupported | `cspNativeApi` |
+| **NHN**       | `MYSQL_V8408`  | `m2.c2m4`                                         | 20GB / General SSD |       Selectable       |             Required              |   N/A (Dedicated DB-SG)    | Unsupported | `cspNativeApi` |
 
 Full per-CSP notes (password quirks, premium storage minimums): section 9 of the CB-Spider wiki's [RDBMS Management Guide](<https://github.com/cloud-barista/cb-spider/wiki/RDBMS%E2%80%90Management%E2%80%90Guide(KR)>).
 
@@ -147,14 +147,14 @@ Full per-CSP notes (password quirks, premium storage minimums): section 9 of the
 
 Only 4 of 9 CSPs support MariaDB. Azure, GCP, Tencent, IBM, and NCP do not list `mariadb` — use `mysql` for those providers.
 
-| CSP       | Engine Version  | DB Spec              | Storage            | Result  | Duration |
-| --------- | --------------- | -------------------- | ------------------ | :-----: | -------: |
-| AWS       | 10.6.27         | db.t3.medium         | 100GB / gp2        | ✅ Pass |    4m44s |
-| Alibaba   | 10.6            | mariadb.n2.medium.2c | 20GB / cloud_essd  | ✅ Pass |    3m20s |
-| NHN       | MARIADB_V101118 | m2.c2m4              | 20GB / General SSD | ✅ Pass |    10m8s |
-| OpenStack | 10.6            | m1.small             | 20GB / auto        | ❌ Fail |        — |
+| CSP           | Engine Version     | DB Spec                | Storage            | Storage Type Selection |        Subnet Requirement         | Security Group Requirement | Tag Support | DB Op. Method  |
+| :------------ | :----------------- | :--------------------- | :----------------- | :--------------------: | :-------------------------------: | :------------------------: | :---------: | :------------- |
+| **AWS**       | `10.6` (`10.6.27`) | `db.t3.medium`         | 100GB / gp2        |       Selectable       |         Required (2 AZs)          |          Required          |  Supported  | `sqlFallback`  |
+| **Alibaba**   | `10.6`             | `mariadb.n2.medium.2c` | 20GB / cloud_essd  |       Selectable       |             Required              |            N/A             |  Supported  | `cspNativeApi` |
+| **NHN**       | `MARIADB_V101118`  | `m2.c2m4`              | 20GB / General SSD |       Selectable       |             Required              |   N/A (Dedicated DB-SG)    | Unsupported | `cspNativeApi` |
+| **OpenStack** | `10.4`             | `m1.small`             | 20GB / auto        |       Selectable       |                N/A                |            N/A             | Unsupported | `cspNativeApi` |
 
-_(OpenStack's failure is a test-environment gap — no MariaDB datastore registered — not a driver limitation.)_
+_(Note: OpenStack's local test environment currently does not have a MariaDB datastore registered, but the driver capability mapping is defined as above.)_
 
 ### CSP-Specific Requirements and Constraints
 
@@ -163,6 +163,7 @@ _(OpenStack's failure is a test-environment gap — no MariaDB datastore registe
   - `io1`/`io2` storage types require `Iops >= 1000` and `StorageSize >= 100GB`.
   - Database CRUD uses `sqlFallback` (direct SQL connection via admin login) — private DB instances require network reachability to the private endpoint.
 - **Azure**:
+  - `RequiresSubnet`: Required when `PublicAccess: false` (VPC-private mode); not used when `PublicAccess: true` (default).
   - `SupportsStorageTypeSelection=false` — storage SKU is auto-managed by Azure based on the compute tier.
   - Enforces TLS encryption (`require_secure_transport=ON`); clients must connect with TLS enabled.
 - **GCP**:
@@ -172,6 +173,7 @@ _(OpenStack's failure is a test-environment gap — no MariaDB datastore registe
   - Network interface release lags DB instance deletion; teardown incorporates stabilization retry buffers (510s / 8.5 min).
 - **Tencent**:
   - DBSpec memory size is specified in MB (e.g. `8000` for 8GB).
+  - Security Group is optional (shares the VM's security group).
   - Background ENI release lags DB instance deletion; teardown incorporates stabilization retry buffers (90s).
 - **IBM**:
   - Provisions on the shared/multitenant platform with auto-managed storage (`SupportsStorageTypeSelection=false`).
@@ -182,7 +184,8 @@ _(OpenStack's failure is a test-environment gap — no MariaDB datastore registe
   - Full DB instance deletion is actively tracked via dynamic CSP-side polling (~3–4 min).
 - **NHN**:
   - Requires dedicated RDS credentials (`User Access Key`, `Secret Access Key`, and engine AppKey).
-  - Returns a single public FQDN endpoint when `PublicAccess: true`. Access control is governed by NHN Cloud's dedicated **DB Security Group** (DB 보안 그룹) rather than standard VPC security groups.
+  - Returns a single public FQDN endpoint when `PublicAccess: true`. Standard VPC Security Groups (`securityGroupIds`) are ignored.
+  - Access control is governed by NHN Cloud's dedicated **DB Security Group** (DB 보안 그룹). Setting `nhnDBSGToAllowAllInbound: true` (or `NHNAutoOpenDBSecurityGroup: true` in Spider) with `PublicAccess: true` auto-creates and attaches a fully-open (`0.0.0.0/0`) DB Security Group for testing and deletes it automatically upon DB deletion.
 - **OpenStack**:
   - Storage type is not reported after creation — verify provisioning success via `Available` status.
 
@@ -206,17 +209,17 @@ Enforced client-side by `validateAdminCredentials` before Create reaches CB-Spid
 
 About a caller's own application or test client connecting straight to the database endpoint via MySQL wire protocol (port 3306) — distinct from Tumblebug/Spider's REST-based database management (`DB Op. Method`).
 
-| CSP       |      External Public Access       |  Internal (VPC) Access   | Requires TLS | Reachability Constraints & Evidence                                                                                                                                                                                                                                                                                                                        |
-| --------- | :-------------------------------: | :----------------------: | :----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AWS       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                                                            |
-| Azure     |                🟢                 |            🟢            |     Yes      | Plain rejected (`Error 3159 ... require_secure_transport=ON`); requires TLS (`tls=preferred` or `true`).                                                                                                                                                                                                                                                   |
-| GCP       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                                                            |
-| Alibaba   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically allocates Public Connection and configures IP Whitelist.                                                                                                                                                                                                                                                 |
-| Tencent   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically opens Public WAN access.                                                                                                                                                                                                                                                                                 |
-| IBM       |                🟢                 |            🟢            |     Yes      | Public endpoint supported; TLS required (`*.databases.appdomain.cloud`).                                                                                                                                                                                                                                                                                   |
-| OpenStack |   🟢 (if FIP/router configured)   |            🟢            |      —       | Depends on tenant network external router and floating IP assignment.                                                                                                                                                                                                                                                                                      |
-| NCP       |             🔴 (N/A)              |            🟢            |      —       | **No external public IP provided by default**; endpoint is private VPC-only (`*.vpc-cdb.ntruss.com`). External access requires manual public domain request via NCP console.                                                                                                                                                                               |
-| NHN       | 🔴 (by default) / 🟢 (with DB SG) | 🟢 (requires DB SG rule) |      —       | **Public FQDN/IP is assigned, but port 3306 is blocked by default** by NHN Cloud's dedicated DB Security Group (positive security model). Access from both external networks and VPC internal VMs requires adding an inbound permit rule in the NHN Console (`Database > RDS for MySQL > DB 보안 그룹`) or enabling test-mode `AllowAllTrafficForTesting`. |
+| CSP       |      External Public Access       |  Internal (VPC) Access   | Requires TLS | Reachability Constraints & Evidence                                                                                                                                                                                                                                                                                    |
+| --------- | :-------------------------------: | :----------------------: | :----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AWS       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                        |
+| Azure     |                🟢                 |            🟢            |     Yes      | Plain rejected (`Error 3159 ... require_secure_transport=ON`); requires TLS (`tls=preferred` or `true`).                                                                                                                                                                                                               |
+| GCP       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                        |
+| Alibaba   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically allocates Public Connection and configures IP Whitelist.                                                                                                                                                                                                             |
+| Tencent   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically opens Public WAN access.                                                                                                                                                                                                                                             |
+| IBM       |                🟢                 |            🟢            |     Yes      | Public endpoint supported; TLS required (`*.databases.appdomain.cloud`).                                                                                                                                                                                                                                               |
+| OpenStack |   🟢 (if FIP/router configured)   |            🟢            |      —       | Depends on tenant network external router and floating IP assignment.                                                                                                                                                                                                                                                  |
+| NCP       |             🔴 (N/A)              |            🟢            |      —       | **No external public IP provided by default**; endpoint is private VPC-only (`*.vpc-cdb.ntruss.com`). External access requires manual public domain request via NCP console.                                                                                                                                           |
+| NHN       | 🔴 (by default) / 🟢 (with DB SG) | 🟢 (requires DB SG rule) |      —       | **Public FQDN/IP is assigned, but port 3306 is blocked by default** by NHN Cloud's dedicated DB Security Group (positive security model). Access requires configuring an inbound permit rule in the NHN Console (`Database > RDS for MySQL > DB 보안 그룹`) or setting `nhnDBSGToAllowAllInbound: true` (for testing). |
 
 > [!NOTE]
 > **Dual Testing Strategy (External vs Internal VPC)**:

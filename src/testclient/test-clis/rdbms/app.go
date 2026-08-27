@@ -85,23 +85,24 @@ type SubnetConfig struct {
 
 // TestCase represents a single CSP test case from the config file.
 type TestCase struct {
-	RdbmsId           string         `mapstructure:"rdbmsId"`
-	ConnectionName    string         `mapstructure:"connectionName"`
-	VNetName          string         `mapstructure:"vNetName"`
-	CidrBlock         string         `mapstructure:"cidrBlock"`
-	Subnets           []SubnetConfig `mapstructure:"subnets"`
-	SecurityGroupName string         `mapstructure:"securityGroupName"`
-	DBEngine          string         `mapstructure:"dbEngine"`
-	DBEngineVersion   string         `mapstructure:"dbEngineVersion"`
-	DBInstanceSpec    string         `mapstructure:"dbInstanceSpec"`
-	DBSpec            string         `mapstructure:"dbSpec"`
-	StorageType       string         `mapstructure:"storageType"`
-	StorageSize       int            `mapstructure:"storageSize"`
-	AutoFillDefaults  bool           `mapstructure:"autoFillDefaults"`
-	AdminUserName     string         `mapstructure:"adminUserName"`
-	AdminUserPassword string         `mapstructure:"adminUserPassword"`
-	PublicAccess      bool           `mapstructure:"publicAccess"`
-	HighAvailability  bool           `mapstructure:"highAvailability"`
+	RdbmsId                  string         `mapstructure:"rdbmsId"`
+	ConnectionName           string         `mapstructure:"connectionName"`
+	VNetName                 string         `mapstructure:"vNetName"`
+	CidrBlock                string         `mapstructure:"cidrBlock"`
+	Subnets                  []SubnetConfig `mapstructure:"subnets"`
+	SecurityGroupName        string         `mapstructure:"securityGroupName"`
+	DBEngine                 string         `mapstructure:"dbEngine"`
+	DBEngineVersion          string         `mapstructure:"dbEngineVersion"`
+	DBInstanceSpec           string         `mapstructure:"dbInstanceSpec"`
+	DBSpec                   string         `mapstructure:"dbSpec"`
+	StorageType              string         `mapstructure:"storageType"`
+	StorageSize              int            `mapstructure:"storageSize"`
+	AutoFillDefaults         bool           `mapstructure:"autoFillDefaults"`
+	AdminUserName            string         `mapstructure:"adminUserName"`
+	AdminUserPassword        string         `mapstructure:"adminUserPassword"`
+	PublicAccess             bool           `mapstructure:"publicAccess"`
+	NHNDBSGToAllowAllInbound bool           `mapstructure:"nhnDBSGToAllowAllInbound"`
+	HighAvailability         bool           `mapstructure:"highAvailability"`
 	// DatabaseName is the logical database created/listed/deleted inside the RDBMS instance
 	// (defaults to "sampledb" if left blank).
 	DatabaseName string `mapstructure:"databaseName"`
@@ -438,12 +439,6 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 
 	// 4. Validate, then create RDBMS (only if VNet succeeded; SecurityGroup is best-effort)
 	if vNetId != "" {
-		providerName := vNetInfo.ConnectionConfig.ProviderName
-		// For NHN (which uses a dedicated DB SecurityGroup distinct from VPC SecurityGroups),
-		// omit securityGroupIds during test-cli execution to trigger Spider's test-mode open DB SG creation
-		// (AllowAllTrafficForTesting) until a dedicated keyword parameter is finalized with the CB-Spider team.
-		allowAllTrafficForTesting := (strings.ToLower(providerName) == "nhn")
-
 		specVal := tc.DBInstanceSpec
 		if specVal == "" {
 			specVal = tc.DBSpec
@@ -465,7 +460,10 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			"autoFillDefaults":  tc.AutoFillDefaults,
 			"description":       "created by RDBMS batch test CLI",
 		}
-		if sgId != "" && !allowAllTrafficForTesting {
+		if tc.NHNDBSGToAllowAllInbound {
+			rdbmsReqBody["nhnDBSGToAllowAllInbound"] = true
+		}
+		if sgId != "" {
 			rdbmsReqBody["securityGroupIds"] = []string{sgId}
 		}
 
@@ -620,9 +618,9 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			if dummyErr != nil {
 				entry.ResponseStatus = "Failed"
 				entry.ResponsePayload = map[string]any{"error": dummyErr.Error()}
-				if providerKey == "nhn" {
-					result.RemoteDataIOTestStatus = "Fail (Note: Requires DB Security Group rule in NHN Console)"
-					result.Note = "NHN 콘솔의 [RDS for MySQL > DB 보안 그룹]에서 3306 인바운드 허용 규칙 설정 필요 (기본 포지티브 시큐리티 차단 정책)"
+				if providerKey == "nhn" && !tc.NHNDBSGToAllowAllInbound {
+					result.RemoteDataIOTestStatus = "Fail (Note: Requires DB Security Group rule in NHN Console or nhnDBSGToAllowAllInbound=true)"
+					result.Note = "NHN requires an inbound permit rule in NHN Console (DB 보안 그룹) or setting nhnDBSGToAllowAllInbound=true"
 				} else {
 					result.RemoteDataIOTestStatus = "Fail"
 				}

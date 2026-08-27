@@ -218,9 +218,11 @@ type RDBMSCreateRequest struct {
 	AdminUserPassword   string `json:"adminUserPassword" validate:"required" example:"Password123!"`
 	HighAvailability    bool   `json:"highAvailability,omitempty" example:"false"`
 	BackupRetentionDays int    `json:"backupRetentionDays,omitempty" example:"7"`
-	PublicAccess        bool   `json:"publicAccess,omitempty" example:"true"`
-	DeletionProtection  bool   `json:"deletionProtection,omitempty" example:"false"`
-	Description         string `json:"description,omitempty" example:"managed by CB-Tumblebug"`
+	PublicAccess        bool   `json:"publicAccess,omitempty" example:"false"`
+	// NHNDBSGToAllowAllInbound (NHN only): when true with publicAccess=true, auto-creates/attaches a 0.0.0.0/0 DB SG.
+	NHNDBSGToAllowAllInbound bool   `json:"nhnDBSGToAllowAllInbound,omitempty" example:"false"`
+	DeletionProtection       bool   `json:"deletionProtection,omitempty" example:"false"`
+	Description              string `json:"description,omitempty" example:"managed by CB-Tumblebug"`
 	// AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from GET /tumblebug/rdbms/capability when left empty/zero.
 	AutoFillDefaults bool       `json:"autoFillDefaults,omitempty" example:"false"`
 	TagList          []KeyValue `json:"tagList,omitempty"`
@@ -261,19 +263,20 @@ type RDBMSInfo struct {
 	DBEngineVersion string `json:"dbEngineVersion" example:"8.0"`
 	DBInstanceSpec  string `json:"dbInstanceSpec" example:"db.t3.medium"`
 	// DBInstanceType is "Primary" or "ReadReplica"; informational only — CB-Spider has no API yet to create a read replica.
-	DBInstanceType      string     `json:"dbInstanceType,omitempty" example:"Primary" enums:"Primary,ReadReplica"`
-	StorageType         string     `json:"storageType,omitempty" example:"gp3"`
-	StorageSize         int        `json:"storageSize" example:"100"`
-	Iops                string     `json:"iops,omitempty" example:"3000"`
-	AdminUserName       string     `json:"adminUserName" example:"admin"`
-	HighAvailability    bool       `json:"highAvailability" example:"false"`
-	BackupRetentionDays int        `json:"backupRetentionDays,omitempty" example:"7"`
-	BackupTime          string     `json:"backupTime,omitempty" example:"03:00"`
-	PublicAccess        bool       `json:"publicAccess" example:"true"`
-	DeletionProtection  bool       `json:"deletionProtection" example:"false"`
-	Encryption          bool       `json:"encryption,omitempty"`
-	Endpoint            string     `json:"endpoint,omitempty" example:"rdbms-01.xxxx.rds.amazonaws.com:3306"`
-	TagList             []KeyValue `json:"tagList,omitempty"`
+	DBInstanceType           string     `json:"dbInstanceType,omitempty" example:"Primary" enums:"Primary,ReadReplica"`
+	StorageType              string     `json:"storageType,omitempty" example:"gp3"`
+	StorageSize              int        `json:"storageSize" example:"100"`
+	Iops                     string     `json:"iops,omitempty" example:"3000"`
+	AdminUserName            string     `json:"adminUserName" example:"admin"`
+	HighAvailability         bool       `json:"highAvailability" example:"false"`
+	BackupRetentionDays      int        `json:"backupRetentionDays,omitempty" example:"7"`
+	BackupTime               string     `json:"backupTime,omitempty" example:"03:00"`
+	PublicAccess             bool       `json:"publicAccess" example:"false"`
+	NHNDBSGToAllowAllInbound bool       `json:"nhnDBSGToAllowAllInbound,omitempty"`
+	DeletionProtection       bool       `json:"deletionProtection" example:"false"`
+	Encryption               bool       `json:"encryption,omitempty"`
+	Endpoint                 string     `json:"endpoint,omitempty" example:"rdbms-01.xxxx.rds.amazonaws.com:3306"`
+	TagList                  []KeyValue `json:"tagList,omitempty"`
 }
 
 // RDBMSListResponse is the Tumblebug API response wrapper for listing RDBMS instances.

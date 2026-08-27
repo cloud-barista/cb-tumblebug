@@ -95,23 +95,24 @@ type spiderRDBMSMetaInfo struct {
 
 // spiderRDBMSCreateReqInfo represents Spider's RDBMSCreateRequest.ReqInfo (PascalCase)
 type spiderRDBMSCreateReqInfo struct {
-	Name                string           `json:"Name"`
-	VPCName             string           `json:"VPCName"`
-	DBEngine            string           `json:"DBEngine"`
-	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBSpec              string           `json:"DBSpec"`
-	StorageSize         string           `json:"StorageSize,omitempty"`
-	StorageType         string           `json:"StorageType,omitempty"`
-	Iops                string           `json:"Iops,omitempty"`
-	SubnetNames         []string         `json:"SubnetNames,omitempty"`
-	SecurityGroupNames  []string         `json:"SecurityGroupNames,omitempty"`
-	MasterUserName      string           `json:"MasterUserName"`
-	MasterUserPassword  string           `json:"MasterUserPassword"`
-	HighAvailability    bool             `json:"HighAvailability"`
-	BackupRetentionDays int              `json:"BackupRetentionDays,omitempty"`
-	PublicAccess        bool             `json:"PublicAccess"`
-	DeletionProtection  bool             `json:"DeletionProtection"`
-	TagList             []model.KeyValue `json:"TagList,omitempty"`
+	Name                       string           `json:"Name"`
+	VPCName                    string           `json:"VPCName"`
+	DBEngine                   string           `json:"DBEngine"`
+	DBEngineVersion            string           `json:"DBEngineVersion"`
+	DBSpec                     string           `json:"DBSpec"`
+	StorageSize                string           `json:"StorageSize,omitempty"`
+	StorageType                string           `json:"StorageType,omitempty"`
+	Iops                       string           `json:"Iops,omitempty"`
+	SubnetNames                []string         `json:"SubnetNames,omitempty"`
+	SecurityGroupNames         []string         `json:"SecurityGroupNames,omitempty"`
+	MasterUserName             string           `json:"MasterUserName"`
+	MasterUserPassword         string           `json:"MasterUserPassword"`
+	HighAvailability           bool             `json:"HighAvailability"`
+	BackupRetentionDays        int              `json:"BackupRetentionDays,omitempty"`
+	PublicAccess               bool             `json:"PublicAccess"`
+	NHNAutoOpenDBSecurityGroup bool             `json:"NHNAutoOpenDBSecurityGroup,omitempty"`
+	DeletionProtection         bool             `json:"DeletionProtection"`
+	TagList                    []model.KeyValue `json:"TagList,omitempty"`
 }
 
 // spiderRDBMSCreateRequest represents Spider's RDBMS create request body (PascalCase)
@@ -152,29 +153,30 @@ type spiderSimpleMsgResp struct {
 
 // spiderRDBMSInfo represents Spider's RDBMSInfo response (PascalCase)
 type spiderRDBMSInfo struct {
-	IId                 model.IID        `json:"IId"`
-	VpcIID              model.IID        `json:"VpcIID"`
-	DBEngine            string           `json:"DBEngine"`
-	DBEngineVersion     string           `json:"DBEngineVersion"`
-	DBSpec              string           `json:"DBSpec"`
-	DBInstanceType      string           `json:"DBInstanceType,omitempty"`
-	StorageSize         string           `json:"StorageSize"`
-	StorageType         string           `json:"StorageType,omitempty"`
-	Iops                string           `json:"Iops,omitempty"`
-	SubnetIIDs          []model.IID      `json:"SubnetIIDs,omitempty"`
-	SecurityGroupIIDs   []model.IID      `json:"SecurityGroupIIDs,omitempty"`
-	MasterUserName      string           `json:"MasterUserName"`
-	PublicAccess        bool             `json:"PublicAccess"`
-	HighAvailability    bool             `json:"HighAvailability"`
-	BackupRetentionDays int              `json:"BackupRetentionDays,omitempty"`
-	BackupTime          string           `json:"BackupTime,omitempty"`
-	DeletionProtection  bool             `json:"DeletionProtection"`
-	Encryption          bool             `json:"Encryption,omitempty"`
-	Endpoint            string           `json:"Endpoint,omitempty"`
-	Status              string           `json:"Status"`
-	CreatedTime         string           `json:"CreatedTime,omitempty"`
-	KeyValueList        []model.KeyValue `json:"KeyValueList,omitempty"`
-	TagList             []model.KeyValue `json:"TagList,omitempty"`
+	IId                        model.IID        `json:"IId"`
+	VpcIID                     model.IID        `json:"VpcIID"`
+	DBEngine                   string           `json:"DBEngine"`
+	DBEngineVersion            string           `json:"DBEngineVersion"`
+	DBSpec                     string           `json:"DBSpec"`
+	DBInstanceType             string           `json:"DBInstanceType,omitempty"`
+	StorageSize                string           `json:"StorageSize"`
+	StorageType                string           `json:"StorageType,omitempty"`
+	Iops                       string           `json:"Iops,omitempty"`
+	SubnetIIDs                 []model.IID      `json:"SubnetIIDs,omitempty"`
+	SecurityGroupIIDs          []model.IID      `json:"SecurityGroupIIDs,omitempty"`
+	MasterUserName             string           `json:"MasterUserName"`
+	PublicAccess               bool             `json:"PublicAccess"`
+	NHNAutoOpenDBSecurityGroup bool             `json:"NHNAutoOpenDBSecurityGroup,omitempty"`
+	HighAvailability           bool             `json:"HighAvailability"`
+	BackupRetentionDays        int              `json:"BackupRetentionDays,omitempty"`
+	BackupTime                 string           `json:"BackupTime,omitempty"`
+	DeletionProtection         bool             `json:"DeletionProtection"`
+	Encryption                 bool             `json:"Encryption,omitempty"`
+	Endpoint                   string           `json:"Endpoint,omitempty"`
+	Status                     string           `json:"Status"`
+	CreatedTime                string           `json:"CreatedTime,omitempty"`
+	KeyValueList               []model.KeyValue `json:"KeyValueList,omitempty"`
+	TagList                    []model.KeyValue `json:"TagList,omitempty"`
 }
 
 // rdbmsDataSourceKeyNames maps Spider's PascalCase DataSource/DataSourceNotes keys to this API's camelCase field names.
@@ -837,6 +839,18 @@ func isStorageTypeCompatibleWithDBSpec(providerName, storageType, dbSpec string)
 
 // validateRDBMSCreateRequest checks the request against live capability flags and assets/rdbmsinfo.yaml's storage type constraints before provisioning.
 func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateRequest, providerName string) error {
+	// Azure requires subnetIds in VPC-private mode (publicAccess=false).
+	if strings.EqualFold(providerName, "azure") && !req.PublicAccess && len(req.SubnetIds) == 0 {
+		return fmt.Errorf("subnetIds required for azure when publicAccess is false")
+	}
+	if req.NHNDBSGToAllowAllInbound {
+		if !strings.EqualFold(providerName, "nhn") {
+			return fmt.Errorf("nhnDBSGToAllowAllInbound is only supported for NHN Cloud")
+		}
+		if !req.PublicAccess {
+			return fmt.Errorf("nhnDBSGToAllowAllInbound requires publicAccess=true")
+		}
+	}
 	if meta.RequiresSubnet && len(req.SubnetIds) == 0 {
 		return fmt.Errorf("subnetIds required for %s", providerName)
 	}
@@ -949,6 +963,7 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 	}
 	rdbmsInfo.AdminUserName = sp.MasterUserName
 	rdbmsInfo.PublicAccess = sp.PublicAccess
+	rdbmsInfo.NHNDBSGToAllowAllInbound = sp.NHNAutoOpenDBSecurityGroup
 	rdbmsInfo.HighAvailability = sp.HighAvailability
 	rdbmsInfo.BackupRetentionDays = sp.BackupRetentionDays
 	rdbmsInfo.BackupTime = sp.BackupTime
@@ -1124,6 +1139,7 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	rdbmsInfo.HighAvailability = req.HighAvailability
 	rdbmsInfo.BackupRetentionDays = req.BackupRetentionDays
 	rdbmsInfo.PublicAccess = req.PublicAccess
+	rdbmsInfo.NHNDBSGToAllowAllInbound = req.NHNDBSGToAllowAllInbound
 	rdbmsInfo.DeletionProtection = req.DeletionProtection
 	rdbmsInfo.TagList = req.TagList
 
@@ -1165,23 +1181,24 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	spReq := spiderRDBMSCreateRequest{
 		ConnectionName: req.ConnectionName,
 		ReqInfo: spiderRDBMSCreateReqInfo{
-			Name:                rdbmsInfo.Uid,
-			VPCName:             vpcName,
-			DBEngine:            req.DBEngine,
-			DBEngineVersion:     req.DBEngineVersion,
-			DBSpec:              req.DBInstanceSpec,
-			StorageSize:         storageSizeStr,
-			StorageType:         req.StorageType,
-			Iops:                req.Iops,
-			SubnetNames:         subnetNames,
-			SecurityGroupNames:  sgNames,
-			MasterUserName:      req.AdminUserName,
-			MasterUserPassword:  req.AdminUserPassword,
-			HighAvailability:    req.HighAvailability,
-			BackupRetentionDays: req.BackupRetentionDays,
-			PublicAccess:        req.PublicAccess,
-			DeletionProtection:  req.DeletionProtection,
-			TagList:             req.TagList,
+			Name:                       rdbmsInfo.Uid,
+			VPCName:                    vpcName,
+			DBEngine:                   req.DBEngine,
+			DBEngineVersion:            req.DBEngineVersion,
+			DBSpec:                     req.DBInstanceSpec,
+			StorageSize:                storageSizeStr,
+			StorageType:                req.StorageType,
+			Iops:                       req.Iops,
+			SubnetNames:                subnetNames,
+			SecurityGroupNames:         sgNames,
+			MasterUserName:             req.AdminUserName,
+			MasterUserPassword:         req.AdminUserPassword,
+			HighAvailability:           req.HighAvailability,
+			BackupRetentionDays:        req.BackupRetentionDays,
+			PublicAccess:               req.PublicAccess,
+			NHNAutoOpenDBSecurityGroup: req.NHNDBSGToAllowAllInbound,
+			DeletionProtection:         req.DeletionProtection,
+			TagList:                    req.TagList,
 		},
 	}
 
