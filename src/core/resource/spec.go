@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -43,6 +44,7 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -3015,6 +3017,11 @@ type Range struct {
 	Max float32 `json:"max"`
 }
 
+// specLookupGroup collapses concurrent identical spec lookups into a single DB read. Large infra
+// provisioning fans out thousands of nodes that share only a handful of specs; without this, each
+// node issued its own query and the burst exhausted the DB connection pool.
+var specLookupGroup singleflight.Group
+
 // GetSpec accepts namespace Id and specKey(Id,CspResourceName,...), and returns the TB spec object
 func GetSpec(nsId string, specKey string) (model.SpecInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
@@ -3028,20 +3035,36 @@ func GetSpec(nsId string, specKey string) (model.SpecInfo, error) {
 	nsId = strings.ToLower(nsId)
 	specKey = strings.ToLower(specKey)
 
-	// ex: tencent+ap-jakarta+ubuntu22.04
-	var spec model.SpecInfo
-	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, specKey).First(&spec)
-	if result.Error == nil {
-		return spec, nil
-	}
+	// Deduplicate concurrent identical lookups so a provisioning burst hits the DB once per spec.
+	v, err, _ := specLookupGroup.Do(nsId+"\x00"+specKey, func() (interface{}, error) {
+		// ex: tencent+ap-jakarta+ubuntu22.04
+		var spec model.SpecInfo
+		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, specKey).First(&spec)
+		if result.Error == nil {
+			return spec, nil
+		}
+		// Only a real "record not found" means the spec is absent; any other error (e.g. a
+		// connection-pool timeout under load) must be surfaced as-is so callers can retry
+		// instead of mistaking a transient DB failure for a missing spec.
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return model.SpecInfo{}, fmt.Errorf("spec lookup by id failed for %s: %w", specKey, result.Error)
+		}
 
-	// ex: spec-487zeit5
-	result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(csp_spec_name) = ?", nsId, specKey).First(&spec)
-	if result.Error == nil {
-		return spec, nil
-	}
+		// ex: spec-487zeit5
+		result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(csp_spec_name) = ?", nsId, specKey).First(&spec)
+		if result.Error == nil {
+			return spec, nil
+		}
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return model.SpecInfo{}, fmt.Errorf("spec lookup by cspSpecName failed for %s: %w", specKey, result.Error)
+		}
 
-	return model.SpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
+		return model.SpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
+	})
+	if err != nil {
+		return model.SpecInfo{}, err
+	}
+	return v.(model.SpecInfo), nil
 }
 
 // Retrieve field-to-column mapping information for the model

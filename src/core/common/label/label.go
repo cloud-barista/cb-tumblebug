@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"maps"
 	"strings"
+	"time"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
@@ -466,10 +467,18 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]any, error)
 	return matchedResources, nil
 }
 
+// cspTagSyncTimeout bounds the detached best-effort CSP tag sync.
+const cspTagSyncTimeout = 30 * time.Second
+
 // UpdateCSPResourceLabel best-effort updates the labels of a resource in the CSP.
 // It first tries a batch upsert via direct CSP API (AWS CreateTags, Azure ARM Tags, etc.).
 // If batch is not supported for the CSP or fails, it falls back to CB-Spider's tag API (one call per tag).
 func UpdateCSPResourceLabel(ctx context.Context, labelType, uid string, labels map[string]string, connectionName string, cspResourceId string) {
+
+	// Best-effort tagging of an already-created resource must outlive a cancelled caller context
+	// (e.g. a sibling node's quota error cancelling the shared region context); detach and bound it.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), cspTagSyncTimeout)
+	defer cancel()
 
 	// Try batch upsert via direct CSP API first
 	if cspResourceId != "" {
@@ -516,8 +525,13 @@ func UpdateCSPResourceLabel(ctx context.Context, labelType, uid string, labels m
 		)
 
 		// this is a best-effort operation, so we don't return an error if it fails
-		// drop if we meet the first error
 		if err != nil {
+			// A tag that already exists (e.g. the Name tag CB-Spider set at VM creation) is not a
+			// failure for an idempotent upsert — skip it and keep syncing the remaining tags.
+			if strings.Contains(strings.ToLower(err.Error()), "already exists") {
+				continue
+			}
+			// drop if we meet the first non-idempotent error
 			log.Info().Err(err).Msg("[Label] best-effort CSP tag sync failed; resource stays registered without CSP-side tags")
 			break
 		}

@@ -19,13 +19,13 @@
       {
         "name": "g3-aws-ap-northeast-1",
         "nodeGroupSize": 1,
-        "specId": "aws+ap-northeast-1+t3a.nano",
+        "specId": "aws+ap-northeast-1+t3.nano",
         "imageId": "ami-0379a1f991c2beceb"
       },
       {
         "name": "g4-aws-ap-northeast-2",
         "nodeGroupSize": 1,
-        "specId": "aws+ap-northeast-2+t3a.nano",
+        "specId": "aws+ap-northeast-2+t3.nano",
         "imageId": "ami-0fde5763b4c293a0b"
       },
       {
@@ -37,7 +37,7 @@
       {
         "name": "g6-aws-ap-south-1",
         "nodeGroupSize": 1,
-        "specId": "aws+ap-south-1+t3a.nano",
+        "specId": "aws+ap-south-1+t3.nano",
         "imageId": "ami-03f76f0957a44f4ab"
       },
       {
@@ -49,13 +49,13 @@
       {
         "name": "g8-aws-ap-southeast-1",
         "nodeGroupSize": 1,
-        "specId": "aws+ap-southeast-1+t3a.nano",
+        "specId": "aws+ap-southeast-1+t3.nano",
         "imageId": "ami-0a010a0312b1400ee"
       },
       {
         "name": "g9-aws-ap-southeast-2",
         "nodeGroupSize": 1,
-        "specId": "aws+ap-southeast-2+t3a.nano",
+        "specId": "aws+ap-southeast-2+t3.nano",
         "imageId": "ami-0e04e402c10e358ef"
       },
       {
@@ -73,7 +73,7 @@
       {
         "name": "g12-aws-ca-central-1",
         "nodeGroupSize": 1,
-        "specId": "aws+ca-central-1+t3a.nano",
+        "specId": "aws+ca-central-1+t3.nano",
         "imageId": "ami-0ff4fb44caafc54a6"
       },
       {
@@ -85,7 +85,7 @@
       {
         "name": "g14-aws-eu-central-1",
         "nodeGroupSize": 1,
-        "specId": "aws+eu-central-1+t3a.nano",
+        "specId": "aws+eu-central-1+t3.nano",
         "imageId": "ami-0c905937c14bd22b0"
       },
       {
@@ -103,8 +103,8 @@
       {
         "name": "g17-aws-eu-south-1",
         "nodeGroupSize": 1,
-        "specId": "aws+eu-south-1+t3a.nano",
-        "imageId": "ami-0ffaa14cc4d8967c3"
+        "specId": "aws+eu-south-1+t3.nano",
+        "imageId": "ami-0e042949ef871f509"
       },
       {
         "name": "g18-aws-eu-south-2",
@@ -115,25 +115,25 @@
       {
         "name": "g19-aws-eu-west-1",
         "nodeGroupSize": 1,
-        "specId": "aws+eu-west-1+t3a.nano",
+        "specId": "aws+eu-west-1+t3.nano",
         "imageId": "ami-0ff6ee91812d27971"
       },
       {
         "name": "g20-aws-eu-west-2",
         "nodeGroupSize": 1,
-        "specId": "aws+eu-west-2+t3a.nano",
+        "specId": "aws+eu-west-2+t3.nano",
         "imageId": "ami-054d71fa8b4a0fd06"
       },
       {
         "name": "g21-aws-eu-west-3",
         "nodeGroupSize": 1,
-        "specId": "aws+eu-west-3+t3a.nano",
-        "imageId": "ami-0feeb0f2f3b036ea9"
+        "specId": "aws+eu-west-3+t3.nano",
+        "imageId": "ami-0e8d619f32b216044"
       },
       {
         "name": "g22-aws-il-central-1",
         "nodeGroupSize": 1,
-        "specId": "aws+il-central-1+t3a.nano",
+        "specId": "aws+il-central-1+t3.nano",
         "imageId": "ami-07b9264ffe2d09a8e"
       },
       {
@@ -145,31 +145,31 @@
       {
         "name": "g24-aws-sa-east-1",
         "nodeGroupSize": 1,
-        "specId": "aws+sa-east-1+t3a.nano",
+        "specId": "aws+sa-east-1+t3.nano",
         "imageId": "ami-07a97e8b2b25e67a8"
       },
       {
         "name": "g25-aws-us-east-1",
         "nodeGroupSize": 1,
-        "specId": "aws+us-east-1+t3a.nano",
+        "specId": "aws+us-east-1+t3.nano",
         "imageId": "ami-0cf474e33a6362af9"
       },
       {
         "name": "g26-aws-us-east-2",
         "nodeGroupSize": 1,
-        "specId": "aws+us-east-2+t3a.nano",
+        "specId": "aws+us-east-2+t3.nano",
         "imageId": "ami-0fe440fddea4f2eae"
       },
       {
         "name": "g27-aws-us-west-1",
         "nodeGroupSize": 1,
-        "specId": "aws+us-west-1+t3a.nano",
+        "specId": "aws+us-west-1+t3.nano",
         "imageId": "ami-09091a60cac273afc"
       },
       {
         "name": "g28-aws-us-west-2",
         "nodeGroupSize": 1,
-        "specId": "aws+us-west-2+t3a.nano",
+        "specId": "aws+us-west-2+t3.nano",
         "imageId": "ami-0ababc7e5826abb79"
       }
     ]
