@@ -4946,6 +4946,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Include per-Node AddtionalDetails (CSP raw metadata); default false",
+                        "name": "detail",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "(For option=id) Field key for filtering (ex: connectionName)",
                         "name": "filterKey",
@@ -6672,6 +6678,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Option for Infra",
                         "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include AddtionalDetails (CSP raw metadata) in the default Node response; default false",
+                        "name": "detail",
                         "in": "query"
                     },
                     {
