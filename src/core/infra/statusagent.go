@@ -106,7 +106,10 @@ func (a *NodeStatusAgent) startBatchSweeper(ctx context.Context) {
 	log.Info().Msg("[BatchSweeper] Initial delay elapsed — running first batch status sweep for batch-capable CSPs (AWS/GCP/Azure/Tencent/Alibaba)")
 	a.runBatchSweep(ctx)
 
-	ticker := time.NewTicker(pollIntervals[PollNormal])
+	// Tick at the transitional cadence so PollHigh nodes (Terminating, …) are swept
+	// promptly; PollNormal nodes are still effectively swept at their own interval
+	// because runBatchSweep honors each node's NextPollAt.
+	ticker := time.NewTicker(pollIntervals[PollHigh])
 	defer ticker.Stop()
 	for {
 		select {
@@ -153,13 +156,25 @@ func resetBatchNotFound(nsId, infraId, nodeId string) {
 // pick them up and persist the change to etcd via the full FetchNodeStatus path.
 func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 	type batchKey struct{ provider, credentialHolder, region string }
-	type batchNode struct{ nsId, infraId, nodeId, instanceId string }
+	type batchNode struct {
+		nsId, infraId, nodeId, instanceId string
+		targetAction                      string
+		priority                          PollPriority
+	}
 
 	now := time.Now()
 	groups := make(map[batchKey][]batchNode)
 
 	for _, e := range globalStatusStore.Snapshot() {
-		if e.Priority != PollNormal {
+		// Batch steady Running (PollNormal) and Terminating nodes. Polling a large
+		// Terminating set individually at 15 s issues one FetchNodeStatus (etcd read
+		// + alloc) per node per interval, which floods memory and OOMs; grouped SDK
+		// calls keep it bounded. Other transitional states (Suspending/Resuming/
+		// Rebooting/Creating) keep the individual path, which carries their own
+		// state-machine handling and stays small.
+		batchEligible := e.Priority == PollNormal ||
+			(e.Priority == PollHigh && strings.EqualFold(e.Status, model.StatusTerminating))
+		if !batchEligible {
 			continue
 		}
 		if e.IsOperationLocked() {
@@ -175,7 +190,7 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 			continue
 		}
 		key := batchKey{e.ProviderName, e.CredentialHolder, e.Region}
-		groups[key] = append(groups[key], batchNode{e.NsId, e.InfraId, e.NodeId, e.CspResourceId})
+		groups[key] = append(groups[key], batchNode{e.NsId, e.InfraId, e.NodeId, e.CspResourceId, e.TargetAction, e.Priority})
 	}
 
 	if len(groups) == 0 {
@@ -187,11 +202,14 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 	// Each node gets a small random jitter (up to 10 % of PollNormal) so that
 	// successive sweeps do not re-synchronise all nodes onto the same instant,
 	// avoiding a thundering-herd on the sweep after startup.
-	jitterRange := int64(pollIntervals[PollNormal] / 10) // 30 s for a 5-min interval
 	for _, nodes := range groups {
 		for _, n := range nodes {
-			jitter := time.Duration(rand.Int63n(jitterRange))
-			nextPoll := now.Add(pollIntervals[PollNormal] + jitter)
+			interval := pollIntervals[n.priority]
+			if interval == 0 {
+				interval = pollIntervals[PollNormal]
+			}
+			jitter := time.Duration(rand.Int63n(int64(interval/10) + 1))
+			nextPoll := now.Add(interval + jitter)
 			globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
 				e.NextPollAt = nextPoll
 			})
@@ -235,6 +253,13 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 				newStatus, found := statuses[n.instanceId]
 				if found {
 					resetBatchNotFound(n.nsId, n.infraId, n.nodeId)
+					// A node we are terminating stays Terminating while the CSP still
+					// reports it alive (AWS briefly returns running/shutting-down after
+					// TerminateInstances). Mirror FetchNodeStatus's TargetAction guard so
+					// the batch path does not flip it back to Running.
+					if strings.EqualFold(n.targetAction, model.ActionTerminate) {
+						newStatus = model.StatusTerminating
+					}
 				} else {
 					// A clean batch response without the id means the CSP instance is gone:
 					// advance the shared streak and settle as Terminated once reached, instead
@@ -254,6 +279,43 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 				updated++
 			}
 
+			// Safety net: nodes whose Terminate never reached the CSP stay present in
+			// the status response. Re-issue TerminateInstances for them in one grouped
+			// call so a large stuck set is drained without per-node fallbacks.
+			reTerminated := 0
+			if termHandler, ok := cspdirect.GetBatchVMControlHandler(k.provider, model.ActionTerminate); ok {
+				var stuckIds []string
+				for _, n := range grp {
+					if !strings.EqualFold(n.targetAction, model.ActionTerminate) {
+						continue
+					}
+					if _, alive := statuses[n.instanceId]; !alive {
+						continue // absent from a clean response = gone; settled as Terminated above
+					}
+					sk := n.nsId + "/" + n.infraId + "/" + n.nodeId
+					first, _ := terminatingHoldSince.LoadOrStore(sk, now)
+					if now.Sub(first.(time.Time)) < terminatingHoldReTerminateAfter {
+						continue // let the original Terminate take effect first
+					}
+					if last, seen := reTerminateLastSent.Load(sk); seen && now.Sub(last.(time.Time)) < reTerminateMinInterval {
+						continue // cooldown: don't re-terminate the same node every sweep
+					}
+					reTerminateLastSent.Store(sk, now)
+					stuckIds = append(stuckIds, n.instanceId)
+				}
+				if len(stuckIds) > 0 {
+					sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, k.credentialHolder)
+					log.Info().Str("provider", k.provider).Str("region", k.region).Int("count", len(stuckIds)).
+						Msg("[BatchSweeper] re-issuing batch terminate for nodes the CSP still reports alive")
+					if _, err := termHandler(sdkCtx, k.region, stuckIds); err != nil {
+						log.Warn().Err(err).Str("provider", k.provider).Str("region", k.region).Int("count", len(stuckIds)).
+							Msg("[BatchSweeper] batch re-terminate failed; will retry next sweep")
+					} else {
+						reTerminated = len(stuckIds)
+					}
+				}
+			}
+
 			log.Debug().
 				Str("provider", k.provider).
 				Str("region", k.region).
@@ -261,6 +323,7 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 				Int("queried", len(ids)).
 				Int("found", len(statuses)).
 				Int("updated", updated).
+				Int("reTerminated", reTerminated).
 				Msg("[BatchSweeper] sweep complete")
 		}(key, nodes)
 	}
@@ -308,12 +371,15 @@ func (a *NodeStatusAgent) dispatchEligible() {
 			continue
 		}
 
-		// PollNormal nodes for CSPs with a registered batch handler are handled
-		// exclusively by runBatchSweep (one grouped SDK call per region).
-		// Dispatching them individually here would issue DescribeInstances(ids=1)
-		// per node — magnified by hundreds of nodes at startup, causing connection
-		// reset bursts from AWS.  Leave them for the batch sweeper.
-		if e.Priority == PollNormal && e.CspResourceId != "" {
+		// Batch-capable Running (PollNormal) and Terminating nodes are handled
+		// exclusively by runBatchSweep (one grouped SDK call per region). Dispatching
+		// them individually here would issue DescribeInstances(ids=1) per node —
+		// magnified by thousands of Terminating nodes it floods FetchNodeStatus and
+		// OOMs. Leave them for the batch sweeper; a status change there flips the node
+		// off PollNormal/PollHigh so this path picks it up once to persist the change.
+		if (e.Priority == PollNormal ||
+			(e.Priority == PollHigh && strings.EqualFold(e.Status, model.StatusTerminating))) &&
+			e.CspResourceId != "" {
 			if _, ok := cspdirect.GetBatchVMStatusHandler(e.ProviderName); ok {
 				continue
 			}
@@ -441,6 +507,7 @@ func (a *NodeStatusAgent) StartupScan() {
 
 	var urgent []nodeRef
 	var normal []nodeRef
+	var final []nodeRef
 
 	for _, nsId := range nsList {
 		infraIds, err := ListInfraId(nsId)
@@ -461,9 +528,17 @@ func (a *NodeStatusAgent) StartupScan() {
 					continue
 				}
 				ref := nodeRef{nsId: nsId, infraId: infraId, info: nodeInfo}
-				if nodeInfo.TargetAction != model.ActionComplete {
+				switch {
+				case strings.EqualFold(nodeInfo.Status, model.StatusTerminated) ||
+					strings.EqualFold(nodeInfo.Status, model.StatusFailed):
+					// Final states are immutable until deletion — never poll. Classify by
+					// status here: a terminated Node keeps TargetAction=Terminate as a
+					// finalize marker, so classifying by TargetAction would mis-mark every
+					// terminated Node as active and poll it (a large per-Node etcd read loop).
+					final = append(final, ref)
+				case nodeInfo.TargetAction != model.ActionComplete:
 					urgent = append(urgent, ref)
-				} else {
+				default:
 					normal = append(normal, ref)
 				}
 			}
@@ -473,7 +548,15 @@ func (a *NodeStatusAgent) StartupScan() {
 	log.Info().
 		Int("urgent", len(urgent)).
 		Int("normal", len(normal)).
+		Int("final", len(final)).
 		Msg("[NodeStatusAgent] StartupScan: scan complete")
+
+	// Final: Terminated/Failed Nodes — seed into the store (so status/list reads are
+	// served from memory) but never poll. buildStatusEntry sets PollSkip for these.
+	for _, ref := range final {
+		globalStatusStore.Set(ref.nsId, ref.infraId, ref.info.Id,
+			buildStatusEntry(ref.nsId, ref.infraId, ref.info))
+	}
 
 	// Urgent: nodes with a pending TargetAction — schedule immediately and warn.
 	// Also detect infras whose Terminate was interrupted by the last crash and

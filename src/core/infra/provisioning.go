@@ -4383,8 +4383,17 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 	}
 	nodeInfoData.Location = configTmp.RegionDetail.Location
 
+	// Store auxiliary details under a separate key; keep them out of the Node
+	// record so status/bulk reads stay small. nodeInfoData is a pointer, so store
+	// a stripped copy rather than mutating the caller's object.
+	if len(nodeInfoData.AddtionalDetails) > 0 {
+		putNodeDetails(nsId, infraId, nodeInfoData.Id, nodeInfoData.AddtionalDetails)
+	}
+	nodeToStore := *nodeInfoData
+	nodeToStore.AddtionalDetails = nil
+
 	// Make VM object
-	val, _ := json.Marshal(nodeInfoData)
+	val, _ := json.Marshal(nodeToStore)
 	err = kvstore.Put(nodeKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")

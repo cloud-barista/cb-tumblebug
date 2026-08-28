@@ -82,9 +82,9 @@ tumblebug:
   # Memory limit contains request-history/status-cache growth on large infras
   resources:
     requests:
-      memory: 1Gi
+      memory: 2Gi
     limits:
-      memory: 8Gi
+      memory: 16Gi
 
 spider:
   # Number of cb-spider replicas. cb-spider is the outbound CSP-call worker; scaling it out
