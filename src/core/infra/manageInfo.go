@@ -535,12 +535,13 @@ func nodeSummaryFromEntry(e StatusEntry) model.NodeSummary {
 		CspResourceName: e.CspResourceName,
 		CspResourceId:   e.CspResourceId,
 		ConnectionName:  e.ConnectionName,
-		// Full connection config and region carried from the store's cached static
-		// fields. Heavy/derived/sensitive fields (label, commandStatus,
+		// Full connection config, region and labels carried from the store's cached
+		// static fields. Heavy/derived/sensitive fields (commandStatus,
 		// sshHostKeyInfo, nodeUserPassword, addtionalDetails) are absent from
 		// NodeSummary by design — see its doc.
 		ConnectionConfig: e.ConnectionConfig,
 		Region:           e.RegionInfo,
+		Label:            e.Label,
 		SpecId:           e.SpecId,
 		ImageId:          e.ImageId,
 		Spec:             e.Spec,

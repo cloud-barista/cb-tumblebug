@@ -25436,14 +25436,6 @@ const docTemplate = `{
             "x-enum-comments": {
                 "DiskError": "CSP-reported error state"
             },
-            "x-enum-descriptions": [
-                "",
-                "",
-                "",
-                "",
-                "CSP-reported error state",
-                ""
-            ],
             "x-enum-varnames": [
                 "DiskCreating",
                 "DiskAvailable",
@@ -30070,6 +30062,12 @@ const docTemplate = `{
                 },
                 "imageId": {
                     "type": "string"
+                },
+                "label": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "location": {
                     "$ref": "#/definitions/model.Location"

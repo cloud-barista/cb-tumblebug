@@ -700,6 +700,7 @@ func buildStatusEntry(nsId, infraId string, nodeInfo model.NodeInfo) StatusEntry
 func applyStaticNodeFields(e *StatusEntry, n model.NodeInfo) {
 	e.ConnectionConfig = n.ConnectionConfig
 	e.RegionInfo = n.Region
+	e.Label = n.Label
 	e.SpecId = n.SpecId
 	e.ImageId = n.ImageId
 	e.Spec = n.Spec

@@ -21296,13 +21296,6 @@ components:
       - Failed
       x-enum-comments:
         DiskError: CSP-reported error state
-      x-enum-descriptions:
-      - ""
-      - ""
-      - ""
-      - ""
-      - CSP-reported error state
-      - ""
       x-enum-varnames:
       - DiskCreating
       - DiskAvailable
@@ -24768,6 +24761,10 @@ components:
           $ref: '#/components/schemas/model.ImageSummary'
         imageId:
           type: string
+        label:
+          type: object
+          additionalProperties:
+            type: string
         location:
           $ref: '#/components/schemas/model.Location'
         monAgentStatus:

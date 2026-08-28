@@ -4666,6 +4666,23 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	GlobalAgent.AcquireLock(nsId, infraId, nodeInfoData.Id, model.StatusCreating, model.ActionCreate)
 	defer GlobalAgent.ReleaseLock(nsId, infraId, nodeInfoData.Id)
 
+	// On any failure exit, sync the seeded store entry to Failed. The many failure
+	// paths below write Failed to the KV record but not to the status store, which
+	// now serves the list/status views; without this the node stays stuck at
+	// Creating (with a Create target) even though provisioning failed. The success
+	// path updates the store live via FetchNodeStatus, so this only acts on failure.
+	defer func() {
+		if strings.EqualFold(nodeInfoData.Status, model.StatusFailed) {
+			globalStatusStore.Update(nsId, infraId, nodeInfoData.Id, func(e *StatusEntry) {
+				e.Status = model.StatusFailed
+				e.TargetStatus = model.StatusFailed
+				e.TargetAction = model.ActionComplete
+				e.Priority = PollSkip
+				e.SystemMessage = nodeInfoData.SystemMessage
+			})
+		}
+	}()
+
 	// in case of registering existing CSP VM
 	if option == "register" {
 		// CspResourceId is required
