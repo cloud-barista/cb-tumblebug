@@ -57,6 +57,7 @@ func isInfraClusterNotFoundError(err error) bool {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param option query string false "Option" Enums(default, id, status, accessinfo)
+// @Param detail query bool false "Include per-Node AddtionalDetails (CSP raw metadata); default false"
 // @Param filterKey query string false "(For option=id) Field key for filtering (ex: connectionName)"
 // @Param filterVal query string false "(For option=id) Field value for filtering (ex: aws-ap-northeast-2)"
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
@@ -103,6 +104,11 @@ func RestGetInfra(c echo.Context) error {
 	} else {
 
 		result, err := infra.GetInfraInfo(nsId, infraId)
+		if err == nil && c.QueryParam("detail") == "true" {
+			// Per-Node auxiliary details are omitted by default; attach them only when
+			// detail=true is explicitly requested.
+			infra.AttachNodeDetails(nsId, infraId, result.Node)
+		}
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	}
@@ -344,6 +350,7 @@ func RestGetAllNodeInNs(c echo.Context) error {
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param nodeId path string true "Node ID" default(g1-1)
 // @Param option query string false "Option for Infra" Enums(default, status, idsInDetail, accessinfo)
+// @Param detail query bool false "Include AddtionalDetails (CSP raw metadata) in the default Node response; default false"
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
 // @success 200 {object} JSONResult{[DEFAULT]=model.NodeInfo,[STATUS]=model.NodeStatusInfo,[IDNAME]=model.IdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
@@ -375,6 +382,13 @@ func RestGetInfraNode(c echo.Context) error {
 
 	default:
 		result, err := infra.GetNodeObject(nsId, infraId, nodeId)
+		if err == nil && c.QueryParam("detail") == "true" {
+			// Auxiliary details (CSP raw metadata) are stored separately and omitted by
+			// default; attach them only when detail=true is explicitly requested.
+			if details := infra.GetNodeDetails(nsId, infraId, nodeId); details != nil {
+				result.AddtionalDetails = details
+			}
+		}
 		return clientManager.EndRequestWithLog(c, err, result)
 	}
 }

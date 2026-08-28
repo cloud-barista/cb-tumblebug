@@ -265,6 +265,15 @@ func GenInfraNodeGroupKey(nsId string, infraId string, groupId string) string {
 
 }
 
+// GenInfraNodeDetailsKey generates the key for a Node's auxiliary details
+// (CSP raw metadata), stored separately from the Node record so status and bulk
+// reads/writes do not carry it.
+func GenInfraNodeDetailsKey(nsId string, infraId string, nodeId string) string {
+
+	return "/" + model.StrNamespace + "/" + nsId + "/" + model.StrInfra + "/" + infraId + "/" + model.StrNodeDetails + "/" + nodeId
+
+}
+
 // GenInfraPolicyKey is func to generate Infra policy key
 func GenInfraPolicyKey(nsId string, infraId string, nodeId string) string {
 	if nodeId != "" {

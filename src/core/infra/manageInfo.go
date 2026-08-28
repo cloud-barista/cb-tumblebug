@@ -321,10 +321,15 @@ func GetNodeGroup(nsId string, infraId string, nodeGroupId string) (model.NodeGr
 	nodeGroupInfo := model.NodeGroupInfo{}
 
 	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId)
-	keyValue, _, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nodeGroupInfo, err
+	}
+	// A missing key returns an empty value; without this check json.Unmarshal("")
+	// below fails and a not-found NodeGroup is misreported as a corrupted one.
+	if !exists {
+		return nodeGroupInfo, fmt.Errorf("no NodeGroup found (Key: %s)", key)
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &nodeGroupInfo)
 	if err != nil {
@@ -521,6 +526,61 @@ func GetInfraClusterInfo(nsId string, infraId string, clusterId string) (*model.
 }
 
 // GetInfraInfo is func to return Infra information with the current status update
+// nodeInfoFromEntry builds a lightweight NodeInfo (status + identity, no full
+// config/labels/details) from a StatusStore entry, for list/summary views.
+func nodeInfoFromEntry(e StatusEntry) model.NodeInfo {
+	return model.NodeInfo{
+		Id:              e.NodeId,
+		Name:            e.Name,
+		CspResourceName: e.CspResourceName,
+		CspResourceId:   e.CspResourceId,
+		ConnectionName:  e.ConnectionName,
+		Status:          e.Status,
+		TargetStatus:    e.TargetStatus,
+		TargetAction:    e.TargetAction,
+		PublicIP:        e.PublicIP,
+		PrivateIP:       e.PrivateIP,
+		SSHPort:         e.SSHPort,
+		Location:        e.Location,
+		MonAgentStatus:  e.MonAgentStatus,
+		CreatedTime:     e.CreatedTime,
+		SystemMessage:   e.SystemMessage,
+	}
+}
+
+// GetInfraInfoBrief returns an Infra summary served from the StatusAgent's
+// in-memory store: the Infra record (read once, no per-Node object reads) plus
+// per-Node status/identity from the store. It avoids GetInfraInfo's ~2N etcd
+// reads (a full Node object read + a label read per Node), which flood etcd when
+// clients poll the Infra list. Nodes carry status-level fields only; full config,
+// labels and CSP details are available via the single-Node/single-Infra APIs.
+func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfo, error) {
+	keyValue, exists, err := kvstore.GetKv(common.GenInfraKey(nsId, infraId, ""))
+	if err != nil || !exists {
+		return nil, fmt.Errorf("the infra %s does not exist", infraId)
+	}
+	infraObj := model.InfraInfo{}
+	if err := json.Unmarshal([]byte(keyValue.Value), &infraObj); err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	if status, serr := GetInfraStatus(nsId, infraId); serr == nil {
+		infraObj.Status = status.Status
+		infraObj.StatusCount = status.StatusCount
+	}
+
+	var nodes []model.NodeInfo
+	for _, e := range globalStatusStore.Snapshot() {
+		if e.NsId == nsId && e.InfraId == infraId {
+			nodes = append(nodes, nodeInfoFromEntry(e))
+		}
+	}
+	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Id < nodes[j].Id })
+	infraObj.Node = nodes
+	return &infraObj, nil
+}
+
 func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 
 	check, _ := CheckInfra(nsId, infraId)
@@ -904,7 +964,9 @@ func ListInfraInfo(nsId string, option string) ([]model.InfraInfo, error) {
 
 	for _, v := range infraList {
 
-		infraTmp, err := GetInfraInfo(nsId, v)
+		// Serve the list from the in-memory store (status-level nodes, no per-Node
+		// etcd object/label reads) so polling clients (e.g. mapui) do not flood etcd.
+		infraTmp, err := GetInfraInfoBrief(nsId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
@@ -1189,6 +1251,59 @@ func GetNodeIdNameInDetail(nsId string, infraId string, nodeId string) (*model.I
 
 // [Infra and Node status management]
 
+// nodeStatusInfoFromEntry builds a NodeStatusInfo from a StatusStore entry.
+func nodeStatusInfoFromEntry(e StatusEntry) model.NodeStatusInfo {
+	return model.NodeStatusInfo{
+		Id:              e.NodeId,
+		Name:            e.Name,
+		CspResourceName: e.CspResourceName,
+		Status:          e.Status,
+		NativeStatus:    e.NativeStatus,
+		TargetStatus:    e.TargetStatus,
+		TargetAction:    e.TargetAction,
+		PublicIp:        e.PublicIP,
+		PrivateIp:       e.PrivateIP,
+		SSHPort:         e.SSHPort,
+		Location:        e.Location,
+		MonAgentStatus:  e.MonAgentStatus,
+		CreatedTime:     e.CreatedTime,
+		SystemMessage:   e.SystemMessage,
+	}
+}
+
+// nodeStatusesFromStore builds the node status list for an Infra from the
+// StatusAgent's in-memory store, which the daemon keeps fresh (batch sweep +
+// individual polls). This replaces a live per-node CSP fanout that materializes
+// N statuses and spawns N goroutines — the source of OOM on large infras.
+// Nodes not yet in the store (e.g. freshly provisioned before the first sweep)
+// fall back to their stored object, with no CSP call.
+func nodeStatusesFromStore(nsId, infraId string, nodeList []string) []model.NodeStatusInfo {
+	byId := make(map[string]StatusEntry, len(nodeList))
+	for _, e := range globalStatusStore.Snapshot() {
+		if e.NsId == nsId && e.InfraId == infraId {
+			byId[e.NodeId] = e
+		}
+	}
+
+	result := make([]model.NodeStatusInfo, 0, len(nodeList))
+	var missing []string
+	for _, nodeId := range nodeList {
+		if e, ok := byId[nodeId]; ok {
+			result = append(result, nodeStatusInfoFromEntry(e))
+		} else {
+			missing = append(missing, nodeId)
+		}
+	}
+	for _, nodeId := range missing {
+		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
+		if err != nil {
+			continue
+		}
+		result = append(result, ConvertNodeInfoListToNodeStatusInfoList([]model.NodeInfo{nodeInfo})...)
+	}
+	return result
+}
+
 // GetInfraStatus is func to Get Infra Status
 func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error) {
 
@@ -1244,12 +1359,10 @@ func GetInfraStatus(nsId string, infraId string) (*model.InfraStatusInfo, error)
 		return &infraStatus, nil
 	}
 
-	// Fetch Node statuses with rate limiting by CSP and region
-	nodeStatusList, err := fetchNodeStatusesWithRateLimiting(nsId, infraId, nodeList)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return &model.InfraStatusInfo{}, err
-	}
+	// Serve node statuses from the StatusAgent's in-memory store instead of a live
+	// per-node CSP fanout: the daemon keeps the store fresh, and materializing N
+	// statuses + goroutines here OOMs on large infras.
+	nodeStatusList := nodeStatusesFromStore(nsId, infraId, nodeList)
 	// log.Debug().Msgf("Fetched %d VM statuses for Infra %s", len(nodeStatusList), infraId)
 	// log.Debug().Msgf("VM Status List: %+v", nodeStatusList)
 
@@ -2723,6 +2836,48 @@ func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
 	}
 }
 
+// putNodeDetails stores a Node's auxiliary details (CSP raw metadata) under a
+// separate key so they are never carried by status/bulk Node reads and writes.
+func putNodeDetails(nsId, infraId, nodeId string, details []model.KeyValue) {
+	if nodeId == "" || len(details) == 0 {
+		return
+	}
+	val, err := json.Marshal(details)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return
+	}
+	if err := kvstore.Put(common.GenInfraNodeDetailsKey(nsId, infraId, nodeId), string(val)); err != nil {
+		log.Error().Err(err).Msg("")
+	}
+}
+
+// GetNodeDetails returns a Node's auxiliary details from the separate details
+// key, or nil when none are stored.
+func GetNodeDetails(nsId, infraId, nodeId string) []model.KeyValue {
+	keyValue, exists, err := kvstore.GetKv(common.GenInfraNodeDetailsKey(nsId, infraId, nodeId))
+	if err != nil || !exists {
+		return nil
+	}
+	var details []model.KeyValue
+	if err := json.Unmarshal([]byte(keyValue.Value), &details); err != nil {
+		log.Error().Err(err).Msg("")
+		return nil
+	}
+	return details
+}
+
+// AttachNodeDetails fills AddtionalDetails for each Node from the separate
+// details key. Read APIs call this only when details are explicitly requested,
+// so default/bulk responses stay small.
+func AttachNodeDetails(nsId, infraId string, nodes []model.NodeInfo) {
+	for i := range nodes {
+		if d := GetNodeDetails(nsId, infraId, nodes[i].Id); d != nil {
+			nodes[i].AddtionalDetails = d
+		}
+	}
+}
+
 // UpdateNodeInfo is func to update Node Info
 func UpdateNodeInfo(nsId string, infraId string, nodeInfoData model.NodeInfo) {
 	// An empty node Id collapses GenInfraKey onto the parent infra key, so this
@@ -2730,6 +2885,12 @@ func UpdateNodeInfo(nsId string, infraId string, nodeInfoData model.NodeInfo) {
 	if nodeInfoData.Id == "" {
 		log.Warn().Msgf("UpdateNodeInfo skipped: empty node Id (Infra %s/%s)", nsId, infraId)
 		return
+	}
+	// Store auxiliary details separately and strip them from the Node record.
+	// nodeInfoData is a value copy, so this does not affect the caller.
+	if len(nodeInfoData.AddtionalDetails) > 0 {
+		putNodeDetails(nsId, infraId, nodeInfoData.Id, nodeInfoData.AddtionalDetails)
+		nodeInfoData.AddtionalDetails = nil
 	}
 	infraInfoMutex.Lock()
 	defer func() {
@@ -3448,21 +3609,22 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	}
 	for _, v := range nodeGroupList {
 		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, v)
-		nodeGroupInfo, err := GetNodeGroup(nsId, infraId, v)
-		if err != nil {
-			log.Error().Err(err).Msg("Cannot get NodeGroup")
-			return deletedResources, err
-		}
+		// Read only to recover the Uid for label cleanup. A NodeGroup we cannot read
+		// (already gone or corrupted) must still be deleted — that is the goal here —
+		// so never let a read failure block the Infra deletion.
+		nodeGroupInfo, gerr := GetNodeGroup(nsId, infraId, v)
 
-		err = kvstore.Delete(nodeGroupKey)
-		if err != nil {
+		if err = kvstore.Delete(nodeGroupKey); err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
 		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"NodeGroup: "+v)
 
-		err = label.DeleteLabelObject(model.StrNodeGroup, nodeGroupInfo.Uid)
-		if err != nil {
+		if gerr != nil {
+			log.Warn().Err(gerr).Msgf("NodeGroup %s unreadable during delete; deleted its key, skipping label cleanup", v)
+			continue
+		}
+		if err = label.DeleteLabelObject(model.StrNodeGroup, nodeGroupInfo.Uid); err != nil {
 			log.Error().Err(err).Msg("")
 		}
 	}
@@ -3585,6 +3747,7 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 		return err
 	}
 	globalStatusStore.Delete(nsId, infraId, nodeId)
+	kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, nodeId))
 
 	// remove empty NodeGroups
 	nodeGroup, err := ListNodeGroupId(nsId, infraId)
