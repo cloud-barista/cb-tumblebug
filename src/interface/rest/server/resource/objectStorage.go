@@ -41,7 +41,7 @@ import (
 // @Tags [Infra Resource] Object Storage Management
 // @Accept json
 // @Produce json
-// @Param cspType query string false "CSP Type (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)
+// @Param providerName query string false "Provider Name (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)
 // @Success 200 {object} model.ObjectStorageSupportResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -51,10 +51,13 @@ import (
 func RestGetObjectStorageSupport(c echo.Context) error {
 
 	// [Input]
-	cspType := c.QueryParam("cspType")
+	providerName := c.QueryParam("providerName")
+	if providerName == "" {
+		providerName = c.QueryParam("cspType")
+	}
 
 	// [Process]
-	result, err := resource.GetObjectStorageSupport(cspType)
+	result, err := resource.GetObjectStorageSupport(providerName)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get object storage support information")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})

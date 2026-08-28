@@ -1556,11 +1556,11 @@ func nlbCloudSetting(providerName string) model.NlbSetting {
 }
 
 // GetNLBSupport returns health checker feature support information per CSP.
-// When cspType is provided, only that CSP's information is returned.
-// When cspType is empty, information for all supported CSPs is returned.
+// When providerName is provided, only that CSP's information is returned.
+// When providerName is empty, information for all supported CSPs is returned.
 // A feature is considered unsupported when its YAML config value is -1,
 // meaning the cloud provider rejects custom values for that field.
-func GetNLBSupport(cspType string) (model.NLBSupportResponse, error) {
+func GetNLBSupport(providerName string) (model.NLBSupportResponse, error) {
 	var response model.NLBSupportResponse
 	response.ResourceType = model.StrNLB
 
@@ -1572,20 +1572,20 @@ func GetNLBSupport(cspType string) (model.NLBSupportResponse, error) {
 		}
 	}
 
-	if cspType != "" {
-		cspType = strings.ToLower(cspType)
+	if providerName != "" {
+		providerName = strings.ToLower(providerName)
 		found := false
 		for _, c := range csp.AllCSPs {
-			if c == cspType {
+			if c == providerName {
 				found = true
 				break
 			}
 		}
 		if !found {
-			return response, fmt.Errorf("unknown CSP type: %s", cspType)
+			return response, fmt.Errorf("unknown CSP type: %s", providerName)
 		}
 		response.Supports = map[string]model.NLBFeatureSupport{
-			cspType: featureFrom(nlbCloudSetting(cspType)),
+			providerName: featureFrom(nlbCloudSetting(providerName)),
 		}
 		return response, nil
 	}

@@ -268,16 +268,16 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string) TestResult
 	}
 
 	// 5. Get Support Info
-	// Derive cspType from the first segment of connectionName (e.g. "aws-ap-northeast-2" → "aws")
-	cspType := strings.SplitN(tc.ConnectionName, "-", 2)[0]
-	urlSupport := fmt.Sprintf("%s/objectStorage/support?cspType=%s", tbApiBase, cspType)
+	// Derive providerName from the first segment of connectionName (e.g. "aws-ap-northeast-2" → "aws")
+	providerName := strings.SplitN(tc.ConnectionName, "-", 2)[0]
+	urlSupport := fmt.Sprintf("%s/objectStorage/support?providerName=%s", tbApiBase, providerName)
 	_, err = callApi("GET", urlSupport, tbAuth, nil, &logs, fmt.Sprintf("[%s] Get Support Info", tc.OsId))
 	if err != nil {
 		result.SupportStatus = "Failed"
 		log.Warn().Err(err).Msgf("[%s] Get Support Info failed", tc.OsId)
 	} else {
-		result.SupportStatus = fmt.Sprintf("Success (cspType=%s)", cspType)
-		log.Info().Msgf("[%s] Get Support Info OK: cspType=%s", tc.OsId, cspType)
+		result.SupportStatus = fmt.Sprintf("Success (providerName=%s)", providerName)
+		log.Info().Msgf("[%s] Get Support Info OK: providerName=%s", tc.OsId, providerName)
 	}
 
 	saveDetailedReport(tc.OsId, logs)
@@ -343,7 +343,7 @@ func generateSummaryReport(filename string, results []TestResult) {
 	md.WriteString("2. **Check Existence** — `HEAD /ns/{nsId}/resources/objectStorage/{osId}`\n")
 	md.WriteString("3. **Get** — `GET /ns/{nsId}/resources/objectStorage/{osId}`\n")
 	md.WriteString("4. **Delete** — `DELETE /ns/{nsId}/resources/objectStorage/{osId}` (with retry and verification)\n")
-	md.WriteString("5. **Get Support Info** — `GET /objectStorage/support?cspType={cspType}`\n\n")
+	md.WriteString("5. **Get Support Info** — `GET /objectStorage/support?providerName={providerName}`\n\n")
 	md.WriteString(fmt.Sprintf("Generated: %s\n\n---\n\n", time.Now().Format(time.RFC3339)))
 
 	md.WriteString("## Results\n\n")
