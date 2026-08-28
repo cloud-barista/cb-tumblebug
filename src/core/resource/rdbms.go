@@ -976,7 +976,7 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 
 const (
 	rdbmsCreationPollInterval = 20 * time.Second
-	rdbmsCreationMaxAttempts  = 30 // 10 minutes total
+	rdbmsCreationMaxAttempts  = 45 // 15 minutes total
 	rdbmsCreationTimeout      = rdbmsCreationMaxAttempts * rdbmsCreationPollInterval
 )
 
