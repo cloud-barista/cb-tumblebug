@@ -115,11 +115,12 @@ type StatusEntry struct {
 
 	// Static config — set at node creation and immutable afterwards. Cached so the
 	// brief list view (GetInfraInfoBrief) can present full node config without a
-	// per-node KV read. Heavy/derived/sensitive fields (label, commandStatus,
+	// per-node KV read. Heavy/derived/sensitive fields (commandStatus,
 	// sshHostKeyInfo, nodeUserPassword, addtionalDetails) are intentionally left to
 	// the single-node/single-infra APIs.
-	ConnectionConfig model.ConnConfig // full connection config; for the list view
-	RegionInfo       model.RegionInfo // full region+zone; for the list view
+	ConnectionConfig model.ConnConfig  // full connection config; for the list view
+	RegionInfo       model.RegionInfo  // full region+zone; for the list view
+	Label            map[string]string // node labels (embedded copy); for label-selector UIs
 	Spec             model.SpecSummary
 	Image            model.ImageSummary
 	CspSpecName      string
