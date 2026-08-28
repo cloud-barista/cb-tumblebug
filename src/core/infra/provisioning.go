@@ -4653,6 +4653,14 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 	nodeKey := common.GenInfraKey(nsId, infraId, nodeInfoData.Id)
 
+	// Seed the status store with the node's known static config (location, spec,
+	// network, …) before locking, so the list/map view can place and label the node
+	// while it is Creating — before the first CSP poll. Without this the store entry
+	// created by AcquireLock carries only status/ids, so the node arrives at the map
+	// with an empty location and is mis-rendered as location-less. AcquireLock then
+	// overlays the operation lock; a later poll refreshes the dynamic fields.
+	globalStatusStore.Set(nsId, infraId, nodeInfoData.Id, buildStatusEntry(nsId, infraId, *nodeInfoData))
+
 	// Acquire operation lock so NodeStatusAgent skips polling while Spider POST /vm blocks.
 	// The lock is always released on return (defer), guaranteeing cleanup on error paths.
 	GlobalAgent.AcquireLock(nsId, infraId, nodeInfoData.Id, model.StatusCreating, model.ActionCreate)
