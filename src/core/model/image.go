@@ -157,7 +157,7 @@ type ImageInfo struct {
 
 	// DeletionRequestedAt (RFC3339) marks a deletion tombstone (customImage only):
 	// non-empty means the row is kept until CSP-side removal is confirmed
-	DeletionRequestedAt string `json:"deletionRequestedAt,omitempty"`
+	DeletionRequestedAt string `json:"deletionRequestedAt,omitempty" gorm:"column:deletion_requested_at"`
 
 	// CommandHistory stores the status and history of remote commands executed on this VM
 	CommandHistory []ImageSourceCommandHistory `json:"commandHistory" gorm:"type:text;serializer:json"`
