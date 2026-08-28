@@ -31,12 +31,12 @@ import (
 // @Summary Get CSP support information for NLB health checker features
 // @Description Get CSP support information for NLB health checker configuration fields (customHealthCheckerInterval, customHealthCheckerTimeout, customHealthCheckerThreshold).
 // @Description A false value means the CSP does not support a custom value for that field (e.g., AWS TCP NLB does not support custom timeout).
-// @Description If cspType query parameter is provided, returns support information for that specific CSP.
-// @Description If cspType is not provided, returns support information for all CSPs.
+// @Description If providerName query parameter is provided, returns support information for that specific CSP
+// @Description If providerName is not provided, returns support information for all CSPs
 // @Tags [Infra Resource] NLB Management
 // @Accept json
 // @Produce json
-// @Param cspType query string false "CSP Type" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)
+// @Param providerName query string false "Provider Name (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)
 // @Success 200 {object} model.NLBSupportResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -44,14 +44,20 @@ import (
 // @Router /nlb/support [get]
 func RestGetNLBSupport(c echo.Context) error {
 
-	cspType := c.QueryParam("cspType")
+	// [Input]
+	providerName := c.QueryParam("providerName")
+	if providerName == "" {
+		providerName = c.QueryParam("cspType")
+	}
 
-	result, err := infra.GetNLBSupport(cspType)
+	// [Process]
+	result, err := infra.GetNLBSupport(providerName)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get NLB support information")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
+	// [Output]
 	return c.JSON(http.StatusOK, result)
 }
 

@@ -2695,7 +2695,7 @@ const docTemplate = `{
         },
         "/nlb/support": {
             "get": {
-                "description": "Get CSP support information for NLB health checker configuration fields (customHealthCheckerInterval, customHealthCheckerTimeout, customHealthCheckerThreshold).\nA false value means the CSP does not support a custom value for that field (e.g., AWS TCP NLB does not support custom timeout).\nIf cspType query parameter is provided, returns support information for that specific CSP.\nIf cspType is not provided, returns support information for all CSPs.",
+                "description": "Get CSP support information for NLB health checker configuration fields (customHealthCheckerInterval, customHealthCheckerTimeout, customHealthCheckerThreshold).\nA false value means the CSP does not support a custom value for that field (e.g., AWS TCP NLB does not support custom timeout).\nIf providerName query parameter is provided, returns support information for that specific CSP\nIf providerName is not provided, returns support information for all CSPs",
                 "consumes": [
                     "application/json"
                 ],
@@ -2722,8 +2722,8 @@ const docTemplate = `{
                             "kt"
                         ],
                         "type": "string",
-                        "description": "CSP Type",
-                        "name": "cspType",
+                        "description": "Provider Name (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)",
+                        "name": "providerName",
                         "in": "query"
                     },
                     {
@@ -20174,8 +20174,8 @@ const docTemplate = `{
                             "kt"
                         ],
                         "type": "string",
-                        "description": "CSP Type (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)",
-                        "name": "cspType",
+                        "description": "Provider Name (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)",
+                        "name": "providerName",
                         "in": "query"
                     },
                     {

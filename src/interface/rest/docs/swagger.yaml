@@ -2228,13 +2228,14 @@ paths:
       description: |-
         Get CSP support information for NLB health checker configuration fields (customHealthCheckerInterval, customHealthCheckerTimeout, customHealthCheckerThreshold).
         A false value means the CSP does not support a custom value for that field (e.g., AWS TCP NLB does not support custom timeout).
-        If cspType query parameter is provided, returns support information for that specific CSP.
-        If cspType is not provided, returns support information for all CSPs.
+        If providerName query parameter is provided, returns support information for that specific CSP
+        If providerName is not provided, returns support information for all CSPs
       operationId: GetNLBSupport
       parameters:
-      - name: cspType
+      - name: providerName
         in: query
-        description: CSP Type
+        description: "Provider Name (e.g., aws, gcp, azure, alibaba, tencent, ibm,\
+          \ openstack, ncp, nhn, kt)"
         schema:
           type: string
           enum:
@@ -16907,10 +16908,10 @@ paths:
         If cspType is not provided, returns support information for all CSPs
       operationId: GetObjectStorageSupport
       parameters:
-      - name: cspType
+      - name: providerName
         in: query
-        description: "CSP Type (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack,\
-          \ ncp, nhn, kt)"
+        description: "Provider Name (e.g., aws, gcp, azure, alibaba, tencent, ibm,\
+          \ openstack, ncp, nhn, kt)"
         schema:
           type: string
           enum:
