@@ -4001,6 +4001,12 @@ paths:
           - id
           - status
           - accessinfo
+      - name: detail
+        in: query
+        description: Include per-Node AddtionalDetails (CSP raw metadata); default
+          false
+        schema:
+          type: boolean
       - name: filterKey
         in: query
         description: "(For option=id) Field key for filtering (ex: connectionName)"
@@ -5471,6 +5477,12 @@ paths:
           - status
           - idsInDetail
           - accessinfo
+      - name: detail
+        in: query
+        description: Include AddtionalDetails (CSP raw metadata) in the default Node
+          response; default false
+        schema:
+          type: boolean
       - name: accessInfoOption
         in: query
         description: (For option=accessinfo) accessInfoOption (showSshKey)
