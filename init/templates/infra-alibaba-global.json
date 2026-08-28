@@ -41,12 +41,6 @@
         "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
       },
       {
-        "name": "g23-alibaba-me-central-1",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+me-central-1+ecs.t6-c4m1.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
-      },
-      {
         "name": "g24-alibaba-me-east-1",
         "nodeGroupSize": 1,
         "specId": "alibaba+me-east-1+ecs.mn4.small",

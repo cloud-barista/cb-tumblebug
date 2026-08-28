@@ -254,10 +254,12 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 				if found {
 					resetBatchNotFound(n.nsId, n.infraId, n.nodeId)
 					// A node we are terminating stays Terminating while the CSP still
-					// reports it alive (AWS briefly returns running/shutting-down after
-					// TerminateInstances). Mirror FetchNodeStatus's TargetAction guard so
-					// the batch path does not flip it back to Running.
-					if strings.EqualFold(n.targetAction, model.ActionTerminate) {
+					// reports it ALIVE (AWS briefly returns running/shutting-down after
+					// TerminateInstances). Do NOT override an actual Terminated state:
+					// AWS keeps terminated instances visible in DescribeInstances for a
+					// while, so forcing Terminating there would pin the node forever.
+					if strings.EqualFold(n.targetAction, model.ActionTerminate) &&
+						!strings.EqualFold(newStatus, model.StatusTerminated) {
 						newStatus = model.StatusTerminating
 					}
 				} else {
@@ -662,7 +664,7 @@ func buildStatusEntry(nsId, infraId string, nodeInfo model.NodeInfo) StatusEntry
 		}
 	}
 	priority := priorityForStatus(nodeInfo.Status, nodeInfo.TargetAction)
-	return StatusEntry{
+	entry := StatusEntry{
 		Status:           nodeInfo.Status,
 		NativeStatus:     nodeInfo.Status,
 		PublicIP:         nodeInfo.PublicIP,
@@ -688,6 +690,38 @@ func buildStatusEntry(nsId, infraId string, nodeInfo model.NodeInfo) StatusEntry
 		Location:         nodeInfo.Location,
 		MonAgentStatus:   nodeInfo.MonAgentStatus,
 	}
+	applyStaticNodeFields(&entry, nodeInfo)
+	return entry
+}
+
+// applyStaticNodeFields copies immutable node config from NodeInfo into the
+// StatusEntry so the brief list view (GetInfraInfoBrief) can present full config
+// without a per-node KV read. These fields are set at creation and never change.
+func applyStaticNodeFields(e *StatusEntry, n model.NodeInfo) {
+	e.ConnectionConfig = n.ConnectionConfig
+	e.RegionInfo = n.Region
+	e.SpecId = n.SpecId
+	e.ImageId = n.ImageId
+	e.Spec = n.Spec
+	e.Image = n.Image
+	e.CspSpecName = n.CspSpecName
+	e.CspImageName = n.CspImageName
+	e.VNetId = n.VNetId
+	e.CspVNetId = n.CspVNetId
+	e.SubnetId = n.SubnetId
+	e.CspSubnetId = n.CspSubnetId
+	e.NetworkInterface = n.NetworkInterface
+	e.SecurityGroupIds = n.SecurityGroupIds
+	e.SshKeyId = n.SshKeyId
+	e.CspSshKeyId = n.CspSshKeyId
+	e.DataDiskIds = n.DataDiskIds
+	e.RootDiskType = n.RootDiskType
+	e.RootDiskSize = n.RootDiskSize
+	e.NodeGroupId = n.NodeGroupId
+	e.Uid = n.Uid
+	e.ResourceType = n.ResourceType
+	e.PublicDNS = n.PublicDNS
+	e.PrivateDNS = n.PrivateDNS
 }
 
 // priorityForStatus maps a node status + TargetAction to a PollPriority.
@@ -747,6 +781,7 @@ func writeStatusToStore(nsId, infraId, nodeId string, statusInfo model.NodeStatu
 		e.ProviderName = providerName
 		e.Region = nodeInfo.Region.Region
 		e.CredentialHolder = nodeInfo.ConnectionConfig.CredentialHolder
+		applyStaticNodeFields(e, nodeInfo)
 
 		// Metadata for cache-hit serving in fetchNodeStatusWithCache
 		e.Name = nodeInfo.Name

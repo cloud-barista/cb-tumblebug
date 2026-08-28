@@ -23295,7 +23295,7 @@ const docTemplate = `{
                 "infra": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.InfraInfo"
+                        "$ref": "#/definitions/model.InfraInfoSummary"
                     }
                 }
             }
@@ -25436,14 +25436,6 @@ const docTemplate = `{
             "x-enum-comments": {
                 "DiskError": "CSP-reported error state"
             },
-            "x-enum-descriptions": [
-                "",
-                "",
-                "",
-                "",
-                "CSP-reported error state",
-                ""
-            ],
             "x-enum-varnames": [
                 "DiskCreating",
                 "DiskAvailable",
@@ -27406,6 +27398,65 @@ const docTemplate = `{
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
+                }
+            }
+        },
+        "model.InfraInfoSummary": {
+            "type": "object",
+            "properties": {
+                "configureCloudAdaptiveNetwork": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "node": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NodeSummary"
+                    }
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "statusCount": {
+                    "$ref": "#/definitions/model.StatusCountInfo"
+                },
+                "systemLabel": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
                 }
             }
         },
@@ -29961,6 +30012,134 @@ const docTemplate = `{
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
+                }
+            }
+        },
+        "model.NodeSummary": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "type": "string"
+                },
+                "cspImageName": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "type": "string"
+                },
+                "cspResourceName": {
+                    "type": "string"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "cspSshKeyId": {
+                    "type": "string"
+                },
+                "cspSubnetId": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "$ref": "#/definitions/model.ImageSummary"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "monAgentStatus": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "networkInterface": {
+                    "type": "string"
+                },
+                "nodeGroupId": {
+                    "type": "string"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "$ref": "#/definitions/model.RegionInfo"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "type": "integer"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "spec": {
+                    "$ref": "#/definitions/model.SpecSummary"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "type": "string"
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
                 }
             }
         },

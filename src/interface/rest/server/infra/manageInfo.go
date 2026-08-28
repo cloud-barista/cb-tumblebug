@@ -151,9 +151,12 @@ func RestGetInfraReqFromInfra(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
-// RestGetAllInfraResponse is a response structure for RestGetAllInfra
+// RestGetAllInfraResponse is a response structure for RestGetAllInfra.
+// The list view returns InfraInfoSummary (status + immutable Node config, no
+// per-Node label/commandStatus/addtionalDetails); use the single-Infra or
+// single-Node API for the complete NodeInfo.
 type RestGetAllInfraResponse struct {
-	Infra []model.InfraInfo `json:"infra"`
+	Infra []model.InfraInfoSummary `json:"infra"`
 }
 
 // RestGetAllInfraStatusResponse is a response structure for RestGetAllInfraStatus

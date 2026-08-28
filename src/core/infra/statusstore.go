@@ -100,6 +100,8 @@ type StatusEntry struct {
 	CspResourceId    string // CSP-native instance ID (e.g., "i-014fa6ede6ada0b2c"), used by batch SDK sweeper
 	ProviderName     string
 	Region           string
+	SpecId           string // static; carried so the brief list view shows it without a KV read
+	ImageId          string // static; same rationale as SpecId
 	CredentialHolder string // credential owner, used as context key for SDK calls
 
 	// Node metadata — static fields from NodeInfo stored here so that
@@ -110,6 +112,34 @@ type StatusEntry struct {
 	CreatedTime    string
 	Location       model.Location
 	MonAgentStatus string
+
+	// Static config — set at node creation and immutable afterwards. Cached so the
+	// brief list view (GetInfraInfoBrief) can present full node config without a
+	// per-node KV read. Heavy/derived/sensitive fields (label, commandStatus,
+	// sshHostKeyInfo, nodeUserPassword, addtionalDetails) are intentionally left to
+	// the single-node/single-infra APIs.
+	ConnectionConfig model.ConnConfig // full connection config; for the list view
+	RegionInfo       model.RegionInfo // full region+zone; for the list view
+	Spec             model.SpecSummary
+	Image            model.ImageSummary
+	CspSpecName      string
+	CspImageName     string
+	VNetId           string
+	CspVNetId        string
+	SubnetId         string
+	CspSubnetId      string
+	NetworkInterface string
+	SecurityGroupIds []string
+	SshKeyId         string
+	CspSshKeyId      string
+	DataDiskIds      []string
+	RootDiskType     string
+	RootDiskSize     int
+	NodeGroupId      string
+	Uid              string
+	ResourceType     string
+	PublicDNS        string
+	PrivateDNS       string
 }
 
 // IsOperationLocked reports whether a live operation lock holds this node.

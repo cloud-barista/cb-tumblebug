@@ -953,6 +953,77 @@ type NodeInfo struct {
 	AddtionalDetails []KeyValue `json:"addtionalDetails,omitempty"`
 }
 
+// NodeSummary is the per-Node projection returned by the Infra list view
+// (GET /ns/{nsId}/infra). It is served from the NodeStatusAgent's in-memory
+// store with no per-Node KV read, so it carries live status plus immutable
+// config only. Heavy, derived, or sensitive fields — full label map,
+// networkAgentStatus, commandStatus, sshHostKeyInfo, nodeUserName/Password,
+// addtionalDetails — are intentionally omitted; fetch the complete NodeInfo via
+// the single-Node API GET /ns/{nsId}/infra/{infraId}/node/{nodeId}.
+type NodeSummary struct {
+	ResourceType     string       `json:"resourceType"`
+	Id               string       `json:"id"`
+	Uid              string       `json:"uid,omitempty"`
+	CspResourceName  string       `json:"cspResourceName,omitempty"`
+	CspResourceId    string       `json:"cspResourceId,omitempty"`
+	Name             string       `json:"name"`
+	NodeGroupId      string       `json:"nodeGroupId"`
+	Location         Location     `json:"location"`
+	Status           string       `json:"status"`
+	TargetStatus     string       `json:"targetStatus"`
+	TargetAction     string       `json:"targetAction"`
+	MonAgentStatus   string       `json:"monAgentStatus"`
+	SystemMessage    string       `json:"systemMessage"`
+	CreatedTime      string       `json:"createdTime"`
+	Region           RegionInfo   `json:"region"`
+	PublicIP         string       `json:"publicIP"`
+	SSHPort          int          `json:"sshPort"`
+	PublicDNS        string       `json:"publicDNS"`
+	PrivateIP        string       `json:"privateIP"`
+	PrivateDNS       string       `json:"privateDNS"`
+	RootDiskType     string       `json:"rootDiskType"`
+	RootDiskSize     int          `json:"rootDiskSize"`
+	ConnectionName   string       `json:"connectionName"`
+	ConnectionConfig ConnConfig   `json:"connectionConfig"`
+	SpecId           string       `json:"specId"`
+	CspSpecName      string       `json:"cspSpecName"`
+	Spec             SpecSummary  `json:"spec"`
+	ImageId          string       `json:"imageId"`
+	CspImageName     string       `json:"cspImageName"`
+	Image            ImageSummary `json:"image"`
+	VNetId           string       `json:"vNetId"`
+	CspVNetId        string       `json:"cspVNetId"`
+	SubnetId         string       `json:"subnetId"`
+	CspSubnetId      string       `json:"cspSubnetId"`
+	NetworkInterface string       `json:"networkInterface"`
+	SecurityGroupIds []string     `json:"securityGroupIds"`
+	DataDiskIds      []string     `json:"dataDiskIds"`
+	SshKeyId         string       `json:"sshKeyId"`
+	CspSshKeyId      string       `json:"cspSshKeyId"`
+}
+
+// InfraInfoSummary is the Infra projection returned by the list view
+// (GET /ns/{nsId}/infra). Infra-level fields are complete (read from the single
+// Infra object); Nodes are NodeSummary. For the full per-Node object use the
+// single-Infra (GET /ns/{nsId}/infra/{infraId}) or single-Node API.
+type InfraInfoSummary struct {
+	ResourceType                  string            `json:"resourceType"`
+	Id                            string            `json:"id"`
+	Uid                           string            `json:"uid,omitempty"`
+	Name                          string            `json:"name"`
+	Status                        string            `json:"status"`
+	StatusCount                   StatusCountInfo   `json:"statusCount"`
+	TargetStatus                  string            `json:"targetStatus"`
+	TargetAction                  string            `json:"targetAction"`
+	InstallMonAgent               string            `json:"installMonAgent"`
+	ConfigureCloudAdaptiveNetwork string            `json:"configureCloudAdaptiveNetwork"`
+	Label                         map[string]string `json:"label"`
+	SystemLabel                   string            `json:"systemLabel"`
+	SystemMessage                 []string          `json:"systemMessage"`
+	Description                   string            `json:"description"`
+	Node                          []NodeSummary     `json:"node"`
+}
+
 // InfraAccessInfo is struct to retrieve overall access information of a Infra
 type InfraAccessInfo struct {
 	InfraId                  string

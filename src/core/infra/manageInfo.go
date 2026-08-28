@@ -526,59 +526,90 @@ func GetInfraClusterInfo(nsId string, infraId string, clusterId string) (*model.
 }
 
 // GetInfraInfo is func to return Infra information with the current status update
-// nodeInfoFromEntry builds a lightweight NodeInfo (status + identity, no full
-// config/labels/details) from a StatusStore entry, for list/summary views.
-func nodeInfoFromEntry(e StatusEntry) model.NodeInfo {
-	return model.NodeInfo{
+// nodeSummaryFromEntry builds a NodeSummary (status + immutable config, no
+// label/commandStatus/details) from a StatusStore entry, for the list view.
+func nodeSummaryFromEntry(e StatusEntry) model.NodeSummary {
+	return model.NodeSummary{
 		Id:              e.NodeId,
 		Name:            e.Name,
 		CspResourceName: e.CspResourceName,
 		CspResourceId:   e.CspResourceId,
 		ConnectionName:  e.ConnectionName,
-		Status:          e.Status,
-		TargetStatus:    e.TargetStatus,
-		TargetAction:    e.TargetAction,
-		PublicIP:        e.PublicIP,
-		PrivateIP:       e.PrivateIP,
-		SSHPort:         e.SSHPort,
-		Location:        e.Location,
-		MonAgentStatus:  e.MonAgentStatus,
-		CreatedTime:     e.CreatedTime,
-		SystemMessage:   e.SystemMessage,
+		// Full connection config and region carried from the store's cached static
+		// fields. Heavy/derived/sensitive fields (label, commandStatus,
+		// sshHostKeyInfo, nodeUserPassword, addtionalDetails) are absent from
+		// NodeSummary by design — see its doc.
+		ConnectionConfig: e.ConnectionConfig,
+		Region:           e.RegionInfo,
+		SpecId:           e.SpecId,
+		ImageId:          e.ImageId,
+		Spec:             e.Spec,
+		Image:            e.Image,
+		CspSpecName:      e.CspSpecName,
+		CspImageName:     e.CspImageName,
+		VNetId:           e.VNetId,
+		CspVNetId:        e.CspVNetId,
+		SubnetId:         e.SubnetId,
+		CspSubnetId:      e.CspSubnetId,
+		NetworkInterface: e.NetworkInterface,
+		SecurityGroupIds: e.SecurityGroupIds,
+		SshKeyId:         e.SshKeyId,
+		CspSshKeyId:      e.CspSshKeyId,
+		DataDiskIds:      e.DataDiskIds,
+		RootDiskType:     e.RootDiskType,
+		RootDiskSize:     e.RootDiskSize,
+		NodeGroupId:      e.NodeGroupId,
+		Uid:              e.Uid,
+		ResourceType:     e.ResourceType,
+		PublicDNS:        e.PublicDNS,
+		PrivateDNS:       e.PrivateDNS,
+		Status:           e.Status,
+		TargetStatus:     e.TargetStatus,
+		TargetAction:     e.TargetAction,
+		PublicIP:         e.PublicIP,
+		PrivateIP:        e.PrivateIP,
+		SSHPort:          e.SSHPort,
+		Location:         e.Location,
+		MonAgentStatus:   e.MonAgentStatus,
+		CreatedTime:      e.CreatedTime,
+		SystemMessage:    e.SystemMessage,
 	}
 }
 
-// GetInfraInfoBrief returns an Infra summary served from the StatusAgent's
+// GetInfraInfoBrief returns an InfraInfoSummary served from the StatusAgent's
 // in-memory store: the Infra record (read once, no per-Node object reads) plus
-// per-Node status/identity from the store. It avoids GetInfraInfo's ~2N etcd
-// reads (a full Node object read + a label read per Node), which flood etcd when
-// clients poll the Infra list. Nodes carry status-level fields only; full config,
-// labels and CSP details are available via the single-Node/single-Infra APIs.
-func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfo, error) {
+// per-Node status/config from the store. It avoids GetInfraInfo's ~2N etcd reads
+// (a full Node object read + a label read per Node), which flood etcd when clients
+// poll the Infra list. Nodes are NodeSummary (status + immutable config, no per-Node
+// label/commandStatus/details); the full per-Node object is on the single-Node API.
+func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfoSummary, error) {
 	keyValue, exists, err := kvstore.GetKv(common.GenInfraKey(nsId, infraId, ""))
 	if err != nil || !exists {
 		return nil, fmt.Errorf("the infra %s does not exist", infraId)
 	}
-	infraObj := model.InfraInfo{}
-	if err := json.Unmarshal([]byte(keyValue.Value), &infraObj); err != nil {
+	// Infra-level fields share NodeSummary-independent json tags with the stored
+	// Infra object, so unmarshalling straight into the summary fills them; the
+	// object's empty embedded node array is then replaced with store-backed nodes.
+	summary := model.InfraInfoSummary{}
+	if err := json.Unmarshal([]byte(keyValue.Value), &summary); err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	if status, serr := GetInfraStatus(nsId, infraId); serr == nil {
-		infraObj.Status = status.Status
-		infraObj.StatusCount = status.StatusCount
+		summary.Status = status.Status
+		summary.StatusCount = status.StatusCount
 	}
 
-	var nodes []model.NodeInfo
+	var nodes []model.NodeSummary
 	for _, e := range globalStatusStore.Snapshot() {
 		if e.NsId == nsId && e.InfraId == infraId {
-			nodes = append(nodes, nodeInfoFromEntry(e))
+			nodes = append(nodes, nodeSummaryFromEntry(e))
 		}
 	}
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Id < nodes[j].Id })
-	infraObj.Node = nodes
-	return &infraObj, nil
+	summary.Node = nodes
+	return &summary, nil
 }
 
 func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
@@ -945,8 +976,8 @@ func GetInfraNodeAccessInfo(nsId string, infraId string, nodeId string, option s
 	return output, nil
 }
 
-// ListInfraInfo is func to get all Infra objects
-func ListInfraInfo(nsId string, option string) ([]model.InfraInfo, error) {
+// ListInfraInfo is func to get all Infra objects as list-view summaries
+func ListInfraInfo(nsId string, option string) ([]model.InfraInfoSummary, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -954,7 +985,7 @@ func ListInfraInfo(nsId string, option string) ([]model.InfraInfo, error) {
 		return nil, err
 	}
 
-	Infra := []model.InfraInfo{}
+	Infra := []model.InfraInfoSummary{}
 
 	infraList, err := ListInfraId(nsId)
 	if err != nil {
@@ -3538,6 +3569,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 			defer deleteWg.Done()
 			globalStatusStore.Delete(nsId, infraId, e.id)
 			deleteErrs[i] = kvstore.Delete(e.key)
+			kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, e.id))
 		}(i, e)
 	}
 	deleteWg.Wait()
