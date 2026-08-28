@@ -651,6 +651,15 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 		defer deletionInFlight.Delete(inflightKey)
 
+		// A vNet's subnets are removed as children by cleanupLocalResourceRecord (no
+		// per-subnet Spider call), so surface their Deleting state here — otherwise
+		// only the vNet shows Deleting while its subnets jump Available -> gone. Run
+		// before markResourceDeleting: this rewrites the whole record, which would drop
+		// the sjson-only tombstone fields markResourceDeleting adds next.
+		if resourceType == model.StrVNet {
+			markVNetSubnetsDeleting(nsId, resourceId)
+		}
+
 		// Persist the tombstone before calling Spider (crash-safe; retry keeps it)
 		if err := markResourceDeleting(nsId, resourceType, resourceId); err != nil {
 			return err
@@ -931,7 +940,7 @@ func errIfNameHeldByTombstone(nsId, resourceType, name string) error {
 // tombstoneSupported reports whether the type uses fail-closed tombstone deletion
 func tombstoneSupported(resourceType string) bool {
 	switch resourceType {
-	case model.StrDataDisk, model.StrSSHKey, model.StrSecurityGroup, model.StrCustomImage:
+	case model.StrDataDisk, model.StrSSHKey, model.StrSecurityGroup, model.StrCustomImage, model.StrVNet:
 		return true
 	}
 	return false
@@ -1091,6 +1100,33 @@ func patchCustomImageTombstone(nsId, resourceId, status, message string) error {
 		nsId, resourceId, model.StrCustomImage).Updates(updates)
 	imageInfoCache.Delete(strings.ToLower(nsId) + "/" + strings.ToLower(resourceId))
 	return result.Error
+}
+
+// markVNetSubnetsDeleting patches a Deleting condition onto the vNet's embedded
+// SubnetInfoList (what GetVNet/list derive subnet status from), so the bulk/release
+// delete path surfaces the same subnet Deleting state as the dedicated DeleteSubnet
+// path. Best-effort. Consolidate with DeleteSubnet if/when the dedicated and generic
+// delete lines are unified.
+func markVNetSubnetsDeleting(nsId, vNetId string) {
+	key := common.GenResourceKey(nsId, model.StrVNet, vNetId)
+	kv, exists, err := kvstore.GetKv(key)
+	if err != nil || !exists {
+		return
+	}
+	var v model.VNetInfo
+	if err := json.Unmarshal([]byte(kv.Value), &v); err != nil || len(v.SubnetInfoList) == 0 {
+		return
+	}
+	for i := range v.SubnetInfoList {
+		model.SetCondition(&v.SubnetInfoList[i].Conditions, model.ConditionReady, model.ConditionFalse,
+			model.ReasonDeleting, "Subnet deletion in progress")
+		v.SubnetInfoList[i].Status = model.DeriveSubnetStatus(v.SubnetInfoList[i].Conditions)
+	}
+	if b, err := json.Marshal(v); err == nil {
+		if err := kvstore.Put(key, string(b)); err != nil {
+			log.Warn().Err(err).Msgf("failed to mark subnets of vNet '%s' as Deleting", vNetId)
+		}
+	}
 }
 
 // markResourceDeleting persists the tombstone before Spider is called; the original
