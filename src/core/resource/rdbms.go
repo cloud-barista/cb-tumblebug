@@ -332,23 +332,19 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 		return response, fmt.Errorf("providerName, regionName, and dbEngine are required")
 	}
 
-	// 1. Resolve the target connection (first name-sorted match if more than one).
-	connNames, err := common.GetConnConfigListByProviderRegionZone(providerName, regionName, "")
+	// 1. Resolve the target connection (direct match first, fallback to provider/region query)
+	directConnName := fmt.Sprintf("%s-%s", providerName, regionName)
+	connConfig, err := common.GetConnConfig(directConnName)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list connection configs for RDBMS support")
-		return response, fmt.Errorf("failed to list connection configs: %w", err)
-	}
-	if len(connNames) == 0 {
-		return response, fmt.Errorf("no matching connection config found (provider: '%s', region: '%s')", providerName, regionName)
-	}
-	sort.Strings(connNames)
-	if len(connNames) > 1 {
-		log.Warn().Msgf("Multiple connections matched provider '%s' region '%s'; using '%s'", providerName, regionName, connNames[0])
-	}
-
-	connConfig, err := common.GetConnConfig(connNames[0])
-	if err != nil {
-		return response, fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
+		connNames, listErr := common.GetConnConfigListByProviderRegionZone(providerName, regionName, "")
+		if listErr != nil || len(connNames) == 0 {
+			return response, fmt.Errorf("no matching connection config found (provider: '%s', region: '%s')", providerName, regionName)
+		}
+		sort.Strings(connNames)
+		connConfig, err = common.GetConnConfig(connNames[0])
+		if err != nil {
+			return response, fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
+		}
 	}
 
 	// 2. Query Spider for this connection/engine and transform the response
@@ -786,6 +782,16 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 		if minSize > 0 {
 			req.StorageSize = minSize
 		}
+	}
+
+	// Omit unsupported parameters automatically when autoFillDefaults=true (Permissive handling)
+	if !meta.SupportsStorageTypeSelection && req.StorageType != "" {
+		log.Info().Msgf("AutoFillDefaults: %s does not support storageType selection; auto-clearing storageType '%s'", providerName, req.StorageType)
+		req.StorageType = ""
+	}
+	if strings.EqualFold(providerName, "ibm") && req.BackupRetentionDays > 0 {
+		log.Info().Msgf("AutoFillDefaults: IBM does not support BackupRetentionDays during provisioning; auto-clearing it")
+		req.BackupRetentionDays = 0
 	}
 }
 
