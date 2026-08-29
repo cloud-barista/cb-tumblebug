@@ -682,6 +682,7 @@ func RunServer() {
 
 	g.POST("/:nsId/resources/spec", rest_resource.RestPostSpec)
 	g.GET("/:nsId/resources/spec/:resourceId", rest_resource.RestGetSpec)
+	g.GET("/:nsId/resources/spec/:resourceId/diskOptions", rest_resource.RestGetSpecDiskOptions)
 	g.PUT("/:nsId/resources/spec/:resourceId", rest_resource.RestPutSpec)
 	g.DELETE("/:nsId/resources/spec/:resourceId", rest_resource.RestDelResource)
 
@@ -769,6 +770,7 @@ func RunServer() {
 
 	// RDBMS support information: static, CSP-wide reference matrix (no Spider call)
 	e.GET("/tumblebug/rdbms/support", rest_resource.RestGetRDBMSSupport)
+	e.GET("/tumblebug/disk/support", rest_resource.RestGetDiskSupport)
 	// RDBMS capability information: live, per-connection query (Spider call)
 	e.GET("/tumblebug/rdbms/capability", rest_resource.RestGetRDBMSCapability)
 

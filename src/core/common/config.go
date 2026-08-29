@@ -27,6 +27,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v2"
 )
 
 // RuntimeCloudInfo is global variable for model.CloudInfo
@@ -44,6 +45,23 @@ var RuntimeExtractPatternsInfo = model.ExtractPatternsInfo{}
 
 // RuntimeRDBMSInfo is global variable for model.RDBMSInfoConfig
 var RuntimeRDBMSInfo = model.RDBMSInfoConfig{}
+
+// RuntimeDiskInfo is global variable for model.DiskInfoConfig
+var RuntimeDiskInfo = model.DiskInfoConfig{}
+
+// LoadDiskInfo parses assets/diskinfo.yaml into RuntimeDiskInfo, preserving disk type key case.
+func LoadDiskInfo(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	cfg := model.DiskInfoConfig{}
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return err
+	}
+	RuntimeDiskInfo = cfg
+	return nil
+}
 
 // RuntimeLatancyMap is global variable for LatancyMap
 var RuntimeLatancyMap = [][]string{}

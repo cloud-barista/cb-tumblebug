@@ -425,6 +425,23 @@ func setConfig() {
 		}
 	}
 
+	//
+	// Load diskinfo (non-fatal: static root/data disk reference for GET /disk/support)
+	//
+	diskInfoViper := viper.New()
+	fileName = "diskinfo"
+	common.SetupViperPaths(diskInfoViper)
+	diskInfoViper.SetConfigName(fileName)
+	diskInfoViper.SetConfigType("yaml")
+	// Parsed with yaml directly (not viper.Unmarshal) so disk type keys keep their case (e.g. CLOUD_PREMIUM).
+	if err = diskInfoViper.ReadInConfig(); err != nil {
+		log.Error().Err(err).Msg("config: failed to read diskinfo config file")
+	} else if err = common.LoadDiskInfo(diskInfoViper.ConfigFileUsed()); err != nil {
+		log.Error().Err(err).Msg("config: failed to unmarshal diskinfo")
+	} else {
+		log.Info().Msgf("config: loaded %s", diskInfoViper.ConfigFileUsed())
+	}
+
 	// Restore CSPs registered at runtime (POST /cloudInfo/{providerName}) before the
 	// registration sweep below, so they are pushed to CB-Spider along with the ones
 	// read from cloudinfo.yaml. Loading these must not be fatal: a provider that can

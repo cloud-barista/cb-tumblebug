@@ -1,0 +1,533 @@
+# Static reference for VM root disks and data disks per Cloud Service Provider (CSP), in CSP-native terms.
+# Single source of truth for GET /tumblebug/disk/support and
+# GET /tumblebug/ns/{nsId}/resources/spec/{specId}/diskOptions (see resource/diskinfo.go).
+# No CB-Spider call is made; live per-zone stock is POST .../reviewSpecImagePair.
+#
+# Last Updated: 2026-08-29
+# Sources: official CSP documentation (links per CSP), cross-checked by provisioning every root-capable
+# type as a VM root disk and creating every data-capable type as a data disk through CB-Tumblebug
+# (CB-Spider v0.13.0) in two regions per CSP on 2026-08-29. Types a CSP offers but that cannot be
+# created through CB-Tumblebug today are kept with rootDisk/dataDisk: false and the reason in "note". Where CB-Spider's driver expects an identifier
+# different from the CSP's, "cbSpiderName" declares it and CB-Tumblebug translates the user's
+# CSP-native value before calling CB-Spider (resource.ToCBSpiderDiskType). Nothing else about
+# CB-Spider is encoded here: CB-Spider remains the final judge and its own limits (e.g. its
+# cloudos_meta.yaml size caps) should be fixed upstream, not mirrored in this file.
+#
+# Schema
+# disk:
+#   <csp>:                          lowercase, as in cloudinfo.yaml
+#     description, links, note
+#     rootDiskSelectable:           whether rootDiskType/rootDiskSize can be chosen at VM creation
+#     dataDiskSelectable:           whether diskType can be chosen at data disk creation
+#     defaultRootDiskType:          what "default" (or empty) resolves to; "" = decided by the CSP/image (explain in note)
+#     defaultDataDiskType:          what "default" (or empty) resolves to
+#     diskTypeOrder:                display order
+#     diskTypes:
+#       <diskType>:                 CSP-native identifier; the value to pass as rootDiskType / diskType
+#         name, description, note
+#         cbSpiderName:             (only if different) identifier CB-Spider expects
+#         rootDisk, dataDisk:       usable as VM root disk / data disk
+#         rootDiskSizeGB:           {min, max, step, allowed}  (allowed = discrete list)
+#         dataDiskSizeGB:           {min, max, step, allowed}
+#         byOS:                     root size override per OS family, e.g. windows: {allowed: [100, 150]}
+#         availability:             scope by regions / zones / specPatterns (case-insensitive globs on the
+#                                   CSP spec name); each axis is "only: [...]" or "except: [...]"; omitted = everywhere.
+#                                   specPatterns govern root disks and attachment; a data disk can be created regardless
+
+disk:
+  aws:
+    description: Amazon EBS volumes
+    links:
+      docs: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html
+      api: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateVolume.html
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: ""
+    defaultDataDiskType: standard
+    note: >-
+      "default" root disk type means the image's own default (gp2 for the current Ubuntu AMIs, at the
+      image size). "default" data disk type resolves to "standard" (magnetic) — specify gp3 explicitly
+      for new workloads. Provisioned IOPS/throughput are not configurable via CB-Tumblebug.
+    diskTypeOrder: [gp3, gp2, io2, io1, st1, sc1, standard]
+    diskTypes:
+      gp3:
+        name: General Purpose SSD (gp3)
+        description: 3000 IOPS / 125 MiB/s baseline; best price-performance for most workloads
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 1, max: 65536}
+        dataDiskSizeGB: {min: 1, max: 65536}
+      gp2:
+        name: General Purpose SSD (gp2)
+        description: Burstable SSD; previous generation of gp3
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 1, max: 16384}
+        dataDiskSizeGB: {min: 1, max: 16384}
+      io2:
+        name: Provisioned IOPS SSD (io2 Block Express)
+        description: Highest performance and durability
+        rootDisk: false
+        dataDisk: false
+        note: Requires a provisioned IOPS value, which CB-Tumblebug does not pass (AWS rejects the request). Verified 2026-08-29.
+      io1:
+        name: Provisioned IOPS SSD (io1)
+        description: Previous-generation provisioned IOPS SSD
+        rootDisk: false
+        dataDisk: false
+        note: Requires a provisioned IOPS value, which CB-Tumblebug does not pass (AWS rejects the request). Verified 2026-08-29.
+      st1:
+        name: Throughput Optimized HDD (st1)
+        description: Low-cost HDD for throughput-intensive, frequently accessed data
+        rootDisk: false
+        dataDisk: true
+        dataDiskSizeGB: {min: 125, max: 16384}
+        note: Cannot be used as a boot volume.
+      sc1:
+        name: Cold HDD (sc1)
+        description: Lowest-cost HDD for infrequently accessed data
+        rootDisk: false
+        dataDisk: true
+        dataDiskSizeGB: {min: 125, max: 16384}
+        note: Cannot be used as a boot volume.
+      standard:
+        name: Magnetic (standard)
+        description: Previous-generation magnetic volume
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 1, max: 1024}
+        dataDiskSizeGB: {min: 1, max: 1024}
+
+  azure:
+    description: Azure managed disks
+    links:
+      docs: https://learn.microsoft.com/en-us/azure/virtual-machines/disks-types
+      limits: https://learn.microsoft.com/en-us/azure/virtual-machines/disks-scalability-targets
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: Premium_LRS
+    defaultDataDiskType: Premium_LRS
+    note: >-
+      Identifiers are Azure storageAccountType values. OS disk max is 4095 GB for every type; sizes are
+      billed by the next SKU tier (P1..P80 / E1..E80 / S4..S80). A data disk created with size
+      "default" is 1024 GB.
+    diskTypeOrder: [Premium_LRS, StandardSSD_LRS, Standard_LRS, PremiumV2_LRS, UltraSSD_LRS]
+    diskTypes:
+      Premium_LRS:
+        name: Premium SSD
+        description: Production-grade SSD with SLA-backed performance
+        cbSpiderName: PremiumSSD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 30, max: 4095}
+        dataDiskSizeGB: {min: 4, max: 32767}
+        note: Root disk min is the image's OS disk size (typically 30 GB).
+      StandardSSD_LRS:
+        name: Standard SSD
+        description: Cost-effective SSD for web servers, dev/test, light workloads
+        cbSpiderName: StandardSSD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 30, max: 4095}
+        dataDiskSizeGB: {min: 4, max: 32767}
+      Standard_LRS:
+        name: Standard HDD
+        description: HDD for backup and non-critical, infrequent access
+        cbSpiderName: StandardHDD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 30, max: 4095}
+        dataDiskSizeGB: {min: 32, max: 32767}
+        note: Standard HDD as an OS disk is being retired on 2028-09-08 (converted to Standard SSD); avoid for new VMs.
+      PremiumV2_LRS:
+        name: Premium SSD v2
+        description: Linear per-GiB SSD with independently provisioned IOPS/throughput
+        rootDisk: false
+        dataDisk: false
+        note: Cannot be created through CB-Tumblebug yet (CB-Spider accepts Premium/StandardSSD/Standard only). Zonal at Azure.
+      UltraSSD_LRS:
+        name: Ultra Disk
+        description: Highest-performance data disk with per-IOPS/MBps billing
+        rootDisk: false
+        dataDisk: false
+        note: Cannot be created through CB-Tumblebug yet (CB-Spider accepts Premium/StandardSSD/Standard only).
+
+  gcp:
+    description: Google Compute Engine Persistent Disk / Hyperdisk
+    links:
+      docs: https://docs.cloud.google.com/compute/docs/disks/persistent-disks
+      hyperdisk: https://docs.cloud.google.com/compute/docs/disks/hyperdisks
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: ""
+    defaultDataDiskType: pd-standard
+    note: >-
+      "default" root disk type means GCP's default for the machine series (pd-standard, or
+      pd-balanced/hyperdisk-balanced on newer series). Machine series decide which disk types are
+      attachable (e.g. C3/C4/N4/X4 need Hyperdisk), so check with a spec: GET .../spec/{specId}/diskOptions.
+    diskTypeOrder: [pd-balanced, pd-ssd, pd-standard, pd-extreme, hyperdisk-balanced, hyperdisk-extreme, hyperdisk-throughput, hyperdisk-ml]
+    diskTypes:
+      pd-balanced:
+        name: Balanced Persistent Disk
+        description: SSD-backed, balanced price/performance; recommended boot disk
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 65536}
+        dataDiskSizeGB: {min: 10, max: 65536}
+        availability:
+          specPatterns: {except: ["c4-*", "c4d-*", "n4-*", "x4-*", "c3-metal-*", "h3-*", "a3-*", "a4-*"]}
+          note: Not attachable to machine series that require Hyperdisk (C4, C4D, N4, X4, H3, A3, A4, C3 metal).
+      pd-ssd:
+        name: SSD Persistent Disk
+        description: Higher IOPS SSD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 65536}
+        dataDiskSizeGB: {min: 10, max: 65536}
+        availability:
+          specPatterns: {except: ["c3-*", "c3d-*", "c4-*", "c4d-*", "c4a-*", "g4-*", "h3-*", "h4d-*", "n4-*", "n4a-*", "n4d-*", "x4-*", "a3-*", "a4-*"]}
+          note: Not supported on C3, C3D, C4A, G4, H4D, N4A, N4D and Hyperdisk-only series (works on E2, verified 2026-08-29).
+      pd-standard:
+        name: Standard Persistent Disk (HDD)
+        description: Low-cost HDD-backed disk
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 65536}
+        dataDiskSizeGB: {min: 10, max: 65536}
+        availability:
+          specPatterns: {except: ["c4-*", "c4d-*", "n4-*", "x4-*", "c3-metal-*", "h3-*", "a3-*", "a4-*"]}
+      pd-extreme:
+        name: Extreme Persistent Disk
+        description: Highest-performance PD with provisioned IOPS
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 500, max: 65536}
+        dataDiskSizeGB: {min: 500, max: 65536}
+        availability:
+          specPatterns: {except: ["c3-*", "c3d-*", "c4-*", "c4d-*", "c4a-*", "g4-*", "h3-*", "h4d-*", "n4-*", "n4a-*", "n4d-*", "x4-*", "a3-*", "a4-*"]}
+          note: Works as a root disk even on E2 (verified 2026-08-29); Google recommends Hyperdisk instead. Provisioned IOPS is not configurable via CB-Tumblebug.
+      hyperdisk-balanced:
+        name: Hyperdisk Balanced
+        description: Default disk for newer machine series; provisioned IOPS/throughput
+        rootDisk: true
+        dataDisk: false
+        rootDiskSizeGB: {min: 4, max: 65536}
+        note: Data disk creation is rejected by CB-Spider (type unknown to its GCP driver); root disk is passed through to GCP. Not usable on E2 (verified 2026-08-29).
+        availability:
+          specPatterns: {only: ["c3-*", "c3d-*", "c4-*", "c4d-*", "c4a-*", "n4-*", "n4a-*", "n4d-*", "x4-*", "m3-*", "m4-*", "h3-*", "h4d-*", "z3-*", "a3-*", "a4-*", "g4-*"]}
+      hyperdisk-extreme:
+        name: Hyperdisk Extreme
+        description: Highest IOPS data disk
+        rootDisk: false
+        dataDisk: false
+        note: Cannot be created through CB-Tumblebug yet (type unknown to CB-Spider's GCP driver).
+        dataDiskSizeGB: {min: 64, max: 65536}
+        availability:
+          specPatterns: {only: ["c3-*", "c3d-*", "c4-*", "n4-*", "x4-*", "m3-*", "m4-*", "z3-*", "a3-*"]}
+      hyperdisk-throughput:
+        name: Hyperdisk Throughput
+        description: High-throughput data disk for scale-out analytics
+        rootDisk: false
+        dataDisk: false
+        note: Cannot be created through CB-Tumblebug yet (type unknown to CB-Spider's GCP driver).
+        dataDiskSizeGB: {min: 2048, max: 32768}
+        availability:
+          specPatterns: {only: ["c3-*", "c3d-*", "c4-*", "c4a-*", "n4-*", "m3-*", "h3-*", "z3-*", "a3-*"]}
+      hyperdisk-ml:
+        name: Hyperdisk ML
+        description: Read-only shareable disk for ML model serving
+        rootDisk: false
+        dataDisk: false
+        note: Cannot be created through CB-Tumblebug yet (type unknown to CB-Spider's GCP driver).
+        dataDiskSizeGB: {min: 4, max: 65536}
+        availability:
+          specPatterns: {only: ["a3-*", "a4-*", "g2-*", "g4-*", "c3-*", "n4-*"]}
+
+  alibaba:
+    description: Alibaba Cloud ECS Elastic Block Storage
+    links:
+      docs: https://www.alibabacloud.com/help/en/ecs/user-guide/elastic-block-storage-devices
+      api: https://www.alibabacloud.com/help/en/ecs/developer-reference/api-ecs-2014-05-26-createdisk
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: cloud_essd
+    defaultDataDiskType: cloud_essd
+    note: >-
+      System (root) disks are limited to 2048 GB for every category. Category availability differs
+      per zone (cloud/cloud_ssd/cloud_efficiency are being phased out in some regions); use
+      POST .../reviewSpecImagePair with rootDiskType for live zone availability. ESSD performance
+      level (PL0..PL3) is not selectable via CB-Tumblebug; PL1 applies.
+    diskTypeOrder: [cloud_essd, cloud_auto, cloud_essd_entry, cloud_efficiency, cloud_ssd, cloud]
+    diskTypes:
+      cloud_essd:
+        name: Enhanced SSD (ESSD)
+        description: Current-generation SSD (PL1 when created via CB-Tumblebug)
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 20, max: 2048}
+        dataDiskSizeGB: {min: 20, max: 65536}
+      cloud_auto:
+        name: ESSD AutoPL
+        description: ESSD with auto-scaling performance
+        rootDisk: true
+        dataDisk: false
+        rootDiskSizeGB: {min: 1, max: 2048}
+        note: Root disk verified in ap-northeast-2 and ap-southeast-1 (2026-08-29); data disk creation is rejected by CB-Spider (category unknown to its driver).
+      cloud_essd_entry:
+        name: ESSD Entry
+        description: Entry-level ESSD for economy (u/e) instance families
+        rootDisk: true
+        dataDisk: false
+        rootDiskSizeGB: {min: 20, max: 2048}
+        note: Data disk creation is rejected by CB-Spider (category unknown to its driver). Root disk on ecs.e-c1m1.large worked in ap-northeast-2 but not in ap-southeast-1 (2026-08-29) — zone-dependent.
+        availability:
+          specPatterns: {only: ["ecs.u1-*", "ecs.e-*"]}
+      cloud_efficiency:
+        name: Ultra Disk
+        description: Previous-generation disk; being phased out in some regions
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 20, max: 2048}
+        dataDiskSizeGB: {min: 20, max: 32768}
+        availability:
+          note: Zone/instance-type dependent — rejected as root disk for ecs.e-* in ap-northeast-2/ap-southeast-1; data disk OK in ap-southeast-1 but NotSupported in ap-northeast-2 (2026-08-29). Verify with reviewSpecImagePair.
+      cloud_ssd:
+        name: Standard SSD
+        description: Previous-generation SSD; being phased out in some regions
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 20, max: 2048}
+        dataDiskSizeGB: {min: 20, max: 32768}
+        availability:
+          note: Zone/instance-type dependent — rejected as root disk for ecs.e-* in ap-northeast-2/ap-southeast-1; data disk OK in ap-southeast-1 but NotSupported in ap-northeast-2 (2026-08-29). Verify with reviewSpecImagePair.
+      cloud:
+        name: Basic Disk
+        description: Legacy basic disk; being phased out in some regions
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 20, max: 500}
+        dataDiskSizeGB: {min: 5, max: 2000}
+        availability:
+          note: Not available in ap-northeast-2 or ap-southeast-1 for either root or data disks (2026-08-29); expect it only in old zones.
+
+  tencent:
+    description: Tencent Cloud Block Storage (CBS)
+    links:
+      docs: https://www.tencentcloud.com/document/product/362/31636
+      api: https://www.tencentcloud.com/document/product/213/15753
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: CLOUD_PREMIUM
+    defaultDataDiskType: CLOUD_PREMIUM
+    note: >-
+      Tencent does not document a per-type system disk maximum (minimum 50 GB). Data disk type
+      availability varies by zone. CLOUD_BASIC is no longer a purchasable CBS product.
+    diskTypeOrder: [CLOUD_PREMIUM, CLOUD_SSD, CLOUD_HSSD, CLOUD_BSSD, CLOUD_TSSD]
+    diskTypes:
+      CLOUD_PREMIUM:
+        name: Premium Cloud Storage
+        description: Balanced hybrid storage; default for most instances
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 50}
+        dataDiskSizeGB: {min: 10, max: 32000, step: 10}
+      CLOUD_SSD:
+        name: SSD Cloud Storage
+        description: High-IOPS SSD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 50}
+        dataDiskSizeGB: {min: 20, max: 32000, step: 10}
+      CLOUD_HSSD:
+        name: Enhanced SSD
+        description: NVMe-based SSD for latency-sensitive workloads
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 50}
+        dataDiskSizeGB: {min: 20, max: 32000, step: 10}
+        availability:
+          specPatterns: {only: ["S5.*", "M5.*", "SA2.*", "S6.*", "M6.*", "SA3.*", "C6.*", "S7.*", "SA5.*"]}
+          note: S5/M5/SA2 and newer instance families only (root on SA2.MEDIUM2 verified 2026-08-29).
+      CLOUD_BSSD:
+        name: Balanced SSD
+        description: Cost-effective SSD
+        rootDisk: true
+        dataDisk: false
+        rootDiskSizeGB: {min: 50}
+        note: Root disk verified in ap-seoul/ap-singapore (2026-08-29); data disk creation is rejected by CB-Spider (type unknown to its driver).
+      CLOUD_TSSD:
+        name: Tremendous SSD
+        description: Highest-performance SSD bundled with specific instance types
+        rootDisk: false
+        dataDisk: false
+        note: Cannot be a system disk and cannot be created standalone ("TSSD Disk can not create alone", 2026-08-29); only bundled with specific instance types.
+
+  ibm:
+    description: IBM Cloud VPC Block Storage
+    links:
+      docs: https://cloud.ibm.com/docs/vpc?topic=vpc-block-storage-profiles
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: general-purpose
+    defaultDataDiskType: general-purpose
+    note: >-
+      Boot volume size must be at least the image's minimum (most stock images 100 GB); boot
+      volumes over 250 GB cannot be captured as custom images. The "custom" profile needs an IOPS
+      value that CB-Tumblebug does not pass.
+    diskTypeOrder: [general-purpose, 5iops-tier, 10iops-tier, sdp]
+    diskTypes:
+      general-purpose:
+        name: General Purpose (3 IOPS/GB)
+        description: Default tiered profile
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 250}
+        dataDiskSizeGB: {min: 10, max: 16000}
+      5iops-tier:
+        name: 5 IOPS/GB tier
+        description: Higher-IOPS tiered profile
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 250}
+        dataDiskSizeGB: {min: 10, max: 9600}
+      10iops-tier:
+        name: 10 IOPS/GB tier
+        description: Highest tiered profile
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 250}
+        dataDiskSizeGB: {min: 10, max: 4800}
+      sdp:
+        name: Defined Performance (sdp, gen 2)
+        description: Second-generation profile with independently tunable IOPS/bandwidth
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 250}
+        dataDiskSizeGB: {min: 10, max: 32000}
+        note: Sizes under 10 GB are raised to 50 GB by CB-Spider.
+        availability:
+          regions: {only: [us-south, us-east, ca-tor, br-sao, eu-de, eu-gb, eu-es, jp-tok, jp-osa, au-syd]}
+          note: Allowlisted per account and region — worked in jp-tok but "volume profile not found" in us-south for the test account (2026-08-29).
+
+  openstack:
+    description: OpenStack Cinder block storage
+    links:
+      docs: https://docs.openstack.org/cinder/latest/admin/volume-types.html
+    rootDiskSelectable: false
+    dataDiskSelectable: false
+    defaultDataDiskType: default
+    note: >-
+      Root disk type/size are not customizable (flavor/image decide; min = image min_disk).
+      Volume types are deployment-defined; data disks use the deployment's default type.
+      Max size is bounded by the project quota (Cinder default 1000 GB).
+    diskTypeOrder: [default]
+    diskTypes:
+      default:
+        name: Deployment default volume type
+        description: The OpenStack deployment's default Cinder volume type
+        rootDisk: false
+        dataDisk: true
+        dataDiskSizeGB: {min: 1, max: 1000}
+        note: Max depends on the project quota.
+
+  ncp:
+    description: Naver Cloud Platform (VPC, KVM g3) Block Storage
+    links:
+      docs: https://guide.ncloud-docs.com/docs/en/server-storage-add-vpc
+      api: https://api.ncloud-docs.com/docs/compute-vserver-storage-createblockstorageinstance.md
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: CB1
+    defaultDataDiskType: FB1
+    note: >-
+      Identifiers are NCP KVM (g3) blockStorageVolumeTypeCode values. Root disks support CB1 only.
+      Sizes are entered in 10 GB units. Root disk min is the image size (10 GB for the current
+      Ubuntu 22.04 g3 image). Note CB-Spider labels CB1 as "SSD" and FB1 as "HDD" in its responses.
+    diskTypeOrder: [CB1, FB1]
+    diskTypes:
+      CB1:
+        name: Common Block (CB1)
+        description: IOPS scales with size (100–16000)
+        cbSpiderName: HDD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 10, max: 2000, step: 10}
+        dataDiskSizeGB: {min: 10, max: 16380, step: 10}
+      FB1:
+        name: Fixed Block (FB1)
+        description: Fixed 500 IOPS block storage
+        cbSpiderName: SSD
+        rootDisk: false
+        dataDisk: true
+        dataDiskSizeGB: {min: 100, max: 16380, step: 10}
+
+  nhn:
+    description: NHN Cloud Block Storage
+    links:
+      docs: https://docs.nhncloud.com/en/Storage/Block%20Storage/en/public-api/
+      policy: https://docs.nhncloud.com/en/nhncloud/en/resource-policy/
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: General HDD
+    defaultDataDiskType: General HDD
+    note: >-
+      Identifiers are NHN volume_type names. u2 flavors have a fixed root disk size and support
+      General HDD only.
+    diskTypeOrder: [General SSD, General HDD]
+    diskTypes:
+      General SSD:
+        name: General SSD
+        description: SSD-backed volume
+        cbSpiderName: General_SSD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 20, max: 2000}
+        dataDiskSizeGB: {min: 10, max: 2048}
+        byOS:
+          windows: {min: 50, max: 2000}
+        availability:
+          specPatterns: {except: ["u2.*"]}
+          note: u2 flavors support General HDD only.
+      General HDD:
+        name: General HDD
+        description: HDD-backed volume
+        cbSpiderName: General_HDD
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {min: 20, max: 2000}
+        dataDiskSizeGB: {min: 10, max: 2048}
+        byOS:
+          windows: {min: 50, max: 2000}
+
+  kt:
+    description: KT Cloud (D1 platform) volumes
+    links:
+      docs: https://manual.cloud.kt.com/kt/compute-server-volume-d1
+    rootDiskSelectable: true
+    dataDiskSelectable: true
+    defaultRootDiskType: HDD
+    defaultDataDiskType: HDD
+    note: >-
+      Root disk size is a discrete choice, not a range (HDD/SSD 50 and 100 GB verified for Linux;
+      150 GB rejected for Linux, 2026-08-29). Up to 13 volumes per server. KT reports volume types
+      as e.g. "HDD-2000iops".
+    diskTypeOrder: [HDD, SSD]
+    diskTypes:
+      HDD:
+        name: HDD
+        description: Standard HDD volume
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {allowed: [50, 100]}
+        dataDiskSizeGB: {min: 10, max: 2000, step: 10}
+        byOS:
+          windows: {allowed: [100, 150]}
+      SSD:
+        name: SSD
+        description: SSD volume
+        rootDisk: true
+        dataDisk: true
+        rootDiskSizeGB: {allowed: [50, 100]}
+        dataDiskSizeGB: {min: 10, max: 2000, step: 10}
+        byOS:
+          windows: {allowed: [100, 150]}

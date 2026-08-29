@@ -93,13 +93,17 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 
 	uid := common.GenUid()
 
+	spiderDiskType := u.DiskType
+	if connConfig, err := common.GetConnConfig(u.ConnectionName); err == nil {
+		spiderDiskType = ToCBSpiderDiskType(connConfig.ProviderName, u.DiskType) // CSP-native -> CB-Spider identifier
+	}
 	requestBody := model.SpiderDiskReqInfoWrapper{
 		ConnectionName: u.ConnectionName,
 		ReqInfo: model.SpiderDiskInfo{
 			Name:     uid,
 			CSPid:    u.CspResourceId, // for option=register
 			Zone:     u.Zone,          // empty: the zone assigned to the connection
-			DiskType: u.DiskType,
+			DiskType: spiderDiskType,
 			DiskSize: strconv.Itoa(u.DiskSize),
 		},
 	}

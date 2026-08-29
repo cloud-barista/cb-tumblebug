@@ -18,7 +18,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
@@ -326,4 +328,82 @@ func RestGetNodeDataDisk(c echo.Context) error {
 	}
 
 	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestGetDiskSupport godoc
+// @ID GetDiskSupport
+// @Summary Get the static, CSP-wide root/data disk type reference
+// @Description Valid rootDiskType/diskType values (CSP-native identifiers) with size constraints per CSP,
+// @Description from assets/diskinfo.yaml (no CB-Spider call). Where CB-Spider expects a different
+// @Description identifier, cbSpiderName shows what CB-Tumblebug translates it to.
+// @Description view=available (default) lists only types in scope for the given region/zone/spec;
+// @Description view=all also lists out-of-scope types with unavailableReason.
+// @Description Pass regionName / cspSpecName to scope availability; or use
+// @Description GET /ns/{nsId}/resources/spec/{specId}/diskOptions to derive them from a spec.
+// @Tags [Infra Resource] Data Disk Management
+// @Accept json
+// @Produce json
+// @Param providerName query string false "Provider Name to filter to a single CSP; omit for all CSPs" Enums(aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt) example(aws)
+// @Param regionName query string false "CSP region to scope availability (e.g. ap-northeast-2)"
+// @Param zone query string false "CSP zone to scope availability"
+// @Param cspSpecName query string false "CSP spec name to scope availability (e.g. c3-standard-4)"
+// @Param osType query string false "OS family of the image (e.g. windows, ubuntu); resolves byOS root size overrides into rootDiskSizeGB"
+// @Param view query string false "available (default) or all" Enums(available, all)
+// @Success 200 {object} model.DiskSupportResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /disk/support [get]
+func RestGetDiskSupport(c echo.Context) error {
+	providerName := c.QueryParam("providerName")
+	if providerName == "" {
+		providerName = c.QueryParam("provider")
+	}
+	scope := resource.DiskScopeFilter{
+		Region:      c.QueryParam("regionName"),
+		Zone:        c.QueryParam("zone"),
+		CspSpecName: c.QueryParam("cspSpecName"),
+		OSType:      c.QueryParam("osType"),
+	}
+	result, err := resource.GetDiskSupport(providerName, c.QueryParam("view"), scope)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestGetSpecDiskOptions godoc
+// @ID GetSpecDiskOptions
+// @Summary Get the disk types and size ranges usable with a spec
+// @Description Resolves the spec's provider, region and CSP spec name and returns the
+// @Description rootDiskType/diskType options in CSP-native terms (assets/diskinfo.yaml, scoped by
+// @Description region/spec availability). Give imageId (same as for POST .../reviewSpecImagePair) so the
+// @Description image's OS selects byOS root size rules and its minimum OS disk size raises rootDiskSizeGB.min.
+// @Description Data disks do not depend on the image. Static reference; for live stock use POST .../reviewSpecImagePair.
+// @Tags [Infra Resource] Spec Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Param specId path string true "Spec ID" example(aws+ap-northeast-2+t3.medium)
+// @Param imageId query string false "Image ID (CSP image name, as used in node creation) to derive OS and minimum root disk size" example(ami-0123456789abcdef0)
+// @Param osType query string false "OS family override when no imageId (e.g. windows, ubuntu)"
+// @Param view query string false "available (default) or all" Enums(available, all)
+// @Success 200 {object} model.SpecDiskOptionsResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /ns/{nsId}/resources/spec/{specId}/diskOptions [get]
+func RestGetSpecDiskOptions(c echo.Context) error {
+	nsId := c.Param("nsId")
+	specId := c.Param("resourceId")
+	if decoded, err := url.PathUnescape(specId); err == nil { // clients may send "+" as %2B
+		specId = decoded
+	}
+	result, err := resource.GetSpecDiskOptions(nsId, specId, c.QueryParam("imageId"), c.QueryParam("osType"), c.QueryParam("view"))
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid view") {
+			return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+		}
+		return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: err.Error()})
+	}
+	return c.JSON(http.StatusOK, result)
 }

@@ -1074,6 +1074,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /disk/support:
+    get:
+      tags:
+      - "[Infra Resource] Data Disk Management"
+      summary: "Get the static, CSP-wide root/data disk type reference"
+      description: |-
+        Valid rootDiskType/diskType values (CSP-native identifiers) with size constraints per CSP,
+        from assets/diskinfo.yaml (no CB-Spider call). Where CB-Spider expects a different
+        identifier, cbSpiderName shows what CB-Tumblebug translates it to.
+        view=available (default) lists only types in scope for the given region/zone/spec;
+        view=all also lists out-of-scope types with unavailableReason.
+        Pass regionName / cspSpecName to scope availability; or use
+        GET /ns/{nsId}/resources/spec/{specId}/diskOptions to derive them from a spec.
+      operationId: GetDiskSupport
+      parameters:
+      - name: providerName
+        in: query
+        description: Provider Name to filter to a single CSP; omit for all CSPs
+        schema:
+          type: string
+          enum:
+          - aws
+          - gcp
+          - azure
+          - alibaba
+          - tencent
+          - ibm
+          - openstack
+          - ncp
+          - nhn
+          - kt
+      - name: regionName
+        in: query
+        description: CSP region to scope availability (e.g. ap-northeast-2)
+        schema:
+          type: string
+      - name: zone
+        in: query
+        description: CSP zone to scope availability
+        schema:
+          type: string
+      - name: cspSpecName
+        in: query
+        description: CSP spec name to scope availability (e.g. c3-standard-4)
+        schema:
+          type: string
+      - name: osType
+        in: query
+        description: "OS family of the image (e.g. windows, ubuntu); resolves byOS\
+          \ root size overrides into rootDiskSizeGB"
+        schema:
+          type: string
+      - name: view
+        in: query
+        description: available (default) or all
+        schema:
+          type: string
+          enum:
+          - available
+          - all
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.DiskSupportResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /fetchImages:
     post:
       tags:
@@ -13997,6 +14075,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/spec/{specId}/diskOptions:
+    get:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Get the disk types and size ranges usable with a spec
+      description: |-
+        Resolves the spec's provider, region and CSP spec name and returns the
+        rootDiskType/diskType options in CSP-native terms (assets/diskinfo.yaml, scoped by
+        region/spec availability). Give imageId (same as for POST .../reviewSpecImagePair) so the
+        image's OS selects byOS root size rules and its minimum OS disk size raises rootDiskSizeGB.min.
+        Data disks do not depend on the image. Static reference; for live stock use POST .../reviewSpecImagePair.
+      operationId: GetSpecDiskOptions
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: system
+      - name: specId
+        in: path
+        description: Spec ID
+        required: true
+        schema:
+          type: string
+      - name: imageId
+        in: query
+        description: "Image ID (CSP image name, as used in node creation) to derive\
+          \ OS and minimum root disk size"
+        schema:
+          type: string
+      - name: osType
+        in: query
+        description: "OS family override when no imageId (e.g. windows, ubuntu)"
+        schema:
+          type: string
+      - name: view
+        in: query
+        description: available (default) or all
+        schema:
+          type: string
+          enum:
+          - available
+          - all
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SpecDiskOptionsResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/sshKey:
     get:
       tags:
@@ -21285,6 +21432,71 @@ components:
         diskSize:
           type: integer
           description: Disk size in GB
+    model.DiskAvailability:
+      type: object
+      properties:
+        note:
+          type: string
+        regions:
+          $ref: '#/components/schemas/model.DiskScope'
+        specPatterns:
+          $ref: '#/components/schemas/model.DiskScope'
+        zones:
+          $ref: '#/components/schemas/model.DiskScope'
+    model.DiskCSPSupportInfo:
+      type: object
+      properties:
+        dataDiskSelectable:
+          type: boolean
+          example: true
+        defaultDataDiskType:
+          type: string
+          example: gp3
+        defaultRootDiskType:
+          type: string
+          example: gp3
+        diskTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.DiskTypeInfo'
+        note:
+          type: string
+        rootDiskSelectable:
+          type: boolean
+          example: true
+        supported:
+          type: boolean
+          example: true
+    model.DiskScope:
+      type: object
+      properties:
+        except:
+          type: array
+          items:
+            type: string
+        only:
+          type: array
+          items:
+            type: string
+    model.DiskSizeConstraint:
+      type: object
+      properties:
+        allowed:
+          type: array
+          example:
+          - 50
+          - 100
+          items:
+            type: integer
+        max:
+          type: integer
+          example: 16384
+        min:
+          type: integer
+          example: 10
+        step:
+          type: integer
+          example: 10
     model.DiskStatus:
       type: string
       enum:
@@ -21310,6 +21522,66 @@ components:
       - DiskDeleting
       - DiskError
       - DiskFailed
+    model.DiskSupportResponse:
+      type: object
+      properties:
+        regionName:
+          type: string
+          example: ap-northeast-2
+        resourceType:
+          type: string
+          example: disk
+        supports:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/model.DiskCSPSupportInfo'
+        view:
+          type: string
+          example: available
+          enum:
+          - available
+          - all
+    model.DiskTypeInfo:
+      type: object
+      properties:
+        availability:
+          $ref: '#/components/schemas/model.DiskAvailability'
+        available:
+          type: boolean
+          description: Available is false when the type is out of scope for the requested
+            region/zone/spec (see unavailableReason).
+          example: true
+        byOS:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/model.DiskSizeConstraint'
+          description: root disk size override per OS family (e.g. windows)
+        cbSpiderName:
+          type: string
+          description: CBSpiderName is the identifier CB-Tumblebug sends to CB-Spider
+            when it differs from diskType (informational).
+          example: PremiumSSD
+        dataDisk:
+          type: boolean
+        dataDiskSizeGB:
+          $ref: '#/components/schemas/model.DiskSizeConstraint'
+        description:
+          type: string
+        diskType:
+          type: string
+          example: gp3
+        displayName:
+          type: string
+          example: General Purpose SSD (gp3)
+        note:
+          type: string
+        rootDisk:
+          type: boolean
+        rootDiskSizeGB:
+          $ref: '#/components/schemas/model.DiskSizeConstraint'
+        unavailableReason:
+          type: string
+          example: not compatible with spec 'c3-standard-4'
     model.ExecCredential:
       type: object
       properties:
@@ -27547,6 +27819,67 @@ components:
         vCPUDiff:
           type: integer
           description: candidate.vCPU - source.vCPU
+    model.SpecDiskOptionsResponse:
+      type: object
+      properties:
+        cspSpecName:
+          type: string
+          example: t3.medium
+        dataDiskSelectable:
+          type: boolean
+          example: true
+        defaultDataDiskType:
+          type: string
+          example: gp3
+        defaultRootDiskType:
+          type: string
+          example: gp3
+        diskTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.DiskTypeInfo'
+        imageId:
+          type: string
+          description: |-
+            Image context (when imageId is given): OS used for byOS rules and the image's minimum root disk size,
+            which raises rootDiskSizeGB.min of every root-capable type.
+          example: ami-0123456789abcdef0
+        imageMinRootDiskSizeGB:
+          type: integer
+          example: 8
+        imageOSPlatform:
+          type: string
+          example: Linux/UNIX
+        imageOSType:
+          type: string
+          example: ubuntu 22.04
+        liveCheckHint:
+          type: string
+          description: LiveCheckHint points to the live stock check (POST .../reviewSpecImagePair
+            with rootDiskType).
+        note:
+          type: string
+        providerName:
+          type: string
+          example: aws
+        regionName:
+          type: string
+          example: ap-northeast-2
+        rootDiskSelectable:
+          type: boolean
+          example: true
+        specId:
+          type: string
+          example: aws+ap-northeast-2+t3.medium
+        specRootDiskSize:
+          type: integer
+        specRootDiskType:
+          type: string
+          description: "SpecRootDiskType/Size are the spec's own root disk hints (from\
+            \ cloudspec.csv), if any."
+        supported:
+          type: boolean
+          example: true
     model.SpecFetchOption:
       type: object
       properties:

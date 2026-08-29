@@ -1330,6 +1330,97 @@ const docTemplate = `{
                 }
             }
         },
+        "/disk/support": {
+            "get": {
+                "description": "Valid rootDiskType/diskType values (CSP-native identifiers) with size constraints per CSP,\nfrom assets/diskinfo.yaml (no CB-Spider call). Where CB-Spider expects a different\nidentifier, cbSpiderName shows what CB-Tumblebug translates it to.\nview=available (default) lists only types in scope for the given region/zone/spec;\nview=all also lists out-of-scope types with unavailableReason.\nPass regionName / cspSpecName to scope availability; or use\nGET /ns/{nsId}/resources/spec/{specId}/diskOptions to derive them from a spec.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Data Disk Management"
+                ],
+                "summary": "Get the static, CSP-wide root/data disk type reference",
+                "operationId": "GetDiskSupport",
+                "parameters": [
+                    {
+                        "enum": [
+                            "aws",
+                            "gcp",
+                            "azure",
+                            "alibaba",
+                            "tencent",
+                            "ibm",
+                            "openstack",
+                            "ncp",
+                            "nhn",
+                            "kt"
+                        ],
+                        "type": "string",
+                        "example": "aws",
+                        "description": "Provider Name to filter to a single CSP; omit for all CSPs",
+                        "name": "providerName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "CSP region to scope availability (e.g. ap-northeast-2)",
+                        "name": "regionName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "CSP zone to scope availability",
+                        "name": "zone",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "CSP spec name to scope availability (e.g. c3-standard-4)",
+                        "name": "cspSpecName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS family of the image (e.g. windows, ubuntu); resolves byOS root size overrides into rootDiskSizeGB",
+                        "name": "osType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "available",
+                            "all"
+                        ],
+                        "type": "string",
+                        "description": "available (default) or all",
+                        "name": "view",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.DiskSupportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/fetchImages": {
             "post": {
                 "description": "Fetch images waiting for completion.\n\n**Provider Selection Options:**\n- ` + "`" + `targetProviders` + "`" + `: Specify exact providers to fetch (e.g., [\"aws\", \"gcp\"]). When set, only these providers are processed and ` + "`" + `excludedProviders` + "`" + ` is ignored.\n- ` + "`" + `excludedProviders` + "`" + `: Specify providers to skip (e.g., [\"azure\"]). Only used when ` + "`" + `targetProviders` + "`" + ` is not set.\n- ` + "`" + `regionAgnosticProviders` + "`" + `: Providers where images are shared across regions (e.g., [\"gcp\"]). Only one region will be fetched per provider.\n\n**Note:** ` + "`" + `regionAgnosticProviders` + "`" + ` should only contain providers that are also in ` + "`" + `targetProviders` + "`" + ` (or not excluded).",
@@ -16596,6 +16687,89 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/spec/{specId}/diskOptions": {
+            "get": {
+                "description": "Resolves the spec's provider, region and CSP spec name and returns the\nrootDiskType/diskType options in CSP-native terms (assets/diskinfo.yaml, scoped by\nregion/spec availability). Give imageId (same as for POST .../reviewSpecImagePair) so the\nimage's OS selects byOS root size rules and its minimum OS disk size raises rootDiskSizeGB.min.\nData disks do not depend on the image. Static reference; for live stock use POST .../reviewSpecImagePair.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Spec Management"
+                ],
+                "summary": "Get the disk types and size ranges usable with a spec",
+                "operationId": "GetSpecDiskOptions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "system",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "aws+ap-northeast-2+t3.medium",
+                        "description": "Spec ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "ami-0123456789abcdef0",
+                        "description": "Image ID (CSP image name, as used in node creation) to derive OS and minimum root disk size",
+                        "name": "imageId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS family override when no imageId (e.g. windows, ubuntu)",
+                        "name": "osType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "available",
+                            "all"
+                        ],
+                        "type": "string",
+                        "description": "available (default) or all",
+                        "name": "view",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SpecDiskOptionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/sshKey": {
             "get": {
                 "description": "List all SSH Keys or SSH Keys' ID",
@@ -25423,6 +25597,101 @@ const docTemplate = `{
                 }
             }
         },
+        "model.DiskAvailability": {
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string"
+                },
+                "regions": {
+                    "$ref": "#/definitions/model.DiskScope"
+                },
+                "specPatterns": {
+                    "$ref": "#/definitions/model.DiskScope"
+                },
+                "zones": {
+                    "$ref": "#/definitions/model.DiskScope"
+                }
+            }
+        },
+        "model.DiskCSPSupportInfo": {
+            "type": "object",
+            "properties": {
+                "dataDiskSelectable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "defaultDataDiskType": {
+                    "type": "string",
+                    "example": "gp3"
+                },
+                "defaultRootDiskType": {
+                    "type": "string",
+                    "example": "gp3"
+                },
+                "diskTypes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DiskTypeInfo"
+                    }
+                },
+                "note": {
+                    "type": "string"
+                },
+                "rootDiskSelectable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "supported": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.DiskScope": {
+            "type": "object",
+            "properties": {
+                "except": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "only": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.DiskSizeConstraint": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        50,
+                        100
+                    ]
+                },
+                "max": {
+                    "type": "integer",
+                    "example": 16384
+                },
+                "min": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "step": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
         "model.DiskStatus": {
             "type": "string",
             "enum": [
@@ -25452,6 +25721,88 @@ const docTemplate = `{
                 "DiskError",
                 "DiskFailed"
             ]
+        },
+        "model.DiskSupportResponse": {
+            "type": "object",
+            "properties": {
+                "regionName": {
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "resourceType": {
+                    "type": "string",
+                    "example": "disk"
+                },
+                "supports": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.DiskCSPSupportInfo"
+                    }
+                },
+                "view": {
+                    "type": "string",
+                    "enum": [
+                        "available",
+                        "all"
+                    ],
+                    "example": "available"
+                }
+            }
+        },
+        "model.DiskTypeInfo": {
+            "type": "object",
+            "properties": {
+                "availability": {
+                    "$ref": "#/definitions/model.DiskAvailability"
+                },
+                "available": {
+                    "description": "Available is false when the type is out of scope for the requested region/zone/spec (see unavailableReason).",
+                    "type": "boolean",
+                    "example": true
+                },
+                "byOS": {
+                    "description": "root disk size override per OS family (e.g. windows)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.DiskSizeConstraint"
+                    }
+                },
+                "cbSpiderName": {
+                    "description": "CBSpiderName is the identifier CB-Tumblebug sends to CB-Spider when it differs from diskType (informational).",
+                    "type": "string",
+                    "example": "PremiumSSD"
+                },
+                "dataDisk": {
+                    "type": "boolean"
+                },
+                "dataDiskSizeGB": {
+                    "$ref": "#/definitions/model.DiskSizeConstraint"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "diskType": {
+                    "type": "string",
+                    "example": "gp3"
+                },
+                "displayName": {
+                    "type": "string",
+                    "example": "General Purpose SSD (gp3)"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "rootDisk": {
+                    "type": "boolean"
+                },
+                "rootDiskSizeGB": {
+                    "$ref": "#/definitions/model.DiskSizeConstraint"
+                },
+                "unavailableReason": {
+                    "type": "string",
+                    "example": "not compatible with spec 'c3-standard-4'"
+                }
+            }
         },
         "model.ExecCredential": {
             "type": "object",
@@ -33792,6 +34143,84 @@ const docTemplate = `{
                 "vCPUDiff": {
                     "description": "candidate.vCPU - source.vCPU",
                     "type": "integer"
+                }
+            }
+        },
+        "model.SpecDiskOptionsResponse": {
+            "type": "object",
+            "properties": {
+                "cspSpecName": {
+                    "type": "string",
+                    "example": "t3.medium"
+                },
+                "dataDiskSelectable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "defaultDataDiskType": {
+                    "type": "string",
+                    "example": "gp3"
+                },
+                "defaultRootDiskType": {
+                    "type": "string",
+                    "example": "gp3"
+                },
+                "diskTypes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DiskTypeInfo"
+                    }
+                },
+                "imageId": {
+                    "description": "Image context (when imageId is given): OS used for byOS rules and the image's minimum root disk size,\nwhich raises rootDiskSizeGB.min of every root-capable type.",
+                    "type": "string",
+                    "example": "ami-0123456789abcdef0"
+                },
+                "imageMinRootDiskSizeGB": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "imageOSPlatform": {
+                    "type": "string",
+                    "example": "Linux/UNIX"
+                },
+                "imageOSType": {
+                    "type": "string",
+                    "example": "ubuntu 22.04"
+                },
+                "liveCheckHint": {
+                    "description": "LiveCheckHint points to the live stock check (POST .../reviewSpecImagePair with rootDiskType).",
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "regionName": {
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "rootDiskSelectable": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.medium"
+                },
+                "specRootDiskSize": {
+                    "type": "integer"
+                },
+                "specRootDiskType": {
+                    "description": "SpecRootDiskType/Size are the spec's own root disk hints (from cloudspec.csv), if any.",
+                    "type": "string"
+                },
+                "supported": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
