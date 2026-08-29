@@ -25436,6 +25436,14 @@ const docTemplate = `{
             "x-enum-comments": {
                 "DiskError": "CSP-reported error state"
             },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "",
+                "CSP-reported error state",
+                ""
+            ],
             "x-enum-varnames": [
                 "DiskCreating",
                 "DiskAvailable",
