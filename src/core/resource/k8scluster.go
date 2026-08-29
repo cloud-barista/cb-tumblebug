@@ -480,7 +480,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 			Name:            spName,
 			ImageName:       spImgName,
 			VMSpecName:      spSpecName,
-			RootDiskType:    v.RootDiskType,
+			RootDiskType:    ToCBSpiderDiskType(connConfig.ProviderName, v.RootDiskType),
 			RootDiskSize:    spRootDiskSize,
 			KeyPairName:     spKpName,
 			OnAutoScaling:   v.OnAutoScaling,
@@ -796,7 +796,7 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 			Name:         spName,
 			ImageName:    spImgName,
 			VMSpecName:   spSpecName,
-			RootDiskType: u.RootDiskType,
+			RootDiskType: ToCBSpiderDiskType(connConfig.ProviderName, u.RootDiskType),
 			RootDiskSize: spRootDiskSize,
 			KeyPairName:  spKpName,
 
@@ -2139,4 +2139,3 @@ func validateK8sImageForProvider(nsId, providerName, imageId string) error {
 	}
 	return nil
 }
-

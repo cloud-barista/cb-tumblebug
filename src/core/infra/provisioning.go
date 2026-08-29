@@ -4715,7 +4715,14 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		requestBody.ReqInfo.VMUserPasswd = common.GenRandomPassword(14)
 	}
 
-	requestBody.ReqInfo.RootDiskType = nodeInfoData.RootDiskType
+	// Users give CSP-native disk types; translate to CB-Spider's identifier when assets/diskinfo.yaml declares one.
+	providerForDisk := nodeInfoData.ConnectionConfig.ProviderName
+	if providerForDisk == "" {
+		if cc, err := common.GetConnConfig(nodeInfoData.ConnectionName); err == nil {
+			providerForDisk = cc.ProviderName
+		}
+	}
+	requestBody.ReqInfo.RootDiskType = resource.ToCBSpiderDiskType(providerForDisk, nodeInfoData.RootDiskType)
 	// Convert int to string for Spider API
 	if nodeInfoData.RootDiskSize > 0 {
 		requestBody.ReqInfo.RootDiskSize = strconv.Itoa(nodeInfoData.RootDiskSize)
