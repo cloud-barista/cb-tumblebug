@@ -9,7 +9,7 @@ images:
   tumblebug: cloudbaristaorg/cb-tumblebug:0.13.1
   spider: cloudbaristaorg/cb-spider:0.13.0
   terrarium: cloudbaristaorg/mc-terrarium:0.1.4
-  mapui: cloudbaristaorg/cb-mapui:0.13.2
+  mapui: cloudbaristaorg/cb-mapui:0.13.4
   mcp: cloudbaristaorg/cb-tumblebug-mcp-server:0.13.1
   etcd: gcr.io/etcd-development/etcd:v3.6.11
   postgres: postgres:16-alpine
