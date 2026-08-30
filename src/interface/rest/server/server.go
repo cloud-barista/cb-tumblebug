@@ -32,7 +32,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/cloud-barista/cb-tumblebug/src/interface/rest/docs"
 	"github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/auth"
 
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/common"
@@ -201,7 +200,8 @@ func RunServer() {
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
 
 	// Route for system management
-	docs.SwaggerInfo.Host = model.SelfEndpoint
+	// The spec declares a relative server URL, so the API base follows whatever
+	// origin the doc was served from (direct port or gateway).
 	swaggerRedirect := func(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "/tumblebug/api/index.html")
 	}
