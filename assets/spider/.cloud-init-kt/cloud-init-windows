@@ -1,4 +1,0 @@
-<powershell>
-net user "Administrator" "{{PASSWORD}}"
-</powershell>
-<persist>true</persist>

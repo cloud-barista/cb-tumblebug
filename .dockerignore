@@ -8,7 +8,6 @@ container-volume/
 .gitignore
 
 # Runtime artifacts created by cb-spider container (root-owned, causes permission errors)
-assets/spider/.securitygroup-*
 
 # Secrets
 **/secrets/*

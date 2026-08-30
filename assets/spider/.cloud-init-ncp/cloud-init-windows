@@ -1,4 +1,0 @@
-Dim shell
-Set shell= WScript.CreateObject ("WScript.shell")
-shell.Exec "net user Administrator {{PASSWORD}}"
-Set shell= Nothing
