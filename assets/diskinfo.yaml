@@ -6,12 +6,6 @@
 # Last Updated: 2026-08-29
 # Sources: official CSP documentation (links per CSP), cross-checked by provisioning every root-capable
 # type as a VM root disk and creating every data-capable type as a data disk through CB-Tumblebug
-# (CB-Spider v0.13.0) in two regions per CSP on 2026-08-29. Types a CSP offers but that cannot be
-# created through CB-Tumblebug today are kept with rootDisk/dataDisk: false and the reason in "note". Where CB-Spider's driver expects an identifier
-# different from the CSP's, "cbSpiderName" declares it and CB-Tumblebug translates the user's
-# CSP-native value before calling CB-Spider (resource.ToCBSpiderDiskType). Nothing else about
-# CB-Spider is encoded here: CB-Spider remains the final judge and its own limits (e.g. its
-# cloudos_meta.yaml size caps) should be fixed upstream, not mirrored in this file.
 #
 # Schema
 # disk:
@@ -143,14 +137,16 @@ disk:
         name: Premium SSD v2
         description: Linear per-GiB SSD with independently provisioned IOPS/throughput
         rootDisk: false
-        dataDisk: false
-        note: Cannot be created through CB-Tumblebug yet (CB-Spider accepts Premium/StandardSSD/Standard only). Zonal at Azure.
+        dataDisk: true
+        dataDiskSizeGB: {min: 1, max: 65536}
+        note: Data disk only (cannot be an OS disk). Zonal at Azure. Verified 2026-08-30.
       UltraSSD_LRS:
         name: Ultra Disk
         description: Highest-performance data disk with per-IOPS/MBps billing
         rootDisk: false
-        dataDisk: false
-        note: Cannot be created through CB-Tumblebug yet (CB-Spider accepts Premium/StandardSSD/Standard only).
+        dataDisk: true
+        dataDiskSizeGB: {min: 4, max: 65536}
+        note: Data disk only (cannot be an OS disk); needs an Ultra-capable VM to attach. Verified 2026-08-30.
 
   gcp:
     description: Google Compute Engine Persistent Disk / Hyperdisk
@@ -210,17 +206,18 @@ disk:
         name: Hyperdisk Balanced
         description: Default disk for newer machine series; provisioned IOPS/throughput
         rootDisk: true
-        dataDisk: false
+        dataDisk: true
         rootDiskSizeGB: {min: 4, max: 65536}
-        note: Data disk creation is rejected by CB-Spider (type unknown to its GCP driver); root disk is passed through to GCP. Not usable on E2 (verified 2026-08-29).
+        dataDiskSizeGB: {min: 4, max: 65536}
+        note: Root disk on n4-standard-2 and data disk verified 2026-08-30. Not usable on E2.
         availability:
           specPatterns: {only: ["c3-*", "c3d-*", "c4-*", "c4d-*", "c4a-*", "n4-*", "n4a-*", "n4d-*", "x4-*", "m3-*", "m4-*", "h3-*", "h4d-*", "z3-*", "a3-*", "a4-*", "g4-*"]}
       hyperdisk-extreme:
         name: Hyperdisk Extreme
         description: Highest IOPS data disk
         rootDisk: false
-        dataDisk: false
-        note: Cannot be created through CB-Tumblebug yet (type unknown to CB-Spider's GCP driver).
+        dataDisk: true
+        note: Data disk only. Verified 2026-08-30.
         dataDiskSizeGB: {min: 64, max: 65536}
         availability:
           specPatterns: {only: ["c3-*", "c3d-*", "c4-*", "n4-*", "x4-*", "m3-*", "m4-*", "z3-*", "a3-*"]}
@@ -228,8 +225,8 @@ disk:
         name: Hyperdisk Throughput
         description: High-throughput data disk for scale-out analytics
         rootDisk: false
-        dataDisk: false
-        note: Cannot be created through CB-Tumblebug yet (type unknown to CB-Spider's GCP driver).
+        dataDisk: true
+        note: Data disk only. Verified 2026-08-30.
         dataDiskSizeGB: {min: 2048, max: 32768}
         availability:
           specPatterns: {only: ["c3-*", "c3d-*", "c4-*", "c4a-*", "n4-*", "m3-*", "h3-*", "z3-*", "a3-*"]}
@@ -237,8 +234,8 @@ disk:
         name: Hyperdisk ML
         description: Read-only shareable disk for ML model serving
         rootDisk: false
-        dataDisk: false
-        note: Cannot be created through CB-Tumblebug yet (type unknown to CB-Spider's GCP driver).
+        dataDisk: true
+        note: Data disk only. Verified 2026-08-30.
         dataDiskSizeGB: {min: 4, max: 65536}
         availability:
           specPatterns: {only: ["a3-*", "a4-*", "g2-*", "g4-*", "c3-*", "n4-*"]}
@@ -270,16 +267,18 @@ disk:
         name: ESSD AutoPL
         description: ESSD with auto-scaling performance
         rootDisk: true
-        dataDisk: false
+        dataDisk: true
         rootDiskSizeGB: {min: 1, max: 2048}
-        note: Root disk verified in ap-northeast-2 and ap-southeast-1 (2026-08-29); data disk creation is rejected by CB-Spider (category unknown to its driver).
+        dataDiskSizeGB: {min: 1, max: 65536}
+        note: Root disk verified in ap-northeast-2 and ap-southeast-1; data disk verified 2026-08-30.
       cloud_essd_entry:
         name: ESSD Entry
         description: Entry-level ESSD for economy (u/e) instance families
         rootDisk: true
-        dataDisk: false
+        dataDisk: true
         rootDiskSizeGB: {min: 20, max: 2048}
-        note: Data disk creation is rejected by CB-Spider (category unknown to its driver). Root disk on ecs.e-c1m1.large worked in ap-northeast-2 but not in ap-southeast-1 (2026-08-29) — zone-dependent.
+        dataDiskSizeGB: {min: 10, max: 32768}
+        note: Data disk verified 2026-08-30. Root disk on ecs.e-c1m1.large worked in ap-northeast-2 but not in ap-southeast-1 (2026-08-29) — zone-dependent.
         availability:
           specPatterns: {only: ["ecs.u1-*", "ecs.e-*"]}
       cloud_efficiency:
@@ -352,9 +351,10 @@ disk:
         name: Balanced SSD
         description: Cost-effective SSD
         rootDisk: true
-        dataDisk: false
+        dataDisk: true
         rootDiskSizeGB: {min: 50}
-        note: Root disk verified in ap-seoul/ap-singapore (2026-08-29); data disk creation is rejected by CB-Spider (type unknown to its driver).
+        dataDiskSizeGB: {min: 20, max: 32000, step: 10}
+        note: Root disk verified in ap-seoul/ap-singapore (2026-08-29); data disk verified 2026-08-30.
       CLOUD_TSSD:
         name: Tremendous SSD
         description: Highest-performance SSD bundled with specific instance types
