@@ -1,6 +1,0 @@
-<powershell>
-#ps1_sysnative
-New-LocalUser "{{username}}" -Password (ConvertTo-SecureString "{{PASSWORD}}" -AsPlainText -Force)
-Add-LocalGroupMember -Group "Administrators" -Member "{{username}}"    
-</powershell>
-<persist>true</persist>

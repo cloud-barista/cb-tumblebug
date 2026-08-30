@@ -117,7 +117,7 @@ spec:
             - { name: log, mountPath: /app/log }
             {{- if .Values.assetsOverride.files }}
             # subPath: overlay one file at a time so anything not in the ConfigMap
-            # (assets.dump.gz, assets/spider/) still comes from the image.
+            # (assets.dump.gz) still comes from the image.
             {{- end }}
             {{- range .Values.assetsOverride.files }}
             - name: assets-override
