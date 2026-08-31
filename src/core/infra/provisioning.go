@@ -95,6 +95,38 @@ func isQuotaOrCapacityError(err error) bool {
 	return false
 }
 
+// recordNodeFailure classifies a CSP rejection and stores it on the node, so a
+// later retry can act on the failure class and the zone that was attempted
+// instead of re-parsing the message. SystemMessage keeps the one-line summary
+// for display; the structured record lives in NodeInfo.Failure.
+//
+// Region/Zone are also filled in here: on the success path they come from
+// CB-Spider's response, so without this a failed node carries no placement
+// information at all and nothing can tell where it was tried.
+func recordNodeFailure(nodeInfoData *model.NodeInfo, provider, attemptedZone string, err error) {
+	if nodeInfoData == nil || err == nil {
+		return
+	}
+	region := nodeInfoData.ConnectionConfig.RegionDetail.RegionName
+	if region == "" {
+		region = nodeInfoData.Region.Region
+	}
+
+	failure := cspcheck.ClassifyProvisioningFailure(provider, region, attemptedZone, err.Error())
+	nodeInfoData.Failure = &failure
+	// Keep the full CSP text here — it is what the UI renders today, and it is
+	// now redacted and trimmed of provider debris. failure.Message holds the
+	// one-line form for callers that want it.
+	nodeInfoData.SystemMessage = failure.RawMessage
+
+	if nodeInfoData.Region.Region == "" {
+		nodeInfoData.Region.Region = region
+	}
+	if nodeInfoData.Region.Zone == "" {
+		nodeInfoData.Region.Zone = failure.AttemptedZone
+	}
+}
+
 // isApiThrottlingError reports whether err is a CSP API rate-limit rejection (retryable).
 func isApiThrottlingError(err error) bool {
 	if err == nil {
@@ -998,22 +1030,48 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 
 // ScaleOutInfraNodeGroup is func to create Infra groupNode
 func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, nodeGroupId string, numNodesToAdd int) (*model.InfraInfo, error) {
+	result, _, err := ScaleOutInfraNodeGroupFrom(ctx, nsId, infraId, nodeGroupId, numNodesToAdd, "", "")
+	return result, err
+}
+
+// ScaleOutInfraNodeGroupFrom is ScaleOutInfraNodeGroup with explicit control over
+// where the new Nodes land.
+//
+// templateNodeId names the Node to copy the configuration from. ListNodeByNodeGroup
+// returns Nodes in KV scan order, so leaving it empty makes the choice arbitrary —
+// which matters once a NodeGroup spans several subnets (DistributeSubnets), because
+// the copied SubnetId then decides the zone. Callers that need a predictable
+// placement must name the template Node.
+//
+// subnetIdOverride places the new Nodes in another subnet of the same VNet. This is
+// not the same as pinning a zone on a dynamic request: that builds a zone-scoped
+// VNet, whereas this keeps the VPC, security group and key, so the new Nodes stay
+// on the Infra's private network.
+// It returns the ids of the Nodes it created alongside the updated Infra.
+func ScaleOutInfraNodeGroupFrom(ctx context.Context, nsId string, infraId string, nodeGroupId string, numNodesToAdd int, templateNodeId string, subnetIdOverride string) (*model.InfraInfo, []string, error) {
 	if numNodesToAdd < 1 {
-		return &model.InfraInfo{}, fmt.Errorf("numNodesToAdd must be 1 or more (got %d)", numNodesToAdd)
+		return &model.InfraInfo{}, nil, fmt.Errorf("numNodesToAdd must be 1 or more (got %d)", numNodesToAdd)
 	}
 
 	nodeIdList, err := ListNodeByNodeGroup(nsId, infraId, nodeGroupId)
 	if err != nil {
 		temp := &model.InfraInfo{}
-		return temp, err
+		return temp, nil, err
 	}
 	if len(nodeIdList) == 0 {
-		return &model.InfraInfo{}, fmt.Errorf("NodeGroup '%s' has no Node in Infra '%s'; scale-out needs an existing Node to copy the configuration from", nodeGroupId, infraId)
+		return &model.InfraInfo{}, nil, fmt.Errorf("NodeGroup '%s' has no Node in Infra '%s'; scale-out needs an existing Node to copy the configuration from", nodeGroupId, infraId)
 	}
-	nodeObj, err := GetNodeObject(nsId, infraId, nodeIdList[0])
+	sourceNodeId := nodeIdList[0]
+	if templateNodeId != "" {
+		if !contains(nodeIdList, templateNodeId) {
+			return &model.InfraInfo{}, nil, fmt.Errorf("template Node '%s' is not in NodeGroup '%s'", templateNodeId, nodeGroupId)
+		}
+		sourceNodeId = templateNodeId
+	}
+	nodeObj, err := GetNodeObject(nsId, infraId, sourceNodeId)
 	if err != nil {
 		temp := &model.InfraInfo{}
-		return temp, err
+		return temp, nil, err
 	}
 
 	nodeGroupReqTemplate := &model.CreateNodeGroupReq{}
@@ -1029,6 +1087,9 @@ func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, no
 	nodeGroupReqTemplate.Label = filterOutSystemLabels(nodeObj.Label)
 	nodeGroupReqTemplate.VNetId = nodeObj.VNetId
 	nodeGroupReqTemplate.SubnetId = nodeObj.SubnetId
+	if subnetIdOverride != "" {
+		nodeGroupReqTemplate.SubnetId = subnetIdOverride
+	}
 	nodeGroupReqTemplate.SecurityGroupIds = nodeObj.SecurityGroupIds
 	nodeGroupReqTemplate.SshKeyId = nodeObj.SshKeyId
 	nodeGroupReqTemplate.NodeUserName = nodeObj.NodeUserName
@@ -1046,30 +1107,39 @@ func ScaleOutInfraNodeGroup(ctx context.Context, nsId string, infraId string, no
 
 	nodeGroupReqTemplate.NodeGroupSize = numNodesToAdd
 
-	result, err := CreateInfraGroupNode(ctx, nsId, infraId, nodeGroupReqTemplate, true)
+	result, newNodeIds, err := createInfraGroupNodeWithIds(ctx, nsId, infraId, nodeGroupReqTemplate, true)
 	if err != nil {
-		temp := &model.InfraInfo{}
-		return temp, err
+		// The ids are still reported on failure: a Node record may exist and need
+		// cleaning up even though creation did not succeed.
+		return &model.InfraInfo{}, newNodeIds, err
 	}
-	return result, nil
-
+	return result, newNodeIds, nil
 }
 
 // CreateInfraGroupNode is func to create Infra groupNode
 func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, nodeRequest *model.CreateNodeGroupReq, newNodeGroup bool) (*model.InfraInfo, error) {
+	result, _, err := createInfraGroupNodeWithIds(ctx, nsId, infraId, nodeRequest, newNodeGroup)
+	return result, err
+}
+
+// createInfraGroupNodeWithIds is CreateInfraGroupNode that also returns the Node
+// ids it reserved. Identifying new Nodes by diffing the NodeGroup listing before
+// and after is unreliable once several creations run concurrently on the same
+// NodeGroup — each would see the others' Nodes appear.
+func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId string, nodeRequest *model.CreateNodeGroupReq, newNodeGroup bool) (*model.InfraInfo, []string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &model.InfraInfo{}
 		log.Error().Err(err).Msg("")
-		return temp, err
+		return temp, nil, err
 	}
 
 	err = common.CheckString(infraId)
 	if err != nil {
 		temp := &model.InfraInfo{}
 		log.Error().Err(err).Msg("")
-		return temp, err
+		return temp, nil, err
 	}
 
 	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
@@ -1081,7 +1151,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			return nil, err
+			return nil, nil, err
 		}
 
 		// for _, err := range err.(validator.ValidationErrors) {
@@ -1099,14 +1169,14 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		// 	fmt.Println()
 		// }
 
-		return nil, err
+		return nil, nil, err
 	}
 
 	infraTmp, _, err := GetInfraObject(nsId, infraId)
 
 	if err != nil {
 		temp := &model.InfraInfo{}
-		return temp, err
+		return temp, nil, err
 	}
 
 	//nodeRequest := req
@@ -1131,7 +1201,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	err = common.CheckString(tentativeNodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.InfraInfo{}, err
+		return &model.InfraInfo{}, nil, err
 	}
 
 	// Create or update nodeGroup object (nodeGroupSize is always >= 1)
@@ -1140,7 +1210,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	newNodeIds, err := reserveNodeNames(nsId, infraId, tentativeNodeId, nodeRequest, nodeGroupSize, newNodeGroup)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return nil, err
+		return nil, nil, err
 	}
 	log.Info().Msgf("Reserved Node names for NodeGroup %s: %v", tentativeNodeId, newNodeIds)
 
@@ -1219,7 +1289,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	if len(objectErrs) > 0 {
 		err := fmt.Errorf("failed to create Node objects for NodeGroup %s: %v", tentativeNodeId, objectErrs)
 		log.Error().Err(err).Msg("")
-		return nil, err
+		return nil, newNodeIds, err
 	}
 
 	// Set option based on whether this is a registration (CspResourceId is set)
@@ -1234,7 +1304,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 		nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return nil, err
+			return nil, newNodeIds, err
 		}
 		nodeInfoList = append(nodeInfoList, &nodeInfo)
 	}
@@ -1244,7 +1314,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	err = CreateNodesInParallel(ctx, nsId, infraId, nodeInfoList, option)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create VMs in parallel")
-		return nil, err
+		return nil, newNodeIds, err
 	}
 
 	//Update Infra status
@@ -1252,7 +1322,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	infraTmp, _, err = GetInfraObject(nsId, infraId)
 	if err != nil {
 		temp := &model.InfraInfo{}
-		return temp, err
+		return temp, newNodeIds, err
 	}
 
 	infraStatusTmp, _ := GetInfraStatus(nsId, infraId)
@@ -1349,7 +1419,7 @@ func CreateInfraGroupNode(ctx context.Context, nsId string, infraId string, node
 	// to identify what was just created, so the whole NodeGroup must not be reported
 	infraTmp.NewNodeList = newNodeIds
 
-	return &infraTmp, nil
+	return &infraTmp, newNodeIds, nil
 
 }
 
@@ -4702,6 +4772,9 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	requestBody := model.SpiderVMReqInfoWrapper{}
 	requestBody.ConnectionName = nodeInfoData.ConnectionName
 
+	// Zone this VM is being placed in, resolved from the selected subnet below.
+	attemptedZone := ""
+
 	//generate VM ID(Name) to request to CSP(Spider)
 	requestBody.ReqInfo.Name = nodeInfoData.Uid
 
@@ -4716,13 +4789,13 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	}
 
 	// Users give CSP-native disk types; translate to CB-Spider's identifier when assets/diskinfo.yaml declares one.
-	providerForDisk := nodeInfoData.ConnectionConfig.ProviderName
-	if providerForDisk == "" {
+	providerName := nodeInfoData.ConnectionConfig.ProviderName
+	if providerName == "" {
 		if cc, err := common.GetConnConfig(nodeInfoData.ConnectionName); err == nil {
-			providerForDisk = cc.ProviderName
+			providerName = cc.ProviderName
 		}
 	}
-	requestBody.ReqInfo.RootDiskType = resource.ToCBSpiderDiskType(providerForDisk, nodeInfoData.RootDiskType)
+	requestBody.ReqInfo.RootDiskType = resource.ToCBSpiderDiskType(providerName, nodeInfoData.RootDiskType)
 	// Convert int to string for Spider API
 	if nodeInfoData.RootDiskSize > 0 {
 		requestBody.ReqInfo.RootDiskSize = strconv.Itoa(nodeInfoData.RootDiskSize)
@@ -4855,6 +4928,12 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			return err
 		}
 
+		// The subnet is the only thing that pins a zone: neither SpiderVMReqInfo nor
+		// the driver-level VMReqInfo carries one, and CB-Spider derives the target
+		// zone from the subnet. Record it now so a failure can report where it was
+		// attempted — several CSPs never name the zone in their error text.
+		attemptedZone = subnetInfo.Zone
+
 		requestBody.ReqInfo.SubnetName = subnetInfo.CspResourceName
 		if requestBody.ReqInfo.SubnetName == "" {
 			nodeInfoData.Status = model.StatusFailed
@@ -4943,6 +5022,8 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	if err != nil {
 		err = fmt.Errorf("%v", err)
 
+		recordNodeFailure(nodeInfoData, providerName, attemptedZone, err)
+
 		if isQuotaOrCapacityError(err) {
 			// Definitive pre-create rejection: the CSP refused the request before any
 			// resource was provisioned — no VM exists on the CSP side. Mark Failed
@@ -4951,7 +5032,6 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			nodeInfoData.Status = model.StatusFailed
 			nodeInfoData.TargetAction = model.ActionComplete
 			nodeInfoData.TargetStatus = ""
-			nodeInfoData.SystemMessage = err.Error()
 			UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 			log.Warn().Err(err).Msgf("[CreateNode] VM %s rejected by CSP before provisioning; marking Failed.", nodeInfoData.Name)
 			return err
@@ -4966,7 +5046,6 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		nodeInfoData.Status = model.StatusFailed
 		nodeInfoData.TargetAction = model.ActionComplete
 		nodeInfoData.TargetStatus = ""
-		nodeInfoData.SystemMessage = err.Error()
 		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
 		log.Warn().Err(err).Msgf("[CreateNode] Spider returned error for VM %s without VM identity info; "+
 			"marking Failed. Run action=reconcile to rescue any orphaned CSP VM, or action=refine to remove.", nodeInfoData.Name)
