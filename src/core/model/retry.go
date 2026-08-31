@@ -24,48 +24,61 @@ const (
 	RetryActionNone = "none"
 )
 
+// RetryTarget is one failed Node to retry, with the settings that apply to it.
+// Per-Node settings live here rather than in maps keyed by Node id alongside a
+// separate id list, so a setting can never name a Node that is not being retried.
+type RetryTarget struct {
+	NodeId string `json:"nodeId" validate:"required" example:"nvidial40s-1"`
+
+	// Zone places this replacement in a chosen zone. The zone is resolved to a
+	// subnet of the Node's own VNet — one is added there if the VNet has none yet
+	// and has CIDR space left — so the replacement keeps the VPC, security group
+	// and key. Empty keeps the zone the Node failed in.
+	//
+	// The review reports which zones the region offers, and which of them already
+	// hold Running Nodes of the same NodeGroup.
+	Zone string `json:"zone,omitempty" example:"us-west-2c"`
+
+	// AssumeResolved retries a Node the classifier ruled out, asserting that the
+	// condition blocking it was resolved outside CB-Tumblebug: a quota granted, a
+	// permission fixed. The stored failure still says otherwise and nothing in
+	// CB-Tumblebug can observe the change, so the caller has to say so.
+	//
+	// It cannot help a request that is simply wrong — an image the CSP does not
+	// have, a disk too small for the flavor. Re-sending that unchanged fails
+	// identically; correct the NodeGroup instead. The review reports, per Node,
+	// which of the two a failure is.
+	AssumeResolved bool `json:"assumeResolved,omitempty" example:"false"`
+}
+
 // RetryFailedNodesReq is the request body for the retry endpoints.
 type RetryFailedNodesReq struct {
-	// NodeIds limits the retry to these failed nodes. Empty means every failed
-	// node in the Infra that the classifier considers retriable.
-	NodeIds []string `json:"nodeIds,omitempty"`
+	// Targets are the failed Nodes to retry. Empty means every failed Node of the
+	// Infra that the classifier considers retriable.
+	Targets []RetryTarget `json:"targets,omitempty"`
 
-	// AttemptsPerNode is how many times to re-create each node before giving up.
+	// AttemptsPerNode is how many times to re-create each Node before giving up.
 	// Capacity comes and goes, so repeating the same request is the point.
 	// Default 1, maximum 10.
 	AttemptsPerNode int `json:"attemptsPerNode,omitempty" example:"3"`
 
-	// IntervalSeconds is the pause between attempts on the same node.
+	// IntervalSeconds is the pause between attempts on the same Node.
 	// Default 30, maximum 600.
 	IntervalSeconds int `json:"intervalSeconds,omitempty" example:"30"`
 
-	// KeepFailedNodes leaves the original failed node records in place after a
+	// Parallelism is how many Nodes to retry at the same time.
+	//
+	// Unset retries as many at once as the CSP allows: the cap is the per-region
+	// VM-creation limit infra provisioning already obeys, applied per connection,
+	// so a burst stays inside an envelope the provider handles. An explicit value
+	// is capped the same way rather than rejected. Ask for 1 to retry one Node at
+	// a time, so each outcome is visible before the next starts.
+	Parallelism int `json:"parallelism,omitempty" example:"0"`
+
+	// KeepFailedNodes leaves the original failed Node records in place after a
 	// successful replacement. They are deleted by default, since the replacement
 	// takes over their role and the failure is preserved in the retry result.
 	KeepFailedNodes bool `json:"keepFailedNodes,omitempty" example:"false"`
-
-	// Force retries nodes the classifier ruled out. Use only when the underlying
-	// cause was fixed outside CB-Tumblebug (a quota granted, an image published).
-	Force bool `json:"force,omitempty" example:"false"`
-
-	// Parallelism is how many nodes to retry at the same time. 1 (the default)
-	// retries one node at a time, so each outcome is visible before the next
-	// starts. Higher values are capped per CSP by the same limits infra
-	// provisioning uses (csp.RateLimitConfig.MaxNodesPerRegion), so a value
-	// larger than a provider allows is reduced rather than rejected.
-	Parallelism int `json:"parallelism,omitempty" example:"1"`
-
-	// PreferAvailableSubnet places a replacement in another subnet of the same
-	// VNet where a Node of its NodeGroup is currently Running. A running sibling
-	// is the best capacity evidence CB-Tumblebug has — it recorded a real success
-	// there — but it is not a guarantee: a zone that accepted a node minutes ago
-	// has been observed to refuse the next request. Staying inside the VNet keeps
-	// the VPC, security group and key, so the Node remains on the Infra's private
-	// network.
-	//
-	// Off by default: a NodeGroup spread over several subnets was usually spread
-	// on purpose, and consolidating it into one zone reduces that spread.
-	PreferAvailableSubnet bool `json:"preferAvailableSubnet,omitempty" example:"false"`
 }
 
 // RetryNodePlan is the verdict for one failed node.
@@ -83,6 +96,11 @@ type RetryNodePlan struct {
 	// before they existed.
 	Failure *ProvisioningFailure `json:"failure,omitempty"`
 
+	// AssumeResolvedHelps reports whether retrying this Node with assumeResolved
+	// can succeed. True when the block is external and may have been lifted since
+	// (quota, permission); false when the request itself has to change.
+	AssumeResolvedHelps bool `json:"assumeResolvedHelps,omitempty"`
+
 	// Action is one of the RetryAction* constants.
 	Action string `json:"action" example:"retryInPlace"`
 	// Reason explains the action in terms a user can act on.
@@ -96,7 +114,7 @@ type RetryNodePlan struct {
 	SubnetId string `json:"subnetId,omitempty"`
 	// SiblingSubnetId is another subnet of the same VNet where Nodes of this
 	// NodeGroup are Running — live evidence that its zone has capacity. Set
-	// preferAvailableSubnet to place the replacement there instead.
+	// that zone as a target's zone to place the replacement there instead.
 	SiblingSubnetId string `json:"siblingSubnetId,omitempty"`
 	// SiblingZone is that subnet's zone.
 	SiblingZone string `json:"siblingZone,omitempty"`
@@ -142,9 +160,11 @@ type RetryNodeResult struct {
 	// FailedNodeRemoved reports whether the original failed record was deleted.
 	FailedNodeRemoved bool `json:"failedNodeRemoved,omitempty"`
 	// PlacedInSubnetId is the subnet the replacement was requested in, which
-	// differs from the failed Node's when preferAvailableSubnet moved it.
+	// differs from the failed Node's when the target named another zone.
 	PlacedInSubnetId string `json:"placedInSubnetId,omitempty"`
-	ElapsedSeconds   int64  `json:"elapsedSeconds,omitempty"`
+	// PlacedInZone is that subnet's zone.
+	PlacedInZone   string `json:"placedInZone,omitempty"`
+	ElapsedSeconds int64  `json:"elapsedSeconds,omitempty"`
 }
 
 // RetryFailedNodesResult is the response of the execute endpoint.

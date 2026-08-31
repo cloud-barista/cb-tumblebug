@@ -61,10 +61,11 @@ var activeRetryRuns sync.Map // key: "{nsId}/{infraId}" -> struct{}
 // ReviewRetryFailedNodes reports, for every failed node in the Infra, whether
 // re-creating it can plausibly succeed and why. It creates nothing.
 func ReviewRetryFailedNodes(nsId, infraId string, req *model.RetryFailedNodesReq) (*model.RetryFailedNodesReview, error) {
+	targets := indexTargets(req)
 	if req == nil {
 		req = &model.RetryFailedNodesReq{}
 	}
-	failedNodes, err := listFailedNodes(nsId, infraId, req.NodeIds)
+	failedNodes, err := listFailedNodes(nsId, infraId, targetNodeIds(req.Targets))
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func ReviewRetryFailedNodes(nsId, infraId string, req *model.RetryFailedNodesReq
 		Plans:   make([]model.RetryNodePlan, 0, len(failedNodes)),
 	}
 	for _, node := range failedNodes {
-		plan := planRetryForNode(nsId, infraId, node, req.Force)
+		plan := planRetryForNode(nsId, infraId, node, targets[node.Id].AssumeResolved)
 		if plan.Action == model.RetryActionInPlace {
 			review.RetriableCount++
 			review.CostPerHourIfAll += plan.CostPerHour
@@ -100,6 +101,7 @@ func ReviewRetryFailedNodes(nsId, infraId string, req *model.RetryFailedNodesReq
 // each outcome is visible before the next is attempted and a partial success is
 // kept. Nodes the review excluded are skipped with their reason.
 func RetryFailedNodes(ctx context.Context, nsId, infraId string, req *model.RetryFailedNodesReq) (*model.RetryFailedNodesResult, error) {
+	targets := indexTargets(req)
 	if req == nil {
 		req = &model.RetryFailedNodesReq{}
 	}
@@ -124,7 +126,7 @@ func RetryFailedNodes(ctx context.Context, nsId, infraId string, req *model.Retr
 	}
 	defer activeRetryRuns.Delete(runKey)
 
-	failedNodes, err := listFailedNodes(nsId, infraId, req.NodeIds)
+	failedNodes, err := listFailedNodes(nsId, infraId, targetNodeIds(req.Targets))
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +145,7 @@ func RetryFailedNodes(ctx context.Context, nsId, infraId string, req *model.Retr
 	}
 	byConnection := map[string][]job{}
 	for _, node := range failedNodes {
-		plan := planRetryForNode(nsId, infraId, node, req.Force)
+		plan := planRetryForNode(nsId, infraId, node, targets[node.Id].AssumeResolved)
 		if plan.Action != model.RetryActionInPlace {
 			result.Results = append(result.Results, model.RetryNodeResult{
 				NodeId: node.Id, NodeGroupId: node.NodeGroupId,
@@ -186,11 +188,23 @@ func RetryFailedNodes(ctx context.Context, nsId, infraId string, req *model.Retr
 					defer func() { <-nodeSlots }()
 
 					subnetOverride := ""
-					if req.PreferAvailableSubnet && j.plan.SiblingSubnetId != "" {
-						subnetOverride = j.plan.SiblingSubnetId
-						log.Info().Msgf("retry: placing the replacement for '%s' in '%s' (zone %s), where %d sibling node(s) are running",
-							j.node.Id, j.plan.SiblingSubnetId, j.plan.SiblingZone, j.plan.SiblingRunningCount)
+					if zone := targets[j.node.Id].Zone; zone != "" {
+						resolved, zErr := resolveZoneOverride(ctx, nsId, j.node, zone)
+						if zErr != nil {
+							mu.Lock()
+							result.Results = append(result.Results, model.RetryNodeResult{
+								NodeId: j.node.Id, NodeGroupId: j.node.NodeGroupId,
+								Skipped: true, Reason: zErr.Error(),
+							})
+							result.SkippedCount++
+							mu.Unlock()
+							return
+						}
+						subnetOverride = resolved
+						log.Info().Msgf("retry: placing the replacement for '%s' in zone '%s' (subnet %s) of its own VNet",
+							j.node.Id, zone, resolved)
 					}
+
 					r := retryOneNode(ctx, nsId, infraId, j.node, attempts, interval, req.KeepFailedNodes, subnetOverride)
 
 					mu.Lock()
@@ -228,6 +242,7 @@ func retryOneNode(ctx context.Context, nsId, infraId string, failed model.NodeIn
 	if subnetOverride != "" {
 		r.PlacedInSubnetId = subnetOverride
 	}
+	r.PlacedInZone = subnetZone(nsId, failed.VNetId, r.PlacedInSubnetId, failed.Region.Zone)
 
 	for attempt := 1; attempt <= attempts; attempt++ {
 		if ctx.Err() != nil {
@@ -299,7 +314,7 @@ func retryOneNode(ctx context.Context, nsId, infraId string, failed model.NodeIn
 }
 
 // planRetryForNode decides what can be done about one failed node.
-func planRetryForNode(nsId, infraId string, node model.NodeInfo, force bool) model.RetryNodePlan {
+func planRetryForNode(nsId, infraId string, node model.NodeInfo, assumeResolved bool) model.RetryNodePlan {
 	failure := reclassify(node)
 	plan := model.RetryNodePlan{
 		NodeId:      node.Id,
@@ -336,17 +351,24 @@ func planRetryForNode(nsId, infraId string, node model.NodeInfo, force bool) mod
 		plan.Reason = retriableReason(failure)
 		if plan.SiblingSubnetId != "" && failure.Class == model.FailureZoneCapacity {
 			plan.Reason += fmt.Sprintf(
-				"; %d node(s) of this NodeGroup are running in %s (subnet %s) of the same VNet — set preferAvailableSubnet to place the replacement there instead, which keeps the same VPC, security group and key",
+				"; %d node(s) of this NodeGroup are running in %s (subnet %s) of the same VNet — retry this node with that zone to place the replacement there instead, which keeps the same VPC, security group and key",
 				plan.SiblingRunningCount, plan.SiblingZone, plan.SiblingSubnetId)
 		}
 
-	case force:
+	case assumeResolved:
 		plan.Action = model.RetryActionInPlace
-		plan.Reason = "forced by request despite: " + failure.Message
+		plan.Reason = "the caller asserts the blocking condition was resolved, despite: " + failure.Message
 
 	default:
 		plan.Action = model.RetryActionNone
 		plan.Reason = notRetriableReason(failure)
+	}
+
+	// Only an externally imposed block can lift on its own; a wrong request
+	// cannot, so saying it was resolved would just waste a CSP call.
+	if failure != nil && !failure.Retryable {
+		plan.AssumeResolvedHelps = failure.Class == model.FailureAccountQuota ||
+			failure.Class == model.FailureAuth
 	}
 
 	// Zone advice belongs only to a zone-specific shortage, and only where the
@@ -379,6 +401,10 @@ func retriableReason(f *model.ProvisioningFailure) string {
 }
 
 func notRetriableReason(f *model.ProvisioningFailure) string {
+	if f.Class == model.FailureAccountQuota || f.Class == model.FailureAuth {
+		return "blocked outside CB-Tumblebug — " + f.Message +
+			"; once that is resolved, retry this node with assumeResolved"
+	}
 	switch f.RetryHint {
 	case model.RetryHintDifferentImage:
 		return "this image cannot be used with this spec; choose another image and add a NodeGroup — " + f.Message
@@ -462,8 +488,8 @@ func zoneEscalationText(region string, zc model.ZoneCapability) string {
 			"; a different region or spec is the remaining option"
 	}
 	return fmt.Sprintf(
-		"if repeated attempts keep failing, add a NodeGroup in another zone of %s (%s); "+
-			"note that a zone-pinned NodeGroup gets its own VNet, so it will not share a private network with this Infra's other nodes",
+		"if repeated attempts keep failing, give this node's retry target a different zone of %s (%s) — "+
+			"the replacement is placed in a subnet of this same VNet, so it keeps the VPC, security group and key",
 		region, strings.Join(zc.Zones, ", "))
 }
 
@@ -524,8 +550,12 @@ func findRunningSiblingSubnet(nsId, infraId string, failed model.NodeInfo) (sibl
 // in one region, so a retry burst stays within the same envelope — Tencent, for
 // instance, allows far fewer parallel creates than AWS.
 func effectiveParallelism(requested int, connectionName string, jobCount int) int {
+	// Unset means "as many as the CSP allows": the cap below is the same limit
+	// infra provisioning obeys when creating VMs in one region, so retrying up to
+	// it stays inside an envelope the provider already handles. Ask for 1 to watch
+	// the nodes go one at a time.
 	if requested < 1 {
-		requested = 1
+		requested = jobCount
 	}
 	if requested > jobCount {
 		requested = jobCount
@@ -555,4 +585,107 @@ func maxConcurrentConnections(connectionCount int) int {
 		return csp.GlobalMaxConcurrentConnections
 	}
 	return connectionCount
+}
+
+// resolveZoneOverride finds the subnet of the failed node's own VNet that sits in
+// the requested zone, creating one if the VNet has none there yet.
+//
+// The zone is deliberately not passed on to a dynamic provisioning request: that
+// path derives a zone-scoped shared VNet name and so builds a second VPC — with
+// the same CIDR, since the CIDR slice is chosen from the connection alone — which
+// would cut the replacement off from the rest of the Infra. Staying inside the
+// existing VNet keeps the VPC, security group and key.
+func resolveZoneOverride(ctx context.Context, nsId string, failed model.NodeInfo, zone string) (string, error) {
+	zone = strings.TrimSpace(zone)
+	if zone == "" {
+		return "", nil
+	}
+	if failed.VNetId == "" {
+		return "", fmt.Errorf("node '%s' has no VNet to place a zone-specific subnet in", failed.Id)
+	}
+
+	zc := common.ResolveZoneCapability(failed.ConnectionName)
+	if !zc.Shiftable {
+		return "", fmt.Errorf("cannot place '%s' in zone '%s': %s", failed.Id, zone, zc.Reason)
+	}
+	if !containsFold(zc.Zones, zone) {
+		return "", fmt.Errorf("zone '%s' is not a zone of region '%s' (available: %s)",
+			zone, failed.Region.Region, strings.Join(zc.Zones, ", "))
+	}
+
+	vNetInfo, err := resource.GetVNet(nsId, failed.VNetId)
+	if err != nil {
+		return "", fmt.Errorf("cannot read VNet '%s': %w", failed.VNetId, err)
+	}
+	for _, subnet := range vNetInfo.SubnetInfoList {
+		if strings.EqualFold(subnet.Zone, zone) {
+			return subnet.Id, nil
+		}
+	}
+
+	newCidr, err := nextSubnetCidr(vNetInfo)
+	if err != nil {
+		return "", fmt.Errorf("VNet '%s' has no subnet in zone '%s' and no CIDR space left to add one: %w",
+			failed.VNetId, zone, err)
+	}
+	subReq := &model.SubnetReq{
+		Name:      fmt.Sprintf("%s-%02d", failed.VNetId, len(vNetInfo.SubnetInfoList)),
+		IPv4_CIDR: newCidr,
+		Zone:      zone,
+	}
+	created, err := resource.CreateSubnet(ctx, nsId, failed.VNetId, subReq)
+	if err != nil {
+		return "", fmt.Errorf("cannot add a subnet in zone '%s' to VNet '%s': %w", zone, failed.VNetId, err)
+	}
+	log.Info().Msgf("retry: added subnet '%s' (zone %s, cidr %s) to VNet '%s' for the retry of '%s'",
+		created.Id, zone, newCidr, failed.VNetId, failed.Id)
+	return created.Id, nil
+}
+
+func containsFold(list []string, want string) bool {
+	for _, v := range list {
+		if strings.EqualFold(v, want) {
+			return true
+		}
+	}
+	return false
+}
+
+// subnetZone reports the zone of a subnet, falling back to the zone already known
+// for the node when the VNet cannot be read.
+func subnetZone(nsId, vNetId, subnetId, fallback string) string {
+	if vNetId == "" || subnetId == "" {
+		return fallback
+	}
+	vNetInfo, err := resource.GetVNet(nsId, vNetId)
+	if err != nil {
+		return fallback
+	}
+	for _, subnet := range vNetInfo.SubnetInfoList {
+		if subnet.Id == subnetId {
+			return subnet.Zone
+		}
+	}
+	return fallback
+}
+
+// indexTargets keys the requested targets by node id, and tolerates a nil request.
+func indexTargets(req *model.RetryFailedNodesReq) map[string]model.RetryTarget {
+	byNode := map[string]model.RetryTarget{}
+	if req == nil {
+		return byNode
+	}
+	for _, t := range req.Targets {
+		byNode[t.NodeId] = t
+	}
+	return byNode
+}
+
+// targetNodeIds narrows the retry to the requested nodes; empty means all.
+func targetNodeIds(targets []model.RetryTarget) []string {
+	ids := make([]string, 0, len(targets))
+	for _, t := range targets {
+		ids = append(ids, t.NodeId)
+	}
+	return ids
 }

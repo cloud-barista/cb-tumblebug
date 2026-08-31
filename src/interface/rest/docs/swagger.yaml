@@ -7312,14 +7312,17 @@ paths:
         network as its siblings. Use attemptsPerNode with intervalSeconds to keep trying
         while a CSP capacity shortage clears.
 
-        Nodes whose failure cannot be fixed by retrying are skipped with a reason; set
-        force to override that, and nodeIds to retry only specific Nodes. The original
-        failed Node record is removed once its replacement is up, unless keepFailedNodes
-        is set.
+        Each target names one failed Node and the settings for it: an optional zone,
+        resolved to a subnet of that Node's own VNet, and assumeResolved to retry a Node
+        the classifier ruled out because the block was lifted outside CB-Tumblebug (a
+        quota granted, a permission fixed). An empty targets list retries every retriable
+        failed Node. The original failed Node record is removed once its replacement is
+        up, unless keepFailedNodes is set.
 
-        Moving a Node to a different zone is NOT done here: a zone-pinned request gets its
-        own VNet, which would take the Node off the Infra's private network. The review
-        reports that as separate advice.
+        A target's zone never leaves the Node's VNet: it selects a subnet of that zone, or
+        adds one, so the replacement keeps the VPC, security group and key. This is not the
+        zone field of a dynamic provisioning request, which builds a separate zone-scoped
+        VNet.
       operationId: RetryFailedNodes
       parameters:
       - name: nsId
@@ -27105,59 +27108,41 @@ components:
         attemptsPerNode:
           type: integer
           description: |-
-            AttemptsPerNode is how many times to re-create each node before giving up.
+            AttemptsPerNode is how many times to re-create each Node before giving up.
             Capacity comes and goes, so repeating the same request is the point.
             Default 1, maximum 10.
           example: 3
-        force:
-          type: boolean
-          description: |-
-            Force retries nodes the classifier ruled out. Use only when the underlying
-            cause was fixed outside CB-Tumblebug (a quota granted, an image published).
-          example: false
         intervalSeconds:
           type: integer
           description: |-
-            IntervalSeconds is the pause between attempts on the same node.
+            IntervalSeconds is the pause between attempts on the same Node.
             Default 30, maximum 600.
           example: 30
         keepFailedNodes:
           type: boolean
           description: |-
-            KeepFailedNodes leaves the original failed node records in place after a
+            KeepFailedNodes leaves the original failed Node records in place after a
             successful replacement. They are deleted by default, since the replacement
             takes over their role and the failure is preserved in the retry result.
           example: false
-        nodeIds:
-          type: array
-          description: |-
-            NodeIds limits the retry to these failed nodes. Empty means every failed
-            node in the Infra that the classifier considers retriable.
-          items:
-            type: string
         parallelism:
           type: integer
           description: |-
-            Parallelism is how many nodes to retry at the same time. 1 (the default)
-            retries one node at a time, so each outcome is visible before the next
-            starts. Higher values are capped per CSP by the same limits infra
-            provisioning uses (csp.RateLimitConfig.MaxNodesPerRegion), so a value
-            larger than a provider allows is reduced rather than rejected.
-          example: 1
-        preferAvailableSubnet:
-          type: boolean
-          description: |-
-            PreferAvailableSubnet places a replacement in another subnet of the same
-            VNet where a Node of its NodeGroup is currently Running. A running sibling
-            is the best capacity evidence CB-Tumblebug has — it recorded a real success
-            there — but it is not a guarantee: a zone that accepted a node minutes ago
-            has been observed to refuse the next request. Staying inside the VNet keeps
-            the VPC, security group and key, so the Node remains on the Infra's private
-            network.
+            Parallelism is how many Nodes to retry at the same time.
 
-            Off by default: a NodeGroup spread over several subnets was usually spread
-            on purpose, and consolidating it into one zone reduces that spread.
-          example: false
+            Unset retries as many at once as the CSP allows: the cap is the per-region
+            VM-creation limit infra provisioning already obeys, applied per connection,
+            so a burst stays inside an envelope the provider handles. An explicit value
+            is capped the same way rather than rejected. Ask for 1 to retry one Node at
+            a time, so each outcome is visible before the next starts.
+          example: 0
+        targets:
+          type: array
+          description: |-
+            Targets are the failed Nodes to retry. Empty means every failed Node of the
+            Infra that the classifier considers retriable.
+          items:
+            $ref: '#/components/schemas/model.RetryTarget'
     model.RetryFailedNodesResult:
       type: object
       properties:
@@ -27213,6 +27198,12 @@ components:
           type: string
           description: Action is one of the RetryAction* constants.
           example: retryInPlace
+        assumeResolvedHelps:
+          type: boolean
+          description: |-
+            AssumeResolvedHelps reports whether retrying this Node with assumeResolved
+            can succeed. True when the block is external and may have been lifted since
+            (quota, permission); false when the request itself has to change.
         costPerHour:
           type: number
           description: CostPerHour is what one replacement node will cost while it
@@ -27256,7 +27247,7 @@ components:
           description: |-
             SiblingSubnetId is another subnet of the same VNet where Nodes of this
             NodeGroup are Running — live evidence that its zone has capacity. Set
-            preferAvailableSubnet to place the replacement there instead.
+            that zone as a target's zone to place the replacement there instead.
         siblingZone:
           type: string
           description: SiblingZone is that subnet's zone.
@@ -27307,13 +27298,48 @@ components:
           type: string
           description: |-
             PlacedInSubnetId is the subnet the replacement was requested in, which
-            differs from the failed Node's when preferAvailableSubnet moved it.
+            differs from the failed Node's when the target named another zone.
+        placedInZone:
+          type: string
+          description: PlacedInZone is that subnet's zone.
         reason:
           type: string
         skipped:
           type: boolean
         succeeded:
           type: boolean
+    model.RetryTarget:
+      required:
+      - nodeId
+      type: object
+      properties:
+        assumeResolved:
+          type: boolean
+          description: |-
+            AssumeResolved retries a Node the classifier ruled out, asserting that the
+            condition blocking it was resolved outside CB-Tumblebug: a quota granted, a
+            permission fixed. The stored failure still says otherwise and nothing in
+            CB-Tumblebug can observe the change, so the caller has to say so.
+
+            It cannot help a request that is simply wrong — an image the CSP does not
+            have, a disk too small for the flavor. Re-sending that unchanged fails
+            identically; correct the NodeGroup instead. The review reports, per Node,
+            which of the two a failure is.
+          example: false
+        nodeId:
+          type: string
+          example: nvidial40s-1
+        zone:
+          type: string
+          description: |-
+            Zone places this replacement in a chosen zone. The zone is resolved to a
+            subnet of the Node's own VNet — one is added there if the VNet has none yet
+            and has CIDR space left — so the replacement keeps the VPC, security group
+            and key. Empty keeps the zone the Node failed in.
+
+            The review reports which zones the region offers, and which of them already
+            hold Running Nodes of the same NodeGroup.
+          example: us-west-2c
     model.ReviewInfraDynamicReqInfo:
       type: object
       properties:

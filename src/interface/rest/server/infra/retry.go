@@ -71,14 +71,17 @@ func RestPostRetryFailedNodesReview(c echo.Context) error {
 // @Description network as its siblings. Use attemptsPerNode with intervalSeconds to keep trying
 // @Description while a CSP capacity shortage clears.
 // @Description
-// @Description Nodes whose failure cannot be fixed by retrying are skipped with a reason; set
-// @Description force to override that, and nodeIds to retry only specific Nodes. The original
-// @Description failed Node record is removed once its replacement is up, unless keepFailedNodes
-// @Description is set.
+// @Description Each target names one failed Node and the settings for it: an optional zone,
+// @Description resolved to a subnet of that Node's own VNet, and assumeResolved to retry a Node
+// @Description the classifier ruled out because the block was lifted outside CB-Tumblebug (a
+// @Description quota granted, a permission fixed). An empty targets list retries every retriable
+// @Description failed Node. The original failed Node record is removed once its replacement is
+// @Description up, unless keepFailedNodes is set.
 // @Description
-// @Description Moving a Node to a different zone is NOT done here: a zone-pinned request gets its
-// @Description own VNet, which would take the Node off the Infra's private network. The review
-// @Description reports that as separate advice.
+// @Description A target's zone never leaves the Node's VNet: it selects a subnet of that zone, or
+// @Description adds one, so the replacement keeps the VPC, security group and key. This is not the
+// @Description zone field of a dynamic provisioning request, which builds a separate zone-scoped
+// @Description VNet.
 // @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
