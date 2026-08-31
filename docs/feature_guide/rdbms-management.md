@@ -178,6 +178,7 @@ _(Note: OpenStack's local test environment currently does not have a MariaDB dat
 - **IBM**:
   - Provisions on the shared/multitenant platform with auto-managed storage (`SupportsStorageTypeSelection=false`).
   - Database CRUD uses `sqlFallback` and requires TLS connection.
+  - Active supported MySQL version is `8.4`. End-of-Life (EOL) versions (`5.7`, `8.0`) are rejected by IBM Cloud for new deployments and are filtered out via `endOfLifeVersions` in `assets/rdbmsinfo.yaml`.
 - **NCP**:
   - `StorageSize` is auto-managed (starts at 10GB and auto-scales up to 6000GB in 10GB increments); custom size inputs are ignored. Storage type defaults to `SSD`.
   - Assigns private VPC endpoints only (`*.vpc-cdb.ntruss.com`); direct external access requires manual public domain assignment via NCP console.

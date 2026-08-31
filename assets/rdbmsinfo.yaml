@@ -437,8 +437,11 @@ dbms:
         defaultPort: 3306
         referenceEngineVersion: "8.4"
         referenceDBInstanceSpec: multitenant
-        note: "Storage is managed automatically by IBM Cloud. Reference values per CB-Spider's
-          rdbms-mysql-test README (verified Available, 2026-08-03)."
+        deprecatedVersions: []
+        endOfLifeVersions:
+          - "8.0" # EOL: July 29, 2026. Provisioning disabled by IBM Cloud ("mysql version 8.0 is no longer available").
+          - "5.7" # EOL: April 26, 2024. Service discontinued by IBM Cloud.
+        note: "Storage is managed automatically by IBM Cloud. MySQL v5.7 (EOL 2024-04-26) and v8.0 (EOL 2026-07-29) reached official End of Life and are rejected by IBM Cloud for new deployments; v8.4 is the active supported version."
         
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions"

@@ -261,6 +261,42 @@ func buildStorageTypeConstraints(st model.RDBMSStorageTypeConfig) string {
 	return strings.Join(parts, " ")
 }
 
+// filterSupportedVersions filters out engine versions marked as EndOfLife (EOL) in assets/rdbmsinfo.yaml.
+// This prevents provisioning failures when CSP metadata APIs return deprecated/EOL versions that the CSP no longer permits creating.
+func filterSupportedVersions(providerName, dbEngine string, liveVersions []string) []string {
+	if len(liveVersions) == 0 {
+		return liveVersions
+	}
+
+	provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]
+	if !exists {
+		return liveVersions
+	}
+
+	reqmt, ok := provider.DBMSRequirements[strings.ToLower(dbEngine)]
+	if !ok || len(reqmt.EndOfLifeVersions) == 0 {
+		return liveVersions
+	}
+
+	eolSet := make(map[string]bool, len(reqmt.EndOfLifeVersions))
+	for _, v := range reqmt.EndOfLifeVersions {
+		eolSet[strings.ToLower(strings.TrimSpace(v))] = true
+	}
+
+	filtered := make([]string, 0, len(liveVersions))
+	for _, v := range liveVersions {
+		if !eolSet[strings.ToLower(strings.TrimSpace(v))] {
+			filtered = append(filtered, v)
+		}
+	}
+
+	// Fallback to live versions if all were filtered out to avoid an empty list
+	if len(filtered) == 0 {
+		return liveVersions
+	}
+	return filtered
+}
+
 // buildStorageTypeNotes enriches Spider's storageTypeOptions with display/description/constraint metadata from assets/rdbmsinfo.yaml.
 func buildStorageTypeNotes(providerName string, storageTypeOptions []string) []model.StorageTypeNote {
 	if _, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]; !exists {
@@ -376,11 +412,12 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 
 	// Map Spider response to Tumblebug lowerCamelCase model
 	response.Supports = model.RDBMSMetaInfo{
-		ProviderName:                     connConfig.ProviderName,
-		RegionName:                       connConfig.RegionZoneInfo.AssignedRegion,
-		ConnectionName:                   connConfig.ConfigName,
-		DBEngine:                         spiderMeta.DBEngine,
-		SupportedVersions:                spiderMeta.SupportedVersions,
+		ProviderName:   connConfig.ProviderName,
+		RegionName:     connConfig.RegionZoneInfo.AssignedRegion,
+		ConnectionName: connConfig.ConfigName,
+		DBEngine:       spiderMeta.DBEngine,
+		// Filter out versions marked as EndOfLife (EOL) in assets/rdbmsinfo.yaml
+		SupportedVersions:                filterSupportedVersions(connConfig.ProviderName, spiderMeta.DBEngine, spiderMeta.SupportedVersions),
 		DBInstanceSpecOptions:            spiderMeta.DBSpecOptions,
 		StorageTypeOptions:               spiderMeta.StorageTypeOptions,
 		StorageSizeRange:                 model.StorageSizeRange{Min: spiderMeta.StorageSizeRangeGB.Min, Max: spiderMeta.StorageSizeRangeGB.Max},

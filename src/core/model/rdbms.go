@@ -110,6 +110,10 @@ type RDBMSDBMSRequirement struct {
 	// ReferenceDBInstanceSpec is CB-Spider's own test-verified dbInstanceSpec for this CSP/engine, preferred over the live /dbspec catalog's "smallest" pick.
 	ReferenceDBInstanceSpec string `yaml:"referenceDBInstanceSpec,omitempty"`
 	ReferenceDBSpec         string `yaml:"referenceDBSpec,omitempty"`
+	// DeprecatedVersions lists engine versions that are deprecated by the CSP and discouraged for new deployments.
+	DeprecatedVersions []string `yaml:"deprecatedVersions,omitempty" json:"deprecatedVersions,omitempty"`
+	// EndOfLifeVersions lists engine versions that have reached official End of Life (EOL) and cannot be provisioned.
+	EndOfLifeVersions []string `yaml:"endOfLifeVersions,omitempty" json:"endOfLifeVersions,omitempty"`
 }
 
 // RDBMSDatabaseRequirement is a CSP's "databaseRequirements" entry in assets/rdbmsinfo.yaml.
