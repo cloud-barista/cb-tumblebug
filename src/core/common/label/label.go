@@ -475,6 +475,15 @@ const cspTagSyncTimeout = 30 * time.Second
 // If batch is not supported for the CSP or fails, it falls back to CB-Spider's tag API (one call per tag).
 func UpdateCSPResourceLabel(ctx context.Context, labelType, uid string, labels map[string]string, connectionName string, cspResourceId string) {
 
+	// Same gate the read paths apply, before either the direct SDK attempt or the
+	// CB-Spider fallback. A CSP with no TagHandler at all (NHN, NCP, KT) would
+	// otherwise be sent one call per tag, all of them answered with an error —
+	// and CB-Spider builds a fresh SDK connection for each, since it caches none.
+	if !isCSPSyncEnabled(labelType, connectionName) {
+		log.Debug().Msgf("CSP tag is not supported for labelType: %s, connectionName: %s", labelType, connectionName)
+		return
+	}
+
 	// Best-effort tagging of an already-created resource must outlive a cancelled caller context
 	// (e.g. a sibling node's quota error cancelling the shared region context); detach and bound it.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), cspTagSyncTimeout)
@@ -540,6 +549,15 @@ func UpdateCSPResourceLabel(ctx context.Context, labelType, uid string, labels m
 
 // RemoveCSPResourceLabel best-effort removes the labels of a resource in the CSP
 func RemoveCSPResourceLabel(ctx context.Context, labelType, uid string, key string, connectionName string) {
+
+	// Same gate the read paths apply. Without it a CSP with no TagHandler at all
+	// (NHN, NCP, KT) is still sent a delete per key, and every one of those round
+	// trips is answered with an error — while CB-Spider builds a fresh SDK
+	// connection for each, since it caches none.
+	if !isCSPSyncEnabled(labelType, connectionName) {
+		log.Debug().Msgf("CSP tag is not supported for labelType: %s, connectionName: %s", labelType, connectionName)
+		return
+	}
 
 	client := clientManager.NewHttpClient()
 	url := fmt.Sprintf("%s/tag/%s", model.SpiderRestUrl, key)

@@ -428,7 +428,11 @@ func RunServer() {
 	g.POST("/:nsId/infraAutopilot", rest_infra.RestPostInfraAutopilot)
 	g.POST("/:nsId/infraAutopilotReview", rest_infra.RestPostInfraAutopilotReview)
 	g.GET("/:nsId/infraAutopilot/:infraId/status", rest_infra.RestGetInfraAutopilotStatus)
+	g.POST("/:nsId/infra/:infraId/retryFailedNodesReview", rest_infra.RestPostRetryFailedNodesReview)
+	g.POST("/:nsId/infra/:infraId/retryFailedNodes", rest_infra.RestPostRetryFailedNodes)
+
 	g.POST("/:nsId/infra/:infraId/nodeGroupDynamic", rest_infra.RestPostInfraNodeGroupDynamic)
+	g.PUT("/:nsId/infra/:infraId/nodeGroupDynamic/:nodeGroupId", rest_infra.RestPutInfraNodeGroupDynamic)
 	g.POST("/:nsId/infra/:infraId/nodeGroupDynamicReview", rest_infra.RestPostInfraDynamicNodeGroupNodeReview)
 
 	// Template-based Infra provisioning

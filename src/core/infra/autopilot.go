@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	cspcheck "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/rs/zerolog/log"
@@ -746,13 +747,13 @@ func CreateInfraAutopilot(ctx context.Context, nsId string, req *model.InfraAuto
 					}
 				}
 				return &model.InfraAutopilotResult{
-					NodeSpecResults:      nodeSpecResults,
-					ProvisioningAttempts: allAttempts,
-					AutopilotStats:       stats,
-				}, fmt.Errorf(
-					"rollback: nodeSpec '%s' provisioned %d/%d (minCount not met); provisioned resources were terminated",
-					r.NodeSpecName, r.ProvisionedCount, r.DesiredCount,
-				)
+						NodeSpecResults:      nodeSpecResults,
+						ProvisioningAttempts: allAttempts,
+						AutopilotStats:       stats,
+					}, fmt.Errorf(
+						"rollback: nodeSpec '%s' provisioned %d/%d (minCount not met); provisioned resources were terminated",
+						r.NodeSpecName, r.ProvisionedCount, r.DesiredCount,
+					)
 			}
 		}
 	}
@@ -1033,11 +1034,11 @@ func provisionNodeSpec(
 			ngName       string
 			lk           string
 			requested    int
-			isZoneRetry  bool   // pre-resolved zone retry; skip SearchImage + ReviewSpecImagePair
+			isZoneRetry  bool // pre-resolved zone retry; skip SearchImage + ReviewSpecImagePair
 			zrZone       string
 			zrImageId    string
 			zrRootDisk   string
-			isPrePlanned bool   // pre-validated from plan; skip SearchImage + ReviewSpecImagePair
+			isPrePlanned bool // pre-validated from plan; skip SearchImage + ReviewSpecImagePair
 			ppImageId    string
 			ppZone       string
 			ppRootDisk   string
@@ -1049,7 +1050,7 @@ func provisionNodeSpec(
 			lk           string
 			connName     string
 			zone         string
-			canZoneRetry bool   // true → inject zone-retry candidates into zoneRetryQueue
+			canZoneRetry bool // true → inject zone-retry candidates into zoneRetryQueue
 			zrSpec       model.SpecInfo
 			zrZone       string // failed zone
 			zrImage      string
@@ -1826,57 +1827,20 @@ func sanitizeForName(s string) string {
 	return s
 }
 
-// isAvailabilityFailure reports whether a CSP error is due to transient zone/region
-// capacity shortage, making it a candidate for zone-level retry.
+// isAvailabilityFailure reports whether a CSP error is a transient zone capacity
+// shortage, making it a candidate for zone-level retry.
 //
-// Only zone-specific shortages qualify — account-level quota errors (InstanceLimitExceeded,
-// VcpuLimitExceeded, etc.) are NOT included because a different zone in the same account
-// would hit the same limit.
+// Account-level quota errors (InstanceLimitExceeded, VcpuLimitExceeded, ...) are
+// excluded by the classifier: a different zone in the same account hits the same
+// limit.
 //
-// Sources:
-//   GCP: ZONE_RESOURCE_POOL_EXHAUSTED / ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS
-//        https://cloud.google.com/compute/docs/troubleshooting/troubleshooting-resource-availability
-//   AWS: InsufficientInstanceCapacity, InsufficientCapacity, UnfulfillableCapacity
-//        https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-//   Tencent: ResourceInsufficient.SpecifiedInstanceType (handled by pre-flight checker)
-//   Alibaba: similar stock/capacity messages
+// Provider is unknown at this call site (the message has already been flattened
+// into an error string), so classification falls back to keyword matching. Pass
+// a provider to csp.ClassifyProvisioningFailure where one is available — the
+// per-CSP parsers also recover the attempted zone and any alternatives.
 func isAvailabilityFailure(errMsg string) bool {
-	lower := strings.ToLower(errMsg)
-
-	// Zone-specific capacity keywords (GCP / Alibaba / Tencent / generic)
-	zoneCapacityKeywords := []string{
-		"not enough resources",       // GCP: "does not have enough resources available"
-		"resource type:compute",      // GCP: ZONE_RESOURCE_POOL_EXHAUSTED detail
-		"zone_resource_pool_exhausted", // GCP: error code in message
-		"resourceinsufficient",       // Tencent: ResourceInsufficient.SpecifiedInstanceType
-		"out of stock",               // Alibaba / generic
-		"stock",                      // Alibaba: SOLD_OUT stock status
-		"insufficient_resources",     // generic
-		"no available",               // generic
-		"resourcesexhausted",         // gRPC: RESOURCE_EXHAUSTED mapped by some CSPs
-	}
-
-	// AWS-specific capacity keywords (zone-level, not account quota)
-	// "InsufficientInstanceCapacity" message: "sufficient capacity in the Availability Zone"
-	// "InsufficientCapacity" / "UnfulfillableCapacity": contain "capacity"
-	// Excluded: InstanceLimitExceeded, VcpuLimitExceeded (account quota, not zone-specific)
-	awsCapacityKeywords := []string{
-		"insufficientinstancecapacity", // AWS error code (lower-cased)
-		"insufficient capacity",        // AWS: "do not have sufficient capacity"
-		"unfulfillablecapacity",        // AWS Spot: UnfulfillableCapacity
-	}
-
-	for _, kw := range zoneCapacityKeywords {
-		if strings.Contains(lower, kw) {
-			return true
-		}
-	}
-	for _, kw := range awsCapacityKeywords {
-		if strings.Contains(lower, kw) {
-			return true
-		}
-	}
-	return false
+	f := cspcheck.ClassifyProvisioningFailure("", "", "", errMsg)
+	return f.Class == model.FailureZoneCapacity
 }
 
 // GetInfraAutopilotStatus returns a live status snapshot of an in-flight autopilot run.

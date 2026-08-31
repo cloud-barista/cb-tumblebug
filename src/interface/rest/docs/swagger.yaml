@@ -6943,6 +6943,93 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: nodeGroupReq
+  /ns/{nsId}/infra/{infraId}/nodeGroupDynamic/{nodeGroupId}:
+    put:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: "Re-create a NodeGroup whose Nodes all failed, with corrected settings"
+      description: |-
+        Replace a NodeGroup that could not be provisioned, using the same name.
+
+        Some failures cannot be retried: an image the CSP does not have, a root disk too
+        small for the flavor. Re-sending the same request fails identically — the request
+        has to change. This clears the failed Nodes and creates the NodeGroup again from
+        the corrected request, so its record carries the new values too.
+
+        The request body is the same shape as adding a NodeGroup, so it can be validated
+        first with POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview.
+
+        Refused rather than guessed when clearing could destroy something:
+        - 409 if any Node of the group is not failed — add a new NodeGroup instead
+        - 409 if a failed Node still names a CSP resource — run action=reconcile to rescue
+        it or action=refine to remove it first
+        - 400 if the request carries a different specId; instance type decides cost,
+        performance and availability together, so changing it is a new NodeGroup
+
+        A zone in the body is ignored: pinning one derives a zone-scoped shared VNet, which
+        would place the new Nodes in a separate VPC from the rest of the Infra.
+      operationId: ReplaceFailedNodeGroup
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: nodeGroupId
+        in: path
+        description: NodeGroup ID to replace
+        required: true
+        schema:
+          type: string
+          default: g1
+      requestBody:
+        description: Corrected NodeGroup request; name must match the path
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.AddNodeGroupDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReplaceNodeGroupResult'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: nodeGroupReq
   /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview:
     post:
       tags:
@@ -7299,6 +7386,132 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: nodeGroupReq
+  /ns/{nsId}/infra/{infraId}/retryFailedNodes:
+    post:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Retry failed Nodes with their original configuration
+      description: |-
+        Re-create the retriable failed Nodes of the Infra, one Node at a time.
+
+        Each replacement keeps the failed Node's exact configuration — zone, subnet, VNet,
+        security group, key, spec, image and root disk — so it stays on the same private
+        network as its siblings. Use attemptsPerNode with intervalSeconds to keep trying
+        while a CSP capacity shortage clears.
+
+        Each target names one failed Node and the settings for it: an optional zone,
+        resolved to a subnet of that Node's own VNet, and assumeResolved to retry a Node
+        the classifier ruled out because the block was lifted outside CB-Tumblebug (a
+        quota granted, a permission fixed). An empty targets list retries every retriable
+        failed Node. The original failed Node record is removed once its replacement is
+        up, unless keepFailedNodes is set.
+
+        A target's zone never leaves the Node's VNet: it selects a subnet of that zone, or
+        adds one, so the replacement keeps the VPC, security group and key. This is not the
+        zone field of a dynamic provisioning request, which builds a separate zone-scoped
+        VNet.
+      operationId: RetryFailedNodes
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      requestBody:
+        description: Optional filter and retry policy
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RetryFailedNodesReq'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RetryFailedNodesResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: retryReq
+  /ns/{nsId}/infra/{infraId}/retryFailedNodesReview:
+    post:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Review which failed Nodes can be retried
+      description: |-
+        Classify every failed Node in the Infra and report whether re-creating it can succeed.
+
+        Nothing is created. Each plan carries the classified CSP failure, the action
+        (retryInPlace or none), a reason, and the hourly cost of one replacement.
+
+        A retry re-creates the Node with the identical configuration — same zone, subnet,
+        VNet, security group and key. CSP capacity shortages are transient, so the same
+        request is often accepted minutes later. Failures that retrying cannot fix
+        (account quota, an image the spec rejects, a malformed request) are reported with
+        the reason instead.
+      operationId: RetryFailedNodesReview
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      requestBody:
+        description: Optional filter and retry policy
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RetryFailedNodesReq'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RetryFailedNodesReview'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: retryReq
   /ns/{nsId}/infra/{infraId}/site:
     get:
       tags:
@@ -24588,6 +24801,15 @@ components:
             type: string
         description:
           type: string
+        failure:
+          type: object
+          description: |-
+            Failure is the structured form of a creation failure: which class of CSP
+            rejection it was, the zone that was attempted, and whether a retry can
+            plausibly succeed. SystemMessage carries the same failure as one line of
+            text for display; this field is what retry logic reads.
+          allOf:
+          - $ref: '#/components/schemas/model.ProvisioningFailure'
         id:
           type: string
           description: Id is unique identifier for the object
@@ -24729,6 +24951,15 @@ components:
             type: string
         description:
           type: string
+        failure:
+          type: object
+          description: |-
+            Failure is the structured form of a creation failure: which class of CSP
+            rejection it was, the zone that was attempted, and whether a retry can
+            plausibly succeed. SystemMessage carries the same failure as one line of
+            text for display; this field is what retry logic reads.
+          allOf:
+          - $ref: '#/components/schemas/model.ProvisioningFailure'
         id:
           type: string
           description: Id is unique identifier for the object
@@ -25844,6 +26075,78 @@ components:
         timestamp:
           type: string
           description: Timestamp is when this provisioning event occurred
+    model.ProvisioningFailure:
+      type: object
+      properties:
+        attemptedZone:
+          type: string
+          description: |-
+            AttemptedZone is the zone CB-Tumblebug actually requested, recorded from
+            the request itself. Authoritative: several CSPs (e.g. Alibaba) never name
+            the zone in their error text.
+          example: us-west-2a
+        class:
+          type: string
+          description: Class is one of the Failure* constants.
+          example: ZoneCapacity
+        cspErrorCode:
+          type: string
+          description: |-
+            CspErrorCode is the provider's own error identifier when one could be
+            extracted (e.g. "InsufficientInstanceCapacity", "STOCKOUT").
+          example: InsufficientInstanceCapacity
+        httpStatus:
+          type: integer
+          example: 500
+        message:
+          type: string
+          description: Message is a single-line human-readable summary.
+        occurredAt:
+          type: string
+        provider:
+          type: string
+          example: aws
+        rawMessage:
+          type: string
+          description: |-
+            RawMessage is the original CSP text after secret redaction, noise
+            trimming and length capping. Kept so an unrecognized failure can still
+            be diagnosed by a human.
+        region:
+          type: string
+          example: us-west-2
+        reportedZone:
+          type: string
+          description: |-
+            ReportedZone is the zone parsed out of the CSP message, when it names one.
+            A mismatch with AttemptedZone means the VM was placed somewhere other than
+            where CB-Tumblebug intended — worth surfacing rather than hiding.
+          example: us-west-2a
+        requestId:
+          type: string
+        retryHint:
+          type: string
+          description: RetryHint is one of the RetryHint* constants.
+          example: differentZone
+        retryable:
+          type: boolean
+          description: |-
+            Retryable reports whether retrying can plausibly succeed without the
+            user changing something (quota increase, different spec).
+          example: true
+        source:
+          type: string
+          example: cb-spider:1024/spider/vm
+        suggestedZones:
+          type: array
+          description: |-
+            SuggestedZones are alternatives the CSP itself offered. Only AWS provides
+            these today; empty for every other provider.
+          example:
+          - us-west-2b
+          - us-west-2c
+          items:
+            type: string
     model.ProvisioningLog:
       type: object
       properties:
@@ -26563,6 +26866,37 @@ components:
           type: integer
         vNet:
           type: integer
+    model.RemovedFailedNode:
+      type: object
+      properties:
+        failure:
+          type: object
+          description: "Failure is the classified failure, re-derived from the stored\
+            \ raw message."
+          allOf:
+          - $ref: '#/components/schemas/model.ProvisioningFailure'
+        nodeId:
+          type: string
+    model.ReplaceNodeGroupResult:
+      type: object
+      properties:
+        infra:
+          type: object
+          description: Infra is the Infra as it stands after the NodeGroup was re-created.
+          allOf:
+          - $ref: '#/components/schemas/model.InfraInfo'
+        infraId:
+          type: string
+        message:
+          type: string
+        nodeGroupId:
+          type: string
+        removedNodes:
+          type: array
+          description: RemovedNodes are the failed Nodes that were cleared before
+            re-creating.
+          items:
+            $ref: '#/components/schemas/model.RemovedFailedNode'
     model.ResourceCountOverview:
       type: object
       properties:
@@ -26886,6 +27220,244 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.SpiderRegionZoneInfo'
+    model.RetryFailedNodesReq:
+      type: object
+      properties:
+        attemptsPerNode:
+          type: integer
+          description: |-
+            AttemptsPerNode is how many times to re-create each Node before giving up.
+            Capacity comes and goes, so repeating the same request is the point.
+            Default 1, maximum 10.
+          example: 3
+        intervalSeconds:
+          type: integer
+          description: |-
+            IntervalSeconds is the pause between attempts on the same Node.
+            Default 30, maximum 600.
+          example: 30
+        keepFailedNodes:
+          type: boolean
+          description: |-
+            KeepFailedNodes leaves the original failed Node records in place after a
+            successful replacement. They are deleted by default, since the replacement
+            takes over their role and the failure is preserved in the retry result.
+          example: false
+        parallelism:
+          type: integer
+          description: |-
+            Parallelism is how many Nodes to retry at the same time.
+
+            Unset retries as many at once as the CSP allows: the cap is the per-region
+            VM-creation limit infra provisioning already obeys, applied per connection,
+            so a burst stays inside an envelope the provider handles. An explicit value
+            is capped the same way rather than rejected. Ask for 1 to retry one Node at
+            a time, so each outcome is visible before the next starts.
+          example: 0
+        targets:
+          type: array
+          description: |-
+            Targets are the failed Nodes to retry. Empty means every failed Node of the
+            Infra that the classifier considers retriable.
+          items:
+            $ref: '#/components/schemas/model.RetryTarget'
+    model.RetryFailedNodesResult:
+      type: object
+      properties:
+        elapsedSeconds:
+          type: integer
+        failedCount:
+          type: integer
+        infraId:
+          type: string
+        infraStatus:
+          type: string
+        message:
+          type: string
+        parallelismUsed:
+          type: object
+          additionalProperties:
+            type: integer
+          description: |-
+            ParallelismUsed is the concurrency actually applied per CSP region after
+            the provider caps were enforced.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.RetryNodeResult'
+        skippedCount:
+          type: integer
+        succeededCount:
+          type: integer
+    model.RetryFailedNodesReview:
+      type: object
+      properties:
+        costPerHourIfAll:
+          type: number
+        infraId:
+          type: string
+        message:
+          type: string
+        notRetriableCount:
+          type: integer
+        plans:
+          type: array
+          description: |-
+            Plans covers every failed node, retriable or not, so the caller can show
+            why the excluded ones were excluded.
+          items:
+            $ref: '#/components/schemas/model.RetryNodePlan'
+        retriableCount:
+          type: integer
+    model.RetryNodePlan:
+      type: object
+      properties:
+        action:
+          type: string
+          description: Action is one of the RetryAction* constants.
+          example: retryInPlace
+        assumeResolvedHelps:
+          type: boolean
+          description: |-
+            AssumeResolvedHelps reports whether retrying this Node with assumeResolved
+            can succeed. True when the block is external and may have been lifted since
+            (quota, permission); false when the request itself has to change.
+        costPerHour:
+          type: number
+          description: CostPerHour is what one replacement node will cost while it
+            runs.
+        escalation:
+          type: string
+          description: |-
+            Escalation describes what to do if repeated in-place retries keep failing.
+            It is advice only: moving a node to another zone puts it in a different
+            VNet, so it is a new NodeGroup rather than a retry, and the user has to
+            choose it deliberately.
+        failure:
+          type: object
+          description: |-
+            Failure is re-derived from the stored raw CSP message rather than read
+            from the record, so parser improvements apply to failures recorded
+            before they existed.
+          allOf:
+          - $ref: '#/components/schemas/model.ProvisioningFailure'
+        imageId:
+          type: string
+        nodeGroupId:
+          type: string
+          example: nvidial40s
+        nodeId:
+          type: string
+          example: nvidial40s-1
+        provider:
+          type: string
+        reason:
+          type: string
+          description: Reason explains the action in terms a user can act on.
+        region:
+          type: string
+        siblingRunningCount:
+          type: integer
+          description: SiblingRunningCount is how many Nodes of this NodeGroup run
+            there.
+        siblingSubnetId:
+          type: string
+          description: |-
+            SiblingSubnetId is another subnet of the same VNet where Nodes of this
+            NodeGroup are Running — live evidence that its zone has capacity. Set
+            that zone as a target's zone to place the replacement there instead.
+        siblingZone:
+          type: string
+          description: SiblingZone is that subnet's zone.
+        specId:
+          type: string
+        subnetId:
+          type: string
+          description: |-
+            SubnetId is the subnet the failed Node was placed in. A NodeGroup spread
+            across subnets (DistributeSubnets) has Nodes in different zones, so this is
+            what decides where a replacement lands.
+        zone:
+          type: string
+        zoneCapability:
+          type: object
+          description: ZoneCapability reports whether another zone is even an option
+            here.
+          allOf:
+          - $ref: '#/components/schemas/model.ZoneCapability'
+    model.RetryNodeResult:
+      type: object
+      properties:
+        attempts:
+          type: integer
+        elapsedSeconds:
+          type: integer
+        failedNodeRemoved:
+          type: boolean
+          description: FailedNodeRemoved reports whether the original failed record
+            was deleted.
+        lastFailure:
+          type: object
+          description: LastFailure is the classified failure of the final unsuccessful
+            attempt.
+          allOf:
+          - $ref: '#/components/schemas/model.ProvisioningFailure'
+        newNodeId:
+          type: string
+          description: |-
+            NewNodeId is the replacement node. A replacement takes the next free index
+            in the NodeGroup; an attempt that fails releases its name again, so
+            repeated attempts reuse one index instead of climbing.
+        nodeGroupId:
+          type: string
+        nodeId:
+          type: string
+        placedInSubnetId:
+          type: string
+          description: |-
+            PlacedInSubnetId is the subnet the replacement was requested in, which
+            differs from the failed Node's when the target named another zone.
+        placedInZone:
+          type: string
+          description: PlacedInZone is that subnet's zone.
+        reason:
+          type: string
+        skipped:
+          type: boolean
+        succeeded:
+          type: boolean
+    model.RetryTarget:
+      required:
+      - nodeId
+      type: object
+      properties:
+        assumeResolved:
+          type: boolean
+          description: |-
+            AssumeResolved retries a Node the classifier ruled out, asserting that the
+            condition blocking it was resolved outside CB-Tumblebug: a quota granted, a
+            permission fixed. The stored failure still says otherwise and nothing in
+            CB-Tumblebug can observe the change, so the caller has to say so.
+
+            It cannot help a request that is simply wrong — an image the CSP does not
+            have, a disk too small for the flavor. Re-sending that unchanged fails
+            identically; correct the NodeGroup instead. The review reports, per Node,
+            which of the two a failure is.
+          example: false
+        nodeId:
+          type: string
+          example: nvidial40s-1
+        zone:
+          type: string
+          description: |-
+            Zone places this replacement in a chosen zone. The zone is resolved to a
+            subnet of the Node's own VNet — one is added there if the VNet has none yet
+            and has CIDR space left — so the replacement keeps the VPC, security group
+            and key. Empty keeps the zone the Node failed in.
+
+            The review reports which zones the region offers, and which of them already
+            hold Running Nodes of the same NodeGroup.
+          example: us-west-2c
     model.ReviewInfraDynamicReqInfo:
       type: object
       properties:
@@ -29459,6 +30031,24 @@ components:
             type: string
         zoneId:
           type: string
+    model.ZoneCapability:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Reason explains a false Shiftable in user-facing terms.
+        shiftable:
+          type: boolean
+          description: Shiftable is ZoneControl && len(Zones) >= 2.
+        zoneControl:
+          type: boolean
+          description: ZoneControl mirrors CB-Spider's per-driver ZoneBasedControl
+            capability.
+        zones:
+          type: array
+          description: Zones is the region's zone list from the connection config.
+          items:
+            type: string
     model.inspectOverview:
       type: object
       properties:

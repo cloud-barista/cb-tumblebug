@@ -908,6 +908,12 @@ type NodeInfo struct {
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
 
+	// Failure is the structured form of a creation failure: which class of CSP
+	// rejection it was, the zone that was attempted, and whether a retry can
+	// plausibly succeed. SystemMessage carries the same failure as one line of
+	// text for display; this field is what retry logic reads.
+	Failure *ProvisioningFailure `json:"failure,omitempty"`
+
 	// Created time
 	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
 
