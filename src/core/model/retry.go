@@ -181,3 +181,22 @@ type RetryFailedNodesResult struct {
 	InfraStatus     string         `json:"infraStatus,omitempty"`
 	Message         string         `json:"message,omitempty"`
 }
+
+// RemovedFailedNode records a failed Node that was cleared to make way for a
+// replacement NodeGroup, so its failure is not lost with the record.
+type RemovedFailedNode struct {
+	NodeId string `json:"nodeId"`
+	// Failure is the classified failure, re-derived from the stored raw message.
+	Failure *ProvisioningFailure `json:"failure,omitempty"`
+}
+
+// ReplaceNodeGroupResult is the response of replacing a failed NodeGroup.
+type ReplaceNodeGroupResult struct {
+	InfraId     string `json:"infraId"`
+	NodeGroupId string `json:"nodeGroupId"`
+	// RemovedNodes are the failed Nodes that were cleared before re-creating.
+	RemovedNodes []RemovedFailedNode `json:"removedNodes,omitempty"`
+	// Infra is the Infra as it stands after the NodeGroup was re-created.
+	Infra   *InfraInfo `json:"infra,omitempty"`
+	Message string     `json:"message,omitempty"`
+}

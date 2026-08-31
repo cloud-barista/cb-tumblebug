@@ -6943,6 +6943,93 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: nodeGroupReq
+  /ns/{nsId}/infra/{infraId}/nodeGroupDynamic/{nodeGroupId}:
+    put:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: "Re-create a NodeGroup whose Nodes all failed, with corrected settings"
+      description: |-
+        Replace a NodeGroup that could not be provisioned, using the same name.
+
+        Some failures cannot be retried: an image the CSP does not have, a root disk too
+        small for the flavor. Re-sending the same request fails identically — the request
+        has to change. This clears the failed Nodes and creates the NodeGroup again from
+        the corrected request, so its record carries the new values too.
+
+        The request body is the same shape as adding a NodeGroup, so it can be validated
+        first with POST /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview.
+
+        Refused rather than guessed when clearing could destroy something:
+        - 409 if any Node of the group is not failed — add a new NodeGroup instead
+        - 409 if a failed Node still names a CSP resource — run action=reconcile to rescue
+        it or action=refine to remove it first
+        - 400 if the request carries a different specId; instance type decides cost,
+        performance and availability together, so changing it is a new NodeGroup
+
+        A zone in the body is ignored: pinning one derives a zone-scoped shared VNet, which
+        would place the new Nodes in a separate VPC from the rest of the Infra.
+      operationId: ReplaceFailedNodeGroup
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: infraId
+        in: path
+        description: Infra ID
+        required: true
+        schema:
+          type: string
+          default: infra01
+      - name: nodeGroupId
+        in: path
+        description: NodeGroup ID to replace
+        required: true
+        schema:
+          type: string
+          default: g1
+      requestBody:
+        description: Corrected NodeGroup request; name must match the path
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.AddNodeGroupDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReplaceNodeGroupResult'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: nodeGroupReq
   /ns/{nsId}/infra/{infraId}/nodeGroupDynamicReview:
     post:
       tags:
@@ -26779,6 +26866,37 @@ components:
           type: integer
         vNet:
           type: integer
+    model.RemovedFailedNode:
+      type: object
+      properties:
+        failure:
+          type: object
+          description: "Failure is the classified failure, re-derived from the stored\
+            \ raw message."
+          allOf:
+          - $ref: '#/components/schemas/model.ProvisioningFailure'
+        nodeId:
+          type: string
+    model.ReplaceNodeGroupResult:
+      type: object
+      properties:
+        infra:
+          type: object
+          description: Infra is the Infra as it stands after the NodeGroup was re-created.
+          allOf:
+          - $ref: '#/components/schemas/model.InfraInfo'
+        infraId:
+          type: string
+        message:
+          type: string
+        nodeGroupId:
+          type: string
+        removedNodes:
+          type: array
+          description: RemovedNodes are the failed Nodes that were cleared before
+            re-creating.
+          items:
+            $ref: '#/components/schemas/model.RemovedFailedNode'
     model.ResourceCountOverview:
       type: object
       properties:

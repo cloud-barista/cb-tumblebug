@@ -200,8 +200,10 @@ func classifyGeneric(msg string) model.ProvisioningFailure {
 
 	// Public-IP exhaustion is region-wide and must be matched before the generic
 	// "no available" capacity keyword below, which would otherwise swallow it.
-	case has("no available public ip", "failed to create public ip",
-		"사용 가능한 공인 ip가 없습니다"):
+	// Only genuine exhaustion of the shared pool. A quota on addresses is an
+	// account limit and is matched above; a bare creation failure says nothing at
+	// all and must not be reported as a shortage only another region can fix.
+	case has("no available public ip", "사용 가능한 공인 ip가 없습니다"):
 		return model.ProvisioningFailure{
 			Class: model.FailureRegionCapacity, Retryable: true,
 			RetryHint: model.RetryHintDifferentRegion,

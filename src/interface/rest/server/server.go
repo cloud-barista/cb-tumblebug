@@ -432,6 +432,7 @@ func RunServer() {
 	g.POST("/:nsId/infra/:infraId/retryFailedNodes", rest_infra.RestPostRetryFailedNodes)
 
 	g.POST("/:nsId/infra/:infraId/nodeGroupDynamic", rest_infra.RestPostInfraNodeGroupDynamic)
+	g.PUT("/:nsId/infra/:infraId/nodeGroupDynamic/:nodeGroupId", rest_infra.RestPutInfraNodeGroupDynamic)
 	g.POST("/:nsId/infra/:infraId/nodeGroupDynamicReview", rest_infra.RestPostInfraDynamicNodeGroupNodeReview)
 
 	// Template-based Infra provisioning

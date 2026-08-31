@@ -75,16 +75,19 @@ func (p *failureParser) Parse(raw string) (model.ProvisioningFailure, bool) {
 		f.Retryable = true
 		f.RetryHint = model.RetryHintDifferentZone
 
+	// Throttling first: RequestLimitExceeded also contains "limitexceeded", so the
+	// account-quota case below would otherwise claim it and report a rate limit —
+	// which clears on its own — as something only a quota increase can fix.
+	case lower == "requestlimitexceeded", strings.Contains(lower, "throttl"):
+		f.Class = model.FailureThrottling
+		f.Retryable = true
+		f.RetryHint = model.RetryHintWaitAndRetry
+
 	// Account limits are region-wide: another AZ hits the same ceiling.
 	case strings.Contains(lower, "limitexceeded"), strings.Contains(lower, "quota"):
 		f.Class = model.FailureAccountQuota
 		f.Retryable = false
 		f.RetryHint = model.RetryHintNotRetryable
-
-	case lower == "requestlimitexceeded", strings.Contains(lower, "throttl"):
-		f.Class = model.FailureThrottling
-		f.Retryable = true
-		f.RetryHint = model.RetryHintWaitAndRetry
 
 	case lower == "authfailure", lower == "unauthorizedoperation",
 		lower == "accessdenied", lower == "invalidclienttokenid":
