@@ -13,7 +13,10 @@ limitations under the License.
 
 package model
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 /*
  * Condition-based Status Management
@@ -63,6 +66,18 @@ const (
 	ReasonSpMetaMissing      = "SpMetaMissing"      // TB: O, SP: X, CSP: O
 	ReasonTbMetaOnly         = "TbMetaOnly"         // TB: O, SP: X, CSP: X
 	ReasonHasDependency      = "HasDependency"      // Active child or attached dependencies exist
+
+	// Attachment reasons (e.g. AWS EBS in-use, Azure Attached, OpenStack in-use)
+	ReasonAttached = "Attached"
+	ReasonDetached = "Detached"
+
+	// Modification reasons (e.g. SecurityGroup rule updates, Disk upsize)
+	ReasonUpdating     = "Updating"
+	ReasonUpdateFailed = "UpdateFailed"
+
+	// Lifecycle reasons (e.g. GCP DEPRECATED image, Glance deactivated)
+	ReasonDeprecated  = "Deprecated"
+	ReasonUnavailable = "Unavailable"
 
 	// ReasonRestored indicates the resource status was restored to Available
 	// by Reconcile after a previously failed terminal operation
@@ -129,6 +144,50 @@ const (
 	StorageStatusDeleting  = ResourceStatusDeleting
 	StorageStatusFailed    = ResourceStatusFailed
 	StorageStatusUnknown   = ResourceStatusUnknown
+)
+
+// -- SecurityGroup resource status aliases --
+const (
+	SecurityGroupStatusAvailable     = ResourceStatusAvailable
+	SecurityGroupStatusCreating      = ResourceStatusCreating
+	SecurityGroupStatusDeleting      = ResourceStatusDeleting
+	SecurityGroupStatusFailed        = ResourceStatusFailed
+	SecurityGroupStatusRegistering   = ResourceStatusRegistering
+	SecurityGroupStatusDeregistering = ResourceStatusDeregistering
+	SecurityGroupStatusUnknown       = ResourceStatusUnknown
+)
+
+// -- SSHKey resource status aliases --
+const (
+	SSHKeyStatusAvailable     = ResourceStatusAvailable
+	SSHKeyStatusCreating      = ResourceStatusCreating
+	SSHKeyStatusDeleting      = ResourceStatusDeleting
+	SSHKeyStatusFailed        = ResourceStatusFailed
+	SSHKeyStatusRegistering   = ResourceStatusRegistering
+	SSHKeyStatusDeregistering = ResourceStatusDeregistering
+	SSHKeyStatusUnknown       = ResourceStatusUnknown
+)
+
+// -- DataDisk resource status aliases --
+const (
+	DataDiskStatusAvailable = ResourceStatusAvailable
+	DataDiskStatusCreating  = ResourceStatusCreating
+	DataDiskStatusDeleting  = ResourceStatusDeleting
+	DataDiskStatusFailed    = ResourceStatusFailed
+	DataDiskStatusAttached  = "Attached"
+	DataDiskStatusError     = "Error"
+	DataDiskStatusUnknown   = ResourceStatusUnknown
+)
+
+// -- CustomImage resource status aliases --
+const (
+	CustomImageStatusAvailable   = ResourceStatusAvailable
+	CustomImageStatusCreating    = ResourceStatusCreating
+	CustomImageStatusDeleting    = ResourceStatusDeleting
+	CustomImageStatusFailed      = ResourceStatusFailed
+	CustomImageStatusDeprecated  = "Deprecated"
+	CustomImageStatusUnavailable = "Unavailable"
+	CustomImageStatusUnknown     = ResourceStatusUnknown
 )
 
 // Condition represents an observation about a resource's state
@@ -207,8 +266,33 @@ func ShouldRestoreToAvailable(conditions []Condition) bool {
 	}
 }
 
-// DeriveVNetStatus derives the VNet status from its Conditions.
-func DeriveVNetStatus(conditions []Condition) string {
+// DeriveStatus derives the status string for a given resource type from its Conditions.
+func DeriveStatus(resourceType string, conditions []Condition) string {
+	switch strings.ToLower(resourceType) {
+	case strings.ToLower(StrVNet), strings.ToLower(StrVPC):
+		return deriveVNetStatus(conditions)
+	case strings.ToLower(StrSubnet):
+		return deriveSubnetStatus(conditions)
+	case strings.ToLower(StrVPN):
+		return deriveVpnStatus(conditions)
+	case strings.ToLower(StrObjectStorage):
+		return deriveObjectStorageStatus(conditions)
+	case strings.ToLower(StrRDBMS):
+		return deriveRDBMSStatus(conditions)
+	case strings.ToLower(StrSecurityGroup), strings.ToLower(StrSG):
+		return deriveSecurityGroupStatus(conditions)
+	case strings.ToLower(StrSSHKey), strings.ToLower(StrKeypair):
+		return deriveSSHKeyStatus(conditions)
+	case strings.ToLower(StrDataDisk), strings.ToLower(StrDisk):
+		return deriveDataDiskStatus(conditions)
+	case strings.ToLower(StrCustomImage), strings.ToLower(StrMyImage):
+		return deriveCustomImageStatus(conditions)
+	default:
+		return deriveCommonStatus(conditions)
+	}
+}
+
+func deriveVNetStatus(conditions []Condition) string {
 	ready := GetCondition(conditions, ConditionReady)
 	if ready == nil || ready.Status == ConditionUnknown {
 		return NetworkStatusUnknown
@@ -229,12 +313,10 @@ func DeriveVNetStatus(conditions []Condition) string {
 		}
 	}
 
-	// ready.Status == ConditionTrue
 	return NetworkStatusAvailable
 }
 
-// DeriveSubnetStatus derives the Subnet status from its Conditions.
-func DeriveSubnetStatus(conditions []Condition) string {
+func deriveSubnetStatus(conditions []Condition) string {
 	ready := GetCondition(conditions, ConditionReady)
 	if ready == nil || ready.Status == ConditionUnknown {
 		return NetworkStatusUnknown
@@ -258,8 +340,7 @@ func DeriveSubnetStatus(conditions []Condition) string {
 	return NetworkStatusAvailable
 }
 
-// DeriveVpnStatus derives the VPN status from its Conditions.
-func DeriveVpnStatus(conditions []Condition) string {
+func deriveVpnStatus(conditions []Condition) string {
 	ready := GetCondition(conditions, ConditionReady)
 	if ready == nil || ready.Status == ConditionUnknown {
 		return NetworkStatusUnknown
@@ -279,8 +360,7 @@ func DeriveVpnStatus(conditions []Condition) string {
 	return NetworkStatusAvailable
 }
 
-// DeriveObjectStorageStatus derives the ObjectStorage status from its Conditions.
-func DeriveObjectStorageStatus(conditions []Condition) string {
+func deriveObjectStorageStatus(conditions []Condition) string {
 	ready := GetCondition(conditions, ConditionReady)
 	if ready == nil || ready.Status == ConditionUnknown {
 		return StorageStatusUnknown
@@ -300,8 +380,7 @@ func DeriveObjectStorageStatus(conditions []Condition) string {
 	return StorageStatusAvailable
 }
 
-// DeriveRDBMSStatus derives the RDBMS instance status from its Conditions.
-func DeriveRDBMSStatus(conditions []Condition) string {
+func deriveRDBMSStatus(conditions []Condition) string {
 	ready := GetCondition(conditions, ConditionReady)
 	if ready == nil || ready.Status == ConditionUnknown {
 		return StorageStatusUnknown
@@ -319,4 +398,129 @@ func DeriveRDBMSStatus(conditions []Condition) string {
 	}
 
 	return StorageStatusAvailable
+}
+
+// deriveSecurityGroupStatus derives SecurityGroup status (e.g. AWS SG, Azure NSG, GCP Firewall).
+func deriveSecurityGroupStatus(conditions []Condition) string {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status == ConditionUnknown {
+		return SecurityGroupStatusUnknown
+	}
+
+	if ready.Status == ConditionFalse {
+		switch ready.Reason {
+		case ReasonCreating:
+			return SecurityGroupStatusCreating
+		case ReasonDeleting:
+			return SecurityGroupStatusDeleting
+		case ReasonRegistering:
+			return SecurityGroupStatusRegistering
+		case ReasonDeregistering:
+			return SecurityGroupStatusDeregistering
+		default:
+			return SecurityGroupStatusFailed
+		}
+	}
+
+	return SecurityGroupStatusAvailable
+}
+
+// deriveSSHKeyStatus derives SSHKey status (e.g. AWS KeyPair, Azure SSH Key, GCP metadata SSH key).
+func deriveSSHKeyStatus(conditions []Condition) string {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status == ConditionUnknown {
+		return SSHKeyStatusUnknown
+	}
+
+	if ready.Status == ConditionFalse {
+		switch ready.Reason {
+		case ReasonCreating:
+			return SSHKeyStatusCreating
+		case ReasonDeleting:
+			return SSHKeyStatusDeleting
+		case ReasonRegistering:
+			return SSHKeyStatusRegistering
+		case ReasonDeregistering:
+			return SSHKeyStatusDeregistering
+		default:
+			return SSHKeyStatusFailed
+		}
+	}
+
+	return SSHKeyStatusAvailable
+}
+
+// deriveDataDiskStatus derives DataDisk status mapping Attached, Available, Creating, Deleting, and Failed.
+// CSP examples: AWS (in-use -> Attached, available -> Available), Azure (Attached/Unattached), OpenStack (in-use/available).
+func deriveDataDiskStatus(conditions []Condition) string {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status == ConditionUnknown {
+		return DataDiskStatusUnknown
+	}
+
+	if ready.Status == ConditionFalse {
+		switch ready.Reason {
+		case ReasonCreating:
+			return DataDiskStatusCreating
+		case ReasonDeleting:
+			return DataDiskStatusDeleting
+		default:
+			return DataDiskStatusFailed
+		}
+	}
+
+	if ready.Reason == ReasonAttached {
+		return DataDiskStatusAttached
+	}
+
+	return DataDiskStatusAvailable
+}
+
+// deriveCustomImageStatus derives CustomImage status (e.g. AWS AMI pending/available, GCP PENDING/READY/DEPRECATED).
+func deriveCustomImageStatus(conditions []Condition) string {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status == ConditionUnknown {
+		return CustomImageStatusUnknown
+	}
+
+	if ready.Status == ConditionFalse {
+		switch ready.Reason {
+		case ReasonCreating:
+			return CustomImageStatusCreating
+		case ReasonDeleting:
+			return CustomImageStatusDeleting
+		case ReasonDeprecated:
+			return CustomImageStatusDeprecated
+		case ReasonUnavailable:
+			return CustomImageStatusUnavailable
+		default:
+			return CustomImageStatusFailed
+		}
+	}
+
+	return CustomImageStatusAvailable
+}
+
+func deriveCommonStatus(conditions []Condition) string {
+	ready := GetCondition(conditions, ConditionReady)
+	if ready == nil || ready.Status == ConditionUnknown {
+		return ResourceStatusUnknown
+	}
+
+	if ready.Status == ConditionFalse {
+		switch ready.Reason {
+		case ReasonCreating:
+			return ResourceStatusCreating
+		case ReasonDeleting:
+			return ResourceStatusDeleting
+		case ReasonRegistering:
+			return ResourceStatusRegistering
+		case ReasonDeregistering:
+			return ResourceStatusDeregistering
+		default:
+			return ResourceStatusFailed
+		}
+	}
+
+	return ResourceStatusAvailable
 }

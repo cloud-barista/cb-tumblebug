@@ -97,6 +97,9 @@ func (r *RDBMSReconciler) reconcileAvailable(nsId string, rdbmsInfo *model.RDBMS
 	switch syncState {
 	case model.SyncStateInSync:
 		model.SetCondition(&rdbmsInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+		if model.GetCondition(rdbmsInfo.Conditions, model.ConditionReady) == nil {
+			model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+		}
 	case model.SyncStateSpMetaMissing:
 		model.SetCondition(&rdbmsInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Spider metadata missing; TB metadata preserved")
 	case model.SyncStateCspResourceMissing:
@@ -108,7 +111,7 @@ func (r *RDBMSReconciler) reconcileAvailable(nsId string, rdbmsInfo *model.RDBMS
 		model.SetCondition(&rdbmsInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
 		rdbmsInfo.SystemMessage = "Reconcile Diagnostic: Ghost metadata detected."
 	}
-	rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
+	rdbmsInfo.Status = model.DeriveStatus(model.StrRDBMS, rdbmsInfo.Conditions)
 
 	val, err := json.Marshal(rdbmsInfo)
 	if err != nil {
@@ -170,7 +173,7 @@ func (r *RDBMSReconciler) reconcileFailed(nsId string, rdbmsInfo *model.RDBMSInf
 	default: // SyncStateInSync, not authorized to restore (sticky tombstone)
 		model.SetCondition(&rdbmsInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
 	}
-	rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
+	rdbmsInfo.Status = model.DeriveStatus(model.StrRDBMS, rdbmsInfo.Conditions)
 
 	val, err := json.Marshal(rdbmsInfo)
 	if err != nil {
