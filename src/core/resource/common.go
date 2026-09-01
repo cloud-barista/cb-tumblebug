@@ -1120,7 +1120,7 @@ func markVNetSubnetsDeleting(nsId, vNetId string) {
 	for i := range v.SubnetInfoList {
 		model.SetCondition(&v.SubnetInfoList[i].Conditions, model.ConditionReady, model.ConditionFalse,
 			model.ReasonDeleting, "Subnet deletion in progress")
-		v.SubnetInfoList[i].Status = model.DeriveSubnetStatus(v.SubnetInfoList[i].Conditions)
+		v.SubnetInfoList[i].Status = model.DeriveStatus(model.StrSubnet, v.SubnetInfoList[i].Conditions)
 	}
 	if b, err := json.Marshal(v); err == nil {
 		if err := kvstore.Put(key, string(b)); err != nil {

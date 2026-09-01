@@ -84,6 +84,9 @@ func (r *ObjectStorageReconciler) reconcileAvailable(nsId string, osInfo *model.
 	switch syncState {
 	case model.SyncStateInSync:
 		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
+		if model.GetCondition(osInfo.Conditions, model.ConditionReady) == nil {
+			model.SetCondition(&osInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+		}
 	case model.SyncStateSpMetaMissing:
 		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Spider metadata missing; TB metadata preserved")
 	case model.SyncStateCspResourceMissing:
@@ -95,7 +98,7 @@ func (r *ObjectStorageReconciler) reconcileAvailable(nsId string, osInfo *model.
 		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionFalse, string(syncState), "Ghost metadata: resource absent on Spider and CSP")
 		osInfo.SystemMessage = "Reconcile Diagnostic: Ghost metadata detected."
 	}
-	osInfo.Status = model.DeriveObjectStorageStatus(osInfo.Conditions)
+	osInfo.Status = model.DeriveStatus(model.StrObjectStorage, osInfo.Conditions)
 
 	val, err := json.Marshal(osInfo)
 	if err != nil {
@@ -157,7 +160,7 @@ func (r *ObjectStorageReconciler) reconcileFailed(nsId string, osInfo *model.Obj
 	default: // SyncStateInSync, not authorized to restore (sticky tombstone)
 		model.SetCondition(&osInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "Resource is in sync across all layers")
 	}
-	osInfo.Status = model.DeriveObjectStorageStatus(osInfo.Conditions)
+	osInfo.Status = model.DeriveStatus(model.StrObjectStorage, osInfo.Conditions)
 
 	val, err := json.Marshal(osInfo)
 	if err != nil {

@@ -320,7 +320,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 	// [Conditions] Mark VPN as not ready (creating) before calling Terrarium API
 	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreating, "VPN creation in progress")
 	model.SetCondition(&vpnInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonCreating, "")
-	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
 	vpnInfo.SystemMessage = ""
 	val, err := json.Marshal(vpnInfo)
 	if err != nil {
@@ -384,7 +384,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 				log.Error().Err(err).Msg("")
 				// [Conditions] Terrarium creation failed → mark as Failed to prevent stuck state
 				model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-				vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+				vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
 				vpnInfo.SystemMessage = err.Error()
 				failVal, marshalErr := json.Marshal(vpnInfo)
 				if marshalErr == nil {
@@ -529,7 +529,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 			log.Err(err).Msg("")
 			// [Conditions] Creation failed → mark as Failed to prevent stuck state
 			model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-			vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+			vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
 			vpnInfo.SystemMessage = err.Error()
 			failVal, marshalErr := json.Marshal(vpnInfo)
 			if marshalErr == nil {
@@ -554,7 +554,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 			// [Conditions] Polling failed → mark as Failed; the Terraform job may still
 			// be running in Terrarium. The caller can query status via GetRequestStatus.
 			model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-			vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+			vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
 			vpnInfo.SystemMessage = err.Error()
 			failVal, marshalErr := json.Marshal(vpnInfo)
 			if marshalErr == nil {
@@ -609,7 +609,7 @@ func CreateSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnRe
 	// [Conditions] VPN creation succeeded → mark as ready and synced
 	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
 	model.SetCondition(&vpnInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
-	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
 	vpnInfo.SystemMessage = ""
 
 	log.Debug().Msgf("vpnInfo(final): %+v", vpnInfo)
@@ -988,7 +988,7 @@ func markVpnDeleteFailedThenReconcile(ctx context.Context, nsId, infraId, vpnId,
 	log.Error().Err(cause).Msg("")
 	// [Conditions] Deletion failed → mark as Failed to prevent stuck state
 	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
-	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.Status = model.DeriveStatus(model.StrVPN, vpnInfo.Conditions)
 	vpnInfo.SystemMessage = cause.Error()
 	if failVal, marshalErr := json.Marshal(vpnInfo); marshalErr == nil {
 		_ = kvstore.Put(vpnKey, string(failVal))
@@ -1058,7 +1058,7 @@ func DeleteSiteToSiteVPN(ctx context.Context, nsId string, infraId string, vpnId
 
 	// [Conditions] Mark VPN as not ready (deleting) before calling Terrarium API
 	model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "VPN deletion in progress")
-	vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+	vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
 	vpnInfo.SystemMessage = ""
 	val, err := json.Marshal(vpnInfo)
 	if err != nil {
@@ -1427,7 +1427,7 @@ func ReconcileSiteToSiteVPN(ctx context.Context, nsId, infraId, vpnId string) (m
 			model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonRestored,
 				fmt.Sprintf("Restored from %s; Terrarium resource exists", prevReason))
 			model.SetCondition(&vpnInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
-			vpnInfo.Status = model.DeriveVpnStatus(vpnInfo.Conditions)
+			vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
 			vpnInfo.SystemMessage = ""
 
 			val, mErr := json.Marshal(vpnInfo)
@@ -1444,6 +1444,15 @@ func ReconcileSiteToSiteVPN(ctx context.Context, nsId, infraId, vpnId string) (m
 			result.Message = fmt.Sprintf("Terrarium resource exists; status restored to Available from %s", prevReason)
 			log.Info().Msgf("ReconcileSiteToSiteVPN: VPN '%s' status restored to Available (from %s)", vpnId, prevReason)
 			return result, nil
+		}
+
+		if model.GetCondition(vpnInfo.Conditions, model.ConditionReady) == nil {
+			model.SetCondition(&vpnInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
+			model.SetCondition(&vpnInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
+			vpnInfo.Status = model.DeriveStatus(resourceType, vpnInfo.Conditions)
+			if val, mErr := json.Marshal(vpnInfo); mErr == nil {
+				_ = kvstore.Put(vpnKey, string(val))
+			}
 		}
 
 		result.Action = "NoActionNeeded"

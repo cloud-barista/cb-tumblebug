@@ -523,7 +523,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreating, "VNet creation in progress")
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonCreating, "")
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionFalse, model.ReasonNoChildren, "")
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -647,7 +647,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 				// [Conditions] Subnet created successfully → mark as ready and synced
 				model.SetCondition(&vNetInfo.SubnetInfoList[i].Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
 				model.SetCondition(&vNetInfo.SubnetInfoList[i].Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
-				vNetInfo.SubnetInfoList[i].Status = model.DeriveSubnetStatus(vNetInfo.SubnetInfoList[i].Conditions)
+				vNetInfo.SubnetInfoList[i].Status = model.DeriveStatus(childResourceType, vNetInfo.SubnetInfoList[i].Conditions)
 			}
 		}
 	}
@@ -661,7 +661,7 @@ func CreateVNet(ctx context.Context, nsId string, vNetReq *model.VNetReq) (model
 	} else {
 		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
 	}
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 	vNetInfo.SystemMessage = ""
 
 	log.Debug().Msgf("VNet created in CSP: id=%s, cspId=%s, cidr=%s", vNetInfo.Id, vNetInfo.CspResourceId, vNetInfo.CidrBlock)
@@ -785,6 +785,7 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 
 	// Set the resource type
 	resourceType := model.StrVNet
+	childResourceType := model.StrSubnet
 	// Set a vNetKey for the vNet object
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
 
@@ -808,9 +809,9 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 	}
 
 	// Derive status from conditions stored in KV store
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 	for i := range vNetInfo.SubnetInfoList {
-		vNetInfo.SubnetInfoList[i].Status = model.DeriveSubnetStatus(vNetInfo.SubnetInfoList[i].Conditions)
+		vNetInfo.SubnetInfoList[i].Status = model.DeriveStatus(childResourceType, vNetInfo.SubnetInfoList[i].Conditions)
 	}
 
 	log.Debug().Msgf("VNet retrieved: id=%s, status=%s", vNetInfo.Id, vNetInfo.Status)
@@ -827,7 +828,7 @@ func markVNetDeleteFailed(nsId, vNetId, vNetKey string, vNetInfo *model.VNetInfo
 	log.Error().Err(cause).Msg("")
 	// [Conditions] Deletion failed → mark as Failed to prevent stuck state
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(model.StrVNet, vNetInfo.Conditions)
 	vNetInfo.SystemMessage = cause.Error()
 	if failVal, marshalErr := json.Marshal(vNetInfo); marshalErr == nil {
 		_ = kvstore.Put(vNetKey, string(failVal))
@@ -966,7 +967,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 
 	// [Conditions] Mark VNet as not ready (deleting) before calling Spider API
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "VNet deletion in progress")
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 	vNetInfo.SystemMessage = ""
 	// Store the status
 	val, err := json.Marshal(vNetInfo)
@@ -1176,7 +1177,7 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonRegistering, "VNet registration in progress")
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonRegistering, "")
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionFalse, model.ReasonNoChildren, "")
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 	// Save the current operation status and the vNet object
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
@@ -1350,7 +1351,7 @@ func RegisterVNet(ctx context.Context, nsId string, vNetRegisterReq *model.Regis
 	} else {
 		model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
 	}
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 	vNetInfo.SystemMessage = ""
 
 	// Put vNet object into the key-value store
@@ -1503,7 +1504,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 
 	// [Conditions] Mark VNet as not ready (deregistering) before calling Spider API
 	model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregistering, "VNet deregistration in progress")
-	vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+	vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 	vNetInfo.SystemMessage = ""
 	// Save the status
 	val, err := json.Marshal(vNetInfo)
@@ -1557,7 +1558,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 			log.Error().Err(err).Msg("")
 			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
 			model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
-			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+			vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 			vNetInfo.SystemMessage = err.Error()
 			failVal, marshalErr := json.Marshal(vNetInfo)
 			if marshalErr == nil {
@@ -1571,7 +1572,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 			log.Error().Err(err).Msg("")
 			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
 			model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
-			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+			vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 			vNetInfo.SystemMessage = err.Error()
 			failVal, marshalErr := json.Marshal(vNetInfo)
 			if marshalErr == nil {
@@ -1584,7 +1585,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 			log.Error().Err(err).Msg("")
 			// [Conditions] Deregistration failed → mark as Failed to prevent stuck state
 			model.SetCondition(&vNetInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeregisterFailed, err.Error())
-			vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+			vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 			vNetInfo.SystemMessage = err.Error()
 			failVal, marshalErr := json.Marshal(vNetInfo)
 			if marshalErr == nil {
@@ -1737,7 +1738,8 @@ func PruneVNets(nsId string) (model.ResourcePruneResults, error) {
 		return model.ResourcePruneResults{}, err
 	}
 
-	resList, err := ListResource(nsId, model.StrVNet, "", "")
+	resourceType := model.StrVNet
+	resList, err := ListResource(nsId, resourceType, "", "")
 	if err != nil {
 		return model.ResourcePruneResults{}, err
 	}
@@ -1828,7 +1830,7 @@ func PruneVNets(nsId string) (model.ResourcePruneResults, error) {
 				} else {
 					model.SetCondition(&vNetInfo.Conditions, model.ConditionChildrenReady, model.ConditionTrue, model.ReasonNoChildren, "")
 				}
-				vNetInfo.Status = model.DeriveVNetStatus(vNetInfo.Conditions)
+				vNetInfo.Status = model.DeriveStatus(resourceType, vNetInfo.Conditions)
 				if val, mErr := json.Marshal(vNetInfo); mErr == nil {
 					if pErr := PutResourceObject(vNetKey, val); pErr != nil {
 						log.Warn().Err(pErr).Msgf("failed to persist vNet %s after pruning its orphaned subnets", vNetInfo.Id)

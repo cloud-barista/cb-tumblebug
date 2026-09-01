@@ -435,7 +435,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	// 6. [Conditions] Mark as not ready (creating) before calling Spider API
 	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreating, "Object storage creation in progress")
 	model.SetCondition(&objStrgInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonCreating, "")
-	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+	objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 	val, err := json.Marshal(objStrgInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -495,7 +495,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 					log.Error().Err(err).Msg("")
 					// [Conditions] Creation failed → mark as Failed to prevent stuck state
 					model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-					objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+					objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 					objStrgInfo.SystemMessage = err.Error()
 					failVal, marshalErr := json.Marshal(objStrgInfo)
 					if marshalErr == nil {
@@ -509,7 +509,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 				log.Error().Err(err).Msg("")
 				// [Conditions] Creation failed → mark as Failed to prevent stuck state
 				model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-				objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+				objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 				objStrgInfo.SystemMessage = err.Error()
 				failVal, marshalErr := json.Marshal(objStrgInfo)
 				if marshalErr == nil {
@@ -552,7 +552,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 		log.Error().Err(err).Msg("")
 		// [Conditions] Creation failed (GET after PUT) → mark as Failed to prevent stuck state
 		model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-		objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+		objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 		objStrgInfo.SystemMessage = err.Error()
 		failVal, marshalErr := json.Marshal(objStrgInfo)
 		if marshalErr == nil {
@@ -587,7 +587,7 @@ func CreateObjectStorage(ctx context.Context, nsId string, req model.ObjectStora
 	// 10. [Conditions] Creation succeeded → mark as ready and synced
 	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
 	model.SetCondition(&objStrgInfo.Conditions, model.ConditionSynced, model.ConditionTrue, model.ReasonAvailable, "")
-	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+	objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 	objStrgInfo.SystemMessage = ""
 	val, err = json.Marshal(objStrgInfo)
 	if err != nil {
@@ -836,7 +836,7 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 		conditionMsg = "Object storage emptying in progress"
 	}
 	model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, conditionMsg)
-	objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+	objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 	objStrgInfo.SystemMessage = ""
 	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
 	val, err := json.Marshal(objStrgInfo)
@@ -893,7 +893,7 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 				err = fmt.Errorf("%s failed for object storage %s: %w", opDesc, uid, delErr)
 				log.Error().Err(err).Msg("")
 				model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, err.Error())
-				objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+				objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 				objStrgInfo.SystemMessage = err.Error()
 				if failVal, marshalErr := json.Marshal(objStrgInfo); marshalErr == nil {
 					_ = kvstore.Put(objStrgKey, string(failVal))
@@ -909,7 +909,7 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 			log.Debug().Msgf("Object storage %s DELETE 204 (empty); skipping GET verification", uid)
 			// empty only clears bucket contents — restore Ready condition and return.
 			model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionTrue, model.ReasonAvailable, "")
-			objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+			objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 			objStrgInfo.SystemMessage = ""
 			restoredVal, marshalErr := json.Marshal(objStrgInfo)
 			if marshalErr == nil {
@@ -932,7 +932,7 @@ func DeleteObjectStorage(nsId, osId string, force, empty bool) error {
 					}
 					log.Error().Err(cause).Msg("")
 					model.SetCondition(&objStrgInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeletionFailed, cause.Error())
-					objStrgInfo.Status = model.DeriveObjectStorageStatus(objStrgInfo.Conditions)
+					objStrgInfo.Status = model.DeriveStatus(resourceType, objStrgInfo.Conditions)
 					objStrgInfo.SystemMessage = cause.Error()
 					if failVal, marshalErr := json.Marshal(objStrgInfo); marshalErr == nil {
 						_ = kvstore.Put(objStrgKey, string(failVal))

@@ -1204,7 +1204,7 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	rdbmsInfo.Uid = common.GenUid() // set before the Spider call so a Failed record still records the attempted CSP name
 	model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreating, "RDBMS creation in progress")
 	model.SetCondition(&rdbmsInfo.Conditions, model.ConditionSynced, model.ConditionFalse, model.ReasonCreating, "")
-	rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
+	rdbmsInfo.Status = model.DeriveStatus(resourceType, rdbmsInfo.Conditions)
 	if val, err := json.Marshal(rdbmsInfo); err == nil {
 		if err := kvstore.Put(rdbmsKey, string(val)); err != nil {
 			log.Error().Err(err).Msg("")
@@ -1265,7 +1265,7 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
 		log.Error().Err(err).Msg("")
 		model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, err.Error())
-		rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
+		rdbmsInfo.Status = model.DeriveStatus(resourceType, rdbmsInfo.Conditions)
 		rdbmsInfo.SystemMessage = err.Error()
 		if failVal, marshalErr := json.Marshal(rdbmsInfo); marshalErr == nil {
 			_ = kvstore.Put(rdbmsKey, string(failVal))
@@ -1290,7 +1290,7 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 		if pollErr != nil {
 			log.Error().Err(pollErr).Msg("")
 			model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonCreationFailed, pollErr.Error())
-			rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
+			rdbmsInfo.Status = model.DeriveStatus(resourceType, rdbmsInfo.Conditions)
 			rdbmsInfo.SystemMessage = pollErr.Error()
 			if failVal, marshalErr := json.Marshal(rdbmsInfo); marshalErr == nil {
 				_ = kvstore.Put(rdbmsKey, string(failVal))
@@ -1448,7 +1448,7 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 
 	// [Conditions] Mark as not ready before calling Spider API
 	model.SetCondition(&rdbmsInfo.Conditions, model.ConditionReady, model.ConditionFalse, model.ReasonDeleting, "RDBMS deletion in progress")
-	rdbmsInfo.Status = model.DeriveRDBMSStatus(rdbmsInfo.Conditions)
+	rdbmsInfo.Status = model.DeriveStatus(resourceType, rdbmsInfo.Conditions)
 	rdbmsInfo.SystemMessage = ""
 	rdbmsKey := common.GenResourceKey(nsId, resourceType, rdbmsInfo.Id)
 	if val, err := json.Marshal(rdbmsInfo); err == nil {
