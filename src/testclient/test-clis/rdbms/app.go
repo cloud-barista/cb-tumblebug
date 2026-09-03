@@ -46,13 +46,17 @@ func init() {
 	tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug"
 }
 
-// setConfig loads settings from test-config.yaml and .env
-func setConfig() {
-	viper.SetConfigName("test-config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+// setConfig loads settings from a specified config file or test-config.yaml and .env
+func setConfig(cfgFile ...string) {
+	if len(cfgFile) > 0 && cfgFile[0] != "" {
+		viper.SetConfigFile(cfgFile[0])
+	} else {
+		viper.SetConfigName("test-config")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(".")
+	}
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal().Err(err).Msg("Error reading test-config.yaml")
+		log.Fatal().Err(err).Msg("Error reading config file")
 	}
 	log.Info().Msgf("Using config file: %s", viper.ConfigFileUsed())
 
@@ -161,6 +165,7 @@ func main() {
 		Short: "Run the full RDBMS lifecycle test for all enabled CSPs",
 		Run:   runBatchTest,
 	}
+	testCmd.Flags().StringP("config", "c", "", "Config file path (default: test-config.yaml)")
 	testCmd.Flags().StringP("nsId", "n", "", "Namespace ID (overrides config)")
 	testCmd.Flags().Bool("parallel", false, "Run test cases in parallel")
 
@@ -176,6 +181,12 @@ func main() {
 // Each test case's own steps always run sequentially, since RDBMS creation
 // depends on the vNet/subnet/securityGroup created earlier in the same case.
 func runBatchTest(cmd *cobra.Command, args []string) {
+	cfgFile, _ := cmd.Flags().GetString("config")
+	if cfgFile != "" {
+		setConfig(cfgFile)
+		tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug"
+	}
+
 	nsId, _ := cmd.Flags().GetString("nsId")
 	parallel, _ := cmd.Flags().GetBool("parallel")
 
