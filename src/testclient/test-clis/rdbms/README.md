@@ -108,6 +108,14 @@ and fill those four fields explicitly for full control.
 go run . test
 ```
 
+**Using custom configuration file:**
+
+```bash
+go run . test -c test-config-openstack.yaml
+go run . test -c test-config-mysql.yaml
+go run . test -c test-config-mariadb.yaml
+```
+
 **Parallel** — all enabled test cases run concurrently:
 
 ```bash
@@ -147,7 +155,7 @@ If a step still fails (e.g. the RDBMS instance never left `Failed`), check
 
 ```bash
 curl -u "$TB_API_USERNAME:$TB_API_PASSWORD" -X DELETE \
-  "http://localhost:1323/tumblebug/ns/default/resources/rdbms/test-rdbms-aws?option=force"
+  "http://localhost:1323/tumblebug/ns/default/resources/rdbms/test-rdbms-openstack?option=force"
 ```
 
 ---
@@ -158,7 +166,8 @@ curl -u "$TB_API_USERNAME:$TB_API_PASSWORD" -X DELETE \
 go run . test [flags]
 
 Flags:
-  -n, --nsId string   Namespace ID (overrides config tumblebug.nsId)
-      --parallel      Run test cases in parallel (default: sequential)
-  -h, --help          Show help
+  -c, --config string   Config file path (default: test-config.yaml)
+  -n, --nsId string     Namespace ID (overrides config tumblebug.nsId)
+      --parallel        Run test cases in parallel (default: sequential)
+  -h, --help            Show help
 ```

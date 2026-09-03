@@ -214,7 +214,7 @@ testCases:
     vmMemoryGiB: "4"
     vmImageId: ""
     vmSpecId: ""
-    execute: false
+    execute: true
 
   - rdbmsId: test-rdbms-ncp
     connectionName: ncp-kr
