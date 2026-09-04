@@ -65,6 +65,7 @@ type KeyValueMap map[string]string
 var (
 	globalStore Store
 	initOnce    sync.Once
+	storeMu     sync.RWMutex
 )
 
 // Package-level implementation for global Store management
@@ -76,14 +77,32 @@ func InitializeStore(store Store) error {
 	if store == nil {
 		return fmt.Errorf("provided store is nil")
 	}
+	storeMu.Lock()
+	defer storeMu.Unlock()
 	initOnce.Do(func() {
 		globalStore = store
 	})
 	return nil
 }
 
+// SetTestStore injects a test store (e.g. MemoryStore) into globalStore
+// and returns a teardown function to restore the previous store.
+func SetTestStore(store Store) func() {
+	storeMu.Lock()
+	prev := globalStore
+	globalStore = store
+	storeMu.Unlock()
+	return func() {
+		storeMu.Lock()
+		globalStore = prev
+		storeMu.Unlock()
+	}
+}
+
 // getStore returns the initialized global Store
 func getStore() (Store, error) {
+	storeMu.RLock()
+	defer storeMu.RUnlock()
 	if globalStore == nil {
 		return nil, fmt.Errorf("store not initialized")
 	}
