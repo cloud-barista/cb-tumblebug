@@ -43,6 +43,7 @@ HF_TOKEN="${HF_TOKEN:-}"  # inherit from env if already set (avoids CLI arg expo
 GPU_UTIL=""               # empty = vLLM default (~0.9)
 CTX_LEN=""                # empty = model default
 API_KEY=""
+CHECK_ONLY="false"
 
 usage() {
   echo "Usage: bash servevLLM.sh --model MODEL [OPTIONS]"
@@ -59,6 +60,7 @@ usage() {
   echo "  --api-key KEY       API key for the vLLM server (default: none)"
   echo "  --tool-parser NAME  Tool-call parser (default: guessed from the model name)"
   echo "  --no-tools          Do not enable tool calling"
+  echo "  --check-access      Only verify the model is reachable on HuggingFace, then exit"
   echo ""
   echo "Recommended models:"
   echo "  Qwen/Qwen2.5-1.5B-Instruct       (~3GB VRAM)"
@@ -78,6 +80,7 @@ while [[ "$#" -gt 0 ]]; do
     --api-key)  API_KEY="${2?Error: --api-key requires an argument}";   shift 2 ;;
     --tool-parser) TOOL_PARSER="${2?Error: --tool-parser requires an argument}"; shift 2 ;;
     --no-tools) ENABLE_TOOLS="false";                                   shift 1 ;;
+    --check-access) CHECK_ONLY="true";                                  shift 1 ;;
     -h|--help)  usage 0 ;;
     *)
       # Backward compatibility: treat first non-flag arg as model name
@@ -94,6 +97,37 @@ if [ -z "$MODEL_NAME" ]; then
   echo "Error: --model is required."
   usage
 fi
+
+# Fail fast when the model is gated, private or missing; vLLM otherwise spends minutes
+# starting up before dying with a 401 traceback.
+check_hf_access() {
+  local model="$1" code
+  [ -d "$model" ] && return 0
+  local -a auth=()
+  [ -n "$HF_TOKEN" ] && auth=(-H "Authorization: Bearer $HF_TOKEN")
+  code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "${auth[@]}" \
+    "https://huggingface.co/api/models/${model}" 2>/dev/null) || return 0
+  case "$code" in
+    200) ;;
+    404) echo "Error: model '$model' not found on HuggingFace (or private and the token has no access)."; return 1 ;;
+    401) [ -n "$HF_TOKEN" ] && echo "Error: HuggingFace rejected the given token (--hf-token)." \
+           || echo "Error: model '$model' not found on HuggingFace, or it requires a token (--hf-token)."; return 1 ;;
+    *)   return 0 ;;
+  esac
+  code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 -I "${auth[@]}" \
+    "https://huggingface.co/${model}/resolve/main/config.json" 2>/dev/null) || return 0
+  case "$code" in
+    401) echo "Error: '$model' is a gated model. Pass --hf-token with a HuggingFace token whose account was granted access."; return 1 ;;
+    403) echo "Error: the HuggingFace token has no access to '$model'. Request access at https://huggingface.co/$model"; return 1 ;;
+    *)   return 0 ;;
+  esac
+}
+
+if [ "$CHECK_ONLY" = "true" ]; then
+  check_hf_access "$MODEL_NAME" && echo "Model '$MODEL_NAME' is accessible on HuggingFace."
+  exit $?
+fi
+check_hf_access "$MODEL_NAME" || exit 1
 
 echo "=========================================="
 echo "vLLM Model Serving"
