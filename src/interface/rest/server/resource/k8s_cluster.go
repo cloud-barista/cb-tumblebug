@@ -419,6 +419,10 @@ func RestGetK8sCluster(c echo.Context) error {
 // @Summary Get a token for K8sCluster access
 // @Description Get an access token for the specified K8sCluster.
 // @Description Only applicable to CSPs that use exec-based authentication (e.g., GCP GKE, AWS EKS).
+// @Description The response follows the Kubernetes ExecCredential format. Its
+// @Description expirationTimestamp tells the client when the token stops being accepted,
+// @Description so it can refresh before the token expires instead of after a 401.
+// @Description The field is omitted when the CSP provides no expiry information.
 // @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
