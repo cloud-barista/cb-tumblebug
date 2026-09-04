@@ -842,7 +842,7 @@ mcp-budget-off: ## Disable spend limits
 	@$(KUBECTL) exec -n $(K8S_NAMESPACE) $(ETCD_POD) -- etcdctl put /mcp/policy/budget '{"enabled":false}'
 	@printf '%b\n' 'Spend limits disabled.'
 
-k-build: ## Build LOCAL source and run it in the cluster (C=tb|mapui|mcp) — compose `--build` equivalent
+k-build: ## Build LOCAL source and run it in the cluster (C=tb|mapui|mcp|sp) — compose `--build` equivalent
 	@$(MAKE) --no-print-directory k-port-forward-save
 	@case "$(C)" in \
 		cb-tumblebug|tb)      canon="cb-tumblebug"; ctx="."; key="tumblebug"; deploy="cb-tumblebug" ;; \
@@ -869,7 +869,7 @@ k-build: ## Build LOCAL source and run it in the cluster (C=tb|mapui|mcp) — co
 	echo "Local build active for $$canon (persists across k-up). Revert: make k-build-off C=$$canon"
 	@$(MAKE) --no-print-directory k-port-forward-restore
 
-k-build-off: ## Revert to published images (C=tb|mapui|mcp for one; omit C for all)
+k-build-off: ## Revert to published images (C=tb|mapui|mcp|sp for one; omit C for all), then run k-up to apply
 	@case "$(C)" in \
 		"") rm -f deployments/helm/cb-tumblebug/values-dev-image-*.yaml ;; \
 		cb-tumblebug|tb)     rm -f deployments/helm/cb-tumblebug/values-dev-image-cb-tumblebug.yaml ;; \

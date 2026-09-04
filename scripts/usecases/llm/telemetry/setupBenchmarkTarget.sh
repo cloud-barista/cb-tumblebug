@@ -51,6 +51,11 @@ echo ""
 # Pass HF token via env var (not CLI arg) so it doesn't appear in ps aux output
 [ -n "$HF_TOKEN" ] && export HF_TOKEN
 
+tmp_serve="$(mktemp -t servevLLM.XXXXXX.sh)"
+curl -fsSL "$VLLM_SERVE_SCRIPT_URL" -o "$tmp_serve"
+# Verify model access before the multi-minute install so a missing token fails immediately
+bash "$tmp_serve" --model "$MODEL_NAME" --check-access || { rm -f "$tmp_serve"; exit 1; }
+
 # Step 1: vLLM Installation
 echo "[1/3] Installing vLLM..."
 tmp_deploy="$(mktemp -t deployvLLM.XXXXXX.sh)"
@@ -61,8 +66,6 @@ echo "✓ vLLM installed"
 
 # Step 2: Model Serving
 echo "[2/3] Starting model: $MODEL_NAME"
-tmp_serve="$(mktemp -t servevLLM.XXXXXX.sh)"
-curl -fsSL "$VLLM_SERVE_SCRIPT_URL" -o "$tmp_serve"
 bash "$tmp_serve" --model "$MODEL_NAME" --port "$VLLM_PORT" || { echo "✗ Model start failed"; rm -f "$tmp_serve"; exit 1; }
 rm -f "$tmp_serve"
 

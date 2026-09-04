@@ -149,22 +149,78 @@ if [ "$GPU_TYPE" = "nvidia" ]; then
   INSTALL_RESULT=$?
 else
   # === AMD ROCm: install pre-built ROCm vllm wheel via uv ===
-  # Pre-built wheels available at wheels.vllm.ai/rocm/ (Python 3.12 / ROCm 7.0+).
-  # uv must be used: it gives --extra-index-url higher priority than PyPI,
-  # preventing pip from selecting the CUDA wheel from PyPI instead.
+  # Each release publishes one wheel under wheels.vllm.ai/rocm/<version>/<rocmNNN>/
+  # (Python 3.12 only). uv must be used: it gives --extra-index-url priority over PyPI,
+  # otherwise pip picks the CUDA wheel.
+  # The bare rocm/ index only carries the latest release, and its glibc requirement can
+  # exceed the host's (0.28.0 needs glibc 2.39; Ubuntu 22.04 has 2.35), so the newest
+  # release whose wheel tag fits the host glibc is selected instead.
   ROCM_VERSION=$(cat /opt/rocm/.info/version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
   ROCM_VERSION=${ROCM_VERSION:-$(rocm-smi --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)}
   echo "Installed ROCm version: ${ROCM_VERSION:-unknown}"
+  ROCM_WHEEL_INDEX="https://wheels.vllm.ai/rocm"
+  GLIBC_MINOR=$(getconf GNU_LIBC_VERSION 2>/dev/null | grep -oE '[0-9]+$')
 
-  # Install uv if not already available (uv gives --extra-index-url higher priority than pip)
+  # Install uv if not already available
   if ! command -v uv &>/dev/null; then
     echo "Installing uv (fast Python package manager)..."
     pip install uv >> "$LOG_FILE" 2>&1
   fi
 
-  echo "Installing pre-built ROCm vllm wheel from https://wheels.vllm.ai/rocm/ ..."
-  uv pip install "$VLLM_SPEC" --extra-index-url "https://wheels.vllm.ai/rocm/" >> "$LOG_FILE" 2>&1
-  INSTALL_RESULT=$?
+  rocm_wheel_glibc() {  # $1=version $2=variant -> minimum glibc minor of the vllm wheel
+    curl -fsSL -m 20 "$ROCM_WHEEL_INDEX/$1/$2/vllm/" 2>/dev/null | grep -oE 'manylinux_2_[0-9]+' | head -1 | grep -oE '[0-9]+$'
+  }
+  rocm_variant() {  # $1=version -> rocmNNN subdirectory, empty if no wheel for this release
+    curl -fsSL -m 20 "$ROCM_WHEEL_INDEX/$1/" 2>/dev/null | grep -oE 'rocm[0-9]+' | head -1
+  }
+
+  ROCM_VLLM_VERSION=""; ROCM_VLLM_VARIANT=""
+  if [ -n "$VLLM_VERSION" ]; then
+    ROCM_VLLM_VARIANT=$(rocm_variant "$VLLM_VERSION")
+    if [ -z "$ROCM_VLLM_VARIANT" ]; then
+      echo "ERROR: no ROCm wheel published for vllm ${VLLM_VERSION} (see $ROCM_WHEEL_INDEX/)."
+      INSTALL_RESULT=1
+    else
+      ROCM_VLLM_VERSION="$VLLM_VERSION"
+      _req=$(rocm_wheel_glibc "$ROCM_VLLM_VERSION" "$ROCM_VLLM_VARIANT")
+      if [ -n "$_req" ] && [ -n "$GLIBC_MINOR" ] && [ "$_req" -gt "$GLIBC_MINOR" ]; then
+        echo "Warning: vllm ${VLLM_VERSION} ROCm wheel needs glibc 2.${_req}; host has 2.${GLIBC_MINOR}. Install will likely fail."
+      fi
+    fi
+  else
+    echo "Selecting the newest vLLM release with a ROCm wheel for glibc 2.${GLIBC_MINOR:-?}..."
+    for _ver in $(curl -fsSL -m 20 https://pypi.org/pypi/vllm/json 2>/dev/null \
+                  | jq -r '.releases | keys[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -rV | head -15); do
+      _variant=$(rocm_variant "$_ver"); [ -z "$_variant" ] && continue
+      _req=$(rocm_wheel_glibc "$_ver" "$_variant")
+      if [ -n "$_req" ] && [ -n "$GLIBC_MINOR" ] && [ "$_req" -le "$GLIBC_MINOR" ]; then
+        ROCM_VLLM_VERSION="$_ver"; ROCM_VLLM_VARIANT="$_variant"; break
+      fi
+    done
+    if [ -z "$ROCM_VLLM_VERSION" ]; then
+      echo "Warning: could not match a ROCm wheel to host glibc; falling back to the latest index."
+    fi
+  fi
+
+  if [ "${INSTALL_RESULT:-0}" -eq 0 ]; then
+    if [ -n "$ROCM_VLLM_VERSION" ]; then
+      # Each index rebuilds torchvision/torchaudio/flash-attn against its own torch but keeps
+      # the same version strings, so switching vLLM versions in an existing venv leaves stale
+      # binaries behind (undefined HIP symbols at runtime). Reinstall the whole set then.
+      _cur=$(python -c "import importlib.metadata as m; print(m.version('vllm'))" 2>/dev/null || true)
+      _reinstall=""
+      if [ -n "$_cur" ] && [ "$_cur" != "${ROCM_VLLM_VERSION}+${ROCM_VLLM_VARIANT}" ]; then
+        echo "  Existing vllm $_cur differs; reinstalling all packages."
+        _reinstall="--reinstall"
+      fi
+      echo "Installing vllm ${ROCM_VLLM_VERSION}+${ROCM_VLLM_VARIANT} from $ROCM_WHEEL_INDEX/${ROCM_VLLM_VERSION}/${ROCM_VLLM_VARIANT}/ ..."
+      uv pip install $_reinstall "vllm==${ROCM_VLLM_VERSION}" --extra-index-url "$ROCM_WHEEL_INDEX/${ROCM_VLLM_VERSION}/${ROCM_VLLM_VARIANT}/" >> "$LOG_FILE" 2>&1
+    else
+      echo "Installing pre-built ROCm vllm wheel from $ROCM_WHEEL_INDEX/ ..."
+      uv pip install vllm --extra-index-url "$ROCM_WHEEL_INDEX/" >> "$LOG_FILE" 2>&1
+    fi
+    INSTALL_RESULT=$?
+  fi
 
   if [ $INSTALL_RESULT -eq 0 ]; then
     HIP_VER=$(python -c "import torch; print(torch.version.hip or '')" 2>/dev/null || true)
@@ -177,9 +233,8 @@ else
     fi
   else
     echo "ERROR: Pre-built ROCm vllm wheel installation failed."
-    echo "  Possible reasons:"
-    echo "    - No wheel available for ROCm ${ROCM_VERSION} / Python 3.12"
-    echo "    - Check available wheels: https://wheels.vllm.ai/rocm/"
+    echo "  Host: glibc 2.${GLIBC_MINOR:-?}, ROCm ${ROCM_VERSION:-unknown}, Python 3.12"
+    echo "  Check available wheels: $ROCM_WHEEL_INDEX/<version>/"
     echo "  See $LOG_FILE for details."
   fi
 fi
@@ -267,7 +322,7 @@ fi
 
 # Install additional useful packages
 echo "Installing additional packages..."
-pip install -U openai transformers huggingface_hub > /dev/null 2>&1
+uv pip install openai huggingface_hub >> "$LOG_FILE" 2>&1 || pip install openai huggingface_hub > /dev/null 2>&1
 
 # Patch prometheus_fastapi_instrumentator routing.py:
 # All known versions have an unfixed bug — '_IncludedRouter' (Starlette ≥0.40,
