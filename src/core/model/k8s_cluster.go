@@ -480,6 +480,12 @@ type ExecCredential struct {
 // Mirrors the Kubernetes ExecCredentialStatus (client.authentication.k8s.io/v1).
 type ExecCredentialStatus struct {
 	Token string `json:"token"`
+
+	// ExpirationTimestamp is when the token stops being accepted, in RFC3339.
+	// It is relayed from CB-Spider and omitted when the CSP provides no expiry
+	// information, which the spec allows: clients then keep the credential until a 401
+	// forces a refresh.
+	ExpirationTimestamp *string `json:"expirationTimestamp,omitempty" example:"2026-09-02T05:15:00Z"`
 }
 
 // K8sClusterTokenResponse is the response struct for the K8sCluster token API.
