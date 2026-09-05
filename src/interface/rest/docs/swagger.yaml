@@ -9425,6 +9425,10 @@ paths:
       description: |-
         Get an access token for the specified K8sCluster.
         Only applicable to CSPs that use exec-based authentication (e.g., GCP GKE, AWS EKS).
+        The response follows the Kubernetes ExecCredential format. Its
+        expirationTimestamp tells the client when the token stops being accepted,
+        so it can refresh before the token expires instead of after a 401.
+        The field is omitted when the CSP provides no expiry information.
       operationId: GetK8sClusterToken
       parameters:
       - name: nsId
@@ -21807,6 +21811,14 @@ components:
     model.ExecCredentialStatus:
       type: object
       properties:
+        expirationTimestamp:
+          type: string
+          description: |-
+            ExpirationTimestamp is when the token stops being accepted, in RFC3339.
+            It is relayed from CB-Spider and omitted when the CSP provides no expiry
+            information, which the spec allows: clients then keep the credential until a 401
+            forces a refresh.
+          example: 2026-09-02T05:15:00Z
         token:
           type: string
     model.ExecutionTask:
