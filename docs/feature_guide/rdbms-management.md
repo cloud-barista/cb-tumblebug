@@ -32,7 +32,7 @@ API (v0.13.1+) — an implementation detail, not this document's focus (see Refe
 | Internal Logical Database CRUD                               | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
 | Tag management                                               | By Label    | [label.go](../../src/core/common/label/label.go)                                                            |
 | Register/Unregister existing CSP RDBMS                       | Not Planned | —                                                                                                           |
-| Reconciliation                                               | ✅          | [rdbmsReconcile.go](../../src/core/reconcile/rdbmsReconcile.go)                                             |
+| Reconciliation                                               | ✅          | [rdbms_reconcile.go](../../src/core/resource/reconcile/rdbms_reconcile.go)                               |
 
 - **Capability discovery**: check which engines/features a CSP supports.
   - Static, CSP-wide reference, no live call (`GET /rdbms/support`).

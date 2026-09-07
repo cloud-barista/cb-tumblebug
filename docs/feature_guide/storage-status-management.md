@@ -155,7 +155,7 @@ On failure, `SystemMessage` is set with the error detail and the resource is per
 
 Reconcile is **non-destructive diagnosis only** — it never deletes metadata or calls a
 destructive Spider API. It is implemented by `ObjectStorageReconciler`
-(`src/core/reconcile/objectStorageReconcile.go`), using the shared `GetResourceSyncState`
+(`src/core/resource/reconcile/object_storage_reconcile.go`), using the shared `GetResourceSyncState`
 helper (`src/core/resource/common.go`) as VNet and RDBMS do, then setting `Ready`/`Synced`
 directly via `SetCondition` and recomputing `Status` via `DeriveObjectStorageStatus`. See
 `docs/feature_guide/resource-reconciliation.md` for the full design, including why
@@ -251,4 +251,4 @@ Domain-specific differences:
 | `src/core/model/condition.go`        | `Condition` struct, `ResourceStatus*` base constants, `StorageStatus*` aliases, `DeriveObjectStorageStatus()` |
 | `src/core/model/objectStorage.go`    | `ObjectStorageInfo.Conditions []Condition`, `ObjectStorageInfo.SystemMessage string`                          |
 | `src/core/resource/objectStorage.go` | Conditions transitions for `CreateObjectStorage`, `DeleteObjectStorage`, `PruneObjectStorages` |
-| `src/core/reconcile/objectStorageReconcile.go` | `ObjectStorageReconciler` — the `Reconcile`/`ReconcileAll` entry points used by `PUT .../reconcile` |
+| `src/core/resource/reconcile/object_storage_reconcile.go` | `ObjectStorageReconciler` — the `Reconcile`/`ReconcileAll` entry points used by `PUT .../reconcile` |

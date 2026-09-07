@@ -22,8 +22,8 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/reconcile"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
+	"github.com/cloud-barista/cb-tumblebug/src/core/resource/reconcile"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )

@@ -253,7 +253,7 @@ CSP/Spider/Terrarium resource (Actual). Behavior currently differs by resource:
 
 - **VNet and Subnet** are on the non-destructive `Reconcile`/`Prune` pattern (see
   `docs/feature_guide/resource-reconciliation.md` for the full design): `VNetReconciler`
-  (`src/core/reconcile/vnetReconcile.go`) diagnoses via the shared `GetResourceSyncState`
+  (`src/core/resource/reconcile/vnet_reconcile.go`) diagnoses via the shared `GetResourceSyncState`
   helper, sets `Ready`/`Synced` directly via `SetCondition`, then recomputes `Status` via
   `DeriveVNetStatus` — it **never deletes metadata**. Orphaned metadata is only removed by
   a separate, explicit `POST /ns/{nsId}/resources/vNet/reconcile/prune` call (`PruneVNets`).
@@ -389,4 +389,4 @@ The VNet itself remains operational. Subnet health is tracked solely via the `Ch
 | `src/core/resource/vnet.go`   | Conditions transitions for CreateVNet, DeleteVNet, RegisterVNet, DeregisterVNet, PruneVNets                                                                                                                        |
 | `src/core/resource/subnet.go` | Conditions transitions for CreateSubnet, DeleteSubnet, RegisterSubnet, DeregisterSubnet, SyncSubnetsForVNet (called by VNetReconciler, never deletes metadata)                                                    |
 | `src/core/resource/vpn.go`    | Conditions transitions for CreateSiteToSiteVPN, DeleteSiteToSiteVPN, ReconcileSiteToSiteVPN (not yet migrated to the non-destructive pattern)                                                                      |
-| `src/core/reconcile/vnetReconcile.go` | `VNetReconciler` — the `Reconcile`/`ReconcileAll` entry points used by `PUT .../vNet/reconcile`, recurses into Subnets via `SyncSubnetsForVNet`                                                             |
+| `src/core/resource/reconcile/vnet_reconcile.go` | `VNetReconciler` — the `Reconcile`/`ReconcileAll` entry points used by `PUT .../vNet/reconcile`, recurses into Subnets via `SyncSubnetsForVNet`                                                             |
