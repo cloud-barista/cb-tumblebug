@@ -267,8 +267,8 @@ dbms:
     storageTypeSelectable: true
     storageTypes:
       cloud_auto:
-        name: Auto-selected Storage Type
-        description: Alibaba Cloud automatically selects the optimal storage type based on region and instance specification. Recommended for simplicity.
+        name: Auto-selected Storage Type (SSD)
+        description: Alibaba Cloud automatically selects optimal SSD storage (General ESSD / PL1) based on region and instance specification. Recommended for simplicity.
         recommendationLevel: recommended
         requiresIops: false
         minStorageSize: 20
