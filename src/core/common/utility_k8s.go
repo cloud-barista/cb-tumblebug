@@ -248,6 +248,20 @@ func GetK8sInitialNodeGroupManagedByCluster(providerName string) (bool, error) {
 	return k8sClusterDetail.InitialNodeGroupManagedByCluster, nil
 }
 
+// GetK8sAutoScalingOffNodeSize returns the node-size floor the CSP still demands while
+// autoscaling is disabled. Zero fields mean the CSP ignores Min/Max in that state, which is
+// the common case; see model.K8sClusterAutoScalingOffNodeSize for the CSPs that do not.
+func GetK8sAutoScalingOffNodeSize(providerName string) (model.K8sClusterAutoScalingOffNodeSize, error) {
+	providerName = strings.ToLower(providerName)
+
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return model.K8sClusterAutoScalingOffNodeSize{}, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	return k8sClusterDetail.AutoScalingOffNodeSize, nil
+}
+
 // GetK8sNodeGroupNamingRule is func to get nodegroup's naming rule
 func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
 	//
