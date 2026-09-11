@@ -205,39 +205,7 @@ func checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx context.Context, connN
 	return nil
 }
 
-// applyK8sNodeGroupSizeDefaults resolves the autoscale fields for the dynamic creation paths
-// (k8sClusterDynamic / k8sNodeGroupDynamic), the only paths that substitute values the client
-// did not send.
-//
-// The rules, and why:
-//
-//   - A negative size is always an error. Nothing in CB-Tumblebug or the CB-Spider drivers
-//     gives a negative value meaning, so it can only be a client mistake; silently rewriting
-//     it hides the mistake from the caller.
-//
-//   - onAutoScaling written explicitly as "true" means the caller engaged with the scaling
-//     policy, so Min/Max become required. Picking a range on their behalf would be
-//     CB-Tumblebug deciding a policy that belongs to the caller.
-//
-//   - onAutoScaling omitted still defaults to "true", and Min/Max are then filled with 1/2 as
-//     before. The caller never asked for autoscaling, so demanding a range from them would
-//     break every existing request - the guide's own example sends neither field. Requiring
-//     Min/Max whenever autoscaling is on, explicit or not, is the intended end state; it is
-//     deferred so that callers get a release to migrate.
-//
-//   - onAutoScaling "false" leaves Min/Max alone. Substituting them is what made
-//     `onAutoScaling: "false"` impossible to express: MinNodeSize is a non-pointer int, so an
-//     omitted key and an explicit 0 are indistinguishable, and Azure, NHN and NCP reject a
-//     non-zero Min while autoscaling is off.
-//     See https://github.com/cloud-barista/cb-tumblebug/issues/2767
-//
-//   - offNodeSize carries the floor a CSP still demands in that state, from
-//     k8sclusterinfo.yaml. It is a CSP quirk the caller cannot be expected to know
-//     (Tencent and IBM validate Min/Max regardless of autoscaling; NHN's nodegroup API
-//     rejects max_node_count 0), so CB-Tumblebug absorbs it rather than surfacing it.
-//
-//   - DesiredNodeSize is always defaulted: Alibaba uses it while autoscaling is off, and
-//     Tencent requires it to be >= 1 in every case.
+// applyK8sNodeGroupSizeDefaults is func to resolve the autoscale fields for the dynamic creation paths
 func applyK8sNodeGroupSizeDefaults(ngReq *model.K8sNodeGroupReq, dReqOnAutoScaling string,
 	desiredNodeSize, minNodeSize, maxNodeSize int,
 	offNodeSize model.K8sClusterAutoScalingOffNodeSize) error {
@@ -491,9 +459,6 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 	}
 	k8sngReq.RootDiskType = dReq.RootDiskType
 	k8sngReq.RootDiskSize = dReq.RootDiskSize
-	// Tencent TKE demands Min/Max node size even while autoscaling is off; every other CSP
-	// either ignores them or rejects a non-zero Min in that state. Treat a lookup failure as
-	// false to avoid introducing a new failure path here.
 	offNodeSize, err := common.GetK8sAutoScalingOffNodeSize(connection.ProviderName)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to get AutoScalingOffNodeSize for provider(%s); assuming no floor", connection.ProviderName)
@@ -668,8 +633,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 	k8sNgReq.RootDiskType = dReq.RootDiskType
 	k8sNgReq.RootDiskSize = dReq.RootDiskSize
 	// specInfo.ConnectionName is verified above to match the cluster's ConnectionName,
-	// so its ProviderName is the cluster's provider. See the note in
-	// applyK8sNodeGroupSizeDefaults for why a lookup failure is treated as false.
+	// so its ProviderName is the cluster's provider.
 	offNodeSize, err := common.GetK8sAutoScalingOffNodeSize(specInfo.ProviderName)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to get AutoScalingOffNodeSize for provider(%s); assuming no floor", specInfo.ProviderName)

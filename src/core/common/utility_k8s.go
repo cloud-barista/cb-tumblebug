@@ -249,8 +249,7 @@ func GetK8sInitialNodeGroupManagedByCluster(providerName string) (bool, error) {
 }
 
 // GetK8sAutoScalingOffNodeSize returns the node-size floor the CSP still demands while
-// autoscaling is disabled. Zero fields mean the CSP ignores Min/Max in that state, which is
-// the common case; see model.K8sClusterAutoScalingOffNodeSize for the CSPs that do not.
+// autoscaling is disabled, as configured per CSP in assets/k8sclusterinfo.yaml.
 func GetK8sAutoScalingOffNodeSize(providerName string) (model.K8sClusterAutoScalingOffNodeSize, error) {
 	providerName = strings.ToLower(providerName)
 

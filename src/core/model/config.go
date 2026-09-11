@@ -207,9 +207,7 @@ type K8sClusterDetail struct {
 	// cluster creation is lifecycle-bound to the cluster and cannot be deleted independently
 	// via the node group API (e.g., Alibaba ACK, Tencent TKE).
 	InitialNodeGroupManagedByCluster bool `mapstructure:"initialNodeGroupManagedByCluster" json:"initial_nodegroup_managed_by_cluster"`
-	// AutoScalingOffNodeSize carries the node-size floor a CSP still demands while
-	// autoscaling is disabled, for the CSPs that reject 0 in that state. Omitted (both
-	// fields zero) means the CSP ignores Min/Max when autoscaling is off - the common case.
+	// AutoScalingOffNodeSize is the node-size floor the CSP requires while autoscaling is off.
 	AutoScalingOffNodeSize K8sClusterAutoScalingOffNodeSize `mapstructure:"autoScalingOffNodeSize" json:"autoscaling_off_node_size"`
 	Version                []K8sClusterVersionDetail        `mapstructure:"version" json:"versions"`
 	NodeImage              []K8sClusterNodeImageDetail      `mapstructure:"nodeImage" json:"node_images"`
@@ -217,12 +215,7 @@ type K8sClusterDetail struct {
 }
 
 // K8sClusterAutoScalingOffNodeSize is the node-size floor a CSP requires while autoscaling
-// is disabled. Min/Max node size are meaningless in that state for most CSPs, but a few still
-// validate them, and they disagree on what they demand:
-//   - Tencent TKE / IBM IKS: Min and Max must both be >= 1, autoscaling state ignored.
-//   - NHN NKS: the nodegroup API rejects max_node_count 0, while Min must stay 0 because the
-//     driver rejects a non-zero Min when autoscaling is off.
-//
+// is disabled. Which CSPs need one, and why, is in assets/k8sclusterinfo.yaml.
 // A zero field means "leave the requested value alone".
 type K8sClusterAutoScalingOffNodeSize struct {
 	Min int `mapstructure:"min" json:"min,omitempty"`
