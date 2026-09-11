@@ -16,6 +16,7 @@ package infra
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -199,6 +200,69 @@ func checkCommonResAvailableForK8sNodeGroupDynamicReq(ctx context.Context, connN
 	err := checkCommonResAvailableForK8sClusterDynamicReq(ctx, k8sClusterDReq)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// applyK8sNodeGroupSizeDefaults is func to resolve the autoscale fields for the dynamic creation paths
+func applyK8sNodeGroupSizeDefaults(ngReq *model.K8sNodeGroupReq, dReqOnAutoScaling string,
+	desiredNodeSize, minNodeSize, maxNodeSize int,
+	offNodeSize model.K8sClusterAutoScalingOffNodeSize) error {
+
+	if desiredNodeSize < 0 || minNodeSize < 0 || maxNodeSize < 0 {
+		return fmt.Errorf("node sizes must not be negative (desiredNodeSize=%d, minNodeSize=%d, maxNodeSize=%d)",
+			desiredNodeSize, minNodeSize, maxNodeSize)
+	}
+
+	onAutoScaling := true
+	autoScalingExplicit := dReqOnAutoScaling != ""
+	if autoScalingExplicit {
+		parsed, err := strconv.ParseBool(dReqOnAutoScaling)
+		if err != nil {
+			return fmt.Errorf("invalid onAutoScaling value %q: must be a boolean such as \"true\" or \"false\"", dReqOnAutoScaling)
+		}
+		onAutoScaling = parsed
+	}
+	ngReq.OnAutoScaling = strconv.FormatBool(onAutoScaling)
+
+	ngReq.DesiredNodeSize = desiredNodeSize
+	if ngReq.DesiredNodeSize <= 0 {
+		ngReq.DesiredNodeSize = 1
+	}
+
+	ngReq.MinNodeSize = minNodeSize
+	ngReq.MaxNodeSize = maxNodeSize
+
+	switch {
+	case onAutoScaling && autoScalingExplicit:
+		if ngReq.MinNodeSize <= 0 || ngReq.MaxNodeSize <= 0 {
+			return fmt.Errorf("minNodeSize and maxNodeSize are required when onAutoScaling is set to \"true\" explicitly "+
+				"(got minNodeSize=%d, maxNodeSize=%d); omit onAutoScaling to keep the defaults, or set it to \"false\"",
+				ngReq.MinNodeSize, ngReq.MaxNodeSize)
+		}
+	case onAutoScaling:
+		// onAutoScaling omitted: keep the historical defaults.
+		if ngReq.MinNodeSize <= 0 {
+			ngReq.MinNodeSize = 1
+		}
+		if ngReq.MaxNodeSize <= 0 {
+			ngReq.MaxNodeSize = 2
+		}
+	default:
+		// Autoscaling off: Min/Max carry no meaning, so raise them only to the floor the CSP
+		// insists on. A zero field in offNodeSize means the CSP has no such requirement.
+		if ngReq.MinNodeSize < offNodeSize.Min {
+			ngReq.MinNodeSize = offNodeSize.Min
+		}
+		if ngReq.MaxNodeSize < offNodeSize.Max {
+			ngReq.MaxNodeSize = offNodeSize.Max
+		}
+	}
+
+	if ngReq.MinNodeSize > 0 && ngReq.MinNodeSize > ngReq.MaxNodeSize {
+		return fmt.Errorf("minNodeSize(%d) must not be greater than maxNodeSize(%d)",
+			ngReq.MinNodeSize, ngReq.MaxNodeSize)
 	}
 
 	return nil
@@ -395,21 +459,15 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 	}
 	k8sngReq.RootDiskType = dReq.RootDiskType
 	k8sngReq.RootDiskSize = dReq.RootDiskSize
-	k8sngReq.OnAutoScaling = dReq.OnAutoScaling
-	if k8sngReq.OnAutoScaling == "" {
-		k8sngReq.OnAutoScaling = "true"
+	offNodeSize, err := common.GetK8sAutoScalingOffNodeSize(connection.ProviderName)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to get AutoScalingOffNodeSize for provider(%s); assuming no floor", connection.ProviderName)
+		offNodeSize = model.K8sClusterAutoScalingOffNodeSize{}
 	}
-	k8sngReq.DesiredNodeSize = dReq.DesiredNodeSize
-	if k8sngReq.DesiredNodeSize <= 0 {
-		k8sngReq.DesiredNodeSize = 1
-	}
-	k8sngReq.MinNodeSize = dReq.MinNodeSize
-	if k8sngReq.MinNodeSize <= 0 {
-		k8sngReq.MinNodeSize = 1
-	}
-	k8sngReq.MaxNodeSize = dReq.MaxNodeSize
-	if k8sngReq.MaxNodeSize <= 0 {
-		k8sngReq.MaxNodeSize = 2
+	if err := applyK8sNodeGroupSizeDefaults(k8sngReq, dReq.OnAutoScaling,
+		dReq.DesiredNodeSize, dReq.MinNodeSize, dReq.MaxNodeSize, offNodeSize); err != nil {
+		log.Err(err).Msg("Failed to apply K8sNodeGroup size defaults")
+		return emptyK8sReq, err
 	}
 	k8sReq.Description = dReq.Description
 	k8sReq.Name = dReq.Name
@@ -574,21 +632,17 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 	}
 	k8sNgReq.RootDiskType = dReq.RootDiskType
 	k8sNgReq.RootDiskSize = dReq.RootDiskSize
-	k8sNgReq.OnAutoScaling = dReq.OnAutoScaling
-	if k8sNgReq.OnAutoScaling == "" {
-		k8sNgReq.OnAutoScaling = "true"
+	// specInfo.ConnectionName is verified above to match the cluster's ConnectionName,
+	// so its ProviderName is the cluster's provider.
+	offNodeSize, err := common.GetK8sAutoScalingOffNodeSize(specInfo.ProviderName)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to get AutoScalingOffNodeSize for provider(%s); assuming no floor", specInfo.ProviderName)
+		offNodeSize = model.K8sClusterAutoScalingOffNodeSize{}
 	}
-	k8sNgReq.DesiredNodeSize = dReq.DesiredNodeSize
-	if k8sNgReq.DesiredNodeSize <= 0 {
-		k8sNgReq.DesiredNodeSize = 1
-	}
-	k8sNgReq.MinNodeSize = dReq.MinNodeSize
-	if k8sNgReq.MinNodeSize <= 0 {
-		k8sNgReq.MinNodeSize = 1
-	}
-	k8sNgReq.MaxNodeSize = dReq.MaxNodeSize
-	if k8sNgReq.MaxNodeSize <= 0 {
-		k8sNgReq.MaxNodeSize = 2
+	if err := applyK8sNodeGroupSizeDefaults(k8sNgReq, dReq.OnAutoScaling,
+		dReq.DesiredNodeSize, dReq.MinNodeSize, dReq.MaxNodeSize, offNodeSize); err != nil {
+		log.Err(err).Msg("Failed to apply K8sNodeGroup size defaults")
+		return emptyK8sNgReq, err
 	}
 	k8sNgReq.Description = dReq.Description
 	k8sNgReq.Label = dReq.Label

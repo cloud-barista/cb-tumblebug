@@ -71,7 +71,7 @@ type ExtractPatterns struct {
 
 // CloudImageIgnoreConfig represents the structure of cloudimage_ignore.yaml
 type CloudImageIgnoreConfig struct {
-	Global GlobalIgnorePatterns             `yaml:"global"`
+	Global GlobalIgnorePatterns              `yaml:"global"`
 	CSPs   map[string]CSPImageIgnorePatterns `yaml:"csps,omitempty"`
 }
 
@@ -199,17 +199,27 @@ type K8sClusterRequiredSubnetCount struct {
 
 // K8sClusterDetail is structure for kubernetes cluster detail information
 type K8sClusterDetail struct {
-	NodeGroupsOnCreation             bool                        `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
-	NodeImageDesignation             bool                        `mapstructure:"nodeImageDesignation" json:"node_image_designation"`
-	RequiredSubnetCount              int                         `mapstructure:"requiredSubnetCount" json:"required_subnet_count"`
-	NodeGroupNamingRule              string                      `mapstructure:"nodeGroupNamingRule" json:"nodegroup_naming_rule"`
+	NodeGroupsOnCreation bool   `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
+	NodeImageDesignation bool   `mapstructure:"nodeImageDesignation" json:"node_image_designation"`
+	RequiredSubnetCount  int    `mapstructure:"requiredSubnetCount" json:"required_subnet_count"`
+	NodeGroupNamingRule  string `mapstructure:"nodeGroupNamingRule" json:"nodegroup_naming_rule"`
 	// InitialNodeGroupManagedByCluster indicates that the initial node group created during
 	// cluster creation is lifecycle-bound to the cluster and cannot be deleted independently
 	// via the node group API (e.g., Alibaba ACK, Tencent TKE).
-	InitialNodeGroupManagedByCluster bool                        `mapstructure:"initialNodeGroupManagedByCluster" json:"initial_nodegroup_managed_by_cluster"`
-	Version                          []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
-	NodeImage                        []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
-	RootDisk                         []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
+	InitialNodeGroupManagedByCluster bool `mapstructure:"initialNodeGroupManagedByCluster" json:"initial_nodegroup_managed_by_cluster"`
+	// AutoScalingOffNodeSize is the node-size floor the CSP requires while autoscaling is off.
+	AutoScalingOffNodeSize K8sClusterAutoScalingOffNodeSize `mapstructure:"autoScalingOffNodeSize" json:"autoscaling_off_node_size"`
+	Version                []K8sClusterVersionDetail        `mapstructure:"version" json:"versions"`
+	NodeImage              []K8sClusterNodeImageDetail      `mapstructure:"nodeImage" json:"node_images"`
+	RootDisk               []K8sClusterRootDiskDetail       `mapstructure:"rootDisk" json:"root_disks"`
+}
+
+// K8sClusterAutoScalingOffNodeSize is the node-size floor a CSP requires while autoscaling
+// is disabled. Which CSPs need one, and why, is in assets/k8sclusterinfo.yaml.
+// A zero field means "leave the requested value alone".
+type K8sClusterAutoScalingOffNodeSize struct {
+	Min int `mapstructure:"min" json:"min,omitempty"`
+	Max int `mapstructure:"max" json:"max,omitempty"`
 }
 
 // K8sClusterVersionDetail is structure for kubernetes cluster version detail information

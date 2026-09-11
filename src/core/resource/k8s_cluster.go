@@ -219,6 +219,13 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		return emptyObj, err
 	}
 
+	for i := range req.K8sNodeGroupList {
+		if err := normalizeK8sNodeGroupOnAutoScaling(&req.K8sNodeGroupList[i]); err != nil {
+			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
+			return emptyObj, err
+		}
+	}
+
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
@@ -620,6 +627,11 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 			return emptyObj, err
 		}
 
+		return emptyObj, err
+	}
+
+	if err := normalizeK8sNodeGroupOnAutoScaling(u); err != nil {
+		log.Err(err).Msgf("Failed to Add K8sNodeGroup(k8scluster=%s)", k8sClusterId)
 		return emptyObj, err
 	}
 
@@ -1978,6 +1990,33 @@ func updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo *model.K8sClusterInfo,
 	tbK8sCInfo.CspResourceId = spCInfo.IId.SystemId
 }
 
+// normalizeK8sNodeGroupOnAutoScaling canonicalizes K8sNodeGroupReq.OnAutoScaling in place so
+// that every downstream consumer - the TB metadata and the value forwarded to CB-Spider -
+// agrees on a single "true"/"false" string.
+//
+// An empty value takes the documented default of "true". A value that is not a boolean is
+// rejected rather than silently coerced: previously TB recorded such a value as true while
+// forwarding the raw string to CB-Spider, so the recorded state and the actual cluster could
+// diverge.
+//
+// This runs on the shared creation path, so it applies to both the dynamic and non-dynamic
+// endpoints.
+func normalizeK8sNodeGroupOnAutoScaling(tbK8sNGReq *model.K8sNodeGroupReq) error {
+	if tbK8sNGReq.OnAutoScaling == "" {
+		tbK8sNGReq.OnAutoScaling = "true"
+		return nil
+	}
+
+	on, err := strconv.ParseBool(tbK8sNGReq.OnAutoScaling)
+	if err != nil {
+		return fmt.Errorf("invalid onAutoScaling value %q for K8sNodeGroup(%s): must be a boolean such as \"true\" or \"false\"",
+			tbK8sNGReq.OnAutoScaling, tbK8sNGReq.Name)
+	}
+
+	tbK8sNGReq.OnAutoScaling = strconv.FormatBool(on)
+	return nil
+}
+
 func fillK8sNodeGroupInfoFromK8sNodeGroupReq(tbK8sNGInfo *model.K8sNodeGroupInfo, tbK8sNGReq *model.K8sNodeGroupReq) {
 	tbK8sNGInfo.Id = tbK8sNGReq.Name
 	tbK8sNGInfo.Name = tbK8sNGReq.Name
@@ -1987,13 +2026,9 @@ func fillK8sNodeGroupInfoFromK8sNodeGroupReq(tbK8sNGInfo *model.K8sNodeGroupInfo
 	tbK8sNGInfo.RootDiskSize = tbK8sNGReq.RootDiskSize
 	tbK8sNGInfo.SshKeyId = tbK8sNGReq.SshKeyId
 
-	// Convert string to appropriate types with better error handling
-	if on, err := strconv.ParseBool(tbK8sNGReq.OnAutoScaling); err == nil {
-		tbK8sNGInfo.OnAutoScaling = on
-	} else {
-		log.Warn().Msgf("Failed to parse OnAutoScaling '%s', defaulting to true", tbK8sNGReq.OnAutoScaling)
-		tbK8sNGInfo.OnAutoScaling = true
-	}
+	// OnAutoScaling is normalized to "true"/"false" by normalizeK8sNodeGroupOnAutoScaling
+	// before this point, so parsing cannot fail here.
+	tbK8sNGInfo.OnAutoScaling, _ = strconv.ParseBool(tbK8sNGReq.OnAutoScaling)
 
 	tbK8sNGInfo.DesiredNodeSize = tbK8sNGReq.DesiredNodeSize
 	tbK8sNGInfo.MinNodeSize = tbK8sNGReq.MinNodeSize

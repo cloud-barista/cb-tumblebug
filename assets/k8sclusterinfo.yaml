@@ -13,6 +13,14 @@
 #           - name: "1.30" [available version name (use double quotes)]
 #             id: "1.30" [available version name (use double quotes)]
 #     nodeGroupNamingRule: [regular expression or no restriction if empty]
+#     initialNodeGroupManagedByCluster: [true/false, default false]
+#       The node group created together with the cluster is lifecycle-bound to it and
+#       cannot be deleted independently via the node group API.
+#     autoScalingOffNodeSize: [{min: N, max: N}, default none]
+#       The node-size floor the CSP still demands while autoscaling is disabled.
+#       Most CSPs ignore Min/Max in that state - omit the key for those. Some even reject
+#       a non-zero MinNodeSize when autoscaling is off, so never set min unless the CSP
+#       demands it. A field left out keeps the value the client requested.
 #
 
 k8scluster:
@@ -136,6 +144,10 @@ k8scluster:
           min: 10
           max: 40
   nhn:
+    # CSP constraint: the NKS nodegroup API rejects max_node_count 0 (verified 2026-09-10,
+    # HTTP 400 "Value should be greater or equal to 1"). Min stays unset because the
+    # CB-Spider driver rejects a non-zero Min while autoscaling is off.
+    autoScalingOffNodeSize: {max: 1}
     nodeGroupsOnCreation: true
     nodeImageDesignation: true
     requiredSubnetCount: 1
@@ -161,6 +173,14 @@ k8scluster:
     nodeImageDesignation: true
     requiredSubnetCount: 1
     initialNodeGroupManagedByCluster: true
+    # Not a CSP constraint: TKE itself accepts MinSize 0 - its CreateClusterNodePool reference
+    # uses "MinSize":0 in the request example
+    # (https://intl.cloud.tencent.com/document/product/457/38781). The floor exists only
+    # because validateAtAddNodeGroup in the CB-Spider driver rejects anything below 1, while
+    # the driver forwards Min/Max/Desired to TKE as AutoScalingGroup parameters regardless of
+    # EnableAutoscale. Drop this once that check is fixed upstream. Nothing scales while
+    # autoscaling is off, so max needs no headroom.
+    autoScalingOffNodeSize: {min: 1, max: 1}
     version:
       # ServiceUnavailable
       - region: [ap-mumbai, eu-moscow, na-toronto]
@@ -202,6 +222,11 @@ k8scluster:
           min: 10
           max: 40
   ibm:
+    # Not a CSP constraint: the driver only sends Min/Max to IKS inside its
+    # `if OnAutoScaling` branch, so IKS never sees them while autoscaling is off. The floor
+    # exists solely because validateAtCreateCluster/validateAtAddNodeGroup reject anything
+    # below 1 with no OnAutoScaling guard. Drop this once that check is fixed upstream.
+    autoScalingOffNodeSize: {min: 1, max: 1}
     nodeGroupsOnCreation: true
     nodeImageDesignation: false
     requiredSubnetCount: 1
