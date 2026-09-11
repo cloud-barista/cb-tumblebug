@@ -23633,6 +23633,13 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/model.K8sClusterDetail'
+    model.K8sClusterAutoScalingOffNodeSize:
+      type: object
+      properties:
+        max:
+          type: integer
+        min:
+          type: integer
     model.K8sClusterConnectionConfigCandidatesReq:
       required:
       - specId
@@ -23648,6 +23655,12 @@ components:
     model.K8sClusterDetail:
       type: object
       properties:
+        autoscaling_off_node_size:
+          type: object
+          description: AutoScalingOffNodeSize is the node-size floor the CSP requires
+            while autoscaling is off.
+          allOf:
+          - $ref: '#/components/schemas/model.K8sClusterAutoScalingOffNodeSize'
         initial_nodegroup_managed_by_cluster:
           type: boolean
           description: |-
