@@ -1380,12 +1380,17 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	// Step 2: delete kvstore entries and status store in parallel
 	// Remove from StatusStore before etcd so StatusAgent cannot dispatch a node
 	// between the etcd deletion and the StatusStore cleanup.
+	// Bound concurrency to prevent etcd "too many requests" errors during large-scale cleanup.
+	const etcdDeleteConcurrency = 50
+	sem := make(chan struct{}, etcdDeleteConcurrency)
 	deleteErrs := make([]error, len(entries))
 	var deleteWg sync.WaitGroup
 	for i, e := range entries {
 		deleteWg.Add(1)
+		sem <- struct{}{}
 		go func(i int, e nodeEntry) {
 			defer deleteWg.Done()
+			defer func() { <-sem }()
 			globalStatusStore.Delete(nsId, infraId, e.id)
 			deleteErrs[i] = kvstore.Delete(e.key)
 			kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, e.id))
@@ -1438,12 +1443,14 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	}
 	batchWg.Wait()
 
-	// Step 4: delete labels in parallel
+	// Step 4: delete labels in parallel (also bounded by semaphore)
 	var labelWg sync.WaitGroup
 	for _, e := range entries {
 		labelWg.Add(1)
+		sem <- struct{}{}
 		go func(e nodeEntry) {
 			defer labelWg.Done()
+			defer func() { <-sem }()
 			if err := label.DeleteLabelObject(model.StrNode, e.info.Uid); err != nil {
 				log.Error().Err(err).Msg("")
 			}
@@ -1600,29 +1607,22 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 	globalStatusStore.Delete(nsId, infraId, nodeId)
 	kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, nodeId))
 
-	// remove empty NodeGroups
-	nodeGroup, err := ListNodeGroupId(nsId, infraId)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to list nodeGroup to remove")
-		return err
-	}
-	for _, v := range nodeGroup {
-		nodeListInNodeGroup, err := ListNodeByNodeGroup(nsId, infraId, v)
+	// remove empty NodeGroup or update NodeGroup record
+	if nodeInfo.NodeGroupId != "" {
+		nodeListInNodeGroup, err := ListNodeByNodeGroup(nsId, infraId, nodeInfo.NodeGroupId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to list node in nodeGroup to remove")
 			return err
 		}
-		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, v)
+		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeInfo.NodeGroupId)
 		if len(nodeListInNodeGroup) == 0 {
 			err := kvstore.Delete(nodeGroupKey)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
 				return err
 			}
-			continue
-		}
-		if v == nodeInfo.NodeGroupId {
-			removeNodeFromNodeGroupRecord(nsId, infraId, v, nodeId, nodeListInNodeGroup)
+		} else {
+			removeNodeFromNodeGroupRecord(nsId, infraId, nodeInfo.NodeGroupId, nodeId, nodeListInNodeGroup)
 		}
 	}
 

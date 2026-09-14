@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -436,11 +437,15 @@ func AnalyzeProvisioningRiskDetailed(specId string, cspImageName string) (*model
 	log.Debug().Msgf("Provisioning analysis for spec %s: failures=%d, successes=%d, rate=%.2f, image_failed=%t, image_succeeded=%t, failed_images=%d, succeeded_images=%d",
 		specId, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate, imageHasFailed, imageHasSucceeded, failedImageCount, succeededImageCount)
 
+	// Classify failure history to differentiate transient capacity/quota limits from permanent incompatibilities
+	hasQuotaCapacity, hasIncompatibility, failureClass := analyzeFailureMessages(
+		provisioningLog.ProviderName, provisioningLog.RegionName, provisioningLog.FailureMessages)
+
 	// Analyze spec-specific risk
-	specRisk := analyzeSpecRisk(specId, failedImageCount, succeededImageCount, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate)
+	specRisk := analyzeSpecRisk(specId, failedImageCount, succeededImageCount, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate, hasQuotaCapacity, hasIncompatibility, failureClass)
 
 	// Analyze image-specific risk
-	imageRisk := analyzeImageRisk(specId, cspImageName, imageHasFailed, imageHasSucceeded, isNewCombination)
+	imageRisk := analyzeImageRisk(specId, cspImageName, imageHasFailed, imageHasSucceeded, isNewCombination, hasQuotaCapacity, hasIncompatibility, failureClass)
 
 	// Determine overall risk and primary factor
 	overallRisk := determineOverallRisk(specRisk, imageRisk)
@@ -460,29 +465,59 @@ func AnalyzeProvisioningRiskDetailed(specId string, cspImageName string) (*model
 	}, nil
 }
 
+// analyzeFailureMessages categorizes past failure messages using the multi-CSP failure classifier.
+func analyzeFailureMessages(provider, region string, failureMessages []string) (hasQuotaCapacity bool, hasIncompatibility bool, primaryClass string) {
+	if len(failureMessages) == 0 {
+		return false, false, ""
+	}
+
+	for _, msg := range failureMessages {
+		failure := csp.ClassifyProvisioningFailure(provider, region, "", msg)
+		switch failure.Class {
+		case model.FailureAccountQuota, model.FailureZoneCapacity, model.FailureRegionCapacity, model.FailureThrottling:
+			hasQuotaCapacity = true
+			if primaryClass == "" {
+				primaryClass = failure.Class
+			}
+		case model.FailureImageSpecMismatch, model.FailureInvalidRequest, model.FailureAuth:
+			hasIncompatibility = true
+			if primaryClass == "" || !hasIncompatibility {
+				primaryClass = failure.Class
+			}
+		}
+	}
+	return hasQuotaCapacity, hasIncompatibility, primaryClass
+}
+
 // analyzeSpecRisk analyzes risk factors specific to the VM specification
-func analyzeSpecRisk(specId string, failedImageCount, succeededImageCount, totalFailures, totalSuccesses int, failureRate float64) model.SpecRiskInfo {
+func analyzeSpecRisk(specId string, failedImageCount, succeededImageCount, totalFailures, totalSuccesses int, failureRate float64, hasQuotaCapacity, hasIncompatibility bool, failureClass string) model.SpecRiskInfo {
 	var level, message string
 
-	if failedImageCount >= 10 {
+	if failedImageCount >= 10 && !hasQuotaCapacity {
 		// Very likely spec-level issue: 10+ different images failed
 		level = "high"
 		message = fmt.Sprintf("Spec '%s': %d different images failed (%.0f%% failure rate) - spec itself may be problematic",
 			specId, failedImageCount, failureRate*100)
-	} else if failedImageCount >= 5 {
+	} else if failedImageCount >= 5 && !hasQuotaCapacity {
 		// Likely spec-level issue: 5+ different images failed
 		level = "medium"
 		message = fmt.Sprintf("Spec '%s': %d different images failed (%.0f%% failure rate) - check spec compatibility",
 			specId, failedImageCount, failureRate*100)
-	} else if failedImageCount >= 3 && succeededImageCount == 0 {
+	} else if failedImageCount >= 3 && succeededImageCount == 0 && !hasQuotaCapacity {
 		// Potential spec-level issue: 3+ different images failed with no successes
 		level = "medium"
 		message = fmt.Sprintf("Spec '%s': %d images failed, none succeeded (%.0f%% failure rate)",
 			specId, failedImageCount, failureRate*100)
 	} else if failureRate >= 0.8 {
-		level = "high"
-		message = fmt.Sprintf("Spec '%s' has %.0f%% failure rate (%d failures out of %d attempts)",
-			specId, failureRate*100, totalFailures, totalFailures+totalSuccesses)
+		if hasQuotaCapacity && !hasIncompatibility {
+			level = "medium"
+			message = fmt.Sprintf("Spec '%s' has %.0f%% failure rate (%d failures, %d successes), mainly due to %s",
+				specId, failureRate*100, totalFailures, totalSuccesses, failureClass)
+		} else {
+			level = "high"
+			message = fmt.Sprintf("Spec '%s' has %.0f%% failure rate (%d failures out of %d attempts)",
+				specId, failureRate*100, totalFailures, totalFailures+totalSuccesses)
+		}
 	} else if failureRate >= 0.5 {
 		level = "medium"
 		message = fmt.Sprintf("Spec '%s' has %.0f%% failure rate (%d failures, %d successes)",
@@ -508,19 +543,27 @@ func analyzeSpecRisk(specId string, failedImageCount, succeededImageCount, total
 }
 
 // analyzeImageRisk analyzes risk factors specific to the image
-func analyzeImageRisk(specId, imageId string, imageHasFailed, imageHasSucceeded, isNewCombination bool) model.ImageRiskInfo {
+func analyzeImageRisk(specId, imageId string, imageHasFailed, imageHasSucceeded, isNewCombination, hasQuotaCapacity, hasIncompatibility bool, failureClass string) model.ImageRiskInfo {
 	var level, message string
 
 	if imageHasFailed {
-		// CRITICAL: Any previous failure with this exact spec+image combination means high risk
 		if !imageHasSucceeded {
 			// This specific image has failed before and never succeeded with this spec
-			level = "high"
-			message = fmt.Sprintf("Image '%s' has FAILED with spec '%s' before (never succeeded)", imageId, specId)
+			if hasQuotaCapacity && !hasIncompatibility {
+				level = "medium"
+				message = fmt.Sprintf("Image '%s' with spec '%s' previously hit %s (never succeeded yet, but may succeed if capacity/quota allows)", imageId, specId, failureClass)
+			} else {
+				level = "high"
+				message = fmt.Sprintf("Image '%s' has FAILED with spec '%s' before (never succeeded)", imageId, specId)
+			}
 		} else {
-			// This image has both failed and succeeded with this spec - still high risk due to failure history
-			level = "high"
-			message = fmt.Sprintf("Image '%s' has FAILED with spec '%s' before (sometimes succeeds, but unreliable)", imageId, specId)
+			// This image has both failed and succeeded with this spec
+			level = "medium"
+			if hasQuotaCapacity && !hasIncompatibility {
+				message = fmt.Sprintf("Image '%s' with spec '%s' has succeeded before (past failures were due to %s)", imageId, specId, failureClass)
+			} else {
+				message = fmt.Sprintf("Image '%s' with spec '%s' has succeeded before, but also had past failures", imageId, specId)
+			}
 		}
 	} else if imageHasSucceeded && !imageHasFailed {
 		// This image has only succeeded with this spec - safest option
