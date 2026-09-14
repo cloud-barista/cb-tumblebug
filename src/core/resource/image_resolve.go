@@ -198,7 +198,7 @@ func resolveLatestAzureImage(ctx context.Context, connectionName string, imageIn
 // latestImageIdCache caches the resolved "latest" CSP image identifier per
 // provider+region+key for a short TTL. Since the same image is typically
 // resolved twice per VM creation (once at review, once at provisioning) and
-// MCIs may launch multiple VMs sharing the same SKU/family, this avoids
+// Infra objects may launch multiple VMs sharing the same SKU/family, this avoids
 // duplicate SDK calls within a creation cycle without holding stale results
 // long enough to miss new image releases.
 var (

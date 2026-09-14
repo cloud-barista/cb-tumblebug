@@ -10,18 +10,19 @@ This document provides a comprehensive guide to the **Infra** resource model in 
 
 ## 🔑 Key Concepts and Terminology
 
-### Why the Terminology Change
+### Current Terminology
 
-CB-Tumblebug originally used the terms **MCI** (Multi-Cloud Infrastructure), **SubGroup**, and **VM** for its core abstractions.
-These were renamed to **Infra**, **NodeGroup**, and **Node** for the following reasons:
+CB-Tumblebug uses the following terms for its server infrastructure model:
 
-| Old Term | New Term | Reason for Change |
-|----------|----------|-------------------|
-| MCI | **Infra** | "MCI" was an acronym that required explanation every time. "Infra" is self-descriptive and universally understood. |
-| SubGroup | **NodeGroup** | "SubGroup" was vague. "NodeGroup" clearly describes a group of homogeneous Nodes. It also aligns with Kubernetes `NodeGroup` semantics, preparing for future Kubernetes integration. |
-| VM | **Node** | "VM" is implementation-specific (virtual machine). "Node" is a more general server instance abstraction that can represent a VM today and can be extended to bare-metal servers or other compute forms over time. The API uses "Node" for user-facing interactions, while the internal implementation still deals with VMs through CSP drivers. |
+| Current Term | Meaning |
+|--------------|---------|
+| **Infra** | A manageable collection of compute resources that can span one or more CSPs. |
+| **NodeGroup** | A group of Nodes that share the same configuration and are typically managed or scaled together. |
+| **Node** | An individual server compute unit, currently provisioned primarily as a virtual machine. |
 
-> **Note on internal implementation:** Within the codebase, `vm` is still used in some internal identifiers (e.g., KV store keys, CSP driver interfaces) to maintain backward compatibility with the storage layer and CB-Spider driver interfaces.
+These current terms are used throughout this guide and in user-facing APIs.
+
+> **Legacy terminology:** Older documentation or internal identifiers may use **MCI**, **SubGroup**, and **VM**, corresponding to **Infra**, **NodeGroup**, and **Node**, respectively. Some internal `vm` identifiers remain for compatibility with existing storage and CB-Spider interfaces.
 
 ### Resource Hierarchy
 
@@ -159,7 +160,7 @@ In addition, Infra detail responses may include the synthesized cluster view as 
 
 > The naming alignment (Node, NodeGroup, Cluster) between VM-based Infra and Kubernetes resources is intentional, providing a consistent mental model regardless of the underlying compute type.
 
-> **Note on Infra flexibility:** Infra can represent infrastructure within a single CSP (e.g., cloud migration from on-premise to AWS) or span multiple CSPs simultaneously (e.g., geographic distribution across AWS, Azure, and GCP). In single-CSP scenarios, the unified "Infra" terminology eliminates the ambiguity of the legacy "MCI" term.
+> **Note on Infra flexibility:** Infra can represent infrastructure within a single CSP (e.g., cloud migration from on-premise to AWS) or span multiple CSPs simultaneously (e.g., geographic distribution across AWS, Azure, and GCP).
 
 ## 📊 Status Constants
 
