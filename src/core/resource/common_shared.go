@@ -26,6 +26,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 )
 
@@ -708,14 +709,34 @@ func DeleteSharedResources(nsId string, dryRun bool) (model.ResourceDeleteResult
 				log.Warn().Err(assocErr).Msgf("Failed to check associations for %s '%s'; skipping", resourceType, id)
 				continue
 			}
-			if len(assoc) > 0 {
-				// Still referenced (in use) -> preserve.
+			// Verify if the associated objects actually exist in kvstore.
+			// Stale references from interrupted or deleted Infras must not block shared resource cleanup.
+			var liveAssoc []string
+			var deadAssoc []string
+			for _, key := range assoc {
+				if _, exists, _ := kvstore.Get(key); exists {
+					liveAssoc = append(liveAssoc, key)
+				} else {
+					deadAssoc = append(deadAssoc, key)
+				}
+			}
+			if len(liveAssoc) > 0 {
+				// Still referenced by live resources -> preserve.
+				if len(deadAssoc) > 0 && !dryRun {
+					// Clean up the dead portion in the background
+					_ = BatchRemoveFromAssociatedObjectList(nsId, resourceType, id, deadAssoc)
+				}
 				continue
+			}
+			if len(deadAssoc) > 0 && !dryRun {
+				// All references were dead; prune them to keep metadata clean
+				log.Info().Msgf("Pruning %d dead associations from %s '%s'", len(deadAssoc), resourceType, id)
+				_ = BatchRemoveFromAssociatedObjectList(nsId, resourceType, id, deadAssoc)
 			}
 			if dryRun {
 				output.Results = append(output.Results, model.ResourceDeleteResult{
 					ResourceType: resourceType, ResourceId: id, Success: true,
-					Message: "would be deleted (dry-run): no associated objects",
+					Message: "would be deleted (dry-run): no live associated objects",
 				})
 				continue
 			}
@@ -785,7 +806,6 @@ func FindConnectionsWithSharedResources(nsId string) ([]string, error) {
 	sort.Strings(connections)
 	return connections, nil
 }
-
 
 // isDuplicateCidrError reports a CSP-side CIDR collision (e.g. KT "duplicate network cidr").
 func isDuplicateCidrError(err error) bool {
