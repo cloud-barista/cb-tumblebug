@@ -6946,7 +6946,7 @@ paths:
   /ns/{nsId}/infra/{infraId}/nodeGroupDynamic/{nodeGroupId}:
     put:
       tags:
-      - "[MC-Infra] MCI Provisioning and Management"
+      - "[MC-Infra] Infra Provisioning and Management"
       summary: "Re-create a NodeGroup whose Nodes all failed, with corrected settings"
       description: |-
         Replace a NodeGroup that could not be provisioned, using the same name.
@@ -7389,7 +7389,7 @@ paths:
   /ns/{nsId}/infra/{infraId}/retryFailedNodes:
     post:
       tags:
-      - "[MC-Infra] MCI Provisioning and Management"
+      - "[MC-Infra] Infra Provisioning and Management"
       summary: Retry failed Nodes with their original configuration
       description: |-
         Re-create the retriable failed Nodes of the Infra, one Node at a time.
@@ -7456,7 +7456,7 @@ paths:
   /ns/{nsId}/infra/{infraId}/retryFailedNodesReview:
     post:
       tags:
-      - "[MC-Infra] MCI Provisioning and Management"
+      - "[MC-Infra] Infra Provisioning and Management"
       summary: Review which failed Nodes can be retried
       description: |-
         Classify every failed Node in the Infra and report whether re-creating it can succeed.
