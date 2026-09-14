@@ -378,6 +378,7 @@ VLLM_CMD_ARGS=(
 [ -n "$GPU_UTIL" ] && VLLM_CMD_ARGS+=(--gpu-memory-utilization "$GPU_UTIL")
 [ -n "$CTX_LEN" ]  && VLLM_CMD_ARGS+=(--max-model-len "$CTX_LEN")
 [ -n "$API_KEY" ]  && VLLM_CMD_ARGS+=(--api-key "$API_KEY")
+[ -n "$HF_TOKEN" ] && VLLM_CMD_ARGS+=(--hf-token "$HF_TOKEN")
 # Use every GPU on the VM unless --tp narrows it; a benchmark should reflect the whole VM.
 if [ -z "$TP_SIZE" ]; then
   if [ "$GPU_TYPE" = "nvidia" ]; then

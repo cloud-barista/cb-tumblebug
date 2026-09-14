@@ -44,7 +44,7 @@ import (
 // @Description
 // @Description A zone in the body is ignored: pinning one derives a zone-scoped shared VNet, which
 // @Description would place the new Nodes in a separate VPC from the rest of the Infra.
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

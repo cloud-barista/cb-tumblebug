@@ -132,7 +132,7 @@ func GetSpecDiskOptions(nsId, specId, imageId, osType, view string) (model.SpecD
 		CspSpecName:      spec.CspSpecName,
 		SpecRootDiskType: spec.RootDiskType,
 		SpecRootDiskSize: spec.RootDiskSize,
-		LiveCheckHint:    "Static reference. For live stock per zone, use POST /ns/{nsId}/mci/reviewSpecImagePair with rootDiskType.",
+		LiveCheckHint:    "Static reference. For live stock per zone, use POST /ns/{nsId}/Infra/reviewSpecImagePair with rootDiskType.",
 	}
 	if imageId != "" {
 		img, err := GetImage(nsId, imageId)

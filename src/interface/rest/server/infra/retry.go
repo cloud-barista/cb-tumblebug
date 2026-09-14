@@ -34,7 +34,7 @@ import (
 // @Description request is often accepted minutes later. Failures that retrying cannot fix
 // @Description (account quota, an image the spec rejects, a malformed request) are reported with
 // @Description the reason instead.
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -82,7 +82,7 @@ func RestPostRetryFailedNodesReview(c echo.Context) error {
 // @Description adds one, so the replacement keeps the VPC, security group and key. This is not the
 // @Description zone field of a dynamic provisioning request, which builds a separate zone-scoped
 // @Description VNet.
-// @Tags [MC-Infra] MCI Provisioning and Management
+// @Tags [MC-Infra] Infra Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
