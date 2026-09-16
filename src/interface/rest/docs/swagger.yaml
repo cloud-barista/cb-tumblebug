@@ -19875,6 +19875,10 @@ components:
           type: boolean
           description: Remediate terminates VMs that are alive at the CSP but unknown
             to TB or recorded as Terminated/Failed.
+        remediateTracked:
+          type: boolean
+          description: RemediateTracked also terminates TrackedAlive VMs (used during
+            DelInfra where all VMs of the infra must be gone).
     infra.AuditResidual:
       type: object
       properties:
