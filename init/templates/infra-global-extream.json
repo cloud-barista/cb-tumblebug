@@ -1,0 +1,885 @@
+{
+  "resourceType": "infra",
+  "name": "infra-global-extream",
+  "description": "Global Multi-Cloud Extreme Infra test - 10,000+ VMs across 8 CSPs (AWS, Azure, GCP, Tencent, IBM, Alibaba, NCP, NHN, KT)",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g1-aws-af-south-1",
+        "nodeGroupSize": 128,
+        "specId": "aws+af-south-1+t3.nano",
+        "imageId": "ami-0fca1efd9f11f94e6"
+      },
+      {
+        "name": "g2-aws-ap-east-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+ap-east-1+t3.nano",
+        "imageId": "ami-0228b479ce1349440"
+      },
+      {
+        "name": "g3-aws-ap-northeast-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+ap-northeast-1+t3.nano",
+        "imageId": "ami-0379a1f991c2beceb"
+      },
+      {
+        "name": "g4-aws-ap-northeast-2",
+        "nodeGroupSize": 500,
+        "specId": "aws+ap-northeast-2+t3.nano",
+        "imageId": "ami-0fde5763b4c293a0b"
+      },
+      {
+        "name": "g5-aws-ap-northeast-3",
+        "nodeGroupSize": 128,
+        "specId": "aws+ap-northeast-3+t3.nano",
+        "imageId": "ami-015848aede63207c3"
+      },
+      {
+        "name": "g6-aws-ap-south-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+ap-south-1+t3.nano",
+        "imageId": "ami-03f76f0957a44f4ab"
+      },
+      {
+        "name": "g7-aws-ap-south-2",
+        "nodeGroupSize": 128,
+        "specId": "aws+ap-south-2+t3.nano",
+        "imageId": "ami-0eab39170eb2844c5"
+      },
+      {
+        "name": "g8-aws-ap-southeast-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+ap-southeast-1+t3.nano",
+        "imageId": "ami-0a010a0312b1400ee"
+      },
+      {
+        "name": "g9-aws-ap-southeast-2",
+        "nodeGroupSize": 500,
+        "specId": "aws+ap-southeast-2+t3.nano",
+        "imageId": "ami-0e04e402c10e358ef"
+      },
+      {
+        "name": "g10-aws-ap-southeast-3",
+        "nodeGroupSize": 128,
+        "specId": "aws+ap-southeast-3+t3.nano",
+        "imageId": "ami-090813c1b06f13dba"
+      },
+      {
+        "name": "g11-aws-ap-southeast-4",
+        "nodeGroupSize": 128,
+        "specId": "aws+ap-southeast-4+t3.nano",
+        "imageId": "ami-0236c3015f21b2400"
+      },
+      {
+        "name": "g12-aws-ca-central-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+ca-central-1+t3.nano",
+        "imageId": "ami-0ff4fb44caafc54a6"
+      },
+      {
+        "name": "g13-aws-ca-west-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+ca-west-1+t3.nano",
+        "imageId": "ami-08df2ec5bffef601d"
+      },
+      {
+        "name": "g14-aws-eu-central-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+eu-central-1+t3.nano",
+        "imageId": "ami-0c905937c14bd22b0"
+      },
+      {
+        "name": "g15-aws-eu-central-2",
+        "nodeGroupSize": 500,
+        "specId": "aws+eu-central-2+t3.nano",
+        "imageId": "ami-0fe6ea1b187752116"
+      },
+      {
+        "name": "g16-aws-eu-north-1",
+        "nodeGroupSize": 192,
+        "specId": "aws+eu-north-1+t3.nano",
+        "imageId": "ami-0eed6a7e3bd86ff98"
+      },
+      {
+        "name": "g17-aws-eu-south-1",
+        "nodeGroupSize": 128,
+        "specId": "aws+eu-south-1+t3.nano",
+        "imageId": "ami-0e042949ef871f509"
+      },
+      {
+        "name": "g18-aws-eu-south-2",
+        "nodeGroupSize": 128,
+        "specId": "aws+eu-south-2+t3.nano",
+        "imageId": "ami-02eebc1c66cd54359"
+      },
+      {
+        "name": "g19-aws-eu-west-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+eu-west-1+t3.nano",
+        "imageId": "ami-0ff6ee91812d27971"
+      },
+      {
+        "name": "g20-aws-eu-west-2",
+        "nodeGroupSize": 500,
+        "specId": "aws+eu-west-2+t3.nano",
+        "imageId": "ami-054d71fa8b4a0fd06"
+      },
+      {
+        "name": "g21-aws-eu-west-3",
+        "nodeGroupSize": 500,
+        "specId": "aws+eu-west-3+t3.nano",
+        "imageId": "ami-0e8d619f32b216044"
+      },
+      {
+        "name": "g22-aws-il-central-1",
+        "nodeGroupSize": 128,
+        "specId": "aws+il-central-1+t3.nano",
+        "imageId": "ami-07b9264ffe2d09a8e"
+      },
+      {
+        "name": "g24-aws-sa-east-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+sa-east-1+t3.nano",
+        "imageId": "ami-07a97e8b2b25e67a8"
+      },
+      {
+        "name": "g25-aws-us-east-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+us-east-1+t3.nano",
+        "imageId": "ami-0cf474e33a6362af9"
+      },
+      {
+        "name": "g26-aws-us-east-2",
+        "nodeGroupSize": 500,
+        "specId": "aws+us-east-2+t3.nano",
+        "imageId": "ami-0fe440fddea4f2eae"
+      },
+      {
+        "name": "g27-aws-us-west-1",
+        "nodeGroupSize": 500,
+        "specId": "aws+us-west-1+t3.nano",
+        "imageId": "ami-09091a60cac273afc"
+      },
+      {
+        "name": "g28-aws-us-west-2",
+        "nodeGroupSize": 500,
+        "specId": "aws+us-west-2+t3.nano",
+        "imageId": "ami-0ababc7e5826abb79"
+      },
+      {
+        "name": "g1-azure-australiacentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+australiacentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g2-azure-australiaeast",
+        "nodeGroupSize": 2,
+        "specId": "azure+australiaeast+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g3-azure-australiasoutheast",
+        "nodeGroupSize": 2,
+        "specId": "azure+australiasoutheast+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g4-azure-austriaeast",
+        "nodeGroupSize": 2,
+        "specId": "azure+austriaeast+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g5-azure-brazilsouth",
+        "nodeGroupSize": 2,
+        "specId": "azure+brazilsouth+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g6-azure-canadacentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+canadacentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g7-azure-canadaeast",
+        "nodeGroupSize": 2,
+        "specId": "azure+canadaeast+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g8-azure-centralindia",
+        "nodeGroupSize": 2,
+        "specId": "azure+centralindia+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g9-azure-centralus",
+        "nodeGroupSize": 2,
+        "specId": "azure+centralus+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g10-azure-chilecentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+chilecentral+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g11-azure-eastasia",
+        "nodeGroupSize": 2,
+        "specId": "azure+eastasia+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g12-azure-eastus",
+        "nodeGroupSize": 2,
+        "specId": "azure+eastus+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g13-azure-eastus2",
+        "nodeGroupSize": 2,
+        "specId": "azure+eastus2+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g14-azure-francecentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+francecentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g15-azure-germanywestcentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+germanywestcentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g17-azure-israelcentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+israelcentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g18-azure-italynorth",
+        "nodeGroupSize": 2,
+        "specId": "azure+italynorth+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g22-azure-koreasouth",
+        "nodeGroupSize": 2,
+        "specId": "azure+koreasouth+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g23-azure-malaysiawest",
+        "nodeGroupSize": 2,
+        "specId": "azure+malaysiawest+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g24-azure-mexicocentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+mexicocentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g26-azure-northcentralus",
+        "nodeGroupSize": 2,
+        "specId": "azure+northcentralus+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g27-azure-northeurope",
+        "nodeGroupSize": 2,
+        "specId": "azure+northeurope+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g28-azure-norwayeast",
+        "nodeGroupSize": 2,
+        "specId": "azure+norwayeast+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g29-azure-polandcentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+polandcentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g30-azure-qatarcentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+qatarcentral+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g31-azure-southafricanorth",
+        "nodeGroupSize": 2,
+        "specId": "azure+southafricanorth+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g32-azure-southcentralus",
+        "nodeGroupSize": 2,
+        "specId": "azure+southcentralus+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g34-azure-southindia",
+        "nodeGroupSize": 2,
+        "specId": "azure+southindia+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g35-azure-spaincentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+spaincentral+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g36-azure-swedencentral",
+        "nodeGroupSize": 2,
+        "specId": "azure+swedencentral+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g37-azure-switzerlandnorth",
+        "nodeGroupSize": 2,
+        "specId": "azure+switzerlandnorth+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g38-azure-uaenorth",
+        "nodeGroupSize": 2,
+        "specId": "azure+uaenorth+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g40-azure-ukwest",
+        "nodeGroupSize": 2,
+        "specId": "azure+ukwest+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290"
+      },
+      {
+        "name": "g41-azure-westcentralus",
+        "nodeGroupSize": 2,
+        "specId": "azure+westcentralus+standard_b1ls",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202608060"
+      },
+      {
+        "name": "g42-azure-westeurope",
+        "nodeGroupSize": 2,
+        "specId": "azure+westeurope+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g44-azure-westus",
+        "nodeGroupSize": 2,
+        "specId": "azure+westus+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g46-azure-westus3",
+        "nodeGroupSize": 2,
+        "specId": "azure+westus3+standard_b1ls",
+        "imageId": "Canonical:ubuntu-22_04-lts:server:22.04.202608060"
+      },
+      {
+        "name": "g1-gcp-africa-south1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+africa-south1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g2-gcp-asia-east1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-east1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g3-gcp-asia-east2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-east2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g4-gcp-asia-northeast1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-northeast1+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g5-gcp-asia-northeast2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-northeast2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g6-gcp-asia-northeast3",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-northeast3+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g7-gcp-asia-south1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-south1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g8-gcp-asia-south2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-south2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g9-gcp-asia-southeast1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-southeast1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g10-gcp-asia-southeast2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+asia-southeast2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g11-gcp-australia-southeast1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+australia-southeast1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g12-gcp-australia-southeast2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+australia-southeast2+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g13-gcp-europe-central2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-central2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g14-gcp-europe-north1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-north1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g15-gcp-europe-north2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-north2+e2-highcpu-2",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g16-gcp-europe-southwest1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-southwest1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g17-gcp-europe-west1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g18-gcp-europe-west10",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west10+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g19-gcp-europe-west12",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west12+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g20-gcp-europe-west2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g21-gcp-europe-west3",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west3+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g22-gcp-europe-west4",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west4+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g23-gcp-europe-west6",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west6+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g24-gcp-europe-west8",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west8+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g25-gcp-europe-west9",
+        "nodeGroupSize": 2,
+        "specId": "gcp+europe-west9+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g26-gcp-me-central1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+me-central1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g27-gcp-me-central2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+me-central2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g28-gcp-me-west1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+me-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g29-gcp-northamerica-northeast1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+northamerica-northeast1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g30-gcp-northamerica-northeast2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+northamerica-northeast2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g31-gcp-northamerica-south1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+northamerica-south1+e2-highcpu-2",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g32-gcp-southamerica-east1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+southamerica-east1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g33-gcp-southamerica-west1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+southamerica-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g34-gcp-us-central1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-central1+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g35-gcp-us-east1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-east1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g36-gcp-us-east4",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-east4+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g38-gcp-us-south1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-south1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g39-gcp-us-west1",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-west1+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g40-gcp-us-west2",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-west2+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g41-gcp-us-west3",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-west3+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g42-gcp-us-west4",
+        "nodeGroupSize": 2,
+        "specId": "gcp+us-west4+t2d-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820"
+      },
+      {
+        "name": "g1-tencent-ap-bangkok",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-bangkok+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g2-tencent-ap-beijing",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-beijing+s5.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g3-tencent-ap-chengdu",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-chengdu+bf1.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g5-tencent-ap-guangzhou",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-guangzhou+sa9.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g6-tencent-ap-hongkong",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-hongkong+sa2.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g7-tencent-ap-jakarta",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-jakarta+bf1.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g8-tencent-ap-nanjing",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-nanjing+sa2.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g9-tencent-ap-seoul",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-seoul+sa2.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g10-tencent-ap-shanghai",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-shanghai+s5.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g11-tencent-ap-singapore",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-singapore+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g12-tencent-ap-tokyo",
+        "nodeGroupSize": 2,
+        "specId": "tencent+ap-tokyo+s5.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g13-tencent-eu-frankfurt",
+        "nodeGroupSize": 2,
+        "specId": "tencent+eu-frankfurt+s5.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g14-tencent-na-ashburn",
+        "nodeGroupSize": 2,
+        "specId": "tencent+na-ashburn+bf1.medium2",
+        "imageId": "img-487zeit5"
+      },
+      {
+        "name": "g15-tencent-na-siliconvalley",
+        "nodeGroupSize": 2,
+        "specId": "tencent+na-siliconvalley+bf1.medium2",
+        "imageId": "img-7rotv4ux"
+      },
+      {
+        "name": "g1-ibm-au-syd",
+        "nodeGroupSize": 2,
+        "specId": "ibm+au-syd+nxf-2x1",
+        "imageId": "r026-b879575b-8209-4e6a-a46e-0e01adf56aaf"
+      },
+      {
+        "name": "g2-ibm-br-sao",
+        "nodeGroupSize": 2,
+        "specId": "ibm+br-sao+nxf-2x1",
+        "imageId": "r042-f36f14d7-e44f-42da-b5d8-7da0318b21e6"
+      },
+      {
+        "name": "g3-ibm-ca-mon",
+        "nodeGroupSize": 2,
+        "specId": "ibm+ca-mon+nxf-2x1",
+        "imageId": "r058-db393538-5f96-4dfd-8787-2880f7fd57c9"
+      },
+      {
+        "name": "g4-ibm-ca-tor",
+        "nodeGroupSize": 2,
+        "specId": "ibm+ca-tor+nxf-2x1",
+        "imageId": "r038-023d738d-8f47-4af2-9041-de843170104c"
+      },
+      {
+        "name": "g5-ibm-eu-de",
+        "nodeGroupSize": 2,
+        "specId": "ibm+eu-de+nxf-2x1",
+        "imageId": "r010-1861cdc6-be06-4d69-bdaa-3b26777b7900"
+      },
+      {
+        "name": "g6-ibm-eu-es",
+        "nodeGroupSize": 2,
+        "specId": "ibm+eu-es+nxf-2x1",
+        "imageId": "r050-31db9e7b-bb45-419a-8b1e-33058dffcd3e"
+      },
+      {
+        "name": "g7-ibm-eu-gb",
+        "nodeGroupSize": 2,
+        "specId": "ibm+eu-gb+nxf-2x1",
+        "imageId": "r018-68376cdc-433f-418e-9c3c-2f13d6e57a73"
+      },
+      {
+        "name": "g8-ibm-jp-osa",
+        "nodeGroupSize": 2,
+        "specId": "ibm+jp-osa+nxf-2x1",
+        "imageId": "r034-8ac504c3-af7c-4def-9731-491910196565"
+      },
+      {
+        "name": "g9-ibm-jp-tok",
+        "nodeGroupSize": 2,
+        "specId": "ibm+jp-tok+nxf-2x1",
+        "imageId": "r022-f1f5d21f-f498-45c2-8bb6-ce5cf0709bd0"
+      },
+      {
+        "name": "g10-ibm-us-east",
+        "nodeGroupSize": 2,
+        "specId": "ibm+us-east+nxf-2x1",
+        "imageId": "r014-13be14d6-99f8-4a41-b3c1-80cfcc7c7943"
+      },
+      {
+        "name": "g11-ibm-us-south",
+        "nodeGroupSize": 2,
+        "specId": "ibm+us-south+nxf-2x1",
+        "imageId": "r006-23020f83-9547-4501-a96a-a28b96671308"
+      },
+      {
+        "name": "g1-alibaba-ap-northeast-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+ap-northeast-1+ecs.e-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g15-alibaba-cn-huhehaote",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+cn-huhehaote+ecs.t6-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g20-alibaba-cn-wulanchabu",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+cn-wulanchabu+ecs.t6-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g21-alibaba-eu-central-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+eu-central-1+ecs.e-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g22-alibaba-eu-west-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+eu-west-1+ecs.e-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g24-alibaba-me-east-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+me-east-1+ecs.mn4.small",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g25-alibaba-na-south-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+na-south-1+ecs.c9i.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g26-alibaba-us-east-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+us-east-1+ecs.e-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g27-alibaba-us-west-1",
+        "nodeGroupSize": 2,
+        "specId": "alibaba+us-west-1+ecs.t6-c4m1.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
+      },
+      {
+        "name": "g1-ncp-jpn",
+        "nodeGroupSize": 2,
+        "specId": "ncp+jpn+c2-g3a",
+        "imageId": "22224744"
+      },
+      {
+        "name": "g2-ncp-kr",
+        "nodeGroupSize": 2,
+        "specId": "ncp+kr+s2-g3a",
+        "imageId": "23214590"
+      },
+      {
+        "name": "g3-ncp-sgn",
+        "nodeGroupSize": 2,
+        "specId": "ncp+sgn+c2-g3",
+        "imageId": "23037369"
+      },
+      {
+        "name": "g1-nhn-jp1",
+        "nodeGroupSize": 2,
+        "specId": "nhn+jp1+t2.c1m1",
+        "imageId": "614f1e49-ef03-45f0-b476-76b07bdd91f0"
+      },
+      {
+        "name": "g2-nhn-kr1",
+        "nodeGroupSize": 2,
+        "specId": "nhn+kr1+t2.c1m1",
+        "imageId": "0f07c795-2a46-44fc-a61b-fa0d96763ce2"
+      },
+      {
+        "name": "g3-nhn-kr2",
+        "nodeGroupSize": 2,
+        "specId": "nhn+kr2+t2.c1m1",
+        "imageId": "8fab9909-617f-4bf4-8cd7-38bfc27a0129"
+      },
+      {
+        "name": "g1-kt-kr1",
+        "nodeGroupSize": 2,
+        "specId": "kt+kr1+1x1.itl",
+        "imageId": "3556e626-a174-448d-a53e-c1ab6e26d559"
+      }
+    ]
+  }
+}

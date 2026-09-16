@@ -17,12 +17,6 @@
         "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
       },
       {
-        "name": "g19-alibaba-cn-wuhan-lr",
-        "nodeGroupSize": 1,
-        "specId": "alibaba+cn-wuhan-lr+ecs.c9i.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd"
-      },
-      {
         "name": "g20-alibaba-cn-wulanchabu",
         "nodeGroupSize": 1,
         "specId": "alibaba+cn-wulanchabu+ecs.t6-c4m1.large",

@@ -62,10 +62,9 @@ func isQuotaOrCapacityError(err error) bool {
 		"operationnotallowed",
 		"ratelimitexceeded",
 		"operationdenied",
-		"사용 가능한 공인 ip가 없습니다",         // KT: 422 with a Korean title.
-		"no available public ip",     // NHN: 500 "Failed to Create Public IP
-		"failed to create public ip", // NCP: server creation limit reached
-		"creation limit",
+		"사용 가능한 공인 ip가 없습니다",     // KT: 422 with a Korean title.
+		"no available public ip", // NHN: 500 "Failed to Create Public IP: no available public ip"
+		"creation limit",         // NCP: server creation limit reached
 	} {
 		if strings.Contains(msg, pattern) {
 			return true
