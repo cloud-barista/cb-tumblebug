@@ -44,6 +44,8 @@ import (
 type AuditOptions struct {
 	// Remediate terminates VMs that are alive at the CSP but unknown to TB or recorded as Terminated/Failed.
 	Remediate bool `json:"remediate"`
+	// RemediateTracked also terminates TrackedAlive VMs (used during DelInfra where all VMs of the infra must be gone).
+	RemediateTracked bool `json:"remediateTracked,omitempty"`
 	// CleanResiduals: "" | "none" (report only), "attributed" (delete residuals named after this infra's nodes), "all" (also unnamed ones).
 	CleanResiduals string `json:"cleanResiduals"`
 }
@@ -318,13 +320,19 @@ func auditConnection(connName string, nodes []model.NodeInfo, scope *auditScope,
 		}
 	}
 
-	if opts.Remediate && (len(res.GhostAlive) > 0 || len(res.UntrackedAlive) > 0) {
+	var targets []AuditVM
+	targets = append(targets, res.GhostAlive...)
+	targets = append(targets, res.UntrackedAlive...)
+	if opts.RemediateTracked {
+		targets = append(targets, res.TrackedAlive...)
+	}
+
+	if opts.Remediate && len(targets) > 0 {
 		terminateRegion := res.Region
 		if res.Provider == csptypes.KT && res.Zone != "" {
 			terminateRegion = res.Zone
 		}
 		term, ok := cspdirect.GetRemediationTerminateHandler(res.Provider)
-		targets := append(res.GhostAlive, res.UntrackedAlive...)
 		ids := make([]string, 0, len(targets))
 		for _, t := range targets {
 			ids = append(ids, t.CspResourceId)
@@ -355,6 +363,9 @@ func auditConnection(connName string, nodes []model.NodeInfo, scope *auditScope,
 		}
 		apply(res.GhostAlive)
 		apply(res.UntrackedAlive)
+		if opts.RemediateTracked {
+			apply(res.TrackedAlive)
+		}
 	}
 
 	mode := strings.ToLower(opts.CleanResiduals)
@@ -419,7 +430,7 @@ func runAudit(scope *auditScope, connNames []string, opts AuditOptions, result *
 		if len(r.GhostAlive) > 0 || len(r.UntrackedAlive) > 0 {
 			clean = false
 		}
-		for _, v := range append(r.GhostAlive, r.UntrackedAlive...) {
+		for _, v := range append(append(r.GhostAlive, r.UntrackedAlive...), r.TrackedAlive...) {
 			if v.Action == "terminate-requested" {
 				s.TerminateRequested++
 			}
@@ -507,7 +518,10 @@ func guardOrphansBeforeDelete(nsId, infraId, option string) error {
 		return nil
 	}
 	remediate := strings.EqualFold(option, model.ActionTerminate)
-	opts := AuditOptions{Remediate: remediate}
+	opts := AuditOptions{
+		Remediate:        remediate,
+		RemediateTracked: remediate,
+	}
 	if remediate {
 		opts.CleanResiduals = "attributed"
 	}
@@ -516,13 +530,13 @@ func guardOrphansBeforeDelete(nsId, infraId, option string) error {
 		log.Warn().Err(err).Msgf("[DelInfra] audit failed for %s/%s; proceeding without CSP verification", nsId, infraId)
 		return nil
 	}
-	alive := res.Summary.GhostAlive + res.Summary.UntrackedAlive
+	alive := res.Summary.TrackedAlive + res.Summary.GhostAlive + res.Summary.UntrackedAlive
 	if alive == 0 {
 		return nil
 	}
 	if !remediate {
-		return fmt.Errorf("infra %s still has %d VM(s) alive at the CSP (ghost=%d, untracked=%d); use option=terminate to terminate them directly, or option=force to drop records anyway",
-			infraId, alive, res.Summary.GhostAlive, res.Summary.UntrackedAlive)
+		return fmt.Errorf("infra %s still has %d VM(s) alive at the CSP (tracked=%d, ghost=%d, untracked=%d); use option=terminate to terminate them directly, or option=force to drop records anyway",
+			infraId, alive, res.Summary.TrackedAlive, res.Summary.GhostAlive, res.Summary.UntrackedAlive)
 	}
 	deadline := time.Now().Add(deleteGuardWait)
 	for time.Now().Before(deadline) {
@@ -531,7 +545,7 @@ func guardOrphansBeforeDelete(nsId, infraId, option string) error {
 		if err != nil {
 			continue
 		}
-		if chk.Summary.GhostAlive+chk.Summary.UntrackedAlive == 0 {
+		if chk.Summary.TrackedAlive+chk.Summary.GhostAlive+chk.Summary.UntrackedAlive == 0 {
 			log.Info().Msgf("[DelInfra] %s/%s: remediated %d VM(s) at the CSP before deletion", nsId, infraId, alive)
 			if _, cerr := AuditInfra(nsId, infraId, AuditOptions{CleanResiduals: "attributed"}); cerr != nil {
 				log.Warn().Err(cerr).Msg("[DelInfra] residual cleanup after remediation failed")
@@ -539,7 +553,8 @@ func guardOrphansBeforeDelete(nsId, infraId, option string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("infra %s: %d VM(s) still alive at the CSP after direct terminate; retry deletion later once the CSP finishes terminating them. Do NOT use option=force while VMs are alive — it drops the CB-TB records but leaves the VMs running and billing as orphans", infraId, alive)
+	return fmt.Errorf("infra %s: %d VM(s) still alive at the CSP (tracked=%d, ghost=%d, untracked=%d) after direct terminate; retry deletion later once the CSP finishes terminating them. Do NOT use option=force while VMs are alive — it drops the CB-TB records but leaves the VMs running and billing as orphans",
+		infraId, alive, res.Summary.TrackedAlive, res.Summary.GhostAlive, res.Summary.UntrackedAlive)
 }
 
 // eligibleForAllMode limits cleanResiduals=all to unnamed VM-adjacent leftovers (IPs, NICs, disks).
