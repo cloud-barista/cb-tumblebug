@@ -273,9 +273,14 @@ func ListNodeByFilter(nsId string, infraId string, filterKey string, filterVal s
 	return groupNodeList, nil
 }
 
-// ListNodeByNodeGroup is func to get Node list with a NodeGroup label in a specified Infra
+// ListNodeByNodeGroup is func to get Node list with a NodeGroup label in a specified Infra.
+// It directly reads the NodeGroup record in O(1) instead of scanning all nodes in the Infra.
 func ListNodeByNodeGroup(nsId string, infraId string, groupId string) ([]string, error) {
-	// NodeGroupId is the Key for NodeGroupId in model.NodeInfo struct
+	ng, err := GetNodeGroup(nsId, infraId, groupId)
+	if err == nil && len(ng.NodeId) > 0 {
+		return ng.NodeId, nil
+	}
+	// Fallback to filter if NodeGroup record doesn't exist (e.g. unrecorded group)
 	filterKey := "NodeGroupId"
 	return ListNodeByFilter(nsId, infraId, filterKey, groupId)
 }
@@ -436,14 +441,41 @@ func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfoSummary, er
 		summary.StatusCount = status.StatusCount
 	}
 
+	nodeIds, _ := ListNodeId(nsId, infraId)
+	nodeIdSet := make(map[string]struct{}, len(nodeIds))
+	for _, id := range nodeIds {
+		nodeIdSet[id] = struct{}{}
+	}
+
 	var nodes []model.NodeSummary
 	for _, e := range globalStatusStore.Snapshot() {
 		if e.NsId == nsId && e.InfraId == infraId {
-			nodes = append(nodes, nodeSummaryFromEntry(e))
+			if len(nodeIdSet) > 0 {
+				if _, exists := nodeIdSet[e.NodeId]; exists {
+					nodes = append(nodes, nodeSummaryFromEntry(e))
+				} else {
+					// Node no longer exists in etcd; prune orphan entry from memory store
+					globalStatusStore.Delete(nsId, infraId, e.NodeId)
+				}
+			} else {
+				nodes = append(nodes, nodeSummaryFromEntry(e))
+			}
 		}
 	}
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Id < nodes[j].Id })
 	summary.Node = nodes
+
+	// Populate NodeGroup hierarchy in brief view
+	if nodeGroupIds, err := ListNodeGroupId(nsId, infraId); err == nil && len(nodeGroupIds) > 0 {
+		nodeGroups := make([]model.NodeGroupInfo, 0, len(nodeGroupIds))
+		for _, gid := range nodeGroupIds {
+			if ng, ngErr := GetNodeGroup(nsId, infraId, gid); ngErr == nil {
+				nodeGroups = append(nodeGroups, ng)
+			}
+		}
+		summary.NodeGroup = nodeGroups
+	}
+
 	return &summary, nil
 }
 
@@ -495,14 +527,13 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 		}
 	}
 
-	// add label info for Node
+	// add label info for Node (only if not already loaded)
 	for i := range infraObj.Node {
-		labelInfo, err := label.GetLabels(model.StrNode, infraObj.Node[i].Uid)
-		if err != nil {
-			log.Error().Err(err).Msg("Cannot get the label info")
-			return nil, err
+		if len(infraObj.Node[i].Label) == 0 && infraObj.Node[i].Uid != "" {
+			if labelInfo, err := label.GetLabels(model.StrNode, infraObj.Node[i].Uid); err == nil {
+				infraObj.Node[i].Label = labelInfo.Labels
+			}
 		}
-		infraObj.Node[i].Label = labelInfo.Labels
 	}
 
 	// add label info
@@ -513,8 +544,65 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 	}
 	infraObj.Label = labelInfo.Labels
 
+	// Populate NodeGroup hierarchy
+	if nodeGroupIds, err := ListNodeGroupId(nsId, infraId); err == nil && len(nodeGroupIds) > 0 {
+		nodeGroups := make([]model.NodeGroupInfo, 0, len(nodeGroupIds))
+		nodeMapByGroup := make(map[string][]model.CompactNodeInfo)
+		rawNodeMap := make(map[string]*model.NodeInfo)
+		for i := range infraObj.Node {
+			nd := &infraObj.Node[i]
+			if nd.NodeGroupId != "" {
+				nodeMapByGroup[nd.NodeGroupId] = append(nodeMapByGroup[nd.NodeGroupId], ToCompactNodeInfo(*nd))
+				if _, ok := rawNodeMap[nd.NodeGroupId]; !ok {
+					rawNodeMap[nd.NodeGroupId] = nd
+				}
+			}
+		}
+		for _, gid := range nodeGroupIds {
+			if ng, ngErr := GetNodeGroup(nsId, infraId, gid); ngErr == nil {
+				// If pre-existing NodeGroup lacks blueprint metadata, backfill from member nodes
+				if ng.ConnectionName == "" && rawNodeMap[gid] != nil {
+					first := rawNodeMap[gid]
+					ng.ConnectionName = first.ConnectionName
+					ng.ConnectionConfig = first.ConnectionConfig
+					ng.Region = first.Region
+					ng.Location = first.Location
+					ng.SpecId = first.SpecId
+					ng.CspSpecName = first.CspSpecName
+					ng.Spec = first.Spec
+					ng.ImageId = first.ImageId
+					ng.CspImageName = first.CspImageName
+					ng.Image = first.Image
+					ng.VNetId = first.VNetId
+					ng.CspVNetId = first.CspVNetId
+					ng.SubnetId = first.SubnetId
+					ng.CspSubnetId = first.CspSubnetId
+					ng.NetworkInterface = first.NetworkInterface
+					ng.SecurityGroupIds = first.SecurityGroupIds
+					ng.SshKeyId = first.SshKeyId
+					ng.CspSshKeyId = first.CspSshKeyId
+					ng.SSHPort = first.SSHPort
+					ng.NodeUserName = first.NodeUserName
+					ng.RootDiskType = first.RootDiskType
+					ng.RootDiskSize = first.RootDiskSize
+					ng.RootDeviceName = first.RootDeviceName
+				}
+				ng.Nodes = nodeMapByGroup[gid]
+				nodeGroups = append(nodeGroups, ng)
+			}
+		}
+		infraObj.NodeGroup = nodeGroups
+	}
+
 	// add implicit cluster view synthesized from already-loaded Nodes
 	infraObj.Cluster = buildImplicitClusterInfoFromNodes(infraId, infraObj.Node)
+
+	// If NodeGroups are present, omit top-level infraObj.Node to avoid duplicating
+	// tens of thousands of full NodeInfo objects in the payload (~90% payload reduction).
+	// Individual node queries (GetNodeObject) continue to return fully hydrated nodes.
+	if len(infraObj.NodeGroup) > 0 {
+		infraObj.Node = nil
+	}
 
 	return &infraObj, nil
 }
@@ -541,6 +629,40 @@ func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.In
 	infraInfo, err := GetInfraInfo(nsId, infraId)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(infraInfo.NodeGroup) > 0 {
+		var nodeGroups []model.CreateNodeGroupDynamicReq
+		for _, ng := range infraInfo.NodeGroup {
+			size := len(ng.Nodes)
+			if size == 0 {
+				size = ng.NodeGroupSize
+			}
+			sg := model.CreateNodeGroupDynamicReq{
+				Name:           ng.Id,
+				NodeGroupSize:  size,
+				Label:          filterOutSystemLabels(ng.Label),
+				Description:    ng.Description,
+				ConnectionName: ng.ConnectionName,
+				SpecId:         ng.SpecId,
+				ImageId:        ng.ImageId,
+				RootDiskType:   ng.RootDiskType,
+				RootDiskSize:   ng.RootDiskSize,
+				Zone:           ng.Region.Zone,
+			}
+			nodeGroups = append(nodeGroups, sg)
+		}
+
+		infraDynamicReq := &model.InfraDynamicReq{
+			Name:            infraInfo.Name,
+			InstallMonAgent: infraInfo.InstallMonAgent,
+			Label:           filterOutSystemLabels(infraInfo.Label),
+			SystemLabel:     infraInfo.SystemLabel,
+			Description:     infraInfo.Description,
+			NodeGroups:      nodeGroups,
+			PostCommands:    infraInfo.PostCommands,
+		}
+		return infraDynamicReq, nil
 	}
 
 	if len(infraInfo.Node) == 0 {
@@ -670,9 +792,15 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 			var wg sync.WaitGroup
 			chanResults := make(chan model.InfraNodeAccessInfo)
 
+			// Pre-load parent NodeGroup for hydration
+			var groupNgMap map[string]model.NodeGroupInfo
+			if ng, gErr := GetNodeGroup(nsId, infraId, groupId); gErr == nil {
+				groupNgMap = map[string]model.NodeGroupInfo{groupId: ng}
+			}
+
 			for _, nodeId := range nodeList {
 				// Check if Node is terminated before processing
-				nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
+				nodeObject, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, groupNgMap)
 				if err != nil {
 					log.Debug().Err(err).Msgf("Failed to get VM object for %s, skipping", nodeId)
 					continue
@@ -703,7 +831,7 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 					}
 					nodeAccessInfo.NodeId = nodeId
 
-					nodeObject, err := GetNodeObject(nsId, infraId, nodeId)
+					nodeObject, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, groupNgMap)
 					if err != nil {
 						log.Info().Err(err).Msg("")
 					} else {
@@ -869,29 +997,26 @@ func ListInfraNodeInfo(nsId string, infraId string) ([]model.NodeInfo, error) {
 		return []model.NodeInfo{}, nil
 	}
 
-	// Use parallel processing for better performance when dealing with multiple Nodes
+	// Pre-load all NodeGroups for this infra in 1 pass to avoid N+1 queries
+	ngMap := LoadInfraNodeGroupMap(nsId, infraId)
+
+	// Use bounded parallel processing for better performance when dealing with multiple Nodes
 	var wg sync.WaitGroup
 	chanResults := make(chan model.NodeInfo, len(nodeIdList))
+	sem := make(chan struct{}, 64)
 
-	// Process each Node in parallel, with existence validation
+	// Process each Node in parallel
 	for _, nodeId := range nodeIdList {
 		wg.Add(1)
+		sem <- struct{}{}
 		go func(nodeId string) {
 			defer wg.Done()
+			defer func() { <-sem }()
 
-			// Check if Node exists first to avoid race conditions during deletion
-			nodeKey := common.GenInfraKey(nsId, infraId, nodeId)
-			_, exists, err := kvstore.GetKv(nodeKey)
-			if err != nil || !exists {
+			nodeInfo, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, ngMap)
+			if err != nil {
 				// Node might be deleted by concurrent operations (e.g., DelInfra)
 				// This is normal during Infra deletion process, so use Debug level
-				log.Debug().Msgf("VM object not found for nodeId: %s (possibly deleted concurrently)", nodeId)
-				return // Skip this Node
-			}
-
-			nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
-			if err != nil {
-				// Secondary check - Node might have been deleted between existence check and retrieval
 				log.Debug().Err(err).Msgf("VM object retrieval failed for nodeId: %s (possibly deleted concurrently)", nodeId)
 				return // Skip this Node
 			}
@@ -944,8 +1069,33 @@ func GetInfraObject(nsId string, infraId string) (model.InfraInfo, bool, error) 
 	return infraTmp, true, nil
 }
 
-// GetNodeObject is func to get Node object
-func GetNodeObject(nsId string, infraId string, nodeId string) (model.NodeInfo, error) {
+// HydrateNodeInfo projects common blueprint fields from parent NodeGroup into a NodeInfo.
+func HydrateNodeInfo(node *model.NodeInfo, ng *model.NodeGroupInfo) {
+	model.HydrateNodeInfo(node, ng)
+}
+
+// ToCompactNodeInfo extracts instance-specific fields from NodeInfo.
+func ToCompactNodeInfo(node model.NodeInfo) model.CompactNodeInfo {
+	return model.ToCompactNodeInfo(node)
+}
+
+// LoadInfraNodeGroupMap loads all NodeGroups of an infra into a map[nodeGroupId]NodeGroupInfo in a single pass.
+func LoadInfraNodeGroupMap(nsId, infraId string) map[string]model.NodeGroupInfo {
+	ngMap := make(map[string]model.NodeGroupInfo)
+	ngIds, err := ListNodeGroupId(nsId, infraId)
+	if err != nil {
+		return ngMap
+	}
+	for _, ngId := range ngIds {
+		if ng, err := GetNodeGroup(nsId, infraId, ngId); err == nil {
+			ngMap[ngId] = ng
+		}
+	}
+	return ngMap
+}
+
+// GetNodeObjectWithNodeGroups is func to get Node object and hydrate blueprint fields from preloaded NodeGroups
+func GetNodeObjectWithNodeGroups(nsId string, infraId string, nodeId string, ngMap map[string]model.NodeGroupInfo) (model.NodeInfo, error) {
 
 	nodeTmp := model.NodeInfo{}
 	key := common.GenInfraKey(nsId, infraId, nodeId)
@@ -965,7 +1115,26 @@ func GetNodeObject(nsId string, infraId string, nodeId string) (model.NodeInfo, 
 		log.Error().Err(err).Msg("")
 		return model.NodeInfo{}, err
 	}
+
+	// Hydrate blueprint fields from parent NodeGroup if nodeGroupId is set
+	if nodeTmp.NodeGroupId != "" {
+		if ngMap != nil {
+			if ng, ok := ngMap[nodeTmp.NodeGroupId]; ok {
+				HydrateNodeInfo(&nodeTmp, &ng)
+			}
+		} else {
+			if ng, ngErr := GetNodeGroup(nsId, infraId, nodeTmp.NodeGroupId); ngErr == nil {
+				HydrateNodeInfo(&nodeTmp, &ng)
+			}
+		}
+	}
+
 	return nodeTmp, nil
+}
+
+// GetNodeObject is func to get Node object
+func GetNodeObject(nsId string, infraId string, nodeId string) (model.NodeInfo, error) {
+	return GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, nil)
 }
 
 // [Update Infra and Node object]
@@ -1214,6 +1383,9 @@ func describePotentialOrphans(infraInfo *model.InfraInfo) string {
 func DelInfra(nsId string, infraId string, option string) (model.IdList, error) {
 
 	option = common.ToLower(option)
+	if option == "" {
+		option = model.ActionTerminate
+	}
 	deletedResources := model.IdList{}
 	deleteStatus := "[Done] "
 
@@ -1356,15 +1528,19 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	}
 
 	// Step 1: fetch all node infos in parallel
+	ngMap := LoadInfraNodeGroupMap(nsId, infraId)
 	entries := make([]nodeEntry, len(nodeList))
 	fetchErrs := make([]error, len(nodeList))
 	var fetchWg sync.WaitGroup
+	fetchSem := make(chan struct{}, 64)
 	for i, v := range nodeList {
 		fetchWg.Add(1)
+		fetchSem <- struct{}{}
 		go func(i int, v string) {
 			defer fetchWg.Done()
+			defer func() { <-fetchSem }()
 			nodeKey := common.GenInfraKey(nsId, infraId, v)
-			nodeInfo, err := GetNodeObject(nsId, infraId, v)
+			nodeInfo, err := GetNodeObjectWithNodeGroups(nsId, infraId, v, ngMap)
 			entries[i] = nodeEntry{id: v, key: nodeKey, info: nodeInfo}
 			fetchErrs[i] = err
 		}(i, v)
@@ -1527,6 +1703,177 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 	return deletedResources, nil
 }
 
+// BatchDeleteInfraNodes deletes multiple nodes belonging to an Infra efficiently:
+// 1. Concurrently terminates live CSP resources (if !force and cspResourceName is non-empty)
+// 2. Deletes node KV records, status store entries, details, and labels in parallel
+// 3. Updates affected NodeGroup records once per group (deleting empty NodeGroups)
+// 4. Batch-removes node associations from VNet, SG, SSHKey, Image in a single RMW per resource
+func BatchDeleteInfraNodes(nsId string, infraId string, nodeIds []string, force bool) (int, error) {
+	if len(nodeIds) == 0 {
+		return 0, nil
+	}
+
+	type nodeDeleteEntry struct {
+		id      string
+		info    model.NodeInfo
+		hasInfo bool
+		softDel bool
+	}
+
+	entries := make([]nodeDeleteEntry, 0, len(nodeIds))
+	var orphanCandidates []orphanCandidate
+	for _, id := range nodeIds {
+		info, err := GetNodeObject(nsId, infraId, id)
+		hasInfo := (err == nil)
+		soft := (!force && hasInfo && info.CspResourceName != "")
+		if !force && hasInfo && info.CspResourceName == "" && info.Uid != "" && info.ConnectionName != "" {
+			orphanCandidates = append(orphanCandidates, orphanCandidate{
+				NodeId:         id,
+				Uid:            info.Uid,
+				ConnectionName: info.ConnectionName,
+			})
+		}
+		entries = append(entries, nodeDeleteEntry{
+			id:      id,
+			info:    info,
+			hasInfo: hasInfo,
+			softDel: soft,
+		})
+	}
+
+	// Rescue orphan nodes whose CspResourceName was empty before deleting them
+	if len(orphanCandidates) > 0 {
+		log.Info().Int("candidates", len(orphanCandidates)).Msg("BatchDeleteInfraNodes: checking CSP for orphan nodes with empty CspResourceName")
+		rescued, _ := rescueOrphanNodes(nsId, infraId, orphanCandidates)
+		if len(rescued) > 0 {
+			log.Info().Int("rescued", len(rescued)).Msg("BatchDeleteInfraNodes: successfully rescued orphan nodes; marking for termination")
+			rescuedSet := make(map[string]bool, len(rescued))
+			for _, r := range rescued {
+				rescuedSet[r] = true
+			}
+			for i := range entries {
+				if rescuedSet[entries[i].id] {
+					if refreshed, err := GetNodeObject(nsId, infraId, entries[i].id); err == nil {
+						entries[i].info = refreshed
+						entries[i].softDel = true
+					}
+				}
+			}
+		}
+	}
+
+	// Step 1: Concurrently terminate CSP VMs for soft deletes (bounded concurrency: 10)
+	var softWg sync.WaitGroup
+	softSem := make(chan struct{}, 10)
+	for _, e := range entries {
+		if !e.softDel {
+			continue
+		}
+		softWg.Add(1)
+		softSem <- struct{}{}
+		go func(e nodeDeleteEntry) {
+			defer softWg.Done()
+			defer func() { <-softSem }()
+			_, _ = HandleInfraNodeAction(nsId, infraId, e.id, model.ActionTerminate, false)
+		}(e)
+	}
+	softWg.Wait()
+
+	// Step 2: Delete node keys, status entries, details, and labels
+	var delWg sync.WaitGroup
+	delSem := make(chan struct{}, 50)
+	for _, e := range entries {
+		delWg.Add(1)
+		delSem <- struct{}{}
+		go func(e nodeDeleteEntry) {
+			defer delWg.Done()
+			defer func() { <-delSem }()
+			_ = kvstore.Delete(common.GenInfraKey(nsId, infraId, e.id))
+			globalStatusStore.Delete(nsId, infraId, e.id)
+			_ = kvstore.Delete(common.GenInfraNodeDetailsKey(nsId, infraId, e.id))
+			if e.hasInfo && e.info.Uid != "" {
+				_ = label.DeleteLabelObject(model.StrNode, e.info.Uid)
+			}
+		}(e)
+	}
+	delWg.Wait()
+
+	// Step 3: Update affected NodeGroup records once per group
+	deletedByGroup := make(map[string][]string)
+	for _, e := range entries {
+		if e.hasInfo && e.info.NodeGroupId != "" {
+			deletedByGroup[e.info.NodeGroupId] = append(deletedByGroup[e.info.NodeGroupId], e.id)
+		}
+	}
+	for groupId, removedIds := range deletedByGroup {
+		ngKey := common.GenInfraNodeGroupKey(nsId, infraId, groupId)
+		ngInfo, err := GetNodeGroup(nsId, infraId, groupId)
+		if err == nil {
+			removedSet := make(map[string]struct{}, len(removedIds))
+			for _, rid := range removedIds {
+				removedSet[rid] = struct{}{}
+			}
+			kept := make([]string, 0, len(ngInfo.NodeId))
+			for _, nid := range ngInfo.NodeId {
+				if _, removed := removedSet[nid]; !removed {
+					kept = append(kept, nid)
+				}
+			}
+			if len(kept) == 0 {
+				_ = kvstore.Delete(ngKey)
+			} else {
+				ngInfo.NodeId = kept
+				ngInfo.NodeGroupSize = len(kept)
+				if val, err := json.Marshal(ngInfo); err == nil {
+					_ = kvstore.Put(ngKey, string(val))
+				}
+			}
+		}
+	}
+
+	// Step 4: Batch remove from associated object lists (one RMW per shared resource)
+	type resourceRef struct {
+		resourceType string
+		resourceId   string
+	}
+	assocMap := make(map[resourceRef][]string)
+	for _, e := range entries {
+		if !e.hasInfo {
+			continue
+		}
+		nodeKey := common.GenInfraKey(nsId, infraId, e.id)
+		add := func(rType, rId string) {
+			if rId != "" {
+				ref := resourceRef{rType, rId}
+				assocMap[ref] = append(assocMap[ref], nodeKey)
+			}
+		}
+		add(model.StrImage, e.info.ImageId)
+		add(model.StrCustomImage, e.info.ImageId)
+		add(model.StrSSHKey, e.info.SshKeyId)
+		add(model.StrVNet, e.info.VNetId)
+		for _, sgId := range e.info.SecurityGroupIds {
+			add(model.StrSecurityGroup, sgId)
+		}
+		for _, ddId := range e.info.DataDiskIds {
+			add(model.StrDataDisk, ddId)
+		}
+	}
+	var batchWg sync.WaitGroup
+	for ref, keys := range assocMap {
+		batchWg.Add(1)
+		go func(ref resourceRef, keys []string) {
+			defer batchWg.Done()
+			if err := resource.BatchRemoveFromAssociatedObjectList(nsId, ref.resourceType, ref.resourceId, keys); err != nil {
+				log.Warn().Err(err).Msgf("BatchRemoveFromAssociatedObjectList failed for %s/%s", ref.resourceType, ref.resourceId)
+			}
+		}(ref, keys)
+	}
+	batchWg.Wait()
+
+	return len(entries), nil
+}
+
 // DelInfraNode is func to delete Node object
 func DelInfraNode(nsId string, infraId string, nodeId string, option string) error {
 
@@ -1609,20 +1956,29 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 
 	// remove empty NodeGroup or update NodeGroup record
 	if nodeInfo.NodeGroupId != "" {
-		nodeListInNodeGroup, err := ListNodeByNodeGroup(nsId, infraId, nodeInfo.NodeGroupId)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to list node in nodeGroup to remove")
-			return err
-		}
 		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeInfo.NodeGroupId)
-		if len(nodeListInNodeGroup) == 0 {
-			err := kvstore.Delete(nodeGroupKey)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
-				return err
+		nodeGroupInfo, err := GetNodeGroup(nsId, infraId, nodeInfo.NodeGroupId)
+		if err == nil {
+			var kept []string
+			for _, id := range nodeGroupInfo.NodeId {
+				if id != nodeId {
+					kept = append(kept, id)
+				}
 			}
-		} else {
-			removeNodeFromNodeGroupRecord(nsId, infraId, nodeInfo.NodeGroupId, nodeId, nodeListInNodeGroup)
+			if len(kept) == 0 {
+				if err := kvstore.Delete(nodeGroupKey); err != nil {
+					log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
+					return err
+				}
+			} else {
+				nodeGroupInfo.NodeId = kept
+				nodeGroupInfo.NodeGroupSize = len(kept)
+				if val, err := json.Marshal(nodeGroupInfo); err == nil {
+					if err := kvstore.Put(nodeGroupKey, string(val)); err != nil {
+						log.Warn().Err(err).Msgf("Failed to update NodeGroup record of %s", nodeInfo.NodeGroupId)
+					}
+				}
+			}
 		}
 	}
 
@@ -1720,21 +2076,32 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 	}
 	globalStatusStore.Delete(nsId, infraId, nodeId)
 
-	// remove empty NodeGroups
-	nodeListInNodeGroup, err := ListNodeByNodeGroup(nsId, infraId, nodeInfo.NodeGroupId)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to list node in nodeGroup to remove")
-		return err
-	}
-	nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeInfo.NodeGroupId)
-	if len(nodeListInNodeGroup) == 0 {
-		err := kvstore.Delete(nodeGroupKey)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
-			return err
+	// remove empty NodeGroups or update NodeGroup record
+	if nodeInfo.NodeGroupId != "" {
+		nodeGroupKey := common.GenInfraNodeGroupKey(nsId, infraId, nodeInfo.NodeGroupId)
+		nodeGroupInfo, err := GetNodeGroup(nsId, infraId, nodeInfo.NodeGroupId)
+		if err == nil {
+			var kept []string
+			for _, id := range nodeGroupInfo.NodeId {
+				if id != nodeId {
+					kept = append(kept, id)
+				}
+			}
+			if len(kept) == 0 {
+				if err := kvstore.Delete(nodeGroupKey); err != nil {
+					log.Error().Err(err).Msg("Failed to remove the empty nodeGroup")
+					return err
+				}
+			} else {
+				nodeGroupInfo.NodeId = kept
+				nodeGroupInfo.NodeGroupSize = len(kept)
+				if val, err := json.Marshal(nodeGroupInfo); err == nil {
+					if err := kvstore.Put(nodeGroupKey, string(val)); err != nil {
+						log.Warn().Err(err).Msgf("Failed to update NodeGroup record of %s", nodeInfo.NodeGroupId)
+					}
+				}
+			}
 		}
-	} else {
-		removeNodeFromNodeGroupRecord(nsId, infraId, nodeInfo.NodeGroupId, nodeId, nodeListInNodeGroup)
 	}
 
 	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfo.SshKeyId, model.StrDelete, key)

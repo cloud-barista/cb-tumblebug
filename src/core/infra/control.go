@@ -15,15 +15,13 @@ limitations under the License.
 package infra
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
-
 	"fmt"
-
 	"strings"
 	"sync"
 	"time"
-
-	"context"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -31,6 +29,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
@@ -179,71 +178,53 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 			return "", err
 		}
 
-		var deletedCount int
+		var failedNodeIds []string
 		var remainingNodeIds []string
 
+		failedSet := make(map[string]struct{})
 		for _, v := range infraStatus.Node {
-			// Remove Nodes in model.StatusFailed or model.StatusUndefined
-			log.Debug().Msgf("[nodeInfo.Status] %v", v.Status)
+			// Identify Nodes in model.StatusFailed or model.StatusUndefined
 			if strings.EqualFold(v.Status, model.StatusFailed) || strings.EqualFold(v.Status, model.StatusUndefined) {
-				// Decide deletion mode based on whether the node was actually created at CSP.
-				// A node with CspResourceName set has a live CSP resource — soft-delete it
-				// (termination attempted first) to avoid leaving orphaned CSP VMs that would
-				// block shared-resource (VNet/SG) cleanup with DependencyViolation errors.
-				// Nodes that were never created at CSP (empty CspResourceName) are safe to
-				// force-delete because there is nothing to terminate on the CSP side.
-				deleteOption := "force"
-				if nodeInfo, infoErr := GetNodeObject(nsId, infraId, v.Id); infoErr == nil && nodeInfo.CspResourceName != "" {
-					deleteOption = "" // soft: attempt CSP termination before removing CB-TB record
-					log.Debug().Msgf("[Refine] Node %s has CspResourceName=%s — using soft delete to avoid CSP orphan", v.Id, nodeInfo.CspResourceName)
-				}
-
-				err := DelInfraNode(nsId, infraId, v.Id, deleteOption)
-				if err != nil {
-					// A "does not exist" error means the node was already removed by a
-					// concurrent refine call — treat as already deleted and continue.
-					if strings.Contains(err.Error(), "does not exist") {
-						log.Debug().Msgf("[Refine] Node %s already removed, skipping", v.Id)
-						deletedCount++
-						continue
-					}
-					log.Error().Err(err).Msg("")
-					return "", err
-				}
-				deletedCount++
+				failedNodeIds = append(failedNodeIds, v.Id)
+				failedSet[v.Id] = struct{}{}
 			} else {
 				remainingNodeIds = append(remainingNodeIds, v.Id)
 			}
 		}
 
-		// Update Infra object to reflect the current Node list after refine
-		if deletedCount > 0 {
-			infraTmp, _, err := GetInfraObject(nsId, infraId)
+		// Also collect any failed/undefined or orphan entries in globalStatusStore
+		for _, e := range globalStatusStore.Snapshot() {
+			if e.NsId == nsId && e.InfraId == infraId {
+				if strings.EqualFold(e.Status, model.StatusFailed) || strings.EqualFold(e.Status, model.StatusUndefined) {
+					if _, exists := failedSet[e.NodeId]; !exists {
+						failedSet[e.NodeId] = struct{}{}
+						failedNodeIds = append(failedNodeIds, e.NodeId)
+					}
+				}
+			}
+		}
+
+		deletedCount := 0
+		if len(failedNodeIds) > 0 {
+			log.Info().Msgf("[Refine] Batch deleting %d failed/undefined Nodes for Infra %s/%s", len(failedNodeIds), nsId, infraId)
+			cnt, err := BatchDeleteInfraNodes(nsId, infraId, failedNodeIds, false)
 			if err != nil {
-				log.Error().Err(err).Msg("")
+				log.Error().Err(err).Msg("BatchDeleteInfraNodes failed during refine")
 				return "", err
 			}
+			deletedCount = cnt
 
-			// Rebuild Node list with only remaining Nodes
-			var remainingNodes []model.NodeInfo
-			for _, nodeId := range remainingNodeIds {
-				nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
-				if err != nil {
-					log.Warn().Err(err).Msgf("Failed to get VM info for %s during refine update", nodeId)
-					continue
-				}
-				remainingNodes = append(remainingNodes, nodeInfo)
-			}
-
-			infraTmp.Node = remainingNodes
 			// Reset stale aggregates so that the next GetInfraStatus call
-			// recomputes the proportion ("R:x/y") from scratch instead of
-			// being clamped by the previous CountTotal (monotonic-up logic
-			// in GetInfraStatus would otherwise keep the larger pre-refine
-			// total even though Nodes were removed).
-			infraTmp.StatusCount = model.StatusCountInfo{}
-			infraTmp.Status = ""
-			UpdateInfraInfo(nsId, infraTmp)
+			// recomputes the proportion ("R:x/y") from scratch
+			key := common.GenInfraKey(nsId, infraId, "")
+			if keyValue, exists, err := kvstore.GetKv(key); err == nil && exists {
+				infraTmp := model.InfraInfo{}
+				if err := json.Unmarshal([]byte(keyValue.Value), &infraTmp); err == nil {
+					infraTmp.StatusCount = model.StatusCountInfo{}
+					infraTmp.Status = ""
+					UpdateInfraInfo(nsId, infraTmp)
+				}
+			}
 
 			log.Info().Msgf("Refine completed: deleted %d Nodes, %d Nodes remaining", deletedCount, len(remainingNodeIds))
 		}
@@ -494,6 +475,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 	// on a large infra the sequential version issued ~2 KV reads per node and dominated the
 	// control latency. A single bulk read is not an option — all node values at once exceed
 	// etcd's gRPC message limit (see ListNodeId) — so bound the concurrency instead.
+	ngMap := LoadInfraNodeGroupMap(nsId, infraId)
 	var preWg sync.WaitGroup
 	var preMu sync.Mutex
 	preSem := make(chan struct{}, 50)
@@ -510,7 +492,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 				return
 			}
 
-			nodeInfo, err := GetNodeObject(nsId, infraId, nodeId)
+			nodeInfo, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, ngMap)
 			if err != nil {
 				log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", nodeId)
 				return

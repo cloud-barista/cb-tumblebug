@@ -1467,6 +1467,8 @@ type NodeCreateInfo struct {
 	RegionName   string
 }
 
+type ctxKeySkipAssoc struct{}
+
 // CreateNodesInParallel creates VMs with hierarchical rate limiting
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
@@ -1475,6 +1477,10 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 	if len(nodeInfoList) == 0 {
 		return nil
 	}
+
+	// Tell child CreateNode calls to skip individual association updates so we can
+	// batch them efficiently at the end, eliminating tens of thousands of serial RMW loops.
+	ctx = context.WithValue(ctx, ctxKeySkipAssoc{}, true)
 
 	// Step 1: Group VMs by CSP and region
 	nodeGroups := make(map[string]map[string][]*model.NodeInfo) // CSP -> Region -> NodeInfos
@@ -1649,6 +1655,55 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 	}
 
 	wg.Wait()
+
+	// Batch update associated object lists for all successfully created nodes.
+	// This collapses tens of thousands of serial RMW etcd transactions on shared
+	// keys (VNet, SSHKey, Image, SecurityGroups) into one batch update per resource.
+	type assocKey struct {
+		resourceType string
+		resourceId   string
+	}
+	assocMap := make(map[assocKey][]string)
+	for _, nodeInfo := range nodeInfoList {
+		if nodeInfo == nil || strings.EqualFold(nodeInfo.Status, model.StatusFailed) {
+			continue
+		}
+		nodeKey := common.GenInfraKey(nsId, infraId, nodeInfo.Id)
+		if nodeInfo.ImageId != "" {
+			imgType := model.StrImage
+			if _, exists, _ := kvstore.Get(common.GenResourceKey(nsId, model.StrCustomImage, nodeInfo.ImageId)); exists {
+				imgType = model.StrCustomImage
+			}
+			k := assocKey{resourceType: imgType, resourceId: nodeInfo.ImageId}
+			assocMap[k] = append(assocMap[k], nodeKey)
+		}
+		if nodeInfo.SshKeyId != "" {
+			k := assocKey{resourceType: model.StrSSHKey, resourceId: nodeInfo.SshKeyId}
+			assocMap[k] = append(assocMap[k], nodeKey)
+		}
+		if nodeInfo.VNetId != "" {
+			k := assocKey{resourceType: model.StrVNet, resourceId: nodeInfo.VNetId}
+			assocMap[k] = append(assocMap[k], nodeKey)
+		}
+		for _, sgId := range nodeInfo.SecurityGroupIds {
+			if sgId != "" {
+				k := assocKey{resourceType: model.StrSecurityGroup, resourceId: sgId}
+				assocMap[k] = append(assocMap[k], nodeKey)
+			}
+		}
+		for _, diskId := range nodeInfo.DataDiskIds {
+			if diskId != "" {
+				k := assocKey{resourceType: model.StrDataDisk, resourceId: diskId}
+				assocMap[k] = append(assocMap[k], nodeKey)
+			}
+		}
+	}
+
+	for k, keys := range assocMap {
+		if err := resource.BatchAddToAssociatedObjectList(nsId, k.resourceType, k.resourceId, keys); err != nil {
+			log.Warn().Err(err).Msgf("Failed to batch update associated object list for %s %s", k.resourceType, k.resourceId)
+		}
+	}
 
 	// Summary logging
 	cspCount := len(nodeGroups)
@@ -2195,24 +2250,26 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 	}
 
-	if customImageFlag == false {
-		resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfoData.ImageId, model.StrAdd, nodeKey)
-	} else {
-		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, nodeInfoData.ImageId, model.StrAdd, nodeKey)
-	}
+	if ctx.Value(ctxKeySkipAssoc{}) != true {
+		if customImageFlag == false {
+			resource.UpdateAssociatedObjectList(nsId, model.StrImage, nodeInfoData.ImageId, model.StrAdd, nodeKey)
+		} else {
+			resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, nodeInfoData.ImageId, model.StrAdd, nodeKey)
+		}
 
-	//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, nodeInfoData.SpecId, model.StrAdd, nodeKey)
-	if nodeInfoData.SshKeyId != "" {
-		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfoData.SshKeyId, model.StrAdd, nodeKey)
-	}
-	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, nodeInfoData.VNetId, model.StrAdd, nodeKey)
+		//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, nodeInfoData.SpecId, model.StrAdd, nodeKey)
+		if nodeInfoData.SshKeyId != "" {
+			resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, nodeInfoData.SshKeyId, model.StrAdd, nodeKey)
+		}
+		resource.UpdateAssociatedObjectList(nsId, model.StrVNet, nodeInfoData.VNetId, model.StrAdd, nodeKey)
 
-	for _, v := range nodeInfoData.SecurityGroupIds {
-		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrAdd, nodeKey)
-	}
+		for _, v := range nodeInfoData.SecurityGroupIds {
+			resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrAdd, nodeKey)
+		}
 
-	for _, v := range nodeInfoData.DataDiskIds {
-		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrAdd, nodeKey)
+		for _, v := range nodeInfoData.DataDiskIds {
+			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrAdd, nodeKey)
+		}
 	}
 
 	// Register dataDisks which are created with the creation of VM
@@ -2231,7 +2288,9 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 		nodeInfoData.DataDiskIds = append(nodeInfoData.DataDiskIds, dataDisk.Id)
 
-		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDisk.Id, model.StrAdd, nodeKey)
+		if ctx.Value(ctxKeySkipAssoc{}) != true {
+			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDisk.Id, model.StrAdd, nodeKey)
+		}
 	}
 
 	// Populate SpecSummary and ImageSummary for NodeInfo

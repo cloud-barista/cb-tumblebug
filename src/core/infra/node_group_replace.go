@@ -123,10 +123,12 @@ func ReplaceFailedNodeGroup(ctx context.Context, nsId, infraId, nodeGroupId stri
 
 	// Clearing the last node also removes the NodeGroup record, which is what
 	// frees the name for the creation below.
+	var removedIds []string
 	for _, r := range removed {
-		if err := DelInfraNode(nsId, infraId, r.NodeId, "force"); err != nil {
-			return nil, fmt.Errorf("cannot clear failed node '%s': %w", r.NodeId, err)
-		}
+		removedIds = append(removedIds, r.NodeId)
+	}
+	if _, err := BatchDeleteInfraNodes(nsId, infraId, removedIds, true); err != nil {
+		return nil, fmt.Errorf("cannot clear failed node(s) of '%s': %w", nodeGroupId, err)
 	}
 	log.Info().Msgf("ReplaceFailedNodeGroup: cleared %d failed node(s) of '%s' in infra '%s'", len(removed), nodeGroupId, infraId)
 

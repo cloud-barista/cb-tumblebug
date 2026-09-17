@@ -129,6 +129,7 @@ const auditConnConcurrency = 4
 
 func loadNodesParallel(nsId, infraId string, nodeIds []string) []model.NodeInfo {
 	out := make([]model.NodeInfo, 0, len(nodeIds))
+	ngMap := LoadInfraNodeGroupMap(nsId, infraId)
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, 32)
@@ -138,7 +139,7 @@ func loadNodesParallel(nsId, infraId string, nodeIds []string) []model.NodeInfo 
 		go func(id string) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			n, err := GetNodeObject(nsId, infraId, id)
+			n, err := GetNodeObjectWithNodeGroups(nsId, infraId, id, ngMap)
 			if err != nil {
 				return
 			}
@@ -215,7 +216,7 @@ func tbConsidersGone(n model.NodeInfo) bool {
 }
 
 // auditConnection compares one connection's CSP inventory with the scope and optionally remediates.
-func auditConnection(connName string, nodes []model.NodeInfo, scope *auditScope, opts AuditOptions) AuditConnectionResult {
+func auditConnection(connName string, nodes []model.NodeInfo, scope *auditScope, opts AuditOptions, tracked map[string]bool) AuditConnectionResult {
 	res := AuditConnectionResult{ConnectionName: connName}
 	var conn model.ConnConfig
 	if len(nodes) > 0 && nodes[0].ConnectionConfig.ConfigName != "" {
@@ -301,7 +302,9 @@ func auditConnection(connName string, nodes []model.NodeInfo, scope *auditScope,
 	}
 
 	if handlers.ListResiduals != nil {
-		tracked := trackedNetworkKeys(connName)
+		if tracked == nil {
+			tracked = trackedNetworkKeys(connName)
+		}
 		items, rerr := handlers.ListResiduals(ctx, res.Region, res.Zone)
 		if rerr != nil && isTransientNetworkError(rerr) {
 			time.Sleep(3 * time.Second) // DNS/connection blips are common on this path; one retry
@@ -396,6 +399,7 @@ func auditConnection(connName string, nodes []model.NodeInfo, scope *auditScope,
 
 func runAudit(scope *auditScope, connNames []string, opts AuditOptions, result *AuditResult) {
 	start := time.Now()
+	allTracked := loadAllTrackedNetworkKeys()
 	sort.Strings(connNames)
 	results := make([]AuditConnectionResult, len(connNames))
 	var wg sync.WaitGroup
@@ -406,7 +410,7 @@ func runAudit(scope *auditScope, connNames []string, opts AuditOptions, result *
 		go func(i int, cn string) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			results[i] = auditConnection(cn, scope.nodes[cn], scope, opts)
+			results[i] = auditConnection(cn, scope.nodes[cn], scope, opts, allTracked[strings.ToLower(cn)])
 		}(i, cn)
 	}
 	wg.Wait()
@@ -575,19 +579,12 @@ func networkResidualType(t string) bool {
 	return false
 }
 
-// trackedNetworkKeys returns lower-cased CSP ids/names of vNets and subnets TB still tracks on a connection (all namespaces).
-func trackedNetworkKeys(connName string) map[string]bool {
-	keys := map[string]bool{}
-	add := func(v ...string) {
-		for _, x := range v {
-			if x != "" {
-				keys[strings.ToLower(x)] = true
-			}
-		}
-	}
+// loadAllTrackedNetworkKeys returns lower-cased CSP ids/names of vNets and subnets TB still tracks across all connections and namespaces.
+func loadAllTrackedNetworkKeys() map[string]map[string]bool {
+	res := make(map[string]map[string]bool)
 	nsIds, err := common.ListNsId()
 	if err != nil {
-		return keys
+		return res
 	}
 	for _, ns := range nsIds {
 		ids, err := resource.ListResourceId(ns, model.StrVNet)
@@ -596,8 +593,21 @@ func trackedNetworkKeys(connName string) map[string]bool {
 		}
 		for _, id := range ids {
 			v, err := resource.GetVNet(ns, id)
-			if err != nil || !strings.EqualFold(v.ConnectionName, connName) {
+			if err != nil {
 				continue
+			}
+			connKey := strings.ToLower(v.ConnectionName)
+			keys, ok := res[connKey]
+			if !ok {
+				keys = make(map[string]bool)
+				res[connKey] = keys
+			}
+			add := func(vals ...string) {
+				for _, x := range vals {
+					if x != "" {
+						keys[strings.ToLower(x)] = true
+					}
+				}
 			}
 			add(v.CspResourceId, v.CspResourceName, v.Uid)
 			for _, sn := range v.SubnetInfoList {
@@ -605,5 +615,14 @@ func trackedNetworkKeys(connName string) map[string]bool {
 			}
 		}
 	}
-	return keys
+	return res
+}
+
+// trackedNetworkKeys returns lower-cased CSP ids/names of vNets and subnets TB still tracks on a connection (all namespaces).
+func trackedNetworkKeys(connName string) map[string]bool {
+	all := loadAllTrackedNetworkKeys()
+	if keys, ok := all[strings.ToLower(connName)]; ok {
+		return keys
+	}
+	return map[string]bool{}
 }

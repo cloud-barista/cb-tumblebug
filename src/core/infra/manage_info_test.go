@@ -153,3 +153,58 @@ func TestConvertNodeInfoToNodeStatusInfo(t *testing.T) {
 		t.Errorf("expected Status %q, got %q", model.StatusRunning, statusInfo.Status)
 	}
 }
+
+func TestHydrateNodeInfo(t *testing.T) {
+	ng := model.NodeGroupInfo{
+		Id:             "ng-01",
+		ConnectionName: "aws-us-east-1",
+		SpecId:         "aws-t2-micro",
+		ImageId:        "ami-12345",
+		VNetId:         "vnet-01",
+		SubnetId:       "subnet-01",
+		SecurityGroupIds: []string{"sg-01"},
+		SshKeyId:       "ssh-key-01",
+		Description:    "test node group",
+		Label:          map[string]string{"env": "test"},
+	}
+
+	node := model.NodeInfo{
+		Id:          "node-01",
+		NodeGroupId: "ng-01",
+		Name:        "worker-01",
+		Status:      model.StatusRunning,
+		PublicIP:    "1.2.3.4",
+	}
+
+	HydrateNodeInfo(&node, &ng)
+
+	if node.ConnectionName != "aws-us-east-1" {
+		t.Errorf("expected ConnectionName %q, got %q", "aws-us-east-1", node.ConnectionName)
+	}
+	if node.SpecId != "aws-t2-micro" {
+		t.Errorf("expected SpecId %q, got %q", "aws-t2-micro", node.SpecId)
+	}
+	if node.ImageId != "ami-12345" {
+		t.Errorf("expected ImageId %q, got %q", "ami-12345", node.ImageId)
+	}
+	if node.VNetId != "vnet-01" {
+		t.Errorf("expected VNetId %q, got %q", "vnet-01", node.VNetId)
+	}
+	if len(node.SecurityGroupIds) != 1 || node.SecurityGroupIds[0] != "sg-01" {
+		t.Errorf("expected SecurityGroupIds %v, got %v", []string{"sg-01"}, node.SecurityGroupIds)
+	}
+	if node.Label["env"] != "test" {
+		t.Errorf("expected Label['env'] %q, got %q", "test", node.Label["env"])
+	}
+}
+
+func TestLoadInfraNodeGroupMap_NonExistent(t *testing.T) {
+	m := LoadInfraNodeGroupMap("non-existent-ns", "non-existent-infra")
+	if m == nil {
+		t.Errorf("expected non-nil map, got nil")
+	}
+	if len(m) != 0 {
+		t.Errorf("expected empty map, got %d entries", len(m))
+	}
+}
+

@@ -308,16 +308,63 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
 
 	nodeGroupInfoData := model.NodeGroupInfo{
-		ResourceType: model.StrNodeGroup,
-		Id:           common.ToLower(nodeRequest.Name),
-		Name:         common.ToLower(nodeRequest.Name),
-		Uid:          common.GenUid(),
-		// Record the number of Nodes actually created, not the requested value:
-		// a request may omit it (0) while one Node is still created, and a later
-		// ScaleOut would then reuse that Node's name (issue #2652)
-		NodeGroupSize: nodeGroupSize,
-		RootDiskType:  nodeRequest.RootDiskType,
-		RootDiskSize:  nodeRequest.RootDiskSize,
+		ResourceType:     model.StrNodeGroup,
+		Id:               common.ToLower(nodeRequest.Name),
+		Name:             common.ToLower(nodeRequest.Name),
+		Uid:              common.GenUid(),
+		NodeGroupSize:    nodeGroupSize,
+		ConnectionName:   nodeRequest.ConnectionName,
+		SpecId:           nodeRequest.SpecId,
+		ImageId:          nodeRequest.ImageId,
+		CspImageName:     nodeRequest.CspImageName,
+		VNetId:           nodeRequest.VNetId,
+		SubnetId:         nodeRequest.SubnetId,
+		SecurityGroupIds: nodeRequest.SecurityGroupIds,
+		SshKeyId:         nodeRequest.SshKeyId,
+		NodeUserName:     nodeRequest.NodeUserName,
+		RootDiskType:     nodeRequest.RootDiskType,
+		RootDiskSize:     nodeRequest.RootDiskSize,
+		Label:            nodeRequest.Label,
+		Description:      nodeRequest.Description,
+	}
+
+	// Pre-populate ConnectionConfig, Region, and Location from ConnectionName
+	if nodeRequest.ConnectionName != "" {
+		if connConfig, err := common.GetConnConfig(nodeRequest.ConnectionName); err == nil {
+			nodeGroupInfoData.ConnectionConfig = connConfig
+			nodeGroupInfoData.Region = model.RegionInfo{
+				Region: connConfig.RegionZoneInfo.AssignedRegion,
+				Zone:   connConfig.RegionZoneInfo.AssignedZone,
+			}
+			nodeGroupInfoData.Location = connConfig.RegionDetail.Location
+		}
+	}
+
+	// Pre-populate SpecSummary from SpecId
+	if nodeRequest.SpecId != "" {
+		if specInfo, err := resource.GetSpec(model.SystemCommonNs, nodeRequest.SpecId); err == nil {
+			nodeGroupInfoData.CspSpecName = specInfo.CspSpecName
+			nodeGroupInfoData.Spec = model.SpecSummary{
+				CspSpecName: specInfo.CspSpecName,
+				VCPU:        specInfo.VCPU,
+				MemoryGiB:   specInfo.MemoryGiB,
+				CostPerHour: specInfo.CostPerHour,
+			}
+		}
+	}
+
+	// Pre-populate ImageSummary from ImageId
+	if nodeRequest.ImageId != "" {
+		if imgInfo, err := resource.GetImage(nsId, nodeRequest.ImageId); err == nil {
+			nodeGroupInfoData.CspImageName = imgInfo.CspImageName
+			nodeGroupInfoData.Image = model.ImageSummary{
+				ResourceType:   imgInfo.ResourceType,
+				CspImageName:   imgInfo.CspImageName,
+				OSType:         imgInfo.OSType,
+				OSArchitecture: imgInfo.OSArchitecture,
+				OSDistribution: imgInfo.OSDistribution,
+			}
+		}
 	}
 
 	// Build Node ID list
@@ -353,6 +400,9 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 		model.LabelInfraName:        req.Name,
 		model.LabelInfraUid:         uid,
 		model.LabelInfraDescription: req.Description,
+	}
+	if nodeRequest.Label != nil {
+		maps.Copy(labels, nodeRequest.Label)
 	}
 
 	return label.CreateOrUpdateLabel(ctx, model.StrNodeGroup, uid, key, labels)

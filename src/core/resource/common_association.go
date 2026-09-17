@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -26,6 +27,8 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
+
+var assocMutex sync.Mutex
 
 // GetAssociatedObjectCount returns the number of Resource's associated Tumblebug objects
 func GetAssociatedObjectCount(nsId string, resourceType string, resourceId string) (int, error) {
@@ -245,6 +248,9 @@ func BatchRemoveFromAssociatedObjectList(nsId string, resourceType string, resou
 		return nil
 	}
 
+	assocMutex.Lock()
+	defer assocMutex.Unlock()
+
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
@@ -284,6 +290,68 @@ func BatchRemoveFromAssociatedObjectList(nsId string, resourceType string, resou
 	}
 	anyJson["associatedObjectList"] = filtered
 
+	updated, err := json.Marshal(anyJson)
+	if err != nil {
+		return err
+	}
+	return kvstore.Put(key, string(updated))
+}
+
+// BatchAddToAssociatedObjectList adds multiple objectKeys to a resource's
+// associatedObjectList in a single read-modify-write, avoiding N round-trips for N nodes.
+// Duplicate keys are skipped. Returns nil if the resource does not exist.
+func BatchAddToAssociatedObjectList(nsId string, resourceType string, resourceId string, objectKeys []string) error {
+	if len(objectKeys) == 0 {
+		return nil
+	}
+
+	assocMutex.Lock()
+	defer assocMutex.Unlock()
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+
+	var anyJson map[string]any
+	if err := json.Unmarshal([]byte(keyValue.Value), &anyJson); err != nil {
+		return err
+	}
+
+	existingSet := make(map[string]struct{})
+	existingSlice := make([]any, 0)
+	if raw, ok := anyJson["associatedObjectList"]; ok && raw != nil {
+		if arr, ok := raw.([]any); ok {
+			existingSlice = arr
+			for _, v := range arr {
+				if s, ok := v.(string); ok {
+					existingSet[s] = struct{}{}
+				}
+			}
+		}
+	}
+
+	changed := false
+	for _, k := range objectKeys {
+		if k == "" {
+			continue
+		}
+		if _, exists := existingSet[k]; !exists {
+			existingSet[k] = struct{}{}
+			existingSlice = append(existingSlice, k)
+			changed = true
+		}
+	}
+
+	if !changed {
+		return nil
+	}
+
+	anyJson["associatedObjectList"] = existingSlice
 	updated, err := json.Marshal(anyJson)
 	if err != nil {
 		return err

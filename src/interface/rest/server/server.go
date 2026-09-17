@@ -134,6 +134,9 @@ func RunServer() {
 	e.Use(middlewares.Zerologger(logfilter.APISkipPatterns))
 
 	e.Use(middleware.Recover())
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+		Level: 5,
+	}))
 	// limit the application to 50 requests/sec using the default in-memory store
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(50)))
 
