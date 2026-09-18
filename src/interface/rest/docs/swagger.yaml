@@ -21078,6 +21078,62 @@ components:
       - EventCommandStatus
       - EventCommandLog
       - EventCommandDone
+    model.CompactNodeInfo:
+      type: object
+      properties:
+        createdTime:
+          type: string
+        cspResourceId:
+          type: string
+        cspResourceName:
+          type: string
+        dataDiskIds:
+          type: array
+          items:
+            type: string
+        failure:
+          $ref: '#/components/schemas/model.ProvisioningFailure'
+        id:
+          type: string
+          example: aws-ap-southeast-1-1
+        label:
+          type: object
+          additionalProperties:
+            type: string
+        monAgentStatus:
+          type: string
+        name:
+          type: string
+          example: aws-ap-southeast-1-1
+        networkAgentStatus:
+          type: string
+        networkInterface:
+          type: string
+        nodeGroupId:
+          type: string
+        privateDNS:
+          type: string
+        privateIP:
+          type: string
+        publicDNS:
+          type: string
+        publicIP:
+          type: string
+        resourceType:
+          type: string
+        sshPort:
+          type: integer
+        status:
+          type: string
+        systemMessage:
+          type: string
+        targetAction:
+          type: string
+        targetStatus:
+          type: string
+        uid:
+          type: string
+          example: wef12awefadf1221edcf
     model.Condition:
       type: object
       properties:
@@ -22787,6 +22843,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.NodeInfo'
+        nodeGroup:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeGroupInfo'
         nodeSpecResults:
           type: array
           items:
@@ -23261,6 +23321,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.NodeInfo'
+        nodeGroup:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeGroupInfo'
         placementAlgo:
           type: string
         postCommandAsync:
@@ -23339,6 +23403,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.NodeSummary'
+        nodeGroup:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeGroupInfo'
         resourceType:
           type: string
         status:
@@ -24789,6 +24857,98 @@ components:
         timestamp:
           type: string
           description: Timestamp when the error occurred
+    model.NodeGroupInfo:
+      type: object
+      properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+          description: Common Topology & Credentials
+        cspImageName:
+          type: string
+        cspSpecName:
+          type: string
+        cspSshKeyId:
+          type: string
+        cspSubnetId:
+          type: string
+        cspVNetId:
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        image:
+          $ref: '#/components/schemas/model.ImageSummary'
+        imageId:
+          type: string
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Group Labels & Description
+        location:
+          $ref: '#/components/schemas/model.Location'
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        networkInterface:
+          type: string
+        nodeGroupSize:
+          type: integer
+        nodeId:
+          type: array
+          items:
+            type: string
+        nodeUserName:
+          type: string
+        nodes:
+          type: array
+          description: Compact Nodes for hierarchical representation
+          items:
+            $ref: '#/components/schemas/model.CompactNodeInfo'
+        region:
+          $ref: '#/components/schemas/model.RegionInfo'
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        rootDeviceName:
+          type: string
+        rootDiskSize:
+          type: integer
+        rootDiskType:
+          type: string
+          description: |-
+            RootDiskType/RootDiskSize keep what was requested when the NodeGroup was created.
+            Nodes hold the CSP-reported values instead, which are not always valid as a request
+            (e.g. NCP reports "SSD" but only accepts "HDD"), so scale-out reads these.
+        securityGroupIds:
+          type: array
+          items:
+            type: string
+        spec:
+          $ref: '#/components/schemas/model.SpecSummary'
+        specId:
+          type: string
+          description: Common Compute & OS Specs
+        sshKeyId:
+          type: string
+        sshPort:
+          type: integer
+        subnetId:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vNetId:
+          type: string
+          description: Common Networking & Access
     model.NodeInfo:
       type: object
       properties:
