@@ -204,9 +204,10 @@ type InfraInfo struct {
 	// Latest system message such as error message
 	SystemMessage []string `json:"systemMessage"` // systeam-given string message
 
-	PlacementAlgo string     `json:"placementAlgo,omitempty"`
-	Description   string     `json:"description"`
-	Node          []NodeInfo `json:"node"`
+	PlacementAlgo string            `json:"placementAlgo,omitempty"`
+	Description   string            `json:"description"`
+	Node          []NodeInfo        `json:"node"`
+	NodeGroup     []NodeGroupInfo   `json:"nodeGroup,omitempty"`
 
 	// Cluster is the list of implicit clusters synthesized at query-time from Nodes.
 	Cluster []InfraClusterInfo `json:"cluster,omitempty"`
@@ -797,11 +798,187 @@ type NodeGroupInfo struct {
 	NodeId        []string `json:"nodeId"`
 	NodeGroupSize int      `json:"nodeGroupSize"`
 
+	// Common Topology & Credentials
+	ConnectionName   string     `json:"connectionName,omitempty"`
+	ConnectionConfig ConnConfig `json:"connectionConfig,omitempty"`
+	Region           RegionInfo `json:"region,omitempty"`
+	Location         Location   `json:"location,omitempty"`
+
+	// Common Compute & OS Specs
+	SpecId       string       `json:"specId,omitempty"`
+	CspSpecName  string       `json:"cspSpecName,omitempty"`
+	Spec         SpecSummary  `json:"spec,omitempty"`
+	ImageId      string       `json:"imageId,omitempty"`
+	CspImageName string       `json:"cspImageName,omitempty"`
+	Image        ImageSummary `json:"image,omitempty"`
+
+	// Common Networking & Access
+	VNetId           string   `json:"vNetId,omitempty"`
+	CspVNetId        string   `json:"cspVNetId,omitempty"`
+	SubnetId         string   `json:"subnetId,omitempty"`
+	CspSubnetId      string   `json:"cspSubnetId,omitempty"`
+	NetworkInterface string   `json:"networkInterface,omitempty"`
+	SecurityGroupIds []string `json:"securityGroupIds,omitempty"`
+	SshKeyId         string   `json:"sshKeyId,omitempty"`
+	CspSshKeyId      string   `json:"cspSshKeyId,omitempty"`
+	SSHPort          int      `json:"sshPort,omitempty"`
+	NodeUserName     string   `json:"nodeUserName,omitempty"`
+
 	// RootDiskType/RootDiskSize keep what was requested when the NodeGroup was created.
 	// Nodes hold the CSP-reported values instead, which are not always valid as a request
 	// (e.g. NCP reports "SSD" but only accepts "HDD"), so scale-out reads these.
-	RootDiskType string `json:"rootDiskType,omitempty"`
-	RootDiskSize int    `json:"rootDiskSize,omitempty"`
+	RootDiskType   string `json:"rootDiskType,omitempty"`
+	RootDiskSize   int    `json:"rootDiskSize,omitempty"`
+	RootDeviceName string `json:"rootDeviceName,omitempty"`
+
+	// Group Labels & Description
+	Label       map[string]string `json:"label,omitempty"`
+	Description string            `json:"description,omitempty"`
+
+	// Compact Nodes for hierarchical representation
+	Nodes []CompactNodeInfo `json:"nodes,omitempty"`
+}
+
+// CompactNodeInfo represents the instance-variable runtime state of a single Node
+// within a NodeGroup, omitting the blueprint attributes held by the parent NodeGroup.
+type CompactNodeInfo struct {
+	ResourceType string `json:"resourceType"`
+	Id           string `json:"id" example:"aws-ap-southeast-1-1"`
+	Uid          string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	Name         string `json:"name" example:"aws-ap-southeast-1-1"`
+	NodeGroupId  string `json:"nodeGroupId"`
+
+	CspResourceName string `json:"cspResourceName,omitempty"`
+	CspResourceId   string `json:"cspResourceId,omitempty"`
+
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus,omitempty"`
+	TargetAction string `json:"targetAction,omitempty"`
+
+	MonAgentStatus     string `json:"monAgentStatus,omitempty"`
+	NetworkAgentStatus string `json:"networkAgentStatus,omitempty"`
+	SystemMessage      string `json:"systemMessage,omitempty"`
+
+	Failure *ProvisioningFailure `json:"failure,omitempty"`
+
+	CreatedTime string `json:"createdTime,omitempty"`
+
+	PublicIP         string `json:"publicIP,omitempty"`
+	SSHPort          int    `json:"sshPort,omitempty"`
+	PublicDNS        string `json:"publicDNS,omitempty"`
+	PrivateIP        string `json:"privateIP,omitempty"`
+	PrivateDNS       string `json:"privateDNS,omitempty"`
+	NetworkInterface string `json:"networkInterface,omitempty"`
+
+	DataDiskIds []string `json:"dataDiskIds,omitempty"`
+
+	Label map[string]string `json:"label,omitempty"`
+}
+
+// HydrateNodeInfo projects common blueprint fields from parent NodeGroup into a NodeInfo.
+func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
+	if node == nil || ng == nil {
+		return
+	}
+	if node.NodeGroupId == "" {
+		node.NodeGroupId = ng.Id
+	}
+	if node.ConnectionName == "" {
+		node.ConnectionName = ng.ConnectionName
+	}
+	if node.ConnectionConfig.ConfigName == "" {
+		node.ConnectionConfig = ng.ConnectionConfig
+	}
+	if node.Region.Region == "" {
+		node.Region = ng.Region
+	}
+	if node.Location.Display == "" {
+		node.Location = ng.Location
+	}
+	if node.SpecId == "" {
+		node.SpecId = ng.SpecId
+		node.CspSpecName = ng.CspSpecName
+		node.Spec = ng.Spec
+	}
+	if node.ImageId == "" {
+		node.ImageId = ng.ImageId
+		node.CspImageName = ng.CspImageName
+		node.Image = ng.Image
+	}
+	if node.VNetId == "" {
+		node.VNetId = ng.VNetId
+		node.CspVNetId = ng.CspVNetId
+	}
+	if node.SubnetId == "" {
+		node.SubnetId = ng.SubnetId
+		node.CspSubnetId = ng.CspSubnetId
+	}
+	if len(node.SecurityGroupIds) == 0 && len(ng.SecurityGroupIds) > 0 {
+		node.SecurityGroupIds = append([]string{}, ng.SecurityGroupIds...)
+	}
+	if node.SshKeyId == "" {
+		node.SshKeyId = ng.SshKeyId
+		node.CspSshKeyId = ng.CspSshKeyId
+	}
+	if node.SSHPort == 0 && ng.SSHPort != 0 {
+		node.SSHPort = ng.SSHPort
+	}
+	if node.NodeUserName == "" {
+		node.NodeUserName = ng.NodeUserName
+	}
+	if node.RootDiskType == "" {
+		node.RootDiskType = ng.RootDiskType
+	}
+	if node.RootDiskSize == 0 {
+		node.RootDiskSize = ng.RootDiskSize
+	}
+	if node.RootDeviceName == "" {
+		node.RootDeviceName = ng.RootDeviceName
+	}
+	if node.Description == "" {
+		node.Description = ng.Description
+	}
+
+	// Merge labels: parent NodeGroup labels as base, node labels override
+	if len(ng.Label) > 0 {
+		if node.Label == nil {
+			node.Label = make(map[string]string, len(ng.Label))
+		}
+		for k, v := range ng.Label {
+			if _, exists := node.Label[k]; !exists {
+				node.Label[k] = v
+			}
+		}
+	}
+}
+
+// ToCompactNodeInfo extracts instance-specific fields from NodeInfo.
+func ToCompactNodeInfo(node NodeInfo) CompactNodeInfo {
+	return CompactNodeInfo{
+		ResourceType:       node.ResourceType,
+		Id:                 node.Id,
+		Uid:                node.Uid,
+		Name:               node.Name,
+		NodeGroupId:        node.NodeGroupId,
+		CspResourceName:    node.CspResourceName,
+		CspResourceId:      node.CspResourceId,
+		Status:             node.Status,
+		TargetStatus:       node.TargetStatus,
+		TargetAction:       node.TargetAction,
+		MonAgentStatus:     node.MonAgentStatus,
+		NetworkAgentStatus: node.NetworkAgentStatus,
+		SystemMessage:      node.SystemMessage,
+		Failure:            node.Failure,
+		CreatedTime:        node.CreatedTime,
+		PublicIP:           node.PublicIP,
+		SSHPort:            node.SSHPort,
+		PublicDNS:          node.PublicDNS,
+		PrivateIP:          node.PrivateIP,
+		PrivateDNS:         node.PrivateDNS,
+		NetworkInterface:   node.NetworkInterface,
+		DataDiskIds:        node.DataDiskIds,
+		Label:              node.Label,
+	}
 }
 
 // InfraClusterInfo is a lightweight, on-demand cluster view synthesized from Infra NodeGroups and Nodes.
@@ -1029,6 +1206,7 @@ type InfraInfoSummary struct {
 	SystemMessage                 []string          `json:"systemMessage"`
 	Description                   string            `json:"description"`
 	Node                          []NodeSummary     `json:"node"`
+	NodeGroup                     []NodeGroupInfo   `json:"nodeGroup,omitempty"`
 }
 
 // InfraAccessInfo is struct to retrieve overall access information of a Infra

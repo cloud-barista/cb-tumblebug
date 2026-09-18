@@ -317,15 +317,71 @@ func GetLabels(labelType, uid string) (label model.LabelInfo, err error) {
 		return labelInfo, err
 	}
 
+	// For Nodes, inherit labels from parent NodeGroup
+	if labelType == model.StrNode && labelInfo.Labels != nil {
+		nsId := labelInfo.Labels[model.LabelNamespace]
+		infraId := labelInfo.Labels[model.LabelInfraId]
+		nodeGroupId := labelInfo.Labels[model.LabelNodeGroupId]
+		if nsId != "" && infraId != "" && nodeGroupId != "" {
+			ngKey := fmt.Sprintf("/%s/%s/%s/%s/%s/%s", model.StrNamespace, nsId, model.StrInfra, infraId, model.StrNodeGroup, strings.ToLower(nodeGroupId))
+			if ngData, exists, err := kvstore.Get(ngKey); err == nil && exists && len(ngData) > 0 {
+				var ng model.NodeGroupInfo
+				if err := json.Unmarshal([]byte(ngData), &ng); err == nil && len(ng.Label) > 0 {
+					merged := make(map[string]string, len(ng.Label)+len(labelInfo.Labels))
+					for k, v := range ng.Label {
+						merged[k] = v
+					}
+					for k, v := range labelInfo.Labels {
+						merged[k] = v
+					}
+					labelInfo.Labels = merged
+				}
+			}
+		}
+	}
+
 	return labelInfo, nil
+}
+
+// splitSelectors splits a label selector by comma while preserving commas inside parentheses (e.g. in/notin lists).
+func splitSelectors(labelSelector string) []string {
+	var selectors []string
+	var current strings.Builder
+	inParen := false
+
+	for _, r := range labelSelector {
+		switch r {
+		case '(':
+			inParen = true
+			current.WriteRune(r)
+		case ')':
+			inParen = false
+			current.WriteRune(r)
+		case ',':
+			if inParen {
+				current.WriteRune(r)
+			} else {
+				if s := strings.TrimSpace(current.String()); s != "" {
+					selectors = append(selectors, s)
+				}
+				current.Reset()
+			}
+		default:
+			current.WriteRune(r)
+		}
+	}
+	if s := strings.TrimSpace(current.String()); s != "" {
+		selectors = append(selectors, s)
+	}
+	return selectors
 }
 
 // MatchesLabelSelector checks if the labels match the given label selector.
 func MatchesLabelSelector(labels map[string]string, labelSelector string) bool {
-	// Split the labelSelector into individual selectors
-	selectors := strings.SplitSeq(labelSelector, ",")
+	// Split the labelSelector into individual selectors respecting parentheses
+	selectors := splitSelectors(labelSelector)
 
-	for selector := range selectors {
+	for _, selector := range selectors {
 		selector = strings.TrimSpace(selector)
 
 		switch {
@@ -417,6 +473,12 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]any, error)
 		return nil, fmt.Errorf("unsupported label type: %s", labelType)
 	}
 
+	// Cache parent NodeGroup info when searching Nodes to avoid redundant reads
+	var ngCache map[string]*model.NodeGroupInfo
+	if labelType == model.StrNode {
+		ngCache = make(map[string]*model.NodeGroupInfo)
+	}
+
 	// Iterate over each filtered label entry
 	for _, kv := range keyValue {
 		labelKey := kv.Key
@@ -432,7 +494,43 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]any, error)
 			continue // Skip this entry and continue with the next one
 		}
 
-		if MatchesLabelSelector(labelInfo.Labels, labelSelector) {
+		effectiveLabels := labelInfo.Labels
+		var parentNg *model.NodeGroupInfo
+
+		// For Nodes, resolve hierarchical labels from parent NodeGroup
+		if labelType == model.StrNode && labelInfo.Labels != nil {
+			nsId := labelInfo.Labels[model.LabelNamespace]
+			infraId := labelInfo.Labels[model.LabelInfraId]
+			nodeGroupId := labelInfo.Labels[model.LabelNodeGroupId]
+			if nsId != "" && infraId != "" && nodeGroupId != "" {
+				cacheKey := fmt.Sprintf("%s/%s/%s", nsId, infraId, strings.ToLower(nodeGroupId))
+				cachedNg, ok := ngCache[cacheKey]
+				if !ok {
+					ngKey := fmt.Sprintf("/%s/%s/%s/%s/%s/%s", model.StrNamespace, nsId, model.StrInfra, infraId, model.StrNodeGroup, strings.ToLower(nodeGroupId))
+					ngData, exists, err := kvstore.Get(ngKey)
+					if err == nil && exists && len(ngData) > 0 {
+						var ng model.NodeGroupInfo
+						if err := json.Unmarshal([]byte(ngData), &ng); err == nil {
+							cachedNg = &ng
+						}
+					}
+					ngCache[cacheKey] = cachedNg
+				}
+				parentNg = cachedNg
+				if parentNg != nil && len(parentNg.Label) > 0 {
+					merged := make(map[string]string, len(parentNg.Label)+len(labelInfo.Labels))
+					for k, v := range parentNg.Label {
+						merged[k] = v
+					}
+					for k, v := range labelInfo.Labels {
+						merged[k] = v
+					}
+					effectiveLabels = merged
+				}
+			}
+		}
+
+		if MatchesLabelSelector(effectiveLabels, labelSelector) {
 			// Use the resource constructor to create a new resource instance
 			resource := resourceConstructor()
 
@@ -457,6 +555,11 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]any, error)
 			if err != nil {
 				log.Error().Err(err).Str("resourceData", string(resourceData)).Msg("Failed to unmarshal resource data")
 				continue // Skip this entry and continue with the next one
+			}
+
+			// Project NodeGroup blueprint attributes onto NodeInfo if needed
+			if node, ok := resource.(*model.NodeInfo); ok && parentNg != nil {
+				model.HydrateNodeInfo(node, parentNg)
 			}
 
 			matchedResources = append(matchedResources, resource)

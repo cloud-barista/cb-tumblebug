@@ -1330,36 +1330,45 @@ func FetchNodeStatus(nsId string, infraId string, nodeId string) (model.NodeStat
 				// A single transient Spider error should not flip status; but if Spider
 				// consistently cannot find the VM over multiple polling cycles, the VM
 				// is almost certainly gone from the CSP.
-				if nodeInfo.Status == model.StatusTerminating {
+				if nodeInfo.Status == model.StatusTerminating || nodeInfo.TargetAction == model.ActionTerminate {
 					streakKey := nsId + "/" + infraId + "/" + nodeId
 					prev, _ := terminatingFailStreak.LoadOrStore(streakKey, 0)
 					streak := prev.(int) + 1
 
-					// Mid-streak: re-issue the terminate request to guard against the rare
-					// case where the original terminate timed out before reaching the CSP.
-					// The terminate (DELETE) endpoint has its own circuit-breaker key,
-					// independent of the vmstatus (GET) circuit-breaker, so this re-send
-					// can succeed even when vmstatus polling is blocked.
-					// Runs in a goroutine to avoid blocking the current status-poll cycle.
-					if streak == terminatingReTerminateAt {
-						fireReTerminate(nsId, infraId, nodeId, fmt.Sprintf("Spider streak=%d", streak))
-					}
-
-					if streak >= terminatingFailStreakMax {
-						if isNodeGoneError(err) {
-							terminatingFailStreak.Delete(streakKey)
-							terminatingReTerminateSent.Delete(streakKey)
-							log.Info().Msgf("[FetchNodeStatus] Node %s: Spider error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
-							callResult.Status = model.StatusTerminated
-						} else {
-							// Network/DNS failures say nothing about CSP state: keep Terminating and
-							// restart the streak so the re-terminate fires again on the next round.
-							terminatingFailStreak.Delete(streakKey)
-							terminatingReTerminateSent.Delete(streakKey)
-							log.Warn().Msgf("[FetchNodeStatus] Node %s: %d consecutive non-not-found Spider errors (Terminating); CSP state unknown, keeping Terminating and re-arming re-terminate", nodeId, streak)
-						}
+					// Fast convergence: if Spider explicitly reports the VM no longer exists (404/NotFound/does not exist),
+					// confirm on streak >= 2 (approx 15-30 s) instead of waiting for terminatingFailStreakMax (10 polls / 2.5 min).
+					if isNodeGoneError(err) && streak >= 2 {
+						terminatingFailStreak.Delete(streakKey)
+						terminatingReTerminateSent.Delete(streakKey)
+						log.Info().Msgf("[FetchNodeStatus] Node %s: VM confirmed gone from CSP (%v) during Terminating (streak %d); promoting to Terminated", nodeId, err, streak)
+						callResult.Status = model.StatusTerminated
 					} else {
-						terminatingFailStreak.Store(streakKey, streak)
+						// Mid-streak: re-issue the terminate request to guard against the rare
+						// case where the original terminate timed out before reaching the CSP.
+						// The terminate (DELETE) endpoint has its own circuit-breaker key,
+						// independent of the vmstatus (GET) circuit-breaker, so this re-send
+						// can succeed even when vmstatus polling is blocked.
+						// Runs in a goroutine to avoid blocking the current status-poll cycle.
+						if streak == terminatingReTerminateAt {
+							fireReTerminate(nsId, infraId, nodeId, fmt.Sprintf("Spider streak=%d", streak))
+						}
+
+						if streak >= terminatingFailStreakMax {
+							if isNodeGoneError(err) {
+								terminatingFailStreak.Delete(streakKey)
+								terminatingReTerminateSent.Delete(streakKey)
+								log.Info().Msgf("[FetchNodeStatus] Node %s: Spider error for %d consecutive polls (Terminating); promoting to Terminated", nodeId, streak)
+								callResult.Status = model.StatusTerminated
+							} else {
+								// Network/DNS failures say nothing about CSP state: keep Terminating and
+								// restart the streak so the re-terminate fires again on the next round.
+								terminatingFailStreak.Delete(streakKey)
+								terminatingReTerminateSent.Delete(streakKey)
+								log.Warn().Msgf("[FetchNodeStatus] Node %s: %d consecutive non-not-found Spider errors (Terminating); CSP state unknown, keeping Terminating and re-arming re-terminate", nodeId, streak)
+							}
+						} else {
+							terminatingFailStreak.Store(streakKey, streak)
+						}
 					}
 				}
 				break
