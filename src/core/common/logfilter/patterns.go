@@ -24,12 +24,44 @@ limitations under the License.
 //   - Patterns: URL patterns that must ALL match (AND condition)
 //   - Single pattern: {"/path"} - matches if URL contains "/path"
 //   - Multiple patterns: {"/path", "param=value"} - matches if URL contains BOTH
+//   - Exclude: URL patterns that cancel the rule if ANY matches
 package logfilter
+
+import "strings"
 
 // SkipRule defines a log skip rule with optional method filtering
 type SkipRule struct {
 	Method   string   // HTTP method ("" = any, "GET", "POST", "PUT", "DELETE", etc.)
 	Patterns []string // URL patterns - ALL must match (AND condition)
+	Exclude  []string // URL patterns - ANY match cancels the rule
+}
+
+// Matches reports whether the rule applies to the given method and URL
+func (r SkipRule) Matches(method, url string) bool {
+	if r.Method != "" && r.Method != method {
+		return false
+	}
+	for _, p := range r.Patterns {
+		if !strings.Contains(url, p) {
+			return false
+		}
+	}
+	for _, e := range r.Exclude {
+		if strings.Contains(url, e) {
+			return false
+		}
+	}
+	return true
+}
+
+// ShouldSkip reports whether any rule matches the given method and URL
+func ShouldSkip(rules []SkipRule, method, url string) bool {
+	for _, r := range rules {
+		if r.Matches(method, url) {
+			return true
+		}
+	}
+	return false
 }
 
 // ==============================================================================
@@ -91,9 +123,8 @@ var APISkipPatterns = []SkipRule{
 	{Patterns: []string{"/tumblebug/livez"}},
 	{Patterns: []string{"/tumblebug/httpVersion"}},
 
-	// Infra status polling (very frequent) - GET only
-	{Method: "GET", Patterns: []string{"/infra", "option=status"}},
-	{Method: "GET", Patterns: []string{"/infra"}},
+	// Infra polling (very frequent) - GET only; keep control actions (terminate, suspend, ...) logged
+	{Method: "GET", Patterns: []string{"/infra"}, Exclude: []string{"/control/"}},
 
 	// Kubernetes cluster operations - GET only
 	{Method: "GET", Patterns: []string{"/k8sCluster"}},

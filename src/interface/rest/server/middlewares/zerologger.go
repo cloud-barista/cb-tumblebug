@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/labstack/echo/v4"
@@ -14,35 +13,21 @@ import (
 func Zerologger(skipRules []logfilter.SkipRule) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		Skipper: func(c echo.Context) bool {
-			path := c.Request().URL.Path
-			query := c.Request().URL.RawQuery
-			method := c.Request().Method
-
-			// Build URL with proper separator
-			url := path
-			if query != "" {
-				url = path + "?" + query
+			url := c.Request().URL.Path
+			if q := c.Request().URL.RawQuery; q != "" {
+				url += "?" + q
 			}
-
-			for _, rule := range skipRules {
-				// Check method filter (empty = match any)
-				if rule.Method != "" && rule.Method != method {
-					continue
-				}
-
-				// Check all URL patterns (AND condition)
-				allMatched := true
-				for _, pattern := range rule.Patterns {
-					if !strings.Contains(url, pattern) {
-						allMatched = false
-						break
-					}
-				}
-				if allMatched {
-					return true
-				}
+			return logfilter.ShouldSkip(skipRules, c.Request().Method, url)
+		},
+		// Logged before the handler runs so long-running requests are visible while in flight
+		BeforeNextFunc: func(c echo.Context) {
+			if c.Request().Method != http.MethodOptions {
+				log.Info().
+					Str("Method", c.Request().Method).
+					Str("URI", c.Request().RequestURI).
+					Str("clientIP", c.RealIP()).
+					Msg("request start")
 			}
-			return false
 		},
 		LogError:         true,
 		LogRequestID:     true,

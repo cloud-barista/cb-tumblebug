@@ -145,25 +145,7 @@ const NoBody = "NOBODY"
 // shouldSkipInternalCallLog checks if the internal call should skip logging.
 // Uses InternalCallSkipPatterns from logfilter package.
 func shouldSkipInternalCallLog(method, url string) bool {
-	for _, rule := range logfilter.InternalCallSkipPatterns {
-		// Check method filter (empty = match any)
-		if rule.Method != "" && rule.Method != method {
-			continue
-		}
-
-		// Check all URL patterns (AND condition)
-		allMatched := true
-		for _, p := range rule.Patterns {
-			if !strings.Contains(url, p) {
-				allMatched = false
-				break
-			}
-		}
-		if allMatched {
-			return true
-		}
-	}
-	return false
+	return logfilter.ShouldSkip(logfilter.InternalCallSkipPatterns, method, url)
 }
 
 // NewHttpClient creates a new HTTP client with Spider Basic Auth configured.

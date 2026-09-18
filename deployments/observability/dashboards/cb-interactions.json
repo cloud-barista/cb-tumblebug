@@ -90,7 +90,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (Method, route) (count_over_time({namespace=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" [1m]))",
+          "expr": "sum by (Method, route) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" [1m]))",
           "legendFormat": "{{Method}} {{route}}",
           "datasource": {
             "type": "loki",
@@ -153,7 +153,7 @@
       },
       "targets": [
         {
-          "expr": "quantile_over_time(0.95, {namespace=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" | unwrap duration(latency) [2m]) by (Method, route)",
+          "expr": "quantile_over_time(0.95, {namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" | unwrap duration(latency) [2m]) by (Method, route)",
           "legendFormat": "{{Method}} {{route}}",
           "datasource": {
             "type": "loki",
@@ -216,7 +216,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (Method, route, status) (count_over_time({namespace=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" | status>=400 [1m]))",
+          "expr": "sum by (Method, route, status) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" | status>=400 [1m]))",
           "legendFormat": "{{Method}} {{route}} ({{status}})",
           "datasource": {
             "type": "loki",
@@ -228,32 +228,19 @@
       ]
     },
     {
-      "type": "row",
-      "title": "cb-tumblebug -> cb-spider \u2014 outbound Spider calls (client Internal Call)",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 10
-      },
-      "id": 5,
-      "panels": []
-    },
-    {
       "type": "timeseries",
-      "title": "Spider calls by method + path (per min)",
-      "description": "Completed calls to cb-spider, grouped by the /spider/<op> path (vpc, vm, securitygroup, ...).",
+      "title": "Requests started by method + path (per min)",
+      "description": "Request-start log lines (logged before the handler runs), same grouping and exclusions as the completions panel. A long-running request shows here immediately; it appears in the completions panel only when it finishes.",
       "datasource": {
         "type": "loki",
         "uid": "loki"
       },
-      "id": 6,
+      "id": 16,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 11
+        "y": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -292,7 +279,205 @@
       },
       "targets": [
         {
-          "expr": "sum by (Method, spiderroute) (count_over_time({namespace=\"cb-tumblebug\"} |= \"Internal Call\" | json | message=~\"Internal Call (OK|Error|Failed)\" | label_format spiderroute=`{{ regexReplaceAll \"^.*?(/spider/[^/?]+).*$\" .URI \"${1}\" }}` [1m]))",
+          "expr": "sum by (Method, route) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=\"request start\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" [1m]))",
+          "legendFormat": "{{Method}} {{route}}",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "refId": "A",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "In-flight requests (started in range, not yet completed)",
+      "description": "Started minus completed within the selected time range, per method + path. Widen the time range so it includes the request start; rows disappear once the request completes.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "id": 17,
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "((sum by (Method, route) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=\"request start\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" [$__range])) - sum by (Method, route) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" [$__range]))) > 0) or (sum by (Method, route) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=\"request start\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" [$__range])) unless sum by (Method, route) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"zerologger.go\" | json | message=~\"request( error)?\" | label_format route=`{{ regexReplaceAll \"^(/[^/?]+(?:/[^/?]+){0,4}).*$\" .URI \"${1}\" }}` | route !~ \"^/tumblebug/(api|readyz|livez|httpVersion|testStreamResponse|requests?)(/|$)\" [$__range])))",
+          "legendFormat": "{{Method}} {{route}}",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "refId": "A",
+          "queryType": "instant",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "in-flight"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Log activity by source file (lines/min)",
+      "description": "cb-tumblebug log lines per minute grouped by the emitting source file. Shows what the server is busy with (e.g. manage_info.go while deleting VMs, statusagent.go for status sweeps) even when no request has completed yet.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "id": 18,
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "lineWidth": 1,
+            "barAlignment": 0,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (file) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} | json | __error__=\"\" | caller != \"\" | label_format file=`{{ regexReplaceAll \"^.*/([^/]+):[0-9]+$\" .caller \"${1}\" }}` [1m]))",
+          "legendFormat": "{{file}}",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "refId": "A",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "cb-tumblebug -> cb-spider \u2014 outbound Spider calls (client Internal Call)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 5,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Spider calls by method + path (per min)",
+      "description": "Completed calls to cb-spider, grouped by the /spider/<op> path (vpc, vm, securitygroup, ...).",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "id": 6,
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 20
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "lineWidth": 1,
+            "barAlignment": 0,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (Method, spiderroute) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"Internal Call\" | json | message=~\"Internal Call (OK|Error|Failed)\" | label_format spiderroute=`{{ regexReplaceAll \"^.*?(/spider/[^/?]+).*$\" .URI \"${1}\" }}` [1m]))",
           "legendFormat": "{{Method}} {{spiderroute}}",
           "datasource": {
             "type": "loki",
@@ -316,7 +501,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 11
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -355,7 +540,7 @@
       },
       "targets": [
         {
-          "expr": "quantile_over_time(0.95, {namespace=\"cb-tumblebug\"} |= \"Internal Call\" | json | message=~\"Internal Call (OK|Error)\" | label_format spiderroute=`{{ regexReplaceAll \"^.*?(/spider/[^/?]+).*$\" .URI \"${1}\" }}` | unwrap latency [2m]) by (Method, spiderroute)",
+          "expr": "quantile_over_time(0.95, {namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"Internal Call\" | json | message=~\"Internal Call (OK|Error)\" | label_format spiderroute=`{{ regexReplaceAll \"^.*?(/spider/[^/?]+).*$\" .URI \"${1}\" }}` | unwrap latency [2m]) by (Method, spiderroute)",
           "legendFormat": "{{Method}} {{spiderroute}}",
           "datasource": {
             "type": "loki",
@@ -379,7 +564,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 11
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -418,7 +603,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (Method, spiderroute, status) (count_over_time({namespace=\"cb-tumblebug\"} |= \"Internal Call\" | json | message=~\"Internal Call (Error|Failed)\" | label_format spiderroute=`{{ regexReplaceAll \"^.*?(/spider/[^/?]+).*$\" .URI \"${1}\" }}` [1m]))",
+          "expr": "sum by (Method, spiderroute, status) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"Internal Call\" | json | message=~\"Internal Call (Error|Failed)\" | label_format spiderroute=`{{ regexReplaceAll \"^.*?(/spider/[^/?]+).*$\" .URI \"${1}\" }}` [1m]))",
           "legendFormat": "{{Method}} {{spiderroute}} ({{status}})",
           "datasource": {
             "type": "loki",
@@ -437,7 +622,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 29
       },
       "id": 9,
       "panels": []
@@ -455,7 +640,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 21
+        "y": 30
       },
       "fieldConfig": {
         "defaults": {
@@ -494,7 +679,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (provider, op) (count_over_time({namespace=\"cb-tumblebug\"} |= \"Direct SDK\" | json | message=~\"Direct SDK (OK|Failed)\" [1m]))",
+          "expr": "sum by (provider, op) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"Direct SDK\" | json | message=~\"Direct SDK (OK|Failed)\" [1m]))",
           "legendFormat": "{{provider}} {{op}}",
           "datasource": {
             "type": "loki",
@@ -518,7 +703,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 21
+        "y": 30
       },
       "fieldConfig": {
         "defaults": {
@@ -557,7 +742,7 @@
       },
       "targets": [
         {
-          "expr": "quantile_over_time(0.95, {namespace=\"cb-tumblebug\"} |= \"Direct SDK\" | json | message=\"Direct SDK OK\" | unwrap latency [2m]) by (provider, op)",
+          "expr": "quantile_over_time(0.95, {namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"Direct SDK\" | json | message=\"Direct SDK OK\" | unwrap latency [2m]) by (provider, op)",
           "legendFormat": "{{provider}} {{op}}",
           "datasource": {
             "type": "loki",
@@ -581,7 +766,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 21
+        "y": 30
       },
       "fieldConfig": {
         "defaults": {
@@ -620,7 +805,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (provider, op) (count_over_time({namespace=\"cb-tumblebug\"} |= \"Direct SDK\" | json | message=\"Direct SDK Failed\" [1m]))",
+          "expr": "sum by (provider, op) (count_over_time({namespace=\"cb-tumblebug\", container=\"cb-tumblebug\"} |= \"Direct SDK\" | json | message=\"Direct SDK Failed\" [1m]))",
           "legendFormat": "{{provider}} {{op}}",
           "datasource": {
             "type": "loki",
@@ -639,7 +824,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 39
       },
       "id": 13,
       "panels": []
@@ -657,7 +842,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 40
       },
       "fieldConfig": {
         "defaults": {
@@ -719,7 +904,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 40
       },
       "fieldConfig": {
         "defaults": {
