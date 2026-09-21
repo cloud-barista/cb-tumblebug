@@ -125,6 +125,9 @@ services:
       - stderr
       - --auth-token
       - simple
+      - --quota-backend-bytes=8589934592
+      - --auto-compaction-mode=periodic
+      - --auto-compaction-retention=1h
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "/usr/local/bin/etcdctl", "endpoint", "health", "--endpoints=http://localhost:2379"]

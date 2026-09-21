@@ -1607,10 +1607,14 @@ func CreateNodesInParallel(ctx context.Context, nsId, infraId string, nodeInfoLi
 								return
 							}
 
-							// Create VM using the existing CreateNode function
+							// Create VM using the existing CreateNode function.
+							// Pass the overall operation context (ctx) rather than regionCtx so that nodes that already
+							// acquired a slot and started provisioning are not aborted mid-way (e.g. while saving labels or
+							// confirming status) if another node triggers cancelRegion due to quota/capacity exhaustion.
+							// Unstarted nodes waiting on nodeSemaphore are still cancelled early via the select above.
 							var createWg sync.WaitGroup
 							createWg.Add(1)
-							err := CreateNode(regionCtx, &createWg, nsId, infraId, nodeInfo, option)
+							err := CreateNode(ctx, &createWg, nsId, infraId, nodeInfo, option)
 							if err != nil {
 								log.Error().Err(err).Msgf("Failed to create VM %s", nodeInfo.Name)
 								nodeMutex.Lock()
@@ -2393,15 +2397,10 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	maps.Copy(labels, nodeInfoData.Label)
 	err = label.CreateOrUpdateLabel(ctx, model.StrNode, nodeInfoData.Uid, nodeKey, labels)
 	if err != nil {
-		err = fmt.Errorf("cannot create label object: %v", err)
-		nodeInfoData.Status = model.StatusFailed
-		nodeInfoData.SystemMessage = err.Error()
-		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
-
-		log.Error().Err(err).Msg("")
-		return err
+		// The VM is already created on the CSP and registered in Tumblebug.
+		// A label persistence failure must NOT mark the entire VM as Failed.
+		log.Warn().Err(err).Msgf("[CreateNode] Failed to store label object for VM %s, but VM provisioning succeeded.", nodeInfoData.Name)
 	}
 
 	return nil
 }
-
