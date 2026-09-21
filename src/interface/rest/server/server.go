@@ -101,25 +101,7 @@ func shouldSkipRequestLog(c echo.Context) bool {
 		return true
 	}
 
-	for _, rule := range logfilter.RequestSkipPatterns {
-		// Check method filter (empty = match any)
-		if rule.Method != "" && rule.Method != method {
-			continue
-		}
-
-		// Check all URL patterns (AND condition)
-		allMatched := true
-		for _, pattern := range rule.Patterns {
-			if !strings.Contains(url, pattern) {
-				allMatched = false
-				break
-			}
-		}
-		if allMatched {
-			return true
-		}
-	}
-	return false
+	return logfilter.ShouldSkip(logfilter.RequestSkipPatterns, method, url)
 }
 
 // RunServer func start Rest API server
