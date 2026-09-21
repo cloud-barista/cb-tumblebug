@@ -1771,15 +1771,23 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 	// Seed the status store with the node's known static config (location, spec,
 	// network, …) before locking, so the list/map view can place and label the node
-	// while it is Creating — before the first CSP poll. Without this the store entry
+	// while it is Creating or Registering — before the first CSP poll. Without this the store entry
 	// created by AcquireLock carries only status/ids, so the node arrives at the map
 	// with an empty location and is mis-rendered as location-less. AcquireLock then
 	// overlays the operation lock; a later poll refreshes the dynamic fields.
+	lockStatus := model.StatusCreating
+	lockAction := model.ActionCreate
+	if strings.EqualFold(option, model.ActionRegister) {
+		nodeInfoData.Status = model.StatusRegistering
+		nodeInfoData.TargetAction = model.ActionRegister
+		lockStatus = model.StatusRegistering
+		lockAction = model.ActionRegister
+	}
 	globalStatusStore.Set(nsId, infraId, nodeInfoData.Id, buildStatusEntry(nsId, infraId, *nodeInfoData))
 
-	// Acquire operation lock so NodeStatusAgent skips polling while Spider POST /vm blocks.
+	// Acquire operation lock so NodeStatusAgent skips polling while Spider POST /vm or /regvm blocks.
 	// The lock is always released on return (defer), guaranteeing cleanup on error paths.
-	GlobalAgent.AcquireLock(nsId, infraId, nodeInfoData.Id, model.StatusCreating, model.ActionCreate)
+	GlobalAgent.AcquireLock(nsId, infraId, nodeInfoData.Id, lockStatus, lockAction)
 	defer GlobalAgent.ReleaseLock(nsId, infraId, nodeInfoData.Id)
 
 	// On any failure exit, sync the seeded store entry to Failed. The many failure
@@ -1800,7 +1808,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	}()
 
 	// in case of registering existing CSP VM
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		// CspResourceId is required
 		if nodeInfoData.CspResourceId == "" {
 			err := fmt.Errorf("nodeInfoData.CspResourceId is empty (required for register VM)")
@@ -1857,7 +1865,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	// surprises the user. Suggestions are exposed via the review APIs
 	// (SpecImagePairReviewResult.SuggestedSystemDisk) for UI display only.
 
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		// Pre-check: reject registration of instances that no longer exist or are already
 		// terminated in the CSP. Uses the direct batch SDK (same path as BatchSweeper) so
 		// no Spider round-trip is needed. CSPs without a registered handler skip the check.
@@ -2040,7 +2048,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	client.SetTimeout(20 * time.Minute)
 
 	url := model.SpiderRestUrl + "/vm"
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		url = model.SpiderRestUrl + "/regvm"
 	}
 
@@ -2128,7 +2136,7 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	nodeInfoData.CspSubnetId = callResult.SubnetIID.SystemId
 	nodeInfoData.CspSshKeyId = callResult.KeyPairIId.SystemId
 
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		// Reconstuct resource IDs
 		// Spec: resolve from DB, or fetch from the CSP and register on demand (as with Image).
 		if callResult.VMSpecName != "" {

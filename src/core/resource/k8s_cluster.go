@@ -517,7 +517,7 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 
 	url := model.SpiderRestUrl
 
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		url = url + "/regcluster"
 	} else { // option != "register"
 		url = url + "/cluster"
@@ -544,10 +544,10 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 	updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo, &spClusterRes.SpiderClusterInfo)
 	tbK8sCInfo.SpiderViewK8sClusterDetail = spClusterRes.SpiderClusterInfo
 
-	if option == "register" && req.CspResourceId == "" {
+	if strings.EqualFold(option, model.ActionRegister) && req.CspResourceId == "" {
 		tbK8sCInfo.SystemLabel = "Registered from CB-Spider resource"
 		// TODO: check to handle something to register
-	} else if option == "register" && req.CspResourceId != "" {
+	} else if strings.EqualFold(option, model.ActionRegister) && req.CspResourceId != "" {
 		tbK8sCInfo.SystemLabel = "Registered from CSP resource"
 	}
 

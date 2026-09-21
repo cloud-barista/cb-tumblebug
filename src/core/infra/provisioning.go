@@ -417,7 +417,7 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 	// with its Nodes (which use ActionRegister) so discovery-aware Infra logic triggers.
 	initStatus := model.StatusCreating
 	initTargetAction := model.ActionCreate
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		initStatus = model.StatusRegistering
 		initTargetAction = model.ActionRegister
 	}
@@ -463,7 +463,7 @@ func createInfraObject(ctx context.Context, nsId, infraId string, req *model.Inf
 
 // handleMonitoringAgent handles CB-Dragonfly monitoring agent installation
 func handleMonitoringAgent(nsId, infraId string, infraTmp model.InfraInfo, option string) error {
-	if !strings.Contains(infraTmp.InstallMonAgent, "yes") || option == "register" {
+	if !strings.Contains(infraTmp.InstallMonAgent, "yes") || strings.EqualFold(option, model.ActionRegister) {
 		return nil
 	}
 
@@ -982,7 +982,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			infraTmp.Status = model.StatusCreating
 			infraTmp.TargetAction = model.ActionCreate
 			infraTmp.TargetStatus = model.StatusRunning
-			if option == "register" {
+			if strings.EqualFold(option, model.ActionRegister) {
 				infraTmp.Status = model.StatusRegistering
 				infraTmp.TargetAction = model.ActionRegister
 			}
@@ -998,7 +998,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			}
 		} else {
 			// Check Infra existence (skip for register option)
-			if option != "register" {
+			if !strings.EqualFold(option, model.ActionRegister) {
 				log.Debug().Msgf("Infra '%s' already exists in namespace '%s'", infraId, nsId)
 				return nil, fmt.Errorf("Infra '%s' already exists in namespace '%s'", infraId, nsId)
 			} else {
@@ -1050,7 +1050,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			// resource's actual CSP state, resolved via late-binding in FetchNodeStatus.
 			initialStatus := model.StatusCreating
 			initialTargetAction := model.ActionCreate
-			if option == "register" {
+			if strings.EqualFold(option, model.ActionRegister) {
 				initialStatus = model.StatusRegistering
 				initialTargetAction = model.ActionRegister
 			}
