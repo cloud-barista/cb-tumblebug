@@ -444,10 +444,10 @@ func CreateNLB(nsId string, infraId string, u *model.NLBReq, option string) (mod
 
 	var url string
 	var method string
-	if option == "register" && u.CspResourceId == "" {
+	if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, u.TargetGroup.NodeGroupId)
 		method = "GET"
-	} else if option == "register" && u.CspResourceId != "" {
+	} else if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regnlb", model.SpiderRestUrl)
 		method = "POST"
 	} else { // option != "register"
@@ -512,9 +512,9 @@ func CreateNLB(nsId string, infraId string, u *model.NLBReq, option string) (mod
 		Location: location,
 	}
 
-	if option == "register" && u.CspResourceId == "" {
+	if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId == "" {
 		content.SystemLabel = "Registered from CB-Spider resource"
-	} else if option == "register" && u.CspResourceId != "" {
+	} else if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId != "" {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 

@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -955,7 +956,7 @@ func RegisterSharedResourceDependencies(ctx context.Context, nsId string, connec
 					}},
 				}
 				log.Info().Msgf("Registering Spider-only node '%s' (%s) from connection '%s'", nodeGroupName, spInfo.CspResourceId, connName)
-				_, regErr := CreateInfra(ctx, nsId, &infraReq, "register", false)
+				_, regErr := CreateInfra(ctx, nsId, &infraReq, model.ActionRegister, false)
 				appendResult(&result, model.StrNode, nodeGroupName, regErr, &result.RegistrationOverview.Node)
 			}
 		}
@@ -1095,7 +1096,7 @@ func registerConnectionsParallel(ctx context.Context, nsId string, connConfigs [
 // RegisterCspNativeResources registers specified CSP native resources from a target connection.
 func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig string, infraNamePrefix string, option string, infraFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
-	optionFlag := "register"
+	optionFlag := model.ActionRegister
 	result := model.RegisterResourceResult{}
 
 	// 1. Option Parsing & Validation
@@ -1229,6 +1230,57 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 			// Explicitly track which nodegroup names were created as temporaries in Phase 1,
 			// so Phase 2 cleanup does not rely on name prefix conventions.
 			tempNodeGroupNames := make(map[string]bool)
+
+			// Pre-filter: skip instances that are already Terminated in CSP or do not exist,
+			// to avoid creating empty/failed Infras and hammering DB lookups.
+			if len(res.Resources.OnCspOnly.Info) > 0 {
+				connConfigInfo, err := common.GetConnConfig(connConfig)
+				if err == nil {
+					providerName := connConfigInfo.ProviderName
+					regionName := connConfigInfo.RegionDetail.RegionName
+					handler, ok := cspdirect.GetBatchVMStatusHandler(providerName)
+					if !ok {
+						log.Warn().Msgf(
+							"[Register] Provider '%s' does not have a registered BatchVMStatusHandler! "+
+								"Terminated-instance pre-filtering is skipped. "+
+								"To prevent performance bottlenecks and redundant failed Infras, "+
+								"please implement RegisterBatchVMStatusHandler in 'src/core/csp/%s/'.",
+							providerName, providerName,
+						)
+					} else {
+						var candidateIds []string
+						for _, r := range res.Resources.OnCspOnly.Info {
+							if r.CspResourceId != "" {
+								candidateIds = append(candidateIds, r.CspResourceId)
+							}
+						}
+						if len(candidateIds) > 0 {
+							sdkCtx := context.WithValue(ctx, model.CtxKeyCredentialHolder, connConfigInfo.CredentialHolder)
+							statuses, err := handler(sdkCtx, regionName, candidateIds)
+							if err != nil {
+								log.Warn().Err(err).Msgf("[Register] Failed to batch-check VM statuses for %s/%s; proceeding without pre-filtering", providerName, regionName)
+							} else {
+								var aliveList []model.ResourceOnCspInfo
+								skippedCount := 0
+								for _, r := range res.Resources.OnCspOnly.Info {
+									status, found := statuses[r.CspResourceId]
+									if !found || strings.EqualFold(status, model.StatusTerminated) {
+										log.Debug().Msgf("[Register] Skipping terminated/missing VM '%s' (status: %s)", r.CspResourceId, status)
+										skippedCount++
+										continue
+									}
+									aliveList = append(aliveList, r)
+								}
+								if skippedCount > 0 {
+									log.Info().Msgf("[Register] Pre-filtered %d terminated/missing VMs out of %d in %s/%s",
+										skippedCount, len(res.Resources.OnCspOnly.Info), providerName, regionName)
+								}
+								res.Resources.OnCspOnly.Info = aliveList
+							}
+						}
+					}
+				}
+			}
 
 			for _, r := range res.Resources.OnCspOnly.Info {
 				// NodeGroup/Node name: use CSP resource ID for consistency with other resources (VNet, SG, etc.)

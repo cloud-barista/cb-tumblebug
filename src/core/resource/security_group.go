@@ -158,7 +158,7 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 	// 	*u.FirewallRules = append(*u.FirewallRules, mockFirewallRule)
 	// }
 
-	if option != "register" {
+	if !strings.EqualFold(option, model.ActionRegister) {
 		err = validate.Var(u.FirewallRules, "required")
 		if err != nil {
 			temp := model.SecurityGroupInfo{}
@@ -210,7 +210,7 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 	uid := common.GenUid()
 
 	// Resolve VNetId if not defined during registration
-	if option == "register" && u.VNetId == "unknown" {
+	if strings.EqualFold(option, model.ActionRegister) && u.VNetId == "unknown" {
 		if u.CspResourceId == "" {
 			return model.SecurityGroupInfo{}, fmt.Errorf("vNetId is required when registering SecurityGroup without CspResourceId")
 		}
@@ -305,10 +305,10 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 
 	var url string
 	var method string
-	if option == "register" && u.CspResourceId == "" {
+	if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, u.Name)
 		method = "GET"
-	} else if option == "register" && u.CspResourceId != "" {
+	} else if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regsecuritygroup", model.SpiderRestUrl)
 		method = "POST"
 	} else { // option != "register"
@@ -360,9 +360,9 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 	}
 	content.FirewallRules = tempTbFirewallRules
 
-	if option == "register" && u.CspResourceId == "" {
+	if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId == "" {
 		content.SystemLabel = "Registered from CB-Spider resource"
-	} else if option == "register" && u.CspResourceId != "" {
+	} else if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId != "" {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 

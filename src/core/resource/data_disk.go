@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 
@@ -64,7 +65,7 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 		return model.DataDiskInfo{}, err
 	}
 
-	if option != "register" { // fields validation
+	if !strings.EqualFold(option, model.ActionRegister) { // fields validation
 		err = validate.Struct(u)
 		if err != nil {
 			if _, ok := err.(*validator.InvalidValidationError); ok {
@@ -115,10 +116,10 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 
 	var url string
 	var method string
-	if option == "register" && u.CspResourceId == "" {
+	if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, u.Name)
 		method = "GET"
-	} else if option == "register" && u.CspResourceId != "" {
+	} else if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regdisk", model.SpiderRestUrl)
 		method = "POST"
 	} else { // option != "register"
@@ -170,7 +171,7 @@ func CreateDataDisk(ctx context.Context, nsId string, u *model.DataDiskReq, opti
 		log.Error().Err(err).Msg("")
 	}
 
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		if u.CspResourceId == "" {
 			content.SystemLabel = "Registered from CB-Spider resource"
 		} else if u.CspResourceId != "" {

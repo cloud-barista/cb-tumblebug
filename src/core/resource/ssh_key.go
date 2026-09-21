@@ -91,7 +91,7 @@ func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option s
 	}
 	uid := common.GenUid()
 
-	if option == "register" { // fields validation
+	if strings.EqualFold(option, model.ActionRegister) { // fields validation
 		errs := []error{}
 		// errs = append(errs, validate.Var(u.Username, "required"))
 		// errs = append(errs, validate.Var(u.PrivateKey, "required"))
@@ -147,7 +147,7 @@ func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option s
 	var url string
 	var method string
 
-	if option == "register" && u.CspResourceId == "" {
+	if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId == "" {
 		// GET request with ConnectionName as query parameter
 		url = fmt.Sprintf("%s/keypair/%s?ConnectionName=%s", model.SpiderRestUrl, u.Name, u.ConnectionName)
 		method = "GET"
@@ -164,7 +164,7 @@ func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option s
 			clientManager.VeryShortDuration,
 		)
 
-	} else if option == "register" && u.CspResourceId != "" {
+	} else if strings.EqualFold(option, model.ActionRegister) && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regkeypair", model.SpiderRestUrl)
 		method = "POST"
 
@@ -224,7 +224,7 @@ func CreateSshKey(ctx context.Context, nsId string, u *model.SshKeyReq, option s
 		log.Error().Err(err).Msg("")
 	}
 
-	if option == "register" {
+	if strings.EqualFold(option, model.ActionRegister) {
 		if u.CspResourceId == "" {
 			content.SystemLabel = "Registered from CB-Spider resource"
 		} else if u.CspResourceId != "" {
