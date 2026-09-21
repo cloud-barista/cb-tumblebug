@@ -51,6 +51,9 @@ spec:
             - --logger=zap
             - --log-outputs=stderr
             - --auth-token=simple
+            - --quota-backend-bytes=8589934592
+            - --auto-compaction-mode=periodic
+            - --auto-compaction-retention=1h
           ports:
             - { name: client, containerPort: 2379 }
             - { name: peer, containerPort: 2380 }
