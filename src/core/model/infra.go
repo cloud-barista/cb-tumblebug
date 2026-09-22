@@ -204,10 +204,10 @@ type InfraInfo struct {
 	// Latest system message such as error message
 	SystemMessage []string `json:"systemMessage"` // systeam-given string message
 
-	PlacementAlgo string            `json:"placementAlgo,omitempty"`
-	Description   string            `json:"description"`
-	Node          []NodeInfo        `json:"node"`
-	NodeGroup     []NodeGroupInfo   `json:"nodeGroup,omitempty"`
+	PlacementAlgo string          `json:"placementAlgo,omitempty"`
+	Description   string          `json:"description"`
+	Node          []NodeInfo      `json:"node"`
+	NodeGroup     []NodeGroupInfo `json:"nodeGroup,omitempty"`
 
 	// Cluster is the list of implicit clusters synthesized at query-time from Nodes.
 	Cluster []InfraClusterInfo `json:"cluster,omitempty"`
@@ -1105,7 +1105,7 @@ type NodeInfo struct {
 	PrivateDNS     string     `json:"privateDNS"`
 	RootDiskType   string     `json:"rootDiskType"`
 	RootDiskSize   int        `json:"rootDiskSize"`
-	RootDeviceName string     `json:"RootDeviceName"`
+	RootDeviceName string     `json:"rootDeviceName"`
 
 	ConnectionName   string       `json:"connectionName"`
 	ConnectionConfig ConnConfig   `json:"connectionConfig"`

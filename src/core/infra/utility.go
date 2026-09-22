@@ -1316,6 +1316,13 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						// Get the Node ID from the newly added Node
 						if infraInfo != nil && len(infraInfo.NewNodeList) > 0 {
 							nodeId = infraInfo.NewNodeList[0]
+						} else if infraInfo != nil && len(infraInfo.Node) > 0 {
+							nodeId = infraInfo.Node[0].Id
+						} else if infraInfo != nil && len(infraInfo.NodeGroup) > 0 && len(infraInfo.NodeGroup[0].Nodes) > 0 {
+							nodeId = infraInfo.NodeGroup[0].Nodes[0].Id
+						}
+						if nodeId == "" {
+							nodeId = common.ToLower(tempNodeGroupName)
 						}
 					}
 				} else {
@@ -1344,6 +1351,23 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 							nodeId = infraInfo.NewNodeList[0]
 						} else if infraInfo != nil && len(infraInfo.Node) > 0 {
 							nodeId = infraInfo.Node[0].Id
+						} else if infraInfo != nil && len(infraInfo.NodeGroup) > 0 && len(infraInfo.NodeGroup[0].Nodes) > 0 {
+							nodeId = infraInfo.NodeGroup[0].Nodes[0].Id
+						}
+						if nodeId == "" {
+							nodeId = common.ToLower(tempNodeGroupName)
+						}
+
+						// If separate Infra mode (useSingleInfra == false), update NodeGroup blueprint from NodeInfo
+						if !useSingleInfra && nodeId != "" {
+							if nodeInfo, nodeErr := GetNodeObject(nsId, infraName, nodeId); nodeErr == nil {
+								ngKey := common.GenInfraNodeGroupKey(nsId, infraName, tempNodeGroupName)
+								if ng, ngErr := GetNodeGroup(nsId, infraName, tempNodeGroupName); ngErr == nil {
+									copyNodeGroupBlueprint(&ng, &nodeInfo)
+									ngVal, _ := json.Marshal(ng)
+									kvstore.Put(ngKey, string(ngVal))
+								}
+							}
 						}
 					}
 				}
@@ -1351,12 +1375,20 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 				// If Node was registered successfully, collect its network info
 				if nodeId != "" && useSingleInfra {
 					nodeInfo, err := GetNodeObject(nsId, singleInfraName, nodeId)
-					if err == nil && nodeInfo.VNetId != "" {
-						networkKey := fmt.Sprintf("%s_%s", nodeInfo.VNetId, nodeInfo.SubnetId)
+					if err == nil {
+						vnetId := nodeInfo.VNetId
+						if vnetId == "" {
+							vnetId = "unknown"
+						}
+						subnetId := nodeInfo.SubnetId
+						if subnetId == "" {
+							subnetId = "unknown"
+						}
+						networkKey := fmt.Sprintf("%s_%s", vnetId, subnetId)
 						registeredNodes = append(registeredNodes, registeredNodeInfo{
 							nodeId:     nodeId,
-							vnetId:     nodeInfo.VNetId,
-							subnetId:   nodeInfo.SubnetId,
+							vnetId:     vnetId,
+							subnetId:   subnetId,
 							networkKey: networkKey,
 						})
 					}
@@ -1364,7 +1396,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 			}
 
 			// Phase 2: Reorganize nodegroups by network configuration (only for single Infra mode)
-			if useSingleInfra && len(registeredNodes) > 1 {
+			if useSingleInfra && len(registeredNodes) >= 1 {
 				log.Info().Msgf("Reorganizing %d VMs into network-based nodegroups in Infra %s", len(registeredNodes), singleInfraName)
 
 				// Group VMs by network configuration
@@ -1390,12 +1422,18 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					networkNodeGroupMap[networkKey] = newNodeGroupName
 					nodegroupNodeCount[newNodeGroupName] = len(nodeIds)
 
+					var firstNodeInfo *model.NodeInfo
+
 					// Update each VM's NodeGroupId
 					for _, nodeId := range nodeIds {
 						nodeInfo, err := GetNodeObject(nsId, singleInfraName, nodeId)
 						if err != nil {
 							log.Warn().Err(err).Msgf("Failed to get VM %s for nodegroup update", nodeId)
 							continue
+						}
+						if firstNodeInfo == nil {
+							copied := nodeInfo
+							firstNodeInfo = &copied
 						}
 
 						oldNodeGroupId := nodeInfo.NodeGroupId
@@ -1409,7 +1447,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						}
 					}
 
-					// Create or update the new nodegroup
+					// Create or update the new nodegroup with full blueprint metadata
 					nodegroupKey := common.GenInfraNodeGroupKey(nsId, singleInfraName, newNodeGroupName)
 					nodegroupInfo := model.NodeGroupInfo{
 						ResourceType:  model.StrNodeGroup,
@@ -1418,6 +1456,10 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						Uid:           common.GenUid(),
 						NodeGroupSize: len(nodeIds),
 						NodeId:        nodeIds,
+						Description:   fmt.Sprintf("Nodegroup for CSP managed Nodes (%s)", networkKey),
+					}
+					if firstNodeInfo != nil {
+						copyNodeGroupBlueprint(&nodegroupInfo, firstNodeInfo)
 					}
 					nodegroupVal, _ := json.Marshal(nodegroupInfo)
 					kvstore.Put(nodegroupKey, string(nodegroupVal))
@@ -1596,4 +1638,34 @@ func FindTbNodeByCspId(nsId string, infraId string, nodeCspResourceId string) (m
 
 	err = fmt.Errorf("Cannot find the VM %s in %s/%s", nodeCspResourceId, nsId, infraId)
 	return model.NodeInfo{}, err
+}
+
+// copyNodeGroupBlueprint populates NodeGroupInfo blueprint fields from a member NodeInfo.
+func copyNodeGroupBlueprint(ng *model.NodeGroupInfo, node *model.NodeInfo) {
+	if ng == nil || node == nil {
+		return
+	}
+	ng.ConnectionName = node.ConnectionName
+	ng.ConnectionConfig = node.ConnectionConfig
+	ng.Region = node.Region
+	ng.Location = node.Location
+	ng.SpecId = node.SpecId
+	ng.CspSpecName = node.CspSpecName
+	ng.Spec = node.Spec
+	ng.ImageId = node.ImageId
+	ng.CspImageName = node.CspImageName
+	ng.Image = node.Image
+	ng.VNetId = node.VNetId
+	ng.CspVNetId = node.CspVNetId
+	ng.SubnetId = node.SubnetId
+	ng.CspSubnetId = node.CspSubnetId
+	ng.NetworkInterface = node.NetworkInterface
+	ng.SecurityGroupIds = node.SecurityGroupIds
+	ng.SshKeyId = node.SshKeyId
+	ng.CspSshKeyId = node.CspSshKeyId
+	ng.SSHPort = node.SSHPort
+	ng.NodeUserName = node.NodeUserName
+	ng.RootDiskType = node.RootDiskType
+	ng.RootDiskSize = node.RootDiskSize
+	ng.RootDeviceName = node.RootDeviceName
 }

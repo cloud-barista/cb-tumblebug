@@ -561,31 +561,53 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 		for _, gid := range nodeGroupIds {
 			if ng, ngErr := GetNodeGroup(nsId, infraId, gid); ngErr == nil {
 				// If pre-existing NodeGroup lacks blueprint metadata, backfill from member nodes
-				if ng.ConnectionName == "" && rawNodeMap[gid] != nil {
+				if rawNodeMap[gid] != nil {
 					first := rawNodeMap[gid]
-					ng.ConnectionName = first.ConnectionName
-					ng.ConnectionConfig = first.ConnectionConfig
-					ng.Region = first.Region
-					ng.Location = first.Location
-					ng.SpecId = first.SpecId
-					ng.CspSpecName = first.CspSpecName
-					ng.Spec = first.Spec
-					ng.ImageId = first.ImageId
-					ng.CspImageName = first.CspImageName
-					ng.Image = first.Image
-					ng.VNetId = first.VNetId
-					ng.CspVNetId = first.CspVNetId
-					ng.SubnetId = first.SubnetId
-					ng.CspSubnetId = first.CspSubnetId
-					ng.NetworkInterface = first.NetworkInterface
-					ng.SecurityGroupIds = first.SecurityGroupIds
-					ng.SshKeyId = first.SshKeyId
-					ng.CspSshKeyId = first.CspSshKeyId
-					ng.SSHPort = first.SSHPort
-					ng.NodeUserName = first.NodeUserName
-					ng.RootDiskType = first.RootDiskType
-					ng.RootDiskSize = first.RootDiskSize
-					ng.RootDeviceName = first.RootDeviceName
+					if ng.ConnectionName == "" {
+						ng.ConnectionName = first.ConnectionName
+						ng.ConnectionConfig = first.ConnectionConfig
+						ng.Region = first.Region
+						ng.Location = first.Location
+					}
+					if ng.SpecId == "" || ng.SpecId == "unknown" {
+						ng.SpecId = first.SpecId
+						ng.CspSpecName = first.CspSpecName
+						ng.Spec = first.Spec
+					}
+					if ng.ImageId == "" || ng.ImageId == "unknown" {
+						ng.ImageId = first.ImageId
+						ng.CspImageName = first.CspImageName
+						ng.Image = first.Image
+					}
+					if ng.VNetId == "" || ng.VNetId == "unknown" {
+						ng.VNetId = first.VNetId
+						ng.CspVNetId = first.CspVNetId
+						ng.SubnetId = first.SubnetId
+						ng.CspSubnetId = first.CspSubnetId
+						ng.NetworkInterface = first.NetworkInterface
+					}
+					if len(ng.SecurityGroupIds) == 0 || (len(ng.SecurityGroupIds) == 1 && ng.SecurityGroupIds[0] == "unknown") {
+						ng.SecurityGroupIds = first.SecurityGroupIds
+					}
+					if ng.SshKeyId == "" || ng.SshKeyId == "unknown" {
+						ng.SshKeyId = first.SshKeyId
+						ng.CspSshKeyId = first.CspSshKeyId
+					}
+					if ng.SSHPort == 0 {
+						ng.SSHPort = first.SSHPort
+					}
+					if ng.NodeUserName == "" {
+						ng.NodeUserName = first.NodeUserName
+					}
+					if ng.RootDiskType == "" {
+						ng.RootDiskType = first.RootDiskType
+					}
+					if ng.RootDiskSize == 0 {
+						ng.RootDiskSize = first.RootDiskSize
+					}
+					if ng.RootDeviceName == "" {
+						ng.RootDeviceName = first.RootDeviceName
+					}
 				}
 				ng.Nodes = nodeMapByGroup[gid]
 				nodeGroups = append(nodeGroups, ng)
