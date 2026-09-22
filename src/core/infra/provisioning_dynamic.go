@@ -1433,12 +1433,14 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 		return fmt.Errorf("Node %s already exists in Infra %s; refusing to overwrite its record", nodeInfoData.Id, infraId)
 	}
 
-	configTmp, err := common.GetConnConfig(nodeInfoData.ConnectionName)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
+	if nodeInfoData.Location.Display == "" {
+		configTmp, err := common.GetConnConfig(nodeInfoData.ConnectionName)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		nodeInfoData.Location = configTmp.RegionDetail.Location
 	}
-	nodeInfoData.Location = configTmp.RegionDetail.Location
 
 	// Store auxiliary details under a separate key; keep them out of the Node
 	// record so status/bulk reads stay small. nodeInfoData is a pointer, so store

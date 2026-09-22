@@ -1318,8 +1318,6 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 							nodeId = infraInfo.NewNodeList[0]
 						} else if infraInfo != nil && len(infraInfo.Node) > 0 {
 							nodeId = infraInfo.Node[0].Id
-						} else if infraInfo != nil && len(infraInfo.NodeGroup) > 0 && len(infraInfo.NodeGroup[0].Nodes) > 0 {
-							nodeId = infraInfo.NodeGroup[0].Nodes[0].Id
 						}
 						if nodeId == "" {
 							nodeId = common.ToLower(tempNodeGroupName)
@@ -1351,8 +1349,6 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 							nodeId = infraInfo.NewNodeList[0]
 						} else if infraInfo != nil && len(infraInfo.Node) > 0 {
 							nodeId = infraInfo.Node[0].Id
-						} else if infraInfo != nil && len(infraInfo.NodeGroup) > 0 && len(infraInfo.NodeGroup[0].Nodes) > 0 {
-							nodeId = infraInfo.NodeGroup[0].Nodes[0].Id
 						}
 						if nodeId == "" {
 							nodeId = common.ToLower(tempNodeGroupName)

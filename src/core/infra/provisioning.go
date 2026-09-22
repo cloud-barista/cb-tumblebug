@@ -688,6 +688,9 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 	var objectErrs []error
 	var objectErrMu sync.Mutex
 
+	const maxConcurrentCreateNodeObject = 50
+	sem := make(chan struct{}, maxConcurrentCreateNodeObject)
+
 	// Create Node objects for the reserved names
 	for i, reservedNodeId := range newNodeIds {
 		nodeInfoData := model.NodeInfo{}
@@ -748,7 +751,9 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 		nodeInfoData.CspResourceId = nodeRequest.CspResourceId
 
 		wg.Add(1)
+		sem <- struct{}{}
 		go func(node model.NodeInfo) {
+			defer func() { <-sem }()
 			if err := CreateNodeObject(&wg, nsId, infraId, &node); err != nil {
 				objectErrMu.Lock()
 				objectErrs = append(objectErrs, err)
@@ -1125,10 +1130,14 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	log.Info().Msgf("Creating %d VM objects", len(nodeConfigs))
 
+	const maxConcurrentCreateVMObject = 50
+	semCreateVM := make(chan struct{}, maxConcurrentCreateVMObject)
 	for _, config := range nodeConfigs {
 		wg.Add(1)
+		semCreateVM <- struct{}{}
 		go func(cfg nodeConfig) {
 			defer wg.Done()
+			defer func() { <-semCreateVM }()
 			if err := createNodeObjectSafe(nsId, infraId, &cfg.nodeInfo); err != nil {
 				errorMu.Lock()
 				createErrors = append(createErrors, fmt.Errorf("VM object creation failed for '%s': %w", cfg.nodeInfo.Name, err))
