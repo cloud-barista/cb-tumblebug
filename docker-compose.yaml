@@ -159,7 +159,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.13.6
+    image: cloudbaristaorg/cb-spider:0.13.9
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -223,7 +223,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.13.9
+    image: cloudbaristaorg/cb-mapui:0.13.11
     container_name: cb-mapui
     # build:
     #   context: ../cb-mapui
