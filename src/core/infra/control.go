@@ -591,12 +591,12 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 			defer preWg.Done()
 			defer func() { <-preSem }()
 
-			// Skip if control is not needed
-			if err := CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: nodeId}, action); err != nil && !force {
-				log.Debug().Msgf("Skipping VM %s for action %s: %v", nodeId, action, err)
+			nodeInfo, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, ngMap)
+			if err != nil {
+				log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", nodeId)
 				nodeResultsMu.Lock()
 				nodeResultsMap[nodeId] = model.NodeActionResult{
-					Message: fmt.Sprintf("Skipped VM %s: %v", nodeId, err),
+					Message: fmt.Sprintf("Failed to get VM %s info: %v", nodeId, err),
 					NodeId:  nodeId,
 					Action:  action,
 					Success: false,
@@ -606,12 +606,12 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 				return
 			}
 
-			nodeInfo, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, ngMap)
-			if err != nil {
-				log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", nodeId)
+			// Skip if control is not needed (in-memory validation without redundant etcd read)
+			if err := checkAllowedNodeStatusTransition(nodeInfo.Status, nodeInfo.TargetAction, action); err != nil && !force {
+				log.Debug().Msgf("Skipping VM %s for action %s: %v", nodeId, action, err)
 				nodeResultsMu.Lock()
 				nodeResultsMap[nodeId] = model.NodeActionResult{
-					Message: fmt.Sprintf("Failed to get VM %s info: %v", nodeId, err),
+					Message: fmt.Sprintf("Skipped VM %s: %v", nodeId, err),
 					NodeId:  nodeId,
 					Action:  action,
 					Success: false,
@@ -1611,6 +1611,68 @@ func isTransientNetworkError(err error) bool {
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
+// checkAllowedNodeStatusTransition validates whether an action is allowed for a node
+// given its current status and targetAction. This is a pure in-memory check without etcd I/O.
+func checkAllowedNodeStatusTransition(status, currentTargetAction, action string) error {
+	targetStatus := ""
+	switch {
+	case strings.EqualFold(action, model.ActionTerminate):
+		targetStatus = model.StatusTerminated
+	case strings.EqualFold(action, model.ActionReboot):
+		targetStatus = model.StatusRunning
+	case strings.EqualFold(action, model.ActionSuspend):
+		targetStatus = model.StatusSuspended
+	case strings.EqualFold(action, model.ActionResume):
+		targetStatus = model.StatusRunning
+	default:
+		return fmt.Errorf("requested action %s is not matched with available actions", action)
+	}
+
+	// duplicated action
+	if strings.EqualFold(status, targetStatus) {
+		if strings.EqualFold(action, model.ActionTerminate) {
+			// Terminate is idempotent: already terminated is considered success
+			return nil
+		}
+		if !strings.EqualFold(action, model.ActionReboot) {
+			return errors.New(action + " is not allowed for VM under " + status)
+		}
+	}
+	// redundant action
+	if strings.EqualFold(status, model.StatusTerminated) {
+		if strings.EqualFold(action, model.ActionTerminate) {
+			return nil
+		}
+		return errors.New(action + " is not allowed for VM under " + status)
+	}
+	// under transitional status
+	if strings.EqualFold(status, model.StatusCreating) {
+		return errors.New(action + " is not allowed for VM under " + status)
+	}
+	if strings.EqualFold(status, model.StatusTerminating) ||
+		strings.EqualFold(status, model.StatusResuming) ||
+		strings.EqualFold(status, model.StatusSuspending) ||
+		strings.EqualFold(status, model.StatusRebooting) {
+
+		// Allow re-requesting the same action already in progress: the CSP may
+		// never have actually received the original request, leaving the node
+		// stuck transitional indefinitely. This re-dispatches to the CSP.
+		if strings.EqualFold(currentTargetAction, action) {
+			return nil
+		}
+		return errors.New(action + " is not allowed for VM under " + status)
+	}
+	// under conditional status
+	if strings.EqualFold(status, model.StatusSuspended) {
+		if strings.EqualFold(action, model.ActionResume) || strings.EqualFold(action, model.ActionTerminate) {
+			return nil
+		} else {
+			return errors.New(action + " is not allowed for VM under " + status)
+		}
+	}
+	return nil
+}
+
 func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalParameter, action string) error {
 
 	targetStatus := ""
@@ -1633,49 +1695,7 @@ func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalPa
 			log.Error().Err(err).Msg("")
 			return err
 		}
-
-		// duplicated action
-		if strings.EqualFold(node.Status, targetStatus) {
-			if strings.EqualFold(action, model.ActionTerminate) {
-				// Terminate is idempotent: already terminated is considered success
-				return nil
-			}
-			if !strings.EqualFold(action, model.ActionReboot) {
-				return errors.New(action + " is not allowed for VM under " + node.Status)
-			}
-		}
-		// redundant action
-		if strings.EqualFold(node.Status, model.StatusTerminated) {
-			if strings.EqualFold(action, model.ActionTerminate) {
-				return nil
-			}
-			return errors.New(action + " is not allowed for VM under " + node.Status)
-		}
-		// under transitional status
-		if strings.EqualFold(node.Status, model.StatusCreating) {
-			return errors.New(action + " is not allowed for VM under " + node.Status)
-		}
-		if strings.EqualFold(node.Status, model.StatusTerminating) ||
-			strings.EqualFold(node.Status, model.StatusResuming) ||
-			strings.EqualFold(node.Status, model.StatusSuspending) ||
-			strings.EqualFold(node.Status, model.StatusRebooting) {
-
-			// Allow re-requesting the same action already in progress: the CSP may
-			// never have actually received the original request, leaving the node
-			// stuck transitional indefinitely. This re-dispatches to the CSP.
-			if strings.EqualFold(node.TargetAction, action) {
-				return nil
-			}
-			return errors.New(action + " is not allowed for VM under " + node.Status)
-		}
-		// under conditional status
-		if strings.EqualFold(node.Status, model.StatusSuspended) {
-			if strings.EqualFold(action, model.ActionResume) || strings.EqualFold(action, model.ActionTerminate) {
-				return nil
-			} else {
-				return errors.New(action + " is not allowed for VM under " + node.Status)
-			}
-		}
+		return checkAllowedNodeStatusTransition(node.Status, node.TargetAction, action)
 	} else {
 		infra, err := GetInfraStatus(nsId, infraId)
 		if err != nil {

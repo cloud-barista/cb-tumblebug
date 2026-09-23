@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	armcompute "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 
@@ -60,15 +61,9 @@ func parseAzureArmID(armID string) (azureArmIDParts, error) {
 
 // BatchDescribeInstanceStatuses returns a map of the requested VM identifiers → TB status.
 //
-// It issues a single subscription-wide VirtualMachines ListAll with statusOnly=true, which
-// returns every VM's runtime InstanceView (power state) in one paged call, and matches each
-// requested identifier against that snapshot. Identifiers may be a full ARM resource ID or a
-// bare VM name — TB register records sometimes hold only the name — and both resolve because
-// the snapshot is keyed by ARM ID and by name.
-//
-// A requested VM absent from the snapshot is omitted from the result: the clean "not found"
-// signal callers treat as gone (the AWS handler follows the same contract). Using ListAll
-// rather than a per-VM Get also lets a bare name resolve without knowing its resource group.
+// It queries each VM's InstanceView directly from the regional Compute Resource Provider
+// (bounded by azureControlConcurrency), returning real-time authoritative power state
+// without relying on Azure ARM's subscription-wide cached ListAll snapshot.
 func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceIds []string) (map[string]string, error) {
 	if len(instanceIds) == 0 {
 		return map[string]string{}, nil
@@ -84,43 +79,50 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 		return nil, fmt.Errorf("Azure vmstatus: failed to get VM client: %w", err)
 	}
 
-	statusOnly := "true"
-	pager := vmClient.NewListAllPager(&armcompute.VirtualMachinesClientListAllOptions{StatusOnly: &statusOnly})
-	byKey := make(map[string]string)
-	for pager.More() {
-		page, perr := pager.NextPage(ctx)
-		if perr != nil {
-			return nil, fmt.Errorf("Azure vmstatus: ListAll failed (region=%s): %w", region, perr)
-		}
-		for _, vm := range page.Value {
-			if vm == nil {
-				continue
-			}
-			status := azurePowerStateToTBStatus(vm.Properties)
-			if vm.ID != nil {
-				byKey[strings.ToLower(*vm.ID)] = status
-			}
-			if vm.Name != nil {
-				byKey[strings.ToLower(*vm.Name)] = status
-			}
-		}
+	type statusResult struct {
+		id     string
+		status string
+		err    error
 	}
+
+	ch := make(chan statusResult, len(instanceIds))
+	sem := make(chan struct{}, azureControlConcurrency)
+
+	var wg sync.WaitGroup
+	for _, instID := range instanceIds {
+		wg.Add(1)
+		go func(id string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			rg := region
+			vmName := id
+			if parts, perr := parseAzureArmID(id); perr == nil {
+				rg = parts.resourceGroup
+				vmName = parts.vmName
+			}
+
+			resp, ierr := vmClient.InstanceView(ctx, rg, vmName, nil)
+			if ierr != nil {
+				ch <- statusResult{id: id, err: ierr}
+				return
+			}
+			st := azureInstanceViewToTBStatus(&resp.VirtualMachineInstanceView)
+			ch <- statusResult{id: id, status: st}
+		}(instID)
+	}
+	wg.Wait()
+	close(ch)
 
 	result := make(map[string]string, len(instanceIds))
-	for _, id := range instanceIds {
-		keys := []string{strings.ToLower(id)}
-		if parts, perr := parseAzureArmID(id); perr == nil {
-			keys = append(keys, strings.ToLower(parts.vmName))
-		}
-		for _, k := range keys {
-			if s, ok := byKey[k]; ok {
-				result[id] = s
-				break
-			}
+	for r := range ch {
+		if r.err == nil && r.status != "" && r.status != model.StatusUndefined {
+			result[r.id] = r.status
 		}
 	}
 
-	log.Trace().
+	log.Debug().
 		Str("region", region).
 		Int("queried", len(instanceIds)).
 		Int("found", len(result)).
@@ -129,20 +131,13 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 	return result, nil
 }
 
-// azurePowerStateToTBStatus extracts the VM state from an Azure VM instance view
+// azureInstanceViewToTBStatus extracts the VM state from an Azure VirtualMachineInstanceView
 // and maps it to a TB status string.
-//
-// Azure reports two relevant status categories in InstanceView.Statuses:
-//   - PowerState/xxx  — actual power state of the VM
-//   - ProvisioningState/xxx — ARM-level provisioning state (including "deleting")
-//
-// ProvisioningState/deleting is checked first because a VM being deleted may still
-// report a stale PowerState (e.g. stopped) that would otherwise be misread as Suspended.
-func azurePowerStateToTBStatus(props *armcompute.VirtualMachineProperties) string {
-	if props == nil || props.InstanceView == nil {
+func azureInstanceViewToTBStatus(iv *armcompute.VirtualMachineInstanceView) string {
+	if iv == nil {
 		return model.StatusUndefined
 	}
-	for _, status := range props.InstanceView.Statuses {
+	for _, status := range iv.Statuses {
 		if status.Code == nil {
 			continue
 		}
@@ -150,8 +145,11 @@ func azurePowerStateToTBStatus(props *armcompute.VirtualMachineProperties) strin
 		if strings.EqualFold(code, "provisioningstate/deleting") {
 			return model.StatusTerminating
 		}
+		if strings.EqualFold(code, "provisioningstate/creating") {
+			return model.StatusCreating
+		}
 	}
-	for _, status := range props.InstanceView.Statuses {
+	for _, status := range iv.Statuses {
 		if status.Code == nil {
 			continue
 		}
@@ -162,7 +160,7 @@ func azurePowerStateToTBStatus(props *armcompute.VirtualMachineProperties) strin
 		powerState := strings.TrimPrefix(code, "powerstate/")
 		switch powerState {
 		case "starting":
-			return model.StatusCreating
+			return model.StatusResuming
 		case "running":
 			return model.StatusRunning
 		case "stopping", "deallocating":
@@ -178,3 +176,12 @@ func azurePowerStateToTBStatus(props *armcompute.VirtualMachineProperties) strin
 	}
 	return model.StatusUndefined
 }
+
+// azurePowerStateToTBStatus delegates to azureInstanceViewToTBStatus.
+func azurePowerStateToTBStatus(props *armcompute.VirtualMachineProperties) string {
+	if props == nil {
+		return model.StatusUndefined
+	}
+	return azureInstanceViewToTBStatus(props.InstanceView)
+}
+

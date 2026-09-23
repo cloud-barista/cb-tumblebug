@@ -89,8 +89,10 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 // alibabaStateToTBStatus maps Alibaba ECS instance status strings to TB status strings.
 func alibabaStateToTBStatus(state string) string {
 	switch state {
-	case "Pending", "Starting":
+	case "Pending":
 		return model.StatusCreating
+	case "Starting":
+		return model.StatusResuming
 	case "Running":
 		return model.StatusRunning
 	case "Stopping":
