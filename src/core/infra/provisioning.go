@@ -1278,10 +1278,12 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 		log.Error().Msgf("Infra %s marked as Failed - all VM and Infra status updates completed", infraId)
 
-		// Record provisioning failure events even when all VMs failed
-		if err := RecordProvisioningEventsFromInfra(nsId, infraResult); err != nil {
-			log.Error().Err(err).Msgf("Failed to record provisioning events for failed Infra '%s'", infraId)
-		}
+		// Record provisioning failure events asynchronously even when all VMs failed
+		go func(ns string, info *model.InfraInfo) {
+			if err := RecordProvisioningEventsFromInfra(ns, info); err != nil {
+				log.Error().Err(err).Msgf("Failed to record provisioning events for failed Infra '%s'", info.Id)
+			}
+		}(nsId, infraResult)
 
 		// Return detailed error message
 		errorMsg := fmt.Sprintf("Infra '%s' creation failed: all %d VMs failed to create.\n\nError: %s",
@@ -1324,11 +1326,13 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		switch req.PolicyOnPartialFailure {
 		case model.PolicyRollback:
 			log.Error().Msgf("VM creation failed for %d VMs, rolling back entire Infra due to policy=rollback", len(createErrors))
-			// Record provisioning failure events before rollback
+			// Record provisioning failure events before rollback asynchronously
 			if infraInfo, infraErr := GetInfraInfo(nsId, infraId); infraErr == nil {
-				if err := RecordProvisioningEventsFromInfra(nsId, infraInfo); err != nil {
-					log.Error().Err(err).Msgf("Failed to record provisioning events before rollback for Infra '%s'", infraId)
-				}
+				go func(ns string, info *model.InfraInfo) {
+					if err := RecordProvisioningEventsFromInfra(ns, info); err != nil {
+						log.Error().Err(err).Msgf("Failed to record provisioning events before rollback for Infra '%s'", info.Id)
+					}
+				}(nsId, infraInfo)
 			}
 			if cleanupErr := cleanupPartialInfra(nsId, infraId); cleanupErr != nil {
 				log.Error().Err(cleanupErr).Msg("Failed to cleanup partial Infra")
@@ -1454,11 +1458,6 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		log.Info().Msgf("Infra '%s' has been successfully created with all %d VMs", infraId, totalNodeCount)
 	}
 
-	// Record provisioning events to history if there were any failures or if specs have previous failure history
-	if err := RecordProvisioningEventsFromInfra(nsId, infraResult); err != nil {
-		log.Error().Err(err).Msgf("Failed to record provisioning events for Infra '%s', but continuing", infraId)
-	}
-
 	// Update DB for the final status of Infra
 	infraResult.TargetStatus = model.StatusComplete
 	infraResult.TargetAction = model.ActionComplete
@@ -1469,5 +1468,13 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Infra info after VM creation: %w", err)
 	}
+
+	// Record provisioning events to history asynchronously in background so it does not block the response
+	go func(ns string, info *model.InfraInfo) {
+		if err := RecordProvisioningEventsFromInfra(ns, info); err != nil {
+			log.Error().Err(err).Msgf("Failed to record provisioning events for Infra '%s'", info.Id)
+		}
+	}(nsId, infraResult)
+
 	return infraResult, nil
 }
