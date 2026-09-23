@@ -1433,12 +1433,14 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 		return fmt.Errorf("Node %s already exists in Infra %s; refusing to overwrite its record", nodeInfoData.Id, infraId)
 	}
 
-	configTmp, err := common.GetConnConfig(nodeInfoData.ConnectionName)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
+	if nodeInfoData.Location.Display == "" {
+		configTmp, err := common.GetConnConfig(nodeInfoData.ConnectionName)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		nodeInfoData.Location = configTmp.RegionDetail.Location
 	}
-	nodeInfoData.Location = configTmp.RegionDetail.Location
 
 	// Store auxiliary details under a separate key; keep them out of the Node
 	// record so status/bulk reads stay small. nodeInfoData is a pointer, so store
@@ -1796,11 +1798,12 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	// Creating (with a Create target) even though provisioning failed. The success
 	// path updates the store live via FetchNodeStatus, so this only acts on failure.
 	defer func() {
-		if strings.EqualFold(nodeInfoData.Status, model.StatusFailed) {
+		if strings.EqualFold(nodeInfoData.Status, model.StatusFailed) || strings.EqualFold(nodeInfoData.Status, model.StatusTerminated) {
 			globalStatusStore.Update(nsId, infraId, nodeInfoData.Id, func(e *StatusEntry) {
-				e.Status = model.StatusFailed
-				e.TargetStatus = model.StatusFailed
-				e.TargetAction = model.ActionComplete
+				e.Status = nodeInfoData.Status
+				e.NativeStatus = nodeInfoData.Status
+				e.TargetStatus = nodeInfoData.TargetStatus
+				e.TargetAction = nodeInfoData.TargetAction
 				e.Priority = PollSkip
 				e.SystemMessage = nodeInfoData.SystemMessage
 			})
@@ -1882,8 +1885,18 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 					// (not Failed): the record reflects reality and is a clean GC target.
 					msg := fmt.Sprintf("instance %s is not found or already terminated in CSP; skipping registration", nodeInfoData.CspResourceId)
 					nodeInfoData.Status = model.StatusTerminated
+					nodeInfoData.TargetAction = model.ActionComplete
+					nodeInfoData.TargetStatus = model.StatusComplete
 					nodeInfoData.SystemMessage = msg
 					UpdateNodeInfo(nsId, infraId, *nodeInfoData)
+					globalStatusStore.Update(nsId, infraId, nodeInfoData.Id, func(e *StatusEntry) {
+						e.Status = model.StatusTerminated
+						e.NativeStatus = model.StatusTerminated
+						e.TargetStatus = model.StatusComplete
+						e.TargetAction = model.ActionComplete
+						e.Priority = PollSkip
+						e.SystemMessage = msg
+					})
 					log.Warn().Msgf("[register] %s", msg)
 					return fmt.Errorf("%s", msg)
 				}
@@ -2177,46 +2190,60 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			}
 		}
 
-		// vNet
-		resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "cspResourceName", callResult.VpcIID.SystemId)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		} else {
-			resourcesInNs := resourceListInNs.([]model.VNetInfo) // type assertion
-			for _, resource := range resourcesInNs {
-				if resource.ConnectionName == requestBody.ConnectionName {
-					nodeInfoData.VNetId = resource.Id
+		// vNet & Subnet
+		targetVNet := callResult.VpcIID.SystemId
+		if targetVNet == "" {
+			targetVNet = callResult.VpcIID.NameId
+		}
+		if targetVNet != "" {
+			resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "", "")
+			if err != nil {
+				log.Error().Err(err).Msg("[CreateNode] Failed to list VNets for registration matching")
+			} else if resourcesInNs, ok := resourceListInNs.([]model.VNetInfo); ok {
+				for _, res := range resourcesInNs {
+					if res.ConnectionName == requestBody.ConnectionName &&
+						(res.CspResourceId == targetVNet || res.CspResourceName == targetVNet || res.Id == targetVNet || res.Name == targetVNet) {
+						nodeInfoData.VNetId = res.Id
 
-					// subnet
-					targetSubnet := callResult.SubnetIID.SystemId
-
-					if targetSubnet == "" {
-						targetSubnet = callResult.SubnetIID.NameId
-					}
-
-					for _, subnet := range resource.SubnetInfoList {
-						if subnet.CspResourceId == targetSubnet {
-							nodeInfoData.SubnetId = subnet.Id
-							break
+						// subnet
+						targetSubnet := callResult.SubnetIID.SystemId
+						if targetSubnet == "" {
+							targetSubnet = callResult.SubnetIID.NameId
 						}
+
+						for _, subnet := range res.SubnetInfoList {
+							if subnet.CspResourceId == targetSubnet || subnet.CspResourceName == targetSubnet || subnet.Id == targetSubnet || subnet.Name == targetSubnet {
+								nodeInfoData.SubnetId = subnet.Id
+								break
+							}
+						}
+						break
 					}
-					break
 				}
 			}
 		}
 
 		// SecurityGroups
 		var matchedSgIds []string
-		for _, sgIID := range callResult.SecurityGroupIIds {
-			resourceListInNs, err := resource.ListResource(nsId, model.StrSecurityGroup, "cspResourceName", sgIID.SystemId)
+		if len(callResult.SecurityGroupIIds) > 0 {
+			sgListInNs, err := resource.ListResource(nsId, model.StrSecurityGroup, "", "")
 			if err != nil {
-				log.Error().Err(err).Msg("")
-			} else {
-				resourcesInNs := resourceListInNs.([]model.SecurityGroupInfo)
-				for _, resource := range resourcesInNs {
-					if resource.ConnectionName == requestBody.ConnectionName {
-						matchedSgIds = append(matchedSgIds, resource.Id)
-						break
+				log.Error().Err(err).Msg("[CreateNode] Failed to list SecurityGroups for registration matching")
+			} else if allSgs, ok := sgListInNs.([]model.SecurityGroupInfo); ok {
+				for _, sgIID := range callResult.SecurityGroupIIds {
+					targetSg := sgIID.SystemId
+					if targetSg == "" {
+						targetSg = sgIID.NameId
+					}
+					if targetSg == "" {
+						continue
+					}
+					for _, res := range allSgs {
+						if res.ConnectionName == requestBody.ConnectionName &&
+							(res.CspResourceId == targetSg || res.CspResourceName == targetSg || res.Id == targetSg || res.Name == targetSg) {
+							matchedSgIds = append(matchedSgIds, res.Id)
+							break
+						}
 					}
 				}
 			}
@@ -2225,14 +2252,18 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 		// access Key
 		sshKeyMatched := false
-		if callResult.KeyPairIId.SystemId != "" {
-			resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspResourceName", callResult.KeyPairIId.SystemId)
+		targetKey := callResult.KeyPairIId.SystemId
+		if targetKey == "" {
+			targetKey = callResult.KeyPairIId.NameId
+		}
+		if targetKey != "" {
+			keyListInNs, err := resource.ListResource(nsId, model.StrSSHKey, "", "")
 			if err != nil {
-				log.Warn().Err(err).Msg("Failed to list SSH keys for matching")
-			} else {
-				resourcesInNs := resourceListInNs.([]model.SshKeyInfo) // type assertion
-				for _, res := range resourcesInNs {
-					if res.ConnectionName == requestBody.ConnectionName {
+				log.Warn().Err(err).Msg("[CreateNode] Failed to list SSH keys for registration matching")
+			} else if allKeys, ok := keyListInNs.([]model.SshKeyInfo); ok {
+				for _, res := range allKeys {
+					if res.ConnectionName == requestBody.ConnectionName &&
+						(res.CspResourceId == targetKey || res.CspResourceName == targetKey || res.Id == targetKey || res.Name == targetKey) {
 						nodeInfoData.SshKeyId = res.Id
 						sshKeyMatched = true
 						break
@@ -2356,11 +2387,15 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		time.Sleep(time.Duration(attempt*5) * time.Second)
 	}
 	if err != nil {
-		// Keep Creating; the status poller converges once the CSP API is reachable again.
-		nodeInfoData.Status = model.StatusCreating
-		nodeInfoData.SystemMessage = fmt.Sprintf("VM created; status not yet confirmed: %v", err)
+		// Keep Creating/Registering; the status poller converges once the CSP API is reachable again.
+		if strings.EqualFold(option, model.ActionRegister) {
+			nodeInfoData.Status = model.StatusRegistering
+		} else {
+			nodeInfoData.Status = model.StatusCreating
+		}
+		nodeInfoData.SystemMessage = fmt.Sprintf("VM created/registered; status not yet confirmed: %v", err)
 		UpdateNodeInfo(nsId, infraId, *nodeInfoData)
-		log.Warn().Err(err).Msgf("[CreateNode] %s created but status unconfirmed; leaving Creating for the poller", nodeInfoData.Id)
+		log.Warn().Err(err).Msgf("[CreateNode] %s created/registered but status unconfirmed; leaving %s for the poller", nodeInfoData.Id, nodeInfoData.Status)
 		return nil
 	}
 

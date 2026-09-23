@@ -77,12 +77,6 @@
         "imageId": "img-487zeit5"
       },
       {
-        "name": "g14-tencent-na-ashburn",
-        "nodeGroupSize": 1,
-        "specId": "tencent+na-ashburn+bf1.medium2",
-        "imageId": "img-487zeit5"
-      },
-      {
         "name": "g15-tencent-na-siliconvalley",
         "nodeGroupSize": 1,
         "specId": "tencent+na-siliconvalley+bf1.medium2",

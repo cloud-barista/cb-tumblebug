@@ -204,10 +204,9 @@ type InfraInfo struct {
 	// Latest system message such as error message
 	SystemMessage []string `json:"systemMessage"` // systeam-given string message
 
-	PlacementAlgo string            `json:"placementAlgo,omitempty"`
-	Description   string            `json:"description"`
-	Node          []NodeInfo        `json:"node"`
-	NodeGroup     []NodeGroupInfo   `json:"nodeGroup,omitempty"`
+	PlacementAlgo string          `json:"placementAlgo,omitempty"`
+	Description   string          `json:"description"`
+	Node          []NodeInfo      `json:"node"`
 
 	// Cluster is the list of implicit clusters synthesized at query-time from Nodes.
 	Cluster []InfraClusterInfo `json:"cluster,omitempty"`
@@ -834,45 +833,6 @@ type NodeGroupInfo struct {
 	// Group Labels & Description
 	Label       map[string]string `json:"label,omitempty"`
 	Description string            `json:"description,omitempty"`
-
-	// Compact Nodes for hierarchical representation
-	Nodes []CompactNodeInfo `json:"nodes,omitempty"`
-}
-
-// CompactNodeInfo represents the instance-variable runtime state of a single Node
-// within a NodeGroup, omitting the blueprint attributes held by the parent NodeGroup.
-type CompactNodeInfo struct {
-	ResourceType string `json:"resourceType"`
-	Id           string `json:"id" example:"aws-ap-southeast-1-1"`
-	Uid          string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
-	Name         string `json:"name" example:"aws-ap-southeast-1-1"`
-	NodeGroupId  string `json:"nodeGroupId"`
-
-	CspResourceName string `json:"cspResourceName,omitempty"`
-	CspResourceId   string `json:"cspResourceId,omitempty"`
-
-	Status       string `json:"status"`
-	TargetStatus string `json:"targetStatus,omitempty"`
-	TargetAction string `json:"targetAction,omitempty"`
-
-	MonAgentStatus     string `json:"monAgentStatus,omitempty"`
-	NetworkAgentStatus string `json:"networkAgentStatus,omitempty"`
-	SystemMessage      string `json:"systemMessage,omitempty"`
-
-	Failure *ProvisioningFailure `json:"failure,omitempty"`
-
-	CreatedTime string `json:"createdTime,omitempty"`
-
-	PublicIP         string `json:"publicIP,omitempty"`
-	SSHPort          int    `json:"sshPort,omitempty"`
-	PublicDNS        string `json:"publicDNS,omitempty"`
-	PrivateIP        string `json:"privateIP,omitempty"`
-	PrivateDNS       string `json:"privateDNS,omitempty"`
-	NetworkInterface string `json:"networkInterface,omitempty"`
-
-	DataDiskIds []string `json:"dataDiskIds,omitempty"`
-
-	Label map[string]string `json:"label,omitempty"`
 }
 
 // HydrateNodeInfo projects common blueprint fields from parent NodeGroup into a NodeInfo.
@@ -949,35 +909,6 @@ func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 				node.Label[k] = v
 			}
 		}
-	}
-}
-
-// ToCompactNodeInfo extracts instance-specific fields from NodeInfo.
-func ToCompactNodeInfo(node NodeInfo) CompactNodeInfo {
-	return CompactNodeInfo{
-		ResourceType:       node.ResourceType,
-		Id:                 node.Id,
-		Uid:                node.Uid,
-		Name:               node.Name,
-		NodeGroupId:        node.NodeGroupId,
-		CspResourceName:    node.CspResourceName,
-		CspResourceId:      node.CspResourceId,
-		Status:             node.Status,
-		TargetStatus:       node.TargetStatus,
-		TargetAction:       node.TargetAction,
-		MonAgentStatus:     node.MonAgentStatus,
-		NetworkAgentStatus: node.NetworkAgentStatus,
-		SystemMessage:      node.SystemMessage,
-		Failure:            node.Failure,
-		CreatedTime:        node.CreatedTime,
-		PublicIP:           node.PublicIP,
-		SSHPort:            node.SSHPort,
-		PublicDNS:          node.PublicDNS,
-		PrivateIP:          node.PrivateIP,
-		PrivateDNS:         node.PrivateDNS,
-		NetworkInterface:   node.NetworkInterface,
-		DataDiskIds:        node.DataDiskIds,
-		Label:              node.Label,
 	}
 }
 
@@ -1105,7 +1036,7 @@ type NodeInfo struct {
 	PrivateDNS     string     `json:"privateDNS"`
 	RootDiskType   string     `json:"rootDiskType"`
 	RootDiskSize   int        `json:"rootDiskSize"`
-	RootDeviceName string     `json:"RootDeviceName"`
+	RootDeviceName string     `json:"rootDeviceName"`
 
 	ConnectionName   string       `json:"connectionName"`
 	ConnectionConfig ConnConfig   `json:"connectionConfig"`
@@ -1206,7 +1137,6 @@ type InfraInfoSummary struct {
 	SystemMessage                 []string          `json:"systemMessage"`
 	Description                   string            `json:"description"`
 	Node                          []NodeSummary     `json:"node"`
-	NodeGroup                     []NodeGroupInfo   `json:"nodeGroup,omitempty"`
 }
 
 // InfraAccessInfo is struct to retrieve overall access information of a Infra

@@ -465,17 +465,6 @@ func GetInfraInfoBrief(nsId string, infraId string) (*model.InfraInfoSummary, er
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Id < nodes[j].Id })
 	summary.Node = nodes
 
-	// Populate NodeGroup hierarchy in brief view
-	if nodeGroupIds, err := ListNodeGroupId(nsId, infraId); err == nil && len(nodeGroupIds) > 0 {
-		nodeGroups := make([]model.NodeGroupInfo, 0, len(nodeGroupIds))
-		for _, gid := range nodeGroupIds {
-			if ng, ngErr := GetNodeGroup(nsId, infraId, gid); ngErr == nil {
-				nodeGroups = append(nodeGroups, ng)
-			}
-		}
-		summary.NodeGroup = nodeGroups
-	}
-
 	return &summary, nil
 }
 
@@ -544,65 +533,8 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 	}
 	infraObj.Label = labelInfo.Labels
 
-	// Populate NodeGroup hierarchy
-	if nodeGroupIds, err := ListNodeGroupId(nsId, infraId); err == nil && len(nodeGroupIds) > 0 {
-		nodeGroups := make([]model.NodeGroupInfo, 0, len(nodeGroupIds))
-		nodeMapByGroup := make(map[string][]model.CompactNodeInfo)
-		rawNodeMap := make(map[string]*model.NodeInfo)
-		for i := range infraObj.Node {
-			nd := &infraObj.Node[i]
-			if nd.NodeGroupId != "" {
-				nodeMapByGroup[nd.NodeGroupId] = append(nodeMapByGroup[nd.NodeGroupId], ToCompactNodeInfo(*nd))
-				if _, ok := rawNodeMap[nd.NodeGroupId]; !ok {
-					rawNodeMap[nd.NodeGroupId] = nd
-				}
-			}
-		}
-		for _, gid := range nodeGroupIds {
-			if ng, ngErr := GetNodeGroup(nsId, infraId, gid); ngErr == nil {
-				// If pre-existing NodeGroup lacks blueprint metadata, backfill from member nodes
-				if ng.ConnectionName == "" && rawNodeMap[gid] != nil {
-					first := rawNodeMap[gid]
-					ng.ConnectionName = first.ConnectionName
-					ng.ConnectionConfig = first.ConnectionConfig
-					ng.Region = first.Region
-					ng.Location = first.Location
-					ng.SpecId = first.SpecId
-					ng.CspSpecName = first.CspSpecName
-					ng.Spec = first.Spec
-					ng.ImageId = first.ImageId
-					ng.CspImageName = first.CspImageName
-					ng.Image = first.Image
-					ng.VNetId = first.VNetId
-					ng.CspVNetId = first.CspVNetId
-					ng.SubnetId = first.SubnetId
-					ng.CspSubnetId = first.CspSubnetId
-					ng.NetworkInterface = first.NetworkInterface
-					ng.SecurityGroupIds = first.SecurityGroupIds
-					ng.SshKeyId = first.SshKeyId
-					ng.CspSshKeyId = first.CspSshKeyId
-					ng.SSHPort = first.SSHPort
-					ng.NodeUserName = first.NodeUserName
-					ng.RootDiskType = first.RootDiskType
-					ng.RootDiskSize = first.RootDiskSize
-					ng.RootDeviceName = first.RootDeviceName
-				}
-				ng.Nodes = nodeMapByGroup[gid]
-				nodeGroups = append(nodeGroups, ng)
-			}
-		}
-		infraObj.NodeGroup = nodeGroups
-	}
-
 	// add implicit cluster view synthesized from already-loaded Nodes
 	infraObj.Cluster = buildImplicitClusterInfoFromNodes(infraId, infraObj.Node)
-
-	// If NodeGroups are present, omit top-level infraObj.Node to avoid duplicating
-	// tens of thousands of full NodeInfo objects in the payload (~90% payload reduction).
-	// Individual node queries (GetNodeObject) continue to return fully hydrated nodes.
-	if len(infraObj.NodeGroup) > 0 {
-		infraObj.Node = nil
-	}
 
 	return &infraObj, nil
 }
@@ -629,40 +561,6 @@ func ExtractInfraDynamicReqFromInfraInfo(nsId string, infraId string) (*model.In
 	infraInfo, err := GetInfraInfo(nsId, infraId)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(infraInfo.NodeGroup) > 0 {
-		var nodeGroups []model.CreateNodeGroupDynamicReq
-		for _, ng := range infraInfo.NodeGroup {
-			size := len(ng.Nodes)
-			if size == 0 {
-				size = ng.NodeGroupSize
-			}
-			sg := model.CreateNodeGroupDynamicReq{
-				Name:           ng.Id,
-				NodeGroupSize:  size,
-				Label:          filterOutSystemLabels(ng.Label),
-				Description:    ng.Description,
-				ConnectionName: ng.ConnectionName,
-				SpecId:         ng.SpecId,
-				ImageId:        ng.ImageId,
-				RootDiskType:   ng.RootDiskType,
-				RootDiskSize:   ng.RootDiskSize,
-				Zone:           ng.Region.Zone,
-			}
-			nodeGroups = append(nodeGroups, sg)
-		}
-
-		infraDynamicReq := &model.InfraDynamicReq{
-			Name:            infraInfo.Name,
-			InstallMonAgent: infraInfo.InstallMonAgent,
-			Label:           filterOutSystemLabels(infraInfo.Label),
-			SystemLabel:     infraInfo.SystemLabel,
-			Description:     infraInfo.Description,
-			NodeGroups:      nodeGroups,
-			PostCommands:    infraInfo.PostCommands,
-		}
-		return infraDynamicReq, nil
 	}
 
 	if len(infraInfo.Node) == 0 {
@@ -1072,11 +970,6 @@ func GetInfraObject(nsId string, infraId string) (model.InfraInfo, bool, error) 
 // HydrateNodeInfo projects common blueprint fields from parent NodeGroup into a NodeInfo.
 func HydrateNodeInfo(node *model.NodeInfo, ng *model.NodeGroupInfo) {
 	model.HydrateNodeInfo(node, ng)
-}
-
-// ToCompactNodeInfo extracts instance-specific fields from NodeInfo.
-func ToCompactNodeInfo(node model.NodeInfo) model.CompactNodeInfo {
-	return model.ToCompactNodeInfo(node)
 }
 
 // LoadInfraNodeGroupMap loads all NodeGroups of an infra into a map[nodeGroupId]NodeGroupInfo in a single pass.

@@ -688,6 +688,9 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 	var objectErrs []error
 	var objectErrMu sync.Mutex
 
+	const maxConcurrentCreateNodeObject = 50
+	sem := make(chan struct{}, maxConcurrentCreateNodeObject)
+
 	// Create Node objects for the reserved names
 	for i, reservedNodeId := range newNodeIds {
 		nodeInfoData := model.NodeInfo{}
@@ -748,7 +751,9 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 		nodeInfoData.CspResourceId = nodeRequest.CspResourceId
 
 		wg.Add(1)
+		sem <- struct{}{}
 		go func(node model.NodeInfo) {
+			defer func() { <-sem }()
 			if err := CreateNodeObject(&wg, nsId, infraId, &node); err != nil {
 				objectErrMu.Lock()
 				objectErrs = append(objectErrs, err)
@@ -1125,10 +1130,14 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 	log.Info().Msgf("Creating %d VM objects", len(nodeConfigs))
 
+	const maxConcurrentCreateVMObject = 50
+	semCreateVM := make(chan struct{}, maxConcurrentCreateVMObject)
 	for _, config := range nodeConfigs {
 		wg.Add(1)
+		semCreateVM <- struct{}{}
 		go func(cfg nodeConfig) {
 			defer wg.Done()
+			defer func() { <-semCreateVM }()
 			if err := createNodeObjectSafe(nsId, infraId, &cfg.nodeInfo); err != nil {
 				errorMu.Lock()
 				createErrors = append(createErrors, fmt.Errorf("VM object creation failed for '%s': %w", cfg.nodeInfo.Name, err))
@@ -1207,26 +1216,62 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 
 		log.Error().Msgf("EARLY TERMINATION: CreateNodesInParallel returned error - all %d VMs failed", totalNodesInParallel)
 
-		// Force update all VM statuses to Failed since CreateNodesInParallel failed completely
-		log.Debug().Msg("Force updating all VM statuses to Failed since no VMs were actually created")
+		// Update VM statuses with proper terminal state
+		log.Debug().Msg("Finalizing VM statuses after parallel creation/registration error")
+		allTerminated := true
 		for _, nodeInfo := range nodeInfoList {
+			latestNode, getErr := GetNodeObject(nsId, infraId, nodeInfo.Id)
+			if getErr == nil && strings.EqualFold(latestNode.Status, model.StatusTerminated) {
+				// Preserve StatusTerminated (e.g. pre-check confirmed instance is already gone/terminated)
+				nodeInfo.Status = model.StatusTerminated
+				nodeInfo.TargetAction = model.ActionComplete
+				nodeInfo.TargetStatus = model.StatusComplete
+				if latestNode.SystemMessage != "" {
+					nodeInfo.SystemMessage = latestNode.SystemMessage
+				}
+				UpdateNodeInfo(nsId, infraId, *nodeInfo)
+				globalStatusStore.Update(nsId, infraId, nodeInfo.Id, func(e *StatusEntry) {
+					e.Status = model.StatusTerminated
+					e.NativeStatus = model.StatusTerminated
+					e.TargetStatus = model.StatusComplete
+					e.TargetAction = model.ActionComplete
+					e.Priority = PollSkip
+					e.SystemMessage = nodeInfo.SystemMessage
+				})
+				continue
+			}
+
+			allTerminated = false
 			nodeInfo.Status = model.StatusFailed
+			nodeInfo.TargetAction = model.ActionComplete
+			nodeInfo.TargetStatus = model.StatusFailed
 			if nodeInfo.SystemMessage == "" {
 				nodeInfo.SystemMessage = fmt.Sprintf("VM creation failed: %s", err.Error())
 			}
 
 			UpdateNodeInfo(nsId, infraId, *nodeInfo)
+			globalStatusStore.Update(nsId, infraId, nodeInfo.Id, func(e *StatusEntry) {
+				e.Status = model.StatusFailed
+				e.NativeStatus = model.StatusFailed
+				e.TargetStatus = model.StatusFailed
+				e.TargetAction = model.ActionComplete
+				e.Priority = PollSkip
+				e.SystemMessage = nodeInfo.SystemMessage
+			})
 			log.Debug().Msgf("Force updated VM %s to Failed status (no actual CSP VM created)", nodeInfo.Name)
 		}
 
-		// Get Infra info and mark as failed immediately
+		// Get Infra info and mark as finalized immediately
 		infraResult, infraErr := GetInfraInfo(nsId, infraId)
 		if infraErr != nil {
 			return nil, fmt.Errorf("failed to get Infra info after all VMs failed: %w", infraErr)
 		}
 
-		// Mark Infra as Failed with complete finalization
-		infraResult.Status = model.StatusFailed
+		if allTerminated {
+			infraResult.Status = model.StatusTerminated
+		} else {
+			infraResult.Status = model.StatusFailed
+		}
 		infraResult.TargetStatus = model.StatusComplete
 		infraResult.TargetAction = model.ActionComplete
 		UpdateInfraInfo(nsId, *infraResult)

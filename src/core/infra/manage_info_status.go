@@ -1450,7 +1450,13 @@ applyStatus:
 	// recognized status is observed.
 	if isDiscoveryAction(nodeStatusTmp.TargetAction) &&
 		strings.EqualFold(callResult.Status, model.StatusUndefined) {
-		callResult.Status = discoveryTransientStatus(nodeStatusTmp.TargetAction)
+		if strings.EqualFold(nodeInfo.Status, model.StatusTerminated) {
+			callResult.Status = model.StatusTerminated
+		} else if strings.EqualFold(nodeInfo.Status, model.StatusFailed) {
+			callResult.Status = model.StatusFailed
+		} else {
+			callResult.Status = discoveryTransientStatus(nodeStatusTmp.TargetAction)
+		}
 	}
 
 	// Fallback: if the CSP (or Spider) returned Undefined but the node already has a
@@ -1538,6 +1544,9 @@ applyStatus:
 
 	if strings.EqualFold(nodeStatusTmp.Status, model.StatusTerminated) {
 		callResult.Status = model.StatusTerminated
+	}
+	if strings.EqualFold(nodeStatusTmp.Status, model.StatusFailed) {
+		callResult.Status = model.StatusFailed
 	}
 
 	// Circuit breaker for Suspend/Resume/Reboot: the TargetAction-correction
