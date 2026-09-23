@@ -1647,12 +1647,22 @@ func checkAllowedNodeStatusTransition(status, currentTargetAction, action string
 	}
 	// under transitional status
 	if strings.EqualFold(status, model.StatusCreating) {
+		if strings.EqualFold(action, model.ActionTerminate) {
+			return nil
+		}
 		return errors.New(action + " is not allowed for VM under " + status)
 	}
 	if strings.EqualFold(status, model.StatusTerminating) ||
 		strings.EqualFold(status, model.StatusResuming) ||
 		strings.EqualFold(status, model.StatusSuspending) ||
 		strings.EqualFold(status, model.StatusRebooting) {
+
+		// Always allow Terminate action regardless of transitional state:
+		// users must always be able to destroy resources to stop billing
+		// or recover from stuck transitional states.
+		if strings.EqualFold(action, model.ActionTerminate) {
+			return nil
+		}
 
 		// Allow re-requesting the same action already in progress: the CSP may
 		// never have actually received the original request, leaving the node
@@ -1719,11 +1729,21 @@ func CheckAllowedTransition(nsId string, infraId string, nodeId model.OptionalPa
 		}
 		// under transitional status
 		if strings.Contains(infra.Status, model.StatusCreating) {
+			if strings.EqualFold(action, model.ActionTerminate) {
+				return nil
+			}
 			return errors.New(action + " is not allowed for Infra under " + infra.Status)
 		}
 		if strings.Contains(infra.Status, model.StatusResuming) ||
 			strings.Contains(infra.Status, model.StatusSuspending) ||
 			strings.Contains(infra.Status, model.StatusRebooting) {
+
+			// Always allow Terminate action regardless of transitional state:
+			// users must always be able to destroy resources to stop billing
+			// or recover from stuck transitional states.
+			if strings.EqualFold(action, model.ActionTerminate) {
+				return nil
+			}
 
 			// Allow re-requesting the same action already in progress (see the
 			// equivalent node-level check above for why).

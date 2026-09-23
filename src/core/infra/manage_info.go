@@ -1023,6 +1023,17 @@ func GetNodeObjectWithNodeGroups(nsId string, infraId string, nodeId string, ngM
 		}
 	}
 
+	// Overlay live status from StatusStore if available so that individual node
+	// queries reflect the fresh in-memory state kept by StatusAgent.
+	if entry, ok := globalStatusStore.Get(nsId, infraId, nodeId); ok && entry.Status != "" {
+		nodeTmp.Status = entry.Status
+		nodeTmp.TargetStatus = entry.TargetStatus
+		nodeTmp.TargetAction = entry.TargetAction
+		if entry.PublicIP != "" {
+			nodeTmp.PublicIP = entry.PublicIP
+		}
+	}
+
 	return nodeTmp, nil
 }
 

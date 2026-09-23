@@ -15,6 +15,7 @@ package infra
 
 import (
 	"context"
+	"encoding/json"
 	"math/rand"
 	"strings"
 	"sync"
@@ -23,6 +24,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/time/rate"
 )
@@ -248,6 +250,15 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 				return
 			}
 
+			type statusUpdate struct {
+				nsId          string
+				infraId       string
+				nodeId        string
+				status        string
+				targetReached bool
+			}
+			var pendingPersist []statusUpdate
+
 			updated := 0
 			for _, n := range grp {
 				newStatus, found := statuses[n.instanceId]
@@ -268,8 +279,11 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 					// of leaving it Undefined forever (which keeps it polling / flip-flopping).
 					newStatus = recordBatchNotFound(n.nsId, n.infraId, n.nodeId)
 				}
+				statusChanged := false
+				targetReached := false
 				globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
 					if e.Status != newStatus {
+						statusChanged = true
 						// Status changed: let the individual worker path write through to etcd.
 						e.Priority = priorityForStatus(newStatus, e.TargetAction)
 						e.NextPollAt = time.Now() // schedule immediate individual poll
@@ -277,8 +291,30 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 					e.Status = newStatus
 					e.NativeStatus = newStatus
 					e.LastUpdated = time.Now()
+					if strings.EqualFold(e.Status, e.TargetStatus) && e.TargetStatus != model.StatusTerminated {
+						e.TargetStatus = model.StatusComplete
+						e.TargetAction = model.ActionComplete
+						targetReached = true
+					}
 				})
+				if statusChanged || targetReached {
+					pendingPersist = append(pendingPersist, statusUpdate{
+						nsId:          n.nsId,
+						infraId:       n.infraId,
+						nodeId:        n.nodeId,
+						status:        newStatus,
+						targetReached: targetReached,
+					})
+				}
 				updated++
+			}
+
+			if len(pendingPersist) > 0 {
+				go func(updates []statusUpdate) {
+					for _, u := range updates {
+						persistBatchNodeStatus(u.nsId, u.infraId, u.nodeId, u.status, u.targetReached)
+					}
+				}(pendingPersist)
 			}
 
 			// Safety net: nodes whose Terminate never reached the CSP stay present in
@@ -828,4 +864,27 @@ func fetchNodeStatusWithCache(nsId, infraId, nodeId string) (model.NodeStatusInf
 		return cached, nil
 	}
 	return FetchNodeStatus(nsId, infraId, nodeId)
+}
+
+// persistBatchNodeStatus writes status changes detected by BatchSweeper to the KV store
+// so DB state remains in sync without triggering per-node CSP API calls.
+func persistBatchNodeStatus(nsId, infraId, nodeId, newStatus string, targetReached bool) {
+	key := common.GenInfraKey(nsId, infraId, nodeId)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if !exists || err != nil {
+		return
+	}
+	nodeTmp := model.NodeInfo{}
+	if err := json.Unmarshal([]byte(keyValue.Value), &nodeTmp); err != nil {
+		return
+	}
+	if nodeTmp.Status == model.StatusTerminated && newStatus != model.StatusTerminated {
+		return
+	}
+	nodeTmp.Status = newStatus
+	if targetReached || strings.EqualFold(nodeTmp.Status, nodeTmp.TargetStatus) {
+		nodeTmp.TargetStatus = model.StatusComplete
+		nodeTmp.TargetAction = model.ActionComplete
+	}
+	UpdateNodeInfo(nsId, infraId, nodeTmp)
 }
