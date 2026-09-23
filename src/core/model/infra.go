@@ -204,9 +204,9 @@ type InfraInfo struct {
 	// Latest system message such as error message
 	SystemMessage []string `json:"systemMessage"` // systeam-given string message
 
-	PlacementAlgo string          `json:"placementAlgo,omitempty"`
-	Description   string          `json:"description"`
-	Node          []NodeInfo      `json:"node"`
+	PlacementAlgo string     `json:"placementAlgo,omitempty"`
+	Description   string     `json:"description"`
+	Node          []NodeInfo `json:"node"`
 
 	// Cluster is the list of implicit clusters synthesized at query-time from Nodes.
 	Cluster []InfraClusterInfo `json:"cluster,omitempty"`
@@ -1301,6 +1301,33 @@ type ControlNodeResult struct {
 // ControlNodeResultWrapper is struct for array of results of Node control
 type ControlNodeResultWrapper struct {
 	ResultArray []ControlNodeResult `json:"resultarray"`
+}
+
+// InfraActionResult represents detailed results of an Infra-level control action.
+// Maintains backward compatibility with SimpleMsg via the root 'message' field.
+type InfraActionResult struct {
+	Message          string             `json:"message" example:"Partially terminated Infra 'infra01': 98/100 nodes succeeded, 2 nodes failed"`
+	Action           string             `json:"action" example:"terminate"`
+	InfraId          string             `json:"infraId" example:"infra01"`
+	Success          bool               `json:"success" example:"false"`
+	TotalNodeCount   int                `json:"totalNodeCount" example:"100"`
+	SuccessNodeCount int                `json:"successNodeCount" example:"98"`
+	FailedNodeCount  int                `json:"failedNodeCount" example:"2"`
+	FailedNodeIds    []string           `json:"failedNodeIds,omitempty"`
+	NodeResults      []NodeActionResult `json:"nodeResults,omitempty"`
+}
+
+// NodeActionResult represents control execution result for an individual node.
+// Maintains backward compatibility with SimpleMsg via the root 'message' field when returned by RestGetControlInfraNode.
+type NodeActionResult struct {
+	Message      string `json:"message" example:"Successfully terminated node g1-1"`
+	NodeId       string `json:"nodeId" example:"g1-1"`
+	ProviderName string `json:"providerName,omitempty" example:"tencent"`
+	RegionName   string `json:"regionName,omitempty" example:"ap-guangzhou"`
+	Action       string `json:"action" example:"terminate"`
+	Success      bool   `json:"success" example:"true"`
+	Status       string `json:"status,omitempty" example:"Terminated"`
+	Error        string `json:"error,omitempty" example:""`
 }
 
 // NodeStatusInfo is to define simple information of Node with updated status

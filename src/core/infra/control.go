@@ -42,7 +42,7 @@ var globalControlSem = make(chan struct{}, 50)
 // Infra Control
 
 // HandleInfraAction is func to handle actions to Infra
-func HandleInfraAction(nsId string, infraId string, action string, force bool) (string, error) {
+func HandleInfraAction(nsId string, infraId string, action string, force bool) (*model.InfraActionResult, error) {
 	action = common.ToLower(action)
 
 	// err := common.CheckString(nsId)
@@ -60,56 +60,41 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 
 	if !check {
 		err := fmt.Errorf("The infra %s does not exist.", infraId)
-		return err.Error(), err
+		return &model.InfraActionResult{
+			Message: err.Error(),
+			Action:  action,
+			InfraId: infraId,
+			Success: false,
+		}, err
 	}
 
 	log.Info().Msgf("Action requested for Infra %s: Action=%s", infraId, action)
 
-	if action == "suspend" {
-
-		err := ControlInfraAsync(nsId, infraId, model.ActionSuspend, force)
-		if err != nil {
-			return "", err
-		}
-
-		return "Suspending the Infra", nil
-
-	} else if action == "resume" {
-
-		err := ControlInfraAsync(nsId, infraId, model.ActionResume, force)
-		if err != nil {
-			return "", err
-		}
-
-		return "Resuming the Infra", nil
-
-	} else if action == "reboot" {
-
-		err := ControlInfraAsync(nsId, infraId, model.ActionReboot, force)
-		if err != nil {
-			return "", err
-		}
-
-		return "Rebooting the Infra", nil
-
-	} else if action == "terminate" {
+	if strings.EqualFold(action, model.ActionSuspend) {
+		return ControlInfraAsync(nsId, infraId, model.ActionSuspend, force)
+	} else if strings.EqualFold(action, model.ActionResume) {
+		return ControlInfraAsync(nsId, infraId, model.ActionResume, force)
+	} else if strings.EqualFold(action, model.ActionReboot) {
+		return ControlInfraAsync(nsId, infraId, model.ActionReboot, force)
+	} else if strings.EqualFold(action, model.ActionTerminate) {
 
 		nodeList, err := ListNodeId(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return "", err
+			return nil, err
 		}
 
 		if len(nodeList) == 0 {
-			return "No Node to terminate in the Infra", nil
+			return &model.InfraActionResult{
+				Message:        "No Node to terminate in the Infra",
+				Action:         model.ActionTerminate,
+				InfraId:        infraId,
+				Success:        true,
+				TotalNodeCount: 0,
+			}, nil
 		}
 
-		err = ControlInfraAsync(nsId, infraId, model.ActionTerminate, force)
-		if err != nil {
-			return "", err
-		}
-
-		return "Terminated the Infra", nil
+		return ControlInfraAsync(nsId, infraId, model.ActionTerminate, force)
 
 	} else if action == "continue" {
 		// continue resumes a Provisioning that was held with option=hold.
@@ -120,11 +105,21 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		if _, holding := holdingInfraMap.Load(key); holding {
 			holdingInfraMap.Store(key, action)
 			log.Info().Msgf("Continue: signalled holding Infra %s/%s", nsId, infraId)
-			return "Continue the holding Infra", nil
+			return &model.InfraActionResult{
+				Message: "Continue the holding Infra",
+				Action:  action,
+				InfraId: infraId,
+				Success: true,
+			}, nil
 		}
 		err := fmt.Errorf("no holding goroutine for Infra %s; if the Infra is stuck after a server restart, use action=reconcile (forward) or action=abort (backward)", infraId)
 		log.Warn().Msg(err.Error())
-		return "", err
+		return &model.InfraActionResult{
+			Message: err.Error(),
+			Action:  action,
+			InfraId: infraId,
+			Success: false,
+		}, err
 
 	} else if action == "withdraw" {
 		// withdraw cancels a Provisioning that was held with option=hold.
@@ -134,11 +129,21 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		if _, holding := holdingInfraMap.Load(key); holding {
 			holdingInfraMap.Store(key, action)
 			log.Info().Msgf("Withdraw: signalled holding Infra %s/%s", nsId, infraId)
-			return "Withdraw the holding Infra", nil
+			return &model.InfraActionResult{
+				Message: "Withdraw the holding Infra",
+				Action:  action,
+				InfraId: infraId,
+				Success: true,
+			}, nil
 		}
 		err := fmt.Errorf("no holding goroutine for Infra %s; to tear down a stuck Infra after a server restart, use action=abort", infraId)
 		log.Warn().Msg(err.Error())
-		return "", err
+		return &model.InfraActionResult{
+			Message: err.Error(),
+			Action:  action,
+			InfraId: infraId,
+			Success: false,
+		}, err
 
 	} else if action == "reconcile" {
 		// reconcile drives the Infra forward toward its desired Running state
@@ -148,7 +153,17 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		// subsequent `refine` can remove them. Used to recover Infras stuck
 		// after a server restart. No new Spider create calls are issued.
 		log.Info().Msgf("Reconcile: forward-reconciling Infra %s/%s", nsId, infraId)
-		return reconcileInfraForward(nsId, infraId)
+		msg, err := reconcileInfraForward(nsId, infraId)
+		res := &model.InfraActionResult{
+			Message: msg,
+			Action:  model.ActionReconcile,
+			InfraId: infraId,
+			Success: (err == nil),
+		}
+		if err != nil && msg == "" {
+			res.Message = err.Error()
+		}
+		return res, err
 
 	} else if action == "abort" {
 		// abort drives the Infra backward toward Terminated by force-
@@ -158,37 +173,50 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		// restart or a partial provisioning failure. The final DELETE call
 		// is left to the operator.
 		log.Info().Msgf("Abort: backward-reconciling Infra %s/%s", nsId, infraId)
-		return reconcileInfraBackward(nsId, infraId)
+		msg, err := reconcileInfraBackward(nsId, infraId)
+		res := &model.InfraActionResult{
+			Message: msg,
+			Action:  "abort",
+			InfraId: infraId,
+			Success: (err == nil),
+		}
+		if err != nil && msg == "" {
+			res.Message = err.Error()
+		}
+		return res, err
 
 	} else if action == "refine" { // refine delete Nodes in model.StatusFailed or model.StatusUndefined
 
 		nodeList, err := ListNodeId(nsId, infraId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return "", err
+			return nil, err
 		}
 
 		if len(nodeList) == 0 {
-			return "No Node in the Infra", nil
-		}
-
-		infraStatus, err := GetInfraStatus(nsId, infraId)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return "", err
+			return &model.InfraActionResult{
+				Message:        "No Node in the Infra",
+				Action:         model.ActionRefine,
+				InfraId:        infraId,
+				Success:        true,
+				TotalNodeCount: 0,
+			}, nil
 		}
 
 		var failedNodeIds []string
 		var remainingNodeIds []string
 
 		failedSet := make(map[string]struct{})
-		for _, v := range infraStatus.Node {
-			// Identify Nodes in model.StatusFailed or model.StatusUndefined
-			if strings.EqualFold(v.Status, model.StatusFailed) || strings.EqualFold(v.Status, model.StatusUndefined) {
-				failedNodeIds = append(failedNodeIds, v.Id)
-				failedSet[v.Id] = struct{}{}
+		for _, nodeId := range nodeList {
+			nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId)
+			if gerr != nil {
+				continue
+			}
+			if strings.EqualFold(nodeObj.Status, model.StatusFailed) || strings.EqualFold(nodeObj.Status, model.StatusUndefined) {
+				failedNodeIds = append(failedNodeIds, nodeObj.Id)
+				failedSet[nodeObj.Id] = struct{}{}
 			} else {
-				remainingNodeIds = append(remainingNodeIds, v.Id)
+				remainingNodeIds = append(remainingNodeIds, nodeObj.Id)
 			}
 		}
 
@@ -205,12 +233,21 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 		}
 
 		deletedCount := 0
+		var nodeResults []model.NodeActionResult
 		if len(failedNodeIds) > 0 {
 			log.Info().Msgf("[Refine] Batch deleting %d failed/undefined Nodes for Infra %s/%s", len(failedNodeIds), nsId, infraId)
 			cnt, err := BatchDeleteInfraNodes(nsId, infraId, failedNodeIds, false)
 			if err != nil {
 				log.Error().Err(err).Msg("BatchDeleteInfraNodes failed during refine")
-				return "", err
+				return &model.InfraActionResult{
+					Message:         fmt.Sprintf("Failed to refine Infra '%s': %v", infraId, err),
+					Action:          model.ActionRefine,
+					InfraId:         infraId,
+					Success:         false,
+					TotalNodeCount:  len(nodeList),
+					FailedNodeCount: len(failedNodeIds),
+					FailedNodeIds:   failedNodeIds,
+				}, err
 			}
 			deletedCount = cnt
 
@@ -227,40 +264,69 @@ func HandleInfraAction(nsId string, infraId string, action string, force bool) (
 			}
 
 			log.Info().Msgf("Refine completed: deleted %d Nodes, %d Nodes remaining", deletedCount, len(remainingNodeIds))
+
+			for _, fid := range failedNodeIds {
+				nodeResults = append(nodeResults, model.NodeActionResult{
+					Message: "Deleted failed/undefined node from Infra metadata",
+					NodeId:  fid,
+					Action:  model.ActionRefine,
+					Success: true,
+					Status:  "Deleted",
+				})
+			}
+
+			return &model.InfraActionResult{
+				Message:          fmt.Sprintf("Successfully refined Infra '%s': deleted %d failed/undefined node(s) (%d nodes remaining)", infraId, deletedCount, len(remainingNodeIds)),
+				Action:           model.ActionRefine,
+				InfraId:          infraId,
+				Success:          true,
+				TotalNodeCount:   len(nodeList),
+				SuccessNodeCount: deletedCount,
+				FailedNodeCount:  len(failedNodeIds) - deletedCount,
+				NodeResults:      nodeResults,
+			}, nil
 		}
 
-		return "Refined the Infra", nil
+		return &model.InfraActionResult{
+			Message:          fmt.Sprintf("Refine completed for Infra '%s': no failed or undefined nodes found (%d nodes normal)", infraId, len(remainingNodeIds)),
+			Action:           model.ActionRefine,
+			InfraId:          infraId,
+			Success:          true,
+			TotalNodeCount:   len(nodeList),
+			SuccessNodeCount: 0,
+			FailedNodeCount:  0,
+		}, nil
 
 	} else {
-		return "", fmt.Errorf("%s not supported", action)
+		return nil, fmt.Errorf("%s not supported", action)
 	}
 }
 
 // HandleInfraNodeAction is func to Get InfraNode Action
-func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action string, force bool) (string, error) {
+func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action string, force bool) (*model.NodeActionResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return "", err
+		return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 	}
 
 	err = common.CheckString(infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return "", err
+		return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 	}
 
 	err = common.CheckString(nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return "", err
+		return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 	}
 	check, _ := CheckNode(nsId, infraId, nodeId)
 
 	if !check {
 		err := fmt.Errorf("The node %s does not exist.", nodeId)
-		return err.Error(), err
+		return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 	}
 
 	log.Info().Msg("[Node control request] " + action)
@@ -268,7 +334,7 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 	infra, err := GetInfraStatus(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return "", err
+		return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 	}
 
 	// Check if Infra is under an action (individual Node action cannot be executed while Infra is under an action)
@@ -276,7 +342,7 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 		err = fmt.Errorf("Infra %s is under %s, please try later", infraId, infra.TargetAction)
 		if !force {
 			log.Info().Msg(err.Error())
-			return "", err
+			return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 		}
 	}
 
@@ -284,7 +350,7 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 	if err != nil {
 		if !force {
 			log.Info().Msg(err.Error())
-			return "", err
+			return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 		}
 	}
 
@@ -297,7 +363,13 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 		nodeStatus, statusErr := GetInfraNodeStatus(nsId, infraId, nodeId, false)
 		if statusErr == nil && strings.EqualFold(nodeStatus.Status, model.StatusTerminated) {
 			log.Info().Msgf("[Node %s] already terminated, skipping", nodeId)
-			return "Already terminated", nil
+			return &model.NodeActionResult{
+				Message: "Already terminated",
+				NodeId:  nodeId,
+				Action:  action,
+				Success: true,
+				Status:  model.StatusTerminated,
+			}, nil
 		}
 	}
 
@@ -315,23 +387,41 @@ func HandleInfraNodeAction(nsId string, infraId string, nodeId string, action st
 	} else {
 		close(results)
 		wg.Done()
-		return "", fmt.Errorf("not supported action: %s", action)
+		err := fmt.Errorf("not supported action: %s", action)
+		return &model.NodeActionResult{Message: err.Error(), NodeId: nodeId, Action: action, Success: false, Error: err.Error()}, err
 	}
 	checkErr := <-results
-	if checkErr.Error != nil {
-		return checkErr.Error.Error(), checkErr.Error
-	}
 	close(results)
-	return "Working on " + action, nil
+	if checkErr.Error != nil {
+		return &model.NodeActionResult{
+			Message: fmt.Sprintf("Failed to %s VM %s: %v", action, nodeId, checkErr.Error),
+			NodeId:  nodeId,
+			Action:  action,
+			Success: false,
+			Status:  checkErr.Status,
+			Error:   checkErr.Error.Error(),
+		}, checkErr.Error
+	}
+	nodeMsg := fmt.Sprintf("Successfully requested %s for VM %s (status: %s)", action, nodeId, checkErr.Status)
+	if strings.EqualFold(action, model.ActionTerminate) {
+		nodeMsg = fmt.Sprintf("Successfully terminated VM %s", nodeId)
+	}
+	return &model.NodeActionResult{
+		Message: nodeMsg,
+		NodeId:  nodeId,
+		Action:  action,
+		Success: true,
+		Status:  checkErr.Status,
+	}, nil
 }
 
 // ControlInfraAsync is func to control Infra async
-func ControlInfraAsync(nsId string, infraId string, action string, force bool) error {
+func ControlInfraAsync(nsId string, infraId string, action string, force bool) (*model.InfraActionResult, error) {
 
 	infra, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return err
+		return nil, err
 	}
 
 	// Check if Infra is under an action (new action cannot be executed while Infra is under an action)
@@ -339,58 +429,64 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 		err = fmt.Errorf("Infra %s is under %s, please try later", infraId, infra.TargetAction)
 		if !force {
 			log.Info().Msg(err.Error())
-			return err
+			return nil, err
 		}
 	}
 
 	err = CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: false}, action)
 	if err != nil {
 		if !force {
-			return err
+			return nil, err
 		}
 	}
 
 	nodeList, err := ListNodeId(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return err
+		return nil, err
 	}
 	if len(nodeList) == 0 {
-		return errors.New("Node list is empty")
+		return &model.InfraActionResult{
+			Message:        "Node list is empty",
+			Action:         action,
+			InfraId:        infraId,
+			Success:        true,
+			TotalNodeCount: 0,
+		}, errors.New("Node list is empty")
 	}
 
-	switch action {
-	case model.ActionTerminate:
-
+	switch strings.ToLower(action) {
+	case "terminate":
+		action = model.ActionTerminate
 		infra.TargetAction = model.ActionTerminate
 		infra.TargetStatus = model.StatusTerminated
 		infra.Status = model.StatusTerminating
 
-	case model.ActionReboot:
-
+	case "reboot":
+		action = model.ActionReboot
 		infra.TargetAction = model.ActionReboot
 		infra.TargetStatus = model.StatusRunning
 		infra.Status = model.StatusRebooting
 
-	case model.ActionSuspend:
-
+	case "suspend":
+		action = model.ActionSuspend
 		infra.TargetAction = model.ActionSuspend
 		infra.TargetStatus = model.StatusSuspended
 		infra.Status = model.StatusSuspending
 
-	case model.ActionResume:
-
+	case "resume":
+		action = model.ActionResume
 		infra.TargetAction = model.ActionResume
 		infra.TargetStatus = model.StatusRunning
 		infra.Status = model.StatusResuming
 
 	default:
-		return errors.New(action + " is invalid actionType")
+		return nil, errors.New(action + " is invalid actionType")
 	}
 	UpdateInfraInfo(nsId, infra)
 
 	// Apply CSP-aware rate limiting for Node control operations
-	err = ControlNodesInParallel(nsId, infraId, nodeList, action, force)
+	actionResult, err := ControlNodesInParallel(nsId, infraId, nodeList, action, force)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to control Nodes in parallel for action %s", action)
 		// Re-fetch and clear TargetAction so future operations are not permanently blocked.
@@ -401,7 +497,7 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 			freshInfra.TargetStatus = model.StatusComplete
 			UpdateInfraInfo(nsId, freshInfra)
 		}
-		return err
+		return actionResult, err
 	}
 
 	// Update Infra TargetAction to Complete after all Node operations are done
@@ -409,7 +505,7 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 	infra, _, err = GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return err
+		return actionResult, err
 	}
 
 	infra.TargetAction = model.ActionComplete
@@ -417,7 +513,7 @@ func ControlInfraAsync(nsId string, infraId string, action string, force bool) e
 	UpdateInfraInfo(nsId, infra)
 
 	log.Info().Msgf("Infra %s action %s completed", infraId, action)
-	return nil
+	return actionResult, nil
 }
 
 // NodeControlInfo represents Node control information with grouping details
@@ -458,10 +554,19 @@ func getNodeControlRateLimitsForCSP(cspName string) (maxRegions, maxNodesPerRegi
 // Level 1: CSPs are processed in parallel
 // Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
 // Level 3: Within each region, VMs are processed with semaphore (maxConcurrentNodesPerRegion)
-func ControlNodesInParallel(nsId, infraId string, nodeList []string, action string, force bool) error {
+func ControlNodesInParallel(nsId, infraId string, nodeList []string, action string, force bool) (*model.InfraActionResult, error) {
 	if len(nodeList) == 0 {
-		return nil
+		return &model.InfraActionResult{
+			Message:        "Node list is empty",
+			Action:         action,
+			InfraId:        infraId,
+			Success:        true,
+			TotalNodeCount: 0,
+		}, nil
 	}
+
+	var nodeResultsMu sync.Mutex
+	nodeResultsMap := make(map[string]model.NodeActionResult)
 
 	// Step 1: Group VMs by CSP and region; also collect bulk-eligible entries.
 	nodeGroups := make(map[string]map[string][]string) // CSP -> Region -> NodeIds
@@ -489,12 +594,30 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 			// Skip if control is not needed
 			if err := CheckAllowedTransition(nsId, infraId, model.OptionalParameter{Set: true, Value: nodeId}, action); err != nil && !force {
 				log.Debug().Msgf("Skipping VM %s for action %s: %v", nodeId, action, err)
+				nodeResultsMu.Lock()
+				nodeResultsMap[nodeId] = model.NodeActionResult{
+					Message: fmt.Sprintf("Skipped VM %s: %v", nodeId, err),
+					NodeId:  nodeId,
+					Action:  action,
+					Success: false,
+					Error:   err.Error(),
+				}
+				nodeResultsMu.Unlock()
 				return
 			}
 
 			nodeInfo, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, ngMap)
 			if err != nil {
 				log.Warn().Err(err).Msgf("Failed to get VM %s info, skipping", nodeId)
+				nodeResultsMu.Lock()
+				nodeResultsMap[nodeId] = model.NodeActionResult{
+					Message: fmt.Sprintf("Failed to get VM %s info: %v", nodeId, err),
+					NodeId:  nodeId,
+					Action:  action,
+					Success: false,
+					Error:   err.Error(),
+				}
+				nodeResultsMu.Unlock()
 				return
 			}
 
@@ -506,6 +629,17 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 			if strings.EqualFold(action, model.ActionTerminate) &&
 				strings.EqualFold(nodeInfo.Status, model.StatusTerminated) {
 				log.Debug().Msgf("[ControlNodesInParallel] Skipping already-terminated VM %s", nodeId)
+				nodeResultsMu.Lock()
+				nodeResultsMap[nodeId] = model.NodeActionResult{
+					Message:      "Already terminated",
+					NodeId:       nodeId,
+					ProviderName: nodeInfo.ConnectionConfig.ProviderName,
+					RegionName:   nodeInfo.Region.Region,
+					Action:       action,
+					Success:      true,
+					Status:       nodeInfo.Status,
+				}
+				nodeResultsMu.Unlock()
 				return
 			}
 
@@ -563,9 +697,6 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 				maxRegionsForCSP, maxNodesForRegion = getNodeControlRateLimitsForCSP(providerName)
 			}
 
-			// log.Debug().Msgf("Controlling VMs for CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
-			// 	providerName, len(regionMap), maxRegionsForCSP, maxNodesForRegion)
-
 			// Step 3: Process regions within CSP with rate limiting
 			regionSemaphore := make(chan struct{}, maxRegionsForCSP)
 			var regionWg sync.WaitGroup
@@ -587,7 +718,7 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					// For Suspend/Resume/Terminate/Reboot on CSPs with a registered bulk handler,
 					// send all nodes in this region in one (or a few) SDK call(s) instead
 					// of N individual ControlNodeAsync dispatches.
-					individualNodeIds := runBulkControlForRegion(nsId, infraId, providerName, regionName, nodeIdList, action, bulkEntries)
+					individualNodeIds := runBulkControlForRegion(nsId, infraId, providerName, regionName, nodeIdList, action, bulkEntries, nodeResultsMap, &nodeResultsMu)
 					regionBulkHandled := len(nodeIdList) - len(individualNodeIds)
 					nodeIdList = individualNodeIds
 					// End bulk SDK fast-path
@@ -614,7 +745,6 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					// otherwise), with rate limiting
 					nodeSemaphore := make(chan struct{}, maxNodesForRegion)
 					var nodeWg sync.WaitGroup
-					var nodeMutex sync.Mutex
 					var regionErrors []error
 					var regionSuccessCount int
 
@@ -640,16 +770,47 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 							result := <-results
 							close(results)
 
+							nodeResultsMu.Lock()
+							finalStatus := result.Status
+							if finalStatus == "" {
+								if nodeObj, gerr := GetNodeObject(nsId, infraId, nodeId); gerr == nil {
+									finalStatus = nodeObj.Status
+								}
+							}
 							if result.Error != nil {
 								log.Error().Err(result.Error).Msgf("Failed to control VM %s", nodeId)
-								nodeMutex.Lock()
+								regionMutex.Lock()
 								regionErrors = append(regionErrors, fmt.Errorf("VM %s: %w", nodeId, result.Error))
-								nodeMutex.Unlock()
+								regionMutex.Unlock()
+								nodeResultsMap[nodeId] = model.NodeActionResult{
+									Message:      fmt.Sprintf("Failed to %s VM %s: %v", action, nodeId, result.Error),
+									NodeId:       nodeId,
+									ProviderName: providerName,
+									RegionName:   regionName,
+									Action:       action,
+									Success:      false,
+									Status:       finalStatus,
+									Error:        result.Error.Error(),
+								}
 							} else {
-								nodeMutex.Lock()
+								regionMutex.Lock()
 								regionSuccessCount++
-								nodeMutex.Unlock()
+								regionMutex.Unlock()
+								nodeMsg := "Successfully terminated"
+								if !strings.EqualFold(action, model.ActionTerminate) {
+									nodeMsg = fmt.Sprintf("Successfully requested %s (status: %s)", action, finalStatus)
+								}
+								nodeResultsMap[nodeId] = model.NodeActionResult{
+									Message:      nodeMsg,
+									NodeId:       nodeId,
+									ProviderName: providerName,
+									RegionName:   regionName,
+									Action:       action,
+									Success:      true,
+									Status:       finalStatus,
+								}
 							}
+							nodeResultsMu.Unlock()
 
 						}(nodeId)
 					}
@@ -662,9 +823,6 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 					cspBulkHandled += regionBulkHandled
 					regionMutex.Unlock()
 
-					// log.Debug().Msgf("Completed VM control in region %s/%s: %d/%d VMs successful",
-					// 	providerName, regionName, regionSuccessCount, len(nodeIdList))
-
 				}(region, nodeIds)
 			}
 			regionWg.Wait()
@@ -675,8 +833,6 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 			successCount += cspSuccessCount
 			bulkHandledCount += cspBulkHandled
 			mutex.Unlock()
-
-			// log.Debug().Msgf("Completed VM control for CSP: %s, %d VMs successful", providerName, cspSuccessCount)
 
 		}(csp, regions)
 	}
@@ -690,19 +846,73 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 		totalRegions += len(regions)
 	}
 
-	if len(allErrors) > 0 {
-		totalSucceeded := successCount + bulkHandledCount
-		log.Warn().Msgf("Rate-limited VM control completed with some errors: %d CSPs, %d regions, %d/%d VMs successful, %d errors",
-			cspCount, totalRegions, totalSucceeded, totalNodeCount, len(allErrors))
-		if totalSucceeded == 0 {
-			// Every node failed — surface the error so callers can report failure.
-			// Partial failures (some nodes succeeded) are still logged as Warn and
-			// return nil to preserve the existing large-infra partial-success behavior.
-			return fmt.Errorf("%d/%d node control operations failed; first error: %w", len(allErrors), totalNodeCount, allErrors[0])
+	var orderedResults []model.NodeActionResult
+	var failedNodeIds []string
+	totalSuccess := 0
+	totalFailed := 0
+
+	for _, nodeId := range nodeList {
+		res, ok := nodeResultsMap[nodeId]
+		if !ok {
+			res = model.NodeActionResult{
+				NodeId:  nodeId,
+				Action:  action,
+				Success: false,
+				Error:   "Unknown execution state",
+			}
+		}
+		if res.Success {
+			totalSuccess++
+		} else {
+			totalFailed++
+			failedNodeIds = append(failedNodeIds, nodeId)
+		}
+		orderedResults = append(orderedResults, res)
+	}
+
+	isAsyncAction := !strings.EqualFold(action, model.ActionTerminate) && !strings.EqualFold(action, model.ActionRefine)
+
+	actionResult := &model.InfraActionResult{
+		Action:           action,
+		InfraId:          infraId,
+		Success:          (totalFailed == 0),
+		TotalNodeCount:   len(nodeList),
+		SuccessNodeCount: totalSuccess,
+		FailedNodeCount:  totalFailed,
+		FailedNodeIds:    failedNodeIds,
+		NodeResults:      orderedResults,
+	}
+
+	if totalFailed == 0 {
+		if isAsyncAction {
+			actionResult.Message = fmt.Sprintf("Successfully requested %s for all %d node(s) in Infra '%s' (in progress)", action, len(nodeList), infraId)
+		} else {
+			actionResult.Message = fmt.Sprintf("Successfully terminated all %d node(s) in Infra '%s'", len(nodeList), infraId)
+		}
+	} else if totalSuccess == 0 {
+		if isAsyncAction {
+			actionResult.Message = fmt.Sprintf("Failed to request %s for all %d node(s) in Infra '%s' (failed: %s)", action, len(nodeList), infraId, strings.Join(failedNodeIds, ", "))
+		} else {
+			actionResult.Message = fmt.Sprintf("Failed to terminate all %d node(s) in Infra '%s' (failed: %s)", len(nodeList), infraId, strings.Join(failedNodeIds, ", "))
+		}
+	} else {
+		if isAsyncAction {
+			actionResult.Message = fmt.Sprintf("Partially requested %s for Infra '%s': %d/%d node(s) accepted (in progress), %d node(s) failed (failed: %s)", action, infraId, totalSuccess, len(nodeList), totalFailed, strings.Join(failedNodeIds, ", "))
+		} else {
+			actionResult.Message = fmt.Sprintf("Partially terminated Infra '%s': %d/%d node(s) succeeded, %d node(s) failed (failed: %s)", infraId, totalSuccess, len(nodeList), totalFailed, strings.Join(failedNodeIds, ", "))
 		}
 	}
 
-	return nil
+	if len(allErrors) > 0 {
+		log.Warn().Msgf("Rate-limited VM control completed with some errors: %d CSPs, %d regions, %d/%d VMs successful, %d errors",
+			cspCount, totalRegions, totalSuccess, totalNodeCount, len(allErrors))
+		if totalSuccess == 0 {
+			// Every node failed — surface the error so callers can report failure.
+			return actionResult, fmt.Errorf("%d/%d node control operations failed; first error: %w", len(allErrors), totalNodeCount, allErrors[0])
+		}
+	}
+
+	return actionResult, nil
 }
 
 // runBulkControlForRegion sends a bulk SDK control action for all bulk-eligible nodes in one
@@ -716,6 +926,8 @@ func runBulkControlForRegion(
 	nodeIdList []string,
 	action string,
 	bulkEntries map[string]bulkControlEntry,
+	nodeResultsMap map[string]model.NodeActionResult,
+	nodeResultsMu *sync.Mutex,
 ) (individualDispatch []string) {
 	handler, hasBulk := cspdirect.GetBatchVMControlHandler(providerName, action)
 	if !hasBulk {
@@ -806,13 +1018,62 @@ func runBulkControlForRegion(
 		// This preserves the synchronous behavior that Spider's DELETE /vm provided —
 		// callers expect the API to return only after the action is truly complete.
 		if strings.EqualFold(action, model.ActionTerminate) {
+			timedOutIds := []string{}
 			if statusFn, hasStatus := cspdirect.GetBatchVMStatusHandler(providerName); hasStatus {
 				acceptedIds := make([]string, 0, len(statuses))
 				for id := range statuses {
 					acceptedIds = append(acceptedIds, id)
 				}
-				waitBulkTerminated(sdkCtx, nsId, infraId, hg.key.cspRegion, acceptedIds, idToEntry, statusFn)
+				timedOutIds = waitBulkTerminated(sdkCtx, nsId, infraId, hg.key.cspRegion, acceptedIds, idToEntry, statusFn)
 			}
+			timedOutMap := make(map[string]bool)
+			for _, id := range timedOutIds {
+				timedOutMap[id] = true
+			}
+			nodeResultsMu.Lock()
+			for _, be := range hg.entries {
+				if _, ok := statuses[be.cspResourceId]; ok {
+					if timedOutMap[be.cspResourceId] {
+						nodeResultsMap[be.nodeId] = model.NodeActionResult{
+							Message:      "Timeout waiting for node to terminate (exceeded 10m)",
+							NodeId:       be.nodeId,
+							ProviderName: providerName,
+							RegionName:   regionName,
+							Action:       action,
+							Success:      false,
+							Status:       model.StatusTerminating,
+							Error:        "Timeout waiting for node to reach Terminated state",
+						}
+					} else {
+						nodeResultsMap[be.nodeId] = model.NodeActionResult{
+							Message:      "Successfully terminated via direct bulk SDK",
+							NodeId:       be.nodeId,
+							ProviderName: providerName,
+							RegionName:   regionName,
+							Action:       action,
+							Success:      true,
+							Status:       model.StatusTerminated,
+						}
+					}
+				}
+			}
+			nodeResultsMu.Unlock()
+		} else {
+			nodeResultsMu.Lock()
+			for _, be := range hg.entries {
+				if st, ok := statuses[be.cspResourceId]; ok {
+					nodeResultsMap[be.nodeId] = model.NodeActionResult{
+						Message:      fmt.Sprintf("Successfully requested %s via direct bulk SDK (status: %s)", action, st),
+						NodeId:       be.nodeId,
+						ProviderName: providerName,
+						RegionName:   regionName,
+						Action:       action,
+						Success:      true,
+						Status:       st,
+					}
+				}
+			}
+			nodeResultsMu.Unlock()
 		}
 	}
 
@@ -822,13 +1083,14 @@ func runBulkControlForRegion(
 // waitBulkTerminated polls the CSP until every instance in acceptedIds reports Terminated
 // (or the 10-minute deadline passes). It updates the StatusStore for each node as it
 // transitions, so the StatusAgent picks up the final state without an extra round-trip.
+// Returns any instance IDs that failed to reach Terminated within the deadline.
 func waitBulkTerminated(
 	ctx context.Context,
 	nsId, infraId, region string,
 	pendingIds []string,
 	idToEntry map[string]bulkControlEntry,
 	statusFn cspdirect.BatchVMStatusFunc,
-) {
+) []string {
 	const (
 		pollInterval = 5 * time.Second
 		maxWait      = 10 * time.Minute
@@ -842,7 +1104,7 @@ func waitBulkTerminated(
 		if err != nil {
 			log.Warn().Err(err).Str("region", region).
 				Msg("[BulkControl] status poll failed during terminate wait; skipping remaining wait")
-			return
+			return pendingIds
 		}
 
 		var remaining []string
@@ -871,6 +1133,7 @@ func waitBulkTerminated(
 	} else {
 		log.Debug().Str("region", region).Msg("[BulkControl] all nodes confirmed Terminated")
 	}
+	return pendingIds
 }
 
 // applyBulkTransitionalStatus sets the in-flight status for a node in both etcd and StatusStore
@@ -1007,15 +1270,28 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 		// orphan could only be recovered if the operator runs `reconcile` first.
 		if strings.EqualFold(action, model.ActionTerminate) {
 			if temp.Uid != "" {
-				rescued, _ := rescueOrphanNodes(nsId, infraId, []orphanCandidate{
-					{NodeId: nodeId, Uid: temp.Uid, ConnectionName: temp.ConnectionName},
-				})
-				if len(rescued) > 0 {
-					if refreshed, gerr := GetNodeObject(nsId, infraId, nodeId); gerr == nil {
-						temp = refreshed
-						cspResourceName = temp.CspResourceName
-						log.Info().Str("nodeId", nodeId).Str("cspResourceName", cspResourceName).
-							Msg("[ControlNodeAsync] rescued orphan CSP resource for previously untracked node; proceeding to terminate it")
+				provider := temp.ConnectionConfig.ProviderName
+				if provider != "" && cspdirect.IsDefinitivePreCreationFailure(provider, temp.SystemMessage) {
+					log.Info().Str("nodeId", nodeId).Str("provider", provider).
+						Msg("[ControlNodeAsync] bypassing orphan rescue for definitive pre-creation failure")
+				} else {
+					rescued, _ := rescueOrphanNodes(nsId, infraId, []orphanCandidate{
+						{
+							NodeId:           nodeId,
+							Uid:              temp.Uid,
+							ConnectionName:   temp.ConnectionName,
+							Provider:         temp.ConnectionConfig.ProviderName,
+							Region:           temp.ConnectionConfig.RegionDetail.RegionName,
+							CredentialHolder: temp.ConnectionConfig.CredentialHolder,
+						},
+					})
+					if len(rescued) > 0 {
+						if refreshed, gerr := GetNodeObject(nsId, infraId, nodeId); gerr == nil {
+							temp = refreshed
+							cspResourceName = temp.CspResourceName
+							log.Info().Str("nodeId", nodeId).Str("cspResourceName", cspResourceName).
+								Msg("[ControlNodeAsync] rescued orphan CSP resource for previously untracked node; proceeding to terminate it")
+						}
 					}
 				}
 			}
@@ -1049,9 +1325,9 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	method := ""
 	// timeout is set per-action below; terminate needs extra time for bare-metal instances
 	timeout := 20 * time.Minute
-	switch action {
-	case model.ActionTerminate:
-
+	switch strings.ToLower(action) {
+	case "terminate":
+		action = model.ActionTerminate
 		temp.TargetAction = model.ActionTerminate
 		temp.TargetStatus = model.StatusTerminated
 		temp.Status = model.StatusTerminating
@@ -1070,24 +1346,24 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 			log.Info().Msg(err.Error())
 		}
 
-	case model.ActionReboot:
-
+	case "reboot":
+		action = model.ActionReboot
 		temp.TargetAction = model.ActionReboot
 		temp.TargetStatus = model.StatusRunning
 		temp.Status = model.StatusRebooting
 
 		url = model.SpiderRestUrl + "/controlvm/" + cspResourceName + "?action=reboot"
 		method = "GET"
-	case model.ActionSuspend:
-
+	case "suspend":
+		action = model.ActionSuspend
 		temp.TargetAction = model.ActionSuspend
 		temp.TargetStatus = model.StatusSuspended
 		temp.Status = model.StatusSuspending
 
 		url = model.SpiderRestUrl + "/controlvm/" + cspResourceName + "?action=suspend"
 		method = "GET"
-	case model.ActionResume:
-
+	case "resume":
+		action = model.ActionResume
 		temp.TargetAction = model.ActionResume
 		temp.TargetStatus = model.StatusRunning
 		temp.Status = model.StatusResuming
@@ -1645,17 +1921,23 @@ func reconcileInfraForward(nsId, infraId string) (string, error) {
 		}
 
 		if strings.TrimSpace(nodeObj.CspResourceName) == "" {
-			// No cspResourceName: Spider cannot resolve this VM by name.
-			// Skip FetchNodeStatus (always returns Undefined without a name)
-			// and go straight to orphan rescue via allVM.
+			if isFailed && nodeObj.ConnectionConfig.ProviderName != "" &&
+				cspdirect.IsDefinitivePreCreationFailure(nodeObj.ConnectionConfig.ProviderName, nodeObj.SystemMessage) {
+				log.Info().Msgf("reconcileInfraForward: Node %s is Failed due to definitive pre-creation error; bypassing orphan rescue", nodeId)
+				markedFailed++
+				continue
+			}
 			if isFailed {
 				log.Info().Msgf("reconcileInfraForward: Node %s is Failed with no cspResourceName; "+
-					"deferring to orphan rescue via /allvm", nodeId)
+					"deferring to targeted orphan rescue", nodeId)
 			}
 			orphanCands = append(orphanCands, orphanCandidate{
-				NodeId:         nodeObj.Id,
-				Uid:            nodeObj.Uid,
-				ConnectionName: nodeObj.ConnectionName,
+				NodeId:           nodeObj.Id,
+				Uid:              nodeObj.Uid,
+				ConnectionName:   nodeObj.ConnectionName,
+				Provider:         nodeObj.ConnectionConfig.ProviderName,
+				Region:           nodeObj.ConnectionConfig.RegionDetail.RegionName,
+				CredentialHolder: nodeObj.ConnectionConfig.CredentialHolder,
 			})
 			continue
 		}
@@ -1938,10 +2220,23 @@ func reconcileInfraBackward(nsId, infraId string) (string, error) {
 		}
 
 		if strings.TrimSpace(nodeObj.CspResourceName) == "" {
+			if nodeObj.ConnectionConfig.ProviderName != "" &&
+				cspdirect.IsDefinitivePreCreationFailure(nodeObj.ConnectionConfig.ProviderName, nodeObj.SystemMessage) {
+				log.Info().Str("nodeId", nodeId).Msg("reconcileInfraBackward: bypassing orphan rescue for definitive pre-creation failure")
+				nodeObj.Status = model.StatusFailed
+				nodeObj.TargetAction = model.ActionComplete
+				nodeObj.TargetStatus = model.StatusComplete
+				UpdateNodeInfo(nsId, infraId, nodeObj)
+				markedFailed++
+				continue
+			}
 			uncertain = append(uncertain, orphanCandidate{
-				NodeId:         nodeObj.Id,
-				Uid:            nodeObj.Uid,
-				ConnectionName: nodeObj.ConnectionName,
+				NodeId:           nodeObj.Id,
+				Uid:              nodeObj.Uid,
+				ConnectionName:   nodeObj.ConnectionName,
+				Provider:         nodeObj.ConnectionConfig.ProviderName,
+				Region:           nodeObj.ConnectionConfig.RegionDetail.RegionName,
+				CredentialHolder: nodeObj.ConnectionConfig.CredentialHolder,
 			})
 			continue
 		}
@@ -1972,7 +2267,7 @@ func reconcileInfraBackward(nsId, infraId string) (string, error) {
 	if len(readyIds) > 0 {
 		// force=true bypasses both per-Node transient guard and the Infra
 		// TargetAction guard inside the parallel control path.
-		if cerr := ControlNodesInParallel(nsId, infraId, readyIds, model.ActionTerminate, true); cerr != nil {
+		if _, cerr := ControlNodesInParallel(nsId, infraId, readyIds, model.ActionTerminate, true); cerr != nil {
 			log.Warn().Err(cerr).Msgf("reconcileInfraBackward: parallel terminate reported errors")
 		}
 	}
@@ -2001,114 +2296,106 @@ func reconcileInfraBackward(nsId, infraId string) (string, error) {
 // possibly because the server crashed before Spider returned the VM IID.
 // rescueOrphanNodes resolves whether the VM actually exists on the CSP.
 type orphanCandidate struct {
-	NodeId         string
-	Uid            string // matched against IID.NameId from Spider /allvm
-	ConnectionName string
+	NodeId           string
+	Uid              string // matched against CSP Name/Tag
+	ConnectionName   string
+	Provider         string
+	Region           string
+	CredentialHolder string
 }
 
 // rescueOrphanNodes attempts to absorb CSP-side VMs that exist without a TB
-// cspResourceName mapping. For each distinct ConnectionName it queries Spider
-// /allvm exactly once and matches both MappedList and OnlyCSPList by
-// NameId == Node.Uid (Spider always uses Node.Uid as the CSP-side NameId
-// during create).
-//
-//   - MappedList match: Spider already has the VM registered (the crash
-//     happened after Spider stored it but before TB persisted the response).
-//     Just fill in the TB Node's cspResourceName/cspResourceId in place —
-//     calling /regvm here would fail with "already exists".
-//   - OnlyCSPList match: VM exists on the CSP but Spider does not know about
-//     it. Import via Spider /regvm, then fill in the TB Node fields.
-//
-// Returns rescued and not-found node IDs.
+// cspResourceName mapping using Direct SDK targeted Name/Tag queries.
 func rescueOrphanNodes(nsId, infraId string, candidates []orphanCandidate) (rescued, notFound []string) {
 	if len(candidates) == 0 {
 		return nil, nil
 	}
-	byConn := make(map[string][]orphanCandidate)
+
+	type groupKey struct {
+		provider         string
+		region           string
+		credentialHolder string
+	}
+
+	byGroup := make(map[groupKey][]orphanCandidate)
 	for _, c := range candidates {
-		if c.ConnectionName == "" || c.Uid == "" {
+		if c.Uid == "" {
 			notFound = append(notFound, c.NodeId)
 			continue
 		}
-		byConn[c.ConnectionName] = append(byConn[c.ConnectionName], c)
+		// Backfill connection config if not present
+		if c.Provider == "" || c.Region == "" || c.CredentialHolder == "" {
+			if nodeObj, err := GetNodeObject(nsId, infraId, c.NodeId); err == nil {
+				c.Provider = nodeObj.ConnectionConfig.ProviderName
+				c.Region = nodeObj.ConnectionConfig.RegionDetail.RegionName
+				c.CredentialHolder = nodeObj.ConnectionConfig.CredentialHolder
+				if c.ConnectionName == "" {
+					c.ConnectionName = nodeObj.ConnectionName
+				}
+			}
+		}
+		k := groupKey{
+			provider:         strings.ToLower(c.Provider),
+			region:           c.Region,
+			credentialHolder: c.CredentialHolder,
+		}
+		byGroup[k] = append(byGroup[k], c)
 	}
 
-	// Fire all /allvm requests in parallel — each can take minutes on large CSPs.
-	type connScan struct {
-		connName   string
-		group      []orphanCandidate
-		statusResp model.CspResourceStatusResponse
-		err        error
-	}
-	scanCh := make(chan connScan, len(byConn))
-	for connName, group := range byConn {
-		go func(cn string, grp []orphanCandidate) {
-			resp, err := resource.GetCspResourceStatus(cn, model.StrNode)
-			scanCh <- connScan{connName: cn, group: grp, statusResp: resp, err: err}
-		}(connName, group)
-	}
-
-	for range byConn {
-		scan := <-scanCh
-		connName := scan.connName
-		group := scan.group
-		if scan.err != nil {
-			log.Warn().Err(scan.err).Str("connection", connName).
-				Msg("rescueOrphanNodes: /allvm failed; treating group as not-found")
+	for k, group := range byGroup {
+		handler, hasHandler := cspdirect.GetFindVMsByUIDHandler(k.provider)
+		if !hasHandler {
+			log.Warn().Str("provider", k.provider).
+				Msg("rescueOrphanNodes: Direct SDK find handler not available; treating candidates as not-found (no Spider /allvm fallback)")
 			for _, c := range group {
 				notFound = append(notFound, c.NodeId)
 			}
 			continue
 		}
-		mapped := make(map[string]string, len(scan.statusResp.AllList.MappedList))
-		for _, iid := range scan.statusResp.AllList.MappedList {
-			mapped[iid.NameId] = iid.SystemId
-		}
-		cspOnly := make(map[string]string, len(scan.statusResp.AllList.OnlyCSPList))
-		for _, iid := range scan.statusResp.AllList.OnlyCSPList {
-			cspOnly[iid.NameId] = iid.SystemId
-		}
-		log.Info().Str("connection", connName).
-			Int("candidates", len(group)).
-			Int("mappedVMs", len(mapped)).
-			Int("cspOnlyVMs", len(cspOnly)).
-			Msg("rescueOrphanNodes: scanning Spider for orphan matches")
 
-		for _, c := range group {
-			// 1) Already mapped in Spider — just heal TB metadata.
-			if sysId, ok := mapped[c.Uid]; ok {
-				nodeObj, gerr := GetNodeObject(nsId, infraId, c.NodeId)
-				if gerr != nil {
-					log.Warn().Err(gerr).Str("nodeId", c.NodeId).
-						Msg("rescueOrphanNodes: cannot load Node for mapped rescue")
-					notFound = append(notFound, c.NodeId)
-					continue
-				}
-				nodeObj.CspResourceName = c.Uid
-				nodeObj.CspResourceId = sysId
-				nodeObj.SystemMessage = "Healed from Spider mapping via reconcile (orphan rescue)"
-				UpdateNodeInfo(nsId, infraId, nodeObj)
-				rescued = append(rescued, c.NodeId)
-				continue
+		uids := make([]string, len(group))
+		candByUID := make(map[string]orphanCandidate, len(group))
+		for i, c := range group {
+			uids[i] = c.Uid
+			candByUID[c.Uid] = c
+		}
+
+		sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, k.credentialHolder)
+		foundMap, err := handler(sdkCtx, k.region, uids)
+		if err != nil {
+			log.Warn().Err(err).Str("provider", k.provider).Str("region", k.region).
+				Msg("rescueOrphanNodes: Direct SDK FindVMsByUID failed; treating group as not-found")
+			for _, c := range group {
+				notFound = append(notFound, c.NodeId)
 			}
-			// 2) Exists only on CSP — import via /regvm.
-			if sysId, ok := cspOnly[c.Uid]; ok {
-				if err := importNodeFromCsp(nsId, infraId, c.NodeId, connName, c.Uid, sysId); err != nil {
+			continue
+		}
+
+		log.Info().Str("provider", k.provider).Str("region", k.region).
+			Int("candidates", len(group)).
+			Int("foundOnCSP", len(foundMap)).
+			Msg("rescueOrphanNodes: Direct SDK targeted orphan check completed")
+
+		for uid, c := range candByUID {
+			if cspSystemId, ok := foundMap[uid]; ok && cspSystemId != "" {
+				// Exists on CSP — import via /regvm so Spider and Tumblebug can track and manage it
+				if err := importNodeFromCsp(nsId, infraId, c.NodeId, c.ConnectionName, c.Uid, cspSystemId); err != nil {
 					log.Warn().Err(err).Str("nodeId", c.NodeId).
 						Msg("rescueOrphanNodes: import via /regvm failed")
 					notFound = append(notFound, c.NodeId)
 					continue
 				}
 				rescued = append(rescued, c.NodeId)
-				log.Info().Str("nodeId", c.NodeId).Str("connection", connName).
-					Str("cspName", c.Uid).Str("cspSystemId", sysId).
+				log.Info().Str("nodeId", c.NodeId).Str("connection", c.ConnectionName).
+					Str("cspName", c.Uid).Str("cspSystemId", cspSystemId).
 					Msg("rescueOrphanNodes: orphan VM imported into Spider")
-				continue
+			} else {
+				// Not found on CSP
+				notFound = append(notFound, c.NodeId)
 			}
-			// 3) No match anywhere — Node never made it to the CSP.
-			notFound = append(notFound, c.NodeId)
 		}
 	}
+
 	return rescued, notFound
 }
 

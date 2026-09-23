@@ -55,7 +55,7 @@ import (
 // @Param infraId path string true "Infra ID" default(infra01)
 // @Param action query string true "Action to apply to the Infra" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw, reconcile, abort)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
-// @Success 200 {object} model.SimpleMsg
+// @Success 200 {object} model.InfraActionResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -72,20 +72,21 @@ func RestGetControlInfra(c echo.Context) error {
 	if force == "true" {
 		forceOption = true
 	}
-	returnObj := model.SimpleMsg{}
 
 	switch action {
 	case "suspend", "resume", "reboot", "terminate", "refine",
 		"continue", "withdraw", "reconcile", "abort":
-		resultString, err := infra.HandleInfraAction(nsId, infraId, action, forceOption)
+		result, err := infra.HandleInfraAction(nsId, infraId, action, forceOption)
 		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, returnObj)
+			if result != nil {
+				return clientManager.EndRequestWithLog(c, err, result)
+			}
+			return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: err.Error()})
 		}
-		returnObj.Message = resultString
-		return clientManager.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, result)
 	default:
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine, continue, withdraw, reconcile, abort")
-		return clientManager.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: err.Error()})
 	}
 }
 
@@ -101,7 +102,7 @@ func RestGetControlInfra(c echo.Context) error {
 // @Param nodeId path string true "Node ID" default(g1-1)
 // @Param action query string true "Action to Infra" Enums(suspend, resume, reboot, terminate)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
-// @Success 200 {object} model.SimpleMsg
+// @Success 200 {object} model.NodeActionResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -120,20 +121,20 @@ func RestGetControlInfraNode(c echo.Context) error {
 		forceOption = true
 	}
 
-	returnObj := model.SimpleMsg{}
-
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
-		resultString, err := infra.HandleInfraNodeAction(nsId, infraId, nodeId, action, forceOption)
+		result, err := infra.HandleInfraNodeAction(nsId, infraId, nodeId, action, forceOption)
 		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, returnObj)
+			if result != nil {
+				return clientManager.EndRequestWithLog(c, err, result)
+			}
+			return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: err.Error()})
 		}
-		returnObj.Message = resultString
-		return clientManager.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, result)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
-		return clientManager.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: err.Error()})
 	}
 }
 

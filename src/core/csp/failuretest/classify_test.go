@@ -9,7 +9,12 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/alibaba"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/aws"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/azure"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/gcp"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/ibm"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/ncp"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/nhn"
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/csp/tencent"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
 
@@ -213,6 +218,52 @@ func TestPublicIpExhaustionIsRegionWide(t *testing.T) {
 		f := csp.ClassifyProvisioningFailure("nhn", "kr1", "kr-p1", msg)
 		if f.Class != model.FailureRegionCapacity {
 			t.Errorf("%q classified as %q, want %q", msg, f.Class, model.FailureRegionCapacity)
+		}
+	}
+}
+
+func TestIsDefinitivePreCreationFailure(t *testing.T) {
+	// Definitive pre-creation errors: VM creation was rejected at API gate, cannot exist on CSP
+	definitiveCases := []struct {
+		provider string
+		msg      string
+	}{
+		{"aws", awsCapacity},
+		{"gcp", gcpStockout},
+		{"alibaba", aliNoStock},
+		{"aws", "VcpuLimitExceeded: You have requested more vCPU capacity than your current vCPU limit of 32."},
+		{"aws", "InstanceLimitExceeded: Your account has reached the maximum number of EC2 instances."},
+		{"aws", "AuthFailure: AWS was not able to validate the provided access credentials."},
+		{"aws", "UnauthorizedOperation: You are not authorized to perform this operation."},
+		{"gcp", "AccessDenied: The caller does not have permission to compute.instances.create"},
+		{"aws", "InvalidParameterValue: Value for parameter InstanceType is invalid."},
+		{"aws", "InvalidAMIID.NotFound: The image id '[ami-xxxx]' does not exist"},
+		{"ncp", "Server (VPC) product generation limit exceeded."},
+		{"nhn", "error message: {badRequest:{message:Volume size is too small.,code:400}}"},
+	}
+
+	for _, tc := range definitiveCases {
+		if !csp.IsDefinitivePreCreationFailure(tc.provider, tc.msg) {
+			t.Errorf("expected definitive failure for [%s] %q, got false", tc.provider, tc.msg)
+		}
+	}
+
+	// Indeterminate / post-creation errors: VM could potentially exist on CSP
+	indeterminateCases := []struct {
+		provider string
+		msg      string
+	}{
+		{"aws", "connection refused to ec2.amazonaws.com"},
+		{"aws", "context deadline exceeded (Client.Timeout exceeded while awaiting headers)"},
+		{"aws", "i/o timeout"},
+		{"nhn", "Failed to attach floating IP after VM creation"},
+		{"generic", "Unknown server error (500)"},
+		{"", ""},
+	}
+
+	for _, tc := range indeterminateCases {
+		if csp.IsDefinitivePreCreationFailure(tc.provider, tc.msg) {
+			t.Errorf("expected NOT definitive failure for [%s] %q, got true", tc.provider, tc.msg)
 		}
 	}
 }
