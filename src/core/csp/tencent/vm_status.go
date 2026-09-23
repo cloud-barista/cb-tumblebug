@@ -89,8 +89,10 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 // tencentStateToTBStatus maps Tencent CVM instance state strings to TB status strings.
 func tencentStateToTBStatus(state string) string {
 	switch state {
-	case "PENDING", "STARTING":
+	case "PENDING":
 		return model.StatusCreating
+	case "STARTING":
+		return model.StatusResuming
 	case "RUNNING":
 		return model.StatusRunning
 	case "STOPPING":
