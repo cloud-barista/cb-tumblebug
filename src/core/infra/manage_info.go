@@ -28,6 +28,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -1620,11 +1621,20 @@ func BatchDeleteInfraNodes(nsId string, infraId string, nodeIds []string, force 
 		hasInfo := (err == nil)
 		soft := (!force && hasInfo && info.CspResourceName != "")
 		if !force && hasInfo && info.CspResourceName == "" && info.Uid != "" && info.ConnectionName != "" {
-			orphanCandidates = append(orphanCandidates, orphanCandidate{
-				NodeId:         id,
-				Uid:            info.Uid,
-				ConnectionName: info.ConnectionName,
-			})
+			if info.ConnectionConfig.ProviderName != "" &&
+				cspdirect.IsDefinitivePreCreationFailure(info.ConnectionConfig.ProviderName, info.SystemMessage) {
+				log.Info().Str("nodeId", id).Str("provider", info.ConnectionConfig.ProviderName).
+					Msg("BatchDeleteInfraNodes: bypassing orphan rescue for definitive pre-creation failure")
+			} else {
+				orphanCandidates = append(orphanCandidates, orphanCandidate{
+					NodeId:           id,
+					Uid:              info.Uid,
+					ConnectionName:   info.ConnectionName,
+					Provider:         info.ConnectionConfig.ProviderName,
+					Region:           info.ConnectionConfig.RegionDetail.RegionName,
+					CredentialHolder: info.ConnectionConfig.CredentialHolder,
+				})
+			}
 		}
 		entries = append(entries, nodeDeleteEntry{
 			id:      id,

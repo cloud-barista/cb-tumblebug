@@ -3253,7 +3253,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+                $ref: '#/components/schemas/model.InfraActionResult'
         "404":
           description: Not Found
           content:
@@ -3331,7 +3331,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+                $ref: '#/components/schemas/model.NodeActionResult'
         "404":
           description: Not Found
           content:
@@ -22635,6 +22635,39 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.InfraNodeGroupAccessInfo'
+    model.InfraActionResult:
+      type: object
+      properties:
+        action:
+          type: string
+          example: terminate
+        failedNodeCount:
+          type: integer
+          example: 2
+        failedNodeIds:
+          type: array
+          items:
+            type: string
+        infraId:
+          type: string
+          example: infra01
+        message:
+          type: string
+          example: "Partially terminated Infra 'infra01': 98/100 nodes succeeded,\
+            \ 2 nodes failed"
+        nodeResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.NodeActionResult'
+        success:
+          type: boolean
+          example: false
+        successNodeCount:
+          type: integer
+          example: 98
+        totalNodeCount:
+          type: integer
+          example: 100
     model.InfraAssociatedResourceList:
       type: object
       properties:
@@ -24774,6 +24807,33 @@ components:
           type: string
           description: TCP|HTTP|HTTPS
           example: TCP
+    model.NodeActionResult:
+      type: object
+      properties:
+        action:
+          type: string
+          example: terminate
+        error:
+          type: string
+          example: ""
+        message:
+          type: string
+          example: Successfully terminated node g1-1
+        nodeId:
+          type: string
+          example: g1-1
+        providerName:
+          type: string
+          example: tencent
+        regionName:
+          type: string
+          example: ap-guangzhou
+        status:
+          type: string
+          example: Terminated
+        success:
+          type: boolean
+          example: true
     model.NodeCreationError:
       type: object
       properties:

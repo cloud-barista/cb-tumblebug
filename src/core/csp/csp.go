@@ -68,6 +68,34 @@ func GetBatchVMStatusHandler(provider string) (BatchVMStatusFunc, bool) {
 	return observeBatchVMStatus(provider, "vmstatus", fn), ok
 }
 
+// FindVMsByUIDFunc queries a CSP directly using targeted Name/Tag filters (no full region scan)
+// to find instances matching any of the given UIDs.
+// ctx must carry model.CtxKeyCredentialHolder for credential lookup.
+// region is the CSP-specific region identifier.
+// uids are the Node.Uid values to search for.
+// Returns a map of UID -> CspResourceId. Missing keys mean the instance was not found on the CSP.
+type FindVMsByUIDFunc func(ctx context.Context, region string, uids []string) (map[string]string, error)
+
+var (
+	findVMsByUIDMu       sync.RWMutex
+	findVMsByUIDHandlers = make(map[string]FindVMsByUIDFunc)
+)
+
+// RegisterFindVMsByUIDHandler registers a direct-SDK targeted VM lookup function for a CSP.
+func RegisterFindVMsByUIDHandler(provider string, fn FindVMsByUIDFunc) {
+	findVMsByUIDMu.Lock()
+	defer findVMsByUIDMu.Unlock()
+	findVMsByUIDHandlers[strings.ToLower(provider)] = fn
+}
+
+// GetFindVMsByUIDHandler returns the registered FindVMsByUIDFunc for the given provider.
+func GetFindVMsByUIDHandler(provider string) (FindVMsByUIDFunc, bool) {
+	findVMsByUIDMu.RLock()
+	defer findVMsByUIDMu.RUnlock()
+	fn, ok := findVMsByUIDHandlers[strings.ToLower(provider)]
+	return fn, ok
+}
+
 // BatchVMControlFunc sends a lifecycle control action to multiple instances in one SDK call.
 // ctx must carry model.CtxKeyCredentialHolder for credential lookup.
 // region is the CSP-native region identifier (e.g., "ap-northeast-2" for AWS).

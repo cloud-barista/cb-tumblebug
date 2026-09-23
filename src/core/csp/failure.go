@@ -258,3 +258,27 @@ func removeZone(zones []string, drop string) []string {
 	}
 	return out
 }
+
+// IsDefinitivePreCreationFailure reports whether errorMsg represents a failure that occurs
+// before any VM resource can possibly be created on the CSP (e.g. zone capacity exhausted,
+// account quota exceeded, authentication failure, invalid parameter or image-spec mismatch).
+// For such errors, it is impossible for an orphan VM to exist on the CSP, so orphan rescue
+// (CSP API scanning) can be safely bypassed.
+func IsDefinitivePreCreationFailure(provider, errorMsg string) bool {
+	if strings.TrimSpace(errorMsg) == "" {
+		return false
+	}
+	f := ClassifyProvisioningFailure(provider, "", "", errorMsg)
+	switch f.Class {
+	case model.FailureZoneCapacity,
+		model.FailureRegionCapacity,
+		model.FailureAccountQuota,
+		model.FailureDiskTypeUnavailable,
+		model.FailureImageSpecMismatch,
+		model.FailureInvalidRequest,
+		model.FailureAuth:
+		return true
+	default:
+		return false
+	}
+}

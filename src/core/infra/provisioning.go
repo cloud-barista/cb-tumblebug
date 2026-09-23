@@ -1414,7 +1414,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		if refineResult, err := HandleInfraAction(nsId, infraId, model.ActionRefine, true); err != nil {
 			log.Error().Err(err).Msg("Failed to execute refine action, but continuing")
 		} else {
-			log.Info().Msgf("Refine action completed: %s", refineResult)
+			log.Info().Msgf("Refine action completed: %s", refineResult.Message)
 			shouldRefine = true
 		}
 	}
