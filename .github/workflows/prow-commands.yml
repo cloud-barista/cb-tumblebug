@@ -25,7 +25,7 @@ jobs:
       # Action according to command (by jpmcb/prow-github-actions)  
       - name: Action according to command
         if: ${{ startsWith(github.event.comment.body, '/') }}
-        uses: jpmcb/prow-github-actions@v2.0.0
+        uses: jpmcb/prow-github-actions@v3.0.0
         with:
           prow-commands: '/assign 
             /unassign
