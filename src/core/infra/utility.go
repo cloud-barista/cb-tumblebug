@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -931,6 +932,19 @@ func RegisterSharedResourceDependencies(ctx context.Context, nsId string, connec
 			}
 
 			for _, spInfo := range inspectResult.Resources.OnSpider.Info {
+				if spInfo.CspResourceId == "" {
+					log.Warn().Msgf("Skipping and purging ghost Spider-only node '%s' with empty CspResourceId on connection '%s'", spInfo.IdBySp, connName)
+					if spInfo.IdBySp != "" {
+						go func(nameId, connectionName string) {
+							client := clientManager.NewHttpClient()
+							url := fmt.Sprintf("%s/regvm/%s", model.SpiderRestUrl, nameId)
+							reqBody := model.SpiderConnectionName{ConnectionName: connectionName}
+							var res model.SimpleMsg
+							_, _ = clientManager.ExecuteHttpRequest(client, "DELETE", url, nil, clientManager.SetUseBody(reqBody), &reqBody, &res, clientManager.VeryShortDuration)
+						}(spInfo.IdBySp, connName)
+					}
+					continue
+				}
 				if tbCspIds[spInfo.CspResourceId] {
 					continue // already tracked in TB
 				}
