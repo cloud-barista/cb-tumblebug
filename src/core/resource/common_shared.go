@@ -657,13 +657,23 @@ func DeleteSharedResources(nsId string, dryRun bool) (model.ResourceDeleteResult
 		sgIds = append(sgIds, id)
 	}
 
-	// SSHKey candidates: shared-named + per-Infra dedicated (identified by label).
+	// SSHKey candidates: shared-named + per-Infra dedicated (identified by label) + placeholder keys.
 	keyIdSet := make(map[string]bool)
 	for _, id := range filterShared(model.StrSSHKey) {
 		keyIdSet[id] = true
 	}
 	if resources, lblErr := label.GetResourcesByLabelSelector(model.StrSSHKey, dedicatedSelector); lblErr != nil {
 		log.Warn().Err(lblErr).Msg("Failed to list per-Infra dedicated SSHKeys by label")
+	} else {
+		for _, r := range resources {
+			if k, ok := r.(*model.SshKeyInfo); ok {
+				keyIdSet[k.Id] = true
+			}
+		}
+	}
+	placeholderSelector := model.LabelPlaceholder + "=true," + model.LabelNamespace + "=" + nsId
+	if resources, lblErr := label.GetResourcesByLabelSelector(model.StrSSHKey, placeholderSelector); lblErr != nil {
+		log.Debug().Err(lblErr).Msg("Failed to list placeholder SSHKeys by label")
 	} else {
 		for _, r := range resources {
 			if k, ok := r.(*model.SshKeyInfo); ok {
@@ -695,15 +705,70 @@ func DeleteSharedResources(nsId string, dryRun bool) (model.ResourceDeleteResult
 		vnetIds = append(vnetIds, id)
 	}
 
+	// Track connections and VNet IDs where child resource deletion (SG or VNet) failed on the CSP.
+	failedNetworkConnections := make(map[string]bool)
+	failedVNetIds := make(map[string]bool)
+
+	recordNetworkFailures := func(results []model.ResourceDeleteResult) {
+		for _, r := range results {
+			if !r.Success {
+				conn, err := getResourceConnectionName(nsId, r.ResourceType, r.ResourceId)
+				if err == nil && conn != "" && conn != "unknown" {
+					failedNetworkConnections[conn] = true
+				}
+				if r.ResourceType == model.StrSecurityGroup {
+					if sgInfo, err := GetSecurityGroup(nsId, r.ResourceId); err == nil && sgInfo.VNetId != "" {
+						failedVNetIds[sgInfo.VNetId] = true
+					}
+				}
+			}
+		}
+	}
+
 	// release deletes (or, in dryRun, reports) only resources with no associated objects.
 	// release selects the deletable resources of one type (those with no associated objects),
 	// then deletes them in parallel per CSP via the shared engine — while the caller keeps the
-	// dependency-ordered type staging (SG -> SSHKey -> VNet) by calling release() per type.
+	// dependency-ordered type staging (SG -> VNet -> SSHKey) by calling release() per type.
 	// The association check is done up front: types are staged, so by the time a type runs its
 	// earlier-stage dependencies are already gone and the association state is stable.
-	release := func(resourceType string, ids []string) {
+	release := func(resourceType string, ids []string) []model.ResourceDeleteResult {
 		var deletable []string
+		var batchResults []model.ResourceDeleteResult
 		for _, id := range ids {
+			// If this is a VNet, check if any dependent SecurityGroup failed deletion
+			if resourceType == model.StrVNet {
+				conn, _ := getResourceConnectionName(nsId, resourceType, id)
+				if failedVNetIds[id] || (conn != "" && failedNetworkConnections[conn]) {
+					log.Info().Msgf("Retaining VNet '%s' in connection '%s': child security group failed deletion", id, conn)
+					retainedResult := model.ResourceDeleteResult{
+						ResourceType: resourceType,
+						ResourceId:   id,
+						Success:      false,
+						Message:      fmt.Sprintf("retained: dependent security group in connection '%s' failed deletion", conn),
+					}
+					batchResults = append(batchResults, retainedResult)
+					output.Results = append(output.Results, retainedResult)
+					continue
+				}
+			}
+
+			// If this is an SSHKey, check if network resource deletion failed in the same connection
+			if resourceType == model.StrSSHKey {
+				conn, _ := getResourceConnectionName(nsId, resourceType, id)
+				if conn != "" && failedNetworkConnections[conn] {
+					log.Info().Msgf("Retaining SSHKey '%s' in connection '%s': network resources (SG/vNet) failed deletion", id, conn)
+					retainedResult := model.ResourceDeleteResult{
+						ResourceType: resourceType,
+						ResourceId:   id,
+						Success:      false,
+						Message:      fmt.Sprintf("retained: dependent network resources (SG/vNet) in connection '%s' failed deletion", conn),
+					}
+					batchResults = append(batchResults, retainedResult)
+					output.Results = append(output.Results, retainedResult)
+					continue
+				}
+			}
+
 			assoc, assocErr := GetAssociatedObjectList(nsId, resourceType, id)
 			if assocErr != nil {
 				log.Warn().Err(assocErr).Msgf("Failed to check associations for %s '%s'; skipping", resourceType, id)
@@ -734,22 +799,34 @@ func DeleteSharedResources(nsId string, dryRun bool) (model.ResourceDeleteResult
 				_ = BatchRemoveFromAssociatedObjectList(nsId, resourceType, id, deadAssoc)
 			}
 			if dryRun {
-				output.Results = append(output.Results, model.ResourceDeleteResult{
+				dryRunResult := model.ResourceDeleteResult{
 					ResourceType: resourceType, ResourceId: id, Success: true,
 					Message: "would be deleted (dry-run): no live associated objects",
-				})
+				}
+				batchResults = append(batchResults, dryRunResult)
+				output.Results = append(output.Results, dryRunResult)
 				continue
 			}
 			deletable = append(deletable, id)
 		}
 		if len(deletable) > 0 {
-			output.Results = append(output.Results, deleteResourceIdsParallel(nsId, resourceType, deletable, "false")...)
+			deletedResults := deleteResourceIdsParallel(nsId, resourceType, deletable, "false")
+			batchResults = append(batchResults, deletedResults...)
+			output.Results = append(output.Results, deletedResults...)
 		}
+		return batchResults
 	}
 
-	release(model.StrSecurityGroup, sgIds)
-	release(model.StrSSHKey, keyIds)
-	release(model.StrVNet, vnetIds)
+	// 1. Release SecurityGroups first (child dependencies of VNets)
+	sgResults := release(model.StrSecurityGroup, sgIds)
+	recordNetworkFailures(sgResults)
+
+	// 2. Release VNets next
+	vnetResults := release(model.StrVNet, vnetIds)
+	recordNetworkFailures(vnetResults)
+
+	// 3. Release SSHKeys last (protected: retains keys in connections where SG or VNet failed)
+	_ = release(model.StrSSHKey, keyIds)
 
 	// Build summary counts
 	successCount := 0

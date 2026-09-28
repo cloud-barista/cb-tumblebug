@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -53,13 +54,15 @@ func RestDelAllResources(c echo.Context) error {
 	content, err := resource.DelAllResources(nsId, resourceType, subString, forceFlag)
 
 	for _, result := range content.Results {
-		if result.ResourceType == model.StrVNet && !result.Success {
-			// Trigger Self-healing upon deletion failure
-			log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", result.ResourceId)
-			manager := reconcile.GetManager()
-			if _, recErr := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, result.ResourceId, nil); recErr != nil {
-				log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", result.ResourceId)
-			}
+		if result.ResourceType == model.StrVNet && !result.Success && !strings.HasPrefix(result.Message, "retained:") {
+			// Trigger Self-healing upon deletion failure asynchronously
+			go func(resId string) {
+				log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", resId)
+				manager := reconcile.GetManager()
+				if _, recErr := manager.RunReconcile(context.Background(), nsId, model.StrVNet, resId, nil); recErr != nil {
+					log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", resId)
+				}
+			}(result.ResourceId)
 		}
 	}
 
@@ -484,13 +487,15 @@ func RestDelAllSharedResources(c echo.Context) error {
 		if dryRun {
 			break
 		}
-		if result.ResourceType == model.StrVNet && !result.Success {
-			// Trigger Self-healing upon deletion failure
-			log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", result.ResourceId)
-			manager := reconcile.GetManager()
-			if _, recErr := manager.RunReconcile(c.Request().Context(), nsId, model.StrVNet, result.ResourceId, nil); recErr != nil {
-				log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", result.ResourceId)
-			}
+		if result.ResourceType == model.StrVNet && !result.Success && !strings.HasPrefix(result.Message, "retained:") {
+			// Trigger Self-healing upon deletion failure asynchronously
+			go func(resId string) {
+				log.Warn().Msgf("DeleteVNet failed. Triggering Reconcile: %s", resId)
+				manager := reconcile.GetManager()
+				if _, recErr := manager.RunReconcile(context.Background(), nsId, model.StrVNet, resId, nil); recErr != nil {
+					log.Warn().Err(recErr).Msgf("auto-reconcile failed for VNet: %s", resId)
+				}
+			}(result.ResourceId)
 		}
 	}
 

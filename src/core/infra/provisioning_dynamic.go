@@ -2263,7 +2263,10 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			} else if allKeys, ok := keyListInNs.([]model.SshKeyInfo); ok {
 				for _, res := range allKeys {
 					if res.ConnectionName == requestBody.ConnectionName &&
-						(res.CspResourceId == targetKey || res.CspResourceName == targetKey || res.Id == targetKey || res.Name == targetKey) {
+						(strings.EqualFold(res.CspResourceId, targetKey) ||
+							strings.EqualFold(res.CspResourceName, targetKey) ||
+							strings.EqualFold(res.Id, targetKey) ||
+							strings.EqualFold(res.Name, targetKey)) {
 						nodeInfoData.SshKeyId = res.Id
 						sshKeyMatched = true
 						break

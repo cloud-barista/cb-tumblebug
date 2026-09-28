@@ -30,6 +30,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/apierr"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	directcsp "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -506,6 +507,25 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		url = model.SpiderRestUrl + "/securitygroup/" + temp.CspResourceName
 		uid = temp.Uid
 		tsCspId, tsCspName = temp.CspResourceId, temp.CspResourceName
+
+		// Pre-deletion CSP dependency check for Security Groups (skipped when forceFlag == "true")
+		if forceFlag != "true" {
+			if connConfig, connErr := common.GetConnConfig(temp.ConnectionName); connErr == nil {
+				provider := connConfig.ProviderName
+				region := connConfig.RegionDetail.RegionName
+				sgIdentifier := temp.CspResourceId
+				if sgIdentifier == "" {
+					sgIdentifier = temp.CspResourceName
+				}
+				inUseInstances, checkErr := directcsp.CheckSecurityGroupInUse(context.Background(), provider, region, sgIdentifier)
+				if checkErr != nil {
+					log.Warn().Err(checkErr).Msgf("Failed to verify if SecurityGroup '%s' is in use on %s; proceeding with deletion", resourceId, provider)
+				} else if len(inUseInstances) > 0 {
+					return fmt.Errorf("cannot delete %s '%s' (CSP ID: %s): in use by %d active %s instance(s): %v",
+						resourceType, resourceId, sgIdentifier, len(inUseInstances), strings.ToUpper(provider), inUseInstances)
+				}
+			}
+		}
 
 	case model.StrDataDisk:
 		temp := model.DataDiskInfo{}
@@ -2247,4 +2267,3 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 		return "", fmt.Errorf("invalid resourceType")
 	}
 }
-

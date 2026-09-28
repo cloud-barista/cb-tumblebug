@@ -216,7 +216,7 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 		}
 
 		// Use Spider API to get VNet info from SecurityGroup's CSP ID
-		cspVNetId, err := getCspVNetIdFromSecurityGroup(u.ConnectionName, u.CspResourceId)
+		cspVNetId, err := GetCspVNetIdFromSecurityGroup(u.ConnectionName, u.CspResourceId)
 		if err != nil {
 			return model.SecurityGroupInfo{}, err
 		}
@@ -397,8 +397,8 @@ func CreateSecurityGroup(ctx context.Context, nsId string, u *model.SecurityGrou
 	return content, nil
 }
 
-// getCspVNetIdFromSecurityGroup retrieves VNet information for a SecurityGroup using Spider API
-func getCspVNetIdFromSecurityGroup(connectionName, cspResourceId string) (string, error) {
+// GetCspVNetIdFromSecurityGroup retrieves VNet information for a SecurityGroup using Spider API
+func GetCspVNetIdFromSecurityGroup(connectionName, cspResourceId string) (string, error) {
 	type GetSecurityGroupOwnerReq struct {
 		ConnectionName string `json:"ConnectionName"`
 		ReqInfo        struct {

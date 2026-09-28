@@ -18,11 +18,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	cspdirect "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
@@ -866,15 +869,147 @@ func RegisterCspNativeResourcesAll(ctx context.Context, nsId string, infraNamePr
 	return output, nil
 }
 
+type spiderVMUsingResources struct {
+	Resources struct {
+		VPC    *model.IID   `json:"VPC"`
+		SGList []*model.IID `json:"SGList"`
+		VMKey  *model.IID   `json:"VMKey"`
+	} `json:"Resources"`
+}
+
+func getSpiderVMUsingResources(connectionName, cspId string) (*spiderVMUsingResources, error) {
+	client := clientManager.NewHttpClient()
+	endpoint := fmt.Sprintf("%s/getvmusingresources?ConnectionName=%s&CSPId=%s",
+		model.SpiderRestUrl, url.QueryEscape(connectionName), url.QueryEscape(cspId))
+	var result spiderVMUsingResources
+	noBody := clientManager.NoBody
+	_, err := clientManager.ExecuteHttpRequest(
+		client,
+		"POST",
+		endpoint,
+		nil,
+		clientManager.SetUseBody(noBody),
+		&noBody,
+		&result,
+		clientManager.MediumDuration,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func getSpiderVMInfo(connectionName, nameId string) (*model.SpiderVMInfo, error) {
+	client := clientManager.NewHttpClient()
+	endpoint := fmt.Sprintf("%s/vm/%s", model.SpiderRestUrl, url.PathEscape(nameId))
+	reqBody := model.SpiderConnectionName{ConnectionName: connectionName}
+	var result model.SpiderVMInfo
+	_, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		endpoint,
+		nil,
+		clientManager.SetUseBody(reqBody),
+		&reqBody,
+		&result,
+		clientManager.MediumDuration,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func getSpiderSecurityInfo(connectionName, nameId string) (*model.SpiderSecurityInfo, error) {
+	client := clientManager.NewHttpClient()
+	endpoint := fmt.Sprintf("%s/securitygroup/%s?ConnectionName=%s",
+		model.SpiderRestUrl, url.PathEscape(nameId), url.QueryEscape(connectionName))
+	var result model.SpiderSecurityInfo
+	noBody := clientManager.NoBody
+	_, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		endpoint,
+		nil,
+		clientManager.SetUseBody(noBody),
+		&noBody,
+		&result,
+		clientManager.MediumDuration,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func getSharedResourceFootprint(nsId, connName string) (map[string]bool, map[string]bool, map[string]bool, error) {
+	vnetCspIds := make(map[string]bool)
+	subnetCspIds := make(map[string]bool)
+	sgCspIds := make(map[string]bool)
+	matchedSubstring := nsId + model.StrSharedResourceName
+
+	addId := func(targetMap map[string]bool, id string) {
+		if id == "" {
+			return
+		}
+		targetMap[id] = true
+		if idx := strings.LastIndex(id, "/"); idx != -1 && idx < len(id)-1 {
+			targetMap[id[idx+1:]] = true
+		}
+	}
+
+	if rawList, err := resource.ListResource(nsId, model.StrVNet, "", ""); err == nil {
+		if vnets, ok := rawList.([]model.VNetInfo); ok {
+			for _, item := range vnets {
+				if item.ConnectionName == connName && strings.Contains(item.Name, matchedSubstring) {
+					addId(vnetCspIds, item.CspResourceId)
+					addId(vnetCspIds, item.CspResourceName)
+					addId(vnetCspIds, item.Id)
+					for _, subnet := range item.SubnetInfoList {
+						addId(subnetCspIds, subnet.CspResourceId)
+						addId(subnetCspIds, subnet.CspResourceName)
+						addId(subnetCspIds, subnet.Id)
+					}
+				}
+			}
+		}
+	}
+
+	if rawList, err := resource.ListResource(nsId, model.StrSecurityGroup, "", ""); err == nil {
+		if sgs, ok := rawList.([]model.SecurityGroupInfo); ok {
+			for _, item := range sgs {
+				if item.ConnectionName == connName && strings.Contains(item.Name, matchedSubstring) {
+					addId(sgCspIds, item.CspResourceId)
+					addId(sgCspIds, item.CspResourceName)
+					addId(sgCspIds, item.Id)
+				}
+			}
+		}
+	}
+
+	// Also include per-Infra dedicated SecurityGroups (dynamic SGs)
+	dedicatedSelector := model.LabelPurpose + "=" + model.PurposeInfraDynamic + "," + model.LabelNamespace + "=" + nsId
+	if resources, lblErr := label.GetResourcesByLabelSelector(model.StrSecurityGroup, dedicatedSelector); lblErr == nil {
+		for _, r := range resources {
+			if sg, ok := r.(*model.SecurityGroupInfo); ok {
+				if sg.ConnectionName == connName {
+					addId(sgCspIds, sg.CspResourceId)
+					addId(sgCspIds, sg.CspResourceName)
+					addId(sgCspIds, sg.Id)
+				}
+			}
+		}
+	}
+
+	return vnetCspIds, subnetCspIds, sgCspIds, nil
+}
+
 // RegisterSharedResourceDependencies finds and registers orphaned CSP resources
 // that are blocking deletion of shared resources due to DependencyViolation errors.
-// These are resources (VMs, SGs, VNets) that exist on the CSP but are no longer
-// tracked in CB-TB. They are registered with a "dep-" prefix to indicate they are
-// detected dependencies, so users can inspect and clean them up properly.
-//
-// If connectionName is empty, all connections with shared resources in the namespace
-// are checked. The default infraNamePrefix is "dep" and default option covers all
-// dependency-relevant resource types.
+// These are resources (VMs attached to shared VNet/Subnet/SG, or untracked SGs inside shared VNet)
+// that exist on the CSP/Spider but are no longer tracked in CB-TB.
+// Only true dependencies matching the shared resource footprint are registered with a "dep-" prefix.
+// Unrelated VMs, SGs, VNets, and SSHKeys are strictly skipped to protect customer workloads.
 func RegisterSharedResourceDependencies(ctx context.Context, nsId string, connectionName string, infraNamePrefix string, option string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
@@ -893,48 +1028,332 @@ func RegisterSharedResourceDependencies(ctx context.Context, nsId string, connec
 		return model.RegisterResourceAllResult{}, fmt.Errorf("no connections with shared resources found in namespace '%s'", nsId)
 	}
 
-	if option == "" {
-		option = strings.Join([]string{model.StrVNet, model.StrSecurityGroup, model.StrSSHKey, model.StrNode}, ",")
-	}
 	if infraNamePrefix == "" {
 		infraNamePrefix = "dep"
 	}
 
-	log.Info().Msgf("RegisterSharedResourceDependencies: checking %d connection(s) for orphaned resources: %v", len(connectionNames), connectionNames)
+	doSG := true
+	doNode := true
+	if option != "" {
+		if optMap, err := getValidatedOptionMap(option); err == nil {
+			doSG = optMap[model.StrSecurityGroup]
+			doNode = optMap[model.StrNode]
+		}
+	}
+
+	log.Info().Msgf("RegisterSharedResourceDependencies: targeted dependency check across %d connection(s): %v", len(connectionNames), connectionNames)
 
 	output := model.RegisterResourceAllResult{}
 	errorConnCount := 0
 
-	for _, connName := range connectionNames {
-		infraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, connName))
-		log.Info().Msgf("Scanning orphaned dependencies for connection '%s', infra prefix: '%s'", connName, infraName)
-
-		// Pass 1: register resources that are on CSP but not in Spider or TB (OnCspOnly)
-		result, err := RegisterCspNativeResources(ctx, nsId, connName, infraName, option, "n")
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed to register dependencies for connection '%s'", connName)
-			result.ConnectionName = connName
-			result.SystemMessage = err.Error()
-			errorConnCount++
+	// If only 1 connection is targeted, process it synchronously without goroutine overhead
+	if len(connectionNames) == 1 {
+		connName := connectionNames[0]
+		res, hasShared := registerSharedDependenciesForConnection(ctx, nsId, connName, infraNamePrefix, doSG, doNode)
+		if hasShared {
+			if res.SystemMessage != "" {
+				errorConnCount++
+			}
+			output.RegisterationResult = append(output.RegisterationResult, res)
+			output.RegistrationOverview.SecurityGroup += res.RegistrationOverview.SecurityGroup
+			output.RegistrationOverview.Node += res.RegistrationOverview.Node
+			output.RegistrationOverview.Failed += res.RegistrationOverview.Failed
+		}
+	} else {
+		// Group connections by CSP for hierarchical concurrency & rate limiting
+		cspGroups := make(map[string][]string)
+		for _, connName := range connectionNames {
+			connConfig, err := common.GetConnConfig(connName)
+			provider := "unknown"
+			if err == nil && connConfig.ProviderName != "" {
+				provider = strings.ToLower(connConfig.ProviderName)
+			}
+			cspGroups[provider] = append(cspGroups[provider], connName)
 		}
 
-		// Pass 2: register VMs that are in Spider's registry but missing from TB.
-		// These are VMs that were previously managed through Spider but got removed
-		// from CB-TB without deleting from CSP (common cause of DependencyViolation).
-		inspectResult, inspErr := InspectResources(connName, model.StrNode)
-		if inspErr != nil {
-			log.Warn().Err(inspErr).Msgf("Could not inspect nodes for Spider-only pass on connection '%s'", connName)
+		resultChan := make(chan model.RegisterResourceResult, len(connectionNames))
+		globalSemaphore := make(chan struct{}, csp.GlobalMaxConcurrentConnections)
+
+		var cspWg sync.WaitGroup
+		for provider, conns := range cspGroups {
+			cspWg.Add(1)
+			go func(providerName string, connList []string) {
+				defer cspWg.Done()
+
+				maxConns, delayMinMs, delayMaxMs := getRegisterRateLimitsForCSP(providerName)
+				cspSemaphore := make(chan struct{}, maxConns)
+
+				var connWg sync.WaitGroup
+				for _, cName := range connList {
+					connWg.Add(1)
+					go func(connName string) {
+						defer connWg.Done()
+
+						select {
+						case <-ctx.Done():
+							log.Warn().Msgf("Registration for connection '%s' cancelled: %v", connName, ctx.Err())
+							return
+						case globalSemaphore <- struct{}{}:
+						}
+						defer func() { <-globalSemaphore }()
+
+						select {
+						case <-ctx.Done():
+							log.Warn().Msgf("Registration for connection '%s' cancelled: %v", connName, ctx.Err())
+							return
+						case cspSemaphore <- struct{}{}:
+						}
+						defer func() { <-cspSemaphore }()
+
+						common.RandomSleep(delayMinMs, delayMaxMs)
+
+						res, hasShared := registerSharedDependenciesForConnection(ctx, nsId, connName, infraNamePrefix, doSG, doNode)
+						if hasShared {
+							resultChan <- res
+						}
+					}(cName)
+				}
+				connWg.Wait()
+			}(provider, conns)
+		}
+
+		go func() {
+			cspWg.Wait()
+			close(resultChan)
+		}()
+
+		for result := range resultChan {
+			if result.SystemMessage != "" {
+				errorConnCount++
+			}
+			output.RegisterationResult = append(output.RegisterationResult, result)
+			output.RegistrationOverview.SecurityGroup += result.RegistrationOverview.SecurityGroup
+			output.RegistrationOverview.Node += result.RegistrationOverview.Node
+			output.RegistrationOverview.Failed += result.RegistrationOverview.Failed
+		}
+	}
+
+	output.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+	output.RegisteredConnection = len(connectionNames)
+	output.AvailableConnection = len(connectionNames) - errorConnCount
+
+	sort.SliceStable(output.RegisterationResult, func(i, j int) bool {
+		return output.RegisterationResult[i].ConnectionName < output.RegisterationResult[j].ConnectionName
+	})
+
+	return output, nil
+}
+
+// registerSharedDependenciesForConnection performs the targeted SG and Node dependency scan for a single connection.
+// Returns (result, hasSharedResources).
+func registerSharedDependenciesForConnection(ctx context.Context, nsId string, connName string, infraNamePrefix string, doSG bool, doNode bool) (model.RegisterResourceResult, bool) {
+	vnetCspIds, subnetCspIds, sgCspIds, err := getSharedResourceFootprint(nsId, connName)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to get shared resource footprint for connection '%s'", connName)
+	}
+
+	if len(vnetCspIds) == 0 && len(sgCspIds) == 0 {
+		log.Info().Msgf("No shared resources found for connection '%s' in namespace '%s'; skipping dependency scan", connName, nsId)
+		return model.RegisterResourceResult{}, false
+	}
+
+	log.Info().Msgf("Targeted dependency scan for connection '%s' (shared footprint: %d VNets, %d Subnets, %d SGs)",
+		connName, len(vnetCspIds), len(subnetCspIds), len(sgCspIds))
+
+	result := model.RegisterResourceResult{
+		ConnectionName: connName,
+	}
+
+	// Phase 1: SecurityGroup Targeted Dependency Scan
+	if doSG {
+		sgInspect, sgErr := InspectResources(connName, model.StrSecurityGroup)
+		if sgErr != nil {
+			log.Warn().Err(sgErr).Msgf("Could not inspect security groups on connection '%s'", connName)
+			result.SystemMessage += "// SG Inspect Failed: " + sgErr.Error()
+		} else {
+			// (A) OnCspOnly SGs: check owner VPC
+			for _, r := range sgInspect.Resources.OnCspOnly.Info {
+				if r.CspResourceId == "" {
+					continue
+				}
+				ownerVpcId, err := resource.GetCspVNetIdFromSecurityGroup(connName, r.CspResourceId)
+				if err != nil {
+					log.Debug().Err(err).Msgf("Could not get owner VPC for CSP SG '%s'", r.CspResourceId)
+					continue
+				}
+				if vnetCspIds[ownerVpcId] {
+					log.Warn().Msgf("Detected orphaned CSP SG '%s' (owner VPC: %s); registering to CB-TB", r.CspResourceId, ownerVpcId)
+					req := model.SecurityGroupReq{
+						ConnectionName: connName,
+						CspResourceId:  r.CspResourceId,
+						Name:           common.ChangeIdString(fmt.Sprintf("%s-%s", connName, r.CspResourceId)),
+						VNetId:         "unknown",
+						Description:    fmt.Sprintf("Orphaned SG (CSP ID: %s, owner VPC: %s) recovered for cleanup", r.CspResourceId, ownerVpcId),
+					}
+					_, regErr := resource.CreateSecurityGroup(ctx, nsId, &req, model.ActionRegister)
+					appendResult(&result, model.StrSecurityGroup, req.Name, regErr, &result.RegistrationOverview.SecurityGroup)
+					if regErr == nil {
+						sgCspIds[r.CspResourceId] = true
+					}
+				} else {
+					log.Debug().Msgf("Skipping unrelated CSP SG '%s' (owner VPC: %s): not in shared VNets", r.CspResourceId, ownerVpcId)
+				}
+			}
+
+			// (B) OnSpiderNotTumblebug SGs: check owner VPC
+			for _, r := range sgInspect.Resources.OnSpiderNotTumblebug.Info {
+				sgNameId := r.RefNameOrId
+				if sgNameId == "" {
+					sgNameId = r.CspResourceId
+				}
+				if sgNameId == "" {
+					continue
+				}
+				sgInfo, err := getSpiderSecurityInfo(connName, sgNameId)
+				if err != nil {
+					log.Debug().Err(err).Msgf("Could not get Spider SG info for '%s'", sgNameId)
+					continue
+				}
+				if vnetCspIds[sgInfo.VpcIID.SystemId] || vnetCspIds[sgInfo.VpcIID.NameId] {
+					log.Warn().Msgf("Detected orphaned Spider SG '%s' (owner VPC: %s); registering to CB-TB", sgNameId, sgInfo.VpcIID.SystemId)
+					req := model.SecurityGroupReq{
+						ConnectionName: connName,
+						Name:           sgNameId,
+						VNetId:         "",
+						Description:    "Orphaned Spider SG recovered for cleanup",
+					}
+					_, regErr := resource.CreateSecurityGroup(ctx, nsId, &req, model.ActionRegister)
+					appendResult(&result, model.StrSecurityGroup, req.Name, regErr, &result.RegistrationOverview.SecurityGroup)
+					if regErr == nil {
+						sgCspIds[r.CspResourceId] = true
+						if sgInfo.IId.SystemId != "" {
+							sgCspIds[sgInfo.IId.SystemId] = true
+						}
+					}
+				} else {
+					log.Debug().Msgf("Skipping unrelated Spider SG '%s': not in shared VNets", sgNameId)
+				}
+			}
+		}
+	}
+
+	// Phase 2: Node (VM) Targeted Dependency Scan
+	if doNode {
+		nodeInspect, nodeErr := InspectResources(connName, model.StrNode)
+		if nodeErr != nil {
+			log.Warn().Err(nodeErr).Msgf("Could not inspect nodes on connection '%s'", connName)
+			result.SystemMessage += "// Node Inspect Failed: " + nodeErr.Error()
 		} else {
 			tbCspIds := make(map[string]bool)
-			for _, info := range inspectResult.Resources.OnTumblebug.Info {
+			for _, info := range nodeInspect.Resources.OnTumblebug.Info {
 				tbCspIds[info.CspResourceId] = true
 			}
 
-			for _, spInfo := range inspectResult.Resources.OnSpider.Info {
+			// (A) OnCspOnly VMs: check VPC and SG via getvmusingresources
+			for _, r := range nodeInspect.Resources.OnCspOnly.Info {
+				if r.CspResourceId == "" || tbCspIds[r.CspResourceId] {
+					continue
+				}
+
+				usingRes, err := getSpiderVMUsingResources(connName, r.CspResourceId)
+				if err != nil {
+					log.Debug().Err(err).Msgf("Could not check using resources for CSP VM '%s'; skipping", r.CspResourceId)
+					continue
+				}
+
+				isDependency := false
+				if usingRes != nil {
+					if usingRes.Resources.VPC != nil {
+						if vnetCspIds[usingRes.Resources.VPC.SystemId] || vnetCspIds[usingRes.Resources.VPC.NameId] {
+							isDependency = true
+						}
+					}
+					for _, sg := range usingRes.Resources.SGList {
+						if sg != nil && (sgCspIds[sg.SystemId] || sgCspIds[sg.NameId]) {
+							isDependency = true
+							break
+						}
+					}
+				}
+
+				if !isDependency {
+					log.Info().Msgf("Skipping unrelated CSP VM '%s' on connection '%s': not attached to shared vNet/SG", r.CspResourceId, connName)
+					continue
+				}
+
+				log.Warn().Msgf("Detected orphaned CSP VM '%s' blocking shared resource deletion; registering under '%s'", r.CspResourceId, infraNamePrefix)
+				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, r.CspResourceId))
+				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.CspResourceId))
+				infraReq := model.InfraReq{
+					Name:            perVmInfraName,
+					Description:     "Infra for CSP-native orphaned dependency node",
+					InstallMonAgent: "no",
+					NodeGroups: []model.CreateNodeGroupReq{{
+						ConnectionName:   connName,
+						CspResourceId:    r.CspResourceId,
+						Name:             nodeGroupName,
+						Description:      "CSP-native VM recovered for cleanup (dep recovery)",
+						Label:            map[string]string{model.LabelRegistered: "true"},
+						ImageId:          "unknown",
+						SpecId:           "unknown",
+						SshKeyId:         "unknown",
+						SubnetId:         "unknown",
+						VNetId:           "unknown",
+						SecurityGroupIds: []string{"unknown"},
+					}},
+				}
+				_, regErr := CreateInfra(ctx, nsId, &infraReq, model.ActionRegister, false)
+				appendResult(&result, model.StrNode, nodeGroupName, regErr, &result.RegistrationOverview.Node)
+				tbCspIds[r.CspResourceId] = true
+			}
+
+			// (B) OnSpider VMs: check VPC, Subnet, SG via Spider VM info
+			for _, spInfo := range nodeInspect.Resources.OnSpider.Info {
+				if spInfo.CspResourceId == "" {
+					log.Warn().Msgf("Skipping and purging ghost Spider-only node '%s' with empty CspResourceId on connection '%s'", spInfo.IdBySp, connName)
+					if spInfo.IdBySp != "" {
+						go func(nameId, connectionName string) {
+							client := clientManager.NewHttpClient()
+							url := fmt.Sprintf("%s/regvm/%s", model.SpiderRestUrl, nameId)
+							reqBody := model.SpiderConnectionName{ConnectionName: connectionName}
+							var res model.SimpleMsg
+							_, _ = clientManager.ExecuteHttpRequest(client, "DELETE", url, nil, clientManager.SetUseBody(reqBody), &reqBody, &res, clientManager.VeryShortDuration)
+						}(spInfo.IdBySp, connName)
+					}
+					continue
+				}
 				if tbCspIds[spInfo.CspResourceId] {
 					continue // already tracked in TB
 				}
-				// VM is in Spider but missing from TB — register it.
+
+				vmInfo, err := getSpiderVMInfo(connName, spInfo.IdBySp)
+				if err != nil {
+					log.Debug().Err(err).Msgf("Could not get Spider VM info for '%s' (%s); skipping", spInfo.IdBySp, spInfo.CspResourceId)
+					continue
+				}
+
+				isDependency := false
+				if vmInfo != nil {
+					if vnetCspIds[vmInfo.VpcIID.SystemId] || vnetCspIds[vmInfo.VpcIID.NameId] {
+						isDependency = true
+					}
+					if subnetCspIds[vmInfo.SubnetIID.SystemId] || subnetCspIds[vmInfo.SubnetIID.NameId] {
+						isDependency = true
+					}
+					for _, sg := range vmInfo.SecurityGroupIIds {
+						if sgCspIds[sg.SystemId] || sgCspIds[sg.NameId] {
+							isDependency = true
+							break
+						}
+					}
+				}
+
+				if !isDependency {
+					log.Info().Msgf("Skipping unrelated Spider VM '%s' (%s) on connection '%s': not attached to shared vNet/SG", spInfo.IdBySp, spInfo.CspResourceId, connName)
+					continue
+				}
+
+				log.Warn().Msgf("Detected orphaned Spider VM '%s' (%s) blocking shared resource deletion; registering under '%s'", spInfo.IdBySp, spInfo.CspResourceId, infraNamePrefix)
 				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, spInfo.CspResourceId))
 				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, spInfo.CspResourceId))
 				infraReq := model.InfraReq{
@@ -955,32 +1374,14 @@ func RegisterSharedResourceDependencies(ctx context.Context, nsId string, connec
 						SecurityGroupIds: []string{"unknown"},
 					}},
 				}
-				log.Info().Msgf("Registering Spider-only node '%s' (%s) from connection '%s'", nodeGroupName, spInfo.CspResourceId, connName)
 				_, regErr := CreateInfra(ctx, nsId, &infraReq, model.ActionRegister, false)
 				appendResult(&result, model.StrNode, nodeGroupName, regErr, &result.RegistrationOverview.Node)
+				tbCspIds[spInfo.CspResourceId] = true
 			}
 		}
-
-		output.RegisterationResult = append(output.RegisterationResult, result)
-
-		output.RegistrationOverview.VNet += result.RegistrationOverview.VNet
-		output.RegistrationOverview.SecurityGroup += result.RegistrationOverview.SecurityGroup
-		output.RegistrationOverview.SshKey += result.RegistrationOverview.SshKey
-		output.RegistrationOverview.Node += result.RegistrationOverview.Node
-		output.RegistrationOverview.DataDisk += result.RegistrationOverview.DataDisk
-		output.RegistrationOverview.CustomImage += result.RegistrationOverview.CustomImage
-		output.RegistrationOverview.Failed += result.RegistrationOverview.Failed
 	}
 
-	output.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
-	output.RegisteredConnection = len(connectionNames)
-	output.AvailableConnection = len(connectionNames) - errorConnCount
-
-	sort.SliceStable(output.RegisterationResult, func(i, j int) bool {
-		return output.RegisterationResult[i].ConnectionName < output.RegisterationResult[j].ConnectionName
-	})
-
-	return output, nil
+	return result, true
 }
 
 // registerConnectionsParallel runs RegisterCspNativeResources in parallel for the given
