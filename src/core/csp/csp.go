@@ -176,6 +176,41 @@ func GetBatchVMControlHandler(provider, action string) (BatchVMControlFunc, bool
 	}
 }
 
+// CheckSGInUseFunc checks whether a security group (identified by its CSP resource ID or tag)
+// is currently in use by any active compute instances on the CSP.
+// ctx must carry model.CtxKeyCredentialHolder for credential lookup if needed.
+// region is the CSP-specific region identifier.
+// cspSgId is the CSP-level security group identifier or firewall rule tag.
+// Returns a list of active instance identifiers using the security group, or an empty slice if none.
+type CheckSGInUseFunc func(ctx context.Context, region string, cspSgId string) ([]string, error)
+
+var (
+	checkSGInUseMu       sync.RWMutex
+	checkSGInUseHandlers = make(map[string]CheckSGInUseFunc)
+)
+
+// RegisterCheckSGInUseHandler registers a direct-SDK security group in-use check function for a CSP.
+func RegisterCheckSGInUseHandler(provider string, fn CheckSGInUseFunc) {
+	checkSGInUseMu.Lock()
+	defer checkSGInUseMu.Unlock()
+	checkSGInUseHandlers[strings.ToLower(provider)] = fn
+}
+
+// CheckSecurityGroupInUse checks whether the security group is currently in use on the CSP
+// by calling the registered provider handler (if any).
+// If no handler is registered for the provider (e.g., AWS, Azure where CSP natively enforces
+// referential integrity on deletion), it returns (nil, nil).
+func CheckSecurityGroupInUse(ctx context.Context, provider string, region string, cspSgId string) ([]string, error) {
+	checkSGInUseMu.RLock()
+	fn, exists := checkSGInUseHandlers[strings.ToLower(provider)]
+	checkSGInUseMu.RUnlock()
+
+	if !exists || fn == nil {
+		return nil, nil
+	}
+	return fn(ctx, region, cspSgId)
+}
+
 // credentialKeyMap maps each CSP's YAML credential keys to the environment variable
 // names expected by OpenTofu providers and cb-tumblebug's runtime credential lookup.
 // Must stay in sync with init/openbao/openbao-register-creds.py KEY_MAP.

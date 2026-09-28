@@ -26,8 +26,11 @@ import (
 // CreateInfraDynamicFromTemplate creates an Infra from a template with overrides
 func CreateInfraDynamicFromTemplate(ctx context.Context, nsId string, templateId string, applyReq *model.TemplateApplyReq, option string) (*model.InfraInfo, error) {
 
-	// Get the template
+	// Get the template (check user namespace first, fallback to system namespace)
 	templateInfo, err := common.GetInfraDynamicTemplate(nsId, templateId)
+	if err != nil && nsId != model.SystemCommonNs {
+		templateInfo, err = common.GetInfraDynamicTemplate(model.SystemCommonNs, templateId)
+	}
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to get template '%s'", templateId)
 		return nil, fmt.Errorf("failed to get template '%s': %w", templateId, err)
