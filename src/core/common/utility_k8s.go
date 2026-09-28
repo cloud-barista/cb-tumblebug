@@ -283,6 +283,16 @@ func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
 	return namingRule, nil
 }
 
+// GetK8sRequireNodeGroupName returns whether the CSP requires explicit node group names
+func GetK8sRequireNodeGroupName(providerName string) bool {
+	providerName = strings.ToLower(providerName)
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return false
+	}
+	return k8sClusterDetail.RequireNodeGroupName
+}
+
 /*
 // GetModelK8sK8sNodeGroupNamingRule is to convert a K8sNodeGroupNamingRule value to model.K8sClusterK8sNodeGroupNamingRule
 func GetModelK8sNodeGroupNamingRule(providerName string) (*model.K8sClusterNodeGroupsOnCreation, error) {

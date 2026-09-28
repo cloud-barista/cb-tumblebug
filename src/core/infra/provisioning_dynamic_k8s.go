@@ -455,6 +455,10 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 	k8sngReq.Name = dReq.NodeGroupName
 	if k8sngReq.Name == "" {
+		if common.GetK8sRequireNodeGroupName(connection.ProviderName) {
+			namingRule, _ := common.GetK8sNodeGroupNamingRule(connection.ProviderName)
+			return emptyK8sReq, fmt.Errorf("nodeGroupName is required for provider '%s' (naming rule: %s)", connection.ProviderName, namingRule)
+		}
 		k8sngReq.Name = common.GenUid()
 	}
 	k8sngReq.RootDiskType = dReq.RootDiskType

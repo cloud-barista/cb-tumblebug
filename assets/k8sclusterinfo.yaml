@@ -56,7 +56,8 @@ k8scluster:
     nodeGroupsOnCreation: true
     nodeImageDesignation: false
     requiredSubnetCount: 1
-    nodeGroupNamingRule: ^[a-z][a-z0-9]*$
+    nodeGroupNamingRule: ^[a-z][a-z0-9]{0,11}$
+    requireNodeGroupName: true
     version:
       - region: [westeurope,westus]
         available: # Updated: 2026-06-24 (verified with learn.microsoft.com/azure/aks/supported-kubernetes-versions + github.com/Azure/AKS/releases)

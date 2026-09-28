@@ -203,6 +203,7 @@ type K8sClusterDetail struct {
 	NodeImageDesignation bool   `mapstructure:"nodeImageDesignation" json:"node_image_designation"`
 	RequiredSubnetCount  int    `mapstructure:"requiredSubnetCount" json:"required_subnet_count"`
 	NodeGroupNamingRule  string `mapstructure:"nodeGroupNamingRule" json:"nodegroup_naming_rule"`
+	RequireNodeGroupName bool   `mapstructure:"requireNodeGroupName" json:"require_nodegroup_name"`
 	// InitialNodeGroupManagedByCluster indicates that the initial node group created during
 	// cluster creation is lifecycle-bound to the cluster and cannot be deleted independently
 	// via the node group API (e.g., Alibaba ACK, Tencent TKE).
