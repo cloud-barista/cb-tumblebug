@@ -455,7 +455,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 
 	k8sngReq.Name = dReq.NodeGroupName
 	if k8sngReq.Name == "" {
-		k8sngReq.Name = common.GenUid()
+		k8sngReq.Name = common.GenK8sNodeGroupName(connection.ProviderName)
 	}
 	k8sngReq.RootDiskType = dReq.RootDiskType
 	k8sngReq.RootDiskSize = dReq.RootDiskSize
@@ -628,7 +628,7 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 
 	k8sNgReq.Name = dReq.Name
 	if k8sNgReq.Name == "" {
-		k8sNgReq.Name = common.GenUid()
+		k8sNgReq.Name = common.GenK8sNodeGroupName(specInfo.ProviderName)
 	}
 	k8sNgReq.RootDiskType = dReq.RootDiskType
 	k8sNgReq.RootDiskSize = dReq.RootDiskSize

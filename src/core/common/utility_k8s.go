@@ -283,6 +283,25 @@ func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
 	return namingRule, nil
 }
 
+// GenK8sNodeGroupName generates a node group name for a request that did not specify one.
+func GenK8sNodeGroupName(providerName string) string {
+	rule, err := GetK8sNodeGroupNamingRule(providerName)
+	if err != nil {
+		return GenUid()
+	}
+	re, err := regexp.Compile(rule)
+	if err != nil {
+		return GenUid()
+	}
+	for length := maxUidLength; length > len(model.StrUidPrefix); length-- {
+		if name := GenUidWithLength(length); re.MatchString(name) {
+			return name
+		}
+	}
+	// No uid satisfies the rule; the naming-rule validation downstream reports it.
+	return GenUid()
+}
+
 /*
 // GetModelK8sK8sNodeGroupNamingRule is to convert a K8sNodeGroupNamingRule value to model.K8sClusterK8sNodeGroupNamingRule
 func GetModelK8sNodeGroupNamingRule(providerName string) (*model.K8sClusterNodeGroupsOnCreation, error) {
