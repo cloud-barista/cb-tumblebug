@@ -283,14 +283,23 @@ func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
 	return namingRule, nil
 }
 
-// GetK8sRequireNodeGroupName returns whether the CSP requires explicit node group names
-func GetK8sRequireNodeGroupName(providerName string) bool {
-	providerName = strings.ToLower(providerName)
-	k8sClusterDetail := getK8sClusterDetail(providerName)
-	if k8sClusterDetail == nil {
-		return false
+// GenK8sNodeGroupName generates a node group name for a request that did not specify one.
+func GenK8sNodeGroupName(providerName string) string {
+	rule, err := GetK8sNodeGroupNamingRule(providerName)
+	if err != nil {
+		return GenUid()
 	}
-	return k8sClusterDetail.RequireNodeGroupName
+	re, err := regexp.Compile(rule)
+	if err != nil {
+		return GenUid()
+	}
+	for length := maxUidLength; length > len(model.StrUidPrefix); length-- {
+		if name := GenUidWithLength(length); re.MatchString(name) {
+			return name
+		}
+	}
+	// No uid satisfies the rule; the naming-rule validation downstream reports it.
+	return GenUid()
 }
 
 /*

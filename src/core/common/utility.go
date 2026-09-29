@@ -115,8 +115,24 @@ var b32Encoding = base32.NewEncoding("0123456789abcdefghijklmnopqrstuv").WithPad
 // are filled with crypto/rand bytes encoded in lowercase base32.
 // Changing either maxUidLength or StrUidPrefix automatically adjusts the random part.
 func GenUid() string {
+	return GenUidWithLength(maxUidLength)
+}
+
+// GenUidWithLength returns a uid string of exactly length characters, for names whose
+// length a CSP caps below maxUidLength (e.g., Azure AKS node pools allow 12).
+// A shorter uid has less entropy, so use it only where the target enforces the limit;
+// a collision is then rejected by the CSP rather than silently shared.
+// length is clamped to [len(model.StrUidPrefix)+1, maxUidLength] so the result always
+// keeps the prefix and at least one random character.
+func GenUidWithLength(length int) string {
 	prefix := model.StrUidPrefix
-	randomLen := maxUidLength - len(prefix)
+	if length > maxUidLength {
+		length = maxUidLength
+	}
+	if length <= len(prefix) {
+		length = len(prefix) + 1
+	}
+	randomLen := length - len(prefix)
 	byteCount := (randomLen*5 + 7) / 8
 	b := make([]byte, byteCount)
 	crand.Read(b) // Go 1.20+: always succeeds; OS random source is guaranteed available

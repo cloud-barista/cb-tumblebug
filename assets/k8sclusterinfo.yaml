@@ -13,6 +13,7 @@
 #           - name: "1.30" [available version name (use double quotes)]
 #             id: "1.30" [available version name (use double quotes)]
 #     nodeGroupNamingRule: [regular expression or no restriction if empty]
+#       Also bounds auto-generated node group names (used when a request leaves the name empty).
 #     initialNodeGroupManagedByCluster: [true/false, default false]
 #       The node group created together with the cluster is lifecycle-bound to it and
 #       cannot be deleted independently via the node group API.
@@ -57,7 +58,6 @@ k8scluster:
     nodeImageDesignation: false
     requiredSubnetCount: 1
     nodeGroupNamingRule: ^[a-z][a-z0-9]{0,11}$
-    requireNodeGroupName: true
     version:
       - region: [westeurope,westus]
         available: # Updated: 2026-06-24 (verified with learn.microsoft.com/azure/aks/supported-kubernetes-versions + github.com/Azure/AKS/releases)
@@ -151,13 +151,13 @@ k8scluster:
     requiredSubnetCount: 1
     version:
       - region: [kr1, kr2]
-        available:
+        available: # Updated: 2026-09-29 (NHN API confirmed on kr1: Available v1.35.5, v1.34.3, v1.33.4)
+          - name: "1.35"
+            id: "v1.35.5"
+          - name: "1.34"
+            id: "v1.34.3"
           - name: "1.33"
             id: "v1.33.4"
-          - name: "1.32"
-            id: "v1.32.3"
-          - name: "1.31"
-            id: "v1.31.4"
     rootDisk:
       - region: [common]
         type:
@@ -206,11 +206,9 @@ k8scluster:
     nodeGroupNamingRule: '^[a-z][a-z0-9-]{1,18}[a-z0-9]$'
     version:
       - region: [common]
-        available: # Updated: 2026-06-25 (NCP API confirmed: Available 1.34.3-nks.1, 1.33.4-nks.1)
+        available: # Updated: 2026-09-29 (NCP API confirmed: Available 1.34.3-nks.1; 1.33.4-nks.1 rejected as unsupported)
           - name: "1.34"
             id: "1.34.3-nks.1"
-          - name: "1.33"
-            id: "1.33.4-nks.1"
     rootDisk:
       - region: [common]
         type:
