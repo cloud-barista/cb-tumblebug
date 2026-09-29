@@ -193,7 +193,13 @@ func dialSSHWithContext(ctx context.Context, network, addr string, config *ssh.C
 		case <-handshakeDone:
 		}
 	}()
+	if config.Timeout > 0 {
+		_ = conn.SetDeadline(time.Now().Add(config.Timeout))
+	}
 	ncc, chans, reqs, err := ssh.NewClientConn(conn, addr, config)
+	if config.Timeout > 0 {
+		_ = conn.SetDeadline(time.Time{})
+	}
 	close(handshakeDone)
 	if err != nil {
 		conn.Close()
@@ -1046,6 +1052,23 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, infraId strin
 	// real failures behind a "via bastion" error wrap. Compare by full identity
 	// (Ns + Infra + Node) — empty bastionNsId is normalised above.
 	isSelfBastion := bastionNsId == nsId && bastionNode.InfraId == infraId && bastionNode.NodeId == nodeId
+
+	// PRE-VALIDATE SECURITY GROUP RULES (Fail-Fast):
+	// Check if the node's Security Groups allow inbound SSH traffic before dialing.
+	// If closed, fail immediately (<1s) instead of waiting for TCP dial timeouts (~80s).
+	if isSelfBastion {
+		if sgErr := checkNodeSshPortOpen(nsId, infraId, nodeId, targetSshPort, "target"); sgErr != nil {
+			log.Warn().Err(sgErr).Msg("[SG Pre-check] Direct SSH connection blocked by Security Group rules")
+			publishSSHSystemLog(ctx, "stderr", "[TB] %v", sgErr)
+			return map[int]string{}, map[int]string{}, sgErr
+		}
+	} else {
+		if sgErr := checkNodeSshPortOpen(bastionNsId, bastionNode.InfraId, bastionNode.NodeId, bastionSshPort, "bastion"); sgErr != nil {
+			log.Warn().Err(sgErr).Msg("[SG Pre-check] Bastion SSH connection blocked by Security Group rules")
+			publishSSHSystemLog(ctx, "stderr", "[TB] %v", sgErr)
+			return map[int]string{}, map[int]string{}, sgErr
+		}
+	}
 
 	// BASTION USERNAME RESOLUTION:
 	//   - Self-bastion: target == bastion, so reuse the target's resolved

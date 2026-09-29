@@ -25,6 +25,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -32,6 +33,38 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/ssh"
 )
+
+// publishSSHSystemLog publishes a system lifecycle or progress log line via SSE
+func publishSSHSystemLog(ctx context.Context, stream string, format string, args ...interface{}) {
+	logMeta := getSSHLogMeta(ctx)
+	if logMeta == nil || logMeta.XRequestId == "" {
+		return
+	}
+	line := fmt.Sprintf(format, args...)
+	PublishCommandEvent(logMeta.XRequestId, model.CommandStreamEvent{
+		Type:         model.EventCommandLog,
+		NodeId:       logMeta.NodeId,
+		CommandIndex: logMeta.CommandIndex,
+		Timestamp:    time.Now().Format(time.RFC3339Nano),
+		Log: &model.CommandLogEntry{
+			Stream:     stream,
+			Line:       line,
+			LineNumber: 0,
+		},
+	})
+}
+
+// summarizeCommand truncates and single-lines a command string for clean status display
+func summarizeCommand(cmd string, maxLen int) string {
+	s := strings.TrimSpace(cmd)
+	s = strings.ReplaceAll(s, "\r\n", " ")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\r", " ")
+	if len(s) > maxLen {
+		return s[:maxLen] + "..."
+	}
+	return s
+}
 
 // SshHostKeyMismatchError represents an SSH host key verification failure
 // This error occurs when the stored host key doesn't match the server's current host key
@@ -336,6 +369,11 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 
 			log.Debug().Msgf("[Check Target via Bastion] %v:%v (Attempt %d/%d, Timeout: %v)",
 				targetHost, targetPort, i+1, retryCount, timeout)
+			if isSelfBastion {
+				publishSSHSystemLog(ctx, "stdout", "[TB] Connecting directly to target host %s:%s (attempt %d/%d, timeout: %v)...", targetHost, targetPort, i+1, retryCount, timeout)
+			} else {
+				publishSSHSystemLog(ctx, "stdout", "[TB] Connecting to target host %s:%s via bastion %s (attempt %d/%d, timeout: %v)...", targetHost, targetPort, bastionInfo.EndPoint, i+1, retryCount, timeout)
+			}
 
 			// Use parent context as base for timeout context so cancellation propagates
 			retryCtx, retryCancel := context.WithTimeout(ctx, timeout)
@@ -432,6 +470,7 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 				bastionClient = <-sshClientCh
 				retryCancel()
 				log.Info().Msgf("Successfully connected to target host on attempt %d", i+1)
+				publishSSHSystemLog(ctx, "stdout", "[TB] TCP connection established (attempt %d/%d).", i+1, retryCount)
 				goto CONNECTION_ESTABLISHED
 			case err := <-errCh:
 				retryCancel()
@@ -439,6 +478,7 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 				waitTime := time.Duration(3) * time.Second
 				log.Warn().Err(err).Msgf("Failed to connect to target host. Attempt %d/%d. Retrying in %v...",
 					i+1, retryCount, waitTime)
+				publishSSHSystemLog(ctx, "stderr", "[TB] Connection attempt %d/%d failed: %v. Retrying in %v...", i+1, retryCount, err, waitTime)
 				// Use select with timer to allow cancellation during wait
 				select {
 				case <-ctx.Done():
@@ -456,6 +496,7 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 				waitTime := time.Duration(3) * time.Second
 				log.Warn().Err(lastErr).Msgf("Connection timeout. Attempt %d/%d. Retrying in %v...",
 					i+1, retryCount, waitTime)
+				publishSSHSystemLog(ctx, "stderr", "[TB] Connection attempt %d/%d timed out after %v. Retrying in %v...", i+1, retryCount, timeout, waitTime)
 				// Use select with timer to allow cancellation during wait
 				select {
 				case <-ctx.Done():
@@ -523,48 +564,37 @@ func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInf
 		var chans <-chan ssh.NewChannel
 		var reqs <-chan *ssh.Request
 		var sshErr error
-		sshRetryCount := 3
-		var lastSSHErr error
 
-		for i := range sshRetryCount {
-			ncc, chans, reqs, sshErr = ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
-			if sshErr == nil {
-				break
-			}
-
-			lastSSHErr = sshErr
-			log.Warn().Err(sshErr).Msgf("SSH authentication failed. Attempt %d/%d", i+1, sshRetryCount)
-
-			if strings.Contains(sshErr.Error(), "handshake failed") ||
-				strings.Contains(sshErr.Error(), "no supported methods remain") {
-				waitTime := time.Duration(3*(i+1)) * time.Second
-				log.Info().Msgf("Waiting for SSH daemon to initialize. Retrying in %v...", waitTime)
-				// Cancellation-aware sleep: user cancel / parent timeout fires
-				// during the back-off should unblock immediately instead of
-				// holding a bastion slot for the full back-off window.
-				select {
-				case <-ctx.Done():
-					return stdoutMap, stderrMap, fmt.Errorf("operation cancelled during SSH retry wait: %w", ctx.Err())
-				case <-time.After(waitTime):
-				}
-			} else {
-				break
-			}
+		// Enforce an explicit socket deadline for SSH handshake/authentication.
+		// Go's ssh.NewClientConn does NOT enforce targetConfig.Timeout; it inherits
+		// whatever deadline is set on the underlying net.Conn. Without this,
+		// an unresponsive or OOM-locked sshd daemon blocks indefinitely on conn.Read.
+		handshakeTimeout := targetConfig.Timeout
+		if handshakeTimeout <= 0 || handshakeTimeout > 20*time.Second {
+			handshakeTimeout = 20 * time.Second
 		}
+		_ = conn.SetDeadline(time.Now().Add(handshakeTimeout))
+		publishSSHSystemLog(ctx, "stdout", "[TB] Authenticating SSH user %q on %s (timeout: %v)...", targetInfo.UserName, targetInfo.EndPoint, handshakeTimeout)
+		ncc, chans, reqs, sshErr = ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
+		_ = conn.SetDeadline(time.Time{})
 
 		if sshErr != nil {
 			log.Error().Str("user", targetInfo.UserName).
 				Str("endpoint", targetInfo.EndPoint).
-				Err(lastSSHErr).Msg("SSH authentication failed")
+				Err(sshErr).Msg("SSH authentication failed")
+			publishSSHSystemLog(ctx, "stderr", "[TB] SSH authentication failed on %s: %v", targetInfo.EndPoint, sshErr)
 
-			if strings.Contains(lastSSHErr.Error(), "no supported methods remain") {
+			if strings.Contains(sshErr.Error(), "no supported methods remain") {
 				return stdoutMap, stderrMap, fmt.Errorf("SSH authentication failed. Please check: 1) private key is valid 2) user '%s' exists on target 3) authorized_keys is properly configured", targetInfo.UserName)
 			}
-
-			return stdoutMap, stderrMap, fmt.Errorf("failed to establish SSH connection to target host: %v", lastSSHErr)
+			if strings.Contains(sshErr.Error(), "i/o timeout") {
+				return stdoutMap, stderrMap, fmt.Errorf("SSH authentication timed out after %v on %s (sshd may be unresponsive or overloaded)", handshakeTimeout, targetInfo.EndPoint)
+			}
+			return stdoutMap, stderrMap, fmt.Errorf("failed to establish SSH connection to target host: %v", sshErr)
 		}
 
 		log.Info().Msgf("SSH connection established successfully to %s as user %s", targetInfo.EndPoint, targetInfo.UserName)
+		publishSSHSystemLog(ctx, "stdout", "[TB] SSH session established for user %q.", targetInfo.UserName)
 		client := ssh.NewClient(ncc, chans, reqs)
 		defer client.Close()
 
@@ -646,10 +676,12 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 		}
 
 		log.Debug().Int("commandIndex", i).Str("command", cmd).Msg("Executing SSH command")
+		publishSSHSystemLog(ctx, "stdout", "[TB] Executing command [%d/%d]: %s", i+1, len(cmds), summarizeCommand(cmd, 120))
 
 		// Create a new SSH session for each command
 		session, err := client.NewSession()
 		if err != nil {
+			publishSSHSystemLog(ctx, "stderr", "[TB] Failed to create SSH session for command [%d/%d]: %v", i+1, len(cmds), err)
 			return stdoutMap, stderrMap, err
 		}
 
@@ -669,6 +701,7 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 		// Start the command
 		if err := session.Start(cmd); err != nil {
 			session.Close()
+			publishSSHSystemLog(ctx, "stderr", "[TB] Failed to start command [%d/%d]: %v", i+1, len(cmds), err)
 			return stdoutMap, stderrMap, err
 		}
 
@@ -677,6 +710,9 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 		stdoutDone := make(chan struct{})
 		stderrDone := make(chan struct{})
 		waitDone := make(chan error, 1)
+
+		var lastOutputTime atomic.Int64
+		lastOutputTime.Store(time.Now().Unix())
 
 		// Check if SSE streaming metadata is available in the context
 		logMeta := getSSHLogMeta(ctx)
@@ -691,6 +727,7 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 				scanner := bufio.NewScanner(io.TeeReader(stdoutPipe, io.MultiWriter(os.Stdout, &stdoutBuf)))
 				scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024) // up to 1MB lines
 				for scanner.Scan() {
+					lastOutputTime.Store(time.Now().Unix())
 					stdoutLineNum++
 					line := scanner.Text()
 					if len(line) > maxLogLineLen {
@@ -724,6 +761,7 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 				scanner := bufio.NewScanner(io.TeeReader(stderrPipe, io.MultiWriter(os.Stderr, &stderrBuf)))
 				scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 				for scanner.Scan() {
+					lastOutputTime.Store(time.Now().Unix())
 					stderrLineNum++
 					line := scanner.Text()
 					if len(line) > maxLogLineLen {
@@ -755,10 +793,36 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 			waitDone <- session.Wait()
 		}()
 
+		// Start heartbeat ticker for long-running / silent commands
+		heartbeatStop := make(chan struct{})
+		if logMeta != nil {
+			go func(cmdIdx int, totalCmds int) {
+				ticker := time.NewTicker(10 * time.Second)
+				defer ticker.Stop()
+				startTime := time.Now()
+				for {
+					select {
+					case <-heartbeatStop:
+						return
+					case <-ctx.Done():
+						return
+					case now := <-ticker.C:
+						lastOut := time.Unix(lastOutputTime.Load(), 0)
+						// Only publish progress if no stdout/stderr output in the last 8 seconds
+						if now.Sub(lastOut) >= 8*time.Second {
+							elapsed := int(now.Sub(startTime).Seconds())
+							publishSSHSystemLog(ctx, "stdout", "[TB] (Executing command [%d/%d]: %ds elapsed, waiting for command output...)", cmdIdx+1, totalCmds, elapsed)
+						}
+					}
+				}
+			}(i, len(cmds))
+		}
+
 		// Wait for either context cancellation or command completion
 		var waitErr error
 		select {
 		case <-ctx.Done():
+			close(heartbeatStop)
 			// Context cancelled - try to signal the remote process to terminate
 			log.Warn().Int("commandIndex", i).Msg("Context cancelled during command execution, attempting to close session")
 
@@ -785,6 +849,7 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 			return stdoutMap, stderrMap, fmt.Errorf("command execution cancelled: %w", ctx.Err())
 
 		case waitErr = <-waitDone:
+			close(heartbeatStop)
 			// Command completed normally
 			<-stdoutDone
 			<-stderrDone
@@ -795,6 +860,7 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 			stderrMap[i] = fmt.Sprintf("(%s)\nStderr: %s", waitErr, stderrBuf.String())
 			stdoutMap[i] = stdoutBuf.String()
 			log.Warn().Err(waitErr).Int("commandIndex", i).Msg("Command execution failed")
+			publishSSHSystemLog(ctx, "stderr", "[TB] Command [%d/%d] exited with error: %v", i+1, len(cmds), waitErr)
 			// Distinguish a clean non-zero exit (SSH transport OK, the command
 			// itself reported failure) from a transport-level failure (EOF,
 			// reset, dial timeout). Callers act on these very differently:
@@ -811,6 +877,7 @@ func executeCommandsOnSSHClient(ctx context.Context, client *ssh.Client, cmds []
 		stdoutMap[i] = stdoutBuf.String()
 		stderrMap[i] = stderrBuf.String()
 		log.Debug().Int("commandIndex", i).Msg("Command executed successfully")
+		publishSSHSystemLog(ctx, "stdout", "[TB] Command [%d/%d] completed successfully.", i+1, len(cmds))
 	}
 
 	return stdoutMap, stderrMap, nil

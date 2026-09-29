@@ -190,3 +190,46 @@ func TestPickBastion(t *testing.T) {
 		t.Errorf("expected empty bastion when list is empty, got %q", empty.NodeId)
 	}
 }
+
+func TestSummarizeCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		cmd      string
+		maxLen   int
+		expected string
+	}{
+		{
+			name:     "Short single line",
+			cmd:      "echo hello",
+			maxLen:   50,
+			expected: "echo hello",
+		},
+		{
+			name:     "Multi-line to single-line",
+			cmd:      "line1\nline2\r\nline3",
+			maxLen:   50,
+			expected: "line1 line2 line3",
+		},
+		{
+			name:     "Truncated with ellipsis",
+			cmd:      "12345678901234567890",
+			maxLen:   10,
+			expected: "1234567890...",
+		},
+		{
+			name:     "Whitespace trimmed",
+			cmd:      "   spaced command   \n",
+			maxLen:   50,
+			expected: "spaced command",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := summarizeCommand(tt.cmd, tt.maxLen)
+			if got != tt.expected {
+				t.Errorf("summarizeCommand() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
