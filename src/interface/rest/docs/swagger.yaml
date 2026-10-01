@@ -23714,6 +23714,11 @@ components:
           type: string
         nodegroups_on_creation:
           type: boolean
+        nodespec_naming_rule:
+          type: string
+          description: |-
+            NodeSpecNamingRule is a regex a node group's spec (CspSpecName) must match; empty means
+            any spec is allowed (e.g., NCP NKS accepts only KVM g3 specs: "^[csm][0-9]+-g3a?$").
         required_subnet_count:
           type: integer
         root_disks:
