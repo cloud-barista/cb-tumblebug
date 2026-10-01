@@ -283,6 +283,35 @@ func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
 	return namingRule, nil
 }
 
+// GetK8sNodeSpecNamingRule returns the regex a node group's spec (CspSpecName) must match for
+// the provider, from nodeSpecNamingRule in k8sclusterinfo.yaml. An empty rule means any spec is allowed.
+func GetK8sNodeSpecNamingRule(providerName string) (string, error) {
+	providerName = strings.ToLower(providerName)
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return "", fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+	return k8sClusterDetail.NodeSpecNamingRule, nil
+}
+
+// ValidateK8sNodeSpecName returns an error when cspSpecName cannot be used for a K8s node group
+// of the provider, per its nodeSpecNamingRule. Providers without a rule accept any spec.
+func ValidateK8sNodeSpecName(providerName, cspSpecName string) error {
+	rule, err := GetK8sNodeSpecNamingRule(providerName)
+	if err != nil || rule == "" {
+		return err
+	}
+	re, err := regexp.Compile(rule)
+	if err != nil {
+		return fmt.Errorf("invalid nodeSpecNamingRule(%s) for provider(%s): %w", rule, providerName, err)
+	}
+	if !re.MatchString(cspSpecName) {
+		return fmt.Errorf("spec(%s) cannot be used for a K8s node group on provider(%s): it does not match the node spec naming rule(%s)",
+			cspSpecName, providerName, rule)
+	}
+	return nil
+}
+
 // GenK8sNodeGroupName generates a node group name for a request that did not specify one.
 func GenK8sNodeGroupName(providerName string) string {
 	rule, err := GetK8sNodeGroupNamingRule(providerName)

@@ -14,6 +14,7 @@
 #             id: "1.30" [available version name (use double quotes)]
 #     nodeGroupNamingRule: [regular expression or no restriction if empty]
 #       Also bounds auto-generated node group names (used when a request leaves the name empty).
+#     nodeSpecNamingRule: [regular expression for node spec names (CspSpecName), no restriction if empty]
 #     initialNodeGroupManagedByCluster: [true/false, default false]
 #       The node group created together with the cluster is lifecycle-bound to it and
 #       cannot be deleted independently via the node group API.
@@ -204,19 +205,25 @@ k8scluster:
     nodeImageDesignation: false
     requiredSubnetCount: 1
     nodeGroupNamingRule: '^[a-z][a-z0-9-]{1,18}[a-z0-9]$'
+    # NKS KVM node pools accept only {c,s,m}{vCPU}-g3 (Intel) or -g3a (AMD) specs (verified 2026-09-29 in kr/sgn/jpn).
+    nodeSpecNamingRule: '^[csm][0-9]+-g3a?$'
     version:
       - region: [common]
-        available: # Updated: 2026-09-29 (NCP API confirmed: Available 1.34.3-nks.1; 1.33.4-nks.1 rejected as unsupported)
+        available: # Updated: 2026-09-30 (KVM hypervisor, NCP API confirmed in kr/sgn/jpn)
+          - name: "1.36"
+            id: "1.36.2-nks.2"
+          - name: "1.35"
+            id: "1.35.3-nks.2"
           - name: "1.34"
-            id: "1.34.3-nks.1"
+            id: "1.34.3-nks.2"
     rootDisk:
       - region: [common]
         type:
           - name: default
             id: default
-        size:
-          min: 10
-          max: 40
+        size: # KVM node pool storageSize (GB)
+          min: 100
+          max: 2000
   ibm:
     # Not a CSP constraint: the driver only sends Min/Max to IKS inside its
     # `if OnAutoScaling` branch, so IKS never sees them while autoscaling is off. The floor

@@ -472,6 +472,10 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 		} else {
 			log.Info().Msgf("Use the Spec %s in ns %s", spSpecName, nsId)
 		}
+		if createErr = common.ValidateK8sNodeSpecName(connConfig.ProviderName, spSpecName); createErr != nil {
+			log.Err(createErr).Msgf("Invalid spec for K8sNodeGroup(%s)", v.Name)
+			return emptyObj, createErr
+		}
 
 		var spKpName string
 		spKpName, createErr = GetCspResourceName(nsId, model.StrSSHKey, v.SshKeyId)
@@ -774,6 +778,10 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 		}
 	} else {
 		log.Info().Msgf("Use the Spec %s in ns %s", spSpecName, nsId)
+	}
+	if err = common.ValidateK8sNodeSpecName(connConfig.ProviderName, spSpecName); err != nil {
+		log.Err(err).Msgf("Invalid spec for K8sNodeGroup(%s)", u.Name)
+		return emptyObj, err
 	}
 
 	spKpName, err := GetCspResourceName(nsId, model.StrSSHKey, u.SshKeyId)
