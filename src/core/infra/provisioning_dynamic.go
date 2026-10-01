@@ -1941,11 +1941,9 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			if imageInfo.ResourceType == model.StrCustomImage {
 				customImageFlag = true
 				requestBody.ReqInfo.ImageType = model.MyImage
-				requestBody.ReqInfo.RootDiskType = ""
-				requestBody.ReqInfo.RootDiskSize = ""
 				requestBody.ReqInfo.ImageName = imageInfo.CspImageName
-				log.Debug().Msgf("CustomImage detected, set ImageName to CspImageId: %s", requestBody.ReqInfo.ImageName)
-				log.Debug().Msgf("CustomImage detected, ignore RootDiskType and RootDiskSize")
+				log.Debug().Msgf("CustomImage detected, set ImageName to CspImageId: %s (RootDiskType: '%s', RootDiskSize: '%s')",
+					requestBody.ReqInfo.ImageName, requestBody.ReqInfo.RootDiskType, requestBody.ReqInfo.RootDiskSize)
 			} else {
 				requestBody.ReqInfo.ImageName = imageInfo.CspImageName
 			}
