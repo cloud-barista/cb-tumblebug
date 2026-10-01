@@ -282,6 +282,11 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		log.Err(err).Msg("")
 		return emptyK8sReq, err
 	}
+	// Checked before any shared resource (vNet, SG, SSH key) is created for the cluster.
+	if err := common.ValidateK8sNodeSpecName(specInfo.ProviderName, specInfo.CspSpecName); err != nil {
+		log.Err(err).Msg("Invalid spec for K8sNodeGroup")
+		return emptyK8sReq, err
+	}
 	k8sngReq.SpecId = specInfo.Id
 
 	var k8sRecVersion string
@@ -569,6 +574,10 @@ func getK8sNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, k8sClust
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
 		log.Err(err).Msg("")
+		return emptyK8sNgReq, err
+	}
+	if err := common.ValidateK8sNodeSpecName(specInfo.ProviderName, specInfo.CspSpecName); err != nil {
+		log.Err(err).Msg("Invalid spec for K8sNodeGroup")
 		return emptyK8sNgReq, err
 	}
 	k8sNgReq.SpecId = specInfo.Id

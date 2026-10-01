@@ -20,6 +20,7 @@ import (
 	"math"
 	"math/rand"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -1662,7 +1663,8 @@ func RecommendNodePerformance(nsId string, specList *[]model.SpecInfo) ([]model.
 	return result, nil
 }
 
-// RecommendK8sNode is func to recommend a node for K8sCluster
+// RecommendK8sNode recommends node specs for a K8sCluster. It enforces the K8s node minimums and
+// drops specs that a provider's nodeSpecNamingRule does not allow for node groups.
 func RecommendK8sNode(ctx context.Context, nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
 	// Validate K8s minimum requirements in filter policy
 	if err := validateK8sMinimumRequirements(&plan); err != nil {
@@ -1670,7 +1672,90 @@ func RecommendK8sNode(ctx context.Context, nsId string, plan model.RecommendSpec
 		return nil, err
 	}
 
-	return RecommendSpec(ctx, nsId, plan)
+	// The naming rule is applied after the query, so the limit is too: otherwise the cheapest
+	// rows could all be disallowed specs (e.g., NCP XEN g2) and leave nothing.
+	limit := plan.Limit
+	if k8sNodeSpecRuleMayApply(plan.Filter.Policy) {
+		plan.Limit = 0
+	}
+
+	specs, err := RecommendSpec(ctx, nsId, plan)
+	if err != nil {
+		return nil, err
+	}
+
+	specs, err = filterK8sNodeSpecsByNamingRule(specs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to apply K8s node spec naming rules")
+		return nil, err
+	}
+	if limit > 0 && len(specs) > limit {
+		specs = specs[:limit]
+	}
+	return specs, nil
+}
+
+// k8sNodeSpecRuleMayApply reports whether any provider the filter can return has a nodeSpecNamingRule.
+func k8sNodeSpecRuleMayApply(policies []model.FilterCondition) bool {
+	providers := filterProviderNames(policies)
+	if len(providers) == 0 {
+		// No provider filter: every provider with K8s support may appear in the result.
+		info, err := common.GetK8sClusterInfo()
+		if err != nil {
+			return true
+		}
+		for provider := range info.CSPs {
+			providers = append(providers, provider)
+		}
+	}
+	for _, provider := range providers {
+		if rule, err := common.GetK8sNodeSpecNamingRule(provider); err == nil && rule != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// filterProviderNames returns the providerName operands of the filter policy, splitting comma-separated values.
+func filterProviderNames(policies []model.FilterCondition) []string {
+	var providers []string
+	for _, policy := range policies {
+		if !strings.EqualFold(policy.Metric, "providerName") {
+			continue
+		}
+		for _, cond := range policy.Condition {
+			for _, p := range strings.Split(cond.Operand, ",") {
+				if p = strings.TrimSpace(p); p != "" {
+					providers = append(providers, p)
+				}
+			}
+		}
+	}
+	return providers
+}
+
+// filterK8sNodeSpecsByNamingRule drops specs that their provider's nodeSpecNamingRule rejects.
+// Specs of providers without a rule, or unknown to k8sclusterinfo.yaml, are kept.
+func filterK8sNodeSpecsByNamingRule(specs []model.SpecInfo) ([]model.SpecInfo, error) {
+	rules := map[string]*regexp.Regexp{} // nil value: provider has no rule
+	kept := make([]model.SpecInfo, 0, len(specs))
+	for _, s := range specs {
+		re, seen := rules[s.ProviderName]
+		if !seen {
+			rule, err := common.GetK8sNodeSpecNamingRule(s.ProviderName)
+			if err == nil && rule != "" {
+				re, err = regexp.Compile(rule)
+				if err != nil {
+					return nil, fmt.Errorf("invalid nodeSpecNamingRule(%s) for provider(%s): %w", rule, s.ProviderName, err)
+				}
+			}
+			rules[s.ProviderName] = re
+		}
+		if re == nil || re.MatchString(s.CspSpecName) {
+			kept = append(kept, s)
+		}
+	}
+	return kept, nil
 }
 
 // validateK8sMinimumRequirements validates that filter policy meets K8s minimum requirements

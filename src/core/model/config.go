@@ -203,6 +203,9 @@ type K8sClusterDetail struct {
 	NodeImageDesignation bool   `mapstructure:"nodeImageDesignation" json:"node_image_designation"`
 	RequiredSubnetCount  int    `mapstructure:"requiredSubnetCount" json:"required_subnet_count"`
 	NodeGroupNamingRule  string `mapstructure:"nodeGroupNamingRule" json:"nodegroup_naming_rule"`
+	// NodeSpecNamingRule is a regex a node group's spec (CspSpecName) must match; empty means
+	// any spec is allowed (e.g., NCP NKS accepts only KVM g3 specs: "^[csm][0-9]+-g3a?$").
+	NodeSpecNamingRule string `mapstructure:"nodeSpecNamingRule" json:"nodespec_naming_rule"`
 	// InitialNodeGroupManagedByCluster indicates that the initial node group created during
 	// cluster creation is lifecycle-bound to the cluster and cannot be deleted independently
 	// via the node group API (e.g., Alibaba ACK, Tencent TKE).
