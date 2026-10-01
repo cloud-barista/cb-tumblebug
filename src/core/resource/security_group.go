@@ -837,9 +837,29 @@ func UpdateFirewallRules(nsId string, securityGroupId string, desiredRules []mod
 			// Process each rule deletion sequentially for sensitive provider for better stability
 			log.Info().Msg("Using sequential deletion for sensitive provider")
 			for _, ruleToDelete := range toDelete {
-				_, err := DeleteFirewallRules(nsId, securityGroupId, []model.FirewallRuleInfo{ruleToDelete})
-				// wait for seconds before next
-				time.Sleep(5 * time.Second)
+				maxRetries := 5
+				var err error
+				for attempt := 1; attempt <= maxRetries; attempt++ {
+					_, err = DeleteFirewallRules(nsId, securityGroupId, []model.FirewallRuleInfo{ruleToDelete})
+					if err == nil {
+						// wait for seconds before next
+						time.Sleep(5 * time.Second)
+						break
+					}
+					errStr := err.Error()
+					if strings.Contains(errStr, "1007009") || strings.Contains(strings.ToLower(errStr), "being changed") {
+						log.Warn().Msgf("ACG is being modified (attempt %d/%d), waiting 5s before retry...", attempt, maxRetries)
+						time.Sleep(5 * time.Second)
+						continue
+					}
+					if strings.Contains(strings.ToLower(errStr), "not found") || strings.Contains(strings.ToLower(errStr), "does not exist") {
+						log.Info().Msgf("Rule to delete not found, assuming already deleted: %v", ruleToDelete)
+						err = nil
+						time.Sleep(5 * time.Second)
+						break
+					}
+					break
+				}
 				// If deletion fails, log the error and continue with next rule
 				if err != nil {
 					log.Info().Err(err).Msgf("Failed to delete firewall rule: %v. Continuing with next rule.", ruleToDelete)
@@ -865,9 +885,29 @@ func UpdateFirewallRules(nsId string, securityGroupId string, desiredRules []mod
 			// Process each rule addition sequentially for sensitive provider for better stability
 			log.Info().Msg("Using sequential addition for sensitive provider")
 			for _, ruleToAdd := range toAdd {
-				_, err := CreateFirewallRules(nsId, securityGroupId, []model.FirewallRuleInfo{ruleToAdd}, false)
-				// wait for seconds before next
-				time.Sleep(5 * time.Second)
+				maxRetries := 5
+				var err error
+				for attempt := 1; attempt <= maxRetries; attempt++ {
+					_, err = CreateFirewallRules(nsId, securityGroupId, []model.FirewallRuleInfo{ruleToAdd}, false)
+					if err == nil {
+						// wait for seconds before next
+						time.Sleep(5 * time.Second)
+						break
+					}
+					errStr := err.Error()
+					if strings.Contains(errStr, "1007009") || strings.Contains(strings.ToLower(errStr), "being changed") {
+						log.Warn().Msgf("ACG is being modified (attempt %d/%d), waiting 5s before retry...", attempt, maxRetries)
+						time.Sleep(5 * time.Second)
+						continue
+					}
+					if strings.Contains(strings.ToLower(errStr), "already exists") {
+						log.Info().Msgf("Rule already exists, skipping addition: %v", ruleToAdd)
+						err = nil
+						time.Sleep(5 * time.Second)
+						break
+					}
+					break
+				}
 				if err != nil {
 					addErrors = append(addErrors, fmt.Sprintf("Add rule failed (%s-%s-%s-%s): %v",
 						ruleToAdd.Direction, ruleToAdd.Protocol, ruleToAdd.Port, ruleToAdd.CIDR, err))
