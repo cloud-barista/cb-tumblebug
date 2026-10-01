@@ -49,6 +49,13 @@ jobs:
         run: gh pr edit ${{ github.event.issue.number }} -R ${{ github.repository }} --add-label approved
         env:
           GH_TOKEN: ${{ github.token }}
+
+      # Approve PR via Bot to satisfy branch protection requirements
+      - name: Approve PR via Bot
+        run: |
+          gh pr review ${{ github.event.issue.number }} -R ${{ github.repository }} --approve || true
+        env:
+          GH_TOKEN: ${{ github.token }}
       
       # AutoMerging if this PR has MERGE_LABELS: approved, lgtm (not wip, hold)
       - name: automerge-lgtm-approved
