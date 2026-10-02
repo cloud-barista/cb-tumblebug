@@ -136,6 +136,14 @@
         "imageId": "img-487zeit5",
         "rootDiskType": "default",
         "rootDiskSize": 50
+      },
+      {
+        "name": "g18-openstack-regionone",
+        "nodeGroupSize": 4,
+        "specId": "openstack+regionone+m1.medium",
+        "imageId": "0b583339-0a62-4e5d-9cfb-4666539961d0",
+        "rootDiskType": "default",
+        "rootDiskSize": 40
       }
     ]
   }

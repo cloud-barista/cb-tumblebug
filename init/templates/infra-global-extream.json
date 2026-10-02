@@ -1,7 +1,7 @@
 {
   "resourceType": "infra",
   "name": "infra-global-extream",
-  "description": "Global Multi-Cloud Extreme Infra test - 10,000+ VMs across 8 CSPs (AWS, Azure, GCP, Tencent, IBM, Alibaba, NCP, NHN, KT)",
+  "description": "Global Multi-Cloud Extreme Infra test - 10,000+ VMs across 10 CSPs (AWS, Azure, GCP, Tencent, IBM, Alibaba, NCP, NHN, KT, OpenStack)",
   "infraDynamicReq": {
     "nodeGroups": [
       {
@@ -873,6 +873,12 @@
         "nodeGroupSize": 2,
         "specId": "kt+kr1+1x1.itl",
         "imageId": "3556e626-a174-448d-a53e-c1ab6e26d559"
+      },
+      {
+        "name": "g1-openstack-regionone",
+        "nodeGroupSize": 4,
+        "specId": "openstack+regionone+m1.medium",
+        "imageId": "0b583339-0a62-4e5d-9cfb-4666539961d0"
       }
     ]
   }
