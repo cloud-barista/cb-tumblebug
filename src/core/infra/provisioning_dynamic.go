@@ -1452,7 +1452,18 @@ func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoD
 	nodeToStore.AddtionalDetails = nil
 
 	// Make VM object
-	val, _ := json.Marshal(nodeToStore)
+	var val []byte
+	if nodeToStore.NodeGroupId != "" {
+		ng, ngErr := GetNodeGroupCached(nsId, infraId, nodeToStore.NodeGroupId)
+		if ngErr == nil && ng.Id != "" {
+			compact := model.ToCompactNodeInfo(nodeToStore, &ng)
+			val, _ = json.Marshal(compact)
+		} else {
+			val, _ = json.Marshal(nodeToStore)
+		}
+	} else {
+		val, _ = json.Marshal(nodeToStore)
+	}
 	err = kvstore.Put(nodeKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")

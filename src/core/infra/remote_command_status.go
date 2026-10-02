@@ -72,7 +72,17 @@ func updateNodeCommandStatusSafe(nsId, infraId, nodeId string, updateFunc func(*
 		}
 
 		// Atomic update
-		nodeJson, err := json.Marshal(nodeInfo)
+		var nodeJson []byte
+		if nodeInfo.NodeGroupId != "" {
+			if ng, ngErr := GetNodeGroupCached(nsId, infraId, nodeInfo.NodeGroupId); ngErr == nil && ng.Id != "" {
+				compact := model.ToCompactNodeInfo(nodeInfo, &ng)
+				nodeJson, err = json.Marshal(compact)
+			} else {
+				nodeJson, err = json.Marshal(nodeInfo)
+			}
+		} else {
+			nodeJson, err = json.Marshal(nodeInfo)
+		}
 		if err != nil {
 			return fmt.Errorf("failed to marshal VM info: %v", err)
 		}

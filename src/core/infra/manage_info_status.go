@@ -115,14 +115,11 @@ func ConvertNodeInfoFieldsToNodeStatusInfoList(nodeStatusList []model.NodeStatus
 
 // GetNodeIdNameInDetail is func to get ID and Name details
 func GetNodeIdNameInDetail(nsId string, infraId string, nodeId string) (*model.IdNameInDetailInfo, error) {
-	key := common.GenInfraKey(nsId, infraId, nodeId)
-	keyValue, _, err := kvstore.GetKv(key)
+	nodeTmp, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.IdNameInDetailInfo{}, err
 	}
-	nodeTmp := model.NodeInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &nodeTmp)
 
 	var idDetails model.IdNameInDetailInfo
 
@@ -211,7 +208,16 @@ func nodeStatusesFromStore(nsId, infraId string, nodeList []string) []model.Node
 	var missing []string
 	for _, nodeId := range nodeList {
 		if e, ok := byId[nodeId]; ok {
-			result = append(result, nodeStatusInfoFromEntry(e))
+			nsi := nodeStatusInfoFromEntry(e)
+			if nsi.PublicIp == "" && strings.EqualFold(nsi.Status, model.StatusRunning) {
+				if nodeObj, err := GetNodeObject(nsId, infraId, nodeId); err == nil && nodeObj.PublicIP != "" {
+					nsi.PublicIp = nodeObj.PublicIP
+					globalStatusStore.Update(nsId, infraId, nodeId, func(entry *StatusEntry) {
+						entry.PublicIP = nodeObj.PublicIP
+					})
+				}
+			}
+			result = append(result, nsi)
 		} else {
 			missing = append(missing, nodeId)
 		}
@@ -729,27 +735,13 @@ func GetNodeIp(nsId string, infraId string, nodeId string) (string, string, int,
 
 // GetNodeSpecId is func to get Node SpecId
 func GetNodeSpecId(nsId string, infraId string, nodeId string) string {
-
-	var content struct {
-		SpecId string `json:"specId"`
-	}
-
 	log.Debug().Msg("[getNodeSpecID]" + nodeId)
-	key := common.GenInfraKey(nsId, infraId, nodeId)
-
-	keyValue, _, err := kvstore.GetKv(key)
+	nodeTmp, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In GetNodeSpecId(); kvstore.GetKv() returned an error.")
-		log.Error().Err(err).Msg("")
-		// return nil, err
+		log.Error().Err(err).Msg("In GetNodeSpecId(): failed to get Node object")
+		return ""
 	}
-
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	fmt.Printf("%+v\n", content.SpecId)
-
-	return content.SpecId
+	return nodeTmp.SpecId
 }
 
 // getRateLimitsForCSP returns rate limiting configuration for Node status fetching
@@ -1617,8 +1609,12 @@ applyStatus:
 				statusInfo.SystemMessage = err.Error()
 				return statusInfo, err
 			}
-			nodeInfo.PublicIP = nodeInfoTmp.PublicIp
-			nodeInfo.SSHPort = nodeInfoTmp.SSHPort
+			if nodeInfoTmp.PublicIp != "" || strings.EqualFold(nodeStatusTmp.Status, model.StatusSuspended) {
+				nodeInfo.PublicIP = nodeInfoTmp.PublicIp
+				if nodeInfoTmp.SSHPort != 0 {
+					nodeInfo.SSHPort = nodeInfoTmp.SSHPort
+				}
+			}
 
 		} else {
 			// Don't init TargetStatus if the TargetStatus is model.StatusTerminated. It is to finalize Node lifecycle if model.StatusTerminated.
@@ -1626,6 +1622,17 @@ applyStatus:
 			nodeStatusTmp.TargetAction = model.ActionTerminate
 			nodeStatusTmp.Status = model.StatusTerminated
 			nodeStatusTmp.SystemMessage = "terminated VM. No action is acceptable except deletion"
+		}
+	}
+
+	// If the node is Running but PublicIP is empty (e.g. after Resume when CSP assigns a new dynamic IP,
+	// or if action completed before IP was attached), refresh the PublicIP.
+	if strings.EqualFold(nodeStatusTmp.Status, model.StatusRunning) && nodeInfo.PublicIP == "" {
+		if nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id); err == nil && nodeInfoTmp.PublicIp != "" {
+			nodeInfo.PublicIP = nodeInfoTmp.PublicIp
+			if nodeInfoTmp.SSHPort != 0 {
+				nodeInfo.SSHPort = nodeInfoTmp.SSHPort
+			}
 		}
 	}
 
