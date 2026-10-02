@@ -32,6 +32,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/secret"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -1546,9 +1547,10 @@ func GetNodeSshKey(nsId string, infraId string, nodeId string) (string, string, 
 	}
 
 	var keyContent struct {
-		Username         string `json:"username"`
-		VerifiedUsername string `json:"verifiedUsername"`
-		PrivateKey       string `json:"privateKey"`
+		Username         string           `json:"username"`
+		VerifiedUsername string           `json:"verifiedUsername"`
+		PrivateKey       string           `json:"privateKey"`
+		KeyValueList     []model.KeyValue `json:"keyValueList"`
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &keyContent)
 	if err != nil {
@@ -1556,8 +1558,24 @@ func GetNodeSshKey(nsId string, infraId string, nodeId string) (string, string, 
 		return "", "", "", err
 	}
 
-	// Private key should already be normalized at storage time
-	privateKey := keyContent.PrivateKey
+	// 1. Retrieve private key from OpenBao secure secret store
+	privateKey, err := secret.GetSshKey(context.Background(), nsId, content.SshKeyId)
+	if err != nil || privateKey == "" {
+		// 2. Fallback: check etcd content for backward compatibility
+		privateKey = keyContent.PrivateKey
+		if privateKey == "" && len(keyContent.KeyValueList) > 0 {
+			for _, kv := range keyContent.KeyValueList {
+				if strings.EqualFold(kv.Key, "PrivateKey") || strings.EqualFold(kv.Key, "KeyMaterial") {
+					privateKey = kv.Value
+					break
+				}
+			}
+		}
+	}
+
+	if strings.Contains(privateKey, "\\n") {
+		privateKey = strings.ReplaceAll(privateKey, "\\n", "\n")
+	}
 
 	if privateKey == "" {
 		err = fmt.Errorf("private key not found in SSH key resource")

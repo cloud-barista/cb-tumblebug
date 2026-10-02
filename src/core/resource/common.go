@@ -33,6 +33,7 @@ import (
 	directcsp "github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
+	"github.com/cloud-barista/cb-tumblebug/src/core/secret"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 
@@ -877,6 +878,9 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 			log.Error().Err(err).Msg("")
 			return err
 		}
+		if strings.EqualFold(resourceType, model.StrSSHKey) {
+			_ = secret.DeleteSshKey(context.Background(), nsId, resourceId)
+		}
 	}
 
 	err = label.DeleteLabelObject(resourceType, uid)
@@ -1490,6 +1494,21 @@ func GetResource(nsId string, resourceType string, resourceId string) (any, erro
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return nil, err
+			}
+			// Retrieve private key from OpenBao
+			if privKey, err := secret.GetSshKey(context.Background(), nsId, resourceId); err == nil && privKey != "" {
+				res.PrivateKey = privKey
+			} else if res.PrivateKey == "" && len(res.KeyValueList) > 0 {
+				// Fallback: check KeyValueList for older keys
+				for _, kv := range res.KeyValueList {
+					if strings.EqualFold(kv.Key, "PrivateKey") || strings.EqualFold(kv.Key, "KeyMaterial") {
+						res.PrivateKey = kv.Value
+						break
+					}
+				}
+			}
+			if strings.Contains(res.PrivateKey, "\\n") {
+				res.PrivateKey = strings.ReplaceAll(res.PrivateKey, "\\n", "\n")
 			}
 			return res, nil
 		case model.StrVNet:

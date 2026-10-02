@@ -585,6 +585,28 @@ func InvalidateSecretCache(path string) {
 	secretCacheMu.Unlock()
 }
 
+// DeleteOpenBaoSecret deletes the secret at the given KV v2 path in OpenBao.
+// It removes all versions and metadata for the secret.
+func DeleteOpenBaoSecret(ctx context.Context, path string) error {
+	defer InvalidateSecretCache(path)
+	if model.VaultToken == "" {
+		return fmt.Errorf("VAULT_TOKEN is not set")
+	}
+
+	client, err := sharedVaultClient()
+	if err != nil {
+		return err
+	}
+
+	// For OpenBao KV v2, deleting metadata deletes all versions and the secret itself.
+	metadataPath := strings.Replace(path, "secret/data/", "secret/metadata/", 1)
+	_, err = client.Logical().DeleteWithContext(ctx, metadataPath)
+	if err != nil {
+		return fmt.Errorf("failed to delete secret from OpenBao at %s: %w", metadataPath, err)
+	}
+	return nil
+}
+
 // CheckOpenBaoStatus verifies that the OpenBao secret store is usable by
 // CB-Tumblebug: endpoint reachable, initialized, unsealed, and the configured
 // VAULT_TOKEN accepted. It stops at the first failed step, so Message always
