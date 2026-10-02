@@ -14,6 +14,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/secret"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 	"github.com/tidwall/gjson"
@@ -97,6 +99,9 @@ func cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid string,
 		if err := kvstore.Delete(key); err != nil {
 			log.Error().Err(err).Msg("")
 			return err
+		}
+		if strings.EqualFold(resourceType, model.StrSSHKey) {
+			_ = secret.DeleteSshKey(context.Background(), nsId, resourceId)
 		}
 	}
 
@@ -391,4 +396,3 @@ func markResourceStillOnCsp(nsId, resourceType, resourceId string, cause error) 
 	markResourceDeleteFailed(nsId, resourceType, resourceId, cause)
 	return false
 }
-
