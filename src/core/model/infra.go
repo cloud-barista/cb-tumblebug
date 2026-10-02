@@ -15,6 +15,7 @@ limitations under the License.
 package model
 
 import (
+	"reflect"
 	"time"
 )
 
@@ -835,6 +836,64 @@ type NodeGroupInfo struct {
 	Description string            `json:"description,omitempty"`
 }
 
+// CompactNodeInfo represents the instance-variable runtime state of a single Node
+// within a NodeGroup, omitting the blueprint attributes held by the parent NodeGroup.
+// Note: This struct is purely for internal etcd storage optimization and is NOT exposed in the REST API.
+type CompactNodeInfo struct {
+	ResourceType string `json:"resourceType"`
+
+	Id              string `json:"id"`
+	Uid             string `json:"uid,omitempty"`
+	CspResourceName string `json:"cspResourceName,omitempty"`
+	CspResourceId   string `json:"cspResourceId,omitempty"`
+
+	Name string `json:"name"`
+
+	NodeGroupId string `json:"nodeGroupId"`
+
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus,omitempty"`
+	TargetAction string `json:"targetAction,omitempty"`
+
+	MonAgentStatus     string               `json:"monAgentStatus,omitempty"`
+	NetworkAgentStatus string               `json:"networkAgentStatus,omitempty"`
+	SystemMessage      string               `json:"systemMessage,omitempty"`
+	Failure            *ProvisioningFailure `json:"failure,omitempty"`
+
+	CreatedTime string `json:"createdTime,omitempty"`
+
+	PublicIP   string `json:"publicIP,omitempty"`
+	SSHPort    int    `json:"sshPort,omitempty"`
+	PublicDNS  string `json:"publicDNS,omitempty"`
+	PrivateIP  string `json:"privateIP,omitempty"`
+	PrivateDNS string `json:"privateDNS,omitempty"`
+
+	// Instance-specific overrides (only stored if different from NodeGroup)
+	SubnetId         string   `json:"subnetId,omitempty"`
+	CspSubnetId      string   `json:"cspSubnetId,omitempty"`
+	NetworkInterface string   `json:"networkInterface,omitempty"`
+	DataDiskIds      []string `json:"dataDiskIds,omitempty"`
+	SecurityGroupIds []string `json:"securityGroupIds,omitempty"`
+
+	NodeUserName     string `json:"nodeUserName,omitempty"`
+	NodeUserPassword string `json:"nodeUserPassword,omitempty"`
+
+	// Disk overrides if reported by CSP and differs from NodeGroup
+	RootDiskType   string `json:"rootDiskType,omitempty"`
+	RootDiskSize   int    `json:"rootDiskSize,omitempty"`
+	RootDeviceName string `json:"rootDeviceName,omitempty"`
+
+	// Region/Zone override if different from NodeGroup
+	Region *RegionInfo `json:"region,omitempty"`
+
+	// Instance-specific labels (only labels that differ from NodeGroup)
+	Label       map[string]string `json:"label,omitempty"`
+	Description string            `json:"description,omitempty"`
+
+	SshHostKeyInfo *SshHostKeyInfo     `json:"sshHostKeyInfo,omitempty"`
+	CommandStatus  []CommandStatusInfo `json:"commandStatus,omitempty"`
+}
+
 // HydrateNodeInfo projects common blueprint fields from parent NodeGroup into a NodeInfo.
 func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 	if node == nil || ng == nil {
@@ -851,6 +910,8 @@ func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 	}
 	if node.Region.Region == "" {
 		node.Region = ng.Region
+	} else if node.Region.Zone == "" && ng.Region.Zone != "" {
+		node.Region.Zone = ng.Region.Zone
 	}
 	if node.Location.Display == "" {
 		node.Location = ng.Location
@@ -872,6 +933,9 @@ func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 	if node.SubnetId == "" {
 		node.SubnetId = ng.SubnetId
 		node.CspSubnetId = ng.CspSubnetId
+	}
+	if node.NetworkInterface == "" {
+		node.NetworkInterface = ng.NetworkInterface
 	}
 	if len(node.SecurityGroupIds) == 0 && len(ng.SecurityGroupIds) > 0 {
 		node.SecurityGroupIds = append([]string{}, ng.SecurityGroupIds...)
@@ -910,6 +974,119 @@ func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 			}
 		}
 	}
+}
+
+// ToCompactNodeInfo extracts instance-specific fields from NodeInfo, omitting
+// blueprint fields that are redundant with the parent NodeGroup.
+func ToCompactNodeInfo(node NodeInfo, ng *NodeGroupInfo) CompactNodeInfo {
+	compact := CompactNodeInfo{
+		ResourceType:       node.ResourceType,
+		Id:                 node.Id,
+		Uid:                node.Uid,
+		CspResourceName:    node.CspResourceName,
+		CspResourceId:      node.CspResourceId,
+		Name:               node.Name,
+		NodeGroupId:        node.NodeGroupId,
+		Status:             node.Status,
+		TargetStatus:       node.TargetStatus,
+		TargetAction:       node.TargetAction,
+		MonAgentStatus:     node.MonAgentStatus,
+		NetworkAgentStatus: node.NetworkAgentStatus,
+		SystemMessage:      node.SystemMessage,
+		Failure:            node.Failure,
+		CreatedTime:        node.CreatedTime,
+		PublicIP:           node.PublicIP,
+		PublicDNS:          node.PublicDNS,
+		PrivateIP:          node.PrivateIP,
+		PrivateDNS:         node.PrivateDNS,
+		NodeUserName:       node.NodeUserName,
+		NodeUserPassword:   node.NodeUserPassword,
+		SshHostKeyInfo:     node.SshHostKeyInfo,
+	}
+
+	if len(node.DataDiskIds) > 0 {
+		compact.DataDiskIds = append([]string{}, node.DataDiskIds...)
+	}
+	if len(node.CommandStatus) > 0 {
+		compact.CommandStatus = append([]CommandStatusInfo{}, node.CommandStatus...)
+	}
+
+	if ng == nil {
+		compact.SSHPort = node.SSHPort
+		compact.SubnetId = node.SubnetId
+		compact.CspSubnetId = node.CspSubnetId
+		compact.NetworkInterface = node.NetworkInterface
+		if len(node.SecurityGroupIds) > 0 {
+			compact.SecurityGroupIds = append([]string{}, node.SecurityGroupIds...)
+		}
+		compact.RootDiskType = node.RootDiskType
+		compact.RootDiskSize = node.RootDiskSize
+		compact.RootDeviceName = node.RootDeviceName
+		if node.Region.Region != "" || node.Region.Zone != "" {
+			reg := node.Region
+			compact.Region = &reg
+		}
+		if len(node.Label) > 0 {
+			compact.Label = make(map[string]string, len(node.Label))
+			for k, v := range node.Label {
+				compact.Label[k] = v
+			}
+		}
+		compact.Description = node.Description
+		return compact
+	}
+
+	// Parent NodeGroup present: keep only fields that differ from NodeGroup
+	if node.SSHPort != 0 && node.SSHPort != ng.SSHPort {
+		compact.SSHPort = node.SSHPort
+	}
+	if node.SubnetId != "" && node.SubnetId != ng.SubnetId {
+		compact.SubnetId = node.SubnetId
+	}
+	if node.CspSubnetId != "" && node.CspSubnetId != ng.CspSubnetId {
+		compact.CspSubnetId = node.CspSubnetId
+	}
+	if node.NetworkInterface != "" && node.NetworkInterface != ng.NetworkInterface {
+		compact.NetworkInterface = node.NetworkInterface
+	}
+	if len(node.SecurityGroupIds) > 0 && !reflect.DeepEqual(node.SecurityGroupIds, ng.SecurityGroupIds) {
+		compact.SecurityGroupIds = append([]string{}, node.SecurityGroupIds...)
+	}
+	if node.NodeUserName != "" && node.NodeUserName != ng.NodeUserName {
+		compact.NodeUserName = node.NodeUserName
+	}
+	if node.RootDiskType != "" && node.RootDiskType != ng.RootDiskType {
+		compact.RootDiskType = node.RootDiskType
+	}
+	if node.RootDiskSize != 0 && node.RootDiskSize != ng.RootDiskSize {
+		compact.RootDiskSize = node.RootDiskSize
+	}
+	if node.RootDeviceName != "" && node.RootDeviceName != ng.RootDeviceName {
+		compact.RootDeviceName = node.RootDeviceName
+	}
+	if (node.Region.Region != "" || node.Region.Zone != "") &&
+		(node.Region.Region != ng.Region.Region || node.Region.Zone != ng.Region.Zone) {
+		reg := node.Region
+		compact.Region = &reg
+	}
+	if node.Description != "" && node.Description != ng.Description {
+		compact.Description = node.Description
+	}
+
+	// Label: keep only labels that are not in ng or differ from ng
+	if len(node.Label) > 0 {
+		diffLabels := make(map[string]string)
+		for k, v := range node.Label {
+			if ngVal, ok := ng.Label[k]; !ok || ngVal != v {
+				diffLabels[k] = v
+			}
+		}
+		if len(diffLabels) > 0 {
+			compact.Label = diffLabels
+		}
+	}
+
+	return compact
 }
 
 // InfraClusterInfo is a lightweight, on-demand cluster view synthesized from Infra NodeGroups and Nodes.

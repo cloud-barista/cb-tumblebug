@@ -252,6 +252,7 @@ func reserveNodeNames(nsId, infraId, nodeGroupId string, nodeRequest *model.Crea
 	if err := kvstore.Put(key, string(val)); err != nil {
 		return nil, fmt.Errorf("cannot store the NodeGroup record of %s: %w", nodeGroupId, err)
 	}
+	InvalidateNodeGroupCache(nsId, infraId)
 	return newNodeIds, nil
 }
 
@@ -356,10 +357,20 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 	// Pre-populate ImageSummary from ImageId
 	if nodeRequest.ImageId != "" {
 		if imgInfo, err := resource.GetImage(nsId, nodeRequest.ImageId); err == nil {
-			nodeGroupInfoData.CspImageName = imgInfo.CspImageName
+			// If CspImageName was already pre-resolved (e.g. from EnsureImageAvailable / dynamic flow), use it.
+			// Otherwise, apply provider-specific latest resolution (Alibaba ImageFamily, Azure SKU).
+			cspImageName := nodeRequest.CspImageName
+			if cspImageName == "" && imgInfo.ResourceType != model.StrCustomImage {
+				resolved := resource.ResolveLatestImageForVMCreation(ctx, nodeRequest.ConnectionName, imgInfo)
+				cspImageName = resolved.CspImageName
+			}
+			if cspImageName == "" {
+				cspImageName = imgInfo.CspImageName
+			}
+			nodeGroupInfoData.CspImageName = cspImageName
 			nodeGroupInfoData.Image = model.ImageSummary{
 				ResourceType:   imgInfo.ResourceType,
-				CspImageName:   imgInfo.CspImageName,
+				CspImageName:   cspImageName,
 				OSType:         imgInfo.OSType,
 				OSArchitecture: imgInfo.OSArchitecture,
 				OSDistribution: imgInfo.OSDistribution,
@@ -387,6 +398,7 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 	if err := kvstore.Put(key, string(val)); err != nil {
 		return fmt.Errorf("failed to store nodeGroup data: %w", err)
 	}
+	InvalidateNodeGroupCache(nsId, infraId)
 
 	// Store label info
 	labels := map[string]string{
@@ -1029,7 +1041,12 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 		if nodeGroupReq.CspImageName == "" && nodeGroupReq.ImageId != "" {
 			if imgInfo, err := resource.GetImage(nsId, nodeGroupReq.ImageId); err == nil &&
 				imgInfo.ResourceType != model.StrCustomImage {
-				nodeGroupReq.CspImageName = imgInfo.CspImageName
+				resolved := resource.ResolveLatestImageForVMCreation(ctx, nodeGroupReq.ConnectionName, imgInfo)
+				if resolved.CspImageName != "" {
+					nodeGroupReq.CspImageName = resolved.CspImageName
+				} else {
+					nodeGroupReq.CspImageName = imgInfo.CspImageName
+				}
 			}
 		}
 

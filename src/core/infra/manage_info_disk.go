@@ -99,17 +99,12 @@ func fetchNodeDetailsWithRetry(node model.NodeInfo) ([]model.KeyValue, error) {
 
 func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command string, dataDiskId string, force bool) (model.NodeInfo, error) {
 	nodeKey := common.GenInfraKey(nsId, infraId, nodeId)
-
-	// Check existence of the key. If no key, no update.
-	keyValue, exists, err := kvstore.GetKv(nodeKey)
-	if !exists || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/infra/node': %s/%s/%s \n", nsId, infraId, nodeId)
+	node, err := GetNodeObject(nsId, infraId, nodeId)
+	if err != nil {
+		err := fmt.Errorf("Failed to find 'ns/infra/node': %s/%s/%s: %w", nsId, infraId, nodeId, err)
 		log.Error().Err(err).Msg("")
 		return model.NodeInfo{}, err
 	}
-
-	node := model.NodeInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &node)
 
 	isInList := common.CheckElement(dataDiskId, node.DataDiskIds)
 	if strings.EqualFold(command, model.DetachDataDisk) && !isInList && !force {
@@ -125,7 +120,7 @@ func AttachDetachDataDisk(nsId string, infraId string, nodeId string, command st
 	dataDiskKey := common.GenResourceKey(nsId, model.StrDataDisk, dataDiskId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, exists, err = kvstore.GetKv(dataDiskKey)
+	keyValue, exists, err := kvstore.GetKv(dataDiskKey)
 	if !exists || err != nil {
 		return model.NodeInfo{}, err
 	}

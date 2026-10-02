@@ -1519,28 +1519,15 @@ func CheckConnectivity(host string, port string) error {
 
 // GetNodeSshKey is func to get Node SshKey. Returns username, verifiedUsername, privateKey
 func GetNodeSshKey(nsId string, infraId string, nodeId string) (string, string, string, error) {
-
-	var content struct {
-		SshKeyId string `json:"sshKeyId"`
-	}
-
-	key := common.GenInfraKey(nsId, infraId, nodeId)
-
-	keyValue, _, err := kvstore.GetKv(key)
+	nodeTmp, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("Cannot find the key from DB. key: %s", key)
-		return "", "", "", err
-	}
-
-	err = json.Unmarshal([]byte(keyValue.Value), &content)
-	if err != nil {
+		err = fmt.Errorf("Cannot find the Node from DB. nodeId: %s, err: %w", nodeId, err)
 		log.Error().Err(err).Msg("")
 		return "", "", "", err
 	}
 
-	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, content.SshKeyId)
-	keyValue, _, err = kvstore.GetKv(sshKey)
+	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, nodeTmp.SshKeyId)
+	keyValue, _, err := kvstore.GetKv(sshKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", "", "", err
@@ -1559,7 +1546,7 @@ func GetNodeSshKey(nsId string, infraId string, nodeId string) (string, string, 
 	}
 
 	// 1. Retrieve private key from OpenBao secure secret store
-	privateKey, err := secret.GetSshKey(context.Background(), nsId, content.SshKeyId)
+	privateKey, err := secret.GetSshKey(context.Background(), nsId, nodeTmp.SshKeyId)
 	if err != nil || privateKey == "" {
 		// 2. Fallback: check etcd content for backward compatibility
 		privateKey = keyContent.PrivateKey
@@ -1588,24 +1575,14 @@ func GetNodeSshKey(nsId string, infraId string, nodeId string) (string, string, 
 
 // UpdateNodeSshKey is func to update Node SshKey
 func UpdateNodeSshKey(nsId string, infraId string, nodeId string, verifiedUserName string) error {
-
-	var content struct {
-		SshKeyId string `json:"sshKeyId"`
-	}
-
-	key := common.GenInfraKey(nsId, infraId, nodeId)
-	keyValue, _, err := kvstore.GetKv(key)
+	nodeTmp, err := GetNodeObject(nsId, infraId, nodeId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In UpdateNodeSshKey(); kvstore.GetKv() returned an error.")
-		log.Error().Err(err).Msg("")
-		// return nil, err
+		log.Error().Err(err).Msg("In UpdateNodeSshKey(): failed to get Node object")
+		return err
 	}
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, content.SshKeyId)
-	keyValue, _, _ = kvstore.GetKv(sshKey)
+	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, nodeTmp.SshKeyId)
+	keyValue, _, _ := kvstore.GetKv(sshKey)
 
 	tmpSshKeyInfo := model.SshKeyInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &tmpSshKeyInfo)

@@ -101,17 +101,23 @@ func ListNodeAllInNs(nsId string, filterKey string, filterVal string) ([]model.N
 		if !ok {
 			continue
 		}
-		// Same filter semantics as the other listings: both terms must appear
-		if filterKey != "" {
-			value := strings.ToLower(v.Value)
-			if !(strings.Contains(value, strings.ToLower(filterKey)) && strings.Contains(value, strings.ToLower(filterVal))) {
-				continue
-			}
-		}
 		tempObj := model.NodeInfo{}
 		if err := json.Unmarshal([]byte(v.Value), &tempObj); err != nil {
 			log.Error().Err(err).Str("key", v.Key).Msg("Cannot read the Node object")
 			return nil, err
+		}
+		if tempObj.NodeGroupId != "" {
+			if ng, ngErr := GetNodeGroupCached(nsId, infraId, tempObj.NodeGroupId); ngErr == nil {
+				HydrateNodeInfo(&tempObj, &ng)
+			}
+		}
+		// Same filter semantics as the other listings: both terms must appear
+		if filterKey != "" {
+			valBytes, _ := json.Marshal(tempObj)
+			value := strings.ToLower(string(valBytes))
+			if !(strings.Contains(value, strings.ToLower(filterKey)) && strings.Contains(value, strings.ToLower(filterVal))) {
+				continue
+			}
 		}
 		res = append(res, model.NodeInfoInNs{InfraId: infraId, NodeInfo: tempObj})
 	}
@@ -314,6 +320,7 @@ func removeNodeFromNodeGroupRecord(nsId, infraId, nodeGroupId, nodeId string, re
 	if err := kvstore.Put(common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId), string(val)); err != nil {
 		log.Warn().Err(err).Msgf("Failed to update the NodeGroup record of %s", nodeGroupId)
 	}
+	InvalidateNodeGroupCache(nsId, infraId)
 }
 
 // GetNodeGroup is func to return list of NodeGroups in a given Infra
@@ -338,6 +345,61 @@ func GetNodeGroup(nsId string, infraId string, nodeGroupId string) (model.NodeGr
 		return nodeGroupInfo, err
 	}
 	return nodeGroupInfo, nil
+}
+
+var (
+	nodeGroupCacheMu sync.RWMutex
+	nodeGroupCache   = make(map[string]cachedNodeGroupEntry)
+)
+
+type cachedNodeGroupEntry struct {
+	ng        model.NodeGroupInfo
+	expiresAt time.Time
+}
+
+const nodeGroupCacheTTL = 5 * time.Minute
+
+// GetNodeGroupCached returns a cached NodeGroupInfo if valid, or loads and caches it from kvstore.
+func GetNodeGroupCached(nsId, infraId, nodeGroupId string) (model.NodeGroupInfo, error) {
+	if nsId == "" || infraId == "" || nodeGroupId == "" {
+		return model.NodeGroupInfo{}, fmt.Errorf("invalid identifiers for NodeGroup lookup")
+	}
+	cacheKey := fmt.Sprintf("%s/%s/%s", nsId, infraId, strings.ToLower(nodeGroupId))
+
+	nodeGroupCacheMu.RLock()
+	entry, ok := nodeGroupCache[cacheKey]
+	nodeGroupCacheMu.RUnlock()
+
+	if ok && time.Now().Before(entry.expiresAt) {
+		return entry.ng, nil
+	}
+
+	ng, err := GetNodeGroup(nsId, infraId, nodeGroupId)
+	if err != nil {
+		return model.NodeGroupInfo{}, err
+	}
+
+	nodeGroupCacheMu.Lock()
+	nodeGroupCache[cacheKey] = cachedNodeGroupEntry{
+		ng:        ng,
+		expiresAt: time.Now().Add(nodeGroupCacheTTL),
+	}
+	nodeGroupCacheMu.Unlock()
+
+	return ng, nil
+}
+
+// InvalidateNodeGroupCache purges cached NodeGroups for a specific Infra.
+func InvalidateNodeGroupCache(nsId, infraId string) {
+	nodeGroupCacheMu.Lock()
+	defer nodeGroupCacheMu.Unlock()
+
+	prefix := fmt.Sprintf("%s/%s/", nsId, infraId)
+	for k := range nodeGroupCache {
+		if strings.HasPrefix(k, prefix) {
+			delete(nodeGroupCache, k)
+		}
+	}
 }
 
 // ListNodeGroupId is func to return list of NodeGroups in a given Infra
@@ -735,6 +797,11 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 						log.Info().Err(err).Msg("")
 					} else {
 						nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
+						if nodeAccessInfo.PublicIP != "" && nodeObject.PublicIP != nodeAccessInfo.PublicIP {
+							nodeObject.PublicIP = nodeAccessInfo.PublicIP
+							nodeObject.SSHPort = nodeAccessInfo.SSHPort
+							UpdateNodeInfo(nsId, infraId, nodeObject)
+						}
 					}
 
 					userName, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
@@ -820,6 +887,11 @@ func GetInfraNodeAccessInfo(nsId string, infraId string, nodeId string, option s
 		return output, err
 	} else {
 		nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
+		if nodeAccessInfo.PublicIP != "" && nodeObject.PublicIP != nodeAccessInfo.PublicIP {
+			nodeObject.PublicIP = nodeAccessInfo.PublicIP
+			nodeObject.SSHPort = nodeAccessInfo.SSHPort
+			UpdateNodeInfo(nsId, infraId, nodeObject)
+		}
 	}
 
 	userName, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
@@ -981,7 +1053,7 @@ func LoadInfraNodeGroupMap(nsId, infraId string) map[string]model.NodeGroupInfo 
 		return ngMap
 	}
 	for _, ngId := range ngIds {
-		if ng, err := GetNodeGroup(nsId, infraId, ngId); err == nil {
+		if ng, err := GetNodeGroupCached(nsId, infraId, ngId); err == nil {
 			ngMap[ngId] = ng
 		}
 	}
@@ -1015,9 +1087,11 @@ func GetNodeObjectWithNodeGroups(nsId string, infraId string, nodeId string, ngM
 		if ngMap != nil {
 			if ng, ok := ngMap[nodeTmp.NodeGroupId]; ok {
 				HydrateNodeInfo(&nodeTmp, &ng)
+			} else if ng, ngErr := GetNodeGroupCached(nsId, infraId, nodeTmp.NodeGroupId); ngErr == nil {
+				HydrateNodeInfo(&nodeTmp, &ng)
 			}
 		} else {
-			if ng, ngErr := GetNodeGroup(nsId, infraId, nodeTmp.NodeGroupId); ngErr == nil {
+			if ng, ngErr := GetNodeGroupCached(nsId, infraId, nodeTmp.NodeGroupId); ngErr == nil {
 				HydrateNodeInfo(&nodeTmp, &ng)
 			}
 		}
@@ -1146,6 +1220,30 @@ func UpdateNodeInfo(nsId string, infraId string, nodeInfoData model.NodeInfo) {
 	keyValue, exists, err := kvstore.GetKv(key)
 	if !exists || err != nil {
 		return
+	}
+
+	if nodeInfoData.NodeGroupId != "" {
+		ng, ngErr := GetNodeGroupCached(nsId, infraId, nodeInfoData.NodeGroupId)
+		if ngErr == nil && ng.Id != "" {
+			// Ensure nodeInfoData has blueprint fields if it was only partially filled
+			HydrateNodeInfo(&nodeInfoData, &ng)
+
+			// Dehydrate to compact format
+			newCompact := model.ToCompactNodeInfo(nodeInfoData, &ng)
+
+			// Read current stored compact info for change detection
+			var compactInDb model.CompactNodeInfo
+			_ = json.Unmarshal([]byte(keyValue.Value), &compactInDb)
+
+			if !reflect.DeepEqual(compactInDb, newCompact) {
+				val, _ := json.Marshal(newCompact)
+				err = kvstore.Put(key, string(val))
+				if err != nil {
+					log.Error().Err(err).Msg("")
+				}
+			}
+			return
+		}
 	}
 
 	nodeTmp := model.NodeInfo{}
@@ -1567,6 +1665,7 @@ func DelInfra(nsId string, infraId string, option string) (model.IdList, error) 
 			log.Error().Err(err).Msg("")
 		}
 	}
+	InvalidateNodeGroupCache(nsId, infraId)
 
 	// delete associated CSP NLBs
 	forceFlag := "false"
@@ -1893,6 +1992,7 @@ func DelInfraNode(nsId string, infraId string, nodeId string, option string) err
 					}
 				}
 			}
+			InvalidateNodeGroupCache(nsId, infraId)
 		}
 	}
 
@@ -2015,6 +2115,7 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 					}
 				}
 			}
+			InvalidateNodeGroupCache(nsId, infraId)
 		}
 	}
 
