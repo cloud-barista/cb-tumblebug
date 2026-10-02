@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"os"
 	"strings"
 	"time"
 
@@ -86,8 +87,23 @@ var cspSyncSkipConfig = CSPSyncConfig{
 	},
 }
 
+// isCspTagSyncEnabled checks whether CSP tag/label synchronization is enabled via system environment variable.
+// Default is false (disabled). Set TB_ENABLE_CSP_TAG_SYNC=true (or TB_SYNC_CSP_TAG=true) to enable.
+func isCspTagSyncEnabled() bool {
+	val := strings.TrimSpace(os.Getenv("TB_ENABLE_CSP_TAG_SYNC"))
+	if val == "" {
+		val = strings.TrimSpace(os.Getenv("TB_SYNC_CSP_TAG"))
+	}
+	return strings.EqualFold(val, "true") || val == "1"
+}
+
 // isCSPSyncEnabled determines if CSP synchronization is enabled for a label type and connection name
 func isCSPSyncEnabled(labelType string, connectionName string) bool {
+	// By default, CSP tag/label synchronization is disabled to prevent unnecessary CSP API overhead
+	// and inconsistent CSP tagging support. It can be enabled by setting TB_ENABLE_CSP_TAG_SYNC=true.
+	if !isCspTagSyncEnabled() {
+		return false
+	}
 	// Get provider name from connection configuration
 	cspType, err := getProviderNameFromConnectionName(connectionName)
 	if err != nil {
