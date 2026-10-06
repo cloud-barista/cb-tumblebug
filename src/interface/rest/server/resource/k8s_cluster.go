@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -286,6 +287,9 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
+		if errors.Is(err, resource.ErrK8sNodeGroupNotFound) {
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
