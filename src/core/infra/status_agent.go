@@ -887,7 +887,7 @@ func persistBatchNodeStatus(nsId, infraId, nodeId, newStatus string, targetReach
 		nodeTmp.TargetAction = model.ActionComplete
 	}
 	if strings.EqualFold(nodeTmp.Status, model.StatusRunning) && nodeTmp.PublicIP == "" {
-		if nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeTmp.Id); err == nil && nodeInfoTmp.PublicIp != "" {
+		if nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeTmp.Id, 0); err == nil && nodeInfoTmp.PublicIp != "" {
 			nodeTmp.PublicIP = nodeInfoTmp.PublicIp
 			if nodeInfoTmp.SSHPort != 0 {
 				nodeTmp.SSHPort = nodeInfoTmp.SSHPort
