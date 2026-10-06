@@ -44,10 +44,19 @@ import (
 func InvalidateGetCache(url string, body any) {
 	if body != nil {
 		if b, err := json.Marshal(body); err == nil {
-			clientCache.Delete(fmt.Sprintf("GET_%s_%s", url, string(b)))
+			clientCache.Delete(fmt.Sprintf("GET_%s_%x", url, sha256.Sum256(b)))
 		}
 	}
 	clientCache.Delete(fmt.Sprintf("GET_%s", url))
+
+	// Invalidate any cache entries matching GET_<url>
+	prefix := fmt.Sprintf("GET_%s", url)
+	clientCache.Range(func(key, value any) bool {
+		if k, ok := key.(string); ok && strings.HasPrefix(k, prefix) {
+			clientCache.Delete(k)
+		}
+		return true
+	})
 }
 
 // CacheItem is a struct to store cached item
@@ -402,26 +411,23 @@ func ExecuteHttpRequest[B any, T any](
 			requestKey = fmt.Sprintf("%s_%s", method, url)
 		}
 
-		if item, found := clientCache.Load(requestKey); found {
-			// Ensure safe type assertion
-			cachedItem, ok := item.(CacheItem[T])
-			if !ok {
-				log.Error().Msgf("Type assertion failed for cache item: expected CacheItem[%T], got %T", *result, item)
-				clientCache.Delete(requestKey) // Delete invalid cache item
-				return nil, fmt.Errorf("type assertion failed for cache item")
-			}
+		if cacheDuration > 0 {
+			if item, found := clientCache.Load(requestKey); found {
+				// Ensure safe type assertion
+				cachedItem, ok := item.(CacheItem[T])
+				if !ok {
+					log.Error().Msgf("Type assertion failed for cache item: expected CacheItem[%T], got %T", *result, item)
+					clientCache.Delete(requestKey) // Delete invalid cache item
+					return nil, fmt.Errorf("type assertion failed for cache item")
+				}
 
-			if time.Now().Before(cachedItem.ExpiresAt) {
-				log.Trace().Msgf("Cache hit! Expires: %v", time.Since(cachedItem.ExpiresAt))
-				*result = cachedItem.Response
-				//val := reflect.ValueOf(result).Elem()
-				//cachedVal := reflect.ValueOf(cachedItem.Response)
-				//val.Set(cachedVal)
-
-				return nil, nil
-			} else {
-				//log.Trace().Msg("Cache item expired!")
-				clientCache.Delete(requestKey)
+				if time.Now().Before(cachedItem.ExpiresAt) {
+					log.Trace().Msgf("Cache hit! Expires: %v", time.Since(cachedItem.ExpiresAt))
+					*result = cachedItem.Response
+					return nil, nil
+				} else {
+					clientCache.Delete(requestKey)
+				}
 			}
 		}
 
@@ -672,12 +678,11 @@ func ExecuteHttpRequest[B any, T any](
 		// Record circuit breaker success for GET requests
 		recordCircuitBreakerSuccess(requestKey)
 
-		// Check if result is nil
-		if result == nil {
-			log.Trace().Msg("Result is nil, not caching")
+		// Check if result is nil or caching is disabled
+		if result == nil || cacheDuration <= 0 {
+			log.Trace().Msg("Result is nil or caching is disabled, not caching")
 		} else {
 			clientCache.Store(requestKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
-			//log.Trace().Msg("Cached successfully!")
 		}
 	}
 

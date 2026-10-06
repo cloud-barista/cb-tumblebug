@@ -1475,6 +1475,11 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 	// polling, cleanup) must not hold the slot or other goroutines starve.
 	<-globalControlSem
 
+	if err == nil {
+		clientManager.InvalidateGetCache(model.SpiderRestUrl+"/vm/"+cspResourceName, requestBody)
+		clientManager.InvalidateGetCache(model.SpiderRestUrl+"/vm/"+cspResourceName, nil)
+	}
+
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		callResult.Error = err

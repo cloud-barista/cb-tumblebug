@@ -658,7 +658,7 @@ func ListInfraStatus(nsId string) ([]model.InfraStatusInfo, error) {
 }
 
 // GetNodeCurrentPublicIp is func to get Node public IP
-func GetNodeCurrentPublicIp(nsId string, infraId string, nodeId string) (model.NodeStatusInfo, error) {
+func GetNodeCurrentPublicIp(nsId string, infraId string, nodeId string, customCacheDuration ...time.Duration) (model.NodeStatusInfo, error) {
 	errorInfo := model.NodeStatusInfo{}
 	errorInfo.Status = model.StatusFailed
 
@@ -692,6 +692,11 @@ func GetNodeCurrentPublicIp(nsId string, infraId string, nodeId string) (model.N
 	requestBody.ConnectionName = temp.ConnectionName
 	callResult := statusResponse{}
 
+	cacheDuration := clientManager.AccessInfoDuration
+	if len(customCacheDuration) > 0 {
+		cacheDuration = customCacheDuration[0]
+	}
+
 	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -700,12 +705,17 @@ func GetNodeCurrentPublicIp(nsId string, infraId string, nodeId string) (model.N
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		clientManager.AccessInfoDuration,
+		cacheDuration,
 	)
 
 	if err != nil {
 		log.Trace().Err(err).Msg("")
 		return errorInfo, err
+	}
+
+	// Do not leave empty public IP cached, ensuring subsequent attempts can re-query fresh
+	if callResult.PublicIP == "" {
+		clientManager.InvalidateGetCache(url, requestBody)
 	}
 
 	nodeStatusTmp := model.NodeStatusInfo{}
@@ -1599,17 +1609,36 @@ applyStatus:
 			log.Debug().Msgf("[FetchNodeStatus] Node %s: Action completed - TargetStatus(%s) reached",
 				nodeId, nodeStatusTmp.TargetStatus)
 			nodeStatusTmp.SystemMessage = nodeStatusTmp.TargetStatus + "==" + nodeStatusTmp.Status
+			completedAction := nodeStatusTmp.TargetAction
 			nodeStatusTmp.TargetStatus = model.StatusComplete
 			nodeStatusTmp.TargetAction = model.ActionComplete
 
-			//Get current public IP when status has been changed.
-			nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id)
+			if cspResourceName != "" {
+				clientManager.InvalidateGetCache(model.SpiderRestUrl+"/vm/"+cspResourceName, nil)
+			}
+
+			// Get current public IP when status has been changed (bypass 60s cache).
+			nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id, 0)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				statusInfo.SystemMessage = err.Error()
 				return statusInfo, err
 			}
-			if nodeInfoTmp.PublicIp != "" || strings.EqualFold(nodeStatusTmp.Status, model.StatusSuspended) {
+
+			// For Resume or Reboot action on dynamic-IP nodes, CSPs (AWS, GCP) may take a few seconds
+			// after status becomes Running to attach the dynamic public IP to the network interface.
+			if (strings.EqualFold(completedAction, model.ActionResume) || strings.EqualFold(completedAction, model.ActionReboot)) &&
+				strings.EqualFold(nodeStatusTmp.Status, model.StatusRunning) && nodeInfoTmp.PublicIp == "" {
+				for retry := 0; retry < 5; retry++ {
+					time.Sleep(2 * time.Second)
+					if retryInfo, retryErr := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id, 0); retryErr == nil && retryInfo.PublicIp != "" {
+						nodeInfoTmp = retryInfo
+						break
+					}
+				}
+			}
+
+			if nodeInfoTmp.PublicIp != "" || strings.EqualFold(nodeStatusTmp.Status, model.StatusSuspended) || strings.EqualFold(completedAction, model.ActionResume) || strings.EqualFold(completedAction, model.ActionReboot) {
 				nodeInfo.PublicIP = nodeInfoTmp.PublicIp
 				if nodeInfoTmp.SSHPort != 0 {
 					nodeInfo.SSHPort = nodeInfoTmp.SSHPort
@@ -1626,9 +1655,9 @@ applyStatus:
 	}
 
 	// If the node is Running but PublicIP is empty (e.g. after Resume when CSP assigns a new dynamic IP,
-	// or if action completed before IP was attached), refresh the PublicIP.
+	// or if action completed before IP was attached), refresh the PublicIP (bypassing cache).
 	if strings.EqualFold(nodeStatusTmp.Status, model.StatusRunning) && nodeInfo.PublicIP == "" {
-		if nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id); err == nil && nodeInfoTmp.PublicIp != "" {
+		if nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id, 0); err == nil && nodeInfoTmp.PublicIp != "" {
 			nodeInfo.PublicIP = nodeInfoTmp.PublicIp
 			if nodeInfoTmp.SSHPort != 0 {
 				nodeInfo.SSHPort = nodeInfoTmp.SSHPort
