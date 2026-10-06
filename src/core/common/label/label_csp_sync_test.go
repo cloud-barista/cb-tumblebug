@@ -8,6 +8,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"testing"
 )
 
@@ -45,5 +46,56 @@ func TestEveryCSPTagPathIsGated(t *testing.T) {
 		if !gated[name] {
 			t.Errorf("%s reaches the CSP tag API without calling isCSPSyncEnabled", name)
 		}
+	}
+}
+
+func TestCspTagSyncEnvControl(t *testing.T) {
+	// Save original env vars
+	origEnable := os.Getenv("TB_ENABLE_CSP_TAG_SYNC")
+	origSync := os.Getenv("TB_SYNC_CSP_TAG")
+	defer func() {
+		os.Setenv("TB_ENABLE_CSP_TAG_SYNC", origEnable)
+		os.Setenv("TB_SYNC_CSP_TAG", origSync)
+	}()
+
+	// 1. Default should be false (disabled)
+	os.Unsetenv("TB_ENABLE_CSP_TAG_SYNC")
+	os.Unsetenv("TB_SYNC_CSP_TAG")
+	if isCspTagSyncEnabled() {
+		t.Errorf("expected isCspTagSyncEnabled() to be false by default")
+	}
+	if isCSPSyncEnabled("vm", "non-existent-conn") {
+		t.Errorf("expected isCSPSyncEnabled() to be false when env is unset")
+	}
+
+	// 2. TB_ENABLE_CSP_TAG_SYNC=true enables it
+	os.Setenv("TB_ENABLE_CSP_TAG_SYNC", "true")
+	if !isCspTagSyncEnabled() {
+		t.Errorf("expected isCspTagSyncEnabled() to be true with TB_ENABLE_CSP_TAG_SYNC=true")
+	}
+
+	// 3. Case insensitivity ("True")
+	os.Setenv("TB_ENABLE_CSP_TAG_SYNC", "True")
+	if !isCspTagSyncEnabled() {
+		t.Errorf("expected isCspTagSyncEnabled() to be true with TB_ENABLE_CSP_TAG_SYNC=True")
+	}
+
+	// 4. "1" enables it
+	os.Setenv("TB_ENABLE_CSP_TAG_SYNC", "1")
+	if !isCspTagSyncEnabled() {
+		t.Errorf("expected isCspTagSyncEnabled() to be true with TB_ENABLE_CSP_TAG_SYNC=1")
+	}
+
+	// 5. Fallback TB_SYNC_CSP_TAG=true
+	os.Unsetenv("TB_ENABLE_CSP_TAG_SYNC")
+	os.Setenv("TB_SYNC_CSP_TAG", "true")
+	if !isCspTagSyncEnabled() {
+		t.Errorf("expected isCspTagSyncEnabled() to be true with TB_SYNC_CSP_TAG=true")
+	}
+
+	// 6. Explicitly false
+	os.Setenv("TB_ENABLE_CSP_TAG_SYNC", "false")
+	if isCspTagSyncEnabled() {
+		t.Errorf("expected isCspTagSyncEnabled() to be false with TB_ENABLE_CSP_TAG_SYNC=false")
 	}
 }
