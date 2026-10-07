@@ -17,11 +17,11 @@ package resource
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"net/url"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -680,32 +680,9 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 	}
 
 	// Validate K8sNodeGroup's Naming Rule
-	k8sNgNamingRule, err := common.GetK8sNodeGroupNamingRule(connConfig.ProviderName)
-	if err != nil {
-		log.Err(err).Msgf("Failed to Get Nodegroup's Naming Rule")
+	if err := common.ValidateK8sNodeGroupName(connConfig.ProviderName, u.Name); err != nil {
+		log.Err(err).Msgf("Invalid name for K8sNodeGroup(k8scluster=%s)", k8sClusterId)
 		return emptyObj, err
-	}
-
-	// Validate naming rule only if a rule is defined
-	if k8sNgNamingRule != "" {
-		re := regexp.MustCompile(k8sNgNamingRule)
-		ngName := u.Name
-
-		// Auto-fix common naming pattern: convert "ng-xxxxx" to "ngxxxxx" for CSPs that don't allow hyphens
-		if !re.MatchString(ngName) {
-			// Try to fix by removing hyphens (common issue with auto-generated names)
-			fixedName := strings.ReplaceAll(ngName, "-", "")
-			if re.MatchString(fixedName) {
-				log.Warn().Msgf("NodeGroup name(%s) contains hyphens not allowed by provider(%s). Auto-converting to: %s",
-					ngName, connConfig.ProviderName, fixedName)
-				u.Name = fixedName
-			} else {
-				err := fmt.Errorf("K8sNodeGroup's Name(%s) does not match naming rule(%s) for provider(%s)",
-					ngName, k8sNgNamingRule, connConfig.ProviderName)
-				log.Err(err).Msg("Invalid NodeGroup name - even after removing hyphens")
-				return emptyObj, err
-			}
-		}
 	}
 
 	// Build RequestBody for SpiderNodeGroupReq{}
@@ -867,6 +844,9 @@ func AddK8sNodeGroup(ctx context.Context, nsId string, k8sClusterId string, u *m
 }
 
 // RemoveK8sNodeGroup removes a specified NodeGroup
+// ErrK8sNodeGroupNotFound reports a node group that the K8sCluster does not record.
+var ErrK8sNodeGroupNotFound = errors.New("k8s node group not found")
+
 func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bool, error) {
 	log.Info().Msg("RemoveK8sNodeGroup")
 
@@ -888,6 +868,24 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 	if err != nil {
 		log.Err(err).Msgf("Failed to Remove K8sNodeGroup(k8scluster=%s)", k8sClusterId)
 		return false, err
+	}
+
+	// Reject a name the cluster does not record, so an unknown node group is reported as
+	// not found rather than as a server error. option=force still goes through so that a
+	// stale node group record outside this cluster's list can be cleaned up.
+	if option != "force" {
+		found := false
+		for _, ng := range tbK8sCInfo.K8sNodeGroupList {
+			if ng.Name == k8sNodeGroupName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			err := fmt.Errorf("%w: '%s' in K8sCluster '%s'", ErrK8sNodeGroupNotFound, k8sNodeGroupName, k8sClusterId)
+			log.Err(err).Msgf("Failed to Remove K8sNodeGroup(k8scluster=%s)", k8sClusterId)
+			return false, err
+		}
 	}
 
 	// Protect initial node group from independent deletion for CSPs where it is
@@ -1780,33 +1778,10 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersio
 		}
 
 		// Validate K8sNodeGroup's Naming Rule (only when nodegroups are required)
-		k8sNgNamingRule, err := common.GetK8sNodeGroupNamingRule(connConfig.ProviderName)
-		if err != nil {
-			log.Err(err).Msgf("Failed to Get Nodegroup's Naming Rule")
-			return err
-		}
-
-		// Validate naming rule only if a rule is defined
-		if k8sNgNamingRule != "" {
-			re := regexp.MustCompile(k8sNgNamingRule)
-			for i, ng := range tbK8sClusterReq.K8sNodeGroupList {
-				ngName := ng.Name
-
-				// Auto-fix common naming pattern: convert "ng-xxxxx" to "ngxxxxx" for CSPs that don't allow hyphens
-				if !re.MatchString(ngName) {
-					// Try to fix by removing hyphens (common issue with auto-generated names)
-					fixedName := strings.ReplaceAll(ngName, "-", "")
-					if re.MatchString(fixedName) {
-						log.Warn().Msgf("NodeGroup name(%s) contains hyphens not allowed by provider(%s). Auto-converting to: %s",
-							ngName, connConfig.ProviderName, fixedName)
-						tbK8sClusterReq.K8sNodeGroupList[i].Name = fixedName
-					} else {
-						err := fmt.Errorf("K8sNodeGroup's Name(%s) does not match naming rule(%s) for provider(%s)",
-							ngName, k8sNgNamingRule, connConfig.ProviderName)
-						log.Err(err).Msg("Invalid NodeGroup name - even after removing hyphens")
-						return err
-					}
-				}
+		for _, ng := range tbK8sClusterReq.K8sNodeGroupList {
+			if err := common.ValidateK8sNodeGroupName(connConfig.ProviderName, ng.Name); err != nil {
+				log.Err(err).Msg("Invalid NodeGroup name")
+				return err
 			}
 		}
 

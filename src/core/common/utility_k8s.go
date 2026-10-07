@@ -312,6 +312,29 @@ func ValidateK8sNodeSpecName(providerName, cspSpecName string) error {
 	return nil
 }
 
+// ValidateK8sNodeGroupName returns an error when name violates the provider's nodeGroupNamingRule.
+// Providers without a rule accept any name. A violating name is rejected rather than rewritten:
+// a silently renamed node group no longer answers to the name the client sent, so later
+// lookups and deletions by that name miss it.
+func ValidateK8sNodeGroupName(providerName, name string) error {
+	rule, err := GetK8sNodeGroupNamingRule(providerName)
+	if err != nil || rule == "" {
+		return err
+	}
+	re, err := regexp.Compile(rule)
+	if err != nil {
+		return fmt.Errorf("invalid nodeGroupNamingRule(%s) for provider(%s): %w", rule, providerName, err)
+	}
+	if re.MatchString(name) {
+		return nil
+	}
+	err = fmt.Errorf("K8sNodeGroup's Name(%s) does not match naming rule(%s) for provider(%s)", name, rule, providerName)
+	if hint := strings.ReplaceAll(name, "-", ""); hint != name && re.MatchString(hint) {
+		err = fmt.Errorf("%w; use a name without hyphens such as %q", err, hint)
+	}
+	return err
+}
+
 // GenK8sNodeGroupName generates a node group name for a request that did not specify one.
 func GenK8sNodeGroupName(providerName string) string {
 	rule, err := GetK8sNodeGroupNamingRule(providerName)
