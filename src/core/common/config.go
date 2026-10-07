@@ -203,13 +203,11 @@ func UpdateGlobalVariable(id string) error {
 		log.Debug().Msg("<TB_API_USERNAME> " + model.APIUsername)
 	case model.StrAPIPassword:
 		model.APIPassword = configInfo.Value
-		log.Debug().Msg("<TB_API_PASSWORD> ********")
 	case model.StrSpiderAPIUsername:
 		model.SpiderAPIUsername = configInfo.Value
 		log.Debug().Msg("<TB_SPIDER_USERNAME> " + model.SpiderAPIUsername)
 	case model.StrSpiderAPIPassword:
 		model.SpiderAPIPassword = configInfo.Value
-		log.Debug().Msg("<TB_SPIDER_PASSWORD> ********")
 	case model.StrDBUrl:
 		model.DBUrl = configInfo.Value
 		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
@@ -221,7 +219,6 @@ func UpdateGlobalVariable(id string) error {
 		log.Debug().Msg("<TB_POSTGRES_USER> " + model.DBUser)
 	case model.StrDBPassword:
 		model.DBPassword = configInfo.Value
-		log.Debug().Msg("<TB_POSTGRES_PASSWORD> " + model.DBPassword)
 	case model.StrAutocontrolDurationMs:
 		model.AutocontrolDurationMs = configInfo.Value
 		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + model.AutocontrolDurationMs)
@@ -233,7 +230,9 @@ func UpdateGlobalVariable(id string) error {
 		log.Debug().Msg("<VAULT_ADDR> " + model.VaultAddr)
 	case model.StrVaultToken:
 		model.VaultToken = configInfo.Value
-		log.Debug().Msg("<VAULT_TOKEN> ********")
+	case model.StrLogMaskingEnabled:
+		model.LogMaskingEnabled = configInfo.Value
+		log.Debug().Msg("<TB_LOG_MASKING_ENABLED> " + model.LogMaskingEnabled)
 	default:
 
 	}
@@ -258,13 +257,11 @@ func InitConfig(id string) error {
 		log.Debug().Msg("<TB_API_USERNAME> " + model.APIUsername)
 	case model.StrAPIPassword:
 		model.APIPassword = NVL(os.Getenv("TB_API_PASSWORD"), "default")
-		log.Debug().Msg("<TB_API_PASSWORD> ********")
 	case model.StrSpiderAPIUsername:
 		model.SpiderAPIUsername = NVL(os.Getenv("TB_SPIDER_USERNAME"), model.APIUsername)
 		log.Debug().Msg("<TB_SPIDER_USERNAME> " + model.SpiderAPIUsername)
 	case model.StrSpiderAPIPassword:
 		model.SpiderAPIPassword = NVL(os.Getenv("TB_SPIDER_PASSWORD"), model.APIPassword)
-		log.Debug().Msg("<TB_SPIDER_PASSWORD> ********")
 	case model.StrDBUrl:
 		model.DBUrl = NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
 		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
@@ -276,7 +273,6 @@ func InitConfig(id string) error {
 		log.Debug().Msg("<TB_POSTGRES_USER> " + model.DBUser)
 	case model.StrDBPassword:
 		model.DBPassword = NVL(os.Getenv("TB_POSTGRES_PASSWORD"), "tumblebug")
-		log.Debug().Msg("<TB_POSTGRES_PASSWORD> " + model.DBPassword)
 	case model.StrAutocontrolDurationMs:
 		model.AutocontrolDurationMs = NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
 		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + model.AutocontrolDurationMs)
@@ -285,7 +281,9 @@ func InitConfig(id string) error {
 		log.Debug().Msg("<VAULT_ADDR> " + model.VaultAddr)
 	case model.StrVaultToken:
 		model.VaultToken = os.Getenv("VAULT_TOKEN")
-		log.Debug().Msg("<VAULT_TOKEN> ********")
+	case model.StrLogMaskingEnabled:
+		model.LogMaskingEnabled = NVL(os.Getenv("TB_LOG_MASKING_ENABLED"), "true")
+		log.Debug().Msg("<TB_LOG_MASKING_ENABLED> " + model.LogMaskingEnabled)
 	default:
 
 	}

@@ -45,14 +45,20 @@ var (
 )
 
 type Config struct {
-	LogLevel    string
-	LogWriter   string
-	LogFormat   string // stdout format: "console" (default, human-readable) or "json"
-	LogFilePath string
-	MaxSize     int
-	MaxBackups  int
-	MaxAge      int
-	Compress    bool
+	LogLevel          string
+	LogWriter         string
+	LogFormat         string // stdout format: "console" (default, human-readable) or "json"
+	LogFilePath       string
+	MaxSize           int
+	MaxBackups        int
+	MaxAge            int
+	Compress          bool
+	LogMaskingEnabled *bool // if nil, defaults to true (masking enabled)
+}
+
+// BoolPtr returns a pointer to the given bool value.
+func BoolPtr(b bool) *bool {
+	return &b
 }
 
 func init() {
@@ -92,6 +98,11 @@ func NewLogger(config Config) *zerolog.Logger {
 	}
 	if config.MaxAge == 0 {
 		config.MaxAge = 30 // in days
+	}
+
+	logMaskingEnabled := true
+	if config.LogMaskingEnabled != nil {
+		logMaskingEnabled = *config.LogMaskingEnabled
 	}
 
 	// Initialize shared log file for log rotation once
@@ -136,12 +147,16 @@ func NewLogger(config Config) *zerolog.Logger {
 		}
 
 		// traceLogger = zerolog.New(sharedLogFile).Level(zerolog.TraceLevel).With().Timestamp().Caller().Logger()
-		traceLogger = zerolog.New(sharedLogFile).Level(zerolog.TraceLevel).With().Timestamp().Logger()
+		var traceWriter io.Writer = sharedLogFile
+		if logMaskingEnabled {
+			traceWriter = NewMaskingWriter(sharedLogFile)
+		}
+		traceLogger = zerolog.New(traceWriter).Level(zerolog.TraceLevel).With().Timestamp().Logger()
 		traceLogger.Hook(TracingHook{})
 	})
 
 	level := getLogLevel(config.LogLevel)
-	logger := configureWriter(config.LogWriter, config.LogFormat, level)
+	logger := configureWriter(config.LogWriter, config.LogFormat, level, logMaskingEnabled)
 
 	// Add tracing hook to the logger
 	logger.Hook(TracingHook{})
@@ -183,7 +198,7 @@ func getLogLevel(logLevel string) zerolog.Level {
 }
 
 // configureWriter sets up the logger based on the writer type and stdout format
-func configureWriter(logWriter string, logFormat string, level zerolog.Level) *zerolog.Logger {
+func configureWriter(logWriter string, logFormat string, level zerolog.Level, logMaskingEnabled bool) *zerolog.Logger {
 	var logger zerolog.Logger
 
 	// File writer unavailable (initialized in stdout-only mode)
@@ -200,36 +215,46 @@ func configureWriter(logWriter string, logFormat string, level zerolog.Level) *z
 
 	multi := zerolog.MultiLevelWriter(sharedLogFile, stdoutWriter)
 
+	var targetWriter io.Writer
 	switch logWriter {
 	case "both":
-		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()
+		targetWriter = multi
 	case "file":
-		logger = zerolog.New(sharedLogFile).Level(level).With().Timestamp().Caller().Logger()
+		targetWriter = sharedLogFile
 	case "stdout":
-		logger = zerolog.New(stdoutWriter).Level(level).With().Timestamp().Caller().Logger()
+		targetWriter = stdoutWriter
 	default:
 		log.Warn().Msgf("Invalid log writer: %s. Using default value: both", logWriter)
-		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()
+		targetWriter = multi
 	}
 
-	logSetupInfo(logger, logWriter)
+	var finalWriter io.Writer = targetWriter
+	if logMaskingEnabled {
+		finalWriter = NewMaskingWriter(targetWriter)
+	}
+	logger = zerolog.New(finalWriter).Level(level).With().Timestamp().Caller().Logger()
+
+	logSetupInfo(logger, logWriter, logMaskingEnabled)
 	return &logger
 }
 
 // logSetupInfo logs the logger setup details
-func logSetupInfo(logger zerolog.Logger, logWriter string) {
+func logSetupInfo(logger zerolog.Logger, logWriter string, logMaskingEnabled bool) {
 	if logWriter == "file" {
 		logger.Info().
 			Str("logFilePath", sharedLogFile.Filename).
+			Bool("logMaskingEnabled", logMaskingEnabled).
 			Msg("Single-write setup (logs to file only)")
 	} else if logWriter == "stdout" {
 		logger.Info().
 			Str("ConsoleWriter", "os.Stdout").
+			Bool("logMaskingEnabled", logMaskingEnabled).
 			Msg("Single-write setup (logs to console only)")
 	} else {
 		logger.Info().
 			Str("logFilePath", sharedLogFile.Filename).
 			Str("ConsoleWriter", "os.Stdout").
+			Bool("logMaskingEnabled", logMaskingEnabled).
 			Msg("Multi-writes setup (logs to both file and console)")
 	}
 }

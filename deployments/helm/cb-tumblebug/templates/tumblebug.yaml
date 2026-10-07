@@ -104,6 +104,7 @@ spec:
             - { name: TB_LOGWRITER, value: {{ .Values.tumblebug.logWriter | quote }} }
             - { name: TB_LOGFORMAT, value: {{ .Values.tumblebug.logFormat | quote }} }
             - { name: TB_LOGLEVEL, value: {{ .Values.tumblebug.logLevel | quote }} }
+            - { name: TB_LOG_MASKING_ENABLED, value: {{ .Values.tumblebug.logMaskingEnabled | default "true" | quote }} }
             - { name: TB_READYZ_CHECK_DEPS, value: {{ .Values.tumblebug.readyzCheckDeps | quote }} }
             - { name: TB_SHUTDOWN_TIMEOUT_MS, value: {{ .Values.tumblebug.shutdownTimeoutMs | quote }} }
             {{- if .Values.openbao.enabled }}

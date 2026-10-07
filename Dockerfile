@@ -79,6 +79,7 @@ ENV TB_ROOT_PATH=/app \
     TB_LOGFILE_COMPRESS=false \
     TB_LOGLEVEL=debug \
     TB_LOGWRITER=both \
+    TB_LOG_MASKING_ENABLED=true \
     TB_NODE_ENV=development
 
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
