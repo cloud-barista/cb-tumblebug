@@ -673,6 +673,17 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	// Spider returns {"Result": "true"} on successful deletion, {"Result": "false"} when deletion was not performed.
 	// Previously this was not checked, causing CB-TB to delete its kvstore entry even when Spider didn't actually delete the resource.
 	if !strings.EqualFold(callResult.Result, "true") {
+		// Spider answers Result="false" (HTTP 200) when the driver reported not-found: it then
+		// drops its own IID record without deleting anything, so a retry can never succeed.
+		// If the CSP enumeration confirms the resource is gone, the record is stale, not
+		// undeleted: purge it instead of failing forever (e.g. a global GCP machine image
+		// registered once per region, deleted through one of them).
+		if tombstoneEnabled && forceFlag != "true" {
+			if present, gateErr := presentOnCspAfterDelete(requestBody.ConnectionName, resourceType, tsCspId, tsCspName, vNetInfoForMark); gateErr == nil && !present {
+				log.Warn().Msgf("%s '%s': Spider reported Result=false and the CSP no longer has it; removing stale CB-TB record", resourceType, resourceId)
+				return cleanupLocalResourceRecord(nsId, resourceType, resourceId, key, uid, childResources)
+			}
+		}
 		resultErr := fmt.Errorf("Spider returned Result=%q for DELETE %s/%s (resource may still exist on Spider/CSP)", callResult.Result, resourceType, resourceId)
 		if resourceType == model.StrVNet && vNetInfoForMark != nil {
 			markVNetDeleteFailed(nsId, resourceId, key, vNetInfoForMark, resultErr)
