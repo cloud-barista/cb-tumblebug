@@ -552,6 +552,12 @@ func GetInfraInfo(nsId string, infraId string) (*model.InfraInfo, error) {
 		return temp, err
 	}
 
+	release, err := acquireInfraRead()
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
 	infraObj, _, err := GetInfraObject(nsId, infraId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1133,6 +1139,7 @@ func GetNodeObject(nsId string, infraId string, nodeId string) (model.NodeInfo, 
 
 // UpdateInfraInfo is func to update Infra Info (without Node info in Infra)
 func UpdateInfraInfo(nsId string, infraInfoData model.InfraInfo) {
+	InvalidateReadCache(nsId, infraInfoData.Id)
 	// An empty Id collapses GenInfraKey onto the namespace key; reject to avoid
 	// writing a stray/empty infra object.
 	if infraInfoData.Id == "" {
@@ -1210,6 +1217,7 @@ func AttachNodeDetails(nsId, infraId string, nodes []model.NodeInfo) {
 
 // UpdateNodeInfo is func to update Node Info
 func UpdateNodeInfo(nsId string, infraId string, nodeInfoData model.NodeInfo) {
+	InvalidateReadCache(nsId, infraId)
 	// An empty node Id collapses GenInfraKey onto the parent infra key, so this
 	// write would overwrite the infra object with node data. Refuse it.
 	if nodeInfoData.Id == "" {
@@ -1397,6 +1405,8 @@ func describePotentialOrphans(infraInfo *model.InfraInfo) string {
 }
 
 func DelInfra(nsId string, infraId string, option string) (model.IdList, error) {
+	InvalidateReadCache(nsId, infraId)
+	defer InvalidateReadCache(nsId, infraId)
 
 	option = common.ToLower(option)
 	if option == "" {
@@ -1902,6 +1912,8 @@ func BatchDeleteInfraNodes(nsId string, infraId string, nodeIds []string, force 
 
 // DelInfraNode is func to delete Node object
 func DelInfraNode(nsId string, infraId string, nodeId string, option string) error {
+	InvalidateReadCache(nsId, infraId)
+	defer InvalidateReadCache(nsId, infraId)
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -2153,6 +2165,7 @@ func DeregisterInfraNode(nsId string, infraId string, nodeId string) error {
 
 // DelAllInfra is func to delete all Infra objects in parallel
 func DelAllInfra(nsId string, option string) (string, error) {
+	defer InvalidateReadCache(nsId, "")
 
 	infraList, err := ListInfraId(nsId)
 	if err != nil {

@@ -51,6 +51,7 @@ import (
 	// REST API (echo)
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/time/rate"
 
 	// echo-swagger middleware
 	_ "github.com/cloud-barista/cb-tumblebug/src/interface/rest/docs"
@@ -119,8 +120,8 @@ func RunServer() {
 	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Level: 5,
 	}))
-	// limit the application to 50 requests/sec using the default in-memory store
-	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(50)))
+	// Global ceiling per client IP (TB_API_RATE_LIMIT_GLOBAL="rate:burst", default 200:400).
+	e.Use(rateLimiterFromEnv("TB_API_RATE_LIMIT_GLOBAL", 200, 400))
 
 	// Custom middleware for RequestContext
 	// Injects request-scoped metadata (credential holder, request ID, etc.)
@@ -453,10 +454,12 @@ func RunServer() {
 		ErrorMessage: "Error: request time out (120s)",
 	}
 
+	// The two heaviest reads keep their own ceilings (TB_API_RATE_LIMIT_INFRA_GET / _INFRA_LIST,
+	// "rate:burst"); identical requests within a second are served from the read cache.
 	g.GET("/:nsId/infra/:infraId", rest_infra.RestGetInfra, middleware.TimeoutWithConfig(timeoutConfig),
-		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
+		rateLimiterFromEnv("TB_API_RATE_LIMIT_INFRA_GET", 5, 15))
 	g.GET("/:nsId/infra", rest_infra.RestGetAllInfra, middleware.TimeoutWithConfig(timeoutConfig),
-		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
+		rateLimiterFromEnv("TB_API_RATE_LIMIT_INFRA_LIST", 10, 30))
 
 	// g.PUT("/:nsId/infra/:infraId", rest_infra.RestPutInfra)
 	g.DELETE("/:nsId/infra/:infraId", rest_infra.RestDelInfra)
@@ -933,4 +936,33 @@ func RunServer() {
 	}
 
 	wg.Wait()
+}
+
+// rateLimiterFromEnv builds a per-client-IP token-bucket limiter. The env value is "rate:burst"
+// (requests per second, burst size); an unset or malformed value keeps the defaults. Rejected
+// requests get 429 with Retry-After so clients can back off.
+func rateLimiterFromEnv(envName string, defRate, defBurst int) echo.MiddlewareFunc {
+	r, b := defRate, defBurst
+	if v := strings.TrimSpace(os.Getenv(envName)); v != "" {
+		parts := strings.SplitN(v, ":", 2)
+		if n, err := strconv.Atoi(parts[0]); err == nil && n > 0 {
+			r = n
+			b = n
+		}
+		if len(parts) == 2 {
+			if n, err := strconv.Atoi(parts[1]); err == nil && n > 0 {
+				b = n
+			}
+		}
+	}
+	store := middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
+		Rate: rate.Limit(r), Burst: b, ExpiresIn: 3 * time.Minute,
+	})
+	return middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
+		Store: store,
+		DenyHandler: func(c echo.Context, identifier string, err error) error {
+			c.Response().Header().Set("Retry-After", "1")
+			return c.JSON(http.StatusTooManyRequests, map[string]string{"message": "rate limit exceeded"})
+		},
+	})
 }

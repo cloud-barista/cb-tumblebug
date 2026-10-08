@@ -1412,6 +1412,7 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 
 // CreateNodeObject is func to add VM to Infra
 func CreateNodeObject(wg *sync.WaitGroup, nsId string, infraId string, nodeInfoData *model.NodeInfo) error {
+	defer InvalidateReadCache(nsId, infraId)
 	log.Debug().Msg("Start to add VM To Infra")
 	//goroutin
 	defer wg.Done()

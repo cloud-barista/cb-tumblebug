@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -102,17 +103,32 @@ func RestGetInfra(c echo.Context) error {
 		result, err := infra.GetInfraAccessInfo(nsId, infraId, accessInfoOption)
 		return clientManager.EndRequestWithLog(c, err, result)
 
-	} else {
+	} else if c.QueryParam("detail") == "true" {
 
+		// detail=true mutates the result (attaches per-Node auxiliary details), so it bypasses
+		// the shared read cache.
 		result, err := infra.GetInfraInfo(nsId, infraId)
-		if err == nil && c.QueryParam("detail") == "true" {
-			// Per-Node auxiliary details are omitted by default; attach them only when
-			// detail=true is explicitly requested.
+		if err == nil {
 			infra.AttachNodeDetails(nsId, infraId, result.Node)
 		}
-		return clientManager.EndRequestWithLog(c, err, result)
+		return endInfraRead(c, err, result)
+
+	} else {
+
+		result, err := infra.GetInfraInfoCached(nsId, infraId)
+		return endInfraRead(c, err, result)
 
 	}
+}
+
+// endInfraRead answers a full Infra read; a read rejected by the concurrency cap becomes
+// 503 with Retry-After so clients back off instead of treating it as a failure.
+func endInfraRead(c echo.Context, err error, result any) error {
+	if errors.Is(err, infra.ErrReadBusy) {
+		c.Response().Header().Set("Retry-After", "1")
+		return c.JSON(http.StatusServiceUnavailable, map[string]string{"message": err.Error()})
+	}
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestGetInfraReqFromInfra godoc
@@ -202,7 +218,7 @@ func RestGetAllInfra(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else if option == "simple" {
 		// Infra in simple (without Node information)
-		result, err := infra.ListInfraInfo(nsId, option)
+		result, err := infra.ListInfraInfoCached(nsId, option)
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
@@ -211,7 +227,7 @@ func RestGetAllInfra(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else {
 		// Infra in detail (with status information)
-		result, err := infra.ListInfraInfo(nsId, "status")
+		result, err := infra.ListInfraInfoCached(nsId, "status")
 		if err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
