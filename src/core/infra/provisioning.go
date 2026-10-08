@@ -184,8 +184,18 @@ var nodeGroupNameLocks sync.Map
 // Nodes that actually exist rather than a size counter: a record that under-counts
 // would name a live Node, whose record would then be overwritten and its CSP resource
 // left running untracked (issue #2652).
-func reserveNodeNames(nsId, infraId, nodeGroupId string, nodeRequest *model.CreateNodeGroupReq, count int, newNodeGroup bool) ([]string, error) {
+func reserveNodeNames(ctx context.Context, nsId, infraId, nodeGroupId string, nodeRequest *model.CreateNodeGroupReq, count int, newNodeGroup bool) ([]string, error) {
 	registerMode := nodeRequest.CspResourceId != ""
+	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId)
+
+	// A NodeGroup created here (no record yet) needs the full blueprint on its record:
+	// Nodes are persisted in compact form and get these fields back from the NodeGroup.
+	// Built before taking the lock so the lookups do not extend the critical section.
+	var fresh *model.NodeGroupInfo
+	if _, exists, _ := kvstore.GetKv(key); !exists {
+		ng := newNodeGroupInfo(ctx, nsId, nodeRequest, count)
+		fresh = &ng
+	}
 	mutex, _ := nodeGroupNameLocks.LoadOrStore(nsId+"/"+infraId+"/"+nodeGroupId, &sync.Mutex{})
 	mutex.(*sync.Mutex).Lock()
 	defer mutex.(*sync.Mutex).Unlock()
@@ -198,7 +208,6 @@ func reserveNodeNames(nsId, infraId, nodeGroupId string, nodeRequest *model.Crea
 		Name:         nodeGroupId,
 		Uid:          common.GenUid(),
 	}
-	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeGroupId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Cannot read the NodeGroup record of %s", nodeGroupId)
@@ -209,8 +218,12 @@ func reserveNodeNames(nsId, infraId, nodeGroupId string, nodeRequest *model.Crea
 		}
 		json.Unmarshal([]byte(keyValue.Value), &record)
 	} else {
-		record.RootDiskType = nodeRequest.RootDiskType
-		record.RootDiskSize = nodeRequest.RootDiskSize
+		if fresh == nil {
+			ng := newNodeGroupInfo(ctx, nsId, nodeRequest, count)
+			fresh = &ng
+		}
+		record = *fresh
+		record.Id, record.Name = nodeGroupId, nodeGroupId
 	}
 
 	// Names in use: the Nodes that exist plus the ones the record already reserved
@@ -304,10 +317,11 @@ func maxNodeIndex(nodeGroupId string, nodeIds []string) int {
 }
 
 // createNodeGroup creates a nodeGroup with proper error handling
-func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *model.CreateNodeGroupReq, nodeGroupSize, nodeStartIndex int, uid string, req *model.InfraReq) error {
-	log.Info().Msgf("Creating Infra nodeGroup object for '%s'", nodeRequest.Name)
-	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
-
+// newNodeGroupInfo builds the NodeGroup record from a request: the blueprint
+// (connection, spec, image, network, key, ...) that its Nodes are stored without and
+// read back from. Every code path that creates a NodeGroup record must use it.
+// Lookups that fail leave the corresponding summary empty, as before.
+func newNodeGroupInfo(ctx context.Context, nsId string, nodeRequest *model.CreateNodeGroupReq, nodeGroupSize int) model.NodeGroupInfo {
 	nodeGroupInfoData := model.NodeGroupInfo{
 		ResourceType:     model.StrNodeGroup,
 		Id:               common.ToLower(nodeRequest.Name),
@@ -377,6 +391,14 @@ func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *mod
 			}
 		}
 	}
+	return nodeGroupInfoData
+}
+
+func createNodeGroup(ctx context.Context, nsId, infraId string, nodeRequest *model.CreateNodeGroupReq, nodeGroupSize, nodeStartIndex int, uid string, req *model.InfraReq) error {
+	log.Info().Msgf("Creating Infra nodeGroup object for '%s'", nodeRequest.Name)
+	key := common.GenInfraNodeGroupKey(nsId, infraId, nodeRequest.Name)
+
+	nodeGroupInfoData := newNodeGroupInfo(ctx, nsId, nodeRequest, nodeGroupSize)
 
 	// Build Node ID list
 	for i := nodeStartIndex; i < nodeGroupSize+nodeStartIndex; i++ {
@@ -690,7 +712,7 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 	// Create or update nodeGroup object (nodeGroupSize is always >= 1)
 	log.Info().Msg("Create Infra nodeGroup object")
 
-	newNodeIds, err := reserveNodeNames(nsId, infraId, tentativeNodeId, nodeRequest, nodeGroupSize, newNodeGroup)
+	newNodeIds, err := reserveNodeNames(ctx, nsId, infraId, tentativeNodeId, nodeRequest, nodeGroupSize, newNodeGroup)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, nil, err

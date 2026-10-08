@@ -3,7 +3,7 @@
 # GET /tumblebug/ns/{nsId}/resources/spec/{specId}/diskOptions (see resource/diskinfo.go).
 # No CB-Spider call is made; live per-zone stock is POST .../reviewSpecImagePair.
 #
-# Last Updated: 2026-08-29
+# Last Updated: 2026-10-07 (KT default root/data disk type: SSD)
 # Sources: official CSP documentation (links per CSP), cross-checked by provisioning every root-capable
 # type as a VM root disk and creating every data-capable type as a data disk through CB-Tumblebug
 #
@@ -505,13 +505,14 @@ disk:
       docs: https://manual.cloud.kt.com/kt/compute-server-volume-d1
     rootDiskSelectable: true
     dataDiskSelectable: true
-    defaultRootDiskType: HDD
-    defaultDataDiskType: HDD
+    defaultRootDiskType: SSD
+    defaultDataDiskType: SSD
     note: >-
       Root disk size is a discrete choice, not a range (HDD/SSD 50 and 100 GB verified for Linux;
       150 GB rejected for Linux, 2026-08-29). Up to 13 volumes per server. KT reports volume types
-      as e.g. "HDD-2000iops".
-    diskTypeOrder: [HDD, SSD]
+      as e.g. "SSD-2000iops". "default" resolves to SSD in CB-Spider (KT driver since 2026-10-06;
+      the KT API itself falls back to HDD when no type is given).
+    diskTypeOrder: [SSD, HDD]
     diskTypes:
       HDD:
         name: HDD

@@ -389,6 +389,17 @@ func GetNodeGroupCached(nsId, infraId, nodeGroupId string) (model.NodeGroupInfo,
 	return ng, nil
 }
 
+// nodeGroupWarned lists NodeGroups already reported by warnNodeGroupOnce, so a broken
+// record with thousands of Nodes is logged once rather than on every Node read.
+var nodeGroupWarned sync.Map
+
+func warnNodeGroupOnce(nsId, infraId, nodeGroupId, reason string) {
+	key := nsId + "/" + infraId + "/" + nodeGroupId
+	if _, seen := nodeGroupWarned.LoadOrStore(key, struct{}{}); !seen {
+		log.Warn().Msgf("NodeGroup %s: %s", key, reason)
+	}
+}
+
 // InvalidateNodeGroupCache purges cached NodeGroups for a specific Infra.
 func InvalidateNodeGroupCache(nsId, infraId string) {
 	nodeGroupCacheMu.Lock()
@@ -1084,15 +1095,17 @@ func GetNodeObjectWithNodeGroups(nsId string, infraId string, nodeId string, ngM
 
 	// Hydrate blueprint fields from parent NodeGroup if nodeGroupId is set
 	if nodeTmp.NodeGroupId != "" {
-		if ngMap != nil {
-			if ng, ok := ngMap[nodeTmp.NodeGroupId]; ok {
-				HydrateNodeInfo(&nodeTmp, &ng)
-			} else if ng, ngErr := GetNodeGroupCached(nsId, infraId, nodeTmp.NodeGroupId); ngErr == nil {
-				HydrateNodeInfo(&nodeTmp, &ng)
-			}
+		ng, ok := ngMap[nodeTmp.NodeGroupId] // nil map reads are safe
+		var ngErr error
+		if !ok {
+			ng, ngErr = GetNodeGroupCached(nsId, infraId, nodeTmp.NodeGroupId)
+		}
+		if ngErr != nil {
+			warnNodeGroupOnce(nsId, infraId, nodeTmp.NodeGroupId, "record unreadable, its Nodes stay unhydrated: "+ngErr.Error())
 		} else {
-			if ng, ngErr := GetNodeGroupCached(nsId, infraId, nodeTmp.NodeGroupId); ngErr == nil {
-				HydrateNodeInfo(&nodeTmp, &ng)
+			HydrateNodeInfo(&nodeTmp, &ng)
+			if nodeTmp.ConnectionName == "" {
+				warnNodeGroupOnce(nsId, infraId, nodeTmp.NodeGroupId, "record has no blueprint (empty ConnectionName); its Nodes cannot be hydrated")
 			}
 		}
 	}
