@@ -1,21 +1,18 @@
 # Configuration for RDBMS (Relational Database Management System) of Cloud Service Providers (CSPs)
 # This file defines storage types, DBMS requirements, and database requirements for each CSP
 
-# Last Updated: 2026-08-27
-# Source: CB-Spider storage-type-test, CB-Spider v0.13.1 RDBMS/MariaDB test suites
-# and wiki RDBMS Management Guide. Field naming (dbInstanceSpec, adminUserName/adminUserPassword)
-# reflects Tumblebug's DBInstanceSpec model and Spider's DBSpec contract. CB-Spider v0.13.1
-# introduced NHNAutoOpenDBSecurityGroup (exposed in Tumblebug as nhnDBSGToAllowAllInbound),
-# clarified SG requirements (AWS: required, Tencent: optional, other 7 CSPs: ignored), and
-# clarified Azure Subnet requirement under VPC-private mode (publicAccess=false).
+# Last Updated: 2026-10-07
+# Source: CB-Spider v0.13.12 RDBMS improvements, storage-type-test, #1820 decimal GB conversion,
+# and wiki RDBMS Management Guide & Guide to Secure Connection.
+# Field naming reflects Tumblebug's DBInstanceSpec model and Spider's DBSpec contract.
+# StorageSizeRangeGB standardizes storage capacities to decimal Gigabytes (GB, 10^9 bytes).
 # dbmsRequirements.<engine>.referenceEngineVersion values come from CB-Spider's own
-# rdbms-mysql-test and rdbms-mariadb-test READMEs,
-# which each document the exact (engine, version, spec, storage) combination CB-Spider's team
-# has confirmed reaches Available per CSP.
+# rdbms-mysql-test and rdbms-mariadb-test READMEs.
 # Reference: https://github.com/cloud-barista/cb-spider/tree/master/test/rdbms-mysql-test/storage-type-test
 #            https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mysql-test/README.md
 #            https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mariadb-test/README.md
-#            https://github.com/cloud-barista/cb-spider/wiki/RDBMS%E2%80%90Management%E2%80%90Guide(KR)
+#            https://github.com/cloud-barista/cb-spider/wiki/RDBMS%E2%80%90Management%E2%80%90Guide
+#            https://github.com/cloud-barista/cb-spider/wiki/Guide-to-Secure-Connection-to-CB%E2%80%90Spider-RDBMS
 
 # The file is in YAML format and contains the following fields. This whole file backs
 # GET /tumblebug/rdbms/support (see resource/rdbms.go) — a static, CSP-wide reference
@@ -54,8 +51,8 @@
 #         description: User-friendly description
 #         recommendationLevel: legacy|standard|recommended|premium
 #         requiresIops: true|false (whether 'iops' parameter is required)
-#         minStorageSize: Minimum storage size in GB
-#         maxStorageSize: Maximum storage size in GB (optional)
+#         minStorageSizeGB: Minimum storage size in GB
+#         maxStorageSizeGB: Maximum storage size in GB (optional)
 #         note: Additional notes or constraints
 #     dbmsRequirements: DBMS engine-specific requirements (e.g., MySQL, MariaDB)
 #       <engine>.referenceEngineVersion / referenceDBInstanceSpec: the exact engine version / dbInstanceSpec
@@ -95,8 +92,8 @@ dbms:
         description: Legacy general-purpose SSD storage. Consider gp3 for better cost/performance.
         recommendationLevel: legacy
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 65536
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 70369
         note: "Verified: 2026-08-03 (Spider storage-type-test)"
         
       gp3:
@@ -104,8 +101,8 @@ dbms:
         description: Latest generation general-purpose SSD with 3,000 baseline IOPS and 125 MiB/s throughput. Recommended for most workloads.
         recommendationLevel: recommended
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 65536
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 70369
         note: "Verified: 2026-08-03 (Spider storage-type-test)"
         
       io1:
@@ -113,8 +110,8 @@ dbms:
         description: High-performance SSD for I/O-intensive workloads. Requires 'iops' parameter (e.g., '3000'). Minimum 100 GB storage.
         recommendationLevel: premium
         requiresIops: true
-        minStorageSize: 100
-        maxStorageSize: 65536
+        minStorageSizeGB: 100
+        maxStorageSizeGB: 70369
         iopsRange:
           min: 1000
           max: 64000
@@ -125,8 +122,8 @@ dbms:
         description: Next-generation high-performance SSD with higher durability (99.999%). Requires 'iops' parameter. Minimum 100 GB storage.
         recommendationLevel: premium
         requiresIops: true
-        minStorageSize: 100
-        maxStorageSize: 65536
+        minStorageSizeGB: 100
+        maxStorageSizeGB: 70369
         iopsRange:
           min: 1000
           max: 256000
@@ -134,8 +131,8 @@ dbms:
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 20
-        maxStorageSize: 65536
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 70369
         defaultPort: 3306
         referenceEngineVersion: "8.0"
         referenceDBInstanceSpec: db.t3.medium
@@ -177,8 +174,8 @@ dbms:
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 20
-        maxStorageSize: 16384
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 35184
         defaultPort: 3306
         referenceEngineVersion: "8.0.21"
         referenceDBInstanceSpec: Standard_B1ms
@@ -211,8 +208,8 @@ dbms:
         description: Standard SSD storage. Automatically selected for N2 machine series (db-perf-optimized-N-*) and Shared/Dedicated core instances.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 10
-        maxStorageSize: 65536
+        minStorageSizeGB: 10
+        maxStorageSizeGB: 70369
         note: "Verified: 2026-08-03 (Spider storage-type-test). Machine series determines storage type; not directly selectable."
         
       PD_HDD:
@@ -220,8 +217,8 @@ dbms:
         description: Cost-effective HDD storage for less I/O-intensive workloads. Available on Shared/Dedicated core instances.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 10
-        maxStorageSize: 65536
+        minStorageSizeGB: 10
+        maxStorageSizeGB: 70369
         note: "Verified: 2026-08-03 (Spider storage-type-test)"
         
       HYPERDISK_BALANCED:
@@ -229,8 +226,8 @@ dbms:
         description: High-performance next-generation storage. Minimum 20 GB. Only available on C4A (db-c4a-highmem-*) and N4 (db-custom-N4-*) machine series.
         recommendationLevel: premium
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 65536
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 70369
         compatibleMachineSeries:
           - C4A
           - N4
@@ -238,14 +235,13 @@ dbms:
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 10
-        maxStorageSize: 65536
+        minStorageSizeGB: 10
+        maxStorageSizeGB: 70369
         defaultPort: 3306
         referenceEngineVersion: "8.0"
-        referenceDBInstanceSpec: db-custom-2-8192
-        note: "Storage type is determined by machine series selection (N2, C4A, N4, etc.), not
-          directly by user input. Reference values per CB-Spider's rdbms-mysql-test README
-          (verified Available with PD_SSD, 2026-08-03)."
+        referenceDBInstanceSpec: db-n1-standard-1
+        note: "Storage type is determined by machine series selection (N1, N2, C4A, N4, etc.), not
+          directly by user input. db-n1-standard-1 matches CB-Spider's live DBSpecOptions catalog."
         
     databaseRequirements:
       maxDatabaseNameLength: 64
@@ -271,8 +267,8 @@ dbms:
         description: Alibaba Cloud automatically selects optimal SSD storage (General ESSD / PL1) based on region and instance specification. Recommended for simplicity.
         recommendationLevel: recommended
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 32768
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 32768
         note: "Verified: 2026-08-03 (Spider storage-type-test returned 'general_essd'). CSP determines actual type at provisioning time."
         
       cloud_essd:
@@ -280,8 +276,8 @@ dbms:
         description: Standard enhanced SSD with good balance of performance and cost. Performance Level 1.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 32768
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 32768
         note: "Verified: 2026-08-03 (Spider storage-type-test)"
         
       cloud_essd2:
@@ -289,8 +285,8 @@ dbms:
         description: High-performance enhanced SSD. Performance Level 2. Minimum 500 GB storage. Not compatible with mysql.n4.* instance specifications.
         recommendationLevel: premium
         requiresIops: false
-        minStorageSize: 500
-        maxStorageSize: 32768
+        minStorageSizeGB: 500
+        maxStorageSizeGB: 32768
         incompatibleSpecs:
           - "mysql.n4.*"
         note: "Verified: 2026-08-03 (Spider storage-type-test with mysql.n2.small.2c spec). Requires mysql.n2.* or higher spec series."
@@ -300,8 +296,8 @@ dbms:
         description: Ultra-high-performance enhanced SSD. Performance Level 3. Minimum 1,500 GB storage. Not compatible with mysql.n4.* instance specifications.
         recommendationLevel: premium
         requiresIops: false
-        minStorageSize: 1500
-        maxStorageSize: 32768
+        minStorageSizeGB: 1500
+        maxStorageSizeGB: 32768
         incompatibleSpecs:
           - "mysql.n4.*"
         note: "Verified: 2026-08-03 (Spider storage-type-test with mysql.n2.small.2c spec). Requires mysql.n2.* or higher spec series."
@@ -311,16 +307,16 @@ dbms:
         description: Local SSD storage with high performance. Only compatible with rds.mysql.* instance specification series. Data loss risk on instance failure.
         recommendationLevel: premium
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 2000
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 2000
         compatibleSpecs:
           - "rds.mysql.*"
         note: "Verified: 2026-08-03 (Spider storage-type-test with rds.mysql.t1.small). Not compatible with mysql.n4.* series (InvalidInstanceLevel.DiskType error)."
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 20
-        maxStorageSize: 32768
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 32768
         defaultPort: 3306
         referenceEngineVersion: "8.0"
         referenceDBInstanceSpec: mysql.n4.large.1
@@ -367,7 +363,7 @@ dbms:
         description: High-performance local SSD storage. Minimum 50 GB.
         recommendationLevel: premium
         requiresIops: false
-        minStorageSize: 50
+        minStorageSizeGB: 50
         note: "Verified: 2026-08-03 (Spider storage-type-test)"
         
       CLOUD_HSSD:
@@ -375,7 +371,7 @@ dbms:
         description: Cloud-based enhanced SSD with high performance. Minimum 50 GB.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 50
+        minStorageSizeGB: 50
         note: "Storage type option available in TencentDB metainfo API"
         
       CLOUD_SSD:
@@ -383,7 +379,7 @@ dbms:
         description: Standard cloud SSD storage. Minimum 50 GB.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 50
+        minStorageSizeGB: 50
         note: "Storage type option available in TencentDB metainfo API"
         
       CLOUD_PREMIUM:
@@ -391,12 +387,12 @@ dbms:
         description: Premium cloud storage with good balance. Minimum 50 GB.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 50
+        minStorageSizeGB: 50
         note: "Storage type option available in TencentDB metainfo API"
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 50
+        minStorageSizeGB: 50
         defaultPort: 3306
         referenceEngineVersion: "8.0"
         referenceDBInstanceSpec: "8000"
@@ -422,14 +418,18 @@ dbms:
       console: https://cloud.ibm.com/databases-overview/resources
     supportedDBEngines: [mysql]
     dbOperationMethod: sqlFallback
-    supportsTag: true
-    note: "Storage type selection not supported. IBM Cloud Databases manages storage automatically."
+    note: "Storage type selection not supported. IBM Cloud Databases manages storage automatically.
+      Hosting Models & Provisioning Times:
+      - 'multitenant' (shared): Recommended default. Fast provisioning in ~9-10 minutes.
+      - Dedicated host flavors ('b3c.*', 'm3c.*'): Require dedicated bare-metal/VPC hardware slice allocation and disk encryption, taking 35-45+ minutes. If selected, ensure client and reverse-proxy timeouts are configured for at least 50 minutes, or invoke migration asynchronously (Prefer: respond-async)."
     storageTypeSelectable: false
     storageTypes:
       auto:
         name: Automatic (IBM-managed)
         description: Storage is managed automatically by IBM Cloud Databases. User cannot specify storage type.
         recommendationLevel: standard
+        minStorageSizeGB: 32
+        maxStorageSizeGB: 13194
         note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). IBM Cloud Databases does not provide storage type selection."
         
     dbmsRequirements:
@@ -441,7 +441,7 @@ dbms:
         endOfLifeVersions:
           - "8.0" # EOL: July 29, 2026. Provisioning disabled by IBM Cloud ("mysql version 8.0 is no longer available").
           - "5.7" # EOL: April 26, 2024. Service discontinued by IBM Cloud.
-        note: "Storage is managed automatically by IBM Cloud. MySQL v5.7 (EOL 2024-04-26) and v8.0 (EOL 2026-07-29) reached official End of Life and are rejected by IBM Cloud for new deployments; v8.4 is the active supported version."
+        note: "Storage is managed automatically by IBM Cloud. MySQL v5.7 (EOL 2024-04-26) and v8.0 (EOL 2026-07-29) reached official End of Life and are rejected by IBM Cloud for new deployments; v8.4 is the active supported version. Recommendation defaults to 'multitenant' (~9-10m provisioning); dedicated flavors ('b3c.*') require 35-45+ minutes."
         
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions"
@@ -469,15 +469,16 @@ dbms:
     supportedDBEngines: [mysql]
     dbOperationMethod: cspNativeApi
     supportsTag: false
-    note: "Storage type and storage size configuration not supported. NCP G3 generation automatically applies SSD storage, starts at 10GB, and auto-scales by 10GB increments up to 6000GB."
+    supportsPublicAccess: false
+    note: "PublicAccess=true is officially not supported because NCP Cloud DB provides only private VPC endpoints (*.vpc-cdb.ntruss.com) and lacks an Open API/SDK for public domain allocation. Storage type and storage size configuration not supported. NCP G3 generation automatically applies SSD storage, starts at 10GB, and auto-scales by 10GB increments up to 6000GB. NCP Cloud DB ACGs apply a default-deny policy (0 inbound rules), blocking port 3306 even for internal VPC VMs until an ACG inbound permit rule is added. For test/dev, setting ncpDBACGToAllowAllInbound=true (NCPAutoOpenACG=true in Spider) auto-configures 0.0.0.0/0 on the ACG (TEST ONLY; do not use in production)."
     storageTypeSelectable: false
     storageTypes:
       ssd:
         name: SSD (automatic)
         description: "NCP G3 automatically applies SSD storage (starts at 10GB and auto-scales by 10GB increments up to 6000GB). Storage size and type are not user-configurable."
         recommendationLevel: standard
-        minStorageSize: 10
-        maxStorageSize: 6000
+        minStorageSizeGB: 10
+        maxStorageSizeGB: 6000
         note: "Verified: 2026-08-03 (Spider storage-type-test SKIP). NCP G3 applies SSD automatically; storage type cannot be specified."
         
     dbmsRequirements:
@@ -490,7 +491,7 @@ dbms:
           2026-08-03)."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions. Direct SQL connection from external machines is not supported by default because NCP Cloud DB provides only private VPC endpoints (*.vpc-cdb.ntruss.com). Direct SQL access requires an internal VPC VM or manual public domain request via NCP console."
+      note: "Database naming follows standard MySQL conventions. NCP Cloud DB officially supports only VPC-private mode (publicAccess=false) accessible via an internal VPC VM. Inbound traffic requires explicit ACG permit rules in NCP Console (Database > Cloud DB for MySQL > ACG) or enabling ncpDBACGToAllowAllInbound (for testing only). External access via Public Domain is not automated because NCP provides no API for public domain allocation and requires manual console requests."
 
     adminUserNameRequirement:
       reservedValues:
@@ -530,8 +531,8 @@ dbms:
         description: Cost-effective HDD storage for less demanding workloads. Minimum 20 GB.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 2048
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 2048
         note: "Verified: 2026-08-03 (Spider storage-type-test, elapsed 10m7s)"
         
       General_SSD:
@@ -539,13 +540,13 @@ dbms:
         description: Standard SSD storage for better performance. Recommended for most workloads. Minimum 20 GB.
         recommendationLevel: recommended
         requiresIops: false
-        minStorageSize: 20
-        maxStorageSize: 2048
+        minStorageSizeGB: 20
+        maxStorageSizeGB: 2048
         note: "Verified: 2026-08-03 (Spider storage-type-test, elapsed 11m7s)"
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 20
+        minStorageSizeGB: 20
         defaultPort: 3306
         referenceEngineVersion: "MYSQL_V8408"
         referenceDBInstanceSpec: m2.c2m4
@@ -553,7 +554,7 @@ dbms:
           Reference values per CB-Spider's rdbms-mysql-test README (verified Available with PublicAccess,
           2026-08-25)."
       mariadb:
-        minStorageSize: 20
+        minStorageSizeGB: 20
         defaultPort: 3306
         referenceEngineVersion: "MARIADB_V101118"
         referenceDBInstanceSpec: m2.c2m4
@@ -605,7 +606,7 @@ dbms:
         description: Default storage type provided by OpenStack deployment. Actual backend depends on deployment configuration.
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 1
+        minStorageSizeGB: 1
         note: "Verified: 2026-08-03 (Spider storage-type-test). OpenStack Trove does not expose storage type in instance info after creation."
         
       RBD:
@@ -613,12 +614,12 @@ dbms:
         description: Ceph RADOS Block Device storage (if available in deployment).
         recommendationLevel: standard
         requiresIops: false
-        minStorageSize: 1
+        minStorageSizeGB: 1
         note: "Verified: 2026-08-03 (Spider storage-type-test). Availability depends on OpenStack deployment. Storage type not exposed post-creation."
         
     dbmsRequirements:
       mysql:
-        minStorageSize: 1
+        minStorageSizeGB: 1
         defaultPort: 3306
         referenceEngineVersion: "5.7.29"
         referenceDBInstanceSpec: m1.small
@@ -626,7 +627,7 @@ dbms:
           Reference values per CB-Spider's rdbms-mysql-test README (verified Available,
           2026-08-03)."
       mariadb:
-        minStorageSize: 1
+        minStorageSizeGB: 1
         defaultPort: 3306
         referenceEngineVersion: "10.4"
         referenceDBInstanceSpec: m1.small

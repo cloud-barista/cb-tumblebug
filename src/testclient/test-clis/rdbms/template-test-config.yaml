@@ -214,7 +214,8 @@ testCases:
     vmMemoryGiB: "4"
     vmImageId: ""
     vmSpecId: ""
-    execute: true
+    # Excluded pending CB-Spider OpenStack driver fix (Error 1044)
+    execute: false
 
   - rdbmsId: test-rdbms-ncp
     connectionName: ncp-kr
@@ -231,7 +232,10 @@ testCases:
     adminUserName: dbadmin
     # NCP requires a special character in the password.
     adminUserPassword: Password123!
-    publicAccess: true
+    publicAccess: false
+    # ncpDBACGToAllowAllInbound: true auto-configures ACG inbound rule (0.0.0.0/0) for testing.
+    # CAUTION: Test/dev use only. Never use in production environments.
+    ncpDBACGToAllowAllInbound: true
     highAvailability: false
     databaseName: sampledb
     internalDataIOTest: true
@@ -240,7 +244,8 @@ testCases:
     vmMemoryGiB: "4"
     vmImageId: "23214590"
     vmSpecId: "s2-g3"
-    execute: true
+    # Paused until CB-Spider adds support for NCPDBACGToAllowAllInbound
+    execute: false
 
   - rdbmsId: test-rdbms-nhn
     connectionName: nhn-kr1

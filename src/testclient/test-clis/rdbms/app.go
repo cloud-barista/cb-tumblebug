@@ -20,6 +20,9 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -31,6 +34,7 @@ import (
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/go-resty/resty/v2"
+	gomysql "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,28 +45,32 @@ import (
 
 var tbApiBase string
 
-func init() {
-	setConfig()
-	tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug"
-}
-
-// setConfig loads settings from a specified config file or test-config.yaml and .env
+// setConfig loads settings from a specified config file or test-config.yaml and merges .env.
 func setConfig(cfgFile ...string) {
+	viper.Reset()
 	if len(cfgFile) > 0 && cfgFile[0] != "" {
 		viper.SetConfigFile(cfgFile[0])
 	} else {
 		viper.SetConfigName("test-config")
-		viper.SetConfigType("yaml")
 		viper.AddConfigPath(".")
 	}
+	viper.SetConfigType("yaml")
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal().Err(err).Msg("Error reading config file")
 	}
 	log.Info().Msgf("Using config file: %s", viper.ConfigFileUsed())
 
-	viper.SetConfigFile(".env")
-	viper.SetConfigType("env")
-	if err := viper.MergeInConfig(); err != nil {
+	// Read .env into an isolated viper instance to avoid corrupting global config type.
+	envViper := viper.New()
+	envViper.SetConfigFile(".env")
+	envViper.SetConfigType("env")
+	if err := envViper.ReadInConfig(); err == nil {
+		for _, k := range envViper.AllKeys() {
+			if !viper.IsSet(k) {
+				viper.Set(k, envViper.Get(k))
+			}
+		}
+	} else {
 		log.Warn().Msg("No .env file found, relying on environment variables or defaults")
 	}
 
@@ -89,24 +97,25 @@ type SubnetConfig struct {
 
 // TestCase represents a single CSP test case from the config file.
 type TestCase struct {
-	RdbmsId                  string         `mapstructure:"rdbmsId"`
-	ConnectionName           string         `mapstructure:"connectionName"`
-	VNetName                 string         `mapstructure:"vNetName"`
-	CidrBlock                string         `mapstructure:"cidrBlock"`
-	Subnets                  []SubnetConfig `mapstructure:"subnets"`
-	SecurityGroupName        string         `mapstructure:"securityGroupName"`
-	DBEngine                 string         `mapstructure:"dbEngine"`
-	DBEngineVersion          string         `mapstructure:"dbEngineVersion"`
-	DBInstanceSpec           string         `mapstructure:"dbInstanceSpec"`
-	DBSpec                   string         `mapstructure:"dbSpec"`
-	StorageType              string         `mapstructure:"storageType"`
-	StorageSize              int            `mapstructure:"storageSize"`
-	AutoFillDefaults         bool           `mapstructure:"autoFillDefaults"`
-	AdminUserName            string         `mapstructure:"adminUserName"`
-	AdminUserPassword        string         `mapstructure:"adminUserPassword"`
-	PublicAccess             bool           `mapstructure:"publicAccess"`
-	NHNDBSGToAllowAllInbound bool           `mapstructure:"nhnDBSGToAllowAllInbound"`
-	HighAvailability         bool           `mapstructure:"highAvailability"`
+	RdbmsId                   string         `mapstructure:"rdbmsId"`
+	ConnectionName            string         `mapstructure:"connectionName"`
+	VNetName                  string         `mapstructure:"vNetName"`
+	CidrBlock                 string         `mapstructure:"cidrBlock"`
+	Subnets                   []SubnetConfig `mapstructure:"subnets"`
+	SecurityGroupName         string         `mapstructure:"securityGroupName"`
+	DBEngine                  string         `mapstructure:"dbEngine"`
+	DBEngineVersion           string         `mapstructure:"dbEngineVersion"`
+	DBInstanceSpec            string         `mapstructure:"dbInstanceSpec"`
+	DBSpec                    string         `mapstructure:"dbSpec"`
+	StorageType               string         `mapstructure:"storageType"`
+	StorageSize               int            `mapstructure:"storageSize"`
+	AutoFillDefaults          bool           `mapstructure:"autoFillDefaults"`
+	AdminUserName             string         `mapstructure:"adminUserName"`
+	AdminUserPassword         string         `mapstructure:"adminUserPassword"`
+	PublicAccess              bool           `mapstructure:"publicAccess"`
+	NHNDBSGToAllowAllInbound  bool           `mapstructure:"nhnDBSGToAllowAllInbound"`
+	NCPDBACGToAllowAllInbound bool           `mapstructure:"ncpDBACGToAllowAllInbound"`
+	HighAvailability          bool           `mapstructure:"highAvailability"`
 	// DatabaseName is the logical database created/listed/deleted inside the RDBMS instance
 	// (defaults to "sampledb" if left blank).
 	DatabaseName string `mapstructure:"databaseName"`
@@ -134,6 +143,7 @@ type TestResult struct {
 	CreateRDBMSStatus        string
 	GetRDBMSStatus           string
 	ListRDBMSStatus          string
+	SecureTransportStatus    string
 	CreateDatabaseStatus     string
 	ListDatabaseStatus       string
 	RemoteDataIOTestStatus   string
@@ -182,10 +192,8 @@ func main() {
 // depends on the vNet/subnet/securityGroup created earlier in the same case.
 func runBatchTest(cmd *cobra.Command, args []string) {
 	cfgFile, _ := cmd.Flags().GetString("config")
-	if cfgFile != "" {
-		setConfig(cfgFile)
-		tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug"
-	}
+	setConfig(cfgFile)
+	tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug"
 
 	nsId, _ := cmd.Flags().GetString("nsId")
 	parallel, _ := cmd.Flags().GetBool("parallel")
@@ -333,6 +341,10 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	var rdbmsCreated bool
 	var rdbmsEndpoint string
 	var databaseCreated bool
+	providerKey := ""
+	if parts := strings.Split(tc.ConnectionName, "-"); len(parts) > 0 {
+		providerKey = strings.ToLower(parts[0])
+	}
 	dbName := tc.DatabaseName
 	if dbName == "" {
 		dbName = "sampledb"
@@ -365,6 +377,9 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		log.Error().Err(err).Msgf("[%s] Create VNet failed", tc.RdbmsId)
 	} else {
 		_ = json.Unmarshal(respBytes, &vNetInfo)
+		if vNetInfo.ConnectionConfig.ProviderName != "" {
+			providerKey = strings.ToLower(vNetInfo.ConnectionConfig.ProviderName)
+		}
 		vNetId = vNetInfo.Id
 		for _, s := range vNetInfo.SubnetInfoList {
 			subnetIds = append(subnetIds, s.Id)
@@ -437,8 +452,8 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			var capResp model.RDBMSCapabilityResponse
 			if jsonErr := json.Unmarshal(capBytes, &capResp); jsonErr == nil {
 				s := capResp.Supports
-				if s.SupportsStorageSizeConfiguration && s.StorageSizeRange.Min == 0 && s.StorageSizeRange.Max == 0 {
-					log.Warn().Msgf("[%s] Capability response looks suspicious: supportsStorageSizeConfiguration=true but storageSizeRange is {0,0} (possible Spider wire-format mismatch)", tc.RdbmsId)
+				if s.SupportsStorageSizeConfiguration && s.StorageSizeRangeGB.Min == 0 && s.StorageSizeRangeGB.Max == 0 {
+					log.Warn().Msgf("[%s] Capability response looks suspicious: supportsStorageSizeConfiguration=true but storageSizeRangeGB is {0,0} (possible Spider wire-format mismatch)", tc.RdbmsId)
 				}
 				log.Info().Msgf("[%s] Capability data: dbInstanceSpecs=%d liveSupportedEngines=%v requiresSG=%v", tc.RdbmsId, len(s.DBInstanceSpecs), s.LiveSupportedEngines, s.RequiresSecurityGroup)
 			}
@@ -473,6 +488,11 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		}
 		if tc.NHNDBSGToAllowAllInbound {
 			rdbmsReqBody["nhnDBSGToAllowAllInbound"] = true
+		}
+		// In test-cli, enable NCP ACG test bypass option for internal testing on NCP
+		if tc.NCPDBACGToAllowAllInbound || (providerKey == "ncp" && tc.InternalDataIOTest) {
+			tc.NCPDBACGToAllowAllInbound = true
+			rdbmsReqBody["ncpDBACGToAllowAllInbound"] = true
 		}
 		if sgId != "" {
 			rdbmsReqBody["securityGroupIds"] = []string{sgId}
@@ -557,14 +577,50 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.ListRDBMSStatus = "Skipped (not created)"
 	}
 
-	// 7. Create Database (only if RDBMS was created)
+	// 6b. Get Secure Transport (query live TLS status and CA certificate)
+	var stInfo *model.RDBMSSecureTransportInfo
+	if rdbmsCreated {
+		urlSecureTransport := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/secure-transport", tbApiBase, nsId, tc.RdbmsId)
+		headers := map[string]string{
+			"X-Admin-User-Name":     tc.AdminUserName,
+			"X-Admin-User-Password": tc.AdminUserPassword,
+		}
+		respBytes, err = callApi("GET", urlSecureTransport, tbAuth, nil, &logs, fmt.Sprintf("[%s] Get Secure Transport", tc.RdbmsId), headers)
+		if err != nil {
+			// External Spider cannot reach private-only endpoints (e.g. NCP) for direct SQL fallback probing.
+			if !tc.PublicAccess || providerKey == "ncp" {
+				result.SecureTransportStatus = "N/A (private VPC endpoint; external probe unreachable)"
+				log.Warn().Err(err).Msgf("[%s] Get Secure Transport returned non-fatal error for private endpoint", tc.RdbmsId)
+			} else {
+				result.SecureTransportStatus = "Failed"
+				log.Warn().Err(err).Msgf("[%s] Get Secure Transport failed", tc.RdbmsId)
+			}
+		} else {
+			var parsedInfo model.RDBMSSecureTransportInfo
+			if jsonErr := json.Unmarshal(respBytes, &parsedInfo); jsonErr == nil {
+				stInfo = &parsedInfo
+				hasCA := stInfo.CACertificate.PEM != ""
+				result.SecureTransportStatus = fmt.Sprintf("Success (TLS=%v, CA=%v)", stInfo.TLSInUse, hasCA)
+				log.Info().Msgf("[%s] Secure Transport OK: TLSInUse=%v Enforced=%v Mode=%s HasCA=%v", tc.RdbmsId, stInfo.TLSInUse, stInfo.Enforced, stInfo.RecommendedSSLMode, hasCA)
+			} else {
+				result.SecureTransportStatus = "Success"
+			}
+		}
+	} else {
+		result.SecureTransportStatus = "Skipped (not created)"
+	}
+
+	// 7. Create Database (only if RDBMS was created; credentials sent via headers)
 	if rdbmsCreated {
 		urlCreateDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database", tbApiBase, nsId, tc.RdbmsId)
 		dbReqBody := map[string]any{
-			"databaseName":      dbName,
-			"adminUserPassword": tc.AdminUserPassword,
+			"databaseName": dbName,
 		}
-		_, err = callApi("POST", urlCreateDB, tbAuth, dbReqBody, &logs, fmt.Sprintf("[%s] Create Database", tc.RdbmsId))
+		headers := map[string]string{
+			"X-Admin-User-Name":     tc.AdminUserName,
+			"X-Admin-User-Password": tc.AdminUserPassword,
+		}
+		_, err = callApi("POST", urlCreateDB, tbAuth, dbReqBody, &logs, fmt.Sprintf("[%s] Create Database", tc.RdbmsId), headers)
 		if err != nil {
 			result.CreateDatabaseStatus = "Failed"
 			log.Error().Err(err).Msgf("[%s] Create Database failed", tc.RdbmsId)
@@ -582,7 +638,10 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	// we have it)
 	if databaseCreated {
 		urlListDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database", tbApiBase, nsId, tc.RdbmsId)
-		headers := map[string]string{"X-Admin-User-Password": tc.AdminUserPassword}
+		headers := map[string]string{
+			"X-Admin-User-Name":     tc.AdminUserName,
+			"X-Admin-User-Password": tc.AdminUserPassword,
+		}
 		respBytes, err = callApi("GET", urlListDB, tbAuth, nil, &logs, fmt.Sprintf("[%s] List Database", tc.RdbmsId), headers)
 		if err != nil {
 			result.ListDatabaseStatus = "Failed"
@@ -609,7 +668,9 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	}
 
 	// 9. Data Tests (External Remote vs Internal VPC)
-	providerKey := strings.ToLower(vNetInfo.ConnectionConfig.ProviderName)
+	if vNetInfo.ConnectionConfig.ProviderName != "" {
+		providerKey = strings.ToLower(vNetInfo.ConnectionConfig.ProviderName)
+	}
 
 	// 9a. Remote Data I/O Test: connect directly from local machine (MySQL wire protocol)
 	if databaseCreated {
@@ -618,17 +679,17 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			log.Info().Msgf("[%s] Remote Data I/O Test: N/A (Private VPC endpoint only: %s)", tc.RdbmsId, rdbmsEndpoint)
 		} else {
 			start := time.Now()
-			dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.AdminUserName, tc.AdminUserPassword, dbName)
+			tlsDesc, dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.AdminUserName, tc.AdminUserPassword, dbName, stInfo, tc.RdbmsId)
 			entry := ApiLog{
 				Step:           fmt.Sprintf("[%s] Remote Data I/O Test", tc.RdbmsId),
 				Method:         "SQL",
 				URL:            fmt.Sprintf("%s/%s", rdbmsEndpoint, dbName),
-				RequestPayload: map[string]any{"table": "tumblebug_test", "operations": "CREATE TABLE, INSERT, SELECT, DELETE"},
+				RequestPayload: map[string]any{"table": "tumblebug_test", "operations": "CREATE TABLE, INSERT, SELECT, DELETE", "tlsMode": tlsDesc},
 				ElapsedTime:    time.Since(start).Round(time.Millisecond).String(),
 			}
 			if dummyErr != nil {
 				entry.ResponseStatus = "Failed"
-				entry.ResponsePayload = map[string]any{"error": dummyErr.Error()}
+				entry.ResponsePayload = map[string]any{"error": dummyErr.Error(), "tlsMode": tlsDesc}
 				if providerKey == "nhn" && !tc.NHNDBSGToAllowAllInbound {
 					result.RemoteDataIOTestStatus = "Fail (Note: Requires DB Security Group rule in NHN Console or nhnDBSGToAllowAllInbound=true)"
 					result.Note = "NHN requires an inbound permit rule in NHN Console (DB 보안 그룹) or setting nhnDBSGToAllowAllInbound=true"
@@ -638,9 +699,9 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 				log.Warn().Err(dummyErr).Msgf("[%s] Remote Data I/O Test failed (non-blocking)", tc.RdbmsId)
 			} else {
 				entry.ResponseStatus = "OK"
-				entry.ResponsePayload = map[string]any{"result": "write/read/verify/delete succeeded"}
-				result.RemoteDataIOTestStatus = "Pass"
-				log.Info().Msgf("[%s] Remote Data I/O Test OK (write/read/verify/delete)", tc.RdbmsId)
+				entry.ResponsePayload = map[string]any{"result": "write/read/verify/delete succeeded", "tlsMode": tlsDesc}
+				result.RemoteDataIOTestStatus = fmt.Sprintf("Pass (%s)", tlsDesc)
+				log.Info().Msgf("[%s] Remote Data I/O Test OK (%s)", tc.RdbmsId, tlsDesc)
 			}
 			logs = append(logs, entry)
 		}
@@ -651,11 +712,15 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	// 9b. Internal Data I/O Test: run SQL commands from inside the VPC using a test VM via Remote Command
 	if databaseCreated && tc.InternalDataIOTest && tc.VmImageId != "" && tc.VmSpecId != "" {
 		internalStatus, internalErr := runInternalDataTest(
-			tbApiBase, nsId, tc, vNetId, subnetIds[0], sgId, rdbmsEndpoint, dbName, tbAuth, &logs,
+			tbApiBase, nsId, tc, vNetId, subnetIds[0], sgId, rdbmsEndpoint, dbName, stInfo, tbAuth, &logs,
 		)
 		result.InternalDataIOTestStatus = internalStatus
 		if internalErr != nil {
-			log.Warn().Err(internalErr).Msgf("[%s] Internal Data I/O Test failed: %s", tc.RdbmsId, internalStatus)
+			if providerKey == "ncp" && !tc.NCPDBACGToAllowAllInbound {
+				result.InternalDataIOTestStatus = "Fail (Note: Requires DB ACG inbound rule in NCP Console or ncpDBACGToAllowAllInbound=true)"
+				result.Note = "NCP Cloud DB requires setting inbound access rule (port 3306) in NCP Console (ACG Configuration) or setting ncpDBACGToAllowAllInbound=true"
+			}
+			log.Warn().Err(internalErr).Msgf("[%s] Internal Data I/O Test failed: %s", tc.RdbmsId, result.InternalDataIOTestStatus)
 		} else {
 			log.Info().Msgf("[%s] Internal Data I/O Test OK: %s", tc.RdbmsId, internalStatus)
 		}
@@ -666,10 +731,13 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		result.InternalDataIOTestStatus = "N/A (internal test disabled)"
 	}
 
-	// 10. Delete Database (best-effort cleanup; X-Admin-User-Password is required here)
+	// 10. Delete Database (best-effort cleanup; admin credentials forwarded via headers)
 	if databaseCreated {
 		urlDeleteDB := fmt.Sprintf("%s/ns/%s/resources/rdbms/%s/database/%s", tbApiBase, nsId, tc.RdbmsId, dbName)
-		headers := map[string]string{"X-Admin-User-Password": tc.AdminUserPassword}
+		headers := map[string]string{
+			"X-Admin-User-Name":     tc.AdminUserName,
+			"X-Admin-User-Password": tc.AdminUserPassword,
+		}
 		_, err = callApi("DELETE", urlDeleteDB, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete Database", tc.RdbmsId), headers)
 		switch {
 		case err == nil:
@@ -712,7 +780,7 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	// 12. Delete SecurityGroup (with retry for eventual consistency on CSPs like Tencent)
 	if sgId != "" {
 		urlDeleteSG := fmt.Sprintf("%s/ns/%s/resources/securityGroup/%s", tbApiBase, nsId, sgId)
-		for attempt := 1; attempt <= 3; attempt++ {
+		for attempt := 1; attempt <= 6; attempt++ {
 			_, err = callApi("DELETE", urlDeleteSG, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete SecurityGroup", tc.RdbmsId))
 			if err == nil {
 				result.DeleteSGStatus = "Success"
@@ -723,8 +791,8 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 				log.Info().Msgf("[%s] Delete SecurityGroup: nothing to delete", tc.RdbmsId)
 				break
 			}
-			if attempt < 3 {
-				log.Info().Msgf("[%s] Delete SecurityGroup attempt %d/3 returned error; waiting 15s for CSP interface release...", tc.RdbmsId, attempt)
+			if attempt < 6 {
+				log.Info().Msgf("[%s] Delete SecurityGroup attempt %d/6 returned error; waiting 15s for CSP interface release...", tc.RdbmsId, attempt)
 				time.Sleep(15 * time.Second)
 			} else {
 				result.DeleteSGStatus = "Failed"
@@ -817,7 +885,7 @@ func isNotFoundErr(err error) bool {
 		return false
 	}
 	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "404") || strings.Contains(msg, "not found")
+	return strings.Contains(msg, "404") || strings.Contains(msg, "not found") || strings.Contains(msg, "does not exist") || strings.Contains(msg, "cannot find")
 }
 
 // tumblebugTestRecord is the scratch row used by testDatabaseDummyData.
@@ -835,13 +903,87 @@ func (tumblebugTestRecord) TableName() string { return "tumblebug_test" }
 // actually usable for SQL, not just present in the database list. Requires the instance to be
 // reachable from wherever this CLI runs (publicAccess=true and a security group rule allowing
 // the caller, as set up by the earlier steps in runLifecycle).
-func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName string) error {
-	// tls=preferred: use TLS if the server offers it, fall back to plaintext if not — CSP
-	// requirements vary (Azure rejects a plaintext connection outright; AWS/GCP don't require
-	// TLS but support it) and this single setting adapts to either without per-CSP branching.
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s&tls=preferred",
-		adminUserName, adminUserPassword, endpoint, dbName)
+// configureSecureTransportTLS registers a custom TLS config in go-sql-driver/mysql
+// using the server CA certificate and recommended SSL mode from Secure Transport info.
+func configureSecureTransportTLS(stInfo *model.RDBMSSecureTransportInfo, rdbmsId, endpoint string) (string, string) {
+	if stInfo == nil {
+		return "", "tls=preferred (no secure transport info)"
+	}
+	if !stInfo.TLSInUse {
+		return "false", "tls=false (server TLS disabled)"
+	}
+	if stInfo.CACertificate.PEM == "" {
+		return "", "tls=preferred (no server CA available)"
+	}
 
+	rootCertPool := x509.NewCertPool()
+	if !rootCertPool.AppendCertsFromPEM([]byte(stInfo.CACertificate.PEM)) {
+		return "", "tls=preferred (failed to parse server CA PEM)"
+	}
+
+	host, _, err := net.SplitHostPort(endpoint)
+	if err != nil {
+		host = endpoint
+	}
+
+	tlsConfigKey := fmt.Sprintf("tb-ca-%s", rdbmsId)
+	mode := strings.ToUpper(stInfo.RecommendedSSLMode)
+
+	switch mode {
+	case "VERIFY_IDENTITY":
+		tlsConfig := &tls.Config{
+			RootCAs:    rootCertPool,
+			ServerName: host,
+		}
+		if regErr := gomysql.RegisterTLSConfig(tlsConfigKey, tlsConfig); regErr != nil {
+			log.Warn().Err(regErr).Msgf("[%s] RegisterTLSConfig failed for VERIFY_IDENTITY; using fallback", rdbmsId)
+			return "", "tls=preferred (fallback: register TLS config failed)"
+		}
+		return tlsConfigKey, "TLS (VERIFY_IDENTITY with server CA)"
+
+	case "VERIFY_CA":
+		// Chain trust only without checking host/SAN
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+			VerifyPeerCertificate: func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+				certs := make([]*x509.Certificate, len(rawCerts))
+				for i, raw := range rawCerts {
+					cert, parseErr := x509.ParseCertificate(raw)
+					if parseErr != nil {
+						return parseErr
+					}
+					certs[i] = cert
+				}
+				opts := x509.VerifyOptions{
+					Roots:         rootCertPool,
+					Intermediates: x509.NewCertPool(),
+				}
+				for _, cert := range certs[1:] {
+					opts.Intermediates.AddCert(cert)
+				}
+				_, verifyErr := certs[0].Verify(opts)
+				return verifyErr
+			},
+		}
+		if regErr := gomysql.RegisterTLSConfig(tlsConfigKey, tlsConfig); regErr != nil {
+			log.Warn().Err(regErr).Msgf("[%s] RegisterTLSConfig failed for VERIFY_CA; using fallback", rdbmsId)
+			return "", "tls=preferred (fallback: register TLS config failed)"
+		}
+		return tlsConfigKey, "TLS (VERIFY_CA with server CA)"
+
+	default:
+		tlsConfig := &tls.Config{
+			RootCAs: rootCertPool,
+		}
+		if regErr := gomysql.RegisterTLSConfig(tlsConfigKey, tlsConfig); regErr != nil {
+			return "", "tls=preferred (fallback: register TLS config failed)"
+		}
+		return tlsConfigKey, fmt.Sprintf("TLS (CA verified, mode=%s)", stInfo.RecommendedSSLMode)
+	}
+}
+
+// runDummyDataSQL executes a minimal write/read/verify/delete test against a database using DSN.
+func runDummyDataSQL(dsn string) error {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
 	if err != nil {
 		return fmt.Errorf("open: %w", err)
@@ -878,6 +1020,31 @@ func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName st
 	}
 
 	return nil
+}
+
+// testDatabaseDummyData connects to the logical database using TLS configured from Secure Transport
+// and runs a write/read/verify/delete cycle. Falls back to tls=preferred if TLS enforcement is not ON.
+func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName string, stInfo *model.RDBMSSecureTransportInfo, rdbmsId string) (string, error) {
+	tlsKey, tlsDesc := configureSecureTransportTLS(stInfo, rdbmsId, endpoint)
+	tlsParam := "tls=preferred"
+	if tlsKey != "" {
+		tlsParam = fmt.Sprintf("tls=%s", tlsKey)
+	}
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s&%s",
+		adminUserName, adminUserPassword, endpoint, dbName, tlsParam)
+
+	err := runDummyDataSQL(dsn)
+	if err != nil && tlsKey != "" && (stInfo == nil || !stInfo.Enforced) {
+		log.Warn().Err(err).Msgf("[%s] Remote Data I/O with %s failed; retrying with fallback tls=preferred", rdbmsId, tlsDesc)
+		fallbackDsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s&tls=preferred",
+			adminUserName, adminUserPassword, endpoint, dbName)
+		fallbackErr := runDummyDataSQL(fallbackDsn)
+		if fallbackErr == nil {
+			return fmt.Sprintf("%s (fallback to tls=preferred)", tlsDesc), nil
+		}
+	}
+	return tlsDesc, err
 }
 
 // resolveAndReviewSpecAndImage uses recommendSpec, searchImage, and specImagePairReview
@@ -1052,6 +1219,7 @@ func runInternalDataTest(
 	sgId string,
 	rdbmsEndpoint string,
 	dbName string,
+	stInfo *model.RDBMSSecureTransportInfo,
 	tbAuth map[string]string,
 	logs *[]ApiLog,
 ) (status string, err error) {
@@ -1065,8 +1233,8 @@ func runInternalDataTest(
 
 		// Poll until test infra is fully terminated so CSP releases SecurityGroup/Subnet ENIs
 		urlGetInfra := fmt.Sprintf("%s/ns/%s/infra/%s", tbApiBase, nsId, infraId)
-		for attempt := 1; attempt <= 18; attempt++ {
-			time.Sleep(5 * time.Second)
+		for attempt := 1; attempt <= 12; attempt++ {
+			time.Sleep(10 * time.Second)
 			_, getErr := callApi("GET", urlGetInfra, tbAuth, nil, logs, fmt.Sprintf("[%s] Verify Infra Termination", tc.RdbmsId))
 			if getErr != nil && isNotFoundErr(getErr) {
 				break
@@ -1110,7 +1278,7 @@ func runInternalDataTest(
 		InstallMonAgent: "no",
 		NodeGroups: []model.CreateNodeGroupReq{
 			{
-				Name:             "ng1",
+				Name:             fmt.Sprintf("ng-%s", cspLabel(tc.RdbmsId)),
 				NodeGroupSize:    1,
 				ConnectionName:   tc.ConnectionName,
 				VNetId:           vNetId,
@@ -1139,18 +1307,31 @@ func runInternalDataTest(
 	time.Sleep(50 * time.Second)
 
 	// 3. Send Remote Command via POST /ns/{nsId}/cmd/infra/{infraId}
-	sqlCmd := fmt.Sprintf("mysql -h %s -P %s -u %s -p'%s' %s -e \"DROP TABLE IF EXISTS tumblebug_internal_test; CREATE TABLE tumblebug_internal_test (id INT PRIMARY KEY, val VARCHAR(255)); INSERT INTO tumblebug_internal_test (id, val) VALUES (1, 'internal-test-ok'); SELECT val FROM tumblebug_internal_test WHERE id=1; DROP TABLE tumblebug_internal_test;\"",
-		host, port, tc.AdminUserName, tc.AdminUserPassword, dbName)
+	sqlStatements := "DROP TABLE IF EXISTS tumblebug_internal_test; CREATE TABLE tumblebug_internal_test (id INT PRIMARY KEY, val VARCHAR(255)); INSERT INTO tumblebug_internal_test (id, val) VALUES (1, 'internal-test-ok'); SELECT val FROM tumblebug_internal_test WHERE id=1; DROP TABLE tumblebug_internal_test;"
+
+	commands := []string{
+		"command -v mysql || command -v mariadb || (command -v apt-get >/dev/null 2>&1 && while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 2; done; sudo apt-get -o DPkg::Lock::Timeout=180 update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=180 install -y -qq default-mysql-client) || (command -v dnf >/dev/null 2>&1 && sudo dnf install -y mariadb) || (command -v yum >/dev/null 2>&1 && sudo yum install -y mariadb) || sudo yum install -y mysql",
+	}
+
+	if stInfo != nil && stInfo.CACertificate.PEM != "" {
+		encodedCA := base64.StdEncoding.EncodeToString([]byte(stInfo.CACertificate.PEM))
+		commands = append(commands, fmt.Sprintf("echo '%s' | base64 -d > /tmp/rdbms-ca.pem", encodedCA))
+		sqlCmd := fmt.Sprintf("mysql -h %s -P %s -u %s -p'%s' --ssl-ca=/tmp/rdbms-ca.pem %s -e \"%s\" || mysql -h %s -P %s -u %s -p'%s' %s -e \"%s\"",
+			host, port, tc.AdminUserName, tc.AdminUserPassword, dbName, sqlStatements,
+			host, port, tc.AdminUserName, tc.AdminUserPassword, dbName, sqlStatements)
+		commands = append(commands, sqlCmd)
+	} else {
+		sqlCmd := fmt.Sprintf("mysql -h %s -P %s -u %s -p'%s' %s -e \"%s\"",
+			host, port, tc.AdminUserName, tc.AdminUserPassword, dbName, sqlStatements)
+		commands = append(commands, sqlCmd)
+	}
 
 	cmdUserName := "cb-user"
 
 	cmdReq := model.InfraCmdReq{
-		Command: []string{
-			"command -v mysql || command -v mariadb || (command -v apt-get >/dev/null 2>&1 && sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq default-mysql-client) || (command -v dnf >/dev/null 2>&1 && sudo dnf install -y mariadb) || (command -v yum >/dev/null 2>&1 && sudo yum install -y mariadb) || sudo yum install -y mysql",
-			sqlCmd,
-		},
+		Command:        commands,
 		UserName:       cmdUserName,
-		TimeoutMinutes: 5,
+		TimeoutMinutes: 10,
 	}
 
 	urlCmd := fmt.Sprintf("%s/ns/%s/cmd/infra/%s", tbApiBase, nsId, infraId)
@@ -1232,7 +1413,7 @@ func saveDetailedReport(rdbmsId string, logs []ApiLog) {
 // buildEngineMatrixMarkdown, in the same order as stepValues.
 var stepLabels = []string{
 	"Create VNet", "Create SecurityGroup", "Support", "Capability", "Validate",
-	"Create RDBMS", "Get RDBMS", "List RDBMS", "Create Database", "List Database",
+	"Create RDBMS", "Get RDBMS", "List RDBMS", "Secure Transport", "Create Database", "List Database",
 	"Remote Data I/O Test", "Internal Data I/O Test", "Delete Database", "Delete RDBMS", "Delete SecurityGroup",
 	"Delete Subnets", "Delete VNet",
 }
@@ -1241,7 +1422,7 @@ var stepLabels = []string{
 func stepValues(r TestResult) []string {
 	return []string{
 		r.CreateVNetStatus, r.CreateSGStatus, r.SupportStatus, r.CapabilityStatus, r.ValidateStatus,
-		r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.CreateDatabaseStatus,
+		r.CreateRDBMSStatus, r.GetRDBMSStatus, r.ListRDBMSStatus, r.SecureTransportStatus, r.CreateDatabaseStatus,
 		r.ListDatabaseStatus, r.RemoteDataIOTestStatus, r.InternalDataIOTestStatus, r.DeleteDatabaseStatus, r.DeleteRDBMSStatus,
 		r.DeleteSGStatus, r.DeleteSubnetsStatus, r.DeleteVNetStatus,
 	}
@@ -1254,7 +1435,7 @@ func overallStatus(r TestResult) string {
 	steps := stepValues(r)
 	for i, s := range steps {
 		label := stepLabels[i]
-		if label == "Remote Data I/O Test" && strings.Contains(s, "Note:") {
+		if (label == "Remote Data I/O Test" || label == "Internal Data I/O Test") && strings.Contains(s, "Note:") {
 			continue
 		}
 		if label == "Remote Data I/O Test" && strings.HasPrefix(s, "N/A") {
@@ -1460,7 +1641,7 @@ func callApi(
 ) ([]byte, error) {
 
 	client := resty.New()
-	client.SetTimeout(30 * time.Minute)
+	client.SetTimeout(50 * time.Minute)
 	// The Tumblebug endpoint under test is typically plain http://localhost during local
 	// development, so resty's "Basic Auth over HTTP is insecure" warning is expected noise
 	// here, not an actual finding — the CLI never talks to a real endpoint over HTTP.
