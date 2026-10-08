@@ -22,6 +22,7 @@ import (
 	resource "github.com/cloud-barista/cb-tumblebug/src/core/resource"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -385,6 +386,13 @@ func RestGetInfraNode(c echo.Context) error {
 
 	default:
 		result, err := infra.GetNodeObject(nsId, infraId, nodeId)
+		if err == nil && len(result.Label) == 0 && result.Uid != "" {
+			// Labels live in the label store (as in GetInfraInfo); attach them here rather
+			// than in GetNodeObject, which the status agent reads on its hot path.
+			if labelInfo, lerr := label.GetLabels(model.StrNode, result.Uid); lerr == nil {
+				result.Label = labelInfo.Labels
+			}
+		}
 		if err == nil && c.QueryParam("detail") == "true" {
 			// Auxiliary details (CSP raw metadata) are stored separately and omitted by
 			// default; attach them only when detail=true is explicitly requested.
