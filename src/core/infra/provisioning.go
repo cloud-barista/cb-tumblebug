@@ -935,6 +935,7 @@ func createInfraGroupNodeWithIds(ctx context.Context, nsId string, infraId strin
 
 // CreateInfra is func to create Infra object and deploy requested VMs (register CSP native VM with option=register)
 func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option string, isReqFromDynamic bool) (*model.InfraInfo, error) {
+	defer InvalidateReadCache(nsId, "")
 	// Input validation
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
