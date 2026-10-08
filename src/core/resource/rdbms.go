@@ -111,6 +111,7 @@ type spiderRDBMSCreateReqInfo struct {
 	BackupRetentionDays        int              `json:"BackupRetentionDays,omitempty"`
 	PublicAccess               bool             `json:"PublicAccess"`
 	NHNAutoOpenDBSecurityGroup bool             `json:"NHNAutoOpenDBSecurityGroup,omitempty"`
+	NCPAutoOpenACG             bool             `json:"NCPAutoOpenACG,omitempty"`
 	DeletionProtection         bool             `json:"DeletionProtection"`
 	TagList                    []model.KeyValue `json:"TagList,omitempty"`
 }
@@ -127,17 +128,42 @@ type spiderRDBMSDeleteRequest struct {
 }
 
 // spiderRDBMSDatabaseCreateRequest represents Spider's create-database request body
+// spiderRDBMSDatabaseCreateRequest is Spider's create-database request body
 // (PascalCase; spider.RDBMSDatabaseRequest).
 type spiderRDBMSDatabaseCreateRequest struct {
 	ConnectionName     string `json:"ConnectionName"`
 	DatabaseName       string `json:"DatabaseName"`
+	MasterUserName     string `json:"MasterUserName,omitempty"`
 	MasterUserPassword string `json:"MasterUserPassword,omitempty"`
 }
 
-// spiderRDBMSDatabaseCredentialRequest is Spider's list/delete-database request body (no DatabaseName; List needs none, Delete's travels in the URL).
+// spiderRDBMSDatabaseCredentialRequest is Spider's delete-database request body.
 type spiderRDBMSDatabaseCredentialRequest struct {
 	ConnectionName     string `json:"ConnectionName"`
+	MasterUserName     string `json:"MasterUserName,omitempty"`
 	MasterUserPassword string `json:"MasterUserPassword,omitempty"`
+}
+
+// spiderRDBMSSecureTransportInfo represents Spider's response for GET .../secure-transport.
+type spiderRDBMSSecureTransportInfo struct {
+	Engine                 string                   `json:"Engine"`
+	RequireSecureTransport string                   `json:"RequireSecureTransport"`
+	Enforced               bool                     `json:"Enforced"`
+	Rules                  string                   `json:"Rules"`
+	TLSInUse               bool                     `json:"TLSInUse"`
+	TLSCipher              string                   `json:"TLSCipher"`
+	CACertificate          spiderRDBMSCACertificate `json:"CACertificate"`
+	CACertificateError     string                   `json:"CACertificateError"`
+	RecommendedSSLMode     string                   `json:"RecommendedSSLMode"`
+}
+
+// spiderRDBMSCACertificate represents Spider's CA certificate details in secure transport response.
+type spiderRDBMSCACertificate struct {
+	PEM          string    `json:"PEM"`
+	Subject      string    `json:"Subject"`
+	Issuer       string    `json:"Issuer"`
+	NotAfter     time.Time `json:"NotAfter"`
+	IsSelfSigned bool      `json:"IsSelfSigned"`
 }
 
 // spiderRDBMSDatabaseListResponse represents Spider's response body for GET .../databases
@@ -167,6 +193,7 @@ type spiderRDBMSInfo struct {
 	MasterUserName             string           `json:"MasterUserName"`
 	PublicAccess               bool             `json:"PublicAccess"`
 	NHNAutoOpenDBSecurityGroup bool             `json:"NHNAutoOpenDBSecurityGroup,omitempty"`
+	NCPAutoOpenACG             bool             `json:"NCPAutoOpenACG,omitempty"`
 	HighAvailability           bool             `json:"HighAvailability"`
 	BackupRetentionDays        int              `json:"BackupRetentionDays,omitempty"`
 	BackupTime                 string           `json:"BackupTime,omitempty"`
@@ -184,9 +211,9 @@ var rdbmsDataSourceKeyNames = map[string]string{
 	"SupportedVersions":      "supportedVersions",
 	"DBSpecOptions":          "dbInstanceSpecOptions",
 	"StorageTypeOptions":     "storageTypeOptions",
-	"StorageSizeRangeGB":     "storageSizeRange",
-	"StorageSizeRangeGB.Min": "storageSizeRange.min",
-	"StorageSizeRangeGB.Max": "storageSizeRange.max",
+	"StorageSizeRangeGB":     "storageSizeRangeGB",
+	"StorageSizeRangeGB.Min": "storageSizeRangeGB.min",
+	"StorageSizeRangeGB.Max": "storageSizeRangeGB.max",
 	"BackupRetentionRange":   "backupRetentionRange",
 }
 
@@ -246,8 +273,8 @@ func buildStorageTypeConstraints(st model.RDBMSStorageTypeConfig) string {
 			parts = append(parts, "Requires 'iops' parameter.")
 		}
 	}
-	if st.MinStorageSize > 0 {
-		parts = append(parts, fmt.Sprintf("Minimum %dGB storage.", st.MinStorageSize))
+	if st.MinStorageSizeGB > 0 {
+		parts = append(parts, fmt.Sprintf("Minimum %dGB storage.", st.MinStorageSizeGB))
 	}
 	if len(st.CompatibleSpecs) > 0 {
 		parts = append(parts, fmt.Sprintf("Requires dbInstanceSpec matching one of: %s.", strings.Join(st.CompatibleSpecs, ", ")))
@@ -310,8 +337,8 @@ func buildStorageTypeNotes(providerName string, storageTypeOptions []string) []m
 				StorageType:         storageType,
 				DisplayName:         st.Name,
 				Description:         st.Description,
-				MinSize:             st.MinStorageSize,
-				MaxSize:             st.MaxStorageSize,
+				MinSizeGB:           st.MinStorageSizeGB,
+				MaxSizeGB:           st.MaxStorageSizeGB,
 				RequiresIops:        st.RequiresIops,
 				IopsRange:           st.IopsRange,
 				Recommended:         strings.EqualFold(st.RecommendationLevel, "recommended"),
@@ -420,7 +447,7 @@ func GetRDBMSCapability(providerName, regionName, dbEngine string) (model.RDBMSC
 		SupportedVersions:                filterSupportedVersions(connConfig.ProviderName, spiderMeta.DBEngine, spiderMeta.SupportedVersions),
 		DBInstanceSpecOptions:            spiderMeta.DBSpecOptions,
 		StorageTypeOptions:               spiderMeta.StorageTypeOptions,
-		StorageSizeRange:                 model.StorageSizeRange{Min: spiderMeta.StorageSizeRangeGB.Min, Max: spiderMeta.StorageSizeRangeGB.Max},
+		StorageSizeRangeGB:               model.StorageSizeRange{Min: spiderMeta.StorageSizeRangeGB.Min, Max: spiderMeta.StorageSizeRangeGB.Max},
 		SupportsHighAvailability:         spiderMeta.SupportsHighAvailability,
 		SupportsBackup:                   spiderMeta.SupportsBackup,
 		BackupRetentionRange:             spiderMeta.BackupRetentionRange,
@@ -752,13 +779,27 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 		}
 	}
 	if req.DBInstanceSpec == "" {
-		// Prefer the CB-Spider-verified reference dbInstanceSpec (assets/rdbmsinfo.yaml) over the live catalog's "smallest" pick, which CreateRDBMS can still reject.
+		// Prefer verified reference spec from assets/rdbmsinfo.yaml if supported by live capability.
 		if provider, exists := common.RuntimeRDBMSInfo.DBMS[strings.ToLower(providerName)]; exists {
 			if reqmt, ok := provider.DBMSRequirements[strings.ToLower(req.DBEngine)]; ok {
-				if reqmt.ReferenceDBInstanceSpec != "" {
-					req.DBInstanceSpec = reqmt.ReferenceDBInstanceSpec
-				} else if reqmt.ReferenceDBSpec != "" {
-					req.DBInstanceSpec = reqmt.ReferenceDBSpec
+				candidate := reqmt.ReferenceDBInstanceSpec
+				if candidate == "" {
+					candidate = reqmt.ReferenceDBSpec
+				}
+				if candidate != "" {
+					if len(meta.DBSpecOptions) == 0 {
+						req.DBInstanceSpec = candidate
+					} else {
+						for _, spec := range meta.DBSpecOptions {
+							if strings.EqualFold(spec, candidate) {
+								req.DBInstanceSpec = candidate
+								break
+							}
+						}
+						if req.DBInstanceSpec == "" {
+							log.Warn().Msgf("AutoFillDefaults: reference spec '%s' for %s not in live DBSpecOptions; falling back to catalog", candidate, providerName)
+						}
+					}
 				}
 			}
 		}
@@ -812,8 +853,8 @@ func applyRDBMSCreateDefaults(meta spiderRDBMSMetaInfo, req *model.RDBMSCreateRe
 	if req.StorageSize <= 0 && meta.SupportsStorageSizeConfiguration {
 		minSize := meta.StorageSizeRangeGB.Min
 		if req.StorageType != "" {
-			if st, found := getStorageTypeConfig(providerName, req.StorageType); found && st.MinStorageSize > minSize {
-				minSize = st.MinStorageSize
+			if st, found := getStorageTypeConfig(providerName, req.StorageType); found && st.MinStorageSizeGB > minSize {
+				minSize = st.MinStorageSizeGB
 			}
 		}
 		if minSize > 0 {
@@ -886,12 +927,23 @@ func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateR
 	if strings.EqualFold(providerName, "azure") && !req.PublicAccess && len(req.SubnetIds) == 0 {
 		return fmt.Errorf("subnetIds required for azure when publicAccess is false")
 	}
+	if !meta.SupportsPublicAccess && req.PublicAccess {
+		if strings.EqualFold(providerName, "ncp") {
+			return fmt.Errorf("publicAccess=true is not supported via API during automated provisioning for ncp (NCP Cloud DB API does not provide automated public domain allocation; please set publicAccess=false, and manually assign a Public Domain and configure ACG via the NCP Console if external access is needed)")
+		}
+		return fmt.Errorf("publicAccess=true is not supported for %s", providerName)
+	}
 	if req.NHNDBSGToAllowAllInbound {
 		if !strings.EqualFold(providerName, "nhn") {
 			return fmt.Errorf("nhnDBSGToAllowAllInbound is only supported for NHN Cloud")
 		}
 		if !req.PublicAccess {
 			return fmt.Errorf("nhnDBSGToAllowAllInbound requires publicAccess=true")
+		}
+	}
+	if req.NCPDBACGToAllowAllInbound {
+		if !strings.EqualFold(providerName, "ncp") {
+			return fmt.Errorf("ncpDBACGToAllowAllInbound is only supported for NCP")
 		}
 	}
 	if meta.RequiresSubnet && len(req.SubnetIds) == 0 {
@@ -967,11 +1019,11 @@ func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateR
 	// StorageType-specific constraint validation (assets/rdbmsinfo.yaml)
 	if req.StorageType != "" {
 		if st, found := getStorageTypeConfig(providerName, req.StorageType); found {
-			if st.MinStorageSize > 0 && req.StorageSize < st.MinStorageSize {
-				return fmt.Errorf("storageType '%s' requires minimum %dGB (requested: %dGB)", req.StorageType, st.MinStorageSize, req.StorageSize)
+			if st.MinStorageSizeGB > 0 && req.StorageSize < st.MinStorageSizeGB {
+				return fmt.Errorf("storageType '%s' requires minimum %dGB (requested: %dGB)", req.StorageType, st.MinStorageSizeGB, req.StorageSize)
 			}
-			if st.MaxStorageSize > 0 && req.StorageSize > st.MaxStorageSize {
-				return fmt.Errorf("storageType '%s' allows maximum %dGB (requested: %dGB)", req.StorageType, st.MaxStorageSize, req.StorageSize)
+			if st.MaxStorageSizeGB > 0 && req.StorageSize > st.MaxStorageSizeGB {
+				return fmt.Errorf("storageType '%s' allows maximum %dGB (requested: %dGB)", req.StorageType, st.MaxStorageSizeGB, req.StorageSize)
 			}
 			if st.RequiresIops && req.Iops == "" {
 				return fmt.Errorf("storageType '%s' requires 'iops' parameter (e.g., '3000')", req.StorageType)
@@ -1054,9 +1106,9 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 	if size, err := strconv.Atoi(sp.StorageSize); err == nil {
 		rdbmsInfo.StorageSize = size
 	}
-	rdbmsInfo.AdminUserName = sp.MasterUserName
 	rdbmsInfo.PublicAccess = sp.PublicAccess
 	rdbmsInfo.NHNDBSGToAllowAllInbound = sp.NHNAutoOpenDBSecurityGroup
+	rdbmsInfo.NCPDBACGToAllowAllInbound = sp.NCPAutoOpenACG
 	rdbmsInfo.HighAvailability = sp.HighAvailability
 	rdbmsInfo.BackupRetentionDays = sp.BackupRetentionDays
 	rdbmsInfo.BackupTime = sp.BackupTime
@@ -1069,7 +1121,7 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 
 const (
 	rdbmsCreationPollInterval = 20 * time.Second
-	rdbmsCreationMaxAttempts  = 45 // 15 minutes total
+	rdbmsCreationMaxAttempts  = 150 // 50 minutes total
 	rdbmsCreationTimeout      = rdbmsCreationMaxAttempts * rdbmsCreationPollInterval
 )
 
@@ -1228,11 +1280,11 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 	rdbmsInfo.StorageType = req.StorageType
 	rdbmsInfo.StorageSize = req.StorageSize
 	rdbmsInfo.Iops = req.Iops
-	rdbmsInfo.AdminUserName = req.AdminUserName
 	rdbmsInfo.HighAvailability = req.HighAvailability
 	rdbmsInfo.BackupRetentionDays = req.BackupRetentionDays
 	rdbmsInfo.PublicAccess = req.PublicAccess
 	rdbmsInfo.NHNDBSGToAllowAllInbound = req.NHNDBSGToAllowAllInbound
+	rdbmsInfo.NCPDBACGToAllowAllInbound = req.NCPDBACGToAllowAllInbound
 	rdbmsInfo.DeletionProtection = req.DeletionProtection
 	rdbmsInfo.TagList = req.TagList
 
@@ -1290,6 +1342,7 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 			BackupRetentionDays:        req.BackupRetentionDays,
 			PublicAccess:               req.PublicAccess,
 			NHNAutoOpenDBSecurityGroup: req.NHNDBSGToAllowAllInbound,
+			NCPAutoOpenACG:             req.NCPDBACGToAllowAllInbound,
 			DeletionProtection:         req.DeletionProtection,
 			TagList:                    req.TagList,
 		},
@@ -1325,10 +1378,8 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 
 	log.Debug().Msgf("[Response from Spider] Creating RDBMS: %+v", spResp)
 
-	// 8. If Spider returned before the instance reached "Available", poll until it does or
-	// times out — this call blocks so the caller receives the final Available/Failed state
-	// directly, retrying through any status in between (Creating, or a possibly-transient
-	// Error such as Alibaba's driver mis-mapping ACCOUNT_MODE_UPGRADING).
+	// 8. If Spider returned before reaching "Available", poll until ready or timed out
+	// so the caller directly receives the final Available/Failed state.
 	if spResp.Status != "Available" {
 		log.Info().Msgf("RDBMS %s not yet Available (status: %s); confirming (timeout: %s)", rdbmsInfo.Id, spResp.Status, rdbmsCreationTimeout)
 		updateRDBMSInfoFromSpider(&rdbmsInfo, spResp)
@@ -1711,11 +1762,10 @@ func PruneRDBMS(nsId string) (model.ResourcePruneResults, error) {
 }
 
 // ========== RDBMS Internal Logical Database CRUD ==========
-// Databases aren't tracked as Tumblebug resources (no kvstore/label); AdminUserPassword is never persisted, only forwarded per call (see §1.6).
+// Databases aren't tracked as Tumblebug resources; admin credentials are never persisted, only forwarded per call.
 
-// CreateRDBMSDatabase creates a logical database inside an Available RDBMS instance via
-// CB-Spider.
-func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq) (model.RDBMSDatabaseInfo, error) {
+// CreateRDBMSDatabase creates a logical database inside an Available RDBMS instance via CB-Spider.
+func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq, adminUserName, adminUserPassword string) (model.RDBMSDatabaseInfo, error) {
 	var emptyRet model.RDBMSDatabaseInfo
 
 	if err := validate.Struct(req); err != nil {
@@ -1736,10 +1786,19 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq)
 	spReq := spiderRDBMSDatabaseCreateRequest{
 		ConnectionName:     rdbmsInfo.ConnectionName,
 		DatabaseName:       req.DatabaseName,
-		MasterUserPassword: req.AdminUserPassword,
+		MasterUserName:     adminUserName,
+		MasterUserPassword: adminUserPassword,
 	}
 	logReq := spReq
 	logReq.MasterUserPassword = "********"
+
+	headers := map[string]string{}
+	if adminUserName != "" {
+		headers["X-Master-User-Name"] = adminUserName
+	}
+	if adminUserPassword != "" {
+		headers["X-Master-User-Password"] = adminUserPassword
+	}
 
 	client := clientManager.NewHttpClient()
 	spResp := spiderSimpleMsgResp{}
@@ -1750,7 +1809,7 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq)
 		client,
 		"POST",
 		spiderUrl,
-		nil,
+		headers,
 		clientManager.SetUseBody(spReq),
 		&spReq,
 		&spResp,
@@ -1770,8 +1829,8 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq)
 	return model.RDBMSDatabaseInfo{DatabaseName: req.DatabaseName}, nil
 }
 
-// ListRDBMSDatabases lists the logical databases inside an RDBMS instance; adminUserPassword may be empty (some drivers don't require it, see §1.3).
-func ListRDBMSDatabases(nsId, rdbmsId, adminUserPassword string) (model.RDBMSDatabaseListResponse, error) {
+// ListRDBMSDatabases lists the logical databases inside an RDBMS instance.
+func ListRDBMSDatabases(nsId, rdbmsId, adminUserName, adminUserPassword string) (model.RDBMSDatabaseListResponse, error) {
 	var emptyRet model.RDBMSDatabaseListResponse
 
 	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
@@ -1779,25 +1838,31 @@ func ListRDBMSDatabases(nsId, rdbmsId, adminUserPassword string) (model.RDBMSDat
 		return emptyRet, err
 	}
 
-	spReq := spiderRDBMSDatabaseCredentialRequest{
-		ConnectionName:     rdbmsInfo.ConnectionName,
-		MasterUserPassword: adminUserPassword,
+	headers := map[string]string{}
+	if adminUserName != "" {
+		headers["X-Master-User-Name"] = adminUserName
 	}
-	logReq := spReq
-	logReq.MasterUserPassword = "********"
+	if adminUserPassword != "" {
+		headers["X-Master-User-Password"] = adminUserPassword
+	}
 
 	client := clientManager.NewHttpClient()
 	spResp := spiderRDBMSDatabaseListResponse{}
-	spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases", model.SpiderRestUrl, rdbmsInfo.Uid)
-	log.Debug().Msgf("[Request to Spider] Listing RDBMS databases (url: %s, request: %+v)", spiderUrl, logReq)
+	spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases?ConnectionName=%s",
+		model.SpiderRestUrl,
+		rdbmsInfo.Uid,
+		url.QueryEscape(rdbmsInfo.ConnectionName),
+	)
+	log.Debug().Msgf("[Request to Spider] Listing RDBMS databases (url: %s)", spiderUrl)
 
+	noBody := clientManager.NoBody
 	restyResp, err := clientManager.ExecuteHttpRequest(
 		client,
 		"GET",
 		spiderUrl,
-		nil,
-		clientManager.SetUseBody(spReq),
-		&spReq,
+		headers,
+		clientManager.SetUseBody(noBody),
+		&noBody,
 		&spResp,
 		clientManager.ShortDuration,
 	)
@@ -1811,7 +1876,7 @@ func ListRDBMSDatabases(nsId, rdbmsId, adminUserPassword string) (model.RDBMSDat
 }
 
 // DeleteRDBMSDatabase deletes a logical database inside an RDBMS instance; an already-gone database is tolerated as success.
-func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserPassword string) error {
+func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserName, adminUserPassword string) error {
 	// dbName is a SQL identifier (may contain underscores), not a Tumblebug resource name, so only non-empty is required here.
 	if dbName == "" {
 		err := fmt.Errorf("dbName is required")
@@ -1839,21 +1904,35 @@ func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserPassword string) error 
 
 		spReq := spiderRDBMSDatabaseCredentialRequest{
 			ConnectionName:     rdbmsInfo.ConnectionName,
+			MasterUserName:     adminUserName,
 			MasterUserPassword: adminUserPassword,
 		}
 		logReq := spReq
 		logReq.MasterUserPassword = "********"
 
+		headers := map[string]string{}
+		if adminUserName != "" {
+			headers["X-Master-User-Name"] = adminUserName
+		}
+		if adminUserPassword != "" {
+			headers["X-Master-User-Password"] = adminUserPassword
+		}
+
 		client := clientManager.NewHttpClient()
 		spResp := spiderSimpleMsgResp{}
-		spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases/%s", model.SpiderRestUrl, rdbmsInfo.Uid, url.PathEscape(dbName))
+		spiderUrl := fmt.Sprintf("%s/rdbms/%s/databases/%s?ConnectionName=%s",
+			model.SpiderRestUrl,
+			rdbmsInfo.Uid,
+			url.PathEscape(dbName),
+			url.QueryEscape(rdbmsInfo.ConnectionName),
+		)
 		log.Debug().Msgf("[Request to Spider] Deleting RDBMS database (url: %s, request: %+v)", spiderUrl, logReq)
 
 		restyResp, delErr := clientManager.ExecuteHttpRequest(
 			client,
 			"DELETE",
 			spiderUrl,
-			nil,
+			headers,
 			clientManager.SetUseBody(spReq),
 			&spReq,
 			&spResp,
@@ -1872,7 +1951,7 @@ func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserPassword string) error 
 		}
 		lastErr = nil
 
-		listResp, listErr := ListRDBMSDatabases(nsId, rdbmsId, adminUserPassword)
+		listResp, listErr := ListRDBMSDatabases(nsId, rdbmsId, adminUserName, adminUserPassword)
 		if listErr != nil {
 			log.Warn().Err(listErr).Msgf("Delete verify: failed to list databases on cycle %d/%d", cycle, maxDeleteCycles)
 			continue
@@ -1893,3 +1972,77 @@ func DeleteRDBMSDatabase(nsId, rdbmsId, dbName, adminUserPassword string) error 
 	}
 	return nil
 }
+
+// GetRDBMSSecureTransport retrieves the live TLS/SSL secure transport status and server CA certificate from CB-Spider.
+func GetRDBMSSecureTransport(nsId, rdbmsId, adminUserName, adminUserPassword string) (model.RDBMSSecureTransportInfo, error) {
+	var emptyRet model.RDBMSSecureTransportInfo
+
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if err := common.CheckString(rdbmsId); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
+	if err != nil {
+		return emptyRet, err
+	}
+
+	headers := map[string]string{}
+	if adminUserName != "" {
+		headers["X-Master-User-Name"] = adminUserName
+	}
+	if adminUserPassword != "" {
+		headers["X-Master-User-Password"] = adminUserPassword
+	}
+
+	client := clientManager.NewHttpClient()
+	spResp := spiderRDBMSSecureTransportInfo{}
+	spiderUrl := fmt.Sprintf("%s/rdbms/%s/secure-transport?ConnectionName=%s",
+		model.SpiderRestUrl,
+		rdbmsInfo.Uid,
+		url.QueryEscape(rdbmsInfo.ConnectionName),
+	)
+	log.Debug().Msgf("[Request to Spider] Getting RDBMS secure transport info (url: %s)", spiderUrl)
+
+	noBody := clientManager.NoBody
+	restyResp, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		spiderUrl,
+		headers,
+		clientManager.SetUseBody(noBody),
+		&noBody,
+		&spResp,
+		clientManager.MediumDuration,
+	)
+	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to get secure transport info for RDBMS '%s'", rdbmsId))
+	}
+	log.Debug().Msgf("[Response from Spider] Getting RDBMS secure transport info: %+v", spResp)
+
+	result := model.RDBMSSecureTransportInfo{
+		Engine:                 spResp.Engine,
+		RequireSecureTransport: spResp.RequireSecureTransport,
+		Enforced:               spResp.Enforced,
+		Rules:                  spResp.Rules,
+		TLSInUse:               spResp.TLSInUse,
+		TLSCipher:              spResp.TLSCipher,
+		CACertificate: model.RDBMSCACertificate{
+			PEM:          spResp.CACertificate.PEM,
+			Subject:      spResp.CACertificate.Subject,
+			Issuer:       spResp.CACertificate.Issuer,
+			NotAfter:     spResp.CACertificate.NotAfter,
+			IsSelfSigned: spResp.CACertificate.IsSelfSigned,
+		},
+		CACertificateError: spResp.CACertificateError,
+		RecommendedSSLMode: spResp.RecommendedSSLMode,
+	}
+
+	return result, nil
+}
+

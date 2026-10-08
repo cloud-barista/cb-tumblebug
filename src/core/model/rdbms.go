@@ -11,8 +11,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package model defines data structures for Tumblebug
 package model
+
+import "time"
 
 // StorageSizeRange defines the minimum and maximum storage capacity in Tumblebug format (lowerCamelCase)
 type StorageSizeRange struct {
@@ -25,8 +26,8 @@ type StorageTypeNote struct {
 	StorageType         string            `json:"storageType" example:"gp3"`
 	DisplayName         string            `json:"displayName" example:"General Purpose SSD v3"`
 	Description         string            `json:"description" example:"Cost-effective, 3000 baseline IOPS, recommended for general workloads"`
-	MinSize             int               `json:"minSize,omitempty" example:"100"`
-	MaxSize             int               `json:"maxSize,omitempty" example:"65536"`
+	MinSizeGB           int               `json:"minSizeGB,omitempty" example:"100"`
+	MaxSizeGB           int               `json:"maxSizeGB,omitempty" example:"65536"`
 	RequiresIops        bool              `json:"requiresIops,omitempty" example:"true"`
 	IopsRange           *StorageSizeRange `json:"iopsRange,omitempty"`
 	Recommended         bool              `json:"recommended,omitempty" example:"true"`
@@ -89,8 +90,8 @@ type RDBMSStorageTypeConfig struct {
 	Description             string            `yaml:"description"`
 	RecommendationLevel     string            `yaml:"recommendationLevel"` // legacy|standard|recommended|premium
 	RequiresIops            bool              `yaml:"requiresIops"`
-	MinStorageSize          int               `yaml:"minStorageSize,omitempty"`
-	MaxStorageSize          int               `yaml:"maxStorageSize,omitempty"`
+	MinStorageSizeGB        int               `yaml:"minStorageSizeGB,omitempty"`
+	MaxStorageSizeGB        int               `yaml:"maxStorageSizeGB,omitempty"`
 	IopsRange               *StorageSizeRange `yaml:"iopsRange,omitempty"`
 	CompatibleSpecs         []string          `yaml:"compatibleSpecs,omitempty"`
 	IncompatibleSpecs       []string          `yaml:"incompatibleSpecs,omitempty"`
@@ -101,8 +102,8 @@ type RDBMSStorageTypeConfig struct {
 // RDBMSDBMSRequirement is one DB-engine entry under a CSP's "dbmsRequirements" in
 // assets/rdbmsinfo.yaml.
 type RDBMSDBMSRequirement struct {
-	MinStorageSize int    `yaml:"minStorageSize,omitempty"`
-	MaxStorageSize int    `yaml:"maxStorageSize,omitempty"`
+	MinStorageSizeGB int    `yaml:"minStorageSizeGB,omitempty"`
+	MaxStorageSizeGB int    `yaml:"maxStorageSizeGB,omitempty"`
 	DefaultPort    int    `yaml:"defaultPort,omitempty"`
 	Note           string `yaml:"note,omitempty"`
 	// ReferenceEngineVersion is CB-Spider's own test-verified engine version for this CSP/engine, preferred over guessing from the live SupportedVersions list.
@@ -132,7 +133,7 @@ type RDBMSMetaInfo struct {
 	SupportedVersions                []string         `json:"supportedVersions" example:"8.0,8.4"`
 	DBInstanceSpecOptions            []string         `json:"dbInstanceSpecOptions" example:"db.t3.medium"`
 	StorageTypeOptions               []string         `json:"storageTypeOptions" example:"gp2,gp3"`
-	StorageSizeRange                 StorageSizeRange `json:"storageSizeRange"`
+	StorageSizeRangeGB               StorageSizeRange `json:"storageSizeRangeGB"`
 	SupportsHighAvailability         bool             `json:"supportsHighAvailability" example:"true"`
 	SupportsBackup                   bool             `json:"supportsBackup" example:"true"`
 	BackupRetentionRange             string           `json:"backupRetentionRange" example:"1-35"`
@@ -224,7 +225,10 @@ type RDBMSCreateRequest struct {
 	BackupRetentionDays int    `json:"backupRetentionDays,omitempty" example:"7"`
 	PublicAccess        bool   `json:"publicAccess,omitempty" example:"false"`
 	// NHNDBSGToAllowAllInbound (NHN only): when true with publicAccess=true, auto-creates/attaches a 0.0.0.0/0 DB SG.
-	NHNDBSGToAllowAllInbound bool   `json:"nhnDBSGToAllowAllInbound,omitempty" example:"false"`
+	NHNDBSGToAllowAllInbound bool `json:"nhnDBSGToAllowAllInbound,omitempty" example:"false"`
+	// NCPDBACGToAllowAllInbound (NCP only): when true, auto-configures ACG inbound rule (0.0.0.0/0) for testing.
+	// CAUTION: For test/dev use only. Do not use in production environments.
+	NCPDBACGToAllowAllInbound bool `json:"ncpDBACGToAllowAllInbound,omitempty" example:"false"`
 	DeletionProtection       bool   `json:"deletionProtection,omitempty" example:"false"`
 	Description              string `json:"description,omitempty" example:"managed by CB-Tumblebug"`
 	// AutoFillDefaults fills DBEngineVersion/DBInstanceSpec/StorageType/StorageSize from GET /tumblebug/rdbms/capability when left empty/zero.
@@ -271,13 +275,13 @@ type RDBMSInfo struct {
 	StorageType              string     `json:"storageType,omitempty" example:"gp3"`
 	StorageSize              int        `json:"storageSize" example:"100"`
 	Iops                     string     `json:"iops,omitempty" example:"3000"`
-	AdminUserName            string     `json:"adminUserName" example:"admin"`
 	HighAvailability         bool       `json:"highAvailability" example:"false"`
 	BackupRetentionDays      int        `json:"backupRetentionDays,omitempty" example:"7"`
 	BackupTime               string     `json:"backupTime,omitempty" example:"03:00"`
 	PublicAccess             bool       `json:"publicAccess" example:"false"`
-	NHNDBSGToAllowAllInbound bool       `json:"nhnDBSGToAllowAllInbound,omitempty"`
-	DeletionProtection       bool       `json:"deletionProtection" example:"false"`
+	NHNDBSGToAllowAllInbound  bool       `json:"nhnDBSGToAllowAllInbound,omitempty"`
+	NCPDBACGToAllowAllInbound bool       `json:"ncpDBACGToAllowAllInbound,omitempty"`
+	DeletionProtection        bool       `json:"deletionProtection" example:"false"`
 	Encryption               bool       `json:"encryption,omitempty"`
 	Endpoint                 string     `json:"endpoint,omitempty" example:"rdbms-01.xxxx.rds.amazonaws.com:3306"`
 	TagList                  []KeyValue `json:"tagList,omitempty"`
@@ -288,10 +292,9 @@ type RDBMSListResponse struct {
 	RDBMS []RDBMSInfo `json:"rdbms"`
 }
 
-// RDBMSDatabaseCreateReq creates a logical database inside an Available RDBMS instance; AdminUserPassword is forwarded as-is, never persisted (§1.6).
+// RDBMSDatabaseCreateReq creates a logical database inside an Available RDBMS instance.
 type RDBMSDatabaseCreateReq struct {
-	DatabaseName      string `json:"databaseName" validate:"required" example:"sampledb"`
-	AdminUserPassword string `json:"adminUserPassword" validate:"required" example:"Password123!"`
+	DatabaseName string `json:"databaseName" validate:"required" example:"sampledb"`
 }
 
 // RDBMSDatabaseInfo represents one logical database inside an RDBMS instance; not a tracked Tumblebug resource, always queried live.
@@ -302,4 +305,26 @@ type RDBMSDatabaseInfo struct {
 // RDBMSDatabaseListResponse wraps the Tumblebug API response for GET .../database (list).
 type RDBMSDatabaseListResponse struct {
 	Databases []string `json:"databases" example:"sampledb"`
+}
+
+// RDBMSSecureTransportInfo represents the TLS secure transport status and server CA certificate of an RDBMS instance.
+type RDBMSSecureTransportInfo struct {
+	Engine                 string             `json:"engine" example:"mysql"`
+	RequireSecureTransport string             `json:"requireSecureTransport" example:"ON"`
+	Enforced               bool               `json:"enforced" example:"true"`
+	Rules                  string             `json:"rules" example:"REQUIRE SSL"`
+	TLSInUse               bool               `json:"tlsInUse" example:"true"`
+	TLSCipher              string             `json:"tlsCipher" example:"ECDHE-RSA-AES128-GCM-SHA256"`
+	CACertificate          RDBMSCACertificate `json:"caCertificate"`
+	CACertificateError     string             `json:"caCertificateError,omitempty"`
+	RecommendedSSLMode     string             `json:"recommendedSSLMode" example:"VERIFY_IDENTITY"`
+}
+
+// RDBMSCACertificate holds details of the server CA certificate obtained from CB-Spider.
+type RDBMSCACertificate struct {
+	PEM          string    `json:"pem"`
+	Subject      string    `json:"subject"`
+	Issuer       string    `json:"issuer"`
+	NotAfter     time.Time `json:"notAfter"`
+	IsSelfSigned bool      `json:"isSelfSigned"`
 }

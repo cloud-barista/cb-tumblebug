@@ -777,6 +777,7 @@ func RunServer() {
 	g.POST("/:nsId/resources/rdbms/:rdbmsId/database", rest_resource.RestPostRDBMSDatabase)
 	g.GET("/:nsId/resources/rdbms/:rdbmsId/database", rest_resource.RestGetRDBMSDatabases)
 	g.DELETE("/:nsId/resources/rdbms/:rdbmsId/database/:dbName", rest_resource.RestDeleteRDBMSDatabase)
+	g.GET("/:nsId/resources/rdbms/:rdbmsId/secure-transport", rest_resource.RestGetRDBMSSecureTransport)
 
 	// Object Storage management
 	g.PUT("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)
