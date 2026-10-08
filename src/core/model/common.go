@@ -259,6 +259,7 @@ var EtcdEndpoints string
 var SelfEndpoint string
 var VaultAddr string
 var VaultToken string
+var LogMaskingEnabled string
 var MyDB *sql.DB
 var err error
 
@@ -283,6 +284,7 @@ const (
 	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
 	StrVaultAddr             string = "VAULT_ADDR"
 	StrVaultToken            string = "VAULT_TOKEN"
+	StrLogMaskingEnabled     string = "TB_LOG_MASKING_ENABLED"
 	StrFromAssets            string = "from-assets"
 	ErrStrKeyNotFound        string = "key not found"
 	StrAdd                   string = "add"

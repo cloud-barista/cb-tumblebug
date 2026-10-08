@@ -71,6 +71,7 @@ tumblebug:
   # garbage in Loki. Switch back to console for raw human-readable kubectl logs if preferred.
   logFormat: json
   logLevel: debug
+  logMaskingEnabled: "true"
   readyzCheckDeps: "true"
   shutdownTimeoutMs: "300000"
   terminationGracePeriodSeconds: 330

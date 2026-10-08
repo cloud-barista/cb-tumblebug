@@ -72,6 +72,7 @@ services:
       # - TB_LOGLEVEL=debug
       # - TB_LOGWRITER=both
       # - TB_LOGFORMAT=console  # 'json' for log collectors (stdout format)
+      # - TB_LOG_MASKING_ENABLED=true   # enable/disable sensitive data masking (default: true)
       # - TB_REQUEST_DUMP_ENABLED=false
       # - TB_READYZ_CHECK_DEPS=true  # readyz also verifies etcd/PostgreSQL connectivity
       # - TB_NODE_ENV=development

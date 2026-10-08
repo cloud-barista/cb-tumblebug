@@ -82,6 +82,7 @@ func init() {
 	common.UpdateGlobalVariable(model.StrAutocontrolDurationMs)
 	common.UpdateGlobalVariable(model.StrVaultAddr)
 	common.UpdateGlobalVariable(model.StrVaultToken)
+	common.UpdateGlobalVariable(model.StrLogMaskingEnabled)
 
 	// Initialize the logger
 	logLevel := common.NVL(os.Getenv("TB_LOGLEVEL"), "debug")
@@ -96,16 +97,25 @@ func init() {
 	logMaxAge, _ := strconv.Atoi(logMaxAgeStr)
 	logCompressStr := common.NVL(os.Getenv("TB_LOGFILE_COMPRESS"), "false")
 	logCompress := (logCompressStr == "true")
+	logMaskingEnabledStr := model.LogMaskingEnabled
+	if logMaskingEnabledStr == "" {
+		logMaskingEnabledStr = os.Getenv("TB_LOG_MASKING_ENABLED")
+	}
+	if logMaskingEnabledStr == "" {
+		logMaskingEnabledStr = "true"
+	}
+	logMaskingEnabled := (logMaskingEnabledStr != "false" && logMaskingEnabledStr != "0" && strings.ToLower(logMaskingEnabledStr) != "off")
 
 	logger := logger.NewLogger(logger.Config{
-		LogLevel:    logLevel,
-		LogWriter:   logWriter,
-		LogFormat:   logFormat,
-		LogFilePath: logFilePath,
-		MaxSize:     logMaxSize,
-		MaxBackups:  logMaxBackups,
-		MaxAge:      logMaxAge,
-		Compress:    logCompress,
+		LogLevel:          logLevel,
+		LogWriter:         logWriter,
+		LogFormat:         logFormat,
+		LogFilePath:       logFilePath,
+		MaxSize:           logMaxSize,
+		MaxBackups:        logMaxBackups,
+		MaxAge:            logMaxAge,
+		Compress:          logCompress,
+		LogMaskingEnabled: &logMaskingEnabled,
 	})
 
 	// Set the global logger
