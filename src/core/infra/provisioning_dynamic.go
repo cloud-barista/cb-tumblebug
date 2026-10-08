@@ -2457,5 +2457,21 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		log.Warn().Err(err).Msgf("[CreateNode] Failed to store label object for VM %s, but VM provisioning succeeded.", nodeInfoData.Name)
 	}
 
+	// The in-memory status entry serves the list and status views. It was created before
+	// the VM existed, so refresh its static fields from the final record once.
+	globalStatusStore.Update(nsId, infraId, nodeInfoData.Id, func(e *StatusEntry) {
+		applyStaticNodeFields(e, *nodeInfoData)
+		e.Name = nodeInfoData.Name
+		e.CspResourceName = nodeInfoData.CspResourceName
+		e.CspResourceId = nodeInfoData.CspResourceId
+		e.PublicIP = nodeInfoData.PublicIP
+		e.PrivateIP = nodeInfoData.PrivateIP
+		e.SSHPort = nodeInfoData.SSHPort
+		e.CreatedTime = nodeInfoData.CreatedTime
+		e.Location = nodeInfoData.Location
+		e.MonAgentStatus = nodeInfoData.MonAgentStatus
+		e.Label = labels
+	})
+
 	return nil
 }

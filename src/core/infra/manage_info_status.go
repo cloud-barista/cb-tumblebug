@@ -176,6 +176,7 @@ func nodeStatusInfoFromEntry(e StatusEntry) model.NodeStatusInfo {
 		Id:              e.NodeId,
 		Name:            e.Name,
 		CspResourceName: e.CspResourceName,
+		CspResourceId:   e.CspResourceId,
 		Status:          e.Status,
 		NativeStatus:    e.NativeStatus,
 		TargetStatus:    e.TargetStatus,

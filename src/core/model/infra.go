@@ -868,12 +868,25 @@ type CompactNodeInfo struct {
 	PrivateIP  string `json:"privateIP,omitempty"`
 	PrivateDNS string `json:"privateDNS,omitempty"`
 
-	// Instance-specific overrides (only stored if different from NodeGroup)
-	SubnetId         string   `json:"subnetId,omitempty"`
-	CspSubnetId      string   `json:"cspSubnetId,omitempty"`
-	NetworkInterface string   `json:"networkInterface,omitempty"`
-	DataDiskIds      []string `json:"dataDiskIds,omitempty"`
-	SecurityGroupIds []string `json:"securityGroupIds,omitempty"`
+	// Instance-specific overrides (only stored if different from NodeGroup).
+	// Blueprint fields are included so a Node whose value differs from its NodeGroup
+	// (registered Nodes, per-Node subnets) keeps it instead of being hydrated back to the
+	// NodeGroup's value; for an ordinary Infra they equal the NodeGroup and are omitted.
+	SpecId           string        `json:"specId,omitempty"`
+	CspSpecName      string        `json:"cspSpecName,omitempty"`
+	Spec             *SpecSummary  `json:"spec,omitempty"`
+	ImageId          string        `json:"imageId,omitempty"`
+	CspImageName     string        `json:"cspImageName,omitempty"`
+	Image            *ImageSummary `json:"image,omitempty"`
+	VNetId           string        `json:"vNetId,omitempty"`
+	CspVNetId        string        `json:"cspVNetId,omitempty"`
+	SshKeyId         string        `json:"sshKeyId,omitempty"`
+	CspSshKeyId      string        `json:"cspSshKeyId,omitempty"`
+	SubnetId         string        `json:"subnetId,omitempty"`
+	CspSubnetId      string        `json:"cspSubnetId,omitempty"`
+	NetworkInterface string        `json:"networkInterface,omitempty"`
+	DataDiskIds      []string      `json:"dataDiskIds,omitempty"`
+	SecurityGroupIds []string      `json:"securityGroupIds,omitempty"`
 
 	NodeUserName     string `json:"nodeUserName,omitempty"`
 	NodeUserPassword string `json:"nodeUserPassword,omitempty"`
@@ -916,22 +929,41 @@ func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 	if node.Location.Display == "" {
 		node.Location = ng.Location
 	}
+	// Fill only what the Node lacks. A value the Node carries (an override kept by
+	// ToCompactNodeInfo) is never replaced; CSP ids and summaries come from the NodeGroup
+	// only when the Node uses the NodeGroup's resource.
 	if node.SpecId == "" {
 		node.SpecId = ng.SpecId
-		node.CspSpecName = ng.CspSpecName
-		node.Spec = ng.Spec
+	}
+	if node.SpecId == ng.SpecId {
+		if node.CspSpecName == "" {
+			node.CspSpecName = ng.CspSpecName
+		}
+		if node.Spec == (SpecSummary{}) {
+			node.Spec = ng.Spec
+		}
 	}
 	if node.ImageId == "" {
 		node.ImageId = ng.ImageId
-		node.CspImageName = ng.CspImageName
-		node.Image = ng.Image
+	}
+	if node.ImageId == ng.ImageId {
+		if node.CspImageName == "" {
+			node.CspImageName = ng.CspImageName
+		}
+		if node.Image == (ImageSummary{}) {
+			node.Image = ng.Image
+		}
 	}
 	if node.VNetId == "" {
 		node.VNetId = ng.VNetId
+	}
+	if node.CspVNetId == "" && node.VNetId == ng.VNetId {
 		node.CspVNetId = ng.CspVNetId
 	}
 	if node.SubnetId == "" {
 		node.SubnetId = ng.SubnetId
+	}
+	if node.CspSubnetId == "" && node.SubnetId == ng.SubnetId {
 		node.CspSubnetId = ng.CspSubnetId
 	}
 	if node.NetworkInterface == "" {
@@ -942,6 +974,8 @@ func HydrateNodeInfo(node *NodeInfo, ng *NodeGroupInfo) {
 	}
 	if node.SshKeyId == "" {
 		node.SshKeyId = ng.SshKeyId
+	}
+	if node.CspSshKeyId == "" && node.SshKeyId == ng.SshKeyId {
 		node.CspSshKeyId = ng.CspSshKeyId
 	}
 	if node.SSHPort == 0 && ng.SSHPort != 0 {
@@ -1012,6 +1046,18 @@ func ToCompactNodeInfo(node NodeInfo, ng *NodeGroupInfo) CompactNodeInfo {
 	}
 
 	if ng == nil {
+		compact.SpecId, compact.CspSpecName = node.SpecId, node.CspSpecName
+		compact.ImageId, compact.CspImageName = node.ImageId, node.CspImageName
+		compact.VNetId, compact.CspVNetId = node.VNetId, node.CspVNetId
+		compact.SshKeyId, compact.CspSshKeyId = node.SshKeyId, node.CspSshKeyId
+		if node.Spec != (SpecSummary{}) {
+			sp := node.Spec
+			compact.Spec = &sp
+		}
+		if node.Image != (ImageSummary{}) {
+			im := node.Image
+			compact.Image = &im
+		}
 		compact.SSHPort = node.SSHPort
 		compact.SubnetId = node.SubnetId
 		compact.CspSubnetId = node.CspSubnetId
@@ -1037,6 +1083,36 @@ func ToCompactNodeInfo(node NodeInfo, ng *NodeGroupInfo) CompactNodeInfo {
 	}
 
 	// Parent NodeGroup present: keep only fields that differ from NodeGroup
+	if node.SpecId != "" && node.SpecId != ng.SpecId {
+		compact.SpecId, compact.CspSpecName = node.SpecId, node.CspSpecName
+		if node.Spec != (SpecSummary{}) {
+			sp := node.Spec
+			compact.Spec = &sp
+		}
+	} else if node.CspSpecName != "" && node.CspSpecName != ng.CspSpecName {
+		compact.CspSpecName = node.CspSpecName
+	}
+	if node.ImageId != "" && node.ImageId != ng.ImageId {
+		compact.ImageId, compact.CspImageName = node.ImageId, node.CspImageName
+		if node.Image != (ImageSummary{}) {
+			im := node.Image
+			compact.Image = &im
+		}
+	} else if node.CspImageName != "" && node.CspImageName != ng.CspImageName {
+		compact.CspImageName = node.CspImageName
+	}
+	if node.VNetId != "" && node.VNetId != ng.VNetId {
+		compact.VNetId = node.VNetId
+	}
+	if node.CspVNetId != "" && node.CspVNetId != ng.CspVNetId {
+		compact.CspVNetId = node.CspVNetId
+	}
+	if node.SshKeyId != "" && node.SshKeyId != ng.SshKeyId {
+		compact.SshKeyId = node.SshKeyId
+	}
+	if node.CspSshKeyId != "" && node.CspSshKeyId != ng.CspSshKeyId {
+		compact.CspSshKeyId = node.CspSshKeyId
+	}
 	if node.SSHPort != 0 && node.SSHPort != ng.SSHPort {
 		compact.SSHPort = node.SSHPort
 	}

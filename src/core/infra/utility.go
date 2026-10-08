@@ -1532,7 +1532,12 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 		if res, err := InspectResources(connConfig, model.StrVNet); err != nil {
 			result.SystemMessage += "// VNet Inspect Failed: " + err.Error()
 		} else {
+			tracked := trackedCspResourceIds(nsId, model.StrVNet)
 			for _, r := range res.Resources.OnCspOnly.Info {
+				if tracked[r.CspResourceId] {
+					log.Info().Msgf("Skipping CSP VNet '%s' on '%s': already managed by CB-TB under another record", r.CspResourceId, connConfig)
+					continue
+				}
 				req := model.RegisterVNetReq{
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 					Description: "Ref name: " + r.RefNameOrId + ". CSP managed VNet (registered to CB-TB)",
@@ -1548,7 +1553,12 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 		if res, err := InspectResources(connConfig, model.StrSecurityGroup); err != nil {
 			result.SystemMessage += "// SG Inspect Failed: " + err.Error()
 		} else {
+			tracked := trackedCspResourceIds(nsId, model.StrSecurityGroup)
 			for _, r := range res.Resources.OnCspOnly.Info {
+				if tracked[r.CspResourceId] {
+					log.Info().Msgf("Skipping CSP SecurityGroup '%s' on '%s': already managed by CB-TB under another record", r.CspResourceId, connConfig)
+					continue
+				}
 				req := model.SecurityGroupReq{
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 					VNetId: "unknown", Description: "Ref name: " + r.RefNameOrId + ". CSP managed Security Group (registered to CB-TB)",
@@ -1625,7 +1635,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 				nodeId     string
 				vnetId     string
 				subnetId   string
-				networkKey string
+				networkKey string // vNet, subnet, spec and image: a group's blueprint must fit every member
 			}
 			var registeredNodes []registeredNodeInfo
 			// Explicitly track which nodegroup names were created as temporaries in Phase 1,
@@ -1781,7 +1791,14 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 						if subnetId == "" {
 							subnetId = "unknown"
 						}
-						networkKey := fmt.Sprintf("%s_%s", vnetId, subnetId)
+						specId, imageId := nodeInfo.SpecId, nodeInfo.ImageId
+						if specId == "" {
+							specId = "unknown"
+						}
+						if imageId == "" {
+							imageId = "unknown"
+						}
+						networkKey := fmt.Sprintf("%s_%s_%s_%s", vnetId, subnetId, specId, imageId)
 						registeredNodes = append(registeredNodes, registeredNodeInfo{
 							nodeId:     nodeId,
 							vnetId:     vnetId,
@@ -2065,4 +2082,32 @@ func copyNodeGroupBlueprint(ng *model.NodeGroupInfo, node *model.NodeInfo) {
 	ng.RootDiskType = node.RootDiskType
 	ng.RootDiskSize = node.RootDiskSize
 	ng.RootDeviceName = node.RootDeviceName
+}
+
+// trackedCspResourceIds returns the CSP ids of the given resource type that CB-TB already has
+// a record for in the namespace, so registration does not create a second record (and a
+// second Spider registration) for a resource CB-TB manages — e.g. a shared vNet whose
+// Spider record was lost, or the single account VPC of a CSP like KT.
+func trackedCspResourceIds(nsId, resourceType string) map[string]bool {
+	ids := map[string]bool{}
+	list, err := resource.ListResource(nsId, resourceType, "", "")
+	if err != nil {
+		return ids
+	}
+	raw, err := json.Marshal(list)
+	if err != nil {
+		return ids
+	}
+	var items []struct {
+		CspResourceId string `json:"cspResourceId"`
+	}
+	if json.Unmarshal(raw, &items) != nil {
+		return ids
+	}
+	for _, it := range items {
+		if it.CspResourceId != "" {
+			ids[it.CspResourceId] = true
+		}
+	}
+	return ids
 }
