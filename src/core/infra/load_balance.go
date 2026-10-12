@@ -35,6 +35,10 @@ import (
 
 const nlbPostfix = "-nlb"
 
+var (
+	nlbPostDeleteWaitTencent = 60 * time.Second
+)
+
 // NLBReqStructLevelValidation is a function to validate 'model.NLBReq' object.
 func NLBReqStructLevelValidation(sl validator.StructLevel) {
 
@@ -964,6 +968,12 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 			markNLBDeletionUnconfirmed(key, &nlbInfo, cause)
 			return fmt.Errorf("%v; record retained — retry DELETE, or delete with option=force to discard it (%w)", cause, resource.ErrDeletionUnconfirmed)
 		}
+
+		// Poll Spider to wait for eventual consistency before checking CSP presence.
+		verifyURL := fmt.Sprintf("%s/nlb/%s?ConnectionName=%s",
+			model.SpiderRestUrl, nlbInfo.CspResourceName, nlbInfo.ConnectionName)
+		resource.PollResourceDeletedViaSpider(verifyURL, nil, resource.DefaultPollMaxAttempts, resource.DefaultPollInterval)
+
 		present, gateErr := resource.ResourcePresentOnCsp(nlbInfo.ConnectionName, model.StrNLB, nlbInfo.CspResourceId, nlbInfo.CspResourceName)
 		if gateErr != nil || present {
 			var cause error
@@ -977,6 +987,19 @@ func DelNLB(nsId string, infraId string, resourceId string, forceFlag string) er
 		}
 	} else if !strings.EqualFold(callResult.Result, "true") {
 		log.Warn().Msgf("Force deletion of NLB %q: Spider Result=%q; removing the record anyway (the CSP resource may remain as an orphan)", resourceId, callResult.Result)
+	}
+
+	// Pause for Tencent post-delete stabilization to release background network bindings (e.g., ENI).
+	providerName := nlbInfo.ConnectionConfig.ProviderName
+	if providerName == "" && nlbInfo.ConnectionName != "" {
+		if conn, err := common.GetConnConfig(nlbInfo.ConnectionName); err == nil {
+			providerName = conn.ProviderName
+		}
+	}
+	if strings.EqualFold(csp.ResolveCloudPlatform(providerName), csp.Tencent) {
+		log.Info().Msgf("Waiting %s for Tencent post-delete stabilization to release background network bindings...", nlbPostDeleteWaitTencent)
+		time.Sleep(nlbPostDeleteWaitTencent)
+		log.Info().Msgf("Post-delete stabilization wait of %s completed for %s (%s)", nlbPostDeleteWaitTencent, providerName, resourceId)
 	}
 
 	err = kvstore.Delete(key)
