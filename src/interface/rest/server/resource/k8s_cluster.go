@@ -556,13 +556,12 @@ func RestDeleteK8sCluster(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	var mapA map[string]string
-	if res == true {
-		mapA = map[string]string{"message": "The K8sCluster " + k8sClusterId + " has been deleted"}
-	} else { // res == false
-		mapA = map[string]string{"message": "The K8sCluster " + k8sClusterId + " is not deleted"}
+	if !res {
+		mapA := map[string]string{"message": "The K8sCluster " + k8sClusterId + " is not deleted"}
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
+	mapA := map[string]string{"message": "The K8sCluster " + k8sClusterId + " has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
