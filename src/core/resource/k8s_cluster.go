@@ -149,11 +149,17 @@ func getK8sClusterInfo(nsId, k8sClusterId string) (*model.K8sClusterInfo, error)
 	return tbK8sCInfo, nil
 }
 
+// k8sClusterInfoMutex keeps storeK8sClusterInfo from writing back a record deleted concurrently
+var k8sClusterInfoMutex sync.Mutex
+
 // storeK8sClusterInfo is func to update K8sClusterInfo
 func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 	k8sClusterId := newTbK8sCInfo.Id
 
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
+
+	k8sClusterInfoMutex.Lock()
+	defer k8sClusterInfoMutex.Unlock()
 
 	// Check existence of the key. If no key, no update.
 	kv, exists, err := kvstore.GetKv(k)
@@ -186,7 +192,9 @@ func deleteK8sClusterInfo(nsId, k8sClusterId string) error {
 
 	// Delete cluster data from kvstore
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
+	k8sClusterInfoMutex.Lock()
 	err = kvstore.Delete(k)
+	k8sClusterInfoMutex.Unlock()
 	if err != nil {
 		return fmt.Errorf("failed to delete K8sClusterInfo(%s): %v", k8sClusterId, err)
 	}
@@ -1427,9 +1435,10 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (any, error
 		}
 
 		if !exists {
-			err = fmt.Errorf("%s cannot be found", k)
-			log.Err(err).Msg("Failed to List K8sCluster")
-			return nil, err
+			// Deleted after the ID list was taken (e.g. a concurrent DELETE); skip it
+			// instead of failing the whole list.
+			log.Debug().Msgf("%s disappeared while listing K8sClusters, skipping", k)
+			continue
 		}
 
 		storedTbK8sCInfo := model.K8sClusterInfo{}
@@ -1450,20 +1459,24 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (any, error
 
 		tbK8sCInfo, err := GetK8sCluster(nsId, storedTbK8sCInfo.Id)
 		if err != nil {
-			// Check if the cluster no longer exists in Spider (CSP)
-			if strings.Contains(err.Error(), "does not exist") {
-				log.Warn().Msgf("K8sCluster(%s) no longer exists in CSP, removing from stored info", storedTbK8sCInfo.Id)
-				// Optionally clean up the stale entry from kvstore
-				// For now, just skip it from the list
-				continue
+			// Not in Spider: mark rather than remove, as the CSP cluster may survive
+			unregistered := isSpiderK8sClusterUnregistered(err)
+			if unregistered {
+				log.Warn().Msgf("K8sCluster(%s) is not registered in CB-Spider; marking stored info", storedTbK8sCInfo.Id)
+				storedTbK8sCInfo.Status = model.K8sClusterInactive
+				storedTbK8sCInfo.SystemMessage = k8sClusterNotInSpiderMessage
+				storeK8sClusterInfo(nsId, &storedTbK8sCInfo)
 			}
 			// If circuit breaker is active or too many requests error, use stored info with warning
-			// But only if we haven't confirmed the cluster doesn't exist
-			if strings.Contains(err.Error(), "API call temporarily blocked") || strings.Contains(err.Error(), "circuit breaker") || strings.Contains(err.Error(), "too many same requests") {
-				log.Warn().Err(err).Msgf("Using stored cluster info due to API limitation for K8sCluster(%s)", storedTbK8sCInfo.Id)
+			if unregistered || strings.Contains(err.Error(), "API call temporarily blocked") || strings.Contains(err.Error(), "circuit breaker") || strings.Contains(err.Error(), "too many same requests") {
+				log.Warn().Err(err).Msgf("Using stored cluster info for K8sCluster(%s)", storedTbK8sCInfo.Id)
 				// Add label info (labels already include user labels merged at creation time)
 				if labelInfo, labelErr := label.GetLabels(model.StrK8s, storedTbK8sCInfo.Uid); labelErr == nil {
 					storedTbK8sCInfo.Label = labelInfo.Labels
+				}
+				// Let callers tell stored info apart from a live CB-Spider result
+				if storedTbK8sCInfo.SystemMessage == "" {
+					storedTbK8sCInfo.SystemMessage = staleK8sClusterInfoMessage
 				}
 				tbK8sCInfoList = append(tbK8sCInfoList, storedTbK8sCInfo)
 			} else {
@@ -1518,50 +1531,88 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	method := "DELETE"
 	client.SetTimeout(20 * time.Minute)
 
-	var ifRes any
-	_, err = clientManager.ExecuteHttpRequest(
+	var spRes model.SpiderBooleanInfo
+	_, spErr := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
-		&ifRes,
+		&spRes,
 		clientManager.VeryShortDuration,
 	)
+	deleted := spErr == nil && strings.EqualFold(spRes.Result, "true")
 
 	log.Debug().Msgf("option=%s", option)
 	if option == "force" {
-		err = deleteK8sClusterInfo(nsId, k8sClusterId)
-		if err != nil {
+		if !deleted {
+			log.Warn().Err(spErr).Msgf("Force deletion of K8sCluster(%s): CB-Spider did not confirm deletion (Result=%q); removing the record anyway (the CSP cluster may remain as an orphan)", k8sClusterId, spRes.Result)
+		}
+	} else if !deleted {
+		// Spider answers Result=false, or an error, when it found nothing to delete:
+		// it drops its own record once the CSP reports not-found. A retry can never
+		// succeed then, so confirm with a GET and purge the stale record.
+		if isSpiderK8sClusterUnregistered(spErr) || isSpiderK8sClusterUnregistered(getSpiderK8sCluster(tbK8sCInfo.ConnectionName, tbK8sCInfo.CspResourceName)) {
+			log.Warn().Msgf("K8sCluster(%s) no longer exists in CB-Spider; removing stale stored info", k8sClusterId)
+		} else {
+			err = spErr
+			if err == nil {
+				err = fmt.Errorf("CB-Spider did not delete K8sCluster(%s) (Result=%q) and it still exists", k8sClusterId, spRes.Result)
+			}
 			log.Err(err).Msgf("Failed to Delete K8sCluster(%s)", k8sClusterId)
 			return false, err
 		}
 	}
 
+	err = deleteK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Delete K8sCluster(%s)", k8sClusterId)
 		return false, err
 	}
 
-	if ifRes != nil {
-		if mapRes, ok := ifRes.(map[string]any); ok {
-			result := mapRes["Result"]
-			if result == "true" {
-				if option != "force" {
-					err = deleteK8sClusterInfo(nsId, k8sClusterId)
-					if err != nil {
-						log.Err(err).Msgf("Failed to Delete K8sCluster(%s)", k8sClusterId)
-						return false, err
-					}
-				}
+	return true, nil
+}
 
-				return true, nil
-			}
-		}
+const (
+	// staleK8sClusterInfoMessage marks a K8sClusterInfo served from the kvstore because
+	// CB-Spider could not be queried, so it may not reflect the cluster's current state.
+	staleK8sClusterInfoMessage = "Stored info returned because CB-Spider could not be queried; the status may be stale"
+
+	// k8sClusterNotInSpiderMessage is persisted on a K8sClusterInfo that CB-Spider
+	// reported as not registered.
+	k8sClusterNotInSpiderMessage = "Not registered in CB-Spider; the cluster may have been deleted outside CB-Tumblebug. Delete this K8sCluster to remove the record"
+)
+
+// isSpiderK8sClusterUnregistered reports whether a CB-Spider error says the cluster is
+// not registered in the connection. Spider drops its record only after the CSP
+// reports the cluster gone, or on a forced delete.
+func isSpiderK8sClusterUnregistered(err error) bool {
+	return err != nil && strings.Contains(strings.ToLower(err.Error()), "does not exist in connection")
+}
+
+// getSpiderK8sCluster queries CB-Spider for the cluster, bypassing the response
+// cache, and returns the call's error.
+func getSpiderK8sCluster(connectionName, cspResourceName string) error {
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	requestBody := JsonTemplate{
+		ConnectionName: connectionName,
 	}
 
-	return false, nil
+	var spClusterRes model.SpiderClusterRes
+	_, err := clientManager.ExecuteHttpRequest(
+		clientManager.NewHttpClient(),
+		"GET",
+		model.SpiderRestUrl+"/cluster/"+cspResourceName,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&spClusterRes,
+		0,
+	)
+	return err
 }
 
 // DeleteAllK8sCluster deletes all clusters
@@ -1960,6 +2011,10 @@ func convertSpiderKeyValueListToTbKeyValueList(spKeyValueList []model.KeyValue) 
 }
 
 func updateK8sClusterInfoFromSpiderClusterInfo(tbK8sCInfo *model.K8sClusterInfo, spCInfo *model.SpiderClusterInfo) {
+	// CB-Spider answered for the cluster, so it is registered again
+	if tbK8sCInfo.SystemMessage == k8sClusterNotInSpiderMessage {
+		tbK8sCInfo.SystemMessage = ""
+	}
 	tbK8sCInfo.Version = spCInfo.Version
 	updateK8sClusterNetworkInfoFromSpiderNetworkInfo(&tbK8sCInfo.Network, &spCInfo.Network)
 	updateK8sNodeGroupInfoListFromSpiderNodeGroupInfoList(&tbK8sCInfo.K8sNodeGroupList, &spCInfo.NodeGroupList)
