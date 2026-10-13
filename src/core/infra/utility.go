@@ -244,13 +244,6 @@ func TrimIP(sshAccessPoint string) (string, error) {
 func InspectResources(connConfig string, resourceType string) (model.InspectResource, error) {
 	nullObj := model.InspectResource{}
 
-	// get providerName from connection
-	providerName, err := common.GetProviderNameFromConnConfig(connConfig)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nullObj, err
-	}
-
 	nsList, err := common.ListNsId()
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -547,12 +540,6 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 
 	for _, v := range cspResourceStatus.AllList.OnlyCSPList {
 		tmpResourceOnCsp.CspResourceId = v.SystemId
-		// Azure has different ID for NameId and SystemId
-		if csp.ResolveCloudPlatform(providerName) == csp.Azure {
-			if resourceType != model.StrDataDisk {
-				tmpResourceOnCsp.CspResourceId = v.NameId
-			}
-		}
 		tmpResourceOnCsp.RefNameOrId = v.NameId
 
 		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
@@ -1186,7 +1173,7 @@ func registerSharedDependenciesForConnection(ctx context.Context, nsId string, c
 					req := model.SecurityGroupReq{
 						ConnectionName: connName,
 						CspResourceId:  r.CspResourceId,
-						Name:           common.ChangeIdString(fmt.Sprintf("%s-%s", connName, r.CspResourceId)),
+						Name:           common.ChangeIdString(fmt.Sprintf("%s-%s", connName, shortCspId(r.CspResourceId))),
 						VNetId:         "unknown",
 						Description:    fmt.Sprintf("Orphaned SG (CSP ID: %s, owner VPC: %s) recovered for cleanup", r.CspResourceId, ownerVpcId),
 					}
@@ -1282,8 +1269,8 @@ func registerSharedDependenciesForConnection(ctx context.Context, nsId string, c
 				}
 
 				log.Warn().Msgf("Detected orphaned CSP VM '%s' blocking shared resource deletion; registering under '%s'", r.CspResourceId, infraNamePrefix)
-				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, r.CspResourceId))
-				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.CspResourceId))
+				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, shortCspId(r.CspResourceId)))
+				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, shortCspId(r.CspResourceId)))
 				infraReq := model.InfraReq{
 					Name:            perVmInfraName,
 					Description:     "Infra for CSP-native orphaned dependency node",
@@ -1354,8 +1341,8 @@ func registerSharedDependenciesForConnection(ctx context.Context, nsId string, c
 				}
 
 				log.Warn().Msgf("Detected orphaned Spider VM '%s' (%s) blocking shared resource deletion; registering under '%s'", spInfo.IdBySp, spInfo.CspResourceId, infraNamePrefix)
-				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, spInfo.CspResourceId))
-				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, spInfo.CspResourceId))
+				nodeGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s", connName, shortCspId(spInfo.CspResourceId)))
+				perVmInfraName := common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, shortCspId(spInfo.CspResourceId)))
 				infraReq := model.InfraReq{
 					Name:            perVmInfraName,
 					Description:     "Infra for Spider-registered orphaned dependency node",
@@ -1495,6 +1482,14 @@ func registerConnectionsParallel(ctx context.Context, nsId string, connConfigs [
 }
 
 // RegisterCspNativeResources registers specified CSP native resources from a target connection.
+// shortCspId returns the last path segment of a CSP resource ID (Azure ARM IDs) for use in TB names.
+func shortCspId(cspId string) string {
+	if idx := strings.LastIndex(cspId, "/"); idx != -1 {
+		return cspId[idx+1:]
+	}
+	return cspId
+}
+
 func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig string, infraNamePrefix string, option string, infraFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
 	optionFlag := model.ActionRegister
@@ -1509,7 +1504,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 
 	// 2. Execution (Best Effort)
 	genName := func(cspId string) string {
-		return common.ChangeIdString(fmt.Sprintf("%s-%s", connConfig, cspId))
+		return common.ChangeIdString(fmt.Sprintf("%s-%s", connConfig, shortCspId(cspId)))
 	}
 
 	// [1] CustomImage
@@ -1706,7 +1701,7 @@ func RegisterCspNativeResources(ctx context.Context, nsId string, connConfig str
 					infraName = singleInfraName
 				} else {
 					// Create separate Infra per Node; include CSP resource ID for traceability
-					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, r.CspResourceId))
+					infraName = common.ChangeIdString(fmt.Sprintf("%s-%s", infraNamePrefix, shortCspId(r.CspResourceId)))
 				}
 
 				var nodeId string

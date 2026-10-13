@@ -1922,11 +1922,13 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 		// and the SecurityGroupIds field in the request may contain "unknown" placeholders
 		// used by the auto-registration flow (utility.go) before resources are fully resolved.
 	} else {
-		if nodeInfoData.CspImageName != "" {
+		if nodeInfoData.CspImageName != "" && nodeInfoData.Image.ResourceType != model.StrCustomImage {
 			// CspImageName was pre-resolved at nodegroup level (Alibaba/Azure latest-version
 			// resolution already applied). Skip the redundant per-VM GetImage DB call.
 			// This eliminates O(nodeCount) concurrent DB queries during large infra creation.
-			// Custom images always have CspImageName empty here and go through the full path below.
+			// Custom images take the full path below: the Node record is hydrated from its
+			// NodeGroup, whose CspImageName is set for custom images too, so CspImageName alone
+			// cannot tell them apart and the MyImage type would be dropped.
 			requestBody.ReqInfo.ImageName = nodeInfoData.CspImageName
 		} else {
 			// Full path: custom images and any node not going through the dynamic creation flow.
@@ -2130,6 +2132,20 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 	}
 
 	nodeInfoData.AddtionalDetails = callResult.KeyValueList
+
+	// Merge CSP tags into Node labels (existing user/system labels take precedence)
+	if len(callResult.TagList) > 0 {
+		if nodeInfoData.Label == nil {
+			nodeInfoData.Label = make(map[string]string)
+		}
+		for _, tag := range callResult.TagList {
+			if tag.Key != "" {
+				if _, exists := nodeInfoData.Label[tag.Key]; !exists {
+					nodeInfoData.Label[tag.Key] = tag.Value
+				}
+			}
+		}
+	}
 	nodeInfoData.NodeUserName = callResult.VMUserId
 	nodeInfoData.NodeUserPassword = callResult.VMUserPasswd
 	nodeInfoData.CspResourceName = callResult.IId.NameId

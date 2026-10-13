@@ -272,7 +272,7 @@ func aggregatePostCommandResults(result *model.InfraSshCmdResultForAPI, timeoutM
 
 const (
 	// sshReadinessTimeout bounds the wait for fresh nodes to accept SSH
-	sshReadinessTimeout = 3 * time.Minute
+	sshReadinessTimeout = 8 * time.Minute // KT and similar CSPs can take several minutes after ACTIVE before sshd answers
 	// sshReadinessInterval is the retry interval of the SSH readiness probe
 	sshReadinessInterval = 10 * time.Second
 )

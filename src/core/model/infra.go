@@ -780,6 +780,7 @@ type SpiderVMInfo struct {
 	PrivateDNS        string
 	RootDeviceName    string // "/dev/sda1", ...
 	SSHAccessPoint    string
+	TagList           []KeyValue
 	KeyValueList      []KeyValue
 }
 
