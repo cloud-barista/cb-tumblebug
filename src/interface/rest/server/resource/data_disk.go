@@ -212,6 +212,7 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Param option query string true "Option for Infra" Enums(attach, detach)
 // @Param force query string false "Force to attach/detach even if node info is not matched" Enums(true, false)
 // @Success 200 {object} model.NodeInfo
+// @Failure 400 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Param x-request-id header string false "Custom request ID for tracking"
@@ -244,7 +245,10 @@ func RestPutNodeDataDisk(c echo.Context) error {
 		fallthrough
 	case model.DetachDataDisk:
 		result, err := infra.AttachDetachDataDisk(nsId, infraId, nodeId, option, u.DataDiskId, forceBool)
-		return clientManager.EndRequestWithLog(c, err, result)
+		if err != nil {
+			return clientManager.EndRequestWithLog(c, err, nil)
+		}
+		return clientManager.EndRequestWithLog(c, nil, result)
 
 	default:
 		err := fmt.Errorf("Supported options: %s, %s, %s", model.AttachDataDisk, model.DetachDataDisk, model.AvailableDataDisk)

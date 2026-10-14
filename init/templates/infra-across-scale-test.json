@@ -9,8 +9,8 @@
       {
         "name": "g1-alibaba-ap-northeast-2",
         "nodeGroupSize": 100,
-        "description": "Alibaba - Seoul (ap-northeast-2) | Limit: zone stock, not quota — 2026-08-23 ecs.e-c4m1.large hit OperationDenied.NoStock after 79 VMs (us-east-1 confirmed 200 on 2026-08-22). Set 100; raise if stock allows",
-        "specId": "alibaba+ap-northeast-2+ecs.e-c4m1.large",
+        "description": "Alibaba - Seoul (ap-northeast-2) | Limit: zone stock, not quota — 2026-08-23 ecs.e-c1m2.large hit OperationDenied.NoStock after 79 VMs (us-east-1 confirmed 200 on 2026-08-22). Set 100; raise if stock allows",
+        "specId": "alibaba+ap-northeast-2+ecs.e-c1m2.large",
         "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd",
         "rootDiskType": "default",
         "rootDiskSize": 50

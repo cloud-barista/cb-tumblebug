@@ -6213,6 +6213,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.NodeInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
           description: Not Found
           content:
