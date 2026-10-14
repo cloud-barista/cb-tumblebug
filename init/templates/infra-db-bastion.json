@@ -1,0 +1,90 @@
+{
+  "resourceType": "infra",
+  "name": "infra-db-bastion",
+  "description": "Multi-CSP DB Bastion template for secure in-VPC RDBMS access and testing. Contains lightweight verified specs/images per CSP with MySQL/MariaDB client pre-installed.",
+  "infraDynamicReq": {
+    "installMonAgent": "no",
+    "nodeGroups": [
+      {
+        "name": "g-aws",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-2+t3.nano",
+        "imageId": "ami-0fde5763b4c293a0b",
+        "rootDiskType": "gp3",
+        "rootDiskSize": 30
+      },
+      {
+        "name": "g-azure",
+        "nodeGroupSize": 1,
+        "specId": "azure+koreasouth+standard_b2ts_v2",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290",
+        "rootDiskType": "default",
+        "rootDiskSize": 30
+      },
+      {
+        "name": "g-gcp",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-northeast3+n1-standard-1",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820",
+        "rootDiskType": "default",
+        "rootDiskSize": 30
+      },
+      {
+        "name": "g-ncp",
+        "nodeGroupSize": 1,
+        "specId": "ncp+kr+s2-g3a",
+        "imageId": "23214590",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-nhn",
+        "nodeGroupSize": 1,
+        "specId": "nhn+kr2+c2.c2m2",
+        "imageId": "8fab9909-617f-4bf4-8cd7-38bfc27a0129",
+        "rootDiskType": "default",
+        "rootDiskSize": 30
+      },
+      {
+        "name": "g-alibaba",
+        "nodeGroupSize": 1,
+        "specId": "alibaba+ap-northeast-1+ecs.e-c1m2.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd",
+        "rootDiskType": "default",
+        "rootDiskSize": 40
+      },
+      {
+        "name": "g-tencent",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-seoul+s2.medium2",
+        "imageId": "img-487zeit5",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-ibm",
+        "nodeGroupSize": 1,
+        "specId": "ibm+us-south+bxf-2x8",
+        "imageId": "r006-23020f83-9547-4501-a96a-a28b96671308",
+        "rootDiskType": "default",
+        "rootDiskSize": 30
+      },
+      {
+        "name": "g-openstack",
+        "nodeGroupSize": 1,
+        "specId": "openstack+regionone+m1.medium",
+        "imageId": "0b583339-0a62-4e5d-9cfb-4666539961d0",
+        "rootDiskType": "default",
+        "rootDiskSize": 40
+      }
+    ],
+    "postCommands": [
+      {
+        "command": [
+          "sudo apt-get update -y && sudo apt-get install -y default-mysql-client mariadb-client netcat"
+        ]
+      }
+    ]
+  }
+}
+
