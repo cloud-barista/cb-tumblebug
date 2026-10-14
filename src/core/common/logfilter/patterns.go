@@ -91,9 +91,7 @@ var RequestSkipPatterns = []SkipRule{
 	// These are called every 5-10 seconds and storing their large response bodies
 	// in RequestMap causes unbounded memory growth (memory leak).
 	// Infra list/status polling
-	{Method: "GET", Patterns: []string{"/infra", "option=status"}},
-	{Method: "GET", Patterns: []string{"/infra", "option=id"}},
-	{Method: "GET", Patterns: []string{"/infra", "option=simple"}},
+	{Method: "GET", Patterns: []string{"/infra"}, Exclude: []string{"/control/"}},
 
 	// Kubernetes cluster polling
 	{Method: "GET", Patterns: []string{"/k8sCluster"}},
@@ -101,11 +99,25 @@ var RequestSkipPatterns = []SkipRule{
 	// Resource list polling (vNet, securityGroup, sshKey, etc.)
 	{Method: "GET", Patterns: []string{"/resources/vNet"}},
 	{Method: "GET", Patterns: []string{"/resources/securityGroup"}},
-	{Method: "GET", Patterns: []string{"/resources/vpn"}},
 	{Method: "GET", Patterns: []string{"/resources/sshKey"}},
 	{Method: "GET", Patterns: []string{"/resources/customImage"}},
 	{Method: "GET", Patterns: []string{"/resources/dataDisk"}},
 	{Method: "GET", Patterns: []string{"/resources/nlb"}},
+	{Method: "GET", Patterns: []string{"/resources/objectStorage"}},
+	{Method: "GET", Patterns: []string{"/objectStorage"}},
+	{Method: "GET", Patterns: []string{"/resources/rdbms"}},
+	{Method: "GET", Patterns: []string{"/rdbms"}},
+
+	// Site-to-site VPN and Site polling
+	{Method: "GET", Patterns: []string{"/vpn"}},
+	{Method: "GET", Patterns: []string{"/site"}},
+
+	// Periodic health checks and status polling
+	{Method: "GET", Patterns: []string{"/healthz"}},
+	{Method: "GET", Patterns: []string{"/task"}},
+	{Method: "GET", Patterns: []string{"/infraAutopilot", "/status"}},
+	{Method: "GET", Patterns: []string{"/registerCspResources/schedule"}},
+	{Method: "GET", Patterns: []string{"/connConfig"}},
 }
 
 // ==============================================================================
@@ -132,11 +144,25 @@ var APISkipPatterns = []SkipRule{
 	// Resource list operations (frequent polling from UI) - GET only
 	{Method: "GET", Patterns: []string{"/resources/vNet"}},
 	{Method: "GET", Patterns: []string{"/resources/securityGroup"}},
-	{Method: "GET", Patterns: []string{"/resources/vpn"}},
 	{Method: "GET", Patterns: []string{"/resources/sshKey"}},
 	{Method: "GET", Patterns: []string{"/resources/customImage"}},
 	{Method: "GET", Patterns: []string{"/resources/dataDisk"}},
 	{Method: "GET", Patterns: []string{"/resources/nlb"}},
+	{Method: "GET", Patterns: []string{"/resources/objectStorage"}},
+	{Method: "GET", Patterns: []string{"/objectStorage"}},
+	{Method: "GET", Patterns: []string{"/resources/rdbms"}},
+	{Method: "GET", Patterns: []string{"/rdbms"}},
+
+	// Site-to-site VPN and Site polling
+	{Method: "GET", Patterns: []string{"/vpn"}},
+	{Method: "GET", Patterns: []string{"/site"}},
+
+	// Periodic health checks and status polling
+	{Method: "GET", Patterns: []string{"/healthz"}},
+	{Method: "GET", Patterns: []string{"/task"}},
+	{Method: "GET", Patterns: []string{"/infraAutopilot", "/status"}},
+	{Method: "GET", Patterns: []string{"/registerCspResources/schedule"}},
+	{Method: "GET", Patterns: []string{"/connConfig"}},
 }
 
 // ==============================================================================
