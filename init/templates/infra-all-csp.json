@@ -1,0 +1,87 @@
+{
+  "resourceType": "infra",
+  "name": "infra-all-csp",
+  "description": "One VM per CSP (10 CSPs) for feature tests: lifecycle, registration, agnostic image. Specs/images verified 2026-10-13 (Alibaba uses a 4 GiB spec; 0.5 GiB specs do not boot to SSH).",
+  "infraDynamicReq": {
+    "nodeGroups": [
+      {
+        "name": "g-alibaba",
+        "nodeGroupSize": 1,
+        "specId": "alibaba+ap-northeast-1+ecs.e-c1m2.large",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-aws",
+        "nodeGroupSize": 1,
+        "specId": "aws+ap-northeast-3+t3.small",
+        "imageId": "ami-070dbbf034ee28f87",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-azure",
+        "nodeGroupSize": 1,
+        "specId": "azure+koreasouth+standard_b2ts_v2",
+        "imageId": "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:22.04.202607290",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-gcp",
+        "nodeGroupSize": 1,
+        "specId": "gcp+asia-northeast1+e2-standard-2",
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20260820",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-ibm",
+        "nodeGroupSize": 1,
+        "specId": "ibm+us-south+bxf-2x8",
+        "imageId": "r006-23020f83-9547-4501-a96a-a28b96671308"
+      },
+      {
+        "name": "g-kt",
+        "nodeGroupSize": 1,
+        "specId": "kt+kr1+2x2.itl",
+        "imageId": "3556e626-a174-448d-a53e-c1ab6e26d559",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-ncp",
+        "nodeGroupSize": 1,
+        "specId": "ncp+kr+s2-g3a",
+        "imageId": "23214590",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-nhn",
+        "nodeGroupSize": 1,
+        "specId": "nhn+kr2+c2.c2m2",
+        "imageId": "8fab9909-617f-4bf4-8cd7-38bfc27a0129",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      },
+      {
+        "name": "g-openstack",
+        "nodeGroupSize": 1,
+        "specId": "openstack+regionone+m1.medium",
+        "imageId": "0b583339-0a62-4e5d-9cfb-4666539961d0",
+        "rootDiskType": "default",
+        "rootDiskSize": 40
+      },
+      {
+        "name": "g-tencent",
+        "nodeGroupSize": 1,
+        "specId": "tencent+ap-seoul+s2.medium2",
+        "imageId": "img-487zeit5",
+        "rootDiskType": "default",
+        "rootDiskSize": 50
+      }
+    ]
+  }
+}

@@ -2430,6 +2430,20 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 
 	nodeInfoData.Status = nodeStatusInfoTmp.Status
 
+	// Some CSPs (NCP) attach the public IP shortly after the VM is Running; re-query briefly instead of storing an empty IP
+	for attempt := 1; attempt <= 6 && strings.EqualFold(nodeInfoData.Status, model.StatusRunning) && nodeInfoData.PublicIP == "" && nodeStatusInfoTmp.PublicIp == ""; attempt++ {
+		time.Sleep(10 * time.Second)
+		if s, e := FetchNodeStatus(nsId, infraId, nodeInfoData.Id); e == nil {
+			nodeStatusInfoTmp = s
+		}
+	}
+	if nodeInfoData.PublicIP == "" && nodeStatusInfoTmp.PublicIp != "" {
+		nodeInfoData.PublicIP = nodeStatusInfoTmp.PublicIp
+		if nodeStatusInfoTmp.SSHPort != 0 {
+			nodeInfoData.SSHPort = nodeStatusInfoTmp.SSHPort
+		}
+	}
+
 	// Monitoring Agent Installation Status (init: notInstalled)
 	nodeInfoData.MonAgentStatus = "notInstalled"
 	nodeInfoData.NetworkAgentStatus = "notInstalled"

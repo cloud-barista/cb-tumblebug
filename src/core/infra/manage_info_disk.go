@@ -310,26 +310,31 @@ func GetAvailableDataDisks(nsId string, infraId string, nodeId string, option st
 	tbDataDisks := []model.DataDiskInfo{}
 	json.Unmarshal(jsonString, &tbDataDisks)
 
-	if option != "id" {
-		return tbDataDisks, nil
-	} else { // option == "id"
-		idList := []string{}
+	availableDisks := []model.DataDiskInfo{}
+	idList := []string{}
 
-		for _, v := range tbDataDisks {
-			// Update Tb dataDisk object's status; skip-and-continue so one broken
-			// record cannot take down the whole availability listing
-			newObj, err := resource.GetResource(nsId, model.StrDataDisk, v.Id)
-			if err != nil {
-				log.Warn().Err(err).Msgf("Skipping dataDisk %s in availability listing", v.Id)
-				continue
-			}
-			tempObj := newObj.(model.DataDiskInfo)
-
-			if v.ConnectionName == node.ConnectionName && tempObj.Status == "Available" {
-				idList = append(idList, v.Id)
-			}
+	for _, v := range tbDataDisks {
+		// Update Tb dataDisk object's status; skip-and-continue so one broken
+		// record cannot take down the whole availability listing
+		newObj, err := resource.GetResource(nsId, model.StrDataDisk, v.Id)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Skipping dataDisk %s in availability listing", v.Id)
+			continue
 		}
+		tempObj := newObj.(model.DataDiskInfo)
 
+		// A dataDisk cannot cross zones (see AttachDetachDataDisk); disks are zone-compatible
+		// if either zone is unspecified (region-level) or zones match.
+		isZoneCompatible := tempObj.Zone == "" || node.Region.Zone == "" || tempObj.Zone == node.Region.Zone
+		if tempObj.ConnectionName == node.ConnectionName && tempObj.Status == "Available" && tempObj.DeletionRequestedAt == "" && isZoneCompatible {
+			idList = append(idList, tempObj.Id)
+			availableDisks = append(availableDisks, tempObj)
+		}
+	}
+
+	if option != "id" {
+		return availableDisks, nil
+	} else { // option == "id"
 		return idList, nil
 	}
 }

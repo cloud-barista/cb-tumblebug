@@ -449,6 +449,13 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 		}
 	}
 
+	// Flush guest writes to disk first; a snapshot taken right after the bootstrap otherwise misses unsynced files
+	if len(req.SourceInfraReq.PostCommands) > 0 {
+		if _, serr := RemoteCommandToInfra(nsId, infraInfo.Id, "", "", "", &model.InfraCmdReq{Command: []string{"sync"}, TimeoutMinutes: 2}, ""); serr != nil {
+			log.Warn().Err(serr).Msg("sync before snapshot failed; continuing")
+		}
+	}
+
 	// Step 4: Create snapshots from the Infra (one per nodegroup)
 	log.Info().Msg("Step 3/4: Creating snapshots from running VMs...")
 	snapshotResult, err := CreateInfraSnapshot(nsId, infraInfo.Id, req.SnapshotReq)
