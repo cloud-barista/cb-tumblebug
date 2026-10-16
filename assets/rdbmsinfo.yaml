@@ -1,9 +1,10 @@
 # Configuration for RDBMS (Relational Database Management System) of Cloud Service Providers (CSPs)
 # This file defines storage types, DBMS requirements, and database requirements for each CSP
 
-# Last Updated: 2026-10-07
-# Source: CB-Spider v0.13.12 RDBMS improvements, storage-type-test, #1820 decimal GB conversion,
-# and wiki RDBMS Management Guide & Guide to Secure Connection.
+# Last Updated: 2026-10-16
+# Source: CB-Spider v0.13.17 RDBMS improvements (#1868 charset/collation, #1873 OpenStack GRANT retry,
+# #1879 NCP NCPAutoOpenACG & PublicAccess/StorageType restrictions, #1880 Tencent SG rules),
+# storage-type-test, #1820 decimal GB conversion, and wiki RDBMS Management Guide & Guide to Secure Connection.
 # Field naming reflects Tumblebug's DBInstanceSpec model and Spider's DBSpec contract.
 # StorageSizeRangeGB standardizes storage capacities to decimal Gigabytes (GB, 10^9 bytes).
 # dbmsRequirements.<engine>.referenceEngineVersion values come from CB-Spider's own
@@ -153,7 +154,7 @@ dbms:
         - performance_schema
         - sys
         - rdsadmin
-      note: "Database names are case-insensitive on MySQL. Reserved names cannot be used."
+      note: "Database names are case-insensitive on MySQL. Reserved names cannot be used. Charset and collation customization are supported on both MySQL and MariaDB via direct SQL (CREATE DATABASE ... CHARACTER SET ... COLLATE ...), requiring X-Admin-User-Name/X-Admin-User-Password and network reachability to the RDS endpoint."
       
   azure:
     description: Azure Database for MySQL Flexible Server
@@ -184,7 +185,7 @@ dbms:
           2026-08-03)."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"
+      note: "Database naming follows standard MySQL conventions. Charset and collation customization are supported via native Azure ARM API (DatabasesClient). When charset is specified without collation, CB-Spider queries information_schema.CHARACTER_SETS over SQL to pair the default collation (requiring admin credentials and network reachability); providing both charset and collation uses pure ARM API."
 
     adminUserNameRequirement:
       reservedValues:
@@ -250,7 +251,7 @@ dbms:
         - information_schema
         - performance_schema
         - sys
-      note: "Database names follow standard MySQL naming conventions"
+      note: "Database names follow standard MySQL naming conventions. Charset and collation customization are supported via native Cloud SQL Admin API (sqladmin.Database) without requiring direct SQL connectivity."
       
   alibaba:
     description: Alibaba Cloud ApsaraDB RDS
@@ -339,7 +340,7 @@ dbms:
         - information_schema
         - performance_schema
         - sys
-      note: "Database names follow standard MySQL naming conventions"
+      note: "Database names follow standard MySQL naming conventions. Charset and collation are supported via native Alibaba RDS OpenAPI on MySQL; on MariaDB, Alibaba's CreateDatabase API accepts CharacterSetName (charset) only and rejects CollationName (collation)."
 
     adminUserNameRequirement:
       reservedValues:
@@ -403,7 +404,7 @@ dbms:
           the driver's own listed-valid-specs response."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"
+      note: "Database naming follows standard MySQL conventions. Charset is supported via native TencentDB API (CreateDatabases); when collation is specified, CB-Spider executes a follow-up SQL ALTER DATABASE ... COLLATE (requiring admin credentials and network reachability, with automatic rollback if ALTER fails)."
 
     adminUserNameRequirement:
       fixedValue: root
@@ -444,7 +445,7 @@ dbms:
         note: "Storage is managed automatically by IBM Cloud. MySQL v5.7 (EOL 2024-04-26) and v8.0 (EOL 2026-07-29) reached official End of Life and are rejected by IBM Cloud for new deployments; v8.4 is the active supported version. Recommendation defaults to 'multitenant' (~9-10m provisioning); dedicated flavors ('b3c.*') require 35-45+ minutes."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"
+      note: "Database naming follows standard MySQL conventions. Charset and collation customization are supported via direct SQL (CREATE DATABASE ... CHARACTER SET ... COLLATE ...), requiring X-Admin-User-Name/X-Admin-User-Password and network reachability to the IBM Cloud Databases endpoint."
 
     adminUserNameRequirement:
       fixedValue: admin
@@ -470,7 +471,7 @@ dbms:
     dbOperationMethod: cspNativeApi
     supportsTag: false
     supportsPublicAccess: false
-    note: "PublicAccess=true is officially not supported because NCP Cloud DB provides only private VPC endpoints (*.vpc-cdb.ntruss.com) and lacks an Open API/SDK for public domain allocation. Storage type and storage size configuration not supported. NCP G3 generation automatically applies SSD storage, starts at 10GB, and auto-scales by 10GB increments up to 6000GB. NCP Cloud DB ACGs apply a default-deny policy (0 inbound rules), blocking port 3306 even for internal VPC VMs until an ACG inbound permit rule is added. For test/dev, setting ncpDBACGToAllowAllInbound=true (NCPAutoOpenACG=true in Spider) auto-configures 0.0.0.0/0 on the ACG (TEST ONLY; do not use in production)."
+    note: "PublicAccess=true is officially not supported because NCP Cloud DB provides only private VPC endpoints (*.vpc-cdb.ntruss.com) and lacks an Open API/SDK for public domain allocation (enforced in CB-Spider v0.13.16 #1879). Storage type and storage size configuration not supported. NCP G3 generation automatically applies SSD storage, starts at 10GB, and auto-scales by 10GB increments up to 6000GB. NCP Cloud DB ACGs apply a default-deny policy (0 inbound rules), blocking port 3306 even for internal VPC VMs until an ACG inbound permit rule is added. For test/dev, setting ncpDBACGToAllowAllInbound=true (NCPAutoOpenACG=true in CB-Spider v0.13.16+) auto-configures 0.0.0.0/0 on the ACG (TEST ONLY; do not use in production)."
     storageTypeSelectable: false
     storageTypes:
       ssd:
@@ -491,7 +492,7 @@ dbms:
           2026-08-03)."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions. NCP Cloud DB officially supports only VPC-private mode (publicAccess=false) accessible via an internal VPC VM. Inbound traffic requires explicit ACG permit rules in NCP Console (Database > Cloud DB for MySQL > ACG) or enabling ncpDBACGToAllowAllInbound (for testing only). External access via Public Domain is not automated because NCP provides no API for public domain allocation and requires manual console requests."
+      note: "Database naming follows standard MySQL conventions. Default database creation (without charset/collation) uses NCP's native REST API (AddCloudMysqlDatabaseList) and works without VPC SQL connectivity. When charset or collation is specified, CB-Spider invokes NCP's privileged stored procedure CALL sys.ncp_create_db('db', 'charset', 'collation') over direct SQL, which requires admin credentials and CB-Spider network reachability to the private VPC endpoint (*.vpc-cdb.ntruss.com:3306)."
 
     adminUserNameRequirement:
       reservedValues:
@@ -569,7 +570,7 @@ dbms:
       note: "NHN Cloud RDS assigns a single public FQDN endpoint when PublicAccess is enabled. Access control to this endpoint (from both external networks and VPC internal VMs) is governed by NHN Cloud's dedicated DB Security Group (DB 보안 그룹)."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions. Direct client access (port 3306) requires inbound permit rules configured in NHN Cloud Console's dedicated DB Security Group, or enabling nhnDBSGToAllowAllInbound (for testing)."
+      note: "Database naming follows standard MySQL conventions. Default database creation (without charset/collation) uses NHN's native REST API. When charset or collation is specified, CB-Spider falls back to direct SQL (CREATE DATABASE ... CHARACTER SET ... COLLATE ...), which requires 'Direct Control' (DB 스키마 & 사용자 직접 제어) enabled in the NHN Cloud Console beforehand plus inbound DB Security Group access (or nhnDBSGToAllowAllInbound=true for testing)."
 
     adminUserNameRequirement:
       reservedValues:
@@ -594,11 +595,7 @@ dbms:
     supportedDBEngines: [mysql, mariadb]
     dbOperationMethod: cspNativeApi
     supportsTag: false
-    note: "An earlier v0.12.44 test run requested MariaDB 10.6 and failed ('Datastore version
-      10.6 cannot be found'). CB-Spider's rdbms-mariadb-test README clarifies the correct
-      reference version for this Trove environment is 10.4, not 10.6 — confirmed Available
-      in a 2026-08-18 run (m1.small/20GB, 3m58s). The datastore was never actually missing;
-      10.6 was simply the wrong version to request."
+    note: "CB-Spider v0.13.15 (#1873, fixing #1866) retries admin privilege GRANT with exponential backoff after Trove reports ACTIVE to prevent Error 1044. Reference MariaDB version for the current Trove environment is 10.4 (confirmed Available via Trove API; direct SQL on the current MariaDB 10.4 guest image is affected by upstream TLS certificate issue #1869 until the scheduled OpenStack MySQL/MariaDB image upgrade)."
     storageTypeSelectable: true
     storageTypes:
       __DEFAULT__:
@@ -636,5 +633,6 @@ dbms:
           not have registered."
         
     databaseRequirements:
-      note: "Database naming follows standard MySQL conventions"
+      note: "Database naming follows standard MySQL conventions. Charset and collation customization are supported via native OpenStack Trove API (databases.CreateOpts CharSet/Collate) without requiring direct SQL connectivity."
+
       

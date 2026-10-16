@@ -17,6 +17,7 @@ package resource
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"net/url"
@@ -127,12 +128,12 @@ type spiderRDBMSDeleteRequest struct {
 	ConnectionName string `json:"ConnectionName"`
 }
 
-// spiderRDBMSDatabaseCreateRequest represents Spider's create-database request body
-// spiderRDBMSDatabaseCreateRequest is Spider's create-database request body
-// (PascalCase; spider.RDBMSDatabaseRequest).
+// spiderRDBMSDatabaseCreateRequest is Spider's create-database request body (spider.RDBMSDatabaseRequest).
 type spiderRDBMSDatabaseCreateRequest struct {
 	ConnectionName     string `json:"ConnectionName"`
 	DatabaseName       string `json:"DatabaseName"`
+	Charset            string `json:"Charset,omitempty"`
+	Collation          string `json:"Collation,omitempty"`
 	MasterUserName     string `json:"MasterUserName,omitempty"`
 	MasterUserPassword string `json:"MasterUserPassword,omitempty"`
 }
@@ -545,7 +546,7 @@ var (
 
 	rdbmsPostDeleteWaitDefault = 10 * time.Second
 	rdbmsPostDeleteWaitAlibaba = 510 * time.Second
-	rdbmsPostDeleteWaitTencent = 90 * time.Second
+	rdbmsPostDeleteWaitTencent = 120 * time.Second
 )
 
 // cspSupportingRDBMS lists CSPs verified against CB-Spider's rdbms-mysql-test suite (v0.12.42).
@@ -1631,9 +1632,8 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 			log.Warn().Err(pollErr).Msgf("Force deletion of RDBMS %q: deletion unconfirmed; removing the record anyway (the CSP resource may remain as an orphan)", rdbmsId)
 		}
 
-		// Wait to allow the CSP to stabilize before a caller's likely-next Subnet/VNet delete.
-		// Tencent: 90s confirmed sufficient. Alibaba: 90s was still observed failing, so it gets
-		// its own, longer wait — its VPC-level dependency clears on an even slower timeline.
+		// Wait to allow the CSP to stabilize before a caller's likely-next SG/Subnet/VNet delete.
+		// Tencent: 120s wait for CDB VIP/ENI detachment. Alibaba: 510s wait for slower VPC-level dependency release.
 		postDeleteWait := rdbmsPostDeleteWaitDefault
 		switch {
 		case strings.EqualFold(rdbmsInfo.ConnectionConfig.ProviderName, csp.Alibaba):
@@ -1764,13 +1764,110 @@ func PruneRDBMS(nsId string) (model.ResourcePruneResults, error) {
 // ========== RDBMS Internal Logical Database CRUD ==========
 // Databases aren't tracked as Tumblebug resources; admin credentials are never persisted, only forwarded per call.
 
+// ErrRDBMSDatabaseValidation marks client-input or capability validation failures on database creation (HTTP 400).
+var ErrRDBMSDatabaseValidation = errors.New("invalid RDBMS database create request")
+
+// isValidRDBMSDatabaseName reports whether s is a non-empty identifier containing only ASCII letters, digits, '_', or '-'.
+func isValidRDBMSDatabaseName(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
+			return false
+		}
+	}
+	return true
+}
+
+// isValidRDBMSSQLOptionIdentifier reports whether s is a non-empty identifier containing only ASCII letters, digits, or '_'.
+func isValidRDBMSSQLOptionIdentifier(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+			return false
+		}
+	}
+	return true
+}
+
+// rdbmsDatabaseCreateRequiresDBAdminCredentials reports whether creating a database with the given options requires DB admin credentials (X-Admin-User-Name / X-Admin-User-Password) on the CSP.
+func rdbmsDatabaseCreateRequiresDBAdminCredentials(cspName, charset, collation string) bool {
+	switch strings.ToLower(strings.TrimSpace(cspName)) {
+	case "aws", "ibm":
+		return true
+	case "ncp", "nhn":
+		return charset != "" || collation != ""
+	case "tencent":
+		return collation != ""
+	case "azure":
+		return charset != "" && collation == ""
+	default:
+		return false
+	}
+}
+
+// validateRDBMSDatabaseCreateRequest validates database name, charset/collation options, and CSP-specific DB admin credential requirements.
+func validateRDBMSDatabaseCreateRequest(dbEngine, providerName string, req model.RDBMSDatabaseCreateReq, adminUserName, adminUserPassword string) error {
+	dbName := strings.TrimSpace(req.DatabaseName)
+	if !isValidRDBMSDatabaseName(dbName) {
+		return fmt.Errorf("%w: databaseName %q must be non-empty and contain only ASCII letters, digits, '_', or '-'", ErrRDBMSDatabaseValidation, req.DatabaseName)
+	}
+
+	charset := strings.TrimSpace(req.Charset)
+	collation := strings.TrimSpace(req.Collation)
+	engine := strings.ToLower(strings.TrimSpace(dbEngine))
+	cspName := strings.ToLower(strings.TrimSpace(providerName))
+
+	if charset != "" || collation != "" {
+		if engine != "mysql" && engine != "mariadb" {
+			return fmt.Errorf("%w: charset and collation options are only supported for mysql and mariadb (got dbEngine=%q)", ErrRDBMSDatabaseValidation, dbEngine)
+		}
+		if charset != "" && !isValidRDBMSSQLOptionIdentifier(charset) {
+			return fmt.Errorf("%w: charset %q must contain only ASCII letters, digits, or '_'", ErrRDBMSDatabaseValidation, req.Charset)
+		}
+		if collation != "" && !isValidRDBMSSQLOptionIdentifier(collation) {
+			return fmt.Errorf("%w: collation %q must contain only ASCII letters, digits, or '_'", ErrRDBMSDatabaseValidation, req.Collation)
+		}
+		if cspName == "alibaba" && engine == "mariadb" && collation != "" {
+			return fmt.Errorf("%w: alibaba MariaDB does not support collation customization via API; specify charset only", ErrRDBMSDatabaseValidation)
+		}
+	}
+
+	if rdbmsDatabaseCreateRequiresDBAdminCredentials(cspName, charset, collation) && (strings.TrimSpace(adminUserName) == "" || strings.TrimSpace(adminUserPassword) == "") {
+		return fmt.Errorf("%w: X-Admin-User-Name and X-Admin-User-Password headers are required to create a database on %s with the requested options", ErrRDBMSDatabaseValidation, providerName)
+	}
+
+	return nil
+}
+
+// enrichRDBMSDatabaseCreateError wraps a Spider database-creation error with CSP-specific guidance when charset/collation is used on NCP or NHN.
+func enrichRDBMSDatabaseCreateError(err error, providerName, rdbmsId, dbName, charset, collation string) error {
+	baseMsg := fmt.Sprintf("failed to create database '%s' in RDBMS '%s'", dbName, rdbmsId)
+	if charset == "" && collation == "" {
+		return apierr.Wrap(err, baseMsg)
+	}
+	switch strings.ToLower(strings.TrimSpace(providerName)) {
+	case "ncp":
+		return apierr.Wrap(err, baseMsg+" (note: setting charset/collation on NCP executes CALL sys.ncp_create_db over direct SQL, which requires CB-Spider to have network reachability to the NCP private VPC endpoint; omit charset/collation to use the native NCP REST API)")
+	case "nhn":
+		return apierr.Wrap(err, baseMsg+" (note: setting charset/collation on NHN Cloud executes CREATE DATABASE over direct SQL, which requires 'Direct Control' enabled in the NHN Cloud Console and inbound DB Security Group access)")
+	default:
+		return apierr.Wrap(err, baseMsg)
+	}
+}
+
 // CreateRDBMSDatabase creates a logical database inside an Available RDBMS instance via CB-Spider.
 func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq, adminUserName, adminUserPassword string) (model.RDBMSDatabaseInfo, error) {
 	var emptyRet model.RDBMSDatabaseInfo
 
 	if err := validate.Struct(req); err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, err
+		return emptyRet, fmt.Errorf("%w: %v", ErrRDBMSDatabaseValidation, err)
 	}
 
 	rdbmsInfo, err := GetRDBMS(nsId, rdbmsId)
@@ -1783,9 +1880,26 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq,
 		return emptyRet, err
 	}
 
+	providerName := rdbmsInfo.ConnectionConfig.ProviderName
+	if providerName == "" && rdbmsInfo.ConnectionName != "" {
+		if connCfg, connErr := common.GetConnConfig(rdbmsInfo.ConnectionName); connErr == nil {
+			providerName = connCfg.ProviderName
+		}
+	}
+	if err := validateRDBMSDatabaseCreateRequest(rdbmsInfo.DBEngine, providerName, req, adminUserName, adminUserPassword); err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	dbName := strings.TrimSpace(req.DatabaseName)
+	charset := strings.TrimSpace(req.Charset)
+	collation := strings.TrimSpace(req.Collation)
+
 	spReq := spiderRDBMSDatabaseCreateRequest{
 		ConnectionName:     rdbmsInfo.ConnectionName,
-		DatabaseName:       req.DatabaseName,
+		DatabaseName:       dbName,
+		Charset:            charset,
+		Collation:          collation,
 		MasterUserName:     adminUserName,
 		MasterUserPassword: adminUserPassword,
 	}
@@ -1817,16 +1931,16 @@ func CreateRDBMSDatabase(nsId, rdbmsId string, req model.RDBMSDatabaseCreateReq,
 	)
 	if err = clientManager.HandleHttpResponse(restyResp, err); err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyRet, apierr.Wrap(err, fmt.Sprintf("failed to create database '%s' in RDBMS '%s'", req.DatabaseName, rdbmsId))
+		return emptyRet, enrichRDBMSDatabaseCreateError(err, providerName, rdbmsId, dbName, charset, collation)
 	}
 	log.Debug().Msgf("[Response from Spider] Creating RDBMS database: %+v", spResp)
 	if spResp.Message != "created" {
-		err = fmt.Errorf("unexpected response creating database '%s' in RDBMS '%s': message=%q", req.DatabaseName, rdbmsId, spResp.Message)
+		err = fmt.Errorf("unexpected response creating database '%s' in RDBMS '%s': message=%q", dbName, rdbmsId, spResp.Message)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	return model.RDBMSDatabaseInfo{DatabaseName: req.DatabaseName}, nil
+	return model.RDBMSDatabaseInfo{DatabaseName: dbName}, nil
 }
 
 // ListRDBMSDatabases lists the logical databases inside an RDBMS instance.

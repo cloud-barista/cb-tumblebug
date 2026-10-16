@@ -86,12 +86,17 @@ testCases:
     adminUserPassword: Password123!
     publicAccess: true
     highAvailability: false
+    databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     execute: true # set to true to include in the test run
 ```
 
 Only test cases with `execute: true` are run. See the template's comments for
 CSP-specific requirements (e.g. AWS needs 2 subnets in distinct AZs; IBM
-rejects special characters in the password; NCP requires one).
+rejects special characters in the password; NCP requires one; Alibaba MariaDB
+supports `databaseCharset` only; NCP and NHN have VPC/Console prerequisites when
+`databaseCharset` or `databaseCollation` is set).
 
 **`autoFillDefaults: true`** picks the first CB-Spider-reported supported option
 for `dbEngineVersion`/`dbInstanceSpec`/`storageType`/`storageSize` — a

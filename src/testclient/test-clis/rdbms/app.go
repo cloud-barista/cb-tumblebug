@@ -116,10 +116,11 @@ type TestCase struct {
 	NHNDBSGToAllowAllInbound  bool           `mapstructure:"nhnDBSGToAllowAllInbound"`
 	NCPDBACGToAllowAllInbound bool           `mapstructure:"ncpDBACGToAllowAllInbound"`
 	HighAvailability          bool           `mapstructure:"highAvailability"`
-	// DatabaseName is the logical database created/listed/deleted inside the RDBMS instance
-	// (defaults to "sampledb" if left blank).
-	DatabaseName string `mapstructure:"databaseName"`
-	Execute      bool   `mapstructure:"execute"`
+	// DatabaseName is the logical database created/listed/deleted inside the RDBMS instance (defaults to "sampledb").
+	DatabaseName      string `mapstructure:"databaseName"`
+	DatabaseCharset   string `mapstructure:"databaseCharset"`
+	DatabaseCollation string `mapstructure:"databaseCollation"`
+	Execute           bool   `mapstructure:"execute"`
 
 	// Internal VM test configuration (runs SQL from a test VM inside the same VPC via Remote Command)
 	InternalDataIOTest bool   `mapstructure:"internalDataIOTest"`
@@ -616,6 +617,12 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 		dbReqBody := map[string]any{
 			"databaseName": dbName,
 		}
+		if tc.DatabaseCharset != "" {
+			dbReqBody["charset"] = tc.DatabaseCharset
+		}
+		if tc.DatabaseCollation != "" {
+			dbReqBody["collation"] = tc.DatabaseCollation
+		}
 		headers := map[string]string{
 			"X-Admin-User-Name":     tc.AdminUserName,
 			"X-Admin-User-Password": tc.AdminUserPassword,
@@ -626,8 +633,8 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			log.Error().Err(err).Msgf("[%s] Create Database failed", tc.RdbmsId)
 		} else {
 			databaseCreated = true
-			result.CreateDatabaseStatus = fmt.Sprintf("Success (name=%s)", dbName)
-			log.Info().Msgf("[%s] Create Database OK: name=%s", tc.RdbmsId, dbName)
+			result.CreateDatabaseStatus = formatCreateDatabaseStatus(dbName, tc.DatabaseCharset, tc.DatabaseCollation)
+			log.Info().Msgf("[%s] Create Database OK: %s", tc.RdbmsId, result.CreateDatabaseStatus)
 		}
 	} else {
 		result.CreateDatabaseStatus = "Skipped (RDBMS not created)"
@@ -679,12 +686,12 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 			log.Info().Msgf("[%s] Remote Data I/O Test: N/A (Private VPC endpoint only: %s)", tc.RdbmsId, rdbmsEndpoint)
 		} else {
 			start := time.Now()
-			tlsDesc, dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.AdminUserName, tc.AdminUserPassword, dbName, stInfo, tc.RdbmsId)
+			tlsDesc, dummyErr := testDatabaseDummyData(rdbmsEndpoint, tc.AdminUserName, tc.AdminUserPassword, dbName, tc.DatabaseCharset, tc.DatabaseCollation, stInfo, tc.RdbmsId)
 			entry := ApiLog{
 				Step:           fmt.Sprintf("[%s] Remote Data I/O Test", tc.RdbmsId),
 				Method:         "SQL",
 				URL:            fmt.Sprintf("%s/%s", rdbmsEndpoint, dbName),
-				RequestPayload: map[string]any{"table": "tumblebug_test", "operations": "CREATE TABLE, INSERT, SELECT, DELETE", "tlsMode": tlsDesc},
+				RequestPayload: map[string]any{"table": "tumblebug_test", "operations": "CREATE TABLE, INSERT, SELECT, DELETE, SCHEMATA verify", "charset": tc.DatabaseCharset, "collation": tc.DatabaseCollation, "tlsMode": tlsDesc},
 				ElapsedTime:    time.Since(start).Round(time.Millisecond).String(),
 			}
 			if dummyErr != nil {
@@ -780,7 +787,8 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 	// 12. Delete SecurityGroup (with retry for eventual consistency on CSPs like Tencent)
 	if sgId != "" {
 		urlDeleteSG := fmt.Sprintf("%s/ns/%s/resources/securityGroup/%s", tbApiBase, nsId, sgId)
-		for attempt := 1; attempt <= 6; attempt++ {
+		const maxSGDeleteAttempts = 10
+		for attempt := 1; attempt <= maxSGDeleteAttempts; attempt++ {
 			_, err = callApi("DELETE", urlDeleteSG, tbAuth, nil, &logs, fmt.Sprintf("[%s] Delete SecurityGroup", tc.RdbmsId))
 			if err == nil {
 				result.DeleteSGStatus = "Success"
@@ -791,9 +799,9 @@ func runLifecycle(nsId string, tc TestCase, tbAuth map[string]string, supportMat
 				log.Info().Msgf("[%s] Delete SecurityGroup: nothing to delete", tc.RdbmsId)
 				break
 			}
-			if attempt < 6 {
-				log.Info().Msgf("[%s] Delete SecurityGroup attempt %d/6 returned error; waiting 15s for CSP interface release...", tc.RdbmsId, attempt)
-				time.Sleep(15 * time.Second)
+			if attempt < maxSGDeleteAttempts {
+				log.Info().Msgf("[%s] Delete SecurityGroup attempt %d/%d returned error; waiting 20s for CSP interface release...", tc.RdbmsId, attempt, maxSGDeleteAttempts)
+				time.Sleep(20 * time.Second)
 			} else {
 				result.DeleteSGStatus = "Failed"
 				log.Error().Err(err).Msgf("[%s] Delete SecurityGroup failed", tc.RdbmsId)
@@ -982,8 +990,30 @@ func configureSecureTransportTLS(stInfo *model.RDBMSSecureTransportInfo, rdbmsId
 	}
 }
 
-// runDummyDataSQL executes a minimal write/read/verify/delete test against a database using DSN.
-func runDummyDataSQL(dsn string) error {
+// formatCreateDatabaseStatus formats the Create Database step summary including optional charset/collation.
+func formatCreateDatabaseStatus(dbName, charset, collation string) string {
+	parts := []string{fmt.Sprintf("name=%s", dbName)}
+	if charset != "" {
+		parts = append(parts, fmt.Sprintf("charset=%s", charset))
+	}
+	if collation != "" {
+		parts = append(parts, fmt.Sprintf("collation=%s", collation))
+	}
+	return fmt.Sprintf("Success (%s)", strings.Join(parts, ", "))
+}
+
+// charsetMatches compares database character sets case-insensitively, treating utf8 and utf8mb3 as equivalent.
+func charsetMatches(got, want string) bool {
+	g := strings.ToLower(strings.TrimSpace(got))
+	w := strings.ToLower(strings.TrimSpace(want))
+	if g == w {
+		return true
+	}
+	return (g == "utf8" && w == "utf8mb3") || (g == "utf8mb3" && w == "utf8")
+}
+
+// runDummyDataSQL executes a minimal write/read/verify/delete test and optional SCHEMATA charset/collation check against a database using DSN.
+func runDummyDataSQL(dsn, dbName, wantCharset, wantCollation string) error {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
 	if err != nil {
 		return fmt.Errorf("open: %w", err)
@@ -997,6 +1027,22 @@ func runDummyDataSQL(dsn string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	db = db.WithContext(ctx)
+
+	if wantCharset != "" || wantCollation != "" {
+		var schemaMeta struct {
+			Charset   string `gorm:"column:DEFAULT_CHARACTER_SET_NAME"`
+			Collation string `gorm:"column:DEFAULT_COLLATION_NAME"`
+		}
+		if err := db.Raw("SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?", dbName).Scan(&schemaMeta).Error; err != nil {
+			return fmt.Errorf("query information_schema.SCHEMATA: %w", err)
+		}
+		if wantCharset != "" && !charsetMatches(schemaMeta.Charset, wantCharset) {
+			return fmt.Errorf("database charset mismatch: got %q, want %q", schemaMeta.Charset, wantCharset)
+		}
+		if wantCollation != "" && !strings.EqualFold(strings.TrimSpace(schemaMeta.Collation), strings.TrimSpace(wantCollation)) {
+			return fmt.Errorf("database collation mismatch: got %q, want %q", schemaMeta.Collation, wantCollation)
+		}
+	}
 
 	if err := db.AutoMigrate(&tumblebugTestRecord{}); err != nil {
 		return fmt.Errorf("auto migrate: %w", err)
@@ -1024,7 +1070,7 @@ func runDummyDataSQL(dsn string) error {
 
 // testDatabaseDummyData connects to the logical database using TLS configured from Secure Transport
 // and runs a write/read/verify/delete cycle. Falls back to tls=preferred if TLS enforcement is not ON.
-func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName string, stInfo *model.RDBMSSecureTransportInfo, rdbmsId string) (string, error) {
+func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName, wantCharset, wantCollation string, stInfo *model.RDBMSSecureTransportInfo, rdbmsId string) (string, error) {
 	tlsKey, tlsDesc := configureSecureTransportTLS(stInfo, rdbmsId, endpoint)
 	tlsParam := "tls=preferred"
 	if tlsKey != "" {
@@ -1034,12 +1080,12 @@ func testDatabaseDummyData(endpoint, adminUserName, adminUserPassword, dbName st
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s&%s",
 		adminUserName, adminUserPassword, endpoint, dbName, tlsParam)
 
-	err := runDummyDataSQL(dsn)
+	err := runDummyDataSQL(dsn, dbName, wantCharset, wantCollation)
 	if err != nil && tlsKey != "" && (stInfo == nil || !stInfo.Enforced) {
 		log.Warn().Err(err).Msgf("[%s] Remote Data I/O with %s failed; retrying with fallback tls=preferred", rdbmsId, tlsDesc)
 		fallbackDsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&timeout=10s&tls=preferred",
 			adminUserName, adminUserPassword, endpoint, dbName)
-		fallbackErr := runDummyDataSQL(fallbackDsn)
+		fallbackErr := runDummyDataSQL(fallbackDsn, dbName, wantCharset, wantCollation)
 		if fallbackErr == nil {
 			return fmt.Sprintf("%s (fallback to tls=preferred)", tlsDesc), nil
 		}
@@ -1308,6 +1354,9 @@ func runInternalDataTest(
 
 	// 3. Send Remote Command via POST /ns/{nsId}/cmd/infra/{infraId}
 	sqlStatements := "DROP TABLE IF EXISTS tumblebug_internal_test; CREATE TABLE tumblebug_internal_test (id INT PRIMARY KEY, val VARCHAR(255)); INSERT INTO tumblebug_internal_test (id, val) VALUES (1, 'internal-test-ok'); SELECT val FROM tumblebug_internal_test WHERE id=1; DROP TABLE tumblebug_internal_test;"
+	if tc.DatabaseCharset != "" || tc.DatabaseCollation != "" {
+		sqlStatements += fmt.Sprintf(" SELECT CONCAT('SCHEMATA:', DEFAULT_CHARACTER_SET_NAME, ':', DEFAULT_COLLATION_NAME) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='%s';", dbName)
+	}
 
 	commands := []string{
 		"command -v mysql || command -v mariadb || (command -v apt-get >/dev/null 2>&1 && while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 2; done; sudo apt-get -o DPkg::Lock::Timeout=180 update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=180 install -y -qq default-mysql-client) || (command -v dnf >/dev/null 2>&1 && sudo dnf install -y mariadb) || (command -v yum >/dev/null 2>&1 && sudo yum install -y mariadb) || sudo yum install -y mysql",
@@ -1343,20 +1392,35 @@ func runInternalDataTest(
 	var cmdResp model.InfraSshCmdResultForAPI
 	_ = json.Unmarshal(respBytes, &cmdResp)
 	cmdSucceeded := false
+	schemaMatched := tc.DatabaseCharset == "" && tc.DatabaseCollation == ""
 	for _, res := range cmdResp.Results {
 		for _, out := range res.Stdout {
 			if strings.Contains(out, "internal-test-ok") {
 				cmdSucceeded = true
-				break
 			}
-		}
-		if cmdSucceeded {
-			break
+			if !schemaMatched && strings.Contains(out, "SCHEMATA:") {
+				for _, line := range strings.Split(out, "\n") {
+					line = strings.TrimSpace(line)
+					if strings.HasPrefix(line, "SCHEMATA:") {
+						parts := strings.SplitN(line, ":", 3)
+						if len(parts) == 3 {
+							csOk := tc.DatabaseCharset == "" || charsetMatches(parts[1], tc.DatabaseCharset)
+							colOk := tc.DatabaseCollation == "" || strings.EqualFold(strings.TrimSpace(parts[2]), strings.TrimSpace(tc.DatabaseCollation))
+							if csOk && colOk {
+								schemaMatched = true
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
-	if cmdSucceeded {
+	if cmdSucceeded && schemaMatched {
 		return "Pass", nil
+	}
+	if cmdSucceeded && !schemaMatched {
+		return "Failed (Charset/Collation mismatch)", fmt.Errorf("internal SQL SCHEMATA verification did not match charset=%q collation=%q", tc.DatabaseCharset, tc.DatabaseCollation)
 	}
 	return "Failed (SQL verification failed)", fmt.Errorf("SQL verification response did not contain expected output")
 }
