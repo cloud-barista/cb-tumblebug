@@ -426,7 +426,9 @@ func RestPruneRDBMS(c echo.Context) error {
 // @ID PostRDBMSDatabase
 // @Summary Create a logical database inside an RDBMS instance
 // @Description Creates a logical database inside an Available RDBMS instance via CB-Spider.
-// @Description X-Admin-User-Name and X-Admin-User-Password headers are required.
+// @Description Optional charset and collation fields are supported for MySQL and MariaDB instances (Alibaba MariaDB supports charset only).
+// @Description X-Admin-User-Name and X-Admin-User-Password headers are required (not persisted by Tumblebug).
+// @Description Note: Setting charset/collation on NCP requires CB-Spider network access to the private VPC endpoint (sys.ncp_create_db), and on NHN Cloud requires 'Direct Control' enabled in the NHN Console.
 // @Tags [Infra Resource] RDBMS Management
 // @Accept json
 // @Produce json
@@ -472,6 +474,9 @@ func RestPostRDBMSDatabase(c echo.Context) error {
 	result, err := resource.CreateRDBMSDatabase(nsId, rdbmsId, req, adminUserName, adminUserPassword)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to create database in RDBMS '%s'", rdbmsId)
+		if errors.Is(err, resource.ErrRDBMSDatabaseValidation) {
+			return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+		}
 		return c.JSON(apierr.Code(err), model.SimpleMsg{Message: err.Error()})
 	}
 

@@ -2,38 +2,38 @@
 
 CB-Tumblebug's RDBMS (managed relational database) feature: capability discovery, instance
 lifecycle, logical database management, and CSP-specific defaults. Backed by CB-Spider's RDBMS
-API (v0.13.12+) — an implementation detail, not this document's focus (see References).
+API (v0.13.17+) — an implementation detail, not this document's focus (see References).
 
 ## CSP-Wide Engine Support Matrix
 
-| CSP           | Provider Name | MySQL | MariaDB | Tested Reference Version (MySQL / MariaDB) | Primary Platform / Service                 |
-| :------------ | :------------ | :---: | :-----: | :----------------------------------------- | :----------------------------------------- |
-| **AWS**       | `aws`         |  ✅   |   ✅    | `8.0` / `10.6`                             | Amazon RDS (Multi-AZ SubnetGroup)          |
-| **Azure**     | `azure`       |  ✅   |   ❌    | `8.0.21` / —                               | Azure Database for MySQL Flexible Server   |
-| **GCP**       | `gcp`         |  ✅   |   ❌    | `8.0` / —                                  | Google Cloud SQL for MySQL                 |
-| **Alibaba**   | `alibaba`     |  ✅   |   ✅    | `8.0` / `10.6`                             | Alibaba Cloud ApsaraDB RDS                 |
-| **Tencent**   | `tencent`     |  ✅   |   ❌    | `8.0` / —                                  | TencentDB for MySQL                        |
-| **IBM**       | `ibm`         |  ✅   |   ❌    | `8.4` / —                                  | IBM Cloud Databases for MySQL              |
-| **NCP**       | `ncp`         |  ✅   |   ❌    | `8.0.36` / —                               | NAVER Cloud Platform Cloud DB for MySQL    |
-| **NHN**       | `nhn`         |  ✅   |   ✅    | `MYSQL_V8408` / `MARIADB_V101118`          | NHN Cloud RDS for MySQL / MariaDB          |
-| **OpenStack** | `openstack`   |  ✅   |   ✅    | `5.7.29` / `10.4`                          | OpenStack Trove                            |
-| **KT Cloud**  | `kt`          |  ❌   |   ❌    | —                                          | _Unsupported (No managed DB service)_      |
+| CSP           | Provider Name | MySQL | MariaDB | Tested Reference Version (MySQL / MariaDB) | Primary Platform / Service               |
+| :------------ | :------------ | :---: | :-----: | :----------------------------------------- | :--------------------------------------- |
+| **AWS**       | `aws`         |  ✅   |   ✅    | `8.0` / `10.6`                             | Amazon RDS (Multi-AZ SubnetGroup)        |
+| **Azure**     | `azure`       |  ✅   |   ❌    | `8.0.21` / —                               | Azure Database for MySQL Flexible Server |
+| **GCP**       | `gcp`         |  ✅   |   ❌    | `8.0` / —                                  | Google Cloud SQL for MySQL               |
+| **Alibaba**   | `alibaba`     |  ✅   |   ✅    | `8.0` / `10.6`                             | Alibaba Cloud ApsaraDB RDS               |
+| **Tencent**   | `tencent`     |  ✅   |   ❌    | `8.0` / —                                  | TencentDB for MySQL                      |
+| **IBM**       | `ibm`         |  ✅   |   ❌    | `8.4` / —                                  | IBM Cloud Databases for MySQL            |
+| **NCP**       | `ncp`         |  ✅   |   ❌    | `8.0.36` / —                               | NAVER Cloud Platform Cloud DB for MySQL  |
+| **NHN**       | `nhn`         |  ✅   |   ✅    | `MYSQL_V8408` / `MARIADB_V101118`          | NHN Cloud RDS for MySQL / MariaDB        |
+| **OpenStack** | `openstack`   |  ✅   |   ✅    | `5.7.29` / `10.4`                          | OpenStack Trove                          |
+| **KT Cloud**  | `kt`          |  ❌   |   ❌    | —                                          | _Unsupported (No managed DB service)_    |
 
 ## Features
 
-| Feature                                                      | Status      | Location                                                                                                    |
-| ------------------------------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------- |
-| Static, CSP-wide support matrix (`GetRDBMSSupport`)          | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
-| Live, per-connection capability query (`GetRDBMSCapability`) | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
-| DB instance lifecycle (Create/List/Get/Delete)               | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
-| Create-request validation (dry run, no side effects)         | ✅          | `ValidateRDBMSCreateRequest` in [rdbms.go](../../src/core/resource/rdbms.go)                                |
-| CSP admin username/password policy validation                | ✅          | `validateAdminCredentials` in [rdbms.go](../../src/core/resource/rdbms.go)                                  |
-| Spec-aware autoFillDefaults picker (vCPU/memory-based)       | ✅          | `pickSmallestDBSpec` in [rdbms.go](../../src/core/resource/rdbms.go)                                        |
-| Internal Logical Database CRUD                               | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
-| Secure transport & server CA certificate probe               | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
-| Tag management                                               | By Label    | [label.go](../../src/core/common/label/label.go)                                                            |
-| Register/Unregister existing CSP RDBMS                       | Not Planned | —                                                                                                           |
-| Reconciliation                                               | ✅          | [rdbmsReconcile.go](../../src/core/reconcile/rdbmsReconcile.go)                                             |
+| Feature                                                       | Status      | Location                                                                                                    |
+| ------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| Static, CSP-wide support matrix (`GetRDBMSSupport`)           | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
+| Live, per-connection capability query (`GetRDBMSCapability`)  | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
+| DB instance lifecycle (Create/List/Get/Delete)                | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
+| Create-request validation (dry run, no side effects)          | ✅          | `ValidateRDBMSCreateRequest` in [rdbms.go](../../src/core/resource/rdbms.go)                                |
+| CSP admin username/password policy validation                 | ✅          | `validateAdminCredentials` in [rdbms.go](../../src/core/resource/rdbms.go)                                  |
+| Spec-aware autoFillDefaults picker (vCPU/memory-based)        | ✅          | `pickSmallestDBSpec` in [rdbms.go](../../src/core/resource/rdbms.go)                                        |
+| Internal Logical Database CRUD (with `charset` / `collation`) | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
+| Secure transport & server CA certificate probe                | ✅          | [rdbms.go](../../src/core/resource/rdbms.go), [rdbms.go](../../src/interface/rest/server/resource/rdbms.go) |
+| Tag management                                                | By Label    | [label.go](../../src/core/common/label/label.go)                                                            |
+| Register/Unregister existing CSP RDBMS                        | Not Planned | —                                                                                                           |
+| Reconciliation                                                | ✅          | [rdbmsReconcile.go](../../src/core/reconcile/rdbmsReconcile.go)                                             |
 
 - **Capability discovery**: check which engines/features a CSP supports.
   - Static, CSP-wide reference, no live call (`GET /rdbms/support`).
@@ -56,6 +56,7 @@ API (v0.13.12+) — an implementation detail, not this document's focus (see Ref
   `Available` DB instance.
   - Not a tracked Tumblebug resource — no kvstore entry, queried live
     (`POST`/`GET`/`DELETE .../rdbms/{rdbmsId}/database[/{dbName}]`).
+  - Supports optional `charset` and `collation` customization on MySQL and MariaDB (`POST .../rdbms/{rdbmsId}/database`; see [Logical Database Charset & Collation Support](#logical-database-charset--collation-support)).
   - Admin credentials forwarded as-is for that call only, never persisted.
 - **Secure Transport & TLS**: inspect live TLS enforcement status, active cipher suite, and download server CA certificate
   (`GET .../rdbms/{rdbmsId}/secure-transport`).
@@ -153,12 +154,12 @@ Full per-CSP notes (password quirks, premium storage minimums): section 9 of the
 
 Only 4 of 9 CSPs support MariaDB. Azure, GCP, Tencent, IBM, and NCP do not list `mariadb` — use `mysql` for those providers.
 
-| CSP           | Engine Version     | DB Spec                | Storage            | Storage Type Selection |        Subnet Requirement         | Security Group Requirement | Tag Support | DB Op. Method  |
-| :------------ | :----------------- | :--------------------- | :----------------- | :--------------------: | :-------------------------------: | :------------------------: | :---------: | :------------- |
-| **AWS**       | `10.6` (`10.6.27`) | `db.t3.medium`         | 100GB / gp2        |       Selectable       |         Required (2 AZs)          |          Required          |  Supported  | `sqlFallback`  |
-| **Alibaba**   | `10.6`             | `mariadb.n2.medium.2c` | 20GB / cloud_essd  |       Selectable       |             Required              |            N/A             |  Supported  | `cspNativeApi` |
-| **NHN**       | `MARIADB_V101118`  | `m2.c2m4`              | 20GB / General SSD |       Selectable       |             Required              |   N/A (Dedicated DB-SG)    | Unsupported | `cspNativeApi` |
-| **OpenStack** | `10.4`             | `m1.small`             | 20GB / auto        |       Selectable       |                N/A                |            N/A             | Unsupported | `cspNativeApi` |
+| CSP           | Engine Version     | DB Spec                | Storage            | Storage Type Selection | Subnet Requirement | Security Group Requirement | Tag Support | DB Op. Method  |
+| :------------ | :----------------- | :--------------------- | :----------------- | :--------------------: | :----------------: | :------------------------: | :---------: | :------------- |
+| **AWS**       | `10.6` (`10.6.27`) | `db.t3.medium`         | 100GB / gp2        |       Selectable       |  Required (2 AZs)  |          Required          |  Supported  | `sqlFallback`  |
+| **Alibaba**   | `10.6`             | `mariadb.n2.medium.2c` | 20GB / cloud_essd  |       Selectable       |      Required      |            N/A             |  Supported  | `cspNativeApi` |
+| **NHN**       | `MARIADB_V101118`  | `m2.c2m4`              | 20GB / General SSD |       Selectable       |      Required      |   N/A (Dedicated DB-SG)    | Unsupported | `cspNativeApi` |
+| **OpenStack** | `10.4`             | `m1.small`             | 20GB / auto        |       Selectable       |        N/A         |            N/A             | Unsupported | `cspNativeApi` |
 
 _(Note: OpenStack Trove datastore registers MariaDB 10.4; core lifecycle and SQL Data I/O are verified.)_
 
@@ -198,6 +199,8 @@ _(Note: OpenStack Trove datastore registers MariaDB 10.4; core lifecycle and SQL
   - Access control is governed by NHN Cloud's dedicated **DB Security Group** (DB 보안 그룹). Setting `nhnDBSGToAllowAllInbound: true` (or `NHNAutoOpenDBSecurityGroup: true` in Spider) with `PublicAccess: true` auto-creates and attaches a fully-open (`0.0.0.0/0`) DB Security Group for testing and deletes it automatically upon DB deletion.
 - **OpenStack**:
   - Storage type is not reported after creation — verify provisioning success via `Available` status.
+  - CB-Spider `v0.13.15` (`#1873`, fixing `#1866`) retries the initial admin privilege `GRANT` with exponential backoff (up to 5 attempts / 2 minutes) after Trove reports `ACTIVE`, preventing `Error 1044` on subsequent SQL operations.
+  - Note: The current OpenStack Trove MariaDB 10.4 guest image forces `require_secure_transport=ON` with an invalid guest TLS certificate (`#1869`), which affects direct SQL data-plane connections while Trove API control-plane operations succeed; scheduled to be resolved by the upcoming OpenStack MySQL/MariaDB image upgrade.
 
 ### Admin Credential Constraints
 
@@ -215,21 +218,51 @@ Enforced client-side by `validateAdminCredentials` before Create reaches CB-Spid
 | NCP       | Rejects: `admin`, `root`, etc. (system accounts)                                                                                                                   | Requires ≥1 special character           |
 | NHN       | Rejects: `admin`, `root`, `rds_admin`, `rds_mha`, `rds_repl`, `sqlgw`, `etladm`, `alertman`, `prom`, `mysql.session`, `mysql.sys`, `mysql.infoschema` (1-32 chars) | —                                       |
 
+### Logical Database Charset & Collation Support
+
+`POST /ns/{nsId}/resources/rdbms/{rdbmsId}/database` accepts optional `charset` and `collation` fields for **MySQL** and **MariaDB** instances (backed by CB-Spider `v0.13.13+` `#1868`):
+
+```json
+{
+  "databaseName": "sampledb",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}
+```
+
+- **Pre-flight Validation**:
+  - `databaseName` must match `^[A-Za-z0-9_-]+$`.
+  - `charset` and `collation` (when non-empty) must match `^[A-Za-z0-9_]+$` and are supported only when `dbEngine` is `mysql` or `mariadb`.
+  - On **Alibaba MariaDB**, non-empty `collation` is rejected with `400 Bad Request` because Alibaba's `CreateDatabase` API supports `CharacterSetName` (`charset`) only on MariaDB.
+- **Per-CSP Execution Mechanism & Prerequisites**:
+
+| CSP           | Default (`charset` & `collation` omitted)     | With `charset` only                                       | With `charset` + `collation` (or `collation` only)                | Prerequisites / Caveats                                                                                                                                                    |
+| :------------ | :-------------------------------------------- | :-------------------------------------------------------- | :---------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **GCP**       | Native Cloud SQL Admin API                    | Native Cloud SQL Admin API                                | Native Cloud SQL Admin API                                        | No direct SQL connectivity required.                                                                                                                                       |
+| **OpenStack** | Native Trove API                              | Native Trove API                                          | Native Trove API                                                  | No direct SQL connectivity required.                                                                                                                                       |
+| **Alibaba**   | Native RDS OpenAPI                            | Native RDS OpenAPI                                        | MySQL: Native RDS OpenAPI<br/>MariaDB: **Rejected (`400`)**       | Alibaba MariaDB supports `charset` only.                                                                                                                                   |
+| **Azure**     | Native ARM API                                | ARM API + SQL query (`information_schema.CHARACTER_SETS`) | Native ARM API                                                    | Providing both `charset` and `collation` uses pure ARM API without SQL connectivity; `charset`-only queries the instance over SQL to pair its default collation.           |
+| **Tencent**   | Native TencentDB API                          | Native TencentDB API                                      | Native API + follow-up SQL `ALTER DATABASE ... COLLATE`           | Specifying `collation` requires network reachability from CB-Spider to the DB endpoint (auto-rolls back via `DeleteDatabase` if `ALTER` fails).                            |
+| **AWS**       | Direct SQL (`CREATE DATABASE`)                | Direct SQL (`CREATE DATABASE ... CHARACTER SET`)          | Direct SQL (`CREATE DATABASE ... CHARACTER SET ... COLLATE`)      | Requires network reachability from CB-Spider to the RDS endpoint.                                                                                                          |
+| **IBM**       | Direct SQL (`CREATE DATABASE`)                | Direct SQL (`CREATE DATABASE ... CHARACTER SET`)          | Direct SQL (`CREATE DATABASE ... CHARACTER SET ... COLLATE`)      | Requires network reachability from CB-Spider to the IBM Cloud Databases endpoint.                                                                                          |
+| **NCP**       | Native REST API (`AddCloudMysqlDatabaseList`) | Direct SQL `CALL sys.ncp_create_db('db', 'charset', '')`  | Direct SQL `CALL sys.ncp_create_db('db', 'charset', 'collation')` | NCP has private VPC endpoints only (`*.vpc-cdb.ntruss.com:3306`). Setting `charset`/`collation` works only when CB-Spider has network reachability to the NCP private VPC. |
+| **NHN**       | Native REST API                               | Direct SQL (`CREATE DATABASE ... CHARACTER SET`)          | Direct SQL (`CREATE DATABASE ... CHARACTER SET ... COLLATE`)      | Setting `charset`/`collation` requires enabling **"Direct Control" (DB 스키마 & 사용자 직접 제어)** in the NHN Cloud Console beforehand and opening the DB Security Group. |
+
 ### Direct SQL Connection & Reachability (External vs Internal VPC)
 
 About a caller's own application or test client connecting straight to the database endpoint via MySQL wire protocol (port 3306) — distinct from Tumblebug/Spider's REST-based database management (`DB Op. Method`).
 
-| CSP       |      External Public Access       |  Internal (VPC) Access   | Requires TLS | Reachability Constraints & Evidence                                                                                                                                                                                                                                                                                    |
-| --------- | :-------------------------------: | :----------------------: | :----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AWS       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                        |
-| Azure     |                🟢                 |            🟢            |     Yes      | Plain rejected (`Error 3159 ... require_secure_transport=ON`); requires TLS (`tls=preferred` or `true`).                                                                                                                                                                                                               |
-| GCP       |                🟢                 |            🟢            |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                        |
-| Alibaba   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically allocates Public Connection and configures IP Whitelist.                                                                                                                                                                                                             |
-| Tencent   |                🟢                 |            🟢            |      —       | When `publicAccess=true`, CB-Spider automatically opens Public WAN access.                                                                                                                                                                                                                                             |
-| IBM       |                🟢                 |            🟢            |     Yes      | Public endpoint supported; TLS required (`*.databases.appdomain.cloud`).                                                                                                                                                                                                                                               |
-| OpenStack |   🟢 (if FIP/router configured)   |            🟢            |      —       | Depends on tenant network external router and floating IP assignment.                                                                                                                                                                                                                                                  |
-| NCP       |             🔴 (N/A)              | 🔴 (by default) / 🟢 (with ACG rule) |      —       | **VPC-private mode only (`publicAccess: false`)**; endpoint is private VPC-only (`*.vpc-cdb.ntruss.com`). Port 3306 is blocked by default even within the VPC until an ACG inbound rule is added in NCP Console (`Database > Cloud DB for MySQL > ACG`) or via `ncpDBACGToAllowAllInbound: true` (for testing only). |
-| NHN       | 🔴 (by default) / 🟢 (with DB SG) | 🟢 (requires DB SG rule) |      —       | **Public FQDN/IP is assigned, but port 3306 is blocked by default** by NHN Cloud's dedicated DB Security Group (positive security model). Access requires configuring an inbound permit rule in the NHN Console (`Database > RDS for MySQL > DB 보안 그룹`) or setting `nhnDBSGToAllowAllInbound: true` (for testing). |
+| CSP       |      External Public Access       |        Internal (VPC) Access         | Requires TLS | Reachability Constraints & Evidence                                                                                                                                                                                                                                                                                    |
+| --------- | :-------------------------------: | :----------------------------------: | :----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AWS       |                🟢                 |                  🟢                  |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                        |
+| Azure     |                🟢                 |                  🟢                  |     Yes      | Plain rejected (`Error 3159 ... require_secure_transport=ON`); requires TLS (`tls=preferred` or `true`).                                                                                                                                                                                                               |
+| GCP       |                🟢                 |                  🟢                  |      No      | Plain connection succeeded externally with `publicAccess=true`.                                                                                                                                                                                                                                                        |
+| Alibaba   |                🟢                 |                  🟢                  |      —       | When `publicAccess=true`, CB-Spider automatically allocates Public Connection and configures IP Whitelist.                                                                                                                                                                                                             |
+| Tencent   |                🟢                 |                  🟢                  |      —       | When `publicAccess=true`, CB-Spider automatically opens Public WAN access.                                                                                                                                                                                                                                             |
+| IBM       |                🟢                 |                  🟢                  |     Yes      | Public endpoint supported; TLS required (`*.databases.appdomain.cloud`).                                                                                                                                                                                                                                               |
+| OpenStack |   🟢 (if FIP/router configured)   |                  🟢                  |      —       | Depends on tenant network external router and floating IP assignment.                                                                                                                                                                                                                                                  |
+| NCP       |             🔴 (N/A)              | 🔴 (by default) / 🟢 (with ACG rule) |      —       | **VPC-private mode only (`publicAccess: false`)**; endpoint is private VPC-only (`*.vpc-cdb.ntruss.com`). Port 3306 is blocked by default even within the VPC until an ACG inbound rule is added in NCP Console (`Database > Cloud DB for MySQL > ACG`) or via `ncpDBACGToAllowAllInbound: true` (for testing only).   |
+| NHN       | 🔴 (by default) / 🟢 (with DB SG) |       🟢 (requires DB SG rule)       |      —       | **Public FQDN/IP is assigned, but port 3306 is blocked by default** by NHN Cloud's dedicated DB Security Group (positive security model). Access requires configuring an inbound permit rule in the NHN Console (`Database > RDS for MySQL > DB 보안 그룹`) or setting `nhnDBSGToAllowAllInbound: true` (for testing). |
 
 > [!NOTE]
 > **Dual Testing Strategy (External vs Internal VPC)**:
@@ -309,22 +342,24 @@ Background on CB-Spider's side of this integration (implementation detail, not p
 - [CB-Spider RDBMS API Test README](https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mysql-test/README.md)
 - [CB-Spider RDBMS StorageType Test README](https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mysql-test/storage-type-test/README.md)
 - [CB-Spider RDBMS Database Management Test README](https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mysql-test/database-test/README.md)
+- [CB-Spider RDBMS Charset Test README](https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mysql-test/charset-test/README.md)
+- [CB-Spider RDBMS Collation Test README](https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mysql-test/collation-test/README.md)
 - [CB-Spider RDBMS Tag Management Test README](https://github.com/cloud-barista/cb-spider/blob/master/test/rdbms-mysql-test/tag-test/README.md)
 
 ## Appendix: Tumblebug API → CB-Spider API Mapping
 
 Covers the 10 routes in Implemented Endpoints (planned endpoints excluded — their Spider-call shape isn't finalized). `{Uid}` is CB-Spider's own DB instance ID (`RDBMSInfo.Uid`), not the Tumblebug `rdbmsId`. 🔁 marks a field CB-Spider still calls `MasterUserName`/`MasterUserPassword` on the wire, translated to/from Tumblebug's `adminUserName`/`adminUserPassword` at the call site and never exposed as `Master*` to a Tumblebug API caller.
 
-| Tumblebug API                                  | CB-Spider API(s) Called                                                                                           | Notes                                                                                  |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `GET /rdbms/support`                           | — (none)                                                                                                          | Static from `assets/rdbmsinfo.yaml`.                                                   |
-| `GET /rdbms/capability`                        | `GET /rdbmsmetainfo` (required); `GET /dbspec`, `GET /rdbmsengine` (best-effort)                                  | Best-effort calls populate `dbInstanceSpecs`/`liveSupportedEngines` only.              |
-| `POST .../rdbms/validate`                      | Same as `/capability`'s required call, plus `GET /dbspec` if autofilling `dbInstanceSpec`                         | Dry run — never reaches create/delete.                                                 |
-| `POST .../rdbms`                               | Same as Validate, plus `POST /rdbms`; `GET /rdbms/{Uid}` (poll every 20s up to 10 min, through Creating or Error) | 🔁 in the create request body.                                                         |
-| `GET .../rdbms` (list)                         | — (none)                                                                                                          | Served from kvstore.                                                                   |
-| `GET .../rdbms/{rdbmsId}`                      | `GET /rdbms/{Uid}`                                                                                                | 🔁 in the response (password never returned).                                          |
-| `DELETE .../rdbms/{rdbmsId}`                   | `DELETE /rdbms/{Uid}`; `GET /rdbms/{Uid}` + `GET /allrdbms` (dual verify)                                         | See [RDBMS Management Stability Enhancement](#rdbms-management-stability-enhancement). |
-| `POST .../rdbms/{rdbmsId}/database`            | `GET /rdbms/{Uid}` (Status check); `POST /rdbms/{Uid}/databases`                                                  | 🔁 via `X-Master-User-Name`/`X-Master-User-Password` headers and body.                 |
-| `GET .../rdbms/{rdbmsId}/database`             | `GET /rdbms/{Uid}/databases?ConnectionName=...`                                                                  | 🔁 via `X-Master-User-Name` and `X-Master-User-Password` headers.                       |
-| `DELETE .../rdbms/{rdbmsId}/database/{dbName}` | `DELETE /rdbms/{Uid}/databases/{dbName}?ConnectionName=...`                                                      | 🔁 via body and `X-Master-User-Name`/`X-Master-User-Password` headers.                 |
-| `GET .../rdbms/{rdbmsId}/secure-transport`     | `GET /rdbms/{Uid}/secure-transport?ConnectionName=...`                                                           | 🔁 via `X-Master-User-Name` and `X-Master-User-Password` headers.                       |
+| Tumblebug API                                  | CB-Spider API(s) Called                                                                                           | Notes                                                                                                           |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `GET /rdbms/support`                           | — (none)                                                                                                          | Static from `assets/rdbmsinfo.yaml`.                                                                            |
+| `GET /rdbms/capability`                        | `GET /rdbmsmetainfo` (required); `GET /dbspec`, `GET /rdbmsengine` (best-effort)                                  | Best-effort calls populate `dbInstanceSpecs`/`liveSupportedEngines` only.                                       |
+| `POST .../rdbms/validate`                      | Same as `/capability`'s required call, plus `GET /dbspec` if autofilling `dbInstanceSpec`                         | Dry run — never reaches create/delete.                                                                          |
+| `POST .../rdbms`                               | Same as Validate, plus `POST /rdbms`; `GET /rdbms/{Uid}` (poll every 20s up to 10 min, through Creating or Error) | 🔁 in the create request body.                                                                                  |
+| `GET .../rdbms` (list)                         | — (none)                                                                                                          | Served from kvstore.                                                                                            |
+| `GET .../rdbms/{rdbmsId}`                      | `GET /rdbms/{Uid}`                                                                                                | 🔁 in the response (password never returned).                                                                   |
+| `DELETE .../rdbms/{rdbmsId}`                   | `DELETE /rdbms/{Uid}`; `GET /rdbms/{Uid}` + `GET /allrdbms` (dual verify)                                         | See [RDBMS Management Stability Enhancement](#rdbms-management-stability-enhancement).                          |
+| `POST .../rdbms/{rdbmsId}/database`            | `GET /rdbms/{Uid}` (Status check); `POST /rdbms/{Uid}/databases`                                                  | Forwards optional `Charset`/`Collation`; 🔁 via `X-Master-User-Name`/`X-Master-User-Password` headers and body. |
+| `GET .../rdbms/{rdbmsId}/database`             | `GET /rdbms/{Uid}/databases?ConnectionName=...`                                                                   | 🔁 via `X-Master-User-Name` and `X-Master-User-Password` headers.                                               |
+| `DELETE .../rdbms/{rdbmsId}/database/{dbName}` | `DELETE /rdbms/{Uid}/databases/{dbName}?ConnectionName=...`                                                       | 🔁 via body and `X-Master-User-Name`/`X-Master-User-Password` headers.                                          |
+| `GET .../rdbms/{rdbmsId}/secure-transport`     | `GET /rdbms/{Uid}/secure-transport?ConnectionName=...`                                                            | 🔁 via `X-Master-User-Name` and `X-Master-User-Password` headers.                                               |

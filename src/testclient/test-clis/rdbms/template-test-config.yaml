@@ -24,6 +24,8 @@ tumblebug:
 #
 # databaseName: logical database created/listed/deleted inside the RDBMS instance
 # (defaults to "sampledb" if left blank).
+# databaseCharset / databaseCollation: optional MySQL/MariaDB character set and collation
+# passed to POST .../database and verified via information_schema.SCHEMATA during Data I/O tests.
 #
 # Password policy quirks (see rdbms-management.md's Admin Credential Constraints section):
 # - IBM: rejects special characters (e.g. !, @) in adminUserPassword
@@ -49,6 +51,8 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     internalDataIOTest: true
     vmOSType: "ubuntu 24.04"
     vmvCPU: "2"
@@ -77,6 +81,8 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     internalDataIOTest: true
     vmOSType: "ubuntu 24.04"
     vmvCPU: "2"
@@ -102,6 +108,8 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     internalDataIOTest: true
     vmOSType: "ubuntu 24.04"
     vmvCPU: "2"
@@ -128,6 +136,8 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     internalDataIOTest: true
     vmOSType: "ubuntu 24.04"
     vmvCPU: "2"
@@ -153,6 +163,8 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     internalDataIOTest: true
     vmOSType: "ubuntu 22.04"
     vmvCPU: "2"
@@ -184,6 +196,8 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     internalDataIOTest: true
     vmOSType: "ubuntu 24.04"
     vmvCPU: "2"
@@ -208,13 +222,15 @@ testCases:
     publicAccess: true
     highAvailability: false
     databaseName: sampledb
+    databaseCharset: utf8mb4
+    databaseCollation: utf8mb4_unicode_ci
     internalDataIOTest: true
     vmOSType: "ubuntu 24.04"
     vmvCPU: "2"
     vmMemoryGiB: "4"
     vmImageId: ""
     vmSpecId: ""
-    # Excluded pending CB-Spider OpenStack driver fix (Error 1044)
+    # CB-Spider v0.13.15 (#1873) GRANT retry is integrated; excluded until the scheduled OpenStack MySQL/MariaDB version upgrade in early November.
     execute: false
 
   - rdbmsId: test-rdbms-ncp
@@ -233,19 +249,22 @@ testCases:
     # NCP requires a special character in the password.
     adminUserPassword: Password123!
     publicAccess: false
-    # ncpDBACGToAllowAllInbound: true auto-configures ACG inbound rule (0.0.0.0/0) for testing.
+    # ncpDBACGToAllowAllInbound: true auto-configures ACG inbound rule (0.0.0.0/0) for testing (CB-Spider v0.13.16+ #1879).
     # CAUTION: Test/dev use only. Never use in production environments.
     ncpDBACGToAllowAllInbound: true
     highAvailability: false
     databaseName: sampledb
+    # NCP charset/collation executes CALL sys.ncp_create_db over direct SQL to the private VPC endpoint (*.vpc-cdb.ntruss.com:3306);
+    # keep empty when CB-Spider runs outside the NCP VPC so the native NCP REST API is used.
+    databaseCharset: ""
+    databaseCollation: ""
     internalDataIOTest: true
     vmOSType: "ubuntu 22.04"
     vmvCPU: "2"
     vmMemoryGiB: "4"
     vmImageId: "23214590"
     vmSpecId: "s2-g3"
-    # Paused until CB-Spider adds support for NCPDBACGToAllowAllInbound
-    execute: false
+    execute: true
 
   - rdbmsId: test-rdbms-nhn
     connectionName: nhn-kr1
@@ -265,6 +284,10 @@ testCases:
     nhnDBSGToAllowAllInbound: true
     highAvailability: false
     databaseName: sampledb
+    # NHN charset/collation uses direct SQL CREATE DATABASE, which requires enabling "Direct Control" (DB 스키마 & 사용자 직접 제어)
+    # in the NHN Cloud Console beforehand; leave empty by default to use NHN's native REST API.
+    databaseCharset: ""
+    databaseCollation: ""
     internalDataIOTest: true
     vmOSType: "ubuntu 24.04"
     vmvCPU: "2"

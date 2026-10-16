@@ -13090,7 +13090,9 @@ paths:
       summary: Create a logical database inside an RDBMS instance
       description: |-
         Creates a logical database inside an Available RDBMS instance via CB-Spider.
-        X-Admin-User-Name and X-Admin-User-Password headers are required.
+        Optional charset and collation fields are supported for MySQL and MariaDB instances (Alibaba MariaDB supports charset only).
+        X-Admin-User-Name and X-Admin-User-Password headers are required (not persisted by Tumblebug).
+        Note: Setting charset/collation on NCP requires CB-Spider network access to the private VPC endpoint (sys.ncp_create_db), and on NHN Cloud requires 'Direct Control' enabled in the NHN Console.
       operationId: PostRDBMSDatabase
       parameters:
       - name: nsId
@@ -26576,6 +26578,16 @@ components:
       - databaseName
       type: object
       properties:
+        charset:
+          type: string
+          description: "Charset is the optional character set for the new database\
+            \ (MySQL/MariaDB only, e.g., \"utf8mb4\")."
+          example: utf8mb4
+        collation:
+          type: string
+          description: "Collation is the optional collation for the new database (MySQL/MariaDB\
+            \ only, e.g., \"utf8mb4_unicode_ci\")."
+          example: utf8mb4_unicode_ci
         databaseName:
           type: string
           example: sampledb

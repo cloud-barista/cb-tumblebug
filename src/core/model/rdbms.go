@@ -295,6 +295,10 @@ type RDBMSListResponse struct {
 // RDBMSDatabaseCreateReq creates a logical database inside an Available RDBMS instance.
 type RDBMSDatabaseCreateReq struct {
 	DatabaseName string `json:"databaseName" validate:"required" example:"sampledb"`
+	// Charset is the optional character set for the new database (MySQL/MariaDB only, e.g., "utf8mb4").
+	Charset string `json:"charset,omitempty" example:"utf8mb4"`
+	// Collation is the optional collation for the new database (MySQL/MariaDB only, e.g., "utf8mb4_unicode_ci").
+	Collation string `json:"collation,omitempty" example:"utf8mb4_unicode_ci"`
 }
 
 // RDBMSDatabaseInfo represents one logical database inside an RDBMS instance; not a tracked Tumblebug resource, always queried live.
