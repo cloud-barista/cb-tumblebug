@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Shared PostgreSQL access backend for restore-assets.sh / backup-assets.sh
-# Backends: docker (compose container), kubectl (k8s pod), direct (TCP via local pg tools)
+# Backends: docker (compose container), kubectl (k8s pod), direct (TCP via local pg tools), ssh (remote docker/kubectl over SSH)
 #
-# Selection: ASSETS_PG_BACKEND=docker|kubectl|direct (default: auto-detect in that order)
+# Selection: ASSETS_PG_BACKEND=docker|kubectl|direct|ssh (default: auto-detect)
 #
 # Common env:
 #   TB_POSTGRES_USER       (default: tumblebug)
@@ -17,6 +17,10 @@
 # direct backend:
 #   TB_POSTGRES_ENDPOINT   (host:port, default: localhost:5432)
 #   TB_POSTGRES_PASSWORD   (default: tumblebug)
+# ssh backend:
+#   TB_SSH_TARGET          (user@host, e.g. cb-user@52.78.93.192)
+#   TB_SSH_KEY             (optional SSH private key path)
+#   TB_SSH_PORT            (optional SSH port, default: 22)
 
 PG_USER="${TB_POSTGRES_USER:-tumblebug}"
 PG_DB="${TB_POSTGRES_DATABASE:-tumblebug}"
@@ -98,6 +102,60 @@ _pg_direct_check() {
     psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d postgres -c "SELECT 1;" >/dev/null 2>&1
 }
 
+# --- ssh backend (remote docker or kubectl over SSH) --------------------------
+# Env:
+#   TB_SSH_TARGET  (required for ssh backend, e.g. cb-user@52.78.93.192)
+#   TB_SSH_KEY     (optional path to SSH private key)
+#   TB_SSH_PORT    (optional SSH port, default: 22)
+
+_pg_ssh() {
+    local opts=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=12 -o ServerAliveInterval=30 -o ServerAliveCountMax=3)
+    [ -n "$TB_SSH_PORT" ] && opts+=(-p "$TB_SSH_PORT")
+    [ -n "$TB_SSH_KEY" ]  && opts+=(-i "$TB_SSH_KEY")
+    ssh "${opts[@]}" "$TB_SSH_TARGET" "$@"
+}
+
+_pg_ssh_check() {
+    [ -n "$TB_SSH_TARGET" ] || return 1
+    command -v ssh >/dev/null 2>&1 || return 1
+
+    local probe
+    probe=$(_pg_ssh "
+        for d in 'docker' 'sudo -n docker'; do
+            names=\$({ \$d ps --format '{{.Names}}' 2>/dev/null || true; })
+            if [ -n \"\$names\" ]; then
+                for c in '${TB_POSTGRES_CONTAINER:-}' 'cb-tumblebug-postgres' 'mc-infra-manager-postgres'; do
+                    [ -n \"\$c\" ] || continue
+                    if printf '%s\n' \"\$names\" | grep -Fxq \"\$c\"; then
+                        echo \"docker|\$d|\$c\"
+                        exit 0
+                    fi
+                done
+            fi
+        done
+        for k in 'kubectl' 'sudo -n kubectl'; do
+            found=\$({ \$k get pod -A -l '${TB_POSTGRES_POD_SELECTOR:-app=cb-tumblebug-postgres}' -o jsonpath='{.items[0].metadata.namespace}|{.items[0].metadata.name}' 2>/dev/null || true; })
+            if [ -n \"\$found\" ] && [ \"\$found\" != '|' ]; then
+                echo \"kubectl|\$k|\$found\"
+                exit 0
+            fi
+        done
+    " 2>/dev/null || true)
+
+    [ -n "$probe" ] || return 1
+    IFS='|' read -r PG_SSH_MODE PG_SSH_CLI PG_SSH_ARG1 PG_SSH_ARG2 <<< "$probe"
+    case "$PG_SSH_MODE" in
+        docker)
+            PG_CONTAINER="$PG_SSH_ARG1"
+            [ -n "$PG_CONTAINER" ] ;;
+        kubectl)
+            PG_K8S_NS="$PG_SSH_ARG1"
+            PG_POD="$PG_SSH_ARG2"
+            [ -n "$PG_K8S_NS" ] && [ -n "$PG_POD" ] ;;
+        *) return 1 ;;
+    esac
+}
+
 # --- backend selection --------------------------------------------------------
 
 # Sets PG_BACKEND and backend-specific vars; exits with guidance on failure
@@ -113,19 +171,34 @@ pg_backend_init() {
             [ -n "$TB_POSTGRES_ENDPOINT" ] || TB_POSTGRES_ENDPOINT="localhost:5432"
             _pg_direct_check || { echo "Error: direct backend unavailable (psql missing or cannot reach $TB_POSTGRES_ENDPOINT)." >&2; exit 1; }
             PG_BACKEND=direct ;;
+        ssh)
+            _pg_ssh_check || { echo "Error: ssh backend unavailable (cannot reach PostgreSQL container/pod on ${TB_SSH_TARGET:-<unset>})." >&2; exit 1; }
+            PG_BACKEND=ssh ;;
         auto)
-            if _pg_docker_check; then PG_BACKEND=docker
+            local tb_host="${TUMBLEBUG_SERVER%%:*}"
+            if [ -n "$TB_SSH_TARGET" ] && _pg_ssh_check; then
+                PG_BACKEND=ssh
+            elif [ -n "$tb_host" ] && [ "$tb_host" != "localhost" ] && [ "$tb_host" != "127.0.0.1" ]; then
+                if [ -n "$TB_POSTGRES_ENDPOINT" ] && _pg_direct_check; then
+                    PG_BACKEND=direct
+                else
+                    echo "Error: TUMBLEBUG_SERVER points to remote host '$tb_host', refusing to overwrite local PostgreSQL database." >&2
+                    echo "  Use 'make init HOST=$tb_host' (SSH tunnel + remote DB restore) or set TB_POSTGRES_ENDPOINT." >&2
+                    exit 1
+                fi
+            elif _pg_docker_check; then PG_BACKEND=docker
             elif _pg_kubectl_check; then PG_BACKEND=kubectl
             elif [ -n "$TB_POSTGRES_ENDPOINT" ] && _pg_direct_check; then PG_BACKEND=direct
             else
                 echo "Error: no PostgreSQL access backend available." >&2
                 echo "  - docker:  start the compose stack (make up) or set TB_POSTGRES_CONTAINER" >&2
                 echo "  - kubectl: set TB_K8S_NAMESPACE / TB_POSTGRES_POD(_SELECTOR)" >&2
+                echo "  - ssh:     run 'make init HOST=<ip>' or set ASSETS_PG_BACKEND=ssh TB_SSH_TARGET=user@host" >&2
                 echo "  - direct:  set TB_POSTGRES_ENDPOINT (and install postgresql client tools)" >&2
                 exit 1
             fi ;;
         *)
-            echo "Error: unknown ASSETS_PG_BACKEND '$ASSETS_PG_BACKEND' (docker|kubectl|direct)" >&2
+            echo "Error: unknown ASSETS_PG_BACKEND '$ASSETS_PG_BACKEND' (docker|kubectl|direct|ssh)" >&2
             exit 1 ;;
     esac
 }
@@ -135,6 +208,12 @@ pg_backend_describe() {
         docker)  echo "docker (container: $PG_CONTAINER)" ;;
         kubectl) echo "kubectl (pod: $PG_K8S_NS/$PG_POD)" ;;
         direct)  echo "direct (endpoint: $PG_HOST:$PG_PORT)" ;;
+        ssh)
+            if [ "$PG_SSH_MODE" = "docker" ]; then
+                echo "ssh ($TB_SSH_TARGET -> docker:$PG_CONTAINER)"
+            else
+                echo "ssh ($TB_SSH_TARGET -> kubectl:$PG_K8S_NS/$PG_POD)"
+            fi ;;
     esac
 }
 
@@ -147,6 +226,12 @@ pg_psql() {
         docker)  docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$db" -c "$sql" ;;
         kubectl) kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- psql -U "$PG_USER" -d "$db" -c "$sql" ;;
         direct)  psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" -c "$sql" ;;
+        ssh)
+            if [ "$PG_SSH_MODE" = "docker" ]; then
+                printf '%s\n' "$sql" | _pg_ssh "$PG_SSH_CLI exec -i $PG_CONTAINER psql -U $PG_USER -d $db"
+            else
+                printf '%s\n' "$sql" | _pg_ssh "$PG_SSH_CLI exec -i -n $PG_K8S_NS $PG_POD -- psql -U $PG_USER -d $db"
+            fi ;;
     esac
 }
 
@@ -157,6 +242,12 @@ pg_psql_value() {
         docker)  docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$db" -tAc "$sql" ;;
         kubectl) kubectl exec -n "$PG_K8S_NS" "$PG_POD" -- psql -U "$PG_USER" -d "$db" -tAc "$sql" ;;
         direct)  psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" -tAc "$sql" ;;
+        ssh)
+            if [ "$PG_SSH_MODE" = "docker" ]; then
+                printf '%s\n' "$sql" | _pg_ssh "$PG_SSH_CLI exec -i $PG_CONTAINER psql -U $PG_USER -d $db -tA"
+            else
+                printf '%s\n' "$sql" | _pg_ssh "$PG_SSH_CLI exec -i -n $PG_K8S_NS $PG_POD -- psql -U $PG_USER -d $db -tA"
+            fi ;;
     esac
 }
 
@@ -181,6 +272,18 @@ pg_restore_file() {
             return $rc ;;
         direct)
             pg_restore -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" --data-only -v "$dump" ;;
+        ssh)
+            local exec_prefix
+            if [ "$PG_SSH_MODE" = "docker" ]; then
+                exec_prefix="$PG_SSH_CLI exec -i $PG_CONTAINER"
+            else
+                exec_prefix="$PG_SSH_CLI exec -i -n $PG_K8S_NS $PG_POD --"
+            fi
+            _pg_ssh "$exec_prefix sh -c 'cat > $remote'" < "$dump"
+            _pg_ssh "$exec_prefix pg_restore -U $PG_USER -d $db --data-only -v $remote"
+            local rc=$?
+            _pg_ssh "$exec_prefix rm -f $remote"
+            return $rc ;;
     esac
 }
 
@@ -204,5 +307,17 @@ pg_dump_file() {
             return $rc ;;
         direct)
             pg_dump -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$db" -F c --data-only -f "$out" ;;
+        ssh)
+            local exec_prefix
+            if [ "$PG_SSH_MODE" = "docker" ]; then
+                exec_prefix="$PG_SSH_CLI exec -i $PG_CONTAINER"
+            else
+                exec_prefix="$PG_SSH_CLI exec -i -n $PG_K8S_NS $PG_POD --"
+            fi
+            _pg_ssh "$exec_prefix pg_dump -U $PG_USER -d $db -F c --data-only -f $remote"
+            _pg_ssh "$exec_prefix cat $remote" > "$out"
+            local rc=$?
+            _pg_ssh "$exec_prefix rm -f $remote"
+            return $rc ;;
     esac
 }

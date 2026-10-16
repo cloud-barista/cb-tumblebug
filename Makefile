@@ -12,9 +12,15 @@ swag swagger: ## Generate Swagger documentation
 
 # ===== Initialization =====
 SHELL := /bin/bash
+REMOTE_HOST := $(or $(HOST),$(IP))
+SSH_USER ?=
+SSH_KEY ?=
+SSH_PORT ?= 22
 
-init: ## Run initialization sequence (`make init ARGS="-y"` for headless; `TARGET=k8s` or `make k-init` for Kubernetes)
-ifeq ($(TARGET),k8s)
+init: ## Run initialization sequence (`make init ARGS="-y"` for headless; `HOST=<ip>` for remote via SSH; `TARGET=k8s` or `make k-init` for Kubernetes)
+ifneq ($(REMOTE_HOST),)
+	@$(MAKE) --no-print-directory r-init
+else ifeq ($(TARGET),k8s)
 	@$(MAKE) k-init
 else
 	@chmod +x ./init/multi-init.sh 2>/dev/null || true
@@ -504,7 +510,10 @@ k-addons-configure:
 	case "$$p" in [nN]*) pf=none;; *) pf=auto;; esac; \
 	printf 'OBS=%s\nPF=%s\nAUTH=%s\n' "$$obs" "$$pf" "$$auth" > $(K8S_ADDONS_ANSWERS)
 
-k-init: ## Run initialization against the Kubernetes deployment (port-forward + headless-capable init)
+k-init: ## Run initialization against the Kubernetes deployment (`HOST=<ip>` for remote node via SSH; else local port-forward)
+ifneq ($(REMOTE_HOST),)
+	@$(MAKE) --no-print-directory r-init
+else
 	@printf '%b\n' '$(KD)Port-forwarding cb-tumblebug ($(K8S_INIT_PORT) -> 1323)...$(KX)'
 	@$(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug $(K8S_INIT_PORT):1323 >/dev/null 2>&1 & \
 	PF_PID=$$!; \
@@ -514,6 +523,120 @@ k-init: ## Run initialization against the Kubernetes deployment (port-forward + 
 	TUMBLEBUG_SERVER=localhost:$(K8S_INIT_PORT) \
 	ASSETS_PG_BACKEND=kubectl \
 	TB_K8S_NAMESPACE=$(K8S_NAMESPACE) \
+	./init/multi-init.sh $(ARGS)
+endif
+
+r-init: ## Initialize a remote CB-Tumblebug / M-CMP node over a temporary SSH tunnel (`make init HOST=<ip|user@ip|infraId>`)
+	@set -e; \
+	tmp_dir=$$(mktemp -d /tmp/.cb-r-init.XXXXXX); chmod 700 "$$tmp_dir"; \
+	TUNNEL_PID=""; DISC_PF_PID=""; remote_pf=0; \
+	ssh_base_opts="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=12 -o ServerAliveInterval=30 -o ServerAliveCountMax=3"; \
+	cleanup() { \
+		trap - EXIT INT TERM; \
+		if [ -n "$$TUNNEL_PID" ]; then \
+			kill "$$TUNNEL_PID" 2>/dev/null || true; \
+			printf '%b\n' "$(KD)\xe2\x9c\x94 Temporary SSH tunnel closed (PID $$TUNNEL_PID) and temporary files cleaned up.$(KX)"; \
+		fi; \
+		[ -n "$$DISC_PF_PID" ] && kill "$$DISC_PF_PID" 2>/dev/null || true; \
+		if [ "$$remote_pf" = "1" ] && [ -n "$$user" ] && [ -n "$$host" ]; then \
+			ssh $$ssh_opts "$$user@$$host" "pkill -f 'port-forward .*svc/cb-tumblebug 11323:1323'" >/dev/null 2>&1 || true; \
+		fi; \
+		rm -rf "$$tmp_dir"; \
+	}; \
+	trap cleanup EXIT INT TERM; \
+	target="$(REMOTE_HOST)"; user="$(SSH_USER)"; key="$(SSH_KEY)"; port="$(SSH_PORT)"; \
+	if [ -z "$$target" ]; then \
+		if [ -t 0 ]; then \
+			read -rp "Remote host / public IP (or local infra ID): " target; \
+		fi; \
+		[ -n "$$target" ] || { printf '%b\n' '$(KR)\xe2\x9c\x96 Remote host is required: make init HOST=<ip>$(KX)'; exit 1; }; \
+	fi; \
+	case "$$target" in \
+		*@*) [ -z "$$user" ] && user="$${target%@*}"; host="$${target#*@}" ;; \
+		*)   host="$$target" ;; \
+	esac; \
+	[ -n "$$key" ] && key="$${key/#\~/$HOME}"; \
+	if [ -z "$$key" ]; then \
+		local_tb=""; \
+		if curl -sf -u default:default --max-time 2 http://localhost:1323/tumblebug/readyz >/dev/null 2>&1; then \
+			local_tb="http://localhost:1323/tumblebug"; \
+		elif curl -sf -u default:default --max-time 2 http://localhost:8080/tumblebug/readyz >/dev/null 2>&1; then \
+			local_tb="http://localhost:8080/tumblebug"; \
+		elif command -v kubectl >/dev/null 2>&1 && $(KUBECTL) get svc -n $(K8S_NAMESPACE) cb-tumblebug >/dev/null 2>&1; then \
+			disc_port=12323; \
+			while ss -tlnH 2>/dev/null | awk '{print $$4}' | grep -qE "[:.]$$disc_port$$"; do disc_port=$$((disc_port+1)); done; \
+			$(KUBECTL) port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug $$disc_port:1323 >/dev/null 2>&1 & \
+			DISC_PF_PID=$$!; sleep 1; \
+			if curl -sf -u default:default --max-time 2 http://localhost:$$disc_port/tumblebug/readyz >/dev/null 2>&1; then \
+				local_tb="http://localhost:$$disc_port/tumblebug"; \
+			fi; \
+		fi; \
+		if [ -n "$$local_tb" ]; then \
+			found=$$(LOCAL_TB="$$local_tb" TARGET_Q="$$host" python3 -c 'exec("import os,sys,json,urllib.request,base64\ntb=os.environ[\"LOCAL_TB\"]; q=os.environ[\"TARGET_Q\"]\nhdr={\"Authorization\":\"Basic \"+base64.b64encode(b\"default:default\").decode()}\nreq=lambda u: json.loads(urllib.request.urlopen(urllib.request.Request(tb+u,headers=hdr),timeout=4).read().decode())\nns_list=[x.get(\"id\") if isinstance(x,dict) else x for x in (req(\"/ns\").get(\"ns\") or [{\"id\":\"default\"}])]\nfor ns in ns_list:\n  try:\n    for inf in (req(f\"/ns/{ns}/infra\").get(\"infra\") or []):\n      iid=inf.get(\"id\",\"\")\n      for v in (inf.get(\"node\") or inf.get(\"vm\") or []):\n        ip=v.get(\"publicIP\") or v.get(\"publicIp\") or \"\"\n        nid=v.get(\"id\",\"\")\n        if ip and (q in (ip, iid, nid)):\n          print(f\"{ip}|{v.get(\x27sshKeyId\x27) or v.get(\x27sshKey\x27) or \x27\x27}|{v.get(\x27nodeUserName\x27) or v.get(\x27vmUserName\x27) or v.get(\x27userName\x27) or \x27cb-user\x27}|{ns}\")\n          sys.exit(0)\n  except Exception: pass\n")' 2>/dev/null || true); \
+			if [ -n "$$found" ]; then \
+				IFS='|' read -r res_ip res_skey res_user res_ns <<< "$$found"; \
+				host="$$res_ip"; \
+				[ -z "$$user" ] && user="$$res_user"; \
+				if [ -n "$$res_skey" ]; then \
+					curl -sf -u default:default "$$local_tb/ns/$$res_ns/resources/sshKey/$$res_skey" \
+						| python3 -c "import json,sys; k=json.load(sys.stdin).get('privateKey',''); sys.stdout.write(k if k.endswith('\n') else k+'\n')" > "$$tmp_dir/key.pem" 2>/dev/null || true; \
+					if [ -s "$$tmp_dir/key.pem" ]; then \
+						chmod 600 "$$tmp_dir/key.pem"; key="$$tmp_dir/key.pem"; \
+						printf '%b\n' "$(KG)\xe2\x9c\x94 Auto-discovered SSH key & target ($(KB)$$user@$$host$(KX)$(KG)) from local CB-Tumblebug$(KX)"; \
+					fi; \
+				fi; \
+			fi; \
+		fi; \
+		if [ -n "$$DISC_PF_PID" ]; then kill "$$DISC_PF_PID" 2>/dev/null || true; DISC_PF_PID=""; fi; \
+	fi; \
+	user="$${user:-cb-user}"; \
+	ssh_opts="$$ssh_base_opts -p $$port"; \
+	[ -n "$$key" ] && ssh_opts="$$ssh_opts -i $$key"; \
+	if ! ssh $$ssh_opts -o BatchMode=yes "$$user@$$host" true >/dev/null 2>&1; then \
+		if [ -z "$$key" ] && [ -t 0 ]; then \
+			printf '%b\n' "$(KY)\xe2\x9a\xa0 Could not connect to $$user@$$host with default SSH credentials.$(KX)"; \
+			read -rp "  SSH private key path [$$HOME/.ssh/id_rsa]: " k_in; \
+			key="$${k_in:-$$HOME/.ssh/id_rsa}"; key="$${key/#\~/$HOME}"; \
+			read -rp "  SSH user [$$user]: " u_in; \
+			user="$${u_in:-$$user}"; \
+			ssh_opts="$$ssh_base_opts -p $$port -i $$key"; \
+		fi; \
+	fi; \
+	printf '%b\n' "$(KB)$(KC)\xe2\x96\x8c Remote Initialization via Temporary SSH Tunnel$(KX) $(KD)($$user@$$host)$$([ -n "$$key" ] && printf ' [key: %s]' "$$(basename "$$key")")$(KX)"; \
+	remote_port=$$(ssh $$ssh_opts "$$user@$$host" " \
+		if ss -tlnH 2>/dev/null | awk '{print \$$4}' | grep -qE '[:.]1323\$$'; then \
+			echo 1323; \
+		else \
+			for k in 'kubectl' 'sudo -n kubectl'; do \
+				if \$$k get svc -n $(K8S_NAMESPACE) cb-tumblebug >/dev/null 2>&1; then \
+					nohup \$$k port-forward -n $(K8S_NAMESPACE) svc/cb-tumblebug 11323:1323 >/dev/null 2>&1 & \
+					sleep 2; echo 11323:k8s; exit 0; \
+				fi; \
+			done; \
+		fi" 2>/dev/null || true); \
+	case "$$remote_port" in \
+		*:k8s) remote_port="$${remote_port%:k8s}"; remote_pf=1 ;; \
+	esac; \
+	if [ -z "$$remote_port" ]; then \
+		printf '%b\n' "$(KR)\xe2\x9c\x96 Could not detect CB-Tumblebug (:1323 or K8s svc/cb-tumblebug) on $$user@$$host.$(KX)"; \
+		exit 1; \
+	fi; \
+	local_port=$(K8S_INIT_PORT); \
+	while ss -tlnH 2>/dev/null | awk '{print $$4}' | grep -qE "[:.]$$local_port$$"; do local_port=$$((local_port+1)); done; \
+	printf '%b\n' "$(KD)Opening temporary SSH tunnel (localhost:$$local_port -> $$host:$$remote_port)...$(KX)"; \
+	ssh -N $$ssh_opts -o ExitOnForwardFailure=yes -L "127.0.0.1:$$local_port:127.0.0.1:$$remote_port" "$$user@$$host" >/dev/null 2>&1 & \
+	TUNNEL_PID=$$!; \
+	sleep 2; \
+	if ! kill -0 "$$TUNNEL_PID" 2>/dev/null; then \
+		printf '%b\n' "$(KR)\xe2\x9c\x96 Failed to establish SSH tunnel to $$user@$$host.$(KX)"; \
+		exit 1; \
+	fi; \
+	chmod +x ./init/multi-init.sh 2>/dev/null || true; \
+	TUMBLEBUG_SERVER="localhost:$$local_port" \
+	ASSETS_PG_BACKEND="ssh" \
+	TB_SSH_TARGET="$$user@$$host" \
+	TB_SSH_KEY="$$key" \
+	TB_SSH_PORT="$$port" \
 	./init/multi-init.sh $(ARGS)
 
 k-down: ## Uninstall the Helm release and wait for pods to terminate (PVCs/data are kept)
@@ -1189,7 +1312,7 @@ help: ## Display this help screen
 	@echo "  \033[36mlogs\033[0m                   Follow service logs (docker compose logs -f)"
 	@echo ""
 	@echo "⚙️  Initialization:"
-	@grep -E '^(init|init-profile|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^(init|r-init|init-profile|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🔐 OpenBao (Secrets Management):"
 	@echo "  \033[36minit-openbao\033[0m           Initialize OpenBao (one-time setup)"
@@ -1240,4 +1363,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop gen-cred enc-cred dec-cred bcrypt certs help k-prereqs k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey
+.PHONY: default run clean clean-all swag swagger init r-init init-profile compose compose-down logs status ps clean-db backup-assets restore-assets up down set-versions k-tunnel k-tunnel-stop gen-cred enc-cred dec-cred bcrypt certs help k-prereqs k-up k-init k-down k-clean k-status k-ps k-images k-logs k-port-forward k-port-forward-stop k-port-forward-save k-port-forward-restore k-token k-mcp-on k-mcp-off k-mcp-client-info k-info k-agentgateway-on k-agentgateway-off k-mcp-auth-on k-mcp-auth-off k-mcp-token k-gateway-on k-gateway-off k-gateway-tls-on k-gateway-tls-off k-gateway-forward k-build k-build-tb k-build-mapui k-build-mcp k-build-sp k-build-off k-assets k-assets-off k-observability-on k-observability-off k-diagnose k-preflight-host k-diagnose-host k-up-apply k-addons-configure k-gateway-install k-mcp-authkey

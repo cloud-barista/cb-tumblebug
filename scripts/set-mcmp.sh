@@ -100,12 +100,33 @@ COMPOSE_FILE="$MCMP_DIR/conf/docker/docker-compose.yaml"
 ENV_FILE="$MCMP_DIR/conf/docker/.env"
 
 # Startup Waves (aligned with mc-admin-cli/bin/installAll.sh)
+# Note: mc-workflow-manager-jenkins is included in Wave 1 because its first boot
+# downloads ~100 Jenkins plugins (~5-6 min); starting it in Wave 1 overlaps plugin
+# installation with Waves 1-3 instead of blocking Wave 4.
 STARTUP_WAVES=(
-    "mc-infra-connector mc-infra-manager mc-iam-manager-nginx mc-iam-manager mc-iam-manager-post-initial"
+    "mc-infra-connector mc-infra-manager mc-iam-manager-nginx mc-iam-manager mc-iam-manager-post-initial mc-workflow-manager-jenkins"
     "mc-data-manager mc-web-console-api mc-web-console-front"
     "mc-observability-manager mc-observability-front mc-observability-insight mc-observability-insight-scheduler mc-observability-mcp-grafana mc-observability-mcp-maria mc-observability-mcp-influx mc-observability-log-collector"
     "mc-application-manager mc-workflow-manager mc-cost-optimizer-fe"
 )
+
+# Run a long-running command while emitting a periodic heartbeat line every 15s
+# so remote SSH sessions do not disconnect due to idle stdout timeout.
+run_with_heartbeat() {
+    local label="$1"
+    shift
+    "$@" &
+    local cmd_pid=$!
+    local elapsed=0
+    while kill -0 "$cmd_pid" 2>/dev/null; do
+        sleep 15
+        if kill -0 "$cmd_pid" 2>/dev/null; then
+            elapsed=$((elapsed + 15))
+            echo "   ⏳ [$label] still in progress... (${elapsed}s elapsed)"
+        fi
+    done
+    wait "$cmd_pid"
+}
 
 get_configured_domain() {
     if [ -f "$ENV_FILE" ]; then
@@ -188,19 +209,19 @@ if [ "$ACTION" != "install" ]; then
                 wave_num=$((wave_num + 1))
                 echo ""
                 echo "---- Wave ${wave_num}/${#STARTUP_WAVES[@]}: $wave_services ----"
-                $SUDO_PREFIX ./mcc infra run -d -s "$wave_services"
+                run_with_heartbeat "Wave ${wave_num}/${#STARTUP_WAVES[@]}" $SUDO_PREFIX ./mcc infra run -d -s "$wave_services"
             done
 
             echo ""
             echo "---- Starting remaining M-CMP services ----"
-            $SUDO_PREFIX ./mcc infra run -d
+            run_with_heartbeat "Remaining services" $SUDO_PREFIX ./mcc infra run -d
 
             # Verify mc-iam-manager-post-initial completion
             pi_exit=$($SUDO_PREFIX docker inspect --format='{{.State.ExitCode}}' mc-iam-manager-post-initial 2>/dev/null || echo "1")
             if [ "$pi_exit" != "0" ]; then
                 echo ""
                 echo "🔄 Re-running mc-iam-manager-post-initial to ensure IAM initialization..."
-                $SUDO_PREFIX ./mcc infra run -s mc-iam-manager-post-initial || true
+                run_with_heartbeat "IAM post-initial" $SUDO_PREFIX ./mcc infra run -s mc-iam-manager-post-initial || true
             fi
 
             # Reclaim ownership if sudo was used
@@ -218,9 +239,9 @@ if [ "$ACTION" != "install" ]; then
             echo "📥 Pre-pulling M-CMP Docker images (quiet mode to prevent log flooding)..."
             echo "   This may take several minutes for ~60 images."
             if $SUDO_PREFIX docker compose --help 2>&1 | grep -q -- "--progress"; then
-                $SUDO_PREFIX env COMPOSE_PROJECT_NAME=mcc docker compose -f "$COMPOSE_FILE" --progress quiet pull
+                run_with_heartbeat "Image pull" $SUDO_PREFIX env COMPOSE_PROJECT_NAME=mcc docker compose -f "$COMPOSE_FILE" --progress quiet pull
             else
-                $SUDO_PREFIX ./mcc infra pull
+                run_with_heartbeat "Image pull" $SUDO_PREFIX ./mcc infra pull
             fi
             echo ""
             echo "✅ Image pull completed."
