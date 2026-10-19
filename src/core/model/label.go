@@ -71,6 +71,9 @@ const (
 	LabelSubnetId           string = "sys.subnetId"
 	LabelPlaceholder        string = "sys.placeholder"
 	LabelRequiresComplement string = "sys.requiresComplement"
+	LabelCspAutoCreated     string = "sys.cspAutoCreated"
+	LabelParentResourceType string = "sys.parentResourceType"
+	LabelParentResourceId   string = "sys.parentResourceId"
 )
 
 // GetLabelConstantsMap returns a map with label-related system constants as keys and their example values.
@@ -104,6 +107,9 @@ func GetLabelConstantsMap() map[string]string {
 		LabelCidr:               "10.0.0.0/24",
 		LabelPlaceholder:        "true",
 		LabelRequiresComplement: "true",
+		LabelCspAutoCreated:     "true",
+		LabelParentResourceType: StrRDBMS,
+		LabelParentResourceId:   "rdbms-1234",
 	}
 }
 
@@ -112,6 +118,8 @@ func GetLabelTypes() []string {
 	return []string{
 		StrVNet,
 		StrSubnet,
+		StrSecurityGroup,
+		StrSSHKey,
 		StrDataDisk,
 		StrNLB,
 		StrNode,
@@ -121,6 +129,8 @@ func GetLabelTypes() []string {
 		StrKubernetes,
 		StrContainer,
 		StrNamespace,
+		StrVPN,
+		StrRDBMS,
 	}
 }
 
