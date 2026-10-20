@@ -26672,6 +26672,10 @@ components:
         iops:
           type: string
           example: "3000"
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
         name:
           type: string
           description: Name is human-readable string to represent the object
