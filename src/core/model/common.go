@@ -407,6 +407,7 @@ var ResourceTypeRegistry = map[string]func() any{
 	StrNamespace:     func() any { return &NsInfo{} },
 	StrVPN:           func() any { return &VpnInfo{} },
 	StrGlobalDns:     func() any { return &GlobalDnsRecordInfo{} },
+	StrRDBMS:         func() any { return &RDBMSInfo{} },
 }
 
 // ResourceIds is struct for containing id and name of each Resource type

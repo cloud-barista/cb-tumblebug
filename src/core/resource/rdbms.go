@@ -938,9 +938,6 @@ func validateRDBMSCreateRequest(meta spiderRDBMSMetaInfo, req model.RDBMSCreateR
 		if !strings.EqualFold(providerName, "nhn") {
 			return fmt.Errorf("nhnDBSGToAllowAllInbound is only supported for NHN Cloud")
 		}
-		if !req.PublicAccess {
-			return fmt.Errorf("nhnDBSGToAllowAllInbound requires publicAccess=true")
-		}
 	}
 	if req.NCPDBACGToAllowAllInbound {
 		if !strings.EqualFold(providerName, "ncp") {
@@ -1117,6 +1114,7 @@ func updateRDBMSInfoFromSpider(rdbmsInfo *model.RDBMSInfo, sp spiderRDBMSInfo) {
 	rdbmsInfo.Encryption = sp.Encryption
 	rdbmsInfo.Endpoint = sp.Endpoint
 	rdbmsInfo.TagList = sp.TagList
+	rdbmsInfo.KeyValueList = sp.KeyValueList
 	rdbmsInfo.Status = sp.Status
 }
 
@@ -1436,6 +1434,11 @@ func CreateRDBMS(ctx context.Context, nsId string, req model.RDBMSCreateRequest)
 		return emptyRet, err
 	}
 
+	// 11. Reconcile and auto-register any CSP-generated Security Group/ACG (e.g. NCP Cloud DB ACG)
+	if recErr := reconcileAutoCreatedSecurityGroup(ctx, nsId, &rdbmsInfo); recErr != nil {
+		log.Warn().Err(recErr).Msgf("Failed to reconcile auto-created security group for RDBMS %s", rdbmsInfo.Id)
+	}
+
 	log.Info().Msgf("RDBMS created: id=%s, status=%s, endpoint=%s, engine=%s/%s",
 		rdbmsInfo.Id, rdbmsInfo.Status, rdbmsInfo.Endpoint, rdbmsInfo.DBEngine, rdbmsInfo.DBEngineVersion)
 	return rdbmsInfo, nil
@@ -1449,7 +1452,8 @@ func isRDBMSInfoUpdated(oldInfo, newInfo model.RDBMSInfo) bool {
 		oldInfo.StorageSize != newInfo.StorageSize ||
 		oldInfo.StorageType != newInfo.StorageType ||
 		oldInfo.BackupTime != newInfo.BackupTime ||
-		oldInfo.Encryption != newInfo.Encryption
+		oldInfo.Encryption != newInfo.Encryption ||
+		!slices.Equal(oldInfo.SecurityGroupIds, newInfo.SecurityGroupIds)
 }
 
 // GetRDBMS retrieves the RDBMS instance info, refreshed live from CB-Spider.
@@ -1508,6 +1512,12 @@ func GetRDBMS(nsId, rdbmsId string) (model.RDBMSInfo, error) {
 	var newInfo model.RDBMSInfo
 	_ = json.Unmarshal(data, &newInfo)
 	updateRDBMSInfoFromSpider(&newInfo, spResp)
+
+	if newInfo.Status == "Available" {
+		if recErr := reconcileAutoCreatedSecurityGroup(context.Background(), nsId, &newInfo); recErr != nil {
+			log.Warn().Err(recErr).Msgf("Failed to reconcile auto-created security group for RDBMS %s", newInfo.Id)
+		}
+	}
 
 	if isRDBMSInfoUpdated(oldInfo, newInfo) {
 		rdbmsKey := common.GenResourceKey(nsId, resourceType, rdbmsId)
@@ -1641,8 +1651,9 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 		case strings.EqualFold(rdbmsInfo.ConnectionConfig.ProviderName, csp.Tencent):
 			postDeleteWait = rdbmsPostDeleteWaitTencent
 		}
-		if !deleted {
-			// nothing was confirmed torn down, so there is no dependency release to wait for
+		if !deleted || rdbmsInfo.CspResourceId == "" {
+			// nothing was confirmed torn down (or no CSP resource was ever provisioned),
+			// so there is no dependency release to wait for
 			postDeleteWait = 0
 		}
 		if postDeleteWait > 0 {
@@ -1654,6 +1665,9 @@ func DeleteRDBMS(nsId, rdbmsId string, force bool) error {
 	} else {
 		log.Warn().Msgf("RDBMS %s has no CSP resource (Uid is empty). Skipping Spider DELETE and removing metadata only.", rdbmsId)
 	}
+
+	// Clean up any CSP auto-created Security Groups associated with this RDBMS
+	deregisterAutoCreatedSecurityGroups(nsId, rdbmsId, rdbmsInfo.SecurityGroupIds)
 
 	if err := kvstore.Delete(rdbmsKey); err != nil {
 		log.Error().Err(err).Msg("")
@@ -2159,4 +2173,161 @@ func GetRDBMSSecureTransport(nsId, rdbmsId, adminUserName, adminUserPassword str
 
 	return result, nil
 }
+
+// extractAutoCreatedAcgNo extracts the auto-created ACG number from KeyValueList (e.g. NCP Cloud DB AccessControlGroupNos).
+func extractAutoCreatedAcgNo(keyValueList []model.KeyValue) string {
+	for _, kv := range keyValueList {
+		if strings.EqualFold(kv.Key, "AccessControlGroupNos") {
+			parts := strings.Split(kv.Value, ",")
+			if len(parts) > 0 {
+				return strings.TrimSpace(parts[0])
+			}
+		}
+	}
+	return ""
+}
+
+// resolveRDBMSPort determines the database service port from endpoint or engine default.
+func resolveRDBMSPort(endpoint, dbEngine string) string {
+	if strings.Contains(endpoint, ":") {
+		parts := strings.Split(endpoint, ":")
+		if len(parts) == 2 && parts[1] != "" {
+			return parts[1]
+		}
+	}
+	if strings.EqualFold(dbEngine, "postgresql") {
+		return "5432"
+	}
+	return "3306"
+}
+
+// reconcileAutoCreatedSecurityGroup checks if the RDBMS has an auto-created ACG/SG from the CSP
+// (e.g. NCP Cloud DB ACG), registers it as a Tumblebug SecurityGroup using option=register,
+// attaches system labels indicating CSP auto-creation, injects an intra-VPC inbound rule for the DB port,
+// and binds the registered SecurityGroup to the RDBMS.
+func reconcileAutoCreatedSecurityGroup(ctx context.Context, nsId string, rdbmsInfo *model.RDBMSInfo) error {
+	if rdbmsInfo == nil || rdbmsInfo.Id == "" {
+		return nil
+	}
+
+	// 1. Look for auto-created ACG number from KeyValueList
+	acgNo := extractAutoCreatedAcgNo(rdbmsInfo.KeyValueList)
+	if acgNo == "" {
+		return nil
+	}
+
+	autoSgId := fmt.Sprintf("%s-acg", rdbmsInfo.Id)
+
+	// 2. Check if the SecurityGroup already exists in Tumblebug
+	var sgInfo model.SecurityGroupInfo
+	exists, _ := CheckResource(nsId, model.StrSecurityGroup, autoSgId)
+	if !exists {
+		log.Info().Msgf("Auto-registering CSP-created ACG %s as SecurityGroup %s for RDBMS %s", acgNo, autoSgId, rdbmsInfo.Id)
+
+		sgReq := &model.SecurityGroupReq{
+			Name:           autoSgId,
+			ConnectionName: rdbmsInfo.ConnectionName,
+			VNetId:         rdbmsInfo.VNetId,
+			CspResourceId:  acgNo,
+			Description:    fmt.Sprintf("Auto-registered CSP Cloud DB ACG for %s", rdbmsInfo.Id),
+		}
+
+		var err error
+		sgInfo, err = CreateSecurityGroup(ctx, nsId, sgReq, model.ActionRegister)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to auto-register SecurityGroup %s (ACG %s) for RDBMS %s", autoSgId, acgNo, rdbmsInfo.Id)
+			return err
+		}
+
+		// Apply system labels marking this as a CSP auto-created resource
+		sgKey := common.GenResourceKey(nsId, model.StrSecurityGroup, autoSgId)
+		sgLabels := map[string]string{
+			model.LabelCspAutoCreated:     "true",
+			model.LabelParentResourceType: model.StrRDBMS,
+			model.LabelParentResourceId:   rdbmsInfo.Id,
+			model.LabelRegistered:         "true",
+			model.LabelConnectionName:     rdbmsInfo.ConnectionName,
+			model.LabelManager:            model.StrManager,
+			model.LabelNamespace:          nsId,
+			model.LabelLabelType:          model.StrSecurityGroup,
+			model.LabelId:                 autoSgId,
+			model.LabelUid:                sgInfo.Uid,
+		}
+		if err := label.CreateOrUpdateLabel(ctx, model.StrSecurityGroup, sgInfo.Uid, sgKey, sgLabels); err != nil {
+			log.Warn().Err(err).Msgf("Failed to set labels on auto-created SecurityGroup %s", autoSgId)
+		}
+
+		// Also update SystemLabel on SecurityGroupInfo
+		sgInfo.SystemLabel = fmt.Sprintf("CSP Auto-Created for %s/%s", model.StrRDBMS, rdbmsInfo.Id)
+		sgInfo.IsAutoGenerated = true
+		if sgVal, err := json.Marshal(sgInfo); err == nil {
+			_ = kvstore.Put(sgKey, string(sgVal))
+		}
+	} else {
+		var err error
+		sgInfo, err = GetSecurityGroup(nsId, autoSgId)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to get existing SecurityGroup %s for RDBMS %s", autoSgId, rdbmsInfo.Id)
+			return err
+		}
+	}
+
+	// 3. Inject intra-VPC inbound rule for database port if missing
+	port := resolveRDBMSPort(rdbmsInfo.Endpoint, rdbmsInfo.DBEngine)
+
+	// Look up VNet to obtain the VPC IPv4 CIDR
+	vNetI, err := GetResource(nsId, model.StrVNet, rdbmsInfo.VNetId)
+	if err == nil && vNetI != nil {
+		var vNetInfo model.VNetInfo
+		if copyErr := common.CopySrcToDest(&vNetI, &vNetInfo); copyErr == nil && vNetInfo.CidrBlock != "" {
+			hasRule := false
+			for _, r := range sgInfo.FirewallRules {
+				if strings.EqualFold(r.Direction, "inbound") && strings.EqualFold(r.Protocol, "tcp") && r.Port == port && r.CIDR == vNetInfo.CidrBlock {
+					hasRule = true
+					break
+				}
+			}
+			if !hasRule {
+				rule := model.FirewallRuleInfo{
+					Direction: "inbound",
+					Protocol:  "tcp",
+					Port:      port,
+					CIDR:      vNetInfo.CidrBlock,
+				}
+				if _, ruleErr := CreateFirewallRules(nsId, autoSgId, []model.FirewallRuleInfo{rule}, false); ruleErr != nil {
+					log.Warn().Err(ruleErr).Msgf("Failed to auto-inject intra-VPC firewall rule to %s: %v", autoSgId, ruleErr)
+				} else {
+					log.Info().Msgf("Successfully auto-injected intra-VPC firewall rule (%s -> port %s) to %s", vNetInfo.CidrBlock, port, autoSgId)
+				}
+			}
+		}
+	}
+
+	// 4. Update rdbmsInfo.SecurityGroupIds to point to the auto-registered ACG
+	if !slices.Contains(rdbmsInfo.SecurityGroupIds, autoSgId) {
+		rdbmsInfo.SecurityGroupIds = []string{autoSgId}
+		rdbmsKey := common.GenResourceKey(nsId, model.StrRDBMS, rdbmsInfo.Id)
+		if val, err := json.Marshal(rdbmsInfo); err == nil {
+			_ = kvstore.Put(rdbmsKey, string(val))
+		}
+	}
+
+	return nil
+}
+
+// deregisterAutoCreatedSecurityGroups cleans up CSP auto-created Security Groups associated with this RDBMS.
+func deregisterAutoCreatedSecurityGroups(nsId, rdbmsId string, sgIds []string) {
+	autoSgId := fmt.Sprintf("%s-acg", rdbmsId)
+	for _, sgId := range sgIds {
+		if sgId == autoSgId {
+			log.Info().Msgf("Deregistering CSP auto-created SecurityGroup %s for RDBMS %s", sgId, rdbmsId)
+			if err := DeregisterResource(nsId, model.StrSecurityGroup, sgId); err != nil {
+				log.Warn().Err(err).Msgf("Failed to deregister auto-created SecurityGroup %s: %v", sgId, err)
+			} else {
+				log.Info().Msgf("Successfully deregistered auto-created SecurityGroup %s", sgId)
+			}
+		}
+	}
+}
+
 

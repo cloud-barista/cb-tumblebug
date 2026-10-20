@@ -285,6 +285,7 @@ type RDBMSInfo struct {
 	Encryption               bool       `json:"encryption,omitempty"`
 	Endpoint                 string     `json:"endpoint,omitempty" example:"rdbms-01.xxxx.rds.amazonaws.com:3306"`
 	TagList                  []KeyValue `json:"tagList,omitempty"`
+	KeyValueList             []KeyValue `json:"keyValueList,omitempty"`
 }
 
 // RDBMSListResponse is the Tumblebug API response wrapper for listing RDBMS instances.

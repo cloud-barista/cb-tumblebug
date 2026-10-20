@@ -1359,7 +1359,7 @@ func runInternalDataTest(
 	}
 
 	commands := []string{
-		"command -v mysql || command -v mariadb || (command -v apt-get >/dev/null 2>&1 && while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 2; done; sudo apt-get -o DPkg::Lock::Timeout=180 update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=180 install -y -qq default-mysql-client) || (command -v dnf >/dev/null 2>&1 && sudo dnf install -y mariadb) || (command -v yum >/dev/null 2>&1 && sudo yum install -y mariadb) || sudo yum install -y mysql",
+		"command -v mysql || command -v mariadb || (command -v apt-get >/dev/null 2>&1 && while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 2; done; sudo apt-get -o DPkg::Lock::Timeout=180 update -qq && (sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=180 install -y -qq mysql-client || sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=180 install -y -qq mariadb-client || sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=180 install -y -qq default-mysql-client)) || (command -v dnf >/dev/null 2>&1 && sudo dnf install -y mariadb) || (command -v yum >/dev/null 2>&1 && sudo yum install -y mariadb) || sudo yum install -y mysql",
 	}
 
 	if stInfo != nil && stInfo.CACertificate.PEM != "" {

@@ -348,6 +348,11 @@ dbms:
       note: "Confirmed via live rejection (2026-08-18): 'admin' is rejected with
         InvalidAccountName.Forbid ('Specified account name is a keyword in RDS')."
 
+    adminUserPasswordRequirement:
+      minLength: 8
+      maxLength: 32
+      note: "Confirmed per Alibaba Cloud ApsaraDB RDS specification: password must be 8-32 characters and contain at least 3 of: uppercase letters, lowercase letters, digits, and special characters (!@#$%^&*()_+-=)."
+
   tencent:
     description: Tencent Cloud TencentDB for MySQL
     links:
