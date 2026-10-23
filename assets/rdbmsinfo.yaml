@@ -600,7 +600,7 @@ dbms:
     supportedDBEngines: [mysql, mariadb]
     dbOperationMethod: cspNativeApi
     supportsTag: false
-    note: "CB-Spider v0.13.15 (#1873, fixing #1866) retries admin privilege GRANT with exponential backoff after Trove reports ACTIVE to prevent Error 1044. Reference MariaDB version for the current Trove environment is 10.4 (confirmed Available via Trove API; direct SQL on the current MariaDB 10.4 guest image is affected by upstream TLS certificate issue #1869 until the scheduled OpenStack MySQL/MariaDB image upgrade)."
+    note: "CB-Spider v0.13.15 (#1873, fixing #1866) retries admin privilege GRANT with exponential backoff after Trove reports ACTIVE to prevent Error 1044. OpenStack Trove 2025.2 (Flamingo) active datastore versions are MySQL 8.4 and MariaDB 11.4."
     storageTypeSelectable: true
     storageTypes:
       __DEFAULT__:
@@ -623,19 +623,16 @@ dbms:
       mysql:
         minStorageSizeGB: 1
         defaultPort: 3306
-        referenceEngineVersion: "5.7.29"
+        referenceEngineVersion: "8.4"
         referenceDBInstanceSpec: m1.small
         note: "Storage type selection depends on OpenStack deployment configuration.
-          Reference values per CB-Spider's rdbms-mysql-test README (verified Available,
-          2026-08-03)."
+          Updated for Trove 2025.2 (Flamingo) datastore upgrade (5.7.29 -> 8.4)."
       mariadb:
         minStorageSizeGB: 1
         defaultPort: 3306
-        referenceEngineVersion: "10.4"
+        referenceEngineVersion: "11.4"
         referenceDBInstanceSpec: m1.small
-        note: "Reference values per CB-Spider's rdbms-mariadb-test README (verified Available,
-          2026-08-18, 20GB) — not version 10.6, which this Trove deployment's datastore does
-          not have registered."
+        note: "Updated for Trove 2025.2 (Flamingo) datastore upgrade (10.4 -> 11.4)."
         
     databaseRequirements:
       note: "Database naming follows standard MySQL conventions. Charset and collation customization are supported via native OpenStack Trove API (databases.CreateOpts CharSet/Collate) without requiring direct SQL connectivity."
