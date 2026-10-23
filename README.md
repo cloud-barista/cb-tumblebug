@@ -549,7 +549,7 @@ make up
 
 ---
 
-### Using CB-TB MapUI 🗺️
+### Using CB-TB MapUI
 
 **Visual Infrastructure Management with Interactive Maps**
 
@@ -581,7 +581,7 @@ open http://localhost:1324
 
 ---
 
-### Using CB-TB REST API 🔌
+### Using CB-TB REST API
 
 **Programmatic Multi-Cloud Infrastructure Management**
 
