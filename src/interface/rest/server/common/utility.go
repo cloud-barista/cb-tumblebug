@@ -601,6 +601,28 @@ func RestGetK8sClusterInfo(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestGetK8sStorageInfo func is a rest api wrapper for K8sStorageAssetInfo
+// RestGetK8sStorageInfo godoc
+// @ID GetK8sStorageInfo
+// @Summary Get kubernetes storage catalog
+// @Description Get the kubernetes storage catalog: per-CSP StorageClass details and abstract storage types (e.g., ssd-general, shared-file).
+// @Description Generated StorageClass manifests use only entries with verified=true.
+// @Tags [Kubernetes] Storage Management
+// @Accept  json
+// @Produce  json
+// @Param provider query string false "Return only this CSP (e.g., gcp)"
+// @Success 200 {object} model.K8sStorageAssetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Router /k8sStorageInfo [get]
+func RestGetK8sStorageInfo(c echo.Context) error {
+	content, err := common.GetK8sStorageInfo(c.QueryParam("provider"))
+	if err != nil {
+		return clientManager.EndRequestWithLogAndStatus(c, err, nil, http.StatusNotFound)
+	}
+	return clientManager.EndRequestWithLog(c, nil, content)
+}
+
 // ObjectList struct consists of object IDs
 type ObjectList struct {
 	Object []string `json:"object"`

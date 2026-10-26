@@ -170,6 +170,10 @@ func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 	oldTbK8sCInfo := &model.K8sClusterInfo{}
 	json.Unmarshal([]byte(kv.Value), oldTbK8sCInfo)
 
+	// Storage is owned by the storage APIs (updateK8sClusterStorage); keep the stored value so a
+	// caller holding an older copy cannot overwrite a storage state recorded in the meantime.
+	newTbK8sCInfo.Storage = oldTbK8sCInfo.Storage
+
 	if !reflect.DeepEqual(oldTbK8sCInfo, newTbK8sCInfo) {
 		val, _ := json.Marshal(newTbK8sCInfo)
 		err = kvstore.Put(k, string(val))
@@ -232,6 +236,13 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 			return emptyObj, err
 		}
+	}
+
+	// The optional storage option is validated up front (a bad storage type is a request error),
+	// but a later storage preparation failure never fails the cluster creation.
+	if err := ValidateK8sClusterStorageReq(req.Storage); err != nil {
+		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
+		return emptyObj, err
 	}
 
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
@@ -591,6 +602,14 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 	}
 
 	log.Info().Msgf("Successfully created K8sCluster: %s", tbK8sCInfo.Name)
+
+	// Optional: prepare abstract storage types once the cluster and node groups are Active (async).
+	if req.Storage != nil {
+		startK8sStoragePreparationAfterCreate(nsId, k8sClusterId, req.Storage)
+		if stored, err := getK8sClusterInfo(nsId, k8sClusterId); err == nil {
+			tbK8sCInfo.Storage = stored.Storage
+		}
+	}
 	return tbK8sCInfo, nil
 }
 
@@ -1545,6 +1564,9 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	deleted := spErr == nil && strings.EqualFold(spRes.Result, "true")
 
 	log.Debug().Msgf("option=%s", option)
+	// clusterGone: the CSP cluster is confirmed deleted (or no longer exists), so the file
+	// systems TB created for it can be removed. Not set when a forced delete was unconfirmed.
+	clusterGone := deleted
 	if option == "force" {
 		if !deleted {
 			log.Warn().Err(spErr).Msgf("Force deletion of K8sCluster(%s): CB-Spider did not confirm deletion (Result=%q); removing the record anyway (the CSP cluster may remain as an orphan)", k8sClusterId, spRes.Result)
@@ -1555,6 +1577,7 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 		// succeed then, so confirm with a GET and purge the stale record.
 		if isSpiderK8sClusterUnregistered(spErr) || isSpiderK8sClusterUnregistered(getSpiderK8sCluster(tbK8sCInfo.ConnectionName, tbK8sCInfo.CspResourceName)) {
 			log.Warn().Msgf("K8sCluster(%s) no longer exists in CB-Spider; removing stale stored info", k8sClusterId)
+			clusterGone = true
 		} else {
 			err = spErr
 			if err == nil {
@@ -1569,6 +1592,13 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	if err != nil {
 		log.Err(err).Msgf("Failed to Delete K8sCluster(%s)", k8sClusterId)
 		return false, err
+	}
+
+	// Best effort: delete the file systems TB created for this cluster's storage (never fails the deletion).
+	if clusterGone {
+		cleanupK8sClusterFileSystems(k8sStorageSpider, tbK8sCInfo)
+	} else if fs := tumblebugCreatedK8sFileSystems(tbK8sCInfo.Storage); len(fs) > 0 {
+		log.Warn().Msgf("K8sCluster(%s) deletion was not confirmed by CB-Spider; keeping file systems %v created for it", k8sClusterId, fs)
 	}
 
 	return true, nil

@@ -319,6 +319,7 @@ func RunServer() {
 	e.GET("/tumblebug/provider/:providerName/region/:regionName", rest_common.RestGetRegion)
 	e.GET("/tumblebug/regionFromCsp", rest_common.RestGetRegionListFromCsp)
 	e.GET("/tumblebug/k8sClusterInfo", rest_common.RestGetK8sClusterInfo)
+	e.GET("/tumblebug/k8sStorageInfo", rest_common.RestGetK8sStorageInfo)
 
 	e.GET("/tumblebug/credential/publicKey", rest_common.RestGetPublicKeyForCredentialEncryption)
 	e.GET("/tumblebug/credential/openbaoStatus", rest_common.RestGetOpenBaoStatus)
@@ -608,6 +609,19 @@ func RunServer() {
 	g.DELETE("/:nsId/template/k8sCluster/:templateId", rest_resource.RestDeleteK8sClusterDynamicTemplate)
 	g.DELETE("/:nsId/template/k8sCluster", rest_resource.RestDeleteAllK8sClusterDynamicTemplate)
 	g.GET("/:nsId/control/k8sCluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
+
+	// K8s storage (abstract storage types; CSP side via CB-Spider only, cluster-internal objects as manifests)
+	g.GET("/:nsId/k8sCluster/:k8sClusterId/storageDriver", rest_resource.RestGetAllK8sClusterStorageDriver)
+	g.PUT("/:nsId/k8sCluster/:k8sClusterId/storageDriver", rest_resource.RestPutK8sClusterStorageDriver)
+	g.DELETE("/:nsId/k8sCluster/:k8sClusterId/storageDriver/:kind", rest_resource.RestDeleteK8sClusterStorageDriver)
+	g.PUT("/:nsId/k8sCluster/:k8sClusterId/storage", rest_resource.RestPutK8sClusterStorage)
+	g.GET("/:nsId/k8sCluster/:k8sClusterId/storage", rest_resource.RestGetK8sClusterStorage)
+	g.GET("/:nsId/k8sCluster/:k8sClusterId/storageClassManifest", rest_resource.RestGetK8sClusterStorageClassManifest)
+	g.PUT("/:nsId/k8sStorage", rest_resource.RestPutK8sMultiClusterStorage)
+	g.GET("/:nsId/k8sStorage", rest_resource.RestGetK8sMultiClusterStorage)
+	g.GET("/:nsId/k8sStorageClassManifest", rest_resource.RestGetK8sMultiClusterStorageClassManifest)
+	g.GET("/:nsId/k8sLeftoverVolume", rest_resource.RestGetAllK8sLeftoverVolume)
+	g.DELETE("/:nsId/k8sLeftoverVolume/:cspDiskId", rest_resource.RestDeleteK8sLeftoverVolume)
 
 	// Network Load Balancer
 	g.POST("/:nsId/infra/:infraId/mcSwNlb", rest_infra.RestPostMcNLB)

@@ -486,6 +486,7 @@ func getK8sClusterReqFromDynamicReq(ctx context.Context, nsId string, dReq *mode
 		log.Info().Msg("Need to Add NodeGroups To Use This K8sCluster")
 	}
 	k8sReq.Label = dReq.Label
+	k8sReq.Storage = dReq.Storage
 
 	common.PrintJsonPretty(k8sReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
