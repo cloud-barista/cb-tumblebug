@@ -79,9 +79,10 @@ type SpiderDiskInfo struct {
 	IId IID // {NameId, SystemId}
 
 	Status    DiskStatus // DiskCreating | DiskAvailable | DiskAttached | DiskDeleting | DiskError
-	OwnerNode IID        // When the Status is DiskAttached
+	OwnerNode IID        `json:"OwnerVM"` // When the Status is DiskAttached (CB-Spider OwnerVM)
 
 	CreatedTime  time.Time
+	TagList      []KeyValue `json:",omitempty"`
 	KeyValueList []KeyValue
 }
 
