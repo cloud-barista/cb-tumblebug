@@ -114,7 +114,7 @@
 | **네트워크 접근 정책 (`publicAccess`)** | **AWS, Azure, Alibaba, Tencent, NHN, OpenStack** | 사설 VPC(`false`, 기본값) 및 공인 접속(`true`) 모두 지원. 기본 사설 VPC 모드에서 동일 VNet의 Bastion VM을 통해 외부 노출 없이 안전하게 CRUD를 검증함. |
 | **전용 빈 서브넷 위임 요구사항** | **Azure** | Azure MySQL Flexible Server는 VM NIC가 없는 전용 서브넷(`Microsoft.DBforMySQL/flexibleServers` 위임)을 요구하므로, MapUI가 공유 VNet의 두 번째 서브넷(`subnetIds[1]`)을 자동 선택함. |
 | **고정 관리자 계정명** | **Tencent, IBM** | Tencent는 초기 슈퍼유저가 `root`, IBM은 `admin`으로 고정됨. MapUI가 CSP별 유효 계정명을 자동 변환하고 프리뷰에 표시함. |
-| **비밀번호 복잡도 규칙 차이** | **IBM, AWS, Alibaba, NCP, Tencent** | IBM은 15~72자 영문·숫자만 허용(특수문자 및 `admin` 문자열 금지), AWS는 `@`, `/`, `"`, 공백 금지, NCP는 8~20자 및 특수문자 1개 이상 필수, Alibaba는 8~32자 3종 조합 필수. MapUI의 `getCspCompliantAdminPassword()`가 CSP별로 자동 보정함. |
+| **비밀번호 복잡도 규칙 차이** | **IBM, AWS, Alibaba, NCP, Tencent** | IBM은 15-72자 영문·숫자만 허용(특수문자 및 `admin` 문자열 금지), AWS는 `@`, `/`, `"`, 공백 금지, NCP는 8~20자 및 특수문자 1개 이상 필수, Alibaba는 8-32자 3종 조합 필수. MapUI의 `getCspCompliantAdminPassword()`가 CSP별로 자동 보정함. |
 | **데이터베이스 CRUD 방식 (`dbOperationMethod`)** | **AWS, IBM vs. 기타 7개 CSP** | AWS RDS와 IBM Cloud는 인스턴스 내부 논리 DB 생성을 위한 별도 REST API를 제공하지 않으므로(`sqlClientRequired`) Bastion SQL 클라이언트로 `CREATE/DROP DATABASE`를 수행하며, 나머지 7개 CSP는 Tumblebug Control Plane API(`/database`)를 사용함. |
 | **Alibaba Control Plane DB 권한 자동 부여** | **Alibaba** | Alibaba RDS API로 신규 DB 생성 시 마스터 계정에 해당 DB의 DML 권한이 자동 부여되지 않는 특성이 있어, CB-Spider가 `CreateDatabase` 직후 `GrantAccountPrivilege`(`ReadWrite`)를 자동 호출하도록 개선함. |
 | **OpenStack Trove 게스트 에이전트 준비 검증** | **OpenStack** | OpenStack Trove는 VM 부팅 직후 `ACTIVE`로 표시되나 내부 MySQL/MariaDB 초기화 및 계정 생성이 수십 초 뒤 완료되므로, CB-Spider가 `ListDatabases` 응답을 확인할 때까지 대기 후 반환하도록 개선함. |
