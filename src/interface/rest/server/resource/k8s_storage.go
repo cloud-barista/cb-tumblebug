@@ -41,7 +41,7 @@ func splitK8sStorageQuery(v string) []string {
 // RestGetAllK8sClusterStorageDriver godoc
 // @ID GetAllK8sClusterStorageDriver
 // @Summary List storage drivers of a K8sCluster
-// @Description List the CSP-managed CSI storage drivers (Block and File) of a K8sCluster
+// @Description List the CSP-managed CSI storage drivers (Block) of a K8sCluster
 // @Tags [Kubernetes] Storage Management
 // @Accept  json
 // @Produce  json
@@ -64,14 +64,15 @@ func RestGetAllK8sClusterStorageDriver(c echo.Context) error {
 // RestPutK8sClusterStorageDriver godoc
 // @ID PutK8sClusterStorageDriver
 // @Summary Enable a storage driver of a K8sCluster
-// @Description Enable a CSP-managed CSI storage driver (Block or File) of a K8sCluster (idempotent; status may be "Updating", check with GET).
+// @Description Enable the CSP-managed CSI storage driver of a K8sCluster (idempotent; status may be "Updating", check with GET).
+// @Description Only kind Block is supported (400 otherwise).
 // @Description Usually not needed: PUT .../storage enables the drivers that the requested storage types need.
 // @Tags [Kubernetes] Storage Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param storageDriverReq body model.K8sStorageDriverEnableReq true "Storage driver kind (Block or File) and optional version"
+// @Param storageDriverReq body model.K8sStorageDriverEnableReq true "Storage driver kind (Block) and optional version"
 // @Success 200 {object} model.K8sStorageDriverInfo
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
@@ -95,7 +96,7 @@ func RestPutK8sClusterStorageDriver(c echo.Context) error {
 // RestDeleteK8sClusterStorageDriver godoc
 // @ID DeleteK8sClusterStorageDriver
 // @Summary Disable a storage driver of a K8sCluster
-// @Description Disable a CSP-managed CSI storage driver (Block or File) of a K8sCluster.
+// @Description Disable the CSP-managed CSI storage driver of a K8sCluster. Only kind Block is supported (400 otherwise).
 // @Description WARNING: existing PersistentVolumes of this driver can no longer be attached or mounted (volumes and data are kept).
 // @Description Requires option=force (400 otherwise). BuiltIn drivers cannot be disabled (400).
 // @Tags [Kubernetes] Storage Management
@@ -103,7 +104,7 @@ func RestPutK8sClusterStorageDriver(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param kind path string true "Storage driver kind" Enums(Block, File)
+// @Param kind path string true "Storage driver kind" Enums(Block)
 // @Param option query string true "Option for storage driver deletion (required to confirm)" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 400 {object} model.SimpleMsg
@@ -126,8 +127,8 @@ func RestDeleteK8sClusterStorageDriver(c echo.Context) error {
 // RestPutK8sClusterStorage godoc
 // @ID PutK8sClusterStorage
 // @Summary Prepare abstract storage types on a K8sCluster (async)
-// @Description Prepare abstract storage types (e.g., ssd-general, shared-file; see GET /k8sStorageInfo) on a K8sCluster:
-// @Description enable the required storage drivers and, with fileSystem.create=true or fileSystem.name, prepare the file system a File driver needs.
+// @Description Prepare abstract storage types (e.g., ssd-general; see GET /k8sStorageInfo) on a K8sCluster:
+// @Description enable the storage drivers the requested storage types need.
 // @Description Returns 202 immediately; poll GET .../storage for the result. 409 when a preparation is already running.
 // @Description StorageClasses are not created; get them from GET .../storageClassManifest.
 // @Tags [Kubernetes] Storage Management
@@ -135,7 +136,7 @@ func RestDeleteK8sClusterStorageDriver(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param storageReq body model.K8sClusterStorageReq false "Storage types to prepare (empty: [ssd-general]) and optional file system option"
+// @Param storageReq body model.K8sClusterStorageReq false "Storage types to prepare (empty: [ssd-general])"
 // @Success 202 {object} model.K8sClusterStoragePrepareResponse
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
@@ -183,7 +184,7 @@ func RestGetK8sClusterStorage(c echo.Context) error {
 // @ID PutK8sMultiClusterStorage
 // @Summary Prepare abstract storage types on many K8sClusters (async)
 // @Description Run PUT .../k8sCluster/{k8sClusterId}/storage on the listed K8sClusters (empty: all in the namespace) in parallel.
-// @Description Returns 202 with a per-cluster result; with more than one cluster, fileSystem.name is ignored (use fileSystem.create=true).
+// @Description Returns 202 with a per-cluster result.
 // @Tags [Kubernetes] Storage Management
 // @Accept  json
 // @Produce  json

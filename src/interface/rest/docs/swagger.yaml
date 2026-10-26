@@ -1787,7 +1787,7 @@ paths:
       - "[Kubernetes] Storage Management"
       summary: Get kubernetes storage catalog
       description: |-
-        Get the kubernetes storage catalog: per-CSP StorageClass details and abstract storage types (e.g., ssd-general, shared-file).
+        Get the kubernetes storage catalog: per-CSP StorageClass details and abstract storage types (e.g., ssd-general).
         Generated StorageClass manifests use only entries with verified=true.
       operationId: GetK8sStorageInfo
       parameters:
@@ -9512,8 +9512,8 @@ paths:
       - "[Kubernetes] Storage Management"
       summary: Prepare abstract storage types on a K8sCluster (async)
       description: |-
-        Prepare abstract storage types (e.g., ssd-general, shared-file; see GET /k8sStorageInfo) on a K8sCluster:
-        enable the required storage drivers and, with fileSystem.create=true or fileSystem.name, prepare the file system a File driver needs.
+        Prepare abstract storage types (e.g., ssd-general; see GET /k8sStorageInfo) on a K8sCluster:
+        enable the storage drivers the requested storage types need.
         Returns 202 immediately; poll GET .../storage for the result. 409 when a preparation is already running.
         StorageClasses are not created; get them from GET .../storageClassManifest.
       operationId: PutK8sClusterStorage
@@ -9538,8 +9538,7 @@ paths:
         schema:
           type: string
       requestBody:
-        description: "Storage types to prepare (empty: [ssd-general]) and optional\
-          \ file system option"
+        description: "Storage types to prepare (empty: [ssd-general])"
         content:
           application/json:
             schema:
@@ -9664,8 +9663,7 @@ paths:
       tags:
       - "[Kubernetes] Storage Management"
       summary: List storage drivers of a K8sCluster
-      description: List the CSP-managed CSI storage drivers (Block and File) of a
-        K8sCluster
+      description: List the CSP-managed CSI storage drivers (Block) of a K8sCluster
       operationId: GetAllK8sClusterStorageDriver
       parameters:
       - name: nsId
@@ -9717,7 +9715,8 @@ paths:
       - "[Kubernetes] Storage Management"
       summary: Enable a storage driver of a K8sCluster
       description: |-
-        Enable a CSP-managed CSI storage driver (Block or File) of a K8sCluster (idempotent; status may be "Updating", check with GET).
+        Enable the CSP-managed CSI storage driver of a K8sCluster (idempotent; status may be "Updating", check with GET).
+        Only kind Block is supported (400 otherwise).
         Usually not needed: PUT .../storage enables the drivers that the requested storage types need.
       operationId: PutK8sClusterStorageDriver
       parameters:
@@ -9741,7 +9740,7 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Storage driver kind (Block or File) and optional version
+        description: Storage driver kind (Block) and optional version
         content:
           application/json:
             schema:
@@ -9791,7 +9790,7 @@ paths:
       - "[Kubernetes] Storage Management"
       summary: Disable a storage driver of a K8sCluster
       description: |-
-        Disable a CSP-managed CSI storage driver (Block or File) of a K8sCluster.
+        Disable the CSP-managed CSI storage driver of a K8sCluster. Only kind Block is supported (400 otherwise).
         WARNING: existing PersistentVolumes of this driver can no longer be attached or mounted (volumes and data are kept).
         Requires option=force (400 otherwise). BuiltIn drivers cannot be disabled (400).
       operationId: DeleteK8sClusterStorageDriver
@@ -9818,7 +9817,6 @@ paths:
           type: string
           enum:
           - Block
-          - File
       - name: option
         in: query
         description: Option for storage driver deletion (required to confirm)
@@ -10432,7 +10430,7 @@ paths:
       summary: Prepare abstract storage types on many K8sClusters (async)
       description: |-
         Run PUT .../k8sCluster/{k8sClusterId}/storage on the listed K8sClusters (empty: all in the namespace) in parallel.
-        Returns 202 with a per-cluster result; with more than one cluster, fileSystem.name is ignored (use fileSystem.create=true).
+        Returns 202 with a per-cluster result.
       operationId: PutK8sMultiClusterStorage
       parameters:
       - name: nsId
@@ -25012,25 +25010,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.K8sStorageAction'
-        clusterSubnetCspIds:
-          type: array
-          description: |-
-            ClusterSubnetCspIds are the CSP IDs of the cluster subnets, recorded for StorageClass parameters
-            such as NHN NAS CSI `subnet` ({{cluster.subnetId}})
-          items:
-            type: string
-        clusterVpcCspId:
-          type: string
-          description: |-
-            ClusterVpcCspId is the CSP ID of the cluster VPC, recorded for StorageClass parameters such as
-            GKE Filestore CSI `network` ({{cluster.vpcId}})
-        createdFileSystems:
-          type: array
-          description: |-
-            CreatedFileSystems are the file systems CB-Tumblebug created for this cluster, kept across
-            re-preparations so they are deleted with the cluster
-          items:
-            type: string
         status:
           type: object
           example: Ready
@@ -25066,12 +25045,6 @@ components:
     model.K8sClusterStorageReq:
       type: object
       properties:
-        fileSystem:
-          type: object
-          description: "FileSystem is used only for File drivers that require a file\
-            \ system (AWS, Alibaba, NHN)"
-          allOf:
-          - $ref: '#/components/schemas/model.K8sStorageFileSystemReq'
         storageTypes:
           type: array
           description: "StorageTypes to prepare. Empty means [\"ssd-general\"]."
@@ -25262,12 +25235,6 @@ components:
     model.K8sMultiClusterStorageReq:
       type: object
       properties:
-        fileSystem:
-          type: object
-          description: FileSystem is used only for File drivers that require a file
-            system
-          allOf:
-          - $ref: '#/components/schemas/model.K8sStorageFileSystemReq'
         k8sClusterIds:
           type: array
           description: K8sClusterIds to prepare. Empty means all K8sClusters in the
@@ -25573,11 +25540,10 @@ components:
       properties:
         kind:
           type: string
-          description: Kind is Block or File
+          description: Kind is Block (the only supported kind)
           example: Block
           enum:
           - Block
-          - File
         version:
           type: string
           description: Version of the driver. Empty means the CSP default version.
@@ -25599,17 +25565,12 @@ components:
             $ref: '#/components/schemas/model.KeyValue'
         kind:
           type: string
-          description: Kind is Block or File
+          description: Kind is Block
           example: Block
         managementMode:
           type: string
           description: "ManagementMode is Addon, BuiltIn or NotSupported"
           example: Addon
-        requiresFileSystem:
-          type: boolean
-          description: "RequiresFileSystem is true when the File driver needs an existing\
-            \ file system (e.g., AWS EFS)"
-          example: false
         status:
           type: string
           description: "Status is Enabled, Disabled, Updating, Failed or Unknown"
@@ -25642,63 +25603,6 @@ components:
         status:
           type: string
           example: Enabled
-    model.K8sStorageFileSystemCreateOptions:
-      type: object
-      properties:
-        capacityGB:
-          type: integer
-          description: "CapacityGB is required by some CSPs (e.g., NHN NAS: 300 GB\
-            \ minimum)"
-          example: 300
-        performanceInfo:
-          type: object
-          additionalProperties:
-            type: string
-          description: "PerformanceInfo is passed to CB-Spider as is (e.g., Alibaba\
-            \ NAS: {\"StorageType\": \"Capacity\"})"
-        performanceInfoAlternatives:
-          type: array
-          description: |-
-            PerformanceInfoAlternatives are tried in order when the CSP rejects PerformanceInfo for the
-            cluster zone (e.g., Alibaba Seoul: zone a offers Performance NAS only, zone b Capacity only)
-          items:
-            type: object
-            additionalProperties:
-              type: string
-    model.K8sStorageFileSystemReq:
-      type: object
-      properties:
-        create:
-          type: boolean
-          description: Create a file system through CB-Spider when true
-          example: true
-        name:
-          type: string
-          description: Name of an existing file system to use
-          example: ""
-    model.K8sStorageFileSystemState:
-      type: object
-      properties:
-        accessSubnets:
-          type: integer
-          description: AccessSubnets is the number of cluster subnets attached to
-            the file system
-          example: 2
-        createdByTumblebug:
-          type: boolean
-          description: CreatedByTumblebug is true when TB created the file system
-        cspId:
-          type: string
-          description: "CspId is the CSP file system ID (e.g., AWS fs-0abc...)"
-          example: fs-0abc1234
-        endpoint:
-          type: string
-          description: Endpoint is the first mount target endpoint reported by CB-Spider
-          example: fs-0abc1234.efs.ap-northeast-2.amazonaws.com
-        name:
-          type: string
-          description: Name is the CB-Spider file system name
-          example: k8scluster01-shared
     model.K8sStorageKindInfo:
       type: object
       properties:
@@ -25706,20 +25610,6 @@ components:
           type: boolean
           description: "AllowVolumeExpansion of a generated StorageClass (default:\
             \ true)"
-        fileSystemCreate:
-          type: object
-          description: FileSystemCreate holds CSP-specific options CB-Tumblebug sends
-            when it creates the file system
-          allOf:
-          - $ref: '#/components/schemas/model.K8sStorageFileSystemCreateOptions'
-        fileSystemParameters:
-          type: object
-          additionalProperties:
-            type: string
-          description: |-
-            FileSystemParameters are StorageClass parameters filled from the prepared file system
-            (only for File drivers that require a file system). Placeholders:
-            {{fileSystem.name}}, {{fileSystem.cspId}}, {{fileSystem.endpoint}}
         ignoreValues:
           type: array
           description: IgnoreValues are sentinel SKU values to skip (classification)
@@ -25757,15 +25647,12 @@ components:
             type: string
         volumeBindingMode:
           type: string
-          description: "VolumeBindingMode of a generated StorageClass (default: WaitForFirstConsumer\
-            \ for Block, Immediate for File)"
+          description: "VolumeBindingMode of a generated StorageClass (default: WaitForFirstConsumer)"
           example: WaitForFirstConsumer
     model.K8sStorageProviderInfo:
       type: object
       properties:
         blockStorage:
-          $ref: '#/components/schemas/model.K8sStorageKindInfo'
-        fileStorage:
           $ref: '#/components/schemas/model.K8sStorageKindInfo'
         verified:
           type: boolean
@@ -25806,7 +25693,7 @@ components:
         driverKind:
           type: string
           description: DriverKind is the CB-Spider storage driver Kind this type needs
-            (Block or File)
+            (Block)
           example: Block
         name:
           type: string
@@ -25838,12 +25725,6 @@ components:
       properties:
         driver:
           $ref: '#/components/schemas/model.K8sStorageDriverRef'
-        fileSystem:
-          type: object
-          description: FileSystem is set when the driver requires a file system and
-            TB prepared one
-          allOf:
-          - $ref: '#/components/schemas/model.K8sStorageFileSystemState'
         reason:
           type: string
           example: ""

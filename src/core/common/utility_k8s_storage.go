@@ -87,42 +87,30 @@ func FindK8sStorageType(catalog *model.K8sStorageAssetInfo, name string) (*model
 	return nil, false
 }
 
-// ResolveK8sStorageDriverKind resolves an abstract storage type to the CB-Spider storage driver Kind
-// (Block or File). It uses `driverKind` of the catalog and falls back to the access modes
-// (ReadWriteMany needs a File driver).
+// ResolveK8sStorageDriverKind resolves an abstract storage type to the CB-Spider storage driver Kind.
+// Block is the only supported kind; an empty `driverKind` in the catalog means Block.
 func ResolveK8sStorageDriverKind(catalog *model.K8sStorageAssetInfo, storageType string) (string, error) {
 	st, ok := FindK8sStorageType(catalog, storageType)
 	if !ok {
 		return "", fmt.Errorf("unknown storageType(%s)", storageType)
 	}
-	if kind, ok := NormalizeK8sStorageDriverKind(st.DriverKind); ok {
-		return kind, nil
+	if strings.TrimSpace(st.DriverKind) == "" {
+		return model.K8sStorageDriverKindBlock, nil
 	}
-	for _, m := range st.AccessModes {
-		if m == "ReadWriteMany" {
-			return model.K8sStorageDriverKindFile, nil
-		}
+	kind, ok := NormalizeK8sStorageDriverKind(st.DriverKind)
+	if !ok {
+		return "", fmt.Errorf("storageType(%s) has unsupported driverKind(%s): only Block is supported", storageType, st.DriverKind)
 	}
-	return model.K8sStorageDriverKindBlock, nil
+	return kind, nil
 }
 
-// NormalizeK8sStorageDriverKind normalizes a driver kind to Block or File (case-insensitive).
+// NormalizeK8sStorageDriverKind normalizes a driver kind to Block (case-insensitive).
+// Block is the only supported kind.
 func NormalizeK8sStorageDriverKind(kind string) (string, bool) {
-	switch strings.ToLower(strings.TrimSpace(kind)) {
-	case "block":
+	if strings.EqualFold(strings.TrimSpace(kind), model.K8sStorageDriverKindBlock) {
 		return model.K8sStorageDriverKindBlock, true
-	case "file":
-		return model.K8sStorageDriverKindFile, true
 	}
 	return "", false
-}
-
-// K8sStorageKindInfoOf returns the block or file section of a provider for a driver kind.
-func K8sStorageKindInfoOf(p model.K8sStorageProviderInfo, kind string) model.K8sStorageKindInfo {
-	if kind == model.K8sStorageDriverKindFile {
-		return p.FileStorage
-	}
-	return p.BlockStorage
 }
 
 // NormalizeK8sStorageTypes trims, de-duplicates and validates storage types against the catalog.

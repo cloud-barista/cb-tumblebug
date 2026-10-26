@@ -37,10 +37,9 @@ type K8sStorageAssetInfo struct {
 type K8sStorageProviderInfo struct {
 	Verified     bool               `json:"verified"`
 	BlockStorage K8sStorageKindInfo `json:"blockStorage"`
-	FileStorage  K8sStorageKindInfo `json:"fileStorage"`
 }
 
-// K8sStorageKindInfo holds the StorageClass details of one storage kind (block or file) of a CSP.
+// K8sStorageKindInfo holds the StorageClass details of one storage kind (block) of a CSP.
 type K8sStorageKindInfo struct {
 	// Provisioners recognized for this kind (classification)
 	Provisioners []string `json:"provisioners,omitempty"`
@@ -57,27 +56,10 @@ type K8sStorageKindInfo struct {
 	ScParameterKey string `json:"scParameterKey,omitempty" example:"type"`
 	// ScParameters are fixed extra parameters written to a generated StorageClass
 	ScParameters map[string]string `json:"scParameters,omitempty"`
-	// VolumeBindingMode of a generated StorageClass (default: WaitForFirstConsumer for Block, Immediate for File)
+	// VolumeBindingMode of a generated StorageClass (default: WaitForFirstConsumer)
 	VolumeBindingMode string `json:"volumeBindingMode,omitempty" example:"WaitForFirstConsumer"`
 	// AllowVolumeExpansion of a generated StorageClass (default: true)
 	AllowVolumeExpansion *bool `json:"allowVolumeExpansion,omitempty"`
-	// FileSystemParameters are StorageClass parameters filled from the prepared file system
-	// (only for File drivers that require a file system). Placeholders:
-	// {{fileSystem.name}}, {{fileSystem.cspId}}, {{fileSystem.endpoint}}
-	FileSystemParameters map[string]string `json:"fileSystemParameters,omitempty"`
-	// FileSystemCreate holds CSP-specific options CB-Tumblebug sends when it creates the file system
-	FileSystemCreate *K8sStorageFileSystemCreateOptions `json:"fileSystemCreate,omitempty"`
-}
-
-// K8sStorageFileSystemCreateOptions are CSP-specific file system creation options.
-type K8sStorageFileSystemCreateOptions struct {
-	// CapacityGB is required by some CSPs (e.g., NHN NAS: 300 GB minimum)
-	CapacityGB int64 `json:"capacityGB,omitempty" example:"300"`
-	// PerformanceInfo is passed to CB-Spider as is (e.g., Alibaba NAS: {"StorageType": "Capacity"})
-	PerformanceInfo map[string]string `json:"performanceInfo,omitempty"`
-	// PerformanceInfoAlternatives are tried in order when the CSP rejects PerformanceInfo for the
-	// cluster zone (e.g., Alibaba Seoul: zone a offers Performance NAS only, zone b Capacity only)
-	PerformanceInfoAlternatives []map[string]string `json:"performanceInfoAlternatives,omitempty"`
 }
 
 // K8sStorageTypeInfo is a CB-Tumblebug abstract storage type.
@@ -85,7 +67,7 @@ type K8sStorageTypeInfo struct {
 	Name        string `json:"name" example:"ssd-general"`
 	Description string `json:"description,omitempty"`
 	ResolveBy   string `json:"resolveBy,omitempty" example:"defaultStorageClass"`
-	// DriverKind is the CB-Spider storage driver Kind this type needs (Block or File)
+	// DriverKind is the CB-Spider storage driver Kind this type needs (Block)
 	DriverKind  string                       `json:"driverKind,omitempty" example:"Block"`
 	AccessModes []string                     `json:"accessModes,omitempty"`
 	Providers   []K8sStorageTypeProviderInfo `json:"providers"`
@@ -103,7 +85,6 @@ type K8sStorageTypeProviderInfo struct {
 // Abstract storage type names and defaults
 const (
 	K8sStorageTypeSsdGeneral = "ssd-general"
-	K8sStorageTypeSharedFile = "shared-file"
 )
 
 /*
@@ -113,7 +94,6 @@ const (
 // K8s storage driver kinds (CB-Spider StorageDriverKind)
 const (
 	K8sStorageDriverKindBlock = "Block"
-	K8sStorageDriverKindFile  = "File"
 )
 
 // K8s storage driver management modes (CB-Spider StorageDriverManagementMode)
@@ -134,14 +114,13 @@ const (
 
 // SpiderStorageDriverInfo is the CB-Spider StorageDriverInfo
 type SpiderStorageDriverInfo struct {
-	Kind               string
-	CSPDriverName      string
-	CSIDriverName      string
-	ManagementMode     string
-	Status             string
-	Version            string
-	RequiresFileSystem bool
-	KeyValueList       []KeyValue
+	Kind           string
+	CSPDriverName  string
+	CSIDriverName  string
+	ManagementMode string
+	Status         string
+	Version        string
+	KeyValueList   []KeyValue
 }
 
 // SpiderStorageDriverListRes is the CB-Spider response of 'GET /cluster/{Name}/storagedriver'
@@ -163,7 +142,7 @@ type SpiderStorageDriverEnableReqInfo struct {
 
 // K8sStorageDriverInfo is a CSP-managed CSI storage driver of a K8sCluster (CB-Tumblebug view of CB-Spider StorageDriverInfo)
 type K8sStorageDriverInfo struct {
-	// Kind is Block or File
+	// Kind is Block
 	Kind string `json:"kind" example:"Block"`
 	// CspDriverName is the CSP add-on name as-is
 	CspDriverName string `json:"cspDriverName,omitempty" example:"aws-ebs-csi-driver"`
@@ -172,11 +151,9 @@ type K8sStorageDriverInfo struct {
 	// ManagementMode is Addon, BuiltIn or NotSupported
 	ManagementMode string `json:"managementMode" example:"Addon"`
 	// Status is Enabled, Disabled, Updating, Failed or Unknown
-	Status  string `json:"status" example:"Enabled"`
-	Version string `json:"version,omitempty" example:"v1.37.0-eksbuild.1"`
-	// RequiresFileSystem is true when the File driver needs an existing file system (e.g., AWS EFS)
-	RequiresFileSystem bool       `json:"requiresFileSystem,omitempty" example:"false"`
-	KeyValueList       []KeyValue `json:"keyValueList,omitempty"`
+	Status       string     `json:"status" example:"Enabled"`
+	Version      string     `json:"version,omitempty" example:"v1.37.0-eksbuild.1"`
+	KeyValueList []KeyValue `json:"keyValueList,omitempty"`
 }
 
 // K8sStorageDriverListResponse is the response of 'GET /ns/{nsId}/k8sCluster/{k8sClusterId}/storageDriver'
@@ -187,8 +164,8 @@ type K8sStorageDriverListResponse struct {
 
 // K8sStorageDriverEnableReq is the request of 'PUT /ns/{nsId}/k8sCluster/{k8sClusterId}/storageDriver'
 type K8sStorageDriverEnableReq struct {
-	// Kind is Block or File
-	Kind string `json:"kind" validate:"required" example:"Block" enums:"Block,File"`
+	// Kind is Block (the only supported kind)
+	Kind string `json:"kind" validate:"required" example:"Block" enums:"Block"`
 	// Version of the driver. Empty means the CSP default version.
 	Version string `json:"version,omitempty" example:""`
 }
@@ -206,21 +183,11 @@ const (
 	K8sStoragePreparing K8sStorageStatus = "Preparing"
 )
 
-// K8sStorageFileSystemReq is the optional file system option for storage types whose driver requires one
-type K8sStorageFileSystemReq struct {
-	// Create a file system through CB-Spider when true
-	Create bool `json:"create,omitempty" example:"true"`
-	// Name of an existing file system to use
-	Name string `json:"name,omitempty" example:""`
-}
-
 // K8sClusterStorageReq is the storage option of K8sCluster creation requests
 // and the request of 'PUT /ns/{nsId}/k8sCluster/{k8sClusterId}/storage'
 type K8sClusterStorageReq struct {
 	// StorageTypes to prepare. Empty means ["ssd-general"].
 	StorageTypes []string `json:"storageTypes,omitempty" example:"ssd-general"`
-	// FileSystem is used only for File drivers that require a file system (AWS, Alibaba, NHN)
-	FileSystem *K8sStorageFileSystemReq `json:"fileSystem,omitempty"`
 }
 
 // K8sStorageDriverRef is the storage driver summary recorded for an abstract storage type
@@ -237,82 +204,7 @@ type K8sStorageTypeState struct {
 	Status      K8sStorageStatus     `json:"status" example:"Ready"`
 	Reason      string               `json:"reason,omitempty" example:""`
 	Driver      *K8sStorageDriverRef `json:"driver,omitempty"`
-	// FileSystem is set when the driver requires a file system and TB prepared one
-	FileSystem *K8sStorageFileSystemState `json:"fileSystem,omitempty"`
 }
-
-// K8sStorageFileSystemState is the file system prepared for a File driver that requires one
-type K8sStorageFileSystemState struct {
-	// Name is the CB-Spider file system name
-	Name string `json:"name" example:"k8scluster01-shared"`
-	// CspId is the CSP file system ID (e.g., AWS fs-0abc...)
-	CspId string `json:"cspId,omitempty" example:"fs-0abc1234"`
-	// Endpoint is the first mount target endpoint reported by CB-Spider
-	Endpoint string `json:"endpoint,omitempty" example:"fs-0abc1234.efs.ap-northeast-2.amazonaws.com"`
-	// AccessSubnets is the number of cluster subnets attached to the file system
-	AccessSubnets int `json:"accessSubnets" example:"2"`
-	// CreatedByTumblebug is true when TB created the file system
-	CreatedByTumblebug bool `json:"createdByTumblebug,omitempty"`
-}
-
-/*
- * CB-Spider file system API (used for File drivers that require a file system)
- */
-
-// SpiderFileSystemCreateReq is the CB-Spider request of 'POST /filesystem'
-type SpiderFileSystemCreateReq struct {
-	ConnectionName string
-	ReqInfo        SpiderFileSystemCreateReqInfo
-}
-
-// SpiderFileSystemCreateReqInfo is the ReqInfo of SpiderFileSystemCreateReq
-type SpiderFileSystemCreateReqInfo struct {
-	Name             string
-	Zone             string
-	VpcIID           IID
-	NFSVersion       string
-	AccessSubnetList []IID                            `json:"AccessSubnetList,omitempty"`
-	MountTargetList  []SpiderFileSystemMountTargetReq `json:"MountTargetList,omitempty"`
-	CapacityGB       int64                            `json:"CapacityGB,omitempty"`
-	PerformanceInfo  map[string]string                `json:"PerformanceInfo,omitempty"`
-	TagList          []KeyValue                       `json:"TagList,omitempty"`
-}
-
-// SpiderFileSystemMountTargetReq is a mount target to create with the file system (CB-Spider NameIds).
-// Without SecurityGroupIIDs the CSP default security group is used.
-type SpiderFileSystemMountTargetReq struct {
-	SubnetIID         IID
-	SecurityGroupIIDs []IID `json:"SecurityGroupIIDs,omitempty"`
-}
-
-// SpiderFileSystemAccessSubnetReq is the CB-Spider request of 'POST /filesystem/{Name}/accesssubnet'
-type SpiderFileSystemAccessSubnetReq struct {
-	ConnectionName string
-	SubnetIID      IID
-}
-
-// SpiderFileSystemMountTarget is a mount target of a CB-Spider file system
-type SpiderFileSystemMountTarget struct {
-	SubnetIID IID
-	Endpoint  string
-}
-
-// SpiderFileSystemInfo is the CB-Spider FileSystemInfo (fields used by TB only)
-type SpiderFileSystemInfo struct {
-	IId              IID
-	Zone             string
-	VpcIID           IID
-	AccessSubnetList []IID
-	Status           string
-	MountTargetList  []SpiderFileSystemMountTarget
-}
-
-// CB-Spider file system statuses
-const (
-	SpiderFileSystemCreating  = "Creating"
-	SpiderFileSystemAvailable = "Available"
-	SpiderFileSystemError     = "Error"
-)
 
 // K8sStorageAction is a CSP-side change made by CB-Tumblebug while preparing storage
 type K8sStorageAction struct {
@@ -329,16 +221,7 @@ type K8sClusterStorageInfo struct {
 	Status       K8sStorageStatus      `json:"status" example:"Ready"`
 	StorageTypes []K8sStorageTypeState `json:"storageTypes"`
 	Actions      []K8sStorageAction    `json:"actions,omitempty"`
-	// ClusterSubnetCspIds are the CSP IDs of the cluster subnets, recorded for StorageClass parameters
-	// such as NHN NAS CSI `subnet` ({{cluster.subnetId}})
-	ClusterSubnetCspIds []string `json:"clusterSubnetCspIds,omitempty"`
-	// ClusterVpcCspId is the CSP ID of the cluster VPC, recorded for StorageClass parameters such as
-	// GKE Filestore CSI `network` ({{cluster.vpcId}})
-	ClusterVpcCspId string `json:"clusterVpcCspId,omitempty"`
-	// CreatedFileSystems are the file systems CB-Tumblebug created for this cluster, kept across
-	// re-preparations so they are deleted with the cluster
-	CreatedFileSystems []string  `json:"createdFileSystems,omitempty"`
-	UpdatedAt          time.Time `json:"updatedAt"`
+	UpdatedAt    time.Time             `json:"updatedAt"`
 }
 
 // K8sClusterStoragePrepareResponse is the 202 response of 'PUT /ns/{nsId}/k8sCluster/{k8sClusterId}/storage'
@@ -367,8 +250,6 @@ type K8sMultiClusterStorageReq struct {
 	K8sClusterIds []string `json:"k8sClusterIds,omitempty"`
 	// StorageTypes to prepare. Empty means ["ssd-general"].
 	StorageTypes []string `json:"storageTypes,omitempty" example:"ssd-general"`
-	// FileSystem is used only for File drivers that require a file system
-	FileSystem *K8sStorageFileSystemReq `json:"fileSystem,omitempty"`
 }
 
 // K8sMultiClusterStoragePrepareResponse is the 202 response of 'PUT /ns/{nsId}/k8sStorage'
@@ -408,7 +289,6 @@ const (
 	K8sStorageClassKind             = "StorageClass"
 	K8sStorageClassReclaimDelete    = "Delete"
 	K8sStorageBindingWaitForConsume = "WaitForFirstConsumer"
-	K8sStorageBindingImmediate      = "Immediate"
 )
 
 // K8sStorageClassManifestMetadata is the metadata of a generated StorageClass

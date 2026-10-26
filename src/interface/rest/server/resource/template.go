@@ -831,9 +831,6 @@ func buildK8sMultiClusterDynamicReqFromCluster(clusterInfo *model.K8sClusterInfo
 		storageReq := &model.K8sClusterStorageReq{}
 		for _, st := range clusterInfo.Storage.StorageTypes {
 			storageReq.StorageTypes = append(storageReq.StorageTypes, st.StorageType)
-			if st.FileSystem != nil && st.FileSystem.CreatedByTumblebug {
-				storageReq.FileSystem = &model.K8sStorageFileSystemReq{Create: true}
-			}
 		}
 		clusterReq.Storage = storageReq
 	}

@@ -1564,9 +1564,6 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	deleted := spErr == nil && strings.EqualFold(spRes.Result, "true")
 
 	log.Debug().Msgf("option=%s", option)
-	// clusterGone: the CSP cluster is confirmed deleted (or no longer exists), so the file
-	// systems TB created for it can be removed. Not set when a forced delete was unconfirmed.
-	clusterGone := deleted
 	if option == "force" {
 		if !deleted {
 			log.Warn().Err(spErr).Msgf("Force deletion of K8sCluster(%s): CB-Spider did not confirm deletion (Result=%q); removing the record anyway (the CSP cluster may remain as an orphan)", k8sClusterId, spRes.Result)
@@ -1577,7 +1574,6 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 		// succeed then, so confirm with a GET and purge the stale record.
 		if isSpiderK8sClusterUnregistered(spErr) || isSpiderK8sClusterUnregistered(getSpiderK8sCluster(tbK8sCInfo.ConnectionName, tbK8sCInfo.CspResourceName)) {
 			log.Warn().Msgf("K8sCluster(%s) no longer exists in CB-Spider; removing stale stored info", k8sClusterId)
-			clusterGone = true
 		} else {
 			err = spErr
 			if err == nil {
@@ -1592,13 +1588,6 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	if err != nil {
 		log.Err(err).Msgf("Failed to Delete K8sCluster(%s)", k8sClusterId)
 		return false, err
-	}
-
-	// Best effort: delete the file systems TB created for this cluster's storage (never fails the deletion).
-	if clusterGone {
-		cleanupK8sClusterFileSystems(k8sStorageSpider, tbK8sCInfo)
-	} else if fs := tumblebugCreatedK8sFileSystems(tbK8sCInfo.Storage); len(fs) > 0 {
-		log.Warn().Msgf("K8sCluster(%s) deletion was not confirmed by CB-Spider; keeping file systems %v created for it", k8sClusterId, fs)
 	}
 
 	return true, nil

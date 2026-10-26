@@ -26,12 +26,11 @@ import (
 
 // GenerateK8sStorageClassManifests builds the common abstract StorageClasses (cb-<storageType>)
 // for one provider. Provisioner and parameters come from the catalog only (TB never reads
-// the cluster); file system parameters come from the file system TB recorded in state.
+// the cluster).
 //
 // Errors carry an HTTP status (see K8sStorageErrorCode):
 //   - 400: unknown storage type
-//   - 422: no catalog entry, or the entry/provider is not `verified: true`,
-//     or the catalog needs a file system that was not recorded
+//   - 422: no catalog entry, or the entry/provider is not `verified: true`
 //   - 412: the storage type is not Ready in the recorded storage state
 func GenerateK8sStorageClassManifests(catalog *model.K8sStorageAssetInfo, provider string, storageTypes []string, setDefault bool, state *model.K8sClusterStorageInfo) ([]model.K8sStorageClassManifest, error) {
 	provider = strings.ToLower(provider)
@@ -42,8 +41,7 @@ func GenerateK8sStorageClassManifests(catalog *model.K8sStorageAssetInfo, provid
 
 	manifests := make([]model.K8sStorageClassManifest, 0, len(types))
 	for _, storageType := range types {
-		kind, err := common.ResolveK8sStorageDriverKind(catalog, storageType)
-		if err != nil {
+		if _, err := common.ResolveK8sStorageDriverKind(catalog, storageType); err != nil {
 			return nil, newK8sStorageError(http.StatusBadRequest, "%v", err)
 		}
 
@@ -86,16 +84,7 @@ func GenerateK8sStorageClassManifests(catalog *model.K8sStorageAssetInfo, provid
 			return nil, newK8sStorageError(http.StatusPreconditionFailed, "storageType(%s) is not Ready (%s): %s", storageType, status, reason)
 		}
 
-		kindInfo := common.K8sStorageKindInfoOf(providerInfo, kind)
-		var network k8sStorageClusterNetwork
-		if state != nil {
-			network = k8sStorageClusterNetwork{VpcCspId: state.ClusterVpcCspId, SubnetCspIds: state.ClusterSubnetCspIds}
-		}
-		m, err := buildK8sStorageClassManifest(storageType, kind, entry, kindInfo, typeState.FileSystem, network, setDefault)
-		if err != nil {
-			return nil, err
-		}
-		manifests = append(manifests, m)
+		manifests = append(manifests, buildK8sStorageClassManifest(storageType, entry, providerInfo.BlockStorage, setDefault))
 	}
 	return manifests, nil
 }
@@ -149,20 +138,9 @@ func k8sLabelValue(v string) string {
 	return strings.Trim(s, "-_.")
 }
 
-// Cluster network placeholders in catalog scParameters: {{cluster.vpcId}} is replaced with the cluster
-// VPC CSP ID, {{cluster.subnetId}} with the first cluster subnet CSP ID.
-const (
-	k8sStorageClusterVpcPlaceholder    = "{{cluster.vpcId}}"
-	k8sStorageClusterSubnetPlaceholder = "{{cluster.subnetId}}"
-)
-
-// k8sStorageClusterNetwork is the recorded cluster network the placeholders resolve to.
-type k8sStorageClusterNetwork struct {
-	VpcCspId     string
-	SubnetCspIds []string
-}
-
-func buildK8sStorageClassManifest(storageType, kind string, entry model.K8sStorageTypeProviderInfo, kindInfo model.K8sStorageKindInfo, fs *model.K8sStorageFileSystemState, network k8sStorageClusterNetwork, setDefault bool) (model.K8sStorageClassManifest, error) {
+// buildK8sStorageClassManifest builds the cb-<storageType> StorageClass from a catalog entry and the
+// provider's block storage details.
+func buildK8sStorageClassManifest(storageType string, entry model.K8sStorageTypeProviderInfo, kindInfo model.K8sStorageKindInfo, setDefault bool) model.K8sStorageClassManifest {
 	labels := map[string]string{
 		model.K8sStorageLabelManagedBy: model.K8sStorageLabelManagedByValue,
 		model.K8sStorageLabelType:      storageType,
@@ -173,30 +151,10 @@ func buildK8sStorageClassManifest(storageType, kind string, entry model.K8sStora
 
 	params := map[string]string{}
 	for k, v := range kindInfo.ScParameters {
-		if strings.Contains(v, k8sStorageClusterSubnetPlaceholder) {
-			if len(network.SubnetCspIds) == 0 {
-				return model.K8sStorageClassManifest{}, newK8sStorageError(http.StatusUnprocessableEntity, "storageType(%s) needs a cluster subnet ID but none is recorded; prepare it again with PUT .../storage", storageType)
-			}
-			v = strings.ReplaceAll(v, k8sStorageClusterSubnetPlaceholder, network.SubnetCspIds[0])
-		}
-		if strings.Contains(v, k8sStorageClusterVpcPlaceholder) {
-			if network.VpcCspId == "" {
-				return model.K8sStorageClassManifest{}, newK8sStorageError(http.StatusUnprocessableEntity, "storageType(%s) needs the cluster VPC ID but none is recorded; prepare it again with PUT .../storage", storageType)
-			}
-			v = strings.ReplaceAll(v, k8sStorageClusterVpcPlaceholder, network.VpcCspId)
-		}
 		params[k] = v
 	}
 	if kindInfo.ScParameterKey != "" && entry.Id != "" {
 		params[kindInfo.ScParameterKey] = entry.Id
-	}
-	if len(kindInfo.FileSystemParameters) > 0 && kind == model.K8sStorageDriverKindFile {
-		if fs == nil {
-			return model.K8sStorageClassManifest{}, newK8sStorageError(http.StatusUnprocessableEntity, "storageType(%s) needs a file system but none is recorded; prepare it with PUT .../storage and fileSystem", storageType)
-		}
-		for k, v := range kindInfo.FileSystemParameters {
-			params[k] = expandK8sStorageFileSystemPlaceholders(v, fs)
-		}
 	}
 	if len(params) == 0 {
 		params = nil
@@ -205,9 +163,6 @@ func buildK8sStorageClassManifest(storageType, kind string, entry model.K8sStora
 	bindingMode := kindInfo.VolumeBindingMode
 	if bindingMode == "" {
 		bindingMode = model.K8sStorageBindingWaitForConsume
-		if kind == model.K8sStorageDriverKindFile {
-			bindingMode = model.K8sStorageBindingImmediate
-		}
 	}
 	allowExpansion := true
 	if kindInfo.AllowVolumeExpansion != nil {
@@ -230,29 +185,7 @@ func buildK8sStorageClassManifest(storageType, kind string, entry model.K8sStora
 	if setDefault {
 		m.Metadata.Annotations = map[string]string{model.K8sStorageAnnotationDefaultSC: "true"}
 	}
-	return m, nil
-}
-
-// expandK8sStorageFileSystemPlaceholders fills {{fileSystem.*}} placeholders of a catalog value.
-func expandK8sStorageFileSystemPlaceholders(v string, fs *model.K8sStorageFileSystemState) string {
-	host, path := splitK8sStorageEndpoint(fs.Endpoint)
-	r := strings.NewReplacer(
-		"{{fileSystem.name}}", fs.Name,
-		"{{fileSystem.cspId}}", fs.CspId,
-		"{{fileSystem.endpointHost}}", host,
-		"{{fileSystem.endpointPath}}", path,
-		"{{fileSystem.endpoint}}", fs.Endpoint,
-	)
-	return r.Replace(v)
-}
-
-// splitK8sStorageEndpoint splits an NFS endpoint "host:/path" into host and path ("/" when absent).
-func splitK8sStorageEndpoint(endpoint string) (string, string) {
-	endpoint = strings.TrimSpace(endpoint)
-	if i := strings.Index(endpoint, ":/"); i >= 0 {
-		return endpoint[:i], endpoint[i+1:]
-	}
-	return endpoint, "/"
+	return m
 }
 
 // MarshalK8sStorageClassManifestsYAML renders manifests as a multi-document YAML stream.

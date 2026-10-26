@@ -605,7 +605,7 @@ func RestGetK8sClusterInfo(c echo.Context) error {
 // RestGetK8sStorageInfo godoc
 // @ID GetK8sStorageInfo
 // @Summary Get kubernetes storage catalog
-// @Description Get the kubernetes storage catalog: per-CSP StorageClass details and abstract storage types (e.g., ssd-general, shared-file).
+// @Description Get the kubernetes storage catalog: per-CSP StorageClass details and abstract storage types (e.g., ssd-general).
 // @Description Generated StorageClass manifests use only entries with verified=true.
 // @Tags [Kubernetes] Storage Management
 // @Accept  json

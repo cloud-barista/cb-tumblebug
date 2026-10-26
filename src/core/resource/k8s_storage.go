@@ -17,7 +17,7 @@ package resource
 // K8s storage deploy & control (abstract storage types on managed K8s clusters).
 //
 // TB never calls the in-cluster Kubernetes API here: no kubeconfig, client-go, exec or Helm.
-// Everything goes through CB-Spider REST (storagedriver, cluster, filesystem). Cluster-internal
+// Everything goes through CB-Spider REST (storagedriver, disk). Cluster-internal
 // objects (StorageClasses) are handed to the user as manifests only.
 
 import (
@@ -91,11 +91,6 @@ type k8sStorageSpiderAPI interface {
 	ListStorageDrivers(cspClusterName, connectionName string) ([]model.SpiderStorageDriverInfo, error)
 	EnableStorageDriver(cspClusterName, connectionName, kind, version string) (model.SpiderStorageDriverInfo, error)
 	DisableStorageDriver(cspClusterName, connectionName, kind string) error
-	GetCluster(cspClusterName, connectionName string) (model.SpiderClusterInfo, error)
-	CreateFileSystem(req model.SpiderFileSystemCreateReq) (model.SpiderFileSystemInfo, error)
-	GetFileSystem(name, connectionName string) (model.SpiderFileSystemInfo, error)
-	AddFileSystemAccessSubnet(name, connectionName string, subnet model.IID) (model.SpiderFileSystemInfo, error)
-	DeleteFileSystem(name, connectionName string) error
 	ListAllDisks(connectionName string) (model.SpiderAllDiskInfoList, error)
 	DeleteCSPDisk(cspDiskId, connectionName string) error
 }
@@ -145,46 +140,6 @@ func (spiderK8sStorageClient) DisableStorageDriver(cspClusterName, connectionNam
 	return nil
 }
 
-func (spiderK8sStorageClient) GetCluster(cspClusterName, connectionName string) (model.SpiderClusterInfo, error) {
-	u := fmt.Sprintf("%s/cluster/%s", model.SpiderRestUrl, url.PathEscape(cspClusterName))
-	var res model.SpiderClusterRes
-	err := spiderCall("GET", u, spiderConnectionBody{ConnectionName: connectionName}, true, &res, 10*time.Minute)
-	return res.SpiderClusterInfo, err
-}
-
-func (spiderK8sStorageClient) CreateFileSystem(req model.SpiderFileSystemCreateReq) (model.SpiderFileSystemInfo, error) {
-	var res model.SpiderFileSystemInfo
-	err := spiderCall("POST", model.SpiderRestUrl+"/filesystem", req, true, &res, 30*time.Minute)
-	return res, err
-}
-
-func (spiderK8sStorageClient) GetFileSystem(name, connectionName string) (model.SpiderFileSystemInfo, error) {
-	u := fmt.Sprintf("%s/filesystem/%s?ConnectionName=%s", model.SpiderRestUrl, url.PathEscape(name), url.QueryEscape(connectionName))
-	var res model.SpiderFileSystemInfo
-	err := spiderCall("GET", u, clientManager.NoBody, false, &res, 2*time.Minute)
-	return res, err
-}
-
-func (spiderK8sStorageClient) AddFileSystemAccessSubnet(name, connectionName string, subnet model.IID) (model.SpiderFileSystemInfo, error) {
-	u := fmt.Sprintf("%s/filesystem/%s/accesssubnet", model.SpiderRestUrl, url.PathEscape(name))
-	body := model.SpiderFileSystemAccessSubnetReq{ConnectionName: connectionName, SubnetIID: model.IID{NameId: subnet.NameId}}
-	var res model.SpiderFileSystemInfo
-	err := spiderCall("POST", u, body, true, &res, 30*time.Minute)
-	return res, err
-}
-
-func (spiderK8sStorageClient) DeleteFileSystem(name, connectionName string) error {
-	u := fmt.Sprintf("%s/filesystem/%s", model.SpiderRestUrl, url.PathEscape(name))
-	var res model.SpiderBooleanInfo
-	if err := spiderCall("DELETE", u, spiderConnectionBody{ConnectionName: connectionName}, true, &res, 10*time.Minute); err != nil {
-		return err
-	}
-	if !strings.EqualFold(res.Result, "true") {
-		return fmt.Errorf("CB-Spider returned Result=%q", res.Result)
-	}
-	return nil
-}
-
 func (spiderK8sStorageClient) ListAllDisks(connectionName string) (model.SpiderAllDiskInfoList, error) {
 	u := fmt.Sprintf("%s/alldiskinfo?ConnectionName=%s", model.SpiderRestUrl, url.QueryEscape(connectionName))
 	var res model.SpiderAllDiskInfoList
@@ -206,14 +161,13 @@ func (spiderK8sStorageClient) DeleteCSPDisk(cspDiskId, connectionName string) er
 
 func toK8sStorageDriverInfo(d model.SpiderStorageDriverInfo) model.K8sStorageDriverInfo {
 	return model.K8sStorageDriverInfo{
-		Kind:               d.Kind,
-		CspDriverName:      d.CSPDriverName,
-		CsiDriverName:      d.CSIDriverName,
-		ManagementMode:     d.ManagementMode,
-		Status:             d.Status,
-		Version:            d.Version,
-		RequiresFileSystem: d.RequiresFileSystem,
-		KeyValueList:       d.KeyValueList,
+		Kind:           d.Kind,
+		CspDriverName:  d.CSPDriverName,
+		CsiDriverName:  d.CSIDriverName,
+		ManagementMode: d.ManagementMode,
+		Status:         d.Status,
+		Version:        d.Version,
+		KeyValueList:   d.KeyValueList,
 	}
 }
 
@@ -241,9 +195,6 @@ type k8sStorageTarget struct {
 	Provider        string
 	CspResourceName string
 	ConnectionName  string
-	Zone            string
-	// FileSystemCreate is the catalog's file system creation options of the provider (set by the preparation)
-	FileSystemCreate *model.K8sStorageFileSystemCreateOptions
 }
 
 func newK8sStorageTarget(nsId string, info *model.K8sClusterInfo) k8sStorageTarget {
@@ -253,7 +204,6 @@ func newK8sStorageTarget(nsId string, info *model.K8sClusterInfo) k8sStorageTarg
 		Provider:        strings.ToLower(info.ConnectionConfig.ProviderName),
 		CspResourceName: info.CspResourceName,
 		ConnectionName:  info.ConnectionName,
-		Zone:            info.ConnectionConfig.RegionZoneInfo.AssignedZone,
 	}
 }
 
@@ -314,33 +264,12 @@ func updateK8sClusterStorage(nsId, k8sClusterId string, mutate func(info *model.
 func recordK8sClusterStorage(nsId, k8sClusterId string, state model.K8sClusterStorageInfo) {
 	err := updateK8sClusterStorage(nsId, k8sClusterId, func(info *model.K8sClusterInfo) bool {
 		s := state
-		// A re-preparation replaces the storage state; keep the file systems TB created earlier so
-		// cluster deletion still removes them; otherwise the file systems would be left on the CSP.
-		s.CreatedFileSystems = mergeK8sCreatedFileSystems(info.Storage, &s)
 		info.Storage = &s
 		return true
 	})
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to record storage state of K8sCluster(%s)", k8sClusterId)
 	}
-}
-
-// mergeK8sCreatedFileSystems returns the distinct TB-created file systems recorded in prev and next.
-func mergeK8sCreatedFileSystems(prev, next *model.K8sClusterStorageInfo) []string {
-	names := []string{}
-	seen := map[string]bool{}
-	for _, s := range []*model.K8sClusterStorageInfo{prev, next} {
-		for _, name := range tumblebugCreatedK8sFileSystems(s) {
-			if !seen[name] {
-				seen[name] = true
-				names = append(names, name)
-			}
-		}
-	}
-	if len(names) == 0 {
-		return nil
-	}
-	return names
 }
 
 // k8sStorageJobs tracks in-flight storage preparations (key: nsId/k8sClusterId).
@@ -389,7 +318,7 @@ func ListK8sClusterStorageDrivers(nsId, k8sClusterId string) (*model.K8sStorageD
 func EnableK8sClusterStorageDriver(nsId, k8sClusterId string, req *model.K8sStorageDriverEnableReq) (*model.K8sStorageDriverInfo, error) {
 	kind, ok := common.NormalizeK8sStorageDriverKind(req.Kind)
 	if !ok {
-		return nil, newK8sStorageError(http.StatusBadRequest, "invalid storage driver kind(%s): use Block or File", req.Kind)
+		return nil, newK8sStorageError(http.StatusBadRequest, "invalid storage driver kind(%s): only Block is supported", req.Kind)
 	}
 	info, err := loadK8sClusterForStorage(nsId, k8sClusterId)
 	if err != nil {
@@ -420,7 +349,7 @@ const K8sStorageDriverDisableWarning = "disabling a storage driver removes the C
 func DisableK8sClusterStorageDriver(nsId, k8sClusterId, kindParam string, force bool) error {
 	kind, ok := common.NormalizeK8sStorageDriverKind(kindParam)
 	if !ok {
-		return newK8sStorageError(http.StatusBadRequest, "invalid storage driver kind(%s): use Block or File", kindParam)
+		return newK8sStorageError(http.StatusBadRequest, "invalid storage driver kind(%s): only Block is supported", kindParam)
 	}
 	if !force {
 		return newK8sStorageError(http.StatusBadRequest, "WARNING: %s", K8sStorageDriverDisableWarning)
@@ -493,9 +422,6 @@ func StartK8sClusterStoragePreparation(nsId, k8sClusterId string, req *model.K8s
 	if err != nil {
 		return nil, newK8sStorageError(http.StatusBadRequest, "%v", err)
 	}
-	if err := validateK8sStorageFileSystemReq(req.FileSystem); err != nil {
-		return nil, err
-	}
 	info, err := loadK8sClusterForStorage(nsId, k8sClusterId)
 	if err != nil {
 		return nil, err
@@ -513,28 +439,17 @@ func StartK8sClusterStoragePreparation(nsId, k8sClusterId string, req *model.K8s
 	}
 
 	target := newK8sStorageTarget(nsId, info)
-	fsReq := req.FileSystem
 	recordK8sClusterStorage(nsId, k8sClusterId, newPreparingK8sStorageState(types, ""))
 
 	go func() {
 		defer k8sStorageJobs.Delete(jobKey)
-		runAndRecordK8sStoragePreparation(target, types, fsReq)
+		runAndRecordK8sStoragePreparation(target, types)
 	}()
 
 	return &model.K8sClusterStoragePrepareResponse{K8sClusterId: k8sClusterId, Status: model.K8sStoragePreparing, StorageTypes: types}, nil
 }
 
-func validateK8sStorageFileSystemReq(fs *model.K8sStorageFileSystemReq) error {
-	if fs == nil || fs.Name == "" {
-		return nil
-	}
-	if err := common.CheckString(fs.Name); err != nil {
-		return newK8sStorageError(http.StatusBadRequest, "invalid fileSystem.name(%s): %v", fs.Name, err)
-	}
-	return nil
-}
-
-func runAndRecordK8sStoragePreparation(target k8sStorageTarget, types []string, fsReq *model.K8sStorageFileSystemReq) {
+func runAndRecordK8sStoragePreparation(target k8sStorageTarget, types []string) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error().Msgf("Panic while preparing storage of K8sCluster(%s): %v", target.K8sClusterId, r)
@@ -548,7 +463,7 @@ func runAndRecordK8sStoragePreparation(target k8sStorageTarget, types []string, 
 		}
 	}()
 	log.Info().Msgf("Preparing %v on K8sCluster(%s/%s)", types, target.NsId, target.K8sClusterId)
-	final := runK8sStoragePreparation(k8sStorageSpider, &common.RuntimeK8sStorageInfo, target, types, fsReq, func(s model.K8sClusterStorageInfo) {
+	final := runK8sStoragePreparation(k8sStorageSpider, &common.RuntimeK8sStorageInfo, target, types, func(s model.K8sClusterStorageInfo) {
 		recordK8sClusterStorage(target.NsId, target.K8sClusterId, s)
 	})
 	recordK8sClusterStorage(target.NsId, target.K8sClusterId, final)
@@ -557,18 +472,14 @@ func runAndRecordK8sStoragePreparation(target k8sStorageTarget, types []string, 
 
 // k8sStorageKindResult is the preparation result of one driver kind, shared by the storage types needing it.
 type k8sStorageKindResult struct {
-	status     model.K8sStorageStatus
-	reason     string
-	driver     *model.K8sStorageDriverRef
-	fileSystem *model.K8sStorageFileSystemState
+	status model.K8sStorageStatus
+	reason string
+	driver *model.K8sStorageDriverRef
 }
 
 // runK8sStoragePreparation prepares the storage types on one cluster and returns the final state.
 // onUpdate receives intermediate states (may be nil). It only talks to CB-Spider through api.
-func runK8sStoragePreparation(api k8sStorageSpiderAPI, catalog *model.K8sStorageAssetInfo, target k8sStorageTarget, types []string, fsReq *model.K8sStorageFileSystemReq, onUpdate func(model.K8sClusterStorageInfo)) model.K8sClusterStorageInfo {
-	if p, ok := catalog.Providers[strings.ToLower(target.Provider)]; ok {
-		target.FileSystemCreate = p.FileStorage.FileSystemCreate
-	}
+func runK8sStoragePreparation(api k8sStorageSpiderAPI, catalog *model.K8sStorageAssetInfo, target k8sStorageTarget, types []string, onUpdate func(model.K8sClusterStorageInfo)) model.K8sClusterStorageInfo {
 	state := newPreparingK8sStorageState(types, "")
 	publish := func() {
 		state.Status = aggregateK8sStorageStatus(state.StorageTypes)
@@ -592,18 +503,6 @@ func runK8sStoragePreparation(api k8sStorageSpiderAPI, catalog *model.K8sStorage
 		return state
 	}
 
-	// Record the cluster VPC and subnet CSP IDs for StorageClass parameters that name them.
-	if cluster, err := api.GetCluster(target.CspResourceName, target.ConnectionName); err == nil {
-		state.ClusterVpcCspId = cluster.Network.VpcIID.SystemId
-		for _, subnet := range cluster.Network.SubnetIIDs {
-			if subnet.SystemId != "" {
-				state.ClusterSubnetCspIds = append(state.ClusterSubnetCspIds, subnet.SystemId)
-			}
-		}
-	} else {
-		log.Warn().Err(err).Msgf("Failed to get the network of K8sCluster(%s)", target.K8sClusterId)
-	}
-
 	results := map[string]k8sStorageKindResult{}
 	for i := range state.StorageTypes {
 		ts := &state.StorageTypes[i]
@@ -615,18 +514,18 @@ func runK8sStoragePreparation(api k8sStorageSpiderAPI, catalog *model.K8sStorage
 		}
 		r, done := results[kind]
 		if !done {
-			r = prepareK8sStorageDriverKind(api, target, kind, drivers, fsReq, addAction)
+			r = prepareK8sStorageDriverKind(api, target, kind, drivers, addAction)
 			results[kind] = r
 		}
-		ts.Status, ts.Reason, ts.Driver, ts.FileSystem = r.status, r.reason, r.driver, r.fileSystem
+		ts.Status, ts.Reason, ts.Driver = r.status, r.reason, r.driver
 		publish()
 	}
 	publish()
 	return state
 }
 
-// prepareK8sStorageDriverKind makes one driver kind usable: optional file system, then driver enablement.
-func prepareK8sStorageDriverKind(api k8sStorageSpiderAPI, target k8sStorageTarget, kind string, drivers []model.SpiderStorageDriverInfo, fsReq *model.K8sStorageFileSystemReq, addAction func(model.K8sStorageAction)) k8sStorageKindResult {
+// prepareK8sStorageDriverKind makes one driver kind usable by enabling its storage driver.
+func prepareK8sStorageDriverKind(api k8sStorageSpiderAPI, target k8sStorageTarget, kind string, drivers []model.SpiderStorageDriverInfo, addAction func(model.K8sStorageAction)) k8sStorageKindResult {
 	d := findSpiderStorageDriver(drivers, kind)
 	if d == nil {
 		return k8sStorageKindResult{status: model.K8sStorageNotReady, reason: fmt.Sprintf("CB-Spider reported no %s storage driver for this cluster", kind)}
@@ -635,19 +534,6 @@ func prepareK8sStorageDriverKind(api k8sStorageSpiderAPI, target k8sStorageTarge
 	if d.ManagementMode == model.K8sStorageDriverModeNotSupported {
 		res.status, res.reason = model.K8sStorageNotReady, fmt.Sprintf("the CSP offers no %s storage driver (NotSupported)", kind)
 		return res
-	}
-
-	if kind == model.K8sStorageDriverKindFile && d.RequiresFileSystem {
-		if fsReq == nil || (!fsReq.Create && fsReq.Name == "") {
-			res.status, res.reason = model.K8sStorageNotReady, "file system required: the File driver of this CSP needs an existing file system; set fileSystem.create=true or fileSystem.name"
-			return res
-		}
-		fs, err := prepareK8sStorageFileSystem(api, target, fsReq, addAction)
-		if err != nil {
-			res.status, res.reason = model.K8sStorageNotReady, fmt.Sprintf("file system: %v", err)
-			return res
-		}
-		res.fileSystem = fs
 	}
 
 	if d.Status == model.K8sStorageDriverEnabled {
@@ -722,29 +608,6 @@ func prepareK8sStorageDriverKind(api k8sStorageSpiderAPI, target k8sStorageTarge
 	return res
 }
 
-func fsCreateCapacityGB(o *model.K8sStorageFileSystemCreateOptions) int64 {
-	if o == nil {
-		return 0
-	}
-	return o.CapacityGB
-}
-
-// fsCreatePerformanceInfos returns the PerformanceInfo candidates to try in order; a single nil
-// candidate means no CSP-specific option.
-func fsCreatePerformanceInfos(o *model.K8sStorageFileSystemCreateOptions) []map[string]string {
-	if o == nil {
-		return []map[string]string{nil}
-	}
-	return append([]map[string]string{o.PerformanceInfo}, o.PerformanceInfoAlternatives...)
-}
-
-// isK8sStorageZoneNotSupportedError tells whether the CSP rejected the file system type for the zone,
-// so another PerformanceInfo candidate may succeed (e.g., Alibaba "InvalidAzone.NotSupport").
-func isK8sStorageZoneNotSupportedError(err error) bool {
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "invalidazone") || strings.Contains(msg, "zone not support")
-}
-
 // isPermanentK8sStorageDriverError tells whether retrying EnableStorageDriver cannot help.
 func isPermanentK8sStorageDriverError(err error) bool {
 	msg := strings.ToLower(err.Error())
@@ -754,158 +617,6 @@ func isPermanentK8sStorageDriverError(err error) bool {
 	}
 	return strings.Contains(msg, "not implemented") || strings.Contains(msg, "not supported") ||
 		strings.Contains(msg, "notsupported") || strings.Contains(msg, "invalid storage driver kind")
-}
-
-// k8sStorageDefaultFileSystemName is the file system name TB uses when fileSystem.name is empty.
-func k8sStorageDefaultFileSystemName(k8sClusterId string) string {
-	return strings.ToLower(k8sClusterId) + "-shared"
-}
-
-func sameIID(a, b model.IID) bool {
-	return (a.NameId != "" && a.NameId == b.NameId) || (a.SystemId != "" && a.SystemId == b.SystemId)
-}
-
-// k8sStorageMountTargets puts a mount target in every cluster subnet with the cluster security groups.
-// Mount targets in the CSP default security group may not be reachable from the nodes over NFS (TCP 2049),
-// e.g., on EKS. Returns nil when the cluster reports no security groups, so the CSP default applies.
-func k8sStorageMountTargets(network model.SpiderNetworkInfo) []model.SpiderFileSystemMountTargetReq {
-	var sgs []model.IID
-	for _, sg := range network.SecurityGroupIIDs {
-		// "#<CSP ID>" names a security group CB-Spider does not manage (e.g., the NHN NKS cluster
-		// security group); CB-Spider cannot resolve it, so it is skipped.
-		if sg.NameId != "" && !strings.HasPrefix(sg.NameId, "#") {
-			sgs = append(sgs, model.IID{NameId: sg.NameId})
-		}
-	}
-	if len(sgs) == 0 {
-		return nil
-	}
-	targets := make([]model.SpiderFileSystemMountTargetReq, 0, len(network.SubnetIIDs))
-	for _, subnet := range network.SubnetIIDs {
-		targets = append(targets, model.SpiderFileSystemMountTargetReq{SubnetIID: model.IID{NameId: subnet.NameId}, SecurityGroupIIDs: sgs})
-	}
-	return targets
-}
-
-// prepareK8sStorageFileSystem prepares a file system for a File driver with existing CB-Spider APIs only:
-// GET cluster (VPC, subnets) → create or reuse the file system in the cluster VPC → attach every
-// cluster subnet that is not attached yet.
-func prepareK8sStorageFileSystem(api k8sStorageSpiderAPI, target k8sStorageTarget, fsReq *model.K8sStorageFileSystemReq, addAction func(model.K8sStorageAction)) (*model.K8sStorageFileSystemState, error) {
-	cluster, err := api.GetCluster(target.CspResourceName, target.ConnectionName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster network from CB-Spider: %w", err)
-	}
-	vpc := cluster.Network.VpcIID
-	if vpc.NameId == "" && vpc.SystemId == "" {
-		return nil, fmt.Errorf("CB-Spider reported no VPC for the cluster")
-	}
-
-	name := fsReq.Name
-	created := false
-	var fs model.SpiderFileSystemInfo
-	if name != "" {
-		fs, err = api.GetFileSystem(name, target.ConnectionName)
-		if err != nil {
-			return nil, fmt.Errorf("file system(%s) not found: %w", name, err)
-		}
-		if !sameIID(fs.VpcIID, vpc) {
-			return nil, fmt.Errorf("file system(%s) is in VPC(%s), not in the cluster VPC(%s)", name, fs.VpcIID.NameId+fs.VpcIID.SystemId, vpc.NameId)
-		}
-	} else {
-		name = k8sStorageDefaultFileSystemName(target.K8sClusterId)
-		// Reuse the file system of a previous run (idempotent re-preparation).
-		if existing, getErr := api.GetFileSystem(name, target.ConnectionName); getErr == nil && existing.IId.NameId != "" {
-			if !sameIID(existing.VpcIID, vpc) {
-				return nil, fmt.Errorf("file system(%s) already exists in another VPC", name)
-			}
-			fs = existing
-			created = true
-		} else {
-			reqInfo := model.SpiderFileSystemCreateReqInfo{
-				Name:   name,
-				Zone:   target.Zone,
-				VpcIID: model.IID{NameId: vpc.NameId},
-				// Empty: the CB-Spider driver uses the CSP default (AWS 4.1, Alibaba 4.0); a fixed 4.1 is
-				// rejected by Alibaba NAS.
-				NFSVersion:      "",
-				MountTargetList: k8sStorageMountTargets(cluster.Network),
-				CapacityGB:      fsCreateCapacityGB(target.FileSystemCreate),
-				TagList:         []model.KeyValue{{Key: model.LabelManager, Value: model.StrManager}, {Key: "k8sClusterId", Value: target.K8sClusterId}},
-			}
-			if reqInfo.MountTargetList == nil {
-				// Without security groups, attach the cluster subnets at creation: some CSPs (NHN NAS)
-				// require them in the create request.
-				for _, subnet := range cluster.Network.SubnetIIDs {
-					reqInfo.AccessSubnetList = append(reqInfo.AccessSubnetList, model.IID{NameId: subnet.NameId})
-				}
-			}
-			for _, perf := range fsCreatePerformanceInfos(target.FileSystemCreate) {
-				reqInfo.PerformanceInfo = perf
-				fs, err = api.CreateFileSystem(model.SpiderFileSystemCreateReq{ConnectionName: target.ConnectionName, ReqInfo: reqInfo})
-				if err == nil || !isK8sStorageZoneNotSupportedError(err) {
-					break
-				}
-			}
-			if err != nil {
-				return nil, fmt.Errorf("failed to create file system(%s) through CB-Spider: %w", name, err)
-			}
-			created = true
-			addAction(model.K8sStorageAction{Step: "createFileSystem", Kind: model.K8sStorageDriverKindFile, Target: name})
-		}
-	}
-
-	// Mount targets need an Available file system.
-	start := time.Now()
-	for fs.Status == model.SpiderFileSystemCreating && time.Since(start) < k8sStorageDriverPollTimeout {
-		time.Sleep(k8sStorageDriverPollInterval)
-		if cur, err := api.GetFileSystem(name, target.ConnectionName); err == nil {
-			fs = cur
-		}
-	}
-	if fs.Status == model.SpiderFileSystemError {
-		return nil, fmt.Errorf("file system(%s) is in Error status", name)
-	}
-	if fs.Status == model.SpiderFileSystemCreating {
-		return nil, fmt.Errorf("file system(%s) did not become Available within %s", name, k8sStorageDriverPollTimeout)
-	}
-
-	attached := 0
-	for _, subnet := range cluster.Network.SubnetIIDs {
-		already := false
-		for _, a := range fs.AccessSubnetList {
-			if sameIID(a, subnet) {
-				already = true
-				break
-			}
-		}
-		if already {
-			attached++
-			continue
-		}
-		if _, err := api.AddFileSystemAccessSubnet(name, target.ConnectionName, subnet); err != nil {
-			return nil, fmt.Errorf("failed to attach subnet(%s) to file system(%s): %w", subnet.NameId, name, err)
-		}
-		attached++
-		addAction(model.K8sStorageAction{Step: "attachFileSystem", Kind: model.K8sStorageDriverKindFile, Target: name + ":" + subnet.NameId})
-	}
-
-	if cur, err := api.GetFileSystem(name, target.ConnectionName); err == nil {
-		fs = cur
-	}
-	endpoint := ""
-	for _, mt := range fs.MountTargetList {
-		if mt.Endpoint != "" {
-			endpoint = mt.Endpoint
-			break
-		}
-	}
-	return &model.K8sStorageFileSystemState{
-		Name:               name,
-		CspId:              fs.IId.SystemId,
-		Endpoint:           endpoint,
-		AccessSubnets:      attached,
-		CreatedByTumblebug: created,
-	}, nil
 }
 
 // refreshK8sStorageState recomputes the per-type status from the current CB-Spider driver list
@@ -935,12 +646,6 @@ func refreshK8sStorageState(catalog *model.K8sStorageAssetInfo, recorded model.K
 		case d.ManagementMode == model.K8sStorageDriverModeNotSupported:
 			ts.Driver = toK8sStorageDriverRef(*d)
 			ts.Status, ts.Reason = model.K8sStorageNotReady, fmt.Sprintf("the CSP offers no %s storage driver (NotSupported)", kind)
-		case kind == model.K8sStorageDriverKindFile && d.RequiresFileSystem && ts.FileSystem == nil:
-			ts.Driver = toK8sStorageDriverRef(*d)
-			ts.Status = model.K8sStorageNotReady
-			if ts.Reason == "" || recorded.Status == model.K8sStoragePreparing {
-				ts.Reason = "file system required: set fileSystem.create=true or fileSystem.name and PUT .../storage again"
-			}
 		case d.Status == model.K8sStorageDriverEnabled:
 			ts.Driver = toK8sStorageDriverRef(*d)
 			ts.Status, ts.Reason = model.K8sStorageReady, ""
@@ -1015,7 +720,7 @@ func ValidateK8sClusterStorageReq(req *model.K8sClusterStorageReq) error {
 	if _, err := common.NormalizeK8sStorageTypes(&common.RuntimeK8sStorageInfo, req.StorageTypes); err != nil {
 		return fmt.Errorf("invalid storage option: %w", err)
 	}
-	return validateK8sStorageFileSystemReq(req.FileSystem)
+	return nil
 }
 
 // startK8sStoragePreparationAfterCreate waits for the new cluster (and its node groups) to become
@@ -1032,7 +737,6 @@ func startK8sStoragePreparationAfterCreate(nsId, k8sClusterId string, req *model
 		return
 	}
 	recordK8sClusterStorage(nsId, k8sClusterId, newPreparingK8sStorageState(types, "waiting for the K8sCluster and its node groups to become Active"))
-	fsReq := req.FileSystem
 
 	go func() {
 		defer k8sStorageJobs.Delete(jobKey)
@@ -1055,7 +759,7 @@ func startK8sStoragePreparationAfterCreate(nsId, k8sClusterId string, req *model
 					return
 				}
 			} else if isK8sClusterAndNodeGroupsActive(info) {
-				runAndRecordK8sStoragePreparation(newK8sStorageTarget(nsId, info), types, fsReq)
+				runAndRecordK8sStoragePreparation(newK8sStorageTarget(nsId, info), types)
 				return
 			}
 			if time.Since(start) >= k8sStorageClusterPollTimeout {
@@ -1134,25 +838,13 @@ func StartK8sMultiClusterStoragePreparation(nsId string, req *model.K8sMultiClus
 	if err != nil {
 		return nil, newK8sStorageError(http.StatusBadRequest, "%v", err)
 	}
-	if err := validateK8sStorageFileSystemReq(req.FileSystem); err != nil {
-		return nil, err
-	}
 	ids, err := listK8sStorageTargetIds(nsId, req.K8sClusterIds)
 	if err != nil {
 		return nil, err
 	}
 	res := &model.K8sMultiClusterStoragePrepareResponse{NsId: nsId, Results: make([]model.K8sClusterStoragePrepareResponse, len(ids))}
 	for i, id := range ids {
-		var fsReq *model.K8sStorageFileSystemReq
-		if req.FileSystem != nil {
-			// A named file system belongs to one VPC; with many clusters only create=true is meaningful.
-			f := *req.FileSystem
-			if len(ids) > 1 {
-				f.Name = ""
-			}
-			fsReq = &f
-		}
-		r, err := StartK8sClusterStoragePreparation(nsId, id, &model.K8sClusterStorageReq{StorageTypes: types, FileSystem: fsReq})
+		r, err := StartK8sClusterStoragePreparation(nsId, id, &model.K8sClusterStorageReq{StorageTypes: types})
 		if err != nil {
 			res.Results[i] = model.K8sClusterStoragePrepareResponse{K8sClusterId: id, Status: model.K8sStorageNotReady, StorageTypes: types, Reason: err.Error()}
 			continue

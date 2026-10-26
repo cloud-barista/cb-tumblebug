@@ -12,25 +12,21 @@
 #   providers:
 #     <csp>:                        lowercase, as in k8sclusterinfo.yaml
 #       verified:                   [true/false] provider confirmed for manifest generation
-#       blockStorage, fileStorage:
-#         provisioners:             CSI (and in-tree) provisioner names of this kind (classification)
+#       blockStorage:
+#         provisioners:             CSI (and in-tree) provisioner names of block storage (classification)
 #         skuKeys:                  SC parameter keys holding the SKU, in priority order; matched lowercase (classification)
 #         ignoreValues:             sentinel SKU values to skip, e.g. GCP `type: dynamic` (classification)
 #         installedByDefault:       [true/false] whether the CSI driver ships enabled
 #         minVolumeSizeGi:          smallest volume the CSP accepts (0 or omitted = no known minimum)
 #         scParameterKey:           exact, case-sensitive SC parameter key written for the SKU (`id`); "" = none
-#         scParameters:             fixed extra SC parameters; placeholders {{cluster.subnetId}}, {{cluster.vpcId}}
-#         fileSystemParameters:     SC parameters filled from the file system TB prepared (RequiresFileSystem drivers);
-#                                   placeholders {{fileSystem.name}}, {{fileSystem.cspId}}, {{fileSystem.endpoint}},
-#                                   {{fileSystem.endpointHost}}, {{fileSystem.endpointPath}}
-#         fileSystemCreate:         file system creation options (capacityGB, performanceInfo, performanceInfoAlternatives)
-#         volumeBindingMode:        default WaitForFirstConsumer (Block) / Immediate (File)
+#         scParameters:             fixed extra SC parameters
+#         volumeBindingMode:        default WaitForFirstConsumer
 #         allowVolumeExpansion:     default true
 #   storageTypes:
 #     - name:                       CB-TB abstract storage type (e.g. ssd-general)
 #       description, accessModes
-#       resolveBy:                  how consumers classify an existing SC (defaultStorageClass / attachNotRequired)
-#       driverKind:                 CB-Spider storage driver Kind (Block / File)
+#       resolveBy:                  how consumers classify an existing SC (defaultStorageClass)
+#       driverKind:                 CB-Spider storage driver Kind (Block)
 #       providers:                  per-CSP realization; within a CSP the first entry is preferred unless another
 #                                   entry's provisioner equals the CSI driver CB-Spider reports (put the CSI one first)
 #         - provider:               CSP name
@@ -50,17 +46,6 @@ k8sstorage:
           - kubernetes.io/aws-ebs
         skuKeys: [type]
         scParameterKey: type
-      fileStorage:
-        provisioners:
-          - efs.csi.aws.com
-        installedByDefault: true # CSIDriver efs.csi.aws.com present, no default SC
-        # EFS needs an existing file system: TB prepares it (PUT .../storage with fileSystem) and
-        # fills these parameters from the recorded file system.
-        scParameterKey: ""
-        fileSystemParameters:
-          provisioningMode: efs-ap
-          fileSystemId: "{{fileSystem.cspId}}"
-          directoryPerms: "700"
 
     azure:
       verified: true # AKS 1.36 / koreacentral
@@ -70,11 +55,6 @@ k8sstorage:
         # `skuName` is absorbed by lowercase normalization.
         # `storageaccounttype` is the legacy key used by the `managed` / `managed-premium` classes.
         skuKeys: [skuname, storageaccounttype]
-        scParameterKey: skuName
-      fileStorage:
-        provisioners:
-          - file.csi.azure.com
-        installedByDefault: true # AKS: Azure Files CSI and SCs ship enabled
         scParameterKey: skuName
 
     gcp:
@@ -88,15 +68,6 @@ k8sstorage:
         skuKeys: [type, pd-type, hyperdisk-type]
         ignoreValues: [dynamic]
         scParameterKey: type
-      fileStorage:
-        provisioners:
-          - filestore.csi.storage.gke.io
-        installedByDefault: false # GKE: Filestore CSI is a separate add-on
-        scParameterKey: tier # GKE Filestore SC uses `tier`
-        # Filestore CSI attaches the instance to the "default" network unless `network` is set;
-        # nodes in a TB-created VPC then time out on the NFS mount.
-        scParameters:
-          network: "{{cluster.vpcId}}"
 
     alibaba:
       verified: true # ACK 1.35.7-aliyun.1 / ap-northeast-2
@@ -108,24 +79,6 @@ k8sstorage:
           - diskplugin.csi.alibabacloud.com
         skuKeys: [type]
         scParameterKey: type
-      fileStorage:
-        provisioners:
-          - nasplugin.csi.alibabacloud.com
-        installedByDefault: true # CSIDriver nasplugin.csi.alibabacloud.com ships installed, no default SC
-        # NAS subpath mode needs an existing file system: TB prepares it and fills these parameters.
-        scParameterKey: ""
-        # Alibaba NAS (general-purpose) needs a StorageType at creation, and the types offered differ per zone
-        # (e.g. Seoul ap-northeast-2a: Performance/Premium, ap-northeast-2b: Capacity only).
-        # CB-Tumblebug tries the alternatives in order when the zone rejects the type.
-        fileSystemCreate:
-          performanceInfo:
-            StorageType: Capacity
-          performanceInfoAlternatives:
-            - StorageType: Performance
-        fileSystemParameters: # Alibaba NAS CSI subpath mode
-          volumeAs: subpath
-          server: "{{fileSystem.endpointHost}}:/"
-          archiveOnDelete: "false"
 
     ibm:
       verified: true # IKS 1.35.9+IKS / au-syd
@@ -134,11 +87,6 @@ k8sstorage:
         provisioners:
           - vpc.block.csi.ibm.io
         skuKeys: [profile]
-        scParameterKey: profile
-      fileStorage:
-        provisioners:
-          - vpc.file.csi.ibm.io
-        installedByDefault: false # Only vpc.block.csi.ibm.io ships installed by default
         scParameterKey: profile
 
     ncp:
@@ -150,17 +98,6 @@ k8sstorage:
           - blk.csi.ncloud.com
         skuKeys: [type]
         scParameterKey: type
-      fileStorage:
-        # NKS < 1.36 ships CSIDriver `nas.csi.ncloud.com` and SC `nks-nas-csi` by default.
-        # NKS 1.36 ships neither; enable the `nks-nas-csi` add-on.
-        provisioners:
-          - nas.csi.ncloud.com
-        installedByDefault: false
-        scParameterKey: ""
-        # Same as NKS SC `nks-nas-csi` created by the nks-nas-csi add-on (NKS 1.36).
-        scParameters:
-          csi.storage.k8s.io/provisioner-secret-name: mount-options
-          csi.storage.k8s.io/provisioner-secret-namespace: kube-system
 
     nhn:
       verified: true # NKS v1.33.4 / kr1
@@ -171,23 +108,6 @@ k8sstorage:
           - kubernetes.io/cinder
         skuKeys: [type]
         scParameterKey: type
-      fileStorage:
-        # NHN's nfs.csi.k8s.io (nfs-csi-plugin add-on) creates an NHN NAS volume per PVC; no file system
-        # is prepared in advance. `subnet` is required; the five snapshot parameters must be set together
-        # (a StorageClass without them fails with "invalid ReservePercent").
-        # The NAS size comes from the PVC annotation `nfs-volume-sizegb` (300-10000).
-        # Ref: https://docs.nhncloud.com/en/Container/NKS/en/user-guide/ (NHN Cloud NAS Service Integration)
-        provisioners:
-          - nfs.csi.k8s.io
-        installedByDefault: false
-        scParameterKey: ""
-        scParameters:
-          subnet: "{{cluster.subnetId}}"
-          maxscheduledcount: "7"
-          reservepercent: "80"
-          scheduletime: "09:00"
-          scheduletimeoffset: "+09:00"
-          scheduleweekdays: "6"
 
     onprem:
       verified: true # Standard CNCF / On-Premise K8s storage provisioners
@@ -203,20 +123,12 @@ k8sstorage:
         skuKeys: [type, pool, backingstorage]
         # On-premise `id` values are CB-TB labels, not driver parameters.
         scParameterKey: ""
-      fileStorage:
-        # Covers Kubernetes CSI NFS, NFS Subdir Provisioner, and Rook-Ceph CephFS.
-        provisioners:
-          - nfs.csi.k8s.io
-          - cluster.local/nfs-subdir-external-provisioner
-          - cephfs.csi.ceph.com
-        installedByDefault: false
 
     tencent:
       # Kubeconfig external endpoint requires TKE public access setup.
-      # TKE add-ons `cbs` and `cfs` can be enabled through the CSP API; StorageClass parameters not confirmed yet.
+      # TKE add-on `cbs` can be enabled through the CSP API; StorageClass parameters not confirmed yet.
       verified: false
       blockStorage: {}
-      fileStorage: {}
 
   # CB-TB abstract storage types.
   # `resolveBy` entries are resolved from the cluster first; the per-provider
@@ -273,48 +185,4 @@ k8sstorage:
         - provider: onprem
           provisioner: rbd.csi.ceph.com
           id: ceph-rbd
-          verified: true
-
-    - name: shared-file
-      description: Shared file storage mountable by many nodes at once (RWX).
-      # Runtime: a StorageClass whose CSIDriver declares `attachRequired: false`.
-      resolveBy: attachNotRequired
-      driverKind: File
-      accessModes: [ReadWriteMany]
-      providers:
-        - provider: aws
-          provisioner: efs.csi.aws.com
-          verified: true # EKS: CSIDriver present (requires EFS SC creation)
-        - provider: azure
-          provisioner: file.csi.azure.com
-          id: Standard_LRS
-          verified: true # AKS SC `azurefile-csi`, attachRequired=false
-        - provider: gcp
-          provisioner: filestore.csi.storage.gke.io
-          id: standard # tier of GKE SC `standard-rwx` (Filestore Basic HDD, 1 TiB minimum)
-          verified: true # GKE: RWX PVC shared by two Pods (Filestore on the cluster VPC)
-        - provider: alibaba
-          provisioner: nasplugin.csi.alibabacloud.com
-          verified: true # ACK: RWX PVC shared by two Pods (TB-created NAS, subpath)
-        - provider: nhn
-          provisioner: nfs.csi.k8s.io
-          # The generated StorageClass provisions an NHN NAS volume per PVC (PVC annotations nfs-volume-name
-          # and nfs-volume-sizegb are required), but the NFS mount fails with "rpc.statd is not running"
-          # unless rpcbind runs on every worker node (NHN prerequisite); mountOptions [nolock] is a workaround.
-          verified: false
-        - provider: ibm
-          provisioner: vpc.file.csi.ibm.io
-          id: dp2 # profile of IKS SC `ibmc-vpc-file-min-iops`
-          verified: true # IKS: RWX PVC shared by two Pods
-        - provider: ncp
-          provisioner: nas.csi.ncloud.com
-          verified: true # NKS SC `nks-nas-csi`
-        - provider: onprem
-          provisioner: nfs.csi.k8s.io
-          verified: true
-        - provider: onprem
-          provisioner: cluster.local/nfs-subdir-external-provisioner
-          verified: true
-        - provider: onprem
-          provisioner: cephfs.csi.ceph.com
           verified: true
