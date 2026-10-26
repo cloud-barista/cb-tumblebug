@@ -13,6 +13,19 @@
 | Bastion 종료·삭제 + 공유 리소스 일괄 해제 (`DELETE /sharedResources`) | 인프라당 3.2 ~ 67.7초 + 공유 네트워크 해제 12.8 ~ 56.4초 |
 | 최종 잔여 리소스 (`rdbms`, `infra`, `vNet`, `securityGroup`, `sshKey`) | 0 / 0 / 0 / 0 / 0 |
 
+<img width="973" height="1260" alt="image" src="https://github.com/user-attachments/assets/fd142b88-151b-441d-a0ef-568680f1d7e7" />
+
+---
+
+<img width="936" height="1106" alt="image" src="https://github.com/user-attachments/assets/1dd98b7e-d697-40cf-a8c2-16886b814b47" />
+
+
+---
+
+<img width="930" height="911" alt="image" src="https://github.com/user-attachments/assets/b3d3adcd-4b25-48b7-bacc-93317ec03de3" />
+
+---
+
 ## 1. 시험 환경
 
 | 항목 | 내용 |
