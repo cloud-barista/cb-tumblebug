@@ -22,7 +22,7 @@ cloud:
     nlb:
       enable: "y"
       interval: 10
-      timeout: 9
+      timeout: -1
       threshold: 3
     k8scluster:
       enable: "y"

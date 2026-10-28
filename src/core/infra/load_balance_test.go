@@ -6,8 +6,13 @@ Copyright 2019 The Cloud-Barista Authors.
 package infra
 
 import (
+	"os"
 	"reflect"
 	"testing"
+
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"gopkg.in/yaml.v2"
 )
 
 func TestNlbNormalizeOs(t *testing.T) {
@@ -131,5 +136,49 @@ func TestRemoveStringSlice(t *testing.T) {
 	result = remove(result, "not-in-list")
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("remove() on non-existent element changed slice: %v", result)
+	}
+}
+
+func TestGetNLBSupportFromCloudConf(t *testing.T) {
+	data, err := os.ReadFile("../../../conf/cloud_conf.yaml")
+	if err != nil {
+		t.Fatalf("failed to read conf/cloud_conf.yaml: %v", err)
+	}
+
+	prevConf := common.RuntimeConf
+	t.Cleanup(func() {
+		common.RuntimeConf = prevConf
+	})
+
+	var cfg model.RuntimeConfig
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("failed to unmarshal conf/cloud_conf.yaml: %v", err)
+	}
+	common.RuntimeConf = cfg
+
+	// AWS and Azure do not support custom healthChecker.timeout (-1 in cloud_conf.yaml)
+	for _, provider := range []string{"aws", "azure"} {
+		nlbSetting := nlbCloudSetting(provider)
+		if nlbSetting.Timeout != -1 {
+			t.Errorf("nlbCloudSetting(%q).Timeout = %d, want -1", provider, nlbSetting.Timeout)
+		}
+
+		resp, err := GetNLBSupport(provider)
+		if err != nil {
+			t.Fatalf("GetNLBSupport(%q) unexpected error: %v", provider, err)
+		}
+		sup, ok := resp.Supports[provider]
+		if !ok {
+			t.Fatalf("GetNLBSupport(%q) missing support entry", provider)
+		}
+		if sup.CustomHealthCheckerTimeout {
+			t.Errorf("GetNLBSupport(%q).CustomHealthCheckerTimeout = true, want false", provider)
+		}
+		if !sup.CustomHealthCheckerInterval {
+			t.Errorf("GetNLBSupport(%q).CustomHealthCheckerInterval = false, want true", provider)
+		}
+		if !sup.CustomHealthCheckerThreshold {
+			t.Errorf("GetNLBSupport(%q).CustomHealthCheckerThreshold = false, want true", provider)
+		}
 	}
 }
