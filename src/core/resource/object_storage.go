@@ -1848,6 +1848,7 @@ func ListDataObjects(nsId, osId string) (model.ObjectStorageListObjectsResponse,
 	}
 
 	// 2. Get the object storage info by calling GetObjectStorage
+	clientManager.InvalidateGetCache(fmt.Sprintf("%s/s3/", model.SpiderRestUrl), nil)
 	osInfo, err := GetObjectStorage(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
