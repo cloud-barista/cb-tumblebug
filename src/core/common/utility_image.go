@@ -17,8 +17,22 @@ package common
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+)
+
+var (
+	reNumericParts  = regexp.MustCompile(`\d+`)
+	reWinShortToken = regexp.MustCompile(`(?:^|[^a-z])win(?:$|[^a-z]|std|ent|dc|svr|server|\d)`)
+	reUbuntuStyle   = regexp.MustCompile(`(?:^|[^0-9.])(\d{2})[.\s_-]?(04|10)(?:$|[^0-9])`)
+	reWinServerYear = regexp.MustCompile(`(?:^|[^0-9])(2025|2022|2019|2016|2012|2008)(?:$|[^0-9])`)
+	reWinShortYear  = regexp.MustCompile(`win[-_\s]?(25|22|19|16)(?:std|ent|dc|svr|[^0-9]|$)`)
+	reWinDesktopVer = regexp.MustCompile(`(?:windows|win)[-_\s:]*(11|10)(?:$|[^0-9.])`)
+	reAzureURNVer   = regexp.MustCompile(`:(\d{1,2})\.\d+\.\d+`)
+	reNoiseTokens   = regexp.MustCompile(`\b(x86_64|x86_32|x86|x64|amd64|arm64|aarch64|s390x|i386|i686|gen[12]|v[123]|g[123]|tk4|cu\d+|sp\d+|\d{2}g|\d+bit|\d+-bit|20\d{6,})\b`)
+	reMajorVersion  = regexp.MustCompile(`(?:^|[^0-9.])(\d{1,4})(?:\.\d+)?(?:$|[^0-9])`)
 )
 
 func ExtractOSInfo(combinedInfo string) string {
@@ -28,37 +42,118 @@ func ExtractOSInfo(combinedInfo string) string {
 
 	infoLower := strings.ToLower(combinedInfo)
 
-	// Loop through all OS types from extraction patterns
+	// Find the earliest matching OS pattern in infoLower (longer pattern wins ties)
+	// so map iteration randomness or middleware names ("SQL Server 2019 on Windows Server 2025")
+	// do not cause non-deterministic or wrong OS matches.
+	var bestOS *model.OSTypeDetail
+	bestPos := len(infoLower) + 1
+	bestPat := ""
+
 	for _, osInfo := range RuntimeExtractPatternsInfo.ExtractPatterns.OSType {
-		// Check if OS patterns are in the combined string
-		for _, pattern := range osInfo.Patterns {
-			if strings.Contains(infoLower, strings.ToLower(pattern)) {
-				// OS found, now look for version
-				for _, version := range osInfo.Versions {
-					// Take only the numeric parts of the version
-					numericParts := regexp.MustCompile(`\d+`).FindAllString(version, -1)
-					if len(numericParts) > 0 {
-						// Join the numeric parts with a regex pattern to match any non-numeric characters
-						// This excludes date formats like 22T04
-						versionPattern := strings.Join(numericParts, "[.\\s-_]?")
-						// Add a regex pattern to avoid matching the version in the middle of numeric strings
-						boundedVersionPattern := fmt.Sprintf("(?:^|[^0-9])%s(?:$|[^0-9])", versionPattern)
-
-						re := regexp.MustCompile(boundedVersionPattern)
-						if re.MatchString(infoLower) {
-							return fmt.Sprintf("%s %s", osInfo.Name, version)
-						}
-					}
+		osCopy := osInfo
+		for _, pattern := range osCopy.Patterns {
+			patLower := strings.ToLower(pattern)
+			pos := -1
+			if patLower == "win" {
+				if loc := reWinShortToken.FindStringIndex(infoLower); loc != nil {
+					pos = loc[0]
 				}
-
-				// OS found but no specific version, return the OS name without version
-				return osInfo.Name
+			} else {
+				pos = strings.Index(infoLower, patLower)
+			}
+			if pos != -1 {
+				if pos < bestPos || (pos == bestPos && len(patLower) > len(bestPat)) {
+					bestPos = pos
+					bestOS = &osCopy
+					bestPat = patLower
+				}
 			}
 		}
 	}
 
-	// If no match found, return empty string
-	return ""
+	if bestOS == nil {
+		return ""
+	}
+
+	osName := bestOS.Name
+	versions := bestOS.Versions
+	if len(versions) == 0 {
+		return osName
+	}
+
+	// Check if versions are multi-part (e.g., Ubuntu "24.04", "22.04")
+	firstParts := reNumericParts.FindAllString(versions[0], -1)
+	if len(firstParts) >= 2 {
+		searchAreas := []string{infoLower[bestPos:], infoLower}
+		for _, area := range searchAreas {
+			if m := reUbuntuStyle.FindStringSubmatch(area); len(m) == 3 {
+				cand := fmt.Sprintf("%s.%s", m[1], m[2])
+				if slices.Contains(versions, cand) {
+					return fmt.Sprintf("%s %s", osName, cand)
+				}
+				if m[1] == "12" || m[1] == "14" {
+					return osName
+				}
+			}
+			for _, version := range versions {
+				numericParts := reNumericParts.FindAllString(version, -1)
+				if len(numericParts) > 0 {
+					versionPattern := strings.Join(numericParts, `[.\s-_]?`)
+					bounded := fmt.Sprintf(`(?:^|[^0-9.])%s(?:$|[^0-9])`, versionPattern)
+					if re, err := regexp.Compile(bounded); err == nil && re.MatchString(area) {
+						return fmt.Sprintf("%s %s", osName, version)
+					}
+				}
+			}
+		}
+		return osName
+	}
+
+	// Single-number major versions (Rocky, RHEL, Debian, CentOS, Alma, Oracle, SUSE, Fedora, Windows, Amazon, Alibaba, Tencent, Azure)
+	tail := infoLower[bestPos:]
+
+	if osName == "Windows" {
+		if m := reWinServerYear.FindStringSubmatch(tail); len(m) == 2 {
+			if slices.Contains(versions, m[1]) {
+				return fmt.Sprintf("Windows %s", m[1])
+			}
+			return "Windows"
+		}
+		if m := reWinShortYear.FindStringSubmatch(tail); len(m) == 2 {
+			yr := "20" + m[1]
+			if slices.Contains(versions, yr) {
+				return fmt.Sprintf("Windows %s", yr)
+			}
+			return "Windows"
+		}
+		if !strings.Contains(tail, "server") {
+			if m := reWinDesktopVer.FindStringSubmatch(tail); len(m) == 2 {
+				if slices.Contains(versions, m[1]) {
+					return fmt.Sprintf("Windows %s", m[1])
+				}
+			}
+		}
+		return "Windows"
+	}
+
+	// Azure URN fourth segment (Publisher:Offer:Sku:Major.Minor.Date)
+	if m := reAzureURNVer.FindStringSubmatch(tail); len(m) == 2 {
+		if slices.Contains(versions, m[1]) {
+			return fmt.Sprintf("%s %s", osName, m[1])
+		}
+		return osName
+	}
+
+	// Find the first major version token after the OS pattern, ignoring architecture/bitness/generation tokens
+	// and never matching a minor version preceded by "<digit>." (such as .8 in 9.8).
+	cleanedTail := reNoiseTokens.ReplaceAllString(tail, " ")
+	for _, m := range reMajorVersion.FindAllStringSubmatch(cleanedTail, -1) {
+		if len(m) == 2 && slices.Contains(versions, m[1]) {
+			return fmt.Sprintf("%s %s", osName, m[1])
+		}
+	}
+
+	return osName
 }
 
 // CheckBasicOSImage checks if the given combined info matches any basic OS image patterns
@@ -240,6 +335,29 @@ func CheckBasicGpuImage(combinedInfo string, providerName string) bool {
 	return false
 }
 
+// hasWordBoundedToken checks whether token appears in text bounded by non-alphanumeric characters.
+func hasWordBoundedToken(textLower, tokenLower string) bool {
+	start := 0
+	for {
+		idx := strings.Index(textLower[start:], tokenLower)
+		if idx == -1 {
+			return false
+		}
+		pos := start + idx
+		end := pos + len(tokenLower)
+		leftOK := pos == 0 || !isAlphaNumASCII(textLower[pos-1])
+		rightOK := end == len(textLower) || !isAlphaNumASCII(textLower[end])
+		if leftOK && rightOK {
+			return true
+		}
+		start = pos + 1
+	}
+}
+
+func isAlphaNumASCII(b byte) bool {
+	return (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9')
+}
+
 // IsK8sImage checks if an image is for Kubernetes
 func IsK8sImage(combinedInfo string) bool {
 	if combinedInfo == "" {
@@ -248,8 +366,31 @@ func IsK8sImage(combinedInfo string) bool {
 
 	infoLower := strings.ToLower(combinedInfo)
 
+	// Handle NHN Cloud explicit NKS compatibility metadata in Properties:
+	// Every NHN image includes "nhncloud_allow_nks_cpu_flavor:false,nhncloud_allow_nks_gpu_flavor:false"
+	// (or ":true" for Container/NKS images). Respect these flags directly so "nks" in the key name
+	// does not cause false positives on standard NHN VM images.
+	if strings.Contains(infoLower, "nhncloud_allow_nks_cpu_flavor:true") ||
+		strings.Contains(infoLower, "nhncloud_allow_nks_gpu_flavor:true") {
+		return true
+	}
+	if strings.Contains(infoLower, "nhncloud_allow_nks_cpu_flavor:false") &&
+		strings.Contains(infoLower, "nhncloud_allow_nks_gpu_flavor:false") {
+		return false
+	}
+
 	for _, pattern := range RuntimeExtractPatternsInfo.ExtractPatterns.K8sPatterns {
-		if strings.Contains(infoLower, strings.ToLower(pattern)) {
+		patLower := strings.ToLower(strings.TrimSpace(pattern))
+		if patLower == "" {
+			continue
+		}
+		// Short acronym patterns (eks, aks, gke, ack, tke, nks, iks, k8s) must match on
+		// word boundaries so "ack" never matches "default_backend" (KT), "backports" (Azure), or "backup" (OpenStack).
+		if len(patLower) <= 4 {
+			if hasWordBoundedToken(infoLower, patLower) {
+				return true
+			}
+		} else if strings.Contains(infoLower, patLower) {
 			return true
 		}
 	}

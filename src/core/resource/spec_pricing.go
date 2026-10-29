@@ -27,6 +27,51 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// FetchPriceStatus represents the real-time progress of price fetching across CSPs.
+type FetchPriceStatus struct {
+	InProgress         bool     `json:"inProgress"`
+	TotalRegions       int      `json:"totalRegions"`
+	ProcessedRegions   int      `json:"processedRegions"`
+	SucceedRegions     int      `json:"succeedRegions"`
+	FailedRegions      int      `json:"failedRegions"`
+	ActiveProviders    []string `json:"activeProviders,omitempty"`
+	CompletedProviders []string `json:"completedProviders,omitempty"`
+	ElapsedSeconds     int      `json:"elapsedSeconds"`
+	ElapsedTime        string   `json:"elapsedTime,omitempty"`
+}
+
+var (
+	fetchPriceStatusMutex sync.RWMutex
+	fetchPriceStatus      FetchPriceStatus
+	fetchPriceStartedAt   time.Time
+)
+
+func recordPriceFetchConnResult(succeeded bool, count int) {
+	fetchPriceStatusMutex.Lock()
+	defer fetchPriceStatusMutex.Unlock()
+	if succeeded {
+		fetchPriceStatus.SucceedRegions += count
+	} else {
+		fetchPriceStatus.FailedRegions += count
+	}
+	fetchPriceStatus.ProcessedRegions = fetchPriceStatus.SucceedRegions + fetchPriceStatus.FailedRegions
+}
+
+// GetFetchPriceStatus returns a snapshot of the current or last price fetch progress.
+func GetFetchPriceStatus() FetchPriceStatus {
+	fetchPriceStatusMutex.RLock()
+	defer fetchPriceStatusMutex.RUnlock()
+	snapshot := fetchPriceStatus
+	snapshot.ActiveProviders = append([]string(nil), fetchPriceStatus.ActiveProviders...)
+	snapshot.CompletedProviders = append([]string(nil), fetchPriceStatus.CompletedProviders...)
+	if snapshot.InProgress && !fetchPriceStartedAt.IsZero() {
+		elapsed := time.Since(fetchPriceStartedAt)
+		snapshot.ElapsedSeconds = int(elapsed.Seconds())
+		snapshot.ElapsedTime = elapsed.Round(time.Second).String()
+	}
+	return snapshot
+}
+
 // filterConnConfigsByProvider keeps targetProviders only; otherwise drops excludedProviders.
 func filterConnConfigsByProvider(configs []model.ConnConfig, targetProviders, excludedProviders []string) []model.ConnConfig {
 	if len(targetProviders) == 0 && len(excludedProviders) == 0 {
@@ -80,6 +125,22 @@ func FetchPriceForAllConnConfigs(option *model.PriceFetchOption) (connConfigCoun
 	log.Info().Msgf("Starting parallel price fetching for %d connections", connConfigCount)
 
 	startTime := time.Now()
+	fetchPriceStatusMutex.Lock()
+	fetchPriceStartedAt = startTime
+	fetchPriceStatus = FetchPriceStatus{
+		InProgress:   true,
+		TotalRegions: len(targetConfigs),
+	}
+	fetchPriceStatusMutex.Unlock()
+
+	defer func() {
+		elapsed := time.Since(startTime)
+		fetchPriceStatusMutex.Lock()
+		fetchPriceStatus.InProgress = false
+		fetchPriceStatus.ElapsedSeconds = int(elapsed.Seconds())
+		fetchPriceStatus.ElapsedTime = elapsed.Round(time.Second).String()
+		fetchPriceStatusMutex.Unlock()
+	}()
 
 	// Separate CSPs that have a direct pricing path from the Spider-based fallback.
 	// GCP: direct because Spider's GCP pricing scraper is broken.
@@ -183,6 +244,10 @@ func FetchPriceForAllConnConfigs(option *model.PriceFetchOption) (connConfigCoun
 				defer wg.Done()
 				defer func() { <-semaphore }()
 
+				fetchPriceStatusMutex.Lock()
+				fetchPriceStatus.ActiveProviders = append(fetchPriceStatus.ActiveProviders, t.name)
+				fetchPriceStatusMutex.Unlock()
+
 				startedAt := time.Now()
 				result := providerFetchResult{provider: t.name}
 
@@ -191,6 +256,18 @@ func FetchPriceForAllConnConfigs(option *model.PriceFetchOption) (connConfigCoun
 						result.errors = append(result.errors, fmt.Sprintf("provider task panic: %v", r))
 					}
 					result.elapsed = time.Since(startedAt)
+
+					fetchPriceStatusMutex.Lock()
+					nextActive := make([]string, 0, len(fetchPriceStatus.ActiveProviders))
+					for _, ap := range fetchPriceStatus.ActiveProviders {
+						if ap != t.name {
+							nextActive = append(nextActive, ap)
+						}
+					}
+					fetchPriceStatus.ActiveProviders = nextActive
+					fetchPriceStatus.CompletedProviders = append(fetchPriceStatus.CompletedProviders, t.name)
+					fetchPriceStatusMutex.Unlock()
+
 					resultChan <- result
 				}()
 
@@ -255,6 +332,7 @@ func fetchGCPPricesDirect(gcpConfigs []model.ConnConfig) (successCount uint, err
 		for _, c := range gcpConfigs {
 			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %s", c.ConfigName, errMsg))
 		}
+		recordPriceFetchConnResult(false, len(gcpConfigs))
 		return 0, errors
 	}
 
@@ -320,9 +398,11 @@ func fetchGCPPricesDirect(gcpConfigs []model.ConnConfig) (successCount uint, err
 	for result := range resultChan {
 		if result.Err != nil {
 			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
+			recordPriceFetchConnResult(false, 1)
 			continue
 		}
 		successCount++
+		recordPriceFetchConnResult(true, 1)
 	}
 
 	log.Info().Msgf("GCP direct pricing completed in %s: %d/%d connections succeeded",
@@ -401,9 +481,11 @@ func fetchAzurePricesDirect(azureConfigs []model.ConnConfig) (successCount uint,
 	for result := range resultChan {
 		if result.Err != nil {
 			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
+			recordPriceFetchConnResult(false, 1)
 			continue
 		}
 		successCount++
+		recordPriceFetchConnResult(true, 1)
 	}
 
 	log.Info().Msgf("Azure direct pricing completed in %s: %d/%d connections succeeded",
@@ -436,6 +518,7 @@ func fetchAWSPricesDirect(awsConfigs []model.ConnConfig) (successCount uint, err
 		for _, c := range awsConfigs {
 			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %s", c.ConfigName, errMsg))
 		}
+		recordPriceFetchConnResult(false, len(awsConfigs))
 		return 0, errors
 	}
 
@@ -502,9 +585,11 @@ func fetchAWSPricesDirect(awsConfigs []model.ConnConfig) (successCount uint, err
 	for result := range resultChan {
 		if result.Err != nil {
 			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
+			recordPriceFetchConnResult(false, 1)
 			continue
 		}
 		successCount++
+		recordPriceFetchConnResult(true, 1)
 	}
 
 	log.Info().Msgf("AWS direct pricing completed in %s: %d/%d connections succeeded",
@@ -623,8 +708,10 @@ func fetchAlibabaPricesDirect(alibabaConfigs []model.ConnConfig) (successCount u
 		doneCount++
 		if result.Err != nil {
 			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v", result.ConnName, result.Err))
+			recordPriceFetchConnResult(false, 1)
 		} else {
 			successCount++
+			recordPriceFetchConnResult(true, 1)
 		}
 
 		if doneCount%5 == 0 || doneCount == totalCount {
@@ -699,9 +786,11 @@ func fetchPricesViaSpider(configs []model.ConnConfig) (successCount uint, errors
 		if result.Err != nil {
 			errors = append(errors, fmt.Sprintf("Error fetching prices for connection %s: %v",
 				result.ConfigName, result.Err))
+			recordPriceFetchConnResult(false, 1)
 			continue
 		}
 		successCount++
+		recordPriceFetchConnResult(true, 1)
 	}
 	return successCount, errors
 }

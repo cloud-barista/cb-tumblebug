@@ -72,7 +72,9 @@ func CheckInfraDynamicReq(ctx context.Context, req *model.InfraConnectionConfigC
 		}
 
 		nodeReqInfo.Spec = specInfo
-		availableImageList, err := resource.GetImagesByRegion(model.SystemCommonNs, specInfo.ProviderName, specInfo.RegionName)
+		availableImageList, _, err := resource.SearchImage(model.SystemCommonNs, model.SearchImageRequest{
+			MatchedSpecId: k,
+		}, false)
 		if err != nil {
 			errMessage += "//Failed to search images for Spec (" + k + ")"
 		}

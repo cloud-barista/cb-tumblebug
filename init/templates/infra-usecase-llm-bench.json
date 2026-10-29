@@ -23,9 +23,9 @@
         "label": {
           "accelerator": "gpu"
         },
-        "description": "NVIDIA A10 GPU node on Alibaba Cloud (ecs.gn7i-2x.8xlarge, 2x A10 24GB)",
-        "specId": "alibaba+ap-southeast-1+ecs.gn7i-2x.8xlarge",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd",
+        "description": "NVIDIA A10 GPU node on Alibaba Cloud (ecs.gn7i-c32g1.16xlarge, 2x A10 24GB)",
+        "specId": "alibaba+ap-southeast-1+ecs.gn7i-c32g1.16xlarge",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20261016.vhd",
         "rootDiskType": "cloud_auto",
         "rootDiskSize": 200,
         "zone": "ap-southeast-1b"
@@ -37,11 +37,10 @@
           "accelerator": "gpu"
         },
         "description": "NVIDIA L20 GPU node on Alibaba Cloud (ecs.gn8is.4xlarge, 1x L20 48GB)",
-        "specId": "alibaba+ap-southeast-1+ecs.gn8is.4xlarge",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd",
+        "specId": "alibaba+ap-southeast-3+ecs.gn8is.4xlarge",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260916.vhd",
         "rootDiskType": "cloud_auto",
-        "rootDiskSize": 200,
-        "zone": "ap-southeast-1c"
+        "rootDiskSize": 200
       },
       {
         "name": "aws-nvidia-l4",

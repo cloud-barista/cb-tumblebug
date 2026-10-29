@@ -369,6 +369,7 @@ func RunServer() {
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 
 	e.GET("/tumblebug/loadAssets", rest_resource.RestLoadAssets)
+	e.GET("/tumblebug/loadAssetsStatus", rest_resource.RestGetLoadAssetsStatus)
 	e.POST("/tumblebug/ns/:nsId/sharedResource", rest_resource.RestCreateSharedResource)
 	e.DELETE("/tumblebug/ns/:nsId/sharedResources", rest_resource.RestDelAllSharedResources)
 	e.POST("/tumblebug/ns/:nsId/sharedResources/recoverDependencies", rest_resource.RestRegisterSharedResourceDependencies)
@@ -699,6 +700,7 @@ func RunServer() {
 
 	e.POST("/tumblebug/fetchSpecs", rest_resource.RestFetchSpecs)
 	e.POST("/tumblebug/fetchPrice", rest_resource.RestFetchPrice)
+	e.POST("/tumblebug/updateSpecsFromAsset", rest_resource.RestUpdateSpecsFromAsset)
 	g.POST("/:nsId/resources/filterSpecsByRange", rest_resource.RestFilterSpecsByRange)
 
 	e.POST("/tumblebug/fetchImages", rest_resource.RestFetchImages)

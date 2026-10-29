@@ -212,6 +212,16 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 					hasNodeWarning = true
 				}
 			}
+
+			// Validate Spec ↔ Image compatibility (architecture, hypervisor, boot mode, disk controller, etc.)
+			if compatErr := resource.CheckSpecImageCompatibility(*specInfoPtr, imageInfo); compatErr != nil {
+				nodeReview.Errors = append(nodeReview.Errors, compatErr.Error())
+				nodeReview.ImageValidation.IsAvailable = false
+				nodeReview.ImageValidation.Status = "Incompatible"
+				nodeReview.ImageValidation.Message = compatErr.Error()
+				nodeReview.CanCreate = false
+				viable = false
+			}
 		}
 	}
 
@@ -674,6 +684,23 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 				IsAvailable:   true,
 				Status:        status,
 				CspResourceId: imageInfo.CspImageName,
+			}
+
+			// Validate Spec ↔ Image compatibility (architecture, hypervisor, boot mode, disk controller, etc.)
+			if result.SpecDetails != nil {
+				if compatErr := resource.CheckSpecImageCompatibility(*result.SpecDetails, imageInfo); compatErr != nil {
+					result.Errors = append(result.Errors, compatErr.Error())
+					result.ImageValidation.IsAvailable = false
+					result.ImageValidation.Status = "Incompatible"
+					result.ImageValidation.Message = compatErr.Error()
+					result.IsValid = false
+					result.Status = "Error"
+					if result.Message == "" {
+						result.Message = compatErr.Error()
+					} else {
+						result.Message += "; " + compatErr.Error()
+					}
+				}
 			}
 		}
 	} else {

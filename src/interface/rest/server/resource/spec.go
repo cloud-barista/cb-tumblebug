@@ -209,6 +209,10 @@ func RestFetchSpecs(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
+	if updateErr := resource.UpdateSpecsFromAsset(nsId); updateErr != nil {
+		log.Warn().Err(updateErr).Msg("UpdateSpecsFromAsset after FetchSpecs failed")
+	}
+
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -248,6 +252,33 @@ func RestFetchPrice(c echo.Context) error {
 	content := map[string]string{
 		"message": "Fetched prices (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
 	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestUpdateSpecsFromAsset godoc
+// @ID UpdateSpecsFromAsset
+// @Summary Update specs from cloudspec.csv asset file
+// @Description Update spec information (costPerHour, accelerator, evaluationScore, etc.) based on the cloudspec.csv asset file
+// @Tags [Infra Resource] Spec Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
+// @Router /updateSpecsFromAsset [post]
+func RestUpdateSpecsFromAsset(c echo.Context) error {
+
+	nsId := model.SystemCommonNs
+	err := resource.UpdateSpecsFromAsset(nsId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content := model.SimpleMsg{
+		Message: "Updated specs from cloudspec.csv asset file",
+	}
+	return clientManager.EndRequestWithLog(c, nil, content)
 }
 
 // RestFilterSpecsResponse is Response structure for RestFilterSpecs

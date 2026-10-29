@@ -37,7 +37,7 @@
       {
         "name": "g7-tencent-ap-jakarta",
         "nodeGroupSize": 1,
-        "specId": "tencent+ap-jakarta+bf1.medium2",
+        "specId": "tencent+ap-jakarta+s5.medium2",
         "imageId": "img-487zeit5"
       },
       {

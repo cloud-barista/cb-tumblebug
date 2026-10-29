@@ -331,8 +331,8 @@ elif run_load_assets and backup_available and not args.yes:
     print("")
     print(Fore.GREEN + "  a+. ⏩ Restore from backup + patch CSV assets (~2 minutes)")
     print(Fore.WHITE + f"     Location: ./assets/assets.dump.gz ({backup_size_mb:.1f} MB, {backup_age_days} days old)")
-    print(Fore.WHITE + "     → Restores backup, then applies latest cloudimage.csv on top")
-    print(Fore.WHITE + "     → Useful when cloudimage.csv has been updated since the backup was created")
+    print(Fore.WHITE + "     → Restores backup, then applies latest cloudspec.csv and cloudimage.csv on top")
+    print(Fore.WHITE + "     → Useful when cloudspec.csv or cloudimage.csv has been updated since the backup was created")
     print("")
     print(Fore.YELLOW + "  b. 🔄 Fetch fresh from CSPs (~10-20 minutes)")
     print(Fore.WHITE + "     → Fetches latest specs, images from cloud providers (excluding Azure)")
@@ -773,24 +773,158 @@ def print_unverified_summary():
     print(Fore.RESET)
 
 
+def get_load_assets_status():
+    """Poll GET /tumblebug/loadAssetsStatus for real-time progress without blocking."""
+    try:
+        resp = requests.get(
+            f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssetsStatus",
+            headers=HEADERS,
+            timeout=2,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        pass
+    return None
+
+
+def format_load_assets_progress(status):
+    """Format a concise one-line progress summary from /tumblebug/loadAssetsStatus."""
+    if not status or not isinstance(status, dict):
+        return ""
+    phase = status.get("currentPhase") or ""
+    phase_idx = status.get("phaseIndex") or 0
+    total_phases = status.get("totalPhases") or 4
+
+    phase_labels = {
+        "initializing": "Initializing",
+        "fetching_specs": "Fetching Specs",
+        "updating_specs_from_asset": "Updating Specs CSV",
+        "fetching_images": "Fetching Images",
+        "updating_images_from_asset": "Updating Images CSV",
+        "completed": "Completed",
+    }
+    phase_label = phase_labels.get(phase, phase)
+
+    detail = ""
+    if phase in ("fetching_specs", "updating_specs_from_asset"):
+        sf = status.get("specFetch") or {}
+        total_reg = sf.get("totalRegions") or 0
+        succ_reg = sf.get("succeedRegions") or 0
+        fail_reg = sf.get("failedRegions") or 0
+        reg_specs = sf.get("registeredSpecs") or 0
+        done_reg = succ_reg + fail_reg
+        if total_reg > 0:
+            pct = int(done_reg * 100 / total_reg)
+            detail = f" | {done_reg}/{total_reg} regions ({pct}%, ✓{succ_reg} ✗{fail_reg}) | {reg_specs:,} specs"
+        elif reg_specs > 0:
+            detail = f" | {reg_specs:,} specs"
+    elif phase in ("fetching_images", "updating_images_from_asset"):
+        imf = status.get("imageFetch") or {}
+        total_reg = imf.get("totalRegions") or 0
+        succ_reg = imf.get("succeedRegions") or 0
+        fail_reg = imf.get("failedRegions") or 0
+        reg_imgs = imf.get("registeredImages") or 0
+        done_reg = succ_reg + fail_reg
+        if total_reg > 0:
+            pct = int(done_reg * 100 / total_reg)
+            detail = f" | {done_reg}/{total_reg} regions ({pct}%, ✓{succ_reg} ✗{fail_reg}) | {reg_imgs:,} images"
+        elif reg_imgs > 0:
+            detail = f" | {reg_imgs:,} images"
+
+    if phase_idx > 0:
+        return f"[Step {phase_idx}/{total_phases}: {phase_label}]{detail}"
+    if phase_label:
+        return f"[{phase_label}]{detail}"
+    return ""
+
+
+def format_price_fetch_progress(status):
+    """Format a concise one-line progress summary for FetchPrice."""
+    if not status or not isinstance(status, dict):
+        return ""
+    pf = status.get("priceFetch") or {}
+    total_reg = pf.get("totalRegions") or 0
+    succ_reg = pf.get("succeedRegions") or 0
+    fail_reg = pf.get("failedRegions") or 0
+    done_reg = pf.get("processedRegions") or (succ_reg + fail_reg)
+    active = pf.get("activeProviders") or []
+    completed = pf.get("completedProviders") or []
+
+    parts = []
+    if total_reg > 0:
+        pct = int(done_reg * 100 / total_reg)
+        parts.append(f"{done_reg}/{total_reg} regions ({pct}%, ✓{succ_reg} ✗{fail_reg})")
+    if active:
+        parts.append(f"active: {','.join(active)}")
+    if completed:
+        parts.append(f"done: {','.join(completed)}")
+    return " | ".join(parts)
+
+
 # Function to fetch price information from CSPs
 def fetch_price():
-    try:
-        # FetchPrice API is a POST endpoint with no required body
-        response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
-        response.raise_for_status()  # Will raise an exception for HTTP error codes
+    price_response = {}
+    price_event = threading.Event()
 
-        response_json = response.json()
-        if response_json is None:  # Check if response.json() returned None
-            response_json = {"error": "No content returned"}
+    def _run_fetch_price():
+        nonlocal price_response
+        try:
+            response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
+            response.raise_for_status()
+            price_response = response.json() or {"error": "No content returned"}
+        except requests.RequestException as e:
+            price_response = {"error": f"Failed to fetch prices: {str(e)}"}
+        finally:
+            price_event.set()
 
-        # Log success message
-        print(f"Price fetching initiated: {response_json.get('message', 'No message returned')}")
-        return response_json
-    except requests.RequestException as e:
-        error_msg = f"Failed to fetch prices: {str(e)}"
-        print(Fore.RED + error_msg)
-        return {"error": error_msg}
+    start_time = time.time()
+    thread = threading.Thread(target=_run_fetch_price)
+    thread.start()
+
+    spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    spinner_idx = 0
+    last_poll_time = 0.0
+    last_print_sec = -1
+    progress_detail = ""
+    is_tty = sys.stdout.isatty()
+
+    while not price_event.is_set():
+        time.sleep(0.1)
+        elapsed = time.time() - start_time
+        spinner_idx = (spinner_idx + 1) % len(spinner_chars)
+
+        if elapsed - last_poll_time >= 2.0:
+            last_poll_time = elapsed
+            status = get_load_assets_status()
+            formatted = format_price_fetch_progress(status)
+            if formatted:
+                progress_detail = f" | {formatted}"
+
+        mins, secs = divmod(int(elapsed), 60)
+        time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
+
+        if is_tty:
+            line = f"\r{spinner_chars[spinner_idx]} Fetching prices... {time_str}{progress_detail}"
+            print(f"{line:<115}", end="", flush=True)
+        else:
+            current_sec = int(elapsed)
+            if current_sec > last_print_sec:
+                last_print_sec = current_sec
+                if current_sec % 15 == 0:
+                    print(f"Fetching prices... {time_str}{progress_detail}", flush=True)
+
+    if is_tty:
+        print(f"\r{' ' * 115}\r", end="")
+
+    thread.join()
+
+    if "error" in price_response:
+        print(Fore.RED + price_response["error"])
+        return price_response
+
+    print(f"Price fetching initiated: {price_response.get('message', 'No message returned')}")
+    return price_response
 
 
 def print_assets_summary(ns_id="system"):
@@ -946,59 +1080,63 @@ if run_load_assets:
                     except Exception as ns_err:
                         print(Fore.YELLOW + f"   ⚠️  Namespace check failed: {str(ns_err)}")
 
-                    # Patch with latest cloudimage.csv if requested (Option a+)
+                    # Patch with latest cloudspec.csv and cloudimage.csv if requested (Option a+)
                     if patch_after_restore:
-                        print(Fore.YELLOW + "\n   Patching with latest cloudimage.csv assets...")
-                        patch_response_holder = {}
-                        patch_event = threading.Event()
+                        for csv_name, endpoint in [
+                            ("cloudspec.csv", "updateSpecsFromAsset"),
+                            ("cloudimage.csv", "updateImagesFromAsset"),
+                        ]:
+                            print(Fore.YELLOW + f"\n   Patching with latest {csv_name} assets...")
+                            patch_response_holder = {}
+                            patch_event = threading.Event()
 
-                        def do_patch():
-                            try:
-                                r = requests.post(
-                                    f"http://{TUMBLEBUG_SERVER}/tumblebug/updateImagesFromAsset",
-                                    headers=HEADERS,
-                                    timeout=600,
-                                )
-                                patch_response_holder["status"] = r.status_code
-                                patch_response_holder["text"] = r.text[:200]
-                            except Exception as e:
-                                patch_response_holder["error"] = str(e)
-                            finally:
-                                patch_event.set()
+                            def do_patch(ep=endpoint):
+                                try:
+                                    r = requests.post(
+                                        f"http://{TUMBLEBUG_SERVER}/tumblebug/{ep}",
+                                        headers=HEADERS,
+                                        timeout=600,
+                                    )
+                                    patch_response_holder["status"] = r.status_code
+                                    patch_response_holder["text"] = r.text[:200]
+                                except Exception as e:
+                                    patch_response_holder["error"] = str(e)
+                                finally:
+                                    patch_event.set()
 
-                        patch_thread = threading.Thread(target=do_patch)
-                        patch_thread.start()
+                            patch_thread = threading.Thread(target=do_patch)
+                            patch_thread.start()
 
-                        spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-                        spinner_idx = 0
-                        patch_elapsed = 0
-                        is_tty = sys.stdout.isatty()
-                        last_print_sec = -1
-                        while not patch_event.is_set():
-                            time.sleep(0.08)
-                            patch_elapsed += 0.08
-                            spinner_idx = (spinner_idx + 1) % len(spinner_chars)
-                            mins, secs = divmod(int(patch_elapsed), 60)
-                            time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
+                            spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+                            spinner_idx = 0
+                            patch_elapsed = 0
+                            is_tty = sys.stdout.isatty()
+                            last_print_sec = -1
+                            while not patch_event.is_set():
+                                time.sleep(0.08)
+                                patch_elapsed += 0.08
+                                spinner_idx = (spinner_idx + 1) % len(spinner_chars)
+                                mins, secs = divmod(int(patch_elapsed), 60)
+                                time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
+                                if is_tty:
+                                    print(f"\r   {spinner_chars[spinner_idx]} Patching {csv_name}... {time_str}", end="", flush=True)
+                                else:
+                                    current_sec = int(patch_elapsed)
+                                    if current_sec > last_print_sec:
+                                        last_print_sec = current_sec
+                                        if current_sec % 30 == 0:
+                                            print(f"   Patching {csv_name}... {time_str}", flush=True)
                             if is_tty:
-                                print(f"\r   {spinner_chars[spinner_idx]} Patching... {time_str}", end="", flush=True)
+                                print(f"\r{' ' * 60}\r", end="")
+
+                            patch_thread.join()
+
+                            if "error" in patch_response_holder:
+                                print(Fore.YELLOW + f"   ⚠️  {csv_name} patch failed (non-critical): {patch_response_holder['error']}")
+                            elif patch_response_holder.get("status") in (200, 202):
+                                print(Fore.GREEN + f"   ✅ {csv_name} patch applied successfully (elapsed: {int(patch_elapsed)}s)")
                             else:
-                                current_sec = int(patch_elapsed)
-                                if current_sec > last_print_sec:
-                                    last_print_sec = current_sec
-                                    if current_sec % 30 == 0:
-                                        print(f"   Patching cloudimage.csv... {time_str}", flush=True)
-                        if is_tty:
-                            print(f"\r{' ' * 60}\r", end="")
-
-                        patch_thread.join()
-
-                        if "error" in patch_response_holder:
-                            print(Fore.YELLOW + f"   ⚠️  Patch failed (non-critical): {patch_response_holder['error']}")
-                        elif patch_response_holder.get("status") in (200, 202):
-                            print(Fore.GREEN + f"   ✅ cloudimage.csv patch applied successfully (elapsed: {int(patch_elapsed)}s)")
-                        else:
-                            print(Fore.YELLOW + f"   ⚠️  Patch returned HTTP {patch_response_holder.get('status')}: {patch_response_holder.get('text', '')}")
+                                print(Fore.YELLOW + f"   ⚠️  {csv_name} patch returned HTTP {patch_response_holder.get('status')}: {patch_response_holder.get('text', '')}")
 
                     # Skip the load_resources call since DB is already populated
                     run_load_assets = False  # Mark as completed
@@ -1068,15 +1206,23 @@ if run_load_assets:
         # provides smoother visual feedback for operations with unpredictable duration
         spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
         spinner_idx = 0
-        elapsed = 0
+        last_poll_time = 0.0
         last_print_sec = -1  # Track last printed second for non-TTY mode
+        progress_detail = ""
         is_tty = sys.stdout.isatty()  # Detect if running in interactive terminal
 
         while not event.is_set():
             # Use shorter sleep for smoother animation
             time.sleep(0.08)
-            elapsed += 0.08
+            elapsed = time.time() - start_time
             spinner_idx = (spinner_idx + 1) % len(spinner_chars)
+
+            if elapsed - last_poll_time >= 2.0:
+                last_poll_time = elapsed
+                status = get_load_assets_status()
+                formatted = format_load_assets_progress(status)
+                if formatted:
+                    progress_detail = f" {formatted}"
 
             # Format elapsed time
             mins, secs = divmod(int(elapsed), 60)
@@ -1084,8 +1230,9 @@ if run_load_assets:
 
             if is_tty:
                 # Interactive terminal: spinner animation with carriage return
+                line = f"\r{spinner_chars[spinner_idx]} Loading... {time_str}{progress_detail}"
                 print(
-                    f"\r{spinner_chars[spinner_idx]} Loading... {time_str} (expected: ~{expected_completion_time_seconds}s)",
+                    f"{line:<115}",
                     end="",
                     flush=True,
                 )
@@ -1094,13 +1241,13 @@ if run_load_assets:
                 current_sec = int(elapsed)
                 if current_sec > last_print_sec:
                     last_print_sec = current_sec
-                    # Print simple progress every 30 seconds to avoid log spam
-                    if current_sec % 30 == 0:
-                        print(f"Loading... {time_str}", flush=True)
+                    # Print simple progress every 15 seconds to avoid log spam
+                    if current_sec % 15 == 0:
+                        print(f"Loading... {time_str}{progress_detail}", flush=True)
 
         # Clear the spinner line (only for TTY)
         if is_tty:
-            print(f"\r{' ' * 80}\r", end="")
+            print(f"\r{' ' * 115}\r", end="")
 
         # Wait for the thread to complete
         thread.join()

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -167,23 +168,15 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 		// Correct manufacturer when Spider reports incorrect info (e.g., IBM labels Gaudi/MI300X as NVIDIA)
 		tumblebugSpec.AcceleratorModel = normalizeAcceleratorModel(tumblebugSpec.AcceleratorModel)
 
-		// GCP fallback: Spider cannot determine memory for GPU types whose accelerator type name
-		// does not contain a "gb" suffix (e.g., "nvidia-l4", "nvidia-tesla-a100"). Extract the raw
-		// guestAcceleratorType from Details and look it up in a static table.
-		if tumblebugSpec.AcceleratorMemoryGB == 0 && csp.ResolveCloudPlatform(tumblebugSpec.ProviderName) == csp.GCP {
-			if accelType := extractGCPAcceleratorType(tumblebugSpec.Details); accelType != "" {
-				if memGB, ok := gcpAcceleratorMemoryGBByType[accelType]; ok {
-					tumblebugSpec.AcceleratorMemoryGB = memGB
-				}
-			}
-		}
-
 		// Log if there are multiple GPUs defined
 		if len(spiderSpec.Gpu) > 1 {
 			log.Warn().Msgf("Spec %s has multiple GPUs defined (%d GPUs). Only using the first GPU information.",
 				spiderSpec.Name, len(spiderSpec.Gpu))
 		}
 	}
+
+	// Enrich missing or incomplete GPU metadata across CSPs (KT, GCP, IBM, Tencent)
+	enrichSpecAcceleratorInfo(&tumblebugSpec)
 
 	return tumblebugSpec, nil
 }
@@ -202,7 +195,188 @@ var gcpAcceleratorMemoryGBByType = map[string]float32{
 	"nvidia-tesla-v100":   16,  // NVIDIA V100 - 16 GB HBM2
 	"nvidia-tesla-a100":   40,  // NVIDIA A100 SXM4 40 GB HBM2 (a2-highgpu / a2-megagpu families)
 	"nvidia-b200":         192, // NVIDIA B200 - 192 GB HBM3e
+	"nvidia-gb200":        186, // NVIDIA GB200 Grace Blackwell - 186 GB HBM3e per GPU
+	"nvidia-gb300":        288, // NVIDIA GB300 Grace Blackwell Ultra - 288 GB HBM3e per GPU
 	"nvidia-rtx-pro-6000": 96,  // NVIDIA RTX PRO 6000 Blackwell - 96 GB GDDR7
+}
+
+// ibmAcceleratorMemoryGBByModel maps IBM GPU model names to per-GPU memory in GB.
+var ibmAcceleratorMemoryGBByModel = map[string]float32{
+	"NVIDIA V100":  16,  // gx2-*v100 uses 16 GB V100
+	"NVIDIA L4":    24,  // gx3-*l4 uses 24 GB L4
+	"NVIDIA L40S":  48,  // gx3-*l40s uses 48 GB L40S
+	"NVIDIA A100P": 80,  // gx3d-*a100p uses 80 GB A100 PCIe
+	"NVIDIA A100":  80,  // 80 GB A100
+	"NVIDIA H100":  80,  // gx3d-*h100 uses 80 GB H100
+	"NVIDIA H200":  141, // gx3d-*h200 uses 141 GB H200
+	"Intel GAUDI3": 128, // gx3d-*gaudi3 uses 128 GB HL-325L
+}
+
+type gpuModelMemory struct {
+	model string
+	memGB float32
+}
+
+// tencentGPUFamilyMap maps Tencent Cloud GPU instance family prefixes (lowercase) to GPU model and per-GPU memory (GB).
+var tencentGPUFamilyMap = map[string]gpuModelMemory{
+	"gn7":     {model: "NVIDIA T4", memGB: 16},
+	"gi1":     {model: "NVIDIA T4", memGB: 16},
+	"gn10x":   {model: "NVIDIA V100", memGB: 16},
+	"gn10xp":  {model: "NVIDIA V100", memGB: 32},
+	"bmg5t":   {model: "NVIDIA V100", memGB: 32},
+	"hccg5v":  {model: "NVIDIA V100", memGB: 32},
+	"gt4":     {model: "NVIDIA A100", memGB: 40},
+	"gn8":     {model: "NVIDIA P40", memGB: 24},
+	"gn6s":    {model: "NVIDIA P4", memGB: 8},
+	"gnv4":    {model: "AMD Radeon Pro V520", memGB: 8},
+	"gc50sgc": {model: "NVIDIA L20", memGB: 48},
+}
+
+var (
+	reKTA10080GXe   = regexp.MustCompile(`(?i)a100-80g-[a-z0-9]+-(\d+)ea`)
+	reKTA10080GUnd  = regexp.MustCompile(`(?i)a100_80g_(\d+)`)
+	reKTA10080G     = regexp.MustCompile(`(?i)a100[-_]80g`)
+	reKTA100Count   = regexp.MustCompile(`(?i)a100-(\d+)`)
+	reKTV100SCount  = regexp.MustCompile(`(?i)v100s-(\d+)`)
+	reKTV100Count   = regexp.MustCompile(`(?i)v100-(\d+)`)
+	reKTRTX4000     = regexp.MustCompile(`(?i)rtx4000-(\d+)`)
+	reKTRTXShortCnt = regexp.MustCompile(`(?i)-rtx(\d+)`)
+	reKTRTXShortOne = regexp.MustCompile(`(?i)-rtx$`)
+	reKTT4Count     = regexp.MustCompile(`(?i)t4[-x](\d+)`)
+	reKTT4Dot       = regexp.MustCompile(`(?i)\.t4\.`)
+)
+
+func parseUint8Match(matches []string, fallback uint8) uint8 {
+	if len(matches) > 1 {
+		if v, err := strconv.ParseUint(matches[1], 10, 8); err == nil && v > 0 {
+			return uint8(v)
+		}
+	}
+	return fallback
+}
+
+// parseKTAcceleratorFromSpecName extracts GPU model, count, and per-GPU memory (GB) from KT Cloud spec names.
+// CB-Spider's KT driver only checks for the substring "gpu" in the spec name and sets Model="NA <SPEC_NAME>",
+// missing specs named with ".v100-1", ".A100-4", ".RTX4000-1", ".T4-4", "a100-80g-xe9680-4ea", etc.
+func parseKTAcceleratorFromSpecName(specName string) (accelType string, modelName string, count uint8, memGB float32, matched bool) {
+	lower := strings.ToLower(specName)
+
+	switch {
+	case reKTA10080GXe.MatchString(lower):
+		m := reKTA10080GXe.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA A100", parseUint8Match(m, 1), 80, true
+	case reKTA10080GUnd.MatchString(lower):
+		m := reKTA10080GUnd.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA A100", parseUint8Match(m, 1), 80, true
+	case reKTA10080G.MatchString(lower):
+		return "gpu", "NVIDIA A100", 1, 80, true
+	case reKTA100Count.MatchString(lower):
+		m := reKTA100Count.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA A100", parseUint8Match(m, 1), 40, true
+	case reKTV100SCount.MatchString(lower):
+		m := reKTV100SCount.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA V100S", parseUint8Match(m, 1), 32, true
+	case reKTV100Count.MatchString(lower):
+		m := reKTV100Count.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA V100", parseUint8Match(m, 1), 32, true
+	case reKTRTX4000.MatchString(lower):
+		m := reKTRTX4000.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA RTX 4000", parseUint8Match(m, 1), 8, true
+	case reKTRTXShortCnt.MatchString(lower):
+		m := reKTRTXShortCnt.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA RTX 4000", parseUint8Match(m, 1), 8, true
+	case reKTRTXShortOne.MatchString(lower):
+		return "gpu", "NVIDIA RTX 4000", 1, 8, true
+	case reKTT4Count.MatchString(lower):
+		m := reKTT4Count.FindStringSubmatch(lower)
+		return "gpu", "NVIDIA T4", parseUint8Match(m, 1), 16, true
+	case reKTT4Dot.MatchString(lower):
+		return "gpu", "NVIDIA T4", 1, 16, true
+	case strings.Contains(lower, ".amd.sdgpu"):
+		return "gpu", "AMD GPU", 1, 0, true
+	case strings.Contains(lower, ".gpu") || strings.Contains(lower, "gpu"):
+		return "gpu", "GPU", 1, 0, true
+	default:
+		return "", "", 0, 0, false
+	}
+}
+
+func isPlaceholderAcceleratorModel(m string) bool {
+	trimmed := strings.TrimSpace(m)
+	return trimmed == "" || trimmed == "NA" || strings.HasPrefix(trimmed, "NA ") || strings.HasSuffix(trimmed, " NA")
+}
+
+// enrichSpecAcceleratorInfo fills in missing or placeholder GPU accelerator fields using
+// CSP-specific naming conventions and static lookup tables. Returns true if any field was modified.
+func enrichSpecAcceleratorInfo(spec *model.SpecInfo) bool {
+	if spec == nil {
+		return false
+	}
+	changed := false
+
+	switch csp.ResolveCloudPlatform(spec.ProviderName) {
+	case csp.KT:
+		if accelType, modelName, count, memGB, ok := parseKTAcceleratorFromSpecName(spec.CspSpecName); ok {
+			if spec.AcceleratorType != accelType {
+				spec.AcceleratorType = accelType
+				changed = true
+			}
+			if isPlaceholderAcceleratorModel(spec.AcceleratorModel) && modelName != "" {
+				spec.AcceleratorModel = modelName
+				changed = true
+			}
+			if spec.AcceleratorCount == 0 && count > 0 {
+				spec.AcceleratorCount = count
+				changed = true
+			}
+			if spec.AcceleratorMemoryGB == 0 && memGB > 0 {
+				spec.AcceleratorMemoryGB = memGB
+				changed = true
+			}
+		}
+
+	case csp.GCP:
+		if spec.AcceleratorType == "gpu" && spec.AcceleratorMemoryGB == 0 {
+			if accelType := extractGCPAcceleratorType(spec.Details); accelType != "" {
+				if memGB, ok := gcpAcceleratorMemoryGBByType[accelType]; ok {
+					spec.AcceleratorMemoryGB = memGB
+					changed = true
+				}
+			}
+		}
+
+	case csp.IBM:
+		if spec.AcceleratorType == "gpu" {
+			normalized := normalizeAcceleratorModel(spec.AcceleratorModel)
+			if normalized != spec.AcceleratorModel {
+				spec.AcceleratorModel = normalized
+				changed = true
+			}
+			if spec.AcceleratorMemoryGB == 0 {
+				if memGB, ok := ibmAcceleratorMemoryGBByModel[spec.AcceleratorModel]; ok {
+					spec.AcceleratorMemoryGB = memGB
+					changed = true
+				}
+			}
+		}
+
+	case csp.Tencent:
+		if spec.AcceleratorType == "gpu" {
+			family := strings.ToLower(strings.SplitN(spec.CspSpecName, ".", 2)[0])
+			if info, ok := tencentGPUFamilyMap[family]; ok {
+				if isPlaceholderAcceleratorModel(spec.AcceleratorModel) && info.model != "" {
+					spec.AcceleratorModel = info.model
+					changed = true
+				}
+				if spec.AcceleratorMemoryGB == 0 && info.memGB > 0 {
+					spec.AcceleratorMemoryGB = info.memGB
+					changed = true
+				}
+			}
+		}
+	}
+
+	return changed
 }
 
 // extractGCPAcceleratorType parses the "Accelerators" key from GCP spec Details and returns

@@ -8,7 +8,7 @@
         "name": "g1-alibaba-ap-northeast-1",
         "nodeGroupSize": 2,
         "specId": "alibaba+ap-northeast-1+ecs.e-c1m2.large",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260916.vhd",
         "rootDiskType": "default",
         "rootDiskSize": 50
       },
@@ -16,7 +16,7 @@
         "name": "g2-alibaba-us-east-1",
         "nodeGroupSize": 2,
         "specId": "alibaba+us-east-1+ecs.e-c1m2.large",
-        "imageId": "ubuntu_24_04_x64_20G_alibase_20260810.vhd",
+        "imageId": "ubuntu_24_04_x64_20G_alibase_20260916.vhd",
         "rootDiskType": "default",
         "rootDiskSize": 60
       },

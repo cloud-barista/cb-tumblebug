@@ -215,7 +215,6 @@ cloud:
           latitude: 22.5428
           longitude: 114.0629
         zone:
-        - cn-shenzhen-a
         - cn-shenzhen-b
         - cn-shenzhen-c
         - cn-shenzhen-d

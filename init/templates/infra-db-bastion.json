@@ -50,7 +50,7 @@
         "nodeGroupSize": 1,
         "specId": "alibaba+ap-northeast-2+ecs.e-c1m2.large",
         "zone": "ap-northeast-2a",
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20260810.vhd",
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20260916.vhd",
         "rootDiskType": "default",
         "rootDiskSize": 40
       },
