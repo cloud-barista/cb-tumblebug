@@ -111,11 +111,15 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 		cspSpecName := specInfo.CspSpecName
 
 		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
-			Provider:         csp.ResolveCloudPlatform(specInfo.ProviderName),
-			Region:           specInfo.RegionName,
-			InstanceType:     specInfo.CspSpecName,
-			AcceleratorModel: specInfo.AcceleratorModel,
-			AcceleratorCount: int(specInfo.AcceleratorCount),
+			Provider:           csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:             specInfo.RegionName,
+			InstanceType:       specInfo.CspSpecName,
+			SystemDiskCategory: model.NormalizeDiskTypeForQuery(nodeGroupDynamicReq.RootDiskType),
+			PreferredZone:      strings.TrimSpace(nodeGroupDynamicReq.Zone),
+			AcceleratorModel:   specInfo.AcceleratorModel,
+			AcceleratorCount:   int(specInfo.AcceleratorCount),
+			VCPU:               int(specInfo.VCPU),
+			MemoryGiB:          specInfo.MemoryGiB,
 		})
 
 		if availability.Source == "none" {
@@ -157,7 +161,12 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
 				Status:        "Available",
+				Message:       availability.Reason,
 				CspResourceId: cspSpecName,
+			}
+			if availability.Reason != "" {
+				nodeReview.Warnings = append(nodeReview.Warnings, fmt.Sprintf("Zone availability notice for '%s': %s", specInfo.CspSpecName, availability.Reason))
+				hasNodeWarning = true
 			}
 
 			// Add cost estimation if available
@@ -528,6 +537,8 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 			PreferredZone:      normalizedZone,
 			AcceleratorModel:   specInfo.AcceleratorModel,
 			AcceleratorCount:   int(specInfo.AcceleratorCount),
+			VCPU:               int(specInfo.VCPU),
+			MemoryGiB:          specInfo.MemoryGiB,
 		})
 
 		switch availability.Source {
@@ -628,7 +639,14 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
 				Status:        "Available",
+				Message:       availability.Reason,
 				CspResourceId: specInfo.CspSpecName,
+			}
+			if availability.Reason != "" {
+				result.Warnings = append(result.Warnings, fmt.Sprintf("Zone availability notice for '%s': %s", specInfo.CspSpecName, availability.Reason))
+				if result.Status == "OK" {
+					result.Status = "Warning"
+				}
 			}
 
 			// Add cost estimation if available

@@ -923,7 +923,7 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 	// without a checker keep the previous behavior. This makes the region zone list from
 	// cloudinfo.yaml accurate (previously only Alibaba was filtered, so e.g. AWS listed zones that
 	// do not actually offer the instance type).
-	availableZones, unavailableZones, filterErr := filterZonesBySpecAvailability(ctx, specInfo.ProviderName, specInfo.CspSpecName, specInfo.RegionName, verifiedZones)
+	availableZones, unavailableZones, filterErr := filterZonesBySpecAvailability(ctx, specInfo, verifiedZones)
 	if filterErr != nil {
 		// Log warning but don't fail - return all verified zones
 		log.Warn().Err(filterErr).
@@ -970,12 +970,8 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 // When there is no checker for the provider, the checker errored, or it returned no per-zone
 // breakdown, this falls back to "all verified zones available" (best-effort) so we never hide
 // zones the user might actually be able to use.
-func filterZonesBySpecAvailability(ctx context.Context, provider string, cspSpecName string, regionName string, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
-	availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
-		Provider:     csp.ResolveCloudPlatform(provider),
-		Region:       regionName,
-		InstanceType: cspSpecName,
-	})
+func filterZonesBySpecAvailability(ctx context.Context, specInfo model.SpecInfo, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
+	availability := cspcheck.CheckAvailability(ctx, buildAvailabilityQueryForSpec(specInfo))
 
 	// No trustworthy per-zone data: missing/errored checker, or a checker that reports the spec
 	// as available without a per-zone breakdown. Fall back to all verified zones (best-effort).
@@ -988,9 +984,9 @@ func filterZonesBySpecAvailability(ctx context.Context, provider string, cspSpec
 		log.Warn().
 			Str("source", availability.Source).
 			Str("reason", availability.Reason).
-			Str("provider", provider).
-			Str("instanceType", cspSpecName).
-			Str("region", regionName).
+			Str("provider", specInfo.ProviderName).
+			Str("instanceType", specInfo.CspSpecName).
+			Str("region", specInfo.RegionName).
 			Msg("availability dispatcher returned no per-zone data; treating all verified zones as available")
 		return verifiedZones, nil, nil
 	}
@@ -1015,3 +1011,219 @@ func filterZonesBySpecAvailability(ctx context.Context, provider string, cspSpec
 
 	return availableZones, unavailableZones, nil
 }
+
+const (
+	maxActiveAvailabilityChecks      = 50
+	activeAvailabilityCheckWorkers   = 10
+	activeAvailabilityPerSpecTimeout = 8 * time.Second
+)
+
+func buildAvailabilityQueryForSpec(spec model.SpecInfo) model.AvailabilityQuery {
+	return model.AvailabilityQuery{
+		Provider:           csp.ResolveCloudPlatform(spec.ProviderName),
+		Region:             spec.RegionName,
+		InstanceType:       spec.CspSpecName,
+		SystemDiskCategory: model.NormalizeDiskTypeForQuery(spec.RootDiskType),
+		AcceleratorModel:   spec.AcceleratorModel,
+		AcceleratorCount:   int(spec.AcceleratorCount),
+		VCPU:               int(spec.VCPU),
+		MemoryGiB:          spec.MemoryGiB,
+	}
+}
+
+func applyAvailabilityResultToSpec(spec *model.SpecInfo, res model.AvailabilityResult) {
+	if spec == nil {
+		return
+	}
+	status := res.Status
+	if status == "" {
+		if res.Available {
+			status = model.AvailabilityAvailable
+		} else {
+			status = model.AvailabilitySoldOut
+		}
+	}
+	spec.AvailabilityStatus = status
+
+	var availZones []string
+	var unavailZones []string
+	if len(res.Zones) > 0 {
+		availSet := make(map[string]bool, len(res.Zones))
+		unavailSet := make(map[string]bool)
+		availZones = make([]string, 0, len(res.Zones))
+		for _, z := range res.Zones {
+			if z.ZoneId == "" {
+				continue
+			}
+			if z.Available {
+				availZones = append(availZones, z.ZoneId)
+				availSet[z.ZoneId] = true
+			} else {
+				unavailZones = append(unavailZones, z.ZoneId)
+				unavailSet[z.ZoneId] = true
+			}
+		}
+		// Some CSP APIs (e.g. AWS DescribeInstanceTypeOfferings, IBM GetInstanceProfile) only list
+		// the zones where the spec IS offered and omit unsupported zones in the region. Compare
+		// against known region zones from cloudinfo.yaml when zone naming matches.
+		if len(availZones) > 0 {
+			if regionDetail, err := common.GetRegion(spec.ProviderName, spec.RegionName); err == nil && len(regionDetail.Zones) > 0 {
+				namingMatches := false
+				for _, rz := range regionDetail.Zones {
+					if availSet[rz] || unavailSet[rz] {
+						namingMatches = true
+						break
+					}
+				}
+				if namingMatches {
+					for _, rz := range regionDetail.Zones {
+						if !availSet[rz] && !unavailSet[rz] {
+							unavailZones = append(unavailZones, rz)
+							unavailSet[rz] = true
+						}
+					}
+				}
+			}
+		}
+		sort.Strings(availZones)
+		sort.Strings(unavailZones)
+		spec.AvailableZones = availZones
+		spec.UnavailableZones = unavailZones
+	}
+
+	if !res.Available || (status != model.AvailabilityAvailable && status != model.AvailabilityUnverified) {
+		spec.AvailabilityReason = res.Reason
+	} else if len(unavailZones) > 0 && len(availZones) > 0 {
+		if res.Reason != "" {
+			spec.AvailabilityReason = res.Reason
+		} else {
+			spec.AvailabilityReason = fmt.Sprintf("zone(s) [%s] unavailable/SoldOut; available in [%s]",
+				strings.Join(unavailZones, ", "), strings.Join(availZones, ", "))
+		}
+	} else {
+		spec.AvailabilityReason = ""
+	}
+
+	if !res.QueriedAt.IsZero() {
+		queriedAt := res.QueriedAt
+		spec.AvailabilityCheckedAt = &queriedAt
+	}
+	if res.RefreshAfter != nil {
+		refreshAfter := *res.RefreshAfter
+		spec.AvailabilityRefreshAfter = &refreshAfter
+	}
+}
+
+// EnrichSpecWithAvailability populates runtime availability fields on a single SpecInfo.
+// It always checks the in-memory cache first (0ms). If activeCheck is true and no cached
+// entry exists, it invokes the registered CSP availability checker.
+func EnrichSpecWithAvailability(ctx context.Context, spec *model.SpecInfo, activeCheck bool) {
+	EnrichSpecWithAvailabilityForce(ctx, spec, activeCheck, false)
+}
+
+// EnrichSpecWithAvailabilityForce populates runtime availability fields on a single SpecInfo,
+// optionally bypassing the cache when forceRefresh is true.
+func EnrichSpecWithAvailabilityForce(ctx context.Context, spec *model.SpecInfo, activeCheck bool, forceRefresh bool) {
+	if spec == nil || spec.ProviderName == "" || spec.RegionName == "" || spec.CspSpecName == "" {
+		return
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	q := buildAvailabilityQueryForSpec(*spec)
+	q.ForceRefresh = forceRefresh
+	if !forceRefresh {
+		if cached, ok := cspcheck.LookupCachedAvailability(ctx, q); ok {
+			applyAvailabilityResultToSpec(spec, cached)
+			return
+		}
+	}
+	if (activeCheck || forceRefresh) && cspcheck.HasAvailabilityChecker(q.Provider) {
+		checkCtx, cancel := context.WithTimeout(ctx, activeAvailabilityPerSpecTimeout)
+		defer cancel()
+		res := cspcheck.CheckAvailability(checkCtx, q)
+		applyAvailabilityResultToSpec(spec, res)
+		return
+	}
+	spec.AvailabilityStatus = model.AvailabilityUnverified
+}
+
+// EnrichSpecsWithAvailability populates runtime availability fields on a slice of SpecInfo.
+// Step 1: 0ms passive enrichment from the in-memory availability cache for all items.
+// Step 2: If activeCheck is true, uncached specs (up to maxActiveAvailabilityChecks) whose CSP
+// has a registered availability checker are queried concurrently with bounded parallelism.
+func EnrichSpecsWithAvailability(ctx context.Context, specs []model.SpecInfo, activeCheck bool) {
+	if len(specs) == 0 {
+		return
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	var missingIndices []int
+	for i := range specs {
+		spec := &specs[i]
+		if spec.ProviderName == "" || spec.RegionName == "" || spec.CspSpecName == "" {
+			spec.AvailabilityStatus = model.AvailabilityUnverified
+			continue
+		}
+		q := buildAvailabilityQueryForSpec(*spec)
+		if cached, ok := cspcheck.LookupCachedAvailability(ctx, q); ok {
+			applyAvailabilityResultToSpec(spec, cached)
+			continue
+		}
+		if activeCheck && cspcheck.HasAvailabilityChecker(q.Provider) && len(missingIndices) < maxActiveAvailabilityChecks {
+			missingIndices = append(missingIndices, i)
+		} else {
+			spec.AvailabilityStatus = model.AvailabilityUnverified
+		}
+	}
+
+	if len(missingIndices) == 0 {
+		return
+	}
+
+	sem := make(chan struct{}, activeAvailabilityCheckWorkers)
+	var wg sync.WaitGroup
+	for _, idx := range missingIndices {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			q := buildAvailabilityQueryForSpec(specs[i])
+			checkCtx, cancel := context.WithTimeout(ctx, activeAvailabilityPerSpecTimeout)
+			res := cspcheck.CheckAvailability(checkCtx, q)
+			cancel()
+			applyAvailabilityResultToSpec(&specs[i], res)
+		}(idx)
+	}
+	wg.Wait()
+}
+
+// shouldActivelyCheckAvailability decides whether FilterSpecsByRange should issue live CSP
+// availability checks for uncached specs. Bulk fetches stay 100% passive (cache-only) unless
+// CheckAvailability is explicitly requested or the query is a targeted GPU/single-spec lookup.
+func shouldActivelyCheckAvailability(filter model.FilterSpecsByRangeRequest, resultCount int) bool {
+	if resultCount == 0 {
+		return false
+	}
+	if filter.CheckAvailability {
+		return true
+	}
+	// Targeted GPU/Accelerator queries with a modest result set: automatically verify stock/quota.
+	isAcceleratorFilter := filter.AcceleratorCount.Min > 0 ||
+		strings.TrimSpace(filter.AcceleratorModel) != "" ||
+		strings.TrimSpace(filter.AcceleratorType) != ""
+	if isAcceleratorFilter && resultCount <= 30 {
+		return true
+	}
+	// Targeted spec ID or CSP spec name lookup with a small result set.
+	isTargetedSpecLookup := strings.TrimSpace(filter.Id) != "" || strings.TrimSpace(filter.CspSpecName) != ""
+	if isTargetedSpecLookup && resultCount <= 15 {
+		return true
+	}
+	return false
+}
+

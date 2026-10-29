@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -777,7 +778,9 @@ func GetSpec(nsId string, specKey string) (model.SpecInfo, error) {
 	if err != nil {
 		return model.SpecInfo{}, err
 	}
-	return v.(model.SpecInfo), nil
+	spec := v.(model.SpecInfo)
+	EnrichSpecWithAvailability(context.Background(), &spec, false)
+	return spec, nil
 }
 
 // Retrieve field-to-column mapping information for the model
@@ -794,10 +797,15 @@ func getColumnMapping(modelType any) map[string]string {
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
-func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, orderBy string) ([]model.SpecInfo, error) {
+func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, orderBy string, ctx ...context.Context) ([]model.SpecInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
 		return nil, err
+	}
+
+	reqCtx := context.Background()
+	if len(ctx) > 0 && ctx[0] != nil {
+		reqCtx = ctx[0]
 	}
 
 	// Start building the query using field names as database column names
@@ -814,8 +822,8 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 
 		modelFieldName := field.Name
 
-		// Skip Limit field as it's not a database column
-		if modelFieldName == "Limit" {
+		// Skip Limit and CheckAvailability fields as they are not database columns
+		if modelFieldName == "Limit" || modelFieldName == "CheckAvailability" {
 			continue
 		}
 
@@ -946,6 +954,8 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 		Int("limitApplied", filter.Limit).
 		Dur("elapsedTime", elapsedTime).
 		Msg("ORM:session.Find(&specs)")
+
+	EnrichSpecsWithAvailability(reqCtx, specs, shouldActivelyCheckAvailability(filter, len(specs)))
 
 	return specs, nil
 }

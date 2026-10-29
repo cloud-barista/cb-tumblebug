@@ -32,13 +32,18 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	cspconst "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/singleflight"
+	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
 )
 
 func init() {
@@ -49,10 +54,224 @@ type gcpAvailabilityChecker struct{}
 
 func (c *gcpAvailabilityChecker) Provider() string { return cspconst.GCP }
 
-// CheckInstance queries GCP machineTypes.aggregatedList for the given
-// (region, machine type) and returns per-zone availability based on which
-// zones list that machine type. The region filter restricts results to zones
-// whose name starts with the region prefix (e.g., "asia-south2-" for "asia-south2").
+type gcpRegionQuotaCacheEntry struct {
+	quotas    map[string]*compute.Quota
+	zones     []string
+	fetchedAt time.Time
+}
+
+type gcpRegionCatalogCacheEntry struct {
+	// zoneName -> machineType -> guestCpus
+	zoneMachineTypes map[string]map[string]int64
+	fetchedAt        time.Time
+}
+
+var (
+	gcpQuotaCache   = make(map[string]*gcpRegionQuotaCacheEntry)
+	gcpQuotaCacheMu sync.RWMutex
+	gcpQuotaSF      singleflight.Group
+	gcpQuotaTTL     = 2 * time.Minute
+
+	gcpCatalogCache   = make(map[string]*gcpRegionCatalogCacheEntry)
+	gcpCatalogCacheMu sync.RWMutex
+	gcpCatalogSF      singleflight.Group
+	gcpCatalogTTL     = 30 * time.Minute
+)
+
+func getGCPRegionInfoAndQuotas(ctx context.Context, svc *compute.Service, projectID, region string) (map[string]*compute.Quota, []string, error) {
+	cacheKey := projectID + "+" + region
+	gcpQuotaCacheMu.RLock()
+	entry, ok := gcpQuotaCache[cacheKey]
+	gcpQuotaCacheMu.RUnlock()
+	if ok && time.Since(entry.fetchedAt) < gcpQuotaTTL {
+		return entry.quotas, entry.zones, nil
+	}
+
+	v, err, _ := gcpQuotaSF.Do(cacheKey, func() (any, error) {
+		gcpQuotaCacheMu.RLock()
+		entry, ok := gcpQuotaCache[cacheKey]
+		gcpQuotaCacheMu.RUnlock()
+		if ok && time.Since(entry.fetchedAt) < gcpQuotaTTL {
+			return entry, nil
+		}
+
+		regionInfo, err := svc.Regions.Get(projectID, region).Context(ctx).Do()
+		if err != nil {
+			return nil, fmt.Errorf("regions.get(%s/%s) failed: %w", projectID, region, err)
+		}
+		quotas := make(map[string]*compute.Quota, len(regionInfo.Quotas))
+		for _, q := range regionInfo.Quotas {
+			if q != nil && q.Metric != "" {
+				quotas[q.Metric] = q
+			}
+		}
+		var zones []string
+		for _, zURL := range regionInfo.Zones {
+			if idx := strings.LastIndex(zURL, "/"); idx >= 0 && idx+1 < len(zURL) {
+				zones = append(zones, zURL[idx+1:])
+			}
+		}
+		sort.Strings(zones)
+		e := &gcpRegionQuotaCacheEntry{
+			quotas:    quotas,
+			zones:     zones,
+			fetchedAt: time.Now(),
+		}
+		gcpQuotaCacheMu.Lock()
+		gcpQuotaCache[cacheKey] = e
+		gcpQuotaCacheMu.Unlock()
+		return e, nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	res := v.(*gcpRegionQuotaCacheEntry)
+	return res.quotas, res.zones, nil
+}
+
+func getGCPRegionQuotas(ctx context.Context, svc *compute.Service, projectID, region string) (map[string]*compute.Quota, error) {
+	quotas, _, err := getGCPRegionInfoAndQuotas(ctx, svc, projectID, region)
+	return quotas, err
+}
+
+// getGCPRegionMachineTypes fetches and caches all machine types for the zones in a single GCP region
+// using parallel zonal MachineTypes.List calls (with partial field projection) instead of a slow global
+// MachineTypes.AggregatedList across 120+ worldwide zones.
+func getGCPRegionMachineTypes(ctx context.Context, svc *compute.Service, projectID, region string) (map[string]map[string]int64, error) {
+	cacheKey := projectID + "+" + region
+	gcpCatalogCacheMu.RLock()
+	entry, ok := gcpCatalogCache[cacheKey]
+	gcpCatalogCacheMu.RUnlock()
+	if ok && time.Since(entry.fetchedAt) < gcpCatalogTTL {
+		return entry.zoneMachineTypes, nil
+	}
+
+	v, err, _ := gcpCatalogSF.Do(cacheKey, func() (any, error) {
+		gcpCatalogCacheMu.RLock()
+		entry, ok := gcpCatalogCache[cacheKey]
+		gcpCatalogCacheMu.RUnlock()
+		if ok && time.Since(entry.fetchedAt) < gcpCatalogTTL {
+			return entry.zoneMachineTypes, nil
+		}
+
+		// Use a background-derived timeout so one caller's tight deadline doesn't abort
+		// the shared singleflight fetch for sibling callers.
+		fetchCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		_, zones, err := getGCPRegionInfoAndQuotas(fetchCtx, svc, projectID, region)
+		if err != nil || len(zones) == 0 {
+			return nil, fmt.Errorf("failed to resolve zones for GCP region %s: %w", region, err)
+		}
+
+		zoneMap := make(map[string]map[string]int64, len(zones))
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+		var firstErr error
+
+		for _, zName := range zones {
+			wg.Add(1)
+			go func(zone string) {
+				defer wg.Done()
+				mtMap := make(map[string]int64, 256)
+				pageToken := ""
+				for {
+					call := svc.MachineTypes.List(projectID, zone).
+						Fields(googleapi.Field("items(name,guestCpus),nextPageToken")).
+						MaxResults(500).
+						Context(fetchCtx)
+					if pageToken != "" {
+						call = call.PageToken(pageToken)
+					}
+					resp, lErr := call.Do()
+					if lErr != nil {
+						mu.Lock()
+						if firstErr == nil {
+							firstErr = fmt.Errorf("machineTypes.list(%s/%s) failed: %w", projectID, zone, lErr)
+						}
+						mu.Unlock()
+						return
+					}
+					for _, mt := range resp.Items {
+						if mt != nil && mt.Name != "" {
+							mtMap[mt.Name] = mt.GuestCpus
+						}
+					}
+					if resp.NextPageToken == "" {
+						break
+					}
+					pageToken = resp.NextPageToken
+				}
+				mu.Lock()
+				zoneMap[zone] = mtMap
+				mu.Unlock()
+			}(zName)
+		}
+		wg.Wait()
+
+		if firstErr != nil && len(zoneMap) == 0 {
+			return nil, firstErr
+		}
+
+		e := &gcpRegionCatalogCacheEntry{
+			zoneMachineTypes: zoneMap,
+			fetchedAt:        time.Now(),
+		}
+		gcpCatalogCacheMu.Lock()
+		gcpCatalogCache[cacheKey] = e
+		gcpCatalogCacheMu.Unlock()
+		return zoneMap, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return v.(map[string]map[string]int64), nil
+}
+
+// resolveFamilyCPUQuotaMetric maps a GCP machine type prefix (e.g. "c2-standard-4" -> "C2_CPUS")
+// to its family-specific regional CPU quota metric name when applicable.
+func resolveFamilyCPUQuotaMetric(instanceType string) string {
+	parts := strings.Split(strings.ToLower(strings.TrimSpace(instanceType)), "-")
+	if len(parts) == 0 {
+		return ""
+	}
+	switch parts[0] {
+	case "c2":
+		return "C2_CPUS"
+	case "c2d":
+		return "C2D_CPUS"
+	case "c3":
+		return "C3_CPUS"
+	case "c3d":
+		return "C3D_CPUS"
+	case "n2":
+		return "N2_CPUS"
+	case "n2d":
+		return "N2D_CPUS"
+	case "t2d":
+		return "T2D_CPUS"
+	case "t2a":
+		return "T2A_CPUS"
+	case "a2":
+		return "A2_CPUS"
+	case "a3":
+		return "A3_CPUS"
+	case "g2":
+		return "G2_CPUS"
+	case "m1":
+		return "M1_CPUS"
+	case "m2":
+		return "M2_CPUS"
+	case "m3":
+		return "M3_CPUS"
+	default:
+		return ""
+	}
+}
+
+// CheckInstance queries GCP regional machineTypes (per-zone MachineTypes.List cached per region)
+// and returns per-zone availability based on which zones list that machine type, followed by
+// regional quota verification (CPU, machine-family CPU, instances, and GPU quotas) via regions.get.
 func (c *gcpAvailabilityChecker) CheckInstance(ctx context.Context, q model.AvailabilityQuery) (model.AvailabilityResult, error) {
 	region := strings.TrimSpace(q.Region)
 	instanceType := strings.TrimSpace(q.InstanceType)
@@ -74,48 +293,37 @@ func (c *gcpAvailabilityChecker) CheckInstance(ctx context.Context, q model.Avai
 	}
 
 	start := time.Now()
-	// Filter by exact machine type name. The filter syntax is "name=MACHINE_TYPE".
-	resp, err := svc.MachineTypes.AggregatedList(creds.ProjectID).
-		Filter(fmt.Sprintf("name=%s", instanceType)).
-		Context(ctx).
-		Do()
+	zoneMachineTypes, err := getGCPRegionMachineTypes(ctx, svc, creds.ProjectID, region)
 	elapsed := time.Since(start)
 	if err != nil {
-		return model.AvailabilityResult{}, fmt.Errorf("machineTypes.aggregatedList(project=%s, instanceType=%s) failed after %s: %w",
-			creds.ProjectID, instanceType, elapsed, err)
+		return model.AvailabilityResult{}, fmt.Errorf("GCP regional machineTypes lookup(project=%s, region=%s, instanceType=%s) failed after %s: %w",
+			creds.ProjectID, region, instanceType, elapsed, err)
 	}
 
 	result := model.AvailabilityResult{
 		Provider:     cspconst.GCP,
 		Region:       region,
 		InstanceType: instanceType,
-		Source:       "gcp:machineTypes.aggregatedList",
+		Source:       "gcp:machineTypes.list",
 		QueriedAt:    time.Now(),
 	}
 
-	// regionPrefix is used to restrict results to zones within this region.
-	// GCP zone names follow the pattern: {region}-{letter}, e.g., "asia-south2-a".
-	regionPrefix := region + "-"
+	guestCpus := int64(q.VCPU)
+	zones := make([]string, 0, len(zoneMachineTypes))
+	for zName := range zoneMachineTypes {
+		zones = append(zones, zName)
+	}
+	sort.Strings(zones)
 
-	for zoneKey, items := range resp.Items {
-		// zoneKey: "zones/asia-south2-a" or "regions/..." (skip non-zone keys)
-		if !strings.HasPrefix(zoneKey, "zones/") {
-			continue
-		}
-		zoneName := strings.TrimPrefix(zoneKey, "zones/")
-		if !strings.HasPrefix(zoneName, regionPrefix) {
-			continue
-		}
-
-		// If the preferred zone is specified, only report that zone.
+	for _, zoneName := range zones {
 		if q.PreferredZone != "" && !strings.EqualFold(zoneName, q.PreferredZone) {
 			continue
 		}
-
-		// items.MachineTypes is non-nil and non-empty only when the machine type
-		// exists in that zone. A Warning with code NO_RESULTS_ON_PAGE means
-		// the zone does not support this machine type.
-		available := len(items.MachineTypes) > 0
+		mtMap := zoneMachineTypes[zoneName]
+		cpus, available := mtMap[instanceType]
+		if available && guestCpus == 0 && cpus > 0 {
+			guestCpus = cpus
+		}
 		z := model.ZoneAvailability{
 			ZoneId:    zoneName,
 			Available: available,
@@ -130,29 +338,74 @@ func (c *gcpAvailabilityChecker) CheckInstance(ctx context.Context, q model.Avai
 		result.Zones = append(result.Zones, z)
 	}
 
-	if !result.Available {
-		result.Reason = fmt.Sprintf("machine type %q is not listed in any zone of region %q "+
-			"(machineTypes.aggregatedList returned no matching zones). "+
+	if result.Available {
+		result.Status = model.AvailabilityAvailable
+	} else {
+		result.Status = model.AvailabilityUnsupported
+		result.Reason = fmt.Sprintf("machine type %q is not listed in any zone of region %q. "+
 			"The machine type may not be supported in this region, or may require a reservation.",
 			instanceType, region)
 	}
 
-	// GPU regional quota check.
-	// machineTypes.aggregatedList only tells us whether the machine type exists in a zone —
-	// it does not expose real-time GPU quota. For GPU specs, also check the regional quota
-	// via regions.get so that quota exhaustion is detected before provisioning time.
-	if result.Available && q.AcceleratorModel != "" && q.AcceleratorCount > 0 {
-		quotaResult, quotaErr := checkGPURegionQuota(ctx, region, q.AcceleratorModel)
+	// Regional quota check (CPU, machine-family CPU, instances, and GPU quotas) via regions.get.
+	if result.Available {
+		quotas, quotaErr := getGCPRegionQuotas(ctx, svc, creds.ProjectID, region)
 		if quotaErr != nil {
 			log.Warn().Err(quotaErr).
 				Str("region", region).
-				Str("acceleratorModel", q.AcceleratorModel).
-				Msg("GCP GPU quota check failed; treating as available")
-		} else if quotaResult != nil && quotaResult.available < int64(q.AcceleratorCount) {
-			result.Available = false
-			result.Reason = fmt.Sprintf(
-				"GCP GPU quota insufficient: %d %s available in region %q, need %d",
-				quotaResult.available, quotaResult.metric, region, q.AcceleratorCount)
+				Msg("GCP regional quota check failed; treating as available")
+		} else if quotas != nil {
+			// 1. Check INSTANCES quota
+			if instQ, ok := quotas["INSTANCES"]; ok {
+				rem := max(int64(instQ.Limit)-int64(instQ.Usage), 0)
+				if rem < 1 {
+					result.Available = false
+					result.Status = model.AvailabilityQuotaExceeded
+					result.Reason = fmt.Sprintf("GCP regional quota insufficient: 0 INSTANCES remaining in region %q (used %d / limit %d)",
+						region, int64(instQ.Usage), int64(instQ.Limit))
+				}
+			}
+			// 2. Check total regional CPUS quota
+			if result.Available && guestCpus > 0 {
+				if cpuQ, ok := quotas["CPUS"]; ok {
+					rem := max(int64(cpuQ.Limit)-int64(cpuQ.Usage), 0)
+					if rem < guestCpus {
+						result.Available = false
+						result.Status = model.AvailabilityQuotaExceeded
+						result.Reason = fmt.Sprintf("GCP regional CPU quota insufficient for %q in region %q: need %d CPUs, %d remaining (used %d / limit %d, metric: CPUS)",
+							instanceType, region, guestCpus, rem, int64(cpuQ.Usage), int64(cpuQ.Limit))
+					}
+				}
+			}
+			// 3. Check machine-family specific CPU quota (e.g., C2_CPUS, N2_CPUS, A2_CPUS, G2_CPUS)
+			if result.Available && guestCpus > 0 {
+				if famMetric := resolveFamilyCPUQuotaMetric(instanceType); famMetric != "" {
+					if famQ, ok := quotas[famMetric]; ok {
+						rem := max(int64(famQ.Limit)-int64(famQ.Usage), 0)
+						if rem < guestCpus {
+							result.Available = false
+							result.Status = model.AvailabilityQuotaExceeded
+							result.Reason = fmt.Sprintf("GCP family CPU quota insufficient for %q in region %q: need %d CPUs, %d remaining (used %d / limit %d, metric: %s)",
+								instanceType, region, guestCpus, rem, int64(famQ.Usage), int64(famQ.Limit), famMetric)
+						}
+					}
+				}
+			}
+			// 4. Check GPU accelerator quota
+			if result.Available && q.AcceleratorModel != "" && q.AcceleratorCount > 0 {
+				if gpuMetric := resolveGPUQuotaMetric(q.AcceleratorModel); gpuMetric != "" {
+					if gpuQ, ok := quotas[gpuMetric]; ok {
+						rem := max(int64(gpuQ.Limit)-int64(gpuQ.Usage), 0)
+						if rem < int64(q.AcceleratorCount) {
+							result.Available = false
+							result.Status = model.AvailabilityQuotaExceeded
+							result.Reason = fmt.Sprintf(
+								"GCP GPU quota insufficient: %d %s available in region %q, need %d (used %d / limit %d)",
+								rem, gpuMetric, region, q.AcceleratorCount, int64(gpuQ.Usage), int64(gpuQ.Limit))
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -161,6 +414,7 @@ func (c *gcpAvailabilityChecker) CheckInstance(ctx context.Context, q model.Avai
 		Str("region", region).
 		Str("instanceType", instanceType).
 		Bool("available", result.Available).
+		Str("status", string(result.Status)).
 		Int("zoneCount", len(result.Zones)).
 		Dur("elapsed", elapsed).
 		Msg("gcp availability check completed")
@@ -182,56 +436,6 @@ var acceleratorQuotaMetrics = map[string]string{
 	"nvidia-tesla-p4":       "NVIDIA_P4_GPUS",
 	"nvidia-tesla-p100":     "NVIDIA_P100_GPUS",
 	"nvidia-a10g":           "NVIDIA_A10_GPUS",
-}
-
-type gpuQuotaCheckResult struct {
-	metric    string
-	limit     int64
-	used      int64
-	available int64
-}
-
-// checkGPURegionQuota checks the GCP Compute Engine regional quota for a given
-// accelerator type. Returns (nil, nil) when the accelerator type is unrecognised
-// or the quota metric is absent — caller should treat this as "quota unknown,
-// do not block provisioning".
-func checkGPURegionQuota(ctx context.Context, region, acceleratorModel string) (*gpuQuotaCheckResult, error) {
-	metric := resolveGPUQuotaMetric(acceleratorModel)
-	if metric == "" {
-		return nil, nil
-	}
-
-	creds, err := getGCPCreds(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("GCP GPU quota check: failed to get credentials: %w", err)
-	}
-
-	svc, err := newComputeService(ctx, creds)
-	if err != nil {
-		return nil, fmt.Errorf("GCP GPU quota check: failed to create compute service: %w", err)
-	}
-
-	regionInfo, err := svc.Regions.Get(creds.ProjectID, region).Context(ctx).Do()
-	if err != nil {
-		return nil, fmt.Errorf("GCP GPU quota check: regions.get(%s/%s) failed: %w", creds.ProjectID, region, err)
-	}
-
-	for _, q := range regionInfo.Quotas {
-		if q.Metric == metric {
-			available := int64(q.Limit) - int64(q.Usage)
-			if available < 0 {
-				available = 0
-			}
-			return &gpuQuotaCheckResult{
-				metric:    metric,
-				limit:     int64(q.Limit),
-				used:      int64(q.Usage),
-				available: available,
-			}, nil
-		}
-	}
-
-	return nil, nil
 }
 
 // resolveGPUQuotaMetric maps an accelerator model name to its GCP regional quota

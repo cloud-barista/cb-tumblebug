@@ -494,6 +494,39 @@ kt,kr1,32x256.itl,2675,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,64x64.itl,2079,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,64x128.itl,3436,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,64x256.itl,4394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,1x1.amd,31,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,1x2.amd,53,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x2.amd,64,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x4.amd,107,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x8.amd,137,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x16.amd,167,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x4.amd,129,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x8.amd,214,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x16.amd,274,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x32.amd,334,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x64.amd,394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x8.amd,259,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x16.amd,429,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x32.amd,549,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x64.amd,668,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x16.amd,519,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x32.amd,859,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x64.amd,1098,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x128.amd,1337,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x24.amd,779,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x48.amd,1288,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x64.amd,1408,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x96.amd,1647,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x192.amd,2006,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x32.amd,1039,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x64.amd,1718,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x128.amd,2197,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x256.amd,2675,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x64.amd,2079,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x128.amd,3436,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x256.amd,4394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,128x128.amd,4158,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,128x256.amd,6872,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,8x64.itl.v100-1,4048,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
 kt,kr1,16x64.itl.v100-1,4477,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
 kt,kr1,16x90.itl.a100-1,6716,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,1,40,,vm

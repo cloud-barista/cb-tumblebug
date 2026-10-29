@@ -185,7 +185,7 @@ func RecommendSpec(ctx context.Context, nsId string, plan model.RecommendSpecReq
 	log.Debug().Msg("[Filtering and sorting specs with DB query]")
 
 	startTime := time.Now()
-	filteredSpecs, err := resource.FilterSpecsByRange(nsId, *u, orderBy)
+	filteredSpecs, err := resource.FilterSpecsByRange(nsId, *u, orderBy, ctx)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -199,6 +199,28 @@ func RecommendSpec(ctx context.Context, nsId string, plan model.RecommendSpecReq
 
 	if len(filteredSpecs) == 0 {
 		return []model.SpecInfo{}, nil
+	}
+
+	// Actively verify availability for the top recommended candidates (up to 10, i.e. 1st UI page),
+	// and passively enrich the remaining candidates from the in-memory cache (0ms).
+	// Do NOT lower the rank of SoldOut or QuotaExceeded specs so users can still see best-matching
+	// specs and retry temporary stockouts or request a quota increase. Only demote Unsupported specs.
+	activeCheckCount := min(len(filteredSpecs), 10)
+	resource.EnrichSpecsWithAvailability(ctx, filteredSpecs[:activeCheckCount], true)
+	if len(filteredSpecs) > activeCheckCount {
+		resource.EnrichSpecsWithAvailability(ctx, filteredSpecs[activeCheckCount:], false)
+	}
+
+	sort.SliceStable(filteredSpecs, func(i, j int) bool {
+		unsupI := filteredSpecs[i].AvailabilityStatus == model.AvailabilityUnsupported
+		unsupJ := filteredSpecs[j].AvailabilityStatus == model.AvailabilityUnsupported
+		if unsupI != unsupJ {
+			return !unsupI
+		}
+		return false
+	})
+	for i := range filteredSpecs {
+		filteredSpecs[i].OrderInFilteredResult = uint16(i + 1)
 	}
 
 	return filteredSpecs, nil
@@ -347,7 +369,7 @@ func RecommendAlternativeNodeConfig(
 		scoredList = scoredList[:req.SpecCandidateLimit]
 	}
 
-	// --- 7. Attach images in parallel ---
+	// --- 7. Attach images and live CSP availability in parallel ---
 	isGPU := strings.ToLower(sourceSpec.AcceleratorType) == "gpu"
 	candidates := make([]model.AlternativeNodeConfigCandidate, len(scoredList))
 	var wg sync.WaitGroup
@@ -355,13 +377,15 @@ func RecommendAlternativeNodeConfig(
 		wg.Add(1)
 		go func(i int, s scored) {
 			defer wg.Done()
-			primary, alts := selectAlternativeImages(nsId, s.spec.Id, s.spec.ProviderName, s.spec.RegionName, isGPU, osType,
+			candSpec := s.spec
+			resource.EnrichSpecWithAvailability(ctx, &candSpec, true)
+			primary, alts := selectAlternativeImages(nsId, candSpec.Id, candSpec.ProviderName, candSpec.RegionName, isGPU, osType,
 				req.ImageAlternativeLimit)
 			candidates[i] = model.AlternativeNodeConfigCandidate{
 				Rank:              i + 1,
 				SimilarityScore:   math.Round(s.score*10) / 10,
-				Spec:              s.spec,
-				SpecDiff:          buildSpecDiff(sourceSpec, s.spec),
+				Spec:              candSpec,
+				SpecDiff:          buildSpecDiff(sourceSpec, candSpec),
 				PrimaryImage:      primary,
 				AlternativeImages: alts,
 			}

@@ -311,7 +311,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 	}
 
 	log.Debug().Msg("[Filter specs]")
-	content, err := resource.FilterSpecsByRange(nsId, *u, "")
+	content, err := resource.FilterSpecsByRange(nsId, *u, "", c.Request().Context())
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
 	return clientManager.EndRequestWithLog(c, err, result)
@@ -342,6 +342,10 @@ func RestGetSpec(c echo.Context) error {
 
 	log.Debug().Msg("[Get spec]" + specId)
 	result, err := resource.GetSpec(nsId, specId)
+	if err == nil {
+		forceRefresh := strings.EqualFold(c.QueryParam("forceRefresh"), "true")
+		resource.EnrichSpecWithAvailabilityForce(c.Request().Context(), &result, true, forceRefresh)
+	}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 

@@ -32,6 +32,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -122,7 +123,14 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		result.Available = true
 	}
 
-	if !result.Available {
+	sort.Slice(result.Zones, func(i, j int) bool {
+		return result.Zones[i].ZoneId < result.Zones[j].ZoneId
+	})
+
+	if result.Available {
+		result.Status = model.AvailabilityAvailable
+	} else {
+		result.Status = model.AvailabilityUnsupported
 		result.Reason = fmt.Sprintf("instance type %q is not offered in any AZ of region %q "+
 			"(DescribeInstanceTypeOfferings returned no results). "+
 			"The instance type may not be supported in this region.",
