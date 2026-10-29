@@ -102,6 +102,10 @@ type K8sClusterReq struct {
 
 	// SystemLabel is for describing the k8scluster in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
+
+	// Storage (optional) prepares abstract storage types after the cluster becomes Active.
+	// A storage preparation failure does not fail the cluster creation.
+	Storage *K8sClusterStorageReq `json:"storage,omitempty"`
 }
 
 // 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L441
@@ -351,6 +355,9 @@ type K8sClusterInfo struct {
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
 	SpiderViewK8sClusterDetail SpiderClusterInfo `json:"spiderViewK8sClusterDetail"`
+
+	// Storage is the CSP-side storage preparation state (abstract storage types). Set by the storage APIs.
+	Storage *K8sClusterStorageInfo `json:"storage,omitempty"`
 }
 
 // SpiderNetworkInfo is a struct to handle Cluster Network information from the CB-Spider's REST API response
@@ -558,6 +565,10 @@ type K8sClusterDynamicReq struct {
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
 	ConnectionName string `json:"connectionName,omitempty" default:"tencent-ap-seoul"`
+
+	// Storage (optional) prepares abstract storage types after the cluster becomes Active.
+	// A storage preparation failure does not fail the cluster creation.
+	Storage *K8sClusterStorageReq `json:"storage,omitempty"`
 }
 
 // K8sNodeGroupDynamicReq is struct for requirements to create K8sNodeGroup dynamically (with default resource option)

@@ -63,6 +63,23 @@ func LoadDiskInfo(path string) error {
 	return nil
 }
 
+// RuntimeK8sStorageInfo is global variable for model.K8sStorageAssetInfo
+var RuntimeK8sStorageInfo = model.K8sStorageAssetInfo{}
+
+// LoadK8sStorageInfo parses assets/k8sstorageinfo.yaml into RuntimeK8sStorageInfo, preserving StorageClass parameter key case.
+func LoadK8sStorageInfo(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	cfg, err := ParseK8sStorageInfo(data)
+	if err != nil {
+		return err
+	}
+	RuntimeK8sStorageInfo = cfg
+	return nil
+}
+
 // RuntimeLatancyMap is global variable for LatancyMap
 var RuntimeLatancyMap = [][]string{}
 

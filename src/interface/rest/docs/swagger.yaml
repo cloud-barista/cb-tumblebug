@@ -31,6 +31,9 @@ tags:
   description: Kubernetes cluster provisioning and management
 - name: "[Kubernetes] Cluster's Container Remote Command"
   description: Execute commands in Kubernetes cluster containers
+- name: "[Kubernetes] Storage Management"
+  description: "Kubernetes storage drivers, abstract storage types, StorageClass manifests,\
+    \ and leftover volumes"
 - name: "[Job Scheduler] (WIP) CSP Resource Registration"
   description: Scheduled CSP resource registration jobs (Work In Progress)
 - name: "[Infra Resource] Common Utility"
@@ -1778,6 +1781,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: recommendSpecReq
+  /k8sStorageInfo:
+    get:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Get kubernetes storage catalog
+      description: |-
+        Get the kubernetes storage catalog: per-CSP StorageClass details and abstract storage types (e.g., ssd-general).
+        Generated StorageClass manifests use only entries with verified=true.
+      operationId: GetK8sStorageInfo
+      parameters:
+      - name: provider
+        in: query
+        description: "Return only this CSP (e.g., gcp)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sStorageAssetInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /label/{labelType}/{uid}:
     get:
       tags:
@@ -9423,6 +9459,414 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/storage:
+    get:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Get the storage state of a K8sCluster
+      description: |-
+        Get the readiness (Ready / NotReady / Preparing) of the abstract storage types of a K8sCluster.
+        When no preparation is running, the driver status is refreshed from the CSP.
+      operationId: GetK8sClusterStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterStorageStatusResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Prepare abstract storage types on a K8sCluster (async)
+      description: |-
+        Prepare abstract storage types (e.g., ssd-general; see GET /k8sStorageInfo) on a K8sCluster:
+        enable the storage drivers the requested storage types need.
+        Returns 202 immediately; poll GET .../storage for the result. 409 when a preparation is already running.
+        StorageClasses are not created; get them from GET .../storageClassManifest.
+      operationId: PutK8sClusterStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: "Storage types to prepare (empty: [ssd-general])"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sClusterStorageReq'
+        required: false
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterStoragePrepareResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: storageReq
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/storageClassManifest:
+    get:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Generate StorageClass manifests for a K8sCluster
+      description: |-
+        Generate the abstract StorageClasses (cb-<storageType>, e.g. cb-ssd-general) of a K8sCluster; apply them to the cluster.
+        Default response is a multi-document YAML; send "Accept: application/json" for a JSON Kubernetes List.
+        412 when a storage type is not Ready (prepare it with PUT .../storage first); 422 when the catalog entry is not verified.
+      operationId: GetK8sClusterStorageClassManifest
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: storageTypes
+        in: query
+        description: "Comma-separated abstract storage types (default: ssd-general)"
+        schema:
+          type: string
+          default: ssd-general
+      - name: setDefault
+        in: query
+        description: Annotate the StorageClass as the cluster default
+        schema:
+          type: boolean
+          default: false
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/model.K8sStorageClassManifestList'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sStorageClassManifestList'
+        "400":
+          description: Bad Request
+          content:
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "412":
+          description: Precondition Failed
+          content:
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/storageDriver:
+    get:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: List storage drivers of a K8sCluster
+      description: List the CSP-managed CSI storage drivers (Block) of a K8sCluster
+      operationId: GetAllK8sClusterStorageDriver
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sStorageDriverListResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Enable a storage driver of a K8sCluster
+      description: |-
+        Enable the CSP-managed CSI storage driver of a K8sCluster (idempotent; status may be "Updating", check with GET).
+        Only kind Block is supported (400 otherwise).
+        Usually not needed: PUT .../storage enables the drivers that the requested storage types need.
+      operationId: PutK8sClusterStorageDriver
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Storage driver kind (Block) and optional version
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sStorageDriverEnableReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sStorageDriverInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: storageDriverReq
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/storageDriver/{kind}:
+    delete:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Disable a storage driver of a K8sCluster
+      description: |-
+        Disable the CSP-managed CSI storage driver of a K8sCluster. Only kind Block is supported (400 otherwise).
+        WARNING: existing PersistentVolumes of this driver can no longer be attached or mounted (volumes and data are kept).
+        Requires option=force (400 otherwise). BuiltIn drivers cannot be disabled (400).
+      operationId: DeleteK8sClusterStorageDriver
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: kind
+        in: path
+        description: Storage driver kind
+        required: true
+        schema:
+          type: string
+          enum:
+          - Block
+      - name: option
+        in: query
+        description: Option for storage driver deletion (required to confirm)
+        required: true
+        schema:
+          type: string
+          enum:
+          - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/k8sCluster/{k8sClusterId}/token:
     get:
       tags:
@@ -9686,6 +10130,154 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: k8sClusterDyanmicReq
+  /ns/{nsId}/k8sLeftoverVolume:
+    get:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: List leftover K8s volumes (CSI-created CSP disks)
+      description: |-
+        List CSP disks of a connection that look created by a Kubernetes CSI driver (PV-backed disks), e.g. left after cluster deletion with reclaimPolicy Retain.
+        A disk matches by its name (pvc-<uuid>) or CSI tags (see matchedBy). Attached disks and disks of K8sClusters known to CB-Tumblebug are excluded by default.
+        Disks without an owner hint (GCP, Azure) may still belong to a cluster outside CB-Tumblebug: check before deleting.
+      operationId: GetAllK8sLeftoverVolume
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: connectionName
+        in: query
+        description: Connection name to scan
+        required: true
+        schema:
+          type: string
+          default: aws-ap-northeast-2
+      - name: includeAttached
+        in: query
+        description: Include disks in Attached status
+        schema:
+          type: boolean
+          default: false
+      - name: includeAlive
+        in: query
+        description: Include disks whose owner cluster is known to CB-Tumblebug
+        schema:
+          type: boolean
+          default: false
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sLeftoverVolumeListResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/k8sLeftoverVolume/{cspDiskId}:
+    delete:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Delete a leftover K8s volume (CSI-created CSP disk)
+      description: |-
+        Delete a CSP disk created by a Kubernetes CSI driver that was left after its cluster was deleted.
+        WARNING: the disk and all its data are deleted permanently. Requires option=force (400 otherwise).
+        409 when the disk no longer looks CSI-created, is attached, its owner cluster is known to CB-Tumblebug, or it is a registered dataDisk.
+      operationId: DeleteK8sLeftoverVolume
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: cspDiskId
+        in: path
+        description: CSP disk ID (cspDiskId from GET .../k8sLeftoverVolume)
+        required: true
+        schema:
+          type: string
+      - name: connectionName
+        in: query
+        description: Connection name of the disk
+        required: true
+        schema:
+          type: string
+          default: aws-ap-northeast-2
+      - name: option
+        in: query
+        description: Option for leftover volume deletion (required to confirm)
+        required: true
+        schema:
+          type: string
+          enum:
+          - force
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/k8sMultiClusterDynamic:
     post:
       tags:
@@ -9793,6 +10385,145 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: k8sMultiClusterDynamicReq
+  /ns/{nsId}/k8sStorage:
+    get:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Get the storage state of many K8sClusters
+      description: "Aggregate GET .../k8sCluster/{k8sClusterId}/storage over the K8sClusters\
+        \ of the namespace (done when summary.preparing is 0)."
+      operationId: GetK8sMultiClusterStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterIds
+        in: query
+        description: "Comma-separated K8sCluster IDs (default: all)"
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sMultiClusterStorageStatusResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Prepare abstract storage types on many K8sClusters (async)
+      description: |-
+        Run PUT .../k8sCluster/{k8sClusterId}/storage on the listed K8sClusters (empty: all in the namespace) in parallel.
+        Returns 202 with a per-cluster result.
+      operationId: PutK8sMultiClusterStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Target clusters and storage types
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sMultiClusterStorageReq'
+        required: false
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sMultiClusterStoragePrepareResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: storageReq
+  /ns/{nsId}/k8sStorageClassManifest:
+    get:
+      tags:
+      - "[Kubernetes] Storage Management"
+      summary: Generate StorageClass manifests for many K8sClusters
+      description: |-
+        Generate the cb-<storageType> StorageClass YAML for each listed K8sCluster (default: all in the namespace).
+        Clusters whose storage types are not Ready or not verified are returned with status NotReady and a reason.
+      operationId: GetK8sMultiClusterStorageClassManifest
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: storageTypes
+        in: query
+        description: "Comma-separated abstract storage types (default: ssd-general)"
+        schema:
+          type: string
+          default: ssd-general
+      - name: k8sClusterIds
+        in: query
+        description: "Comma-separated K8sCluster IDs (default: all)"
+        schema:
+          type: string
+      - name: setDefault
+        in: query
+        description: Annotate the StorageClass as the cluster default
+        schema:
+          type: boolean
+          default: false
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sMultiClusterStorageClassManifestResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/monitoring/infra/{infraId}/metric/{metric}:
     get:
       tags:
@@ -23888,6 +24619,13 @@ components:
           type: string
           description: SpecId is field for id of a spec in common namespace
           example: tencent+ap-seoul+S2.MEDIUM4
+        storage:
+          type: object
+          description: |-
+            Storage (optional) prepares abstract storage types after the cluster becomes Active.
+            A storage preparation failure does not fail the cluster creation.
+          allOf:
+          - $ref: '#/components/schemas/model.K8sClusterStorageReq'
         version:
           type: string
           description: K8s Clsuter version
@@ -24043,6 +24781,12 @@ components:
           example: Active
           allOf:
           - $ref: '#/components/schemas/model.K8sClusterStatus'
+        storage:
+          type: object
+          description: Storage is the CSP-side storage preparation state (abstract
+            storage types). Set by the storage APIs.
+          allOf:
+          - $ref: '#/components/schemas/model.K8sClusterStorageInfo'
         systemLabel:
           type: string
           description: SystemLabel is for describing the Resource in a keyword (any
@@ -24165,6 +24909,13 @@ components:
           - sg-01
           items:
             type: string
+        storage:
+          type: object
+          description: |-
+            Storage (optional) prepares abstract storage types after the cluster becomes Active.
+            A storage preparation failure does not fail the cluster creation.
+          allOf:
+          - $ref: '#/components/schemas/model.K8sClusterStorageReq'
         subnetIds:
           type: array
           example:
@@ -24230,6 +24981,103 @@ components:
       - K8sClusterInactive
       - K8sClusterUpdating
       - K8sClusterDeleting
+    model.K8sClusterStorageClassManifestResult:
+      type: object
+      properties:
+        k8sClusterId:
+          type: string
+          example: k8scluster01
+        manifest:
+          type: string
+          description: Manifest is the multi-document StorageClass YAML (empty when
+            Status is NotReady)
+        provider:
+          type: string
+          example: aws
+        reason:
+          type: string
+        status:
+          type: object
+          description: "Status is Ready when a manifest was generated for all requested\
+            \ storage types, otherwise NotReady"
+          example: Ready
+          allOf:
+          - $ref: '#/components/schemas/model.K8sStorageStatus'
+    model.K8sClusterStorageInfo:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sStorageAction'
+        status:
+          type: object
+          example: Ready
+          allOf:
+          - $ref: '#/components/schemas/model.K8sStorageStatus'
+        storageTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sStorageTypeState'
+        updatedAt:
+          type: string
+    model.K8sClusterStoragePrepareResponse:
+      type: object
+      properties:
+        k8sClusterId:
+          type: string
+          example: k8scluster01
+        reason:
+          type: string
+          description: Reason is set when the cluster was not accepted (multi-cluster
+            request only)
+        status:
+          type: object
+          example: Preparing
+          allOf:
+          - $ref: '#/components/schemas/model.K8sStorageStatus'
+        storageTypes:
+          type: array
+          example:
+          - ssd-general
+          items:
+            type: string
+    model.K8sClusterStorageReq:
+      type: object
+      properties:
+        storageTypes:
+          type: array
+          description: "StorageTypes to prepare. Empty means [\"ssd-general\"]."
+          example:
+          - ssd-general
+          items:
+            type: string
+    model.K8sClusterStorageStatusResponse:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sStorageAction'
+        k8sClusterId:
+          type: string
+          example: k8scluster01
+        provider:
+          type: string
+          example: aws
+        reason:
+          type: string
+        status:
+          type: object
+          example: Ready
+          allOf:
+          - $ref: '#/components/schemas/model.K8sStorageStatus'
+        storageTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sStorageTypeState'
+        updatedAt:
+          type: string
     model.K8sClusterTemplateApplyReq:
       required:
       - namePrefix
@@ -24270,6 +25118,77 @@ components:
         name:
           type: string
           example: "1.30"
+    model.K8sLeftoverVolume:
+      type: object
+      properties:
+        createdTime:
+          type: string
+        cspDiskId:
+          type: string
+          description: "CspDiskId is the CSP disk ID (use it with DELETE .../k8sLeftoverVolume/{cspDiskId})"
+          example: vol-0abc1234def567890
+        diskSizeGB:
+          type: string
+          example: "10"
+        diskType:
+          type: string
+          example: gp3
+        matchedBy:
+          type: array
+          description: "MatchedBy lists the rules that classified the disk as CSI-created\
+            \ (e.g., name:pvc-uuid, tagKey:ebs.csi.aws.com/cluster)"
+          example:
+          - tagKey:ebs.csi.aws.com/cluster
+          items:
+            type: string
+        name:
+          type: string
+          description: Name is the CSP disk name (NameId reported by CB-Spider)
+          example: pvc-0f9e6a3c-2b1d-4c5e-8f7a-1234567890ab
+        ownerClusterAlive:
+          type: boolean
+          description: OwnerClusterAlive is true when the hint matches a K8sCluster
+            currently known to CB-Tumblebug (any namespace)
+        ownerClusterHint:
+          type: string
+          description: OwnerClusterHint is the owner cluster name or ID found in the
+            tags (empty when the CSP records none)
+          example: k8scluster01-abc123
+        pvcName:
+          type: string
+          description: PvcName and PvcNamespace come from CSI tags when the CSP records
+            them
+          example: data-postgres-0
+        pvcNamespace:
+          type: string
+          example: default
+        registeredInSpider:
+          type: boolean
+          description: "RegisteredInSpider is true when the disk is registered in\
+            \ CB-Spider (e.g., a TB dataDisk); such disks cannot be deleted by this\
+            \ API"
+        status:
+          type: string
+          description: "Status is the CB-Spider disk status (Creating, Available,\
+            \ Attached, Deleting, Error)"
+          example: Available
+        zone:
+          type: string
+          example: ap-northeast-2a
+    model.K8sLeftoverVolumeListResponse:
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2
+        leftoverVolumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sLeftoverVolume'
+        scanned:
+          type: integer
+          description: Scanned is the number of CSP disks examined
+          example: 12
     model.K8sMultiClusterDynamicReq:
       required:
       - clusters
@@ -24293,6 +25212,54 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.K8sClusterFailedInfo'
+    model.K8sMultiClusterStorageClassManifestResponse:
+      type: object
+      properties:
+        nsId:
+          type: string
+          example: default
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sClusterStorageClassManifestResult'
+    model.K8sMultiClusterStoragePrepareResponse:
+      type: object
+      properties:
+        nsId:
+          type: string
+          example: default
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sClusterStoragePrepareResponse'
+    model.K8sMultiClusterStorageReq:
+      type: object
+      properties:
+        k8sClusterIds:
+          type: array
+          description: K8sClusterIds to prepare. Empty means all K8sClusters in the
+            namespace.
+          items:
+            type: string
+        storageTypes:
+          type: array
+          description: "StorageTypes to prepare. Empty means [\"ssd-general\"]."
+          example:
+          - ssd-general
+          items:
+            type: string
+    model.K8sMultiClusterStorageStatusResponse:
+      type: object
+      properties:
+        nsId:
+          type: string
+          example: default
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sClusterStorageStatusResponse'
+        summary:
+          $ref: '#/components/schemas/model.K8sStorageSummary'
     model.K8sNodeGroupDynamicReq:
       required:
       - imageId
@@ -24480,6 +25447,295 @@ components:
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
+    model.K8sStorageAction:
+      type: object
+      properties:
+        from:
+          type: string
+          example: Disabled
+        kind:
+          type: string
+          example: Block
+        step:
+          type: string
+          example: enableStorageDriver
+        target:
+          type: string
+          example: ""
+        time:
+          type: string
+        to:
+          type: string
+          example: Enabled
+    model.K8sStorageAssetInfo:
+      type: object
+      properties:
+        providers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/model.K8sStorageProviderInfo'
+          description: Providers maps a CSP name (lowercase) to its StorageClass details
+        storageTypes:
+          type: array
+          description: StorageTypes is the list of CB-Tumblebug abstract storage types
+          items:
+            $ref: '#/components/schemas/model.K8sStorageTypeInfo'
+    model.K8sStorageClassManifest:
+      type: object
+      properties:
+        allowVolumeExpansion:
+          type: boolean
+        apiVersion:
+          type: string
+          example: storage.k8s.io/v1
+        kind:
+          type: string
+          example: StorageClass
+        metadata:
+          $ref: '#/components/schemas/model.K8sStorageClassManifestMetadata'
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        provisioner:
+          type: string
+          example: ebs.csi.aws.com
+        reclaimPolicy:
+          type: string
+          example: Delete
+        volumeBindingMode:
+          type: string
+          example: WaitForFirstConsumer
+    model.K8sStorageClassManifestList:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+          example: v1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sStorageClassManifest'
+        kind:
+          type: string
+          example: List
+    model.K8sStorageClassManifestMetadata:
+      type: object
+      properties:
+        annotations:
+          type: object
+          additionalProperties:
+            type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        name:
+          type: string
+          example: cb-ssd-general
+    model.K8sStorageDriverEnableReq:
+      required:
+      - kind
+      type: object
+      properties:
+        kind:
+          type: string
+          description: Kind is Block (the only supported kind)
+          example: Block
+          enum:
+          - Block
+        version:
+          type: string
+          description: Version of the driver. Empty means the CSP default version.
+          example: ""
+    model.K8sStorageDriverInfo:
+      type: object
+      properties:
+        csiDriverName:
+          type: string
+          description: CsiDriverName is the name of the Kubernetes CSIDriver object
+          example: ebs.csi.aws.com
+        cspDriverName:
+          type: string
+          description: CspDriverName is the CSP add-on name as-is
+          example: aws-ebs-csi-driver
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        kind:
+          type: string
+          description: Kind is Block
+          example: Block
+        managementMode:
+          type: string
+          description: "ManagementMode is Addon, BuiltIn or NotSupported"
+          example: Addon
+        status:
+          type: string
+          description: "Status is Enabled, Disabled, Updating, Failed or Unknown"
+          example: Enabled
+        version:
+          type: string
+          example: v1.37.0-eksbuild.1
+    model.K8sStorageDriverListResponse:
+      type: object
+      properties:
+        k8sClusterId:
+          type: string
+          example: k8scluster01
+        storageDrivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sStorageDriverInfo'
+    model.K8sStorageDriverRef:
+      type: object
+      properties:
+        csiDriverName:
+          type: string
+          example: ebs.csi.aws.com
+        kind:
+          type: string
+          example: Block
+        managementMode:
+          type: string
+          example: Addon
+        status:
+          type: string
+          example: Enabled
+    model.K8sStorageKindInfo:
+      type: object
+      properties:
+        allowVolumeExpansion:
+          type: boolean
+          description: "AllowVolumeExpansion of a generated StorageClass (default:\
+            \ true)"
+        ignoreValues:
+          type: array
+          description: IgnoreValues are sentinel SKU values to skip (classification)
+          items:
+            type: string
+        installedByDefault:
+          type: boolean
+          description: InstalledByDefault tells whether the CSI driver ships enabled
+        minVolumeSizeGi:
+          type: integer
+          description: MinVolumeSizeGi is the smallest volume the CSP accepts for
+            this kind (0 = no known minimum)
+          example: 20
+        provisioners:
+          type: array
+          description: Provisioners recognized for this kind (classification)
+          items:
+            type: string
+        scParameterKey:
+          type: string
+          description: ScParameterKey is the exact parameter key written for the SKU
+            in a generated StorageClass
+          example: type
+        scParameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: ScParameters are fixed extra parameters written to a generated
+            StorageClass
+        skuKeys:
+          type: array
+          description: SkuKeys is the priority-ordered list of parameter keys holding
+            the SKU (classification)
+          items:
+            type: string
+        volumeBindingMode:
+          type: string
+          description: "VolumeBindingMode of a generated StorageClass (default: WaitForFirstConsumer)"
+          example: WaitForFirstConsumer
+    model.K8sStorageProviderInfo:
+      type: object
+      properties:
+        blockStorage:
+          $ref: '#/components/schemas/model.K8sStorageKindInfo'
+        verified:
+          type: boolean
+    model.K8sStorageStatus:
+      type: string
+      enum:
+      - Ready
+      - NotReady
+      - Preparing
+      x-enum-varnames:
+      - K8sStorageReady
+      - K8sStorageNotReady
+      - K8sStoragePreparing
+    model.K8sStorageSummary:
+      type: object
+      properties:
+        notReady:
+          type: integer
+          example: 1
+        preparing:
+          type: integer
+          example: 0
+        ready:
+          type: integer
+          example: 6
+        total:
+          type: integer
+          example: 7
+    model.K8sStorageTypeInfo:
+      type: object
+      properties:
+        accessModes:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        driverKind:
+          type: string
+          description: DriverKind is the CB-Spider storage driver Kind this type needs
+            (Block)
+          example: Block
+        name:
+          type: string
+          example: ssd-general
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sStorageTypeProviderInfo'
+        resolveBy:
+          type: string
+          example: defaultStorageClass
+    model.K8sStorageTypeProviderInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Id is the CSP SKU value (e.g., gp3). Written as parameters[scParameterKey]."
+          example: gp3
+        provider:
+          type: string
+          example: aws
+        provisioner:
+          type: string
+          example: ebs.csi.aws.com
+        verified:
+          type: boolean
+    model.K8sStorageTypeState:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/model.K8sStorageDriverRef'
+        reason:
+          type: string
+          example: ""
+        status:
+          type: object
+          example: Ready
+          allOf:
+          - $ref: '#/components/schemas/model.K8sStorageStatus'
+        storageType:
+          type: string
+          example: ssd-general
     model.KeyValue:
       type: object
       properties:

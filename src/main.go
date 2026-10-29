@@ -452,6 +452,24 @@ func setConfig() {
 		log.Info().Msgf("config: loaded %s", diskInfoViper.ConfigFileUsed())
 	}
 
+	//
+	// Load k8sstorageinfo (non-fatal: K8s storage catalog for GET /k8sStorageInfo, storage preparation
+	// and StorageClass manifest generation)
+	//
+	k8sStorageInfoViper := viper.New()
+	fileName = "k8sstorageinfo"
+	common.SetupViperPaths(k8sStorageInfoViper)
+	k8sStorageInfoViper.SetConfigName(fileName)
+	k8sStorageInfoViper.SetConfigType("yaml")
+	// Parsed with sigs.k8s.io/yaml (not viper.Unmarshal) so StorageClass parameter keys keep their case (e.g. skuName).
+	if err = k8sStorageInfoViper.ReadInConfig(); err != nil {
+		log.Error().Err(err).Msg("config: failed to read k8sstorageinfo config file")
+	} else if err = common.LoadK8sStorageInfo(k8sStorageInfoViper.ConfigFileUsed()); err != nil {
+		log.Error().Err(err).Msg("config: failed to unmarshal k8sstorageinfo")
+	} else {
+		log.Info().Msgf("config: loaded %s", k8sStorageInfoViper.ConfigFileUsed())
+	}
+
 	// Restore CSPs registered at runtime (POST /cloudInfo/{providerName}) before the
 	// registration sweep below, so they are pushed to CB-Spider along with the ones
 	// read from cloudinfo.yaml. Loading these must not be fatal: a provider that can
@@ -769,6 +787,9 @@ func addIndexes() error {
 
 // @tag.name [Kubernetes] Cluster's Container Remote Command
 // @tag.description Execute commands in Kubernetes cluster containers
+
+// @tag.name [Kubernetes] Storage Management
+// @tag.description Kubernetes storage drivers, abstract storage types, StorageClass manifests, and leftover volumes
 
 // @tag.name [Job Scheduler] (WIP) CSP Resource Registration
 // @tag.description Scheduled CSP resource registration jobs (Work In Progress)

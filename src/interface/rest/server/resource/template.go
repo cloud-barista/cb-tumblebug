@@ -826,6 +826,15 @@ func buildK8sMultiClusterDynamicReqFromCluster(clusterInfo *model.K8sClusterInfo
 		}
 	}
 
+	// Carry the requested abstract storage types so the reproduced cluster prepares the same storage.
+	if clusterInfo.Storage != nil && len(clusterInfo.Storage.StorageTypes) > 0 {
+		storageReq := &model.K8sClusterStorageReq{}
+		for _, st := range clusterInfo.Storage.StorageTypes {
+			storageReq.StorageTypes = append(storageReq.StorageTypes, st.StorageType)
+		}
+		clusterReq.Storage = storageReq
+	}
+
 	return model.K8sMultiClusterDynamicReq{
 		NamePrefix: clusterInfo.Id,
 		Clusters:   []model.K8sClusterDynamicReq{clusterReq},

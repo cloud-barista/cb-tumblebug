@@ -1,0 +1,188 @@
+# Configuration for Kubernetes Storage of Cloud Service Providers (CSPs)
+# Maps CSP-specific StorageClass details to CB-Tumblebug abstract storage types.
+# Served by GET /k8sStorageInfo; used by PUT /ns/{nsId}/k8sCluster/{k8sClusterId}/storage (driver kind)
+# and GET /ns/{nsId}/k8sCluster/{k8sClusterId}/storageClassManifest (cb-<storageType> StorageClasses).
+# StorageClass manifests are generated only from entries with verified: true (provider and storage type entry);
+# a wrong value here makes PVCs fail on the target cluster.
+#
+# Last Updated: 2026-10-24
+#
+# Schema
+# k8sstorage:                       Top level key
+#   providers:
+#     <csp>:                        lowercase, as in k8sclusterinfo.yaml
+#       verified:                   [true/false] provider confirmed for manifest generation
+#       blockStorage:
+#         provisioners:             CSI (and in-tree) provisioner names of block storage (classification)
+#         skuKeys:                  SC parameter keys holding the SKU, in priority order; matched lowercase (classification)
+#         ignoreValues:             sentinel SKU values to skip, e.g. GCP `type: dynamic` (classification)
+#         installedByDefault:       [true/false] whether the CSI driver ships enabled
+#         minVolumeSizeGi:          smallest volume the CSP accepts (0 or omitted = no known minimum)
+#         scParameterKey:           exact, case-sensitive SC parameter key written for the SKU (`id`); "" = none
+#         scParameters:             fixed extra SC parameters
+#         volumeBindingMode:        default WaitForFirstConsumer
+#         allowVolumeExpansion:     default true
+#   storageTypes:
+#     - name:                       CB-TB abstract storage type (e.g. ssd-general)
+#       description, accessModes
+#       resolveBy:                  how consumers classify an existing SC (defaultStorageClass)
+#       driverKind:                 CB-Spider storage driver Kind (Block)
+#       providers:                  per-CSP realization; within a CSP the first entry is preferred unless another
+#                                   entry's provisioner equals the CSI driver CB-Spider reports (put the CSI one first)
+#         - provider:               CSP name
+#           provisioner:            StorageClass provisioner
+#           id:                     CSP SKU value, written as parameters[scParameterKey]
+#           verified:               [true/false] confirmed by PVC provisioning on the CSP
+
+k8sstorage:
+  providers:
+
+    aws:
+      verified: true # EKS 1.36 / ap-northeast-2
+      blockStorage:
+        # EKS ships `gp2` with the in-tree provisioner and `ebs.csi.aws.com` via Spider add-on.
+        provisioners:
+          - ebs.csi.aws.com
+          - kubernetes.io/aws-ebs
+        skuKeys: [type]
+        scParameterKey: type
+
+    azure:
+      verified: true # AKS 1.36 / koreacentral
+      blockStorage:
+        provisioners:
+          - disk.csi.azure.com
+        # `skuName` is absorbed by lowercase normalization.
+        # `storageaccounttype` is the legacy key used by the `managed` / `managed-premium` classes.
+        skuKeys: [skuname, storageaccounttype]
+        scParameterKey: skuName
+
+    gcp:
+      verified: true # GKE 1.35 / asia-northeast3
+      blockStorage:
+        # GKE `standard` still uses the in-tree provisioner. Both must match.
+        provisioners:
+          - pd.csi.storage.gke.io
+          - kubernetes.io/gce-pd
+        # `dynamic-rwo` carries `type: dynamic` plus the real type in `pd-type`.
+        skuKeys: [type, pd-type, hyperdisk-type]
+        ignoreValues: [dynamic]
+        scParameterKey: type
+
+    alibaba:
+      verified: true # ACK 1.35.7-aliyun.1 / ap-northeast-2
+      blockStorage:
+        # Ships 4 SCs (alicloud-disk-essd, alicloud-disk-ssd, alicloud-disk-efficiency, alicloud-disk-topology-alltype), none marked default.
+        # cloud_essd disks have a 20 GiB minimum (a smaller PVC fails with "requested size ... is less than min").
+        minVolumeSizeGi: 20
+        provisioners:
+          - diskplugin.csi.alibabacloud.com
+        skuKeys: [type]
+        scParameterKey: type
+
+    ibm:
+      verified: true # IKS 1.35.9+IKS / au-syd
+      blockStorage:
+        # Default SC is `ibmc-vpc-block-10iops-tier` (profile: 10iops-tier). Also ships `general-purpose` and `5iops-tier` profiles.
+        provisioners:
+          - vpc.block.csi.ibm.io
+        skuKeys: [profile]
+        scParameterKey: profile
+
+    ncp:
+      verified: true # NKS 1.34.3 and 1.36.2-nks.2 / kr
+      blockStorage:
+        # NKS < 1.36: default SC `nks-block-storage` (provisioner: blk.csi.ncloud.com, type: CB2) ships installed.
+        # NKS 1.36: no CSI driver and no SC by default; enable the `nks-csi` add-on.
+        provisioners:
+          - blk.csi.ncloud.com
+        skuKeys: [type]
+        scParameterKey: type
+
+    nhn:
+      verified: true # NKS v1.33.4 / kr1
+      blockStorage:
+        # NKS ships no SC and no CSIDriver unless the Cinder CSI add-on is enabled.
+        provisioners:
+          - cinder.csi.openstack.org
+          - kubernetes.io/cinder
+        skuKeys: [type]
+        scParameterKey: type
+
+    onprem:
+      verified: true # Standard CNCF / On-Premise K8s storage provisioners
+      blockStorage:
+        # Covers K3s local-path, Longhorn, Rook-Ceph RBD, OpenEBS, and OpenStack Cinder.
+        provisioners:
+          - rancher.io/local-path
+          - driver.longhorn.io
+          - rbd.csi.ceph.com
+          - openebs.io/local
+          - cinder.csi.openstack.org
+          - kubernetes.io/no-provisioner
+        skuKeys: [type, pool, backingstorage]
+        # On-premise `id` values are CB-TB labels, not driver parameters.
+        scParameterKey: ""
+
+    tencent:
+      # Kubeconfig external endpoint requires TKE public access setup.
+      # TKE add-on `cbs` can be enabled through the CSP API; StorageClass parameters not confirmed yet.
+      verified: false
+      blockStorage: {}
+
+  # CB-TB abstract storage types.
+  # `resolveBy` entries are resolved from the cluster first; the per-provider
+  # `id` values below are only a fallback when runtime resolution fails.
+  storageTypes:
+
+    - name: ssd-general
+      description: General purpose SSD. The sensible default for most workloads.
+      # Runtime: the StorageClass annotated `storageclass.kubernetes.io/is-default-class: "true"`.
+      resolveBy: defaultStorageClass
+      driverKind: Block
+      accessModes: [ReadWriteOnce]
+      providers:
+        - provider: aws
+          provisioner: ebs.csi.aws.com
+          id: gp3
+          verified: true # EKS 1.35, 1.36
+        - provider: aws
+          provisioner: kubernetes.io/aws-ebs
+          id: gp2
+          verified: true # EKS pre-installed gp2 SC
+        - provider: azure
+          provisioner: disk.csi.azure.com
+          id: StandardSSD_LRS
+          verified: true # AKS SC `default`
+        - provider: gcp
+          provisioner: pd.csi.storage.gke.io
+          id: pd-balanced
+          verified: true # GKE SC `standard-rwo`
+        - provider: alibaba
+          provisioner: diskplugin.csi.alibabacloud.com
+          id: cloud_essd
+          verified: true # ACK SC `alicloud-disk-essd`
+        - provider: ibm
+          provisioner: vpc.block.csi.ibm.io
+          id: 10iops-tier
+          verified: true # IKS default SC `ibmc-vpc-block-10iops-tier`
+        - provider: ncp
+          provisioner: blk.csi.ncloud.com
+          id: CB2
+          verified: true # NKS default SC `nks-block-storage`
+        - provider: nhn
+          provisioner: cinder.csi.openstack.org
+          id: General SSD
+          verified: true # Cinder volume type name has a space (Spider meta "General_SSD" is the Spider-facing alias)
+        - provider: onprem
+          provisioner: rancher.io/local-path
+          id: local-ssd
+          verified: true
+        - provider: onprem
+          provisioner: driver.longhorn.io
+          id: longhorn-ssd
+          verified: true
+        - provider: onprem
+          provisioner: rbd.csi.ceph.com
+          id: ceph-rbd
+          verified: true

@@ -170,6 +170,10 @@ func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 	oldTbK8sCInfo := &model.K8sClusterInfo{}
 	json.Unmarshal([]byte(kv.Value), oldTbK8sCInfo)
 
+	// Storage is owned by the storage APIs (updateK8sClusterStorage); keep the stored value so a
+	// caller holding an older copy cannot overwrite a storage state recorded in the meantime.
+	newTbK8sCInfo.Storage = oldTbK8sCInfo.Storage
+
 	if !reflect.DeepEqual(oldTbK8sCInfo, newTbK8sCInfo) {
 		val, _ := json.Marshal(newTbK8sCInfo)
 		err = kvstore.Put(k, string(val))
@@ -232,6 +236,13 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 			return emptyObj, err
 		}
+	}
+
+	// The optional storage option is validated up front (a bad storage type is a request error),
+	// but a later storage preparation failure never fails the cluster creation.
+	if err := ValidateK8sClusterStorageReq(req.Storage); err != nil {
+		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
+		return emptyObj, err
 	}
 
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
@@ -591,6 +602,14 @@ func CreateK8sCluster(ctx context.Context, nsId string, req *model.K8sClusterReq
 	}
 
 	log.Info().Msgf("Successfully created K8sCluster: %s", tbK8sCInfo.Name)
+
+	// Optional: prepare abstract storage types once the cluster and node groups are Active (async).
+	if req.Storage != nil {
+		startK8sStoragePreparationAfterCreate(nsId, k8sClusterId, req.Storage)
+		if stored, err := getK8sClusterInfo(nsId, k8sClusterId); err == nil {
+			tbK8sCInfo.Storage = stored.Storage
+		}
+	}
 	return tbK8sCInfo, nil
 }
 
