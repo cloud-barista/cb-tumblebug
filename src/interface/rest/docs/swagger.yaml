@@ -21218,16 +21218,42 @@ components:
         reason:
           type: string
           description: explanation when Available is false (or when no checker)
+        refreshAfter:
+          type: string
+          description: when the cached status will expire and be re-evaluated
         region:
           type: string
         source:
           type: string
           description: "checker identifier for tracing (e.g., \"alibaba:DescribeAvailableResource\"\
             )"
+        status:
+          type: object
+          description: "standardized status: Available, SoldOut, QuotaExceeded, Unsupported,\
+            \ Unverified"
+          allOf:
+          - $ref: '#/components/schemas/model.AvailabilityStatus'
+        ttlSeconds:
+          type: integer
+          description: cache TTL in seconds applied to this result
         zones:
           type: array
           items:
             $ref: '#/components/schemas/model.ZoneAvailability'
+    model.AvailabilityStatus:
+      type: string
+      enum:
+      - Available
+      - SoldOut
+      - QuotaExceeded
+      - Unsupported
+      - Unverified
+      x-enum-varnames:
+      - AvailabilityAvailable
+      - AvailabilitySoldOut
+      - AvailabilityQuotaExceeded
+      - AvailabilityUnsupported
+      - AvailabilityUnverified
     model.AvailableZonesError:
       type: object
       properties:
@@ -22948,6 +22974,9 @@ components:
           type: string
         architecture:
           type: string
+        checkAvailability:
+          type: boolean
+          example: false
         connectionName:
           type: string
         costPerHour:
@@ -30159,6 +30188,23 @@ components:
           type: array
           items:
             type: string
+        availabilityCheckedAt:
+          type: string
+        availabilityReason:
+          type: string
+        availabilityRefreshAfter:
+          type: string
+        availabilityStatus:
+          type: object
+          description: Runtime-only availability fields (never persisted to PostgreSQL;
+            populated from cache or live CSP check).
+          example: Available
+          allOf:
+          - $ref: '#/components/schemas/model.AvailabilityStatus'
+        availableZones:
+          type: array
+          items:
+            type: string
         connectionName:
           type: string
         costPerHour:
@@ -30245,6 +30291,10 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+        unavailableZones:
+          type: array
+          items:
+            type: string
         vCPU:
           type: integer
     model.SpecMatchCriteria:
