@@ -1,119 +1,423 @@
 providerName,regionName,cspSpecName,costPerHour,currency,evaluationScore01,evaluationScore02,evaluationScore03,evaluationScore04,evaluationScore05,evaluationScore06,evaluationScore07,evaluationScore08,evaluationScore09,evaluationScore10,rootDiskType,rootDiskSize,acceleratorType,acceleratorModel,acceleratorCount,acceleratorMemoryGB,description,infraType
-NCP,KR,s2-g3,0.0848,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s2-g3a,0.0848,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s4-g3,0.1747,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s4-g3a,0.1747,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s8-g3,0.3546,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s8-g3a,0.3546,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s16-g3,0.7151,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s16-g3a,0.7151,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s32-g3,1.4361,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s32-g3a,1.4361,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s48-g3,2.1570,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s48-g3a,2.1570,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s64-g3,2.8780,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,s64-g3a,2.8780,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m2-g3,0.1172,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m2-g3a,0.1172,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m4-g3,0.2403,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m4-g3a,0.2403,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m8-g3,0.4858,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m8-g3a,0.4858,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m16-g3,0.9775,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m16-g3a,0.9775,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m32-g3,1.9602,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m32-g3a,1.9602,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m48-g3,2.9429,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,m48-g3a,2.9429,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,ci2-g3,0.0730,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,ci4-g3,0.1511,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,ci8-g3,0.3074,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,ci16-g3,0.6207,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,ci32-g3,1.2473,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,ci48-g3,1.8799,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,ci64-g3,2.5065,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,KR,mi1-g3,0.0111,USD,-1,,,,,,,,,,default,10,,,,,,vm
-NCP,SGN,s2-g3,0.0892,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s2-g3a,0.0892,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s4-g3,0.1836,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s4-g3a,0.1836,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s8-g3,0.3723,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s8-g3a,0.3723,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s16-g3,0.7512,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s16-g3a,0.7512,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s32-g3,1.5083,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s32-g3a,1.5083,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s48-g3,2.2654,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s48-g3a,2.2654,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s64-g3,3.0225,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,s64-g3a,3.0225,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c2-g3,0.0715,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c2-g3a,0.0715,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c4-g3,0.1489,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c4-g3a,0.1489,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c8-g3,0.3037,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c8-g3a,0.3037,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c16-g3,0.6134,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c16-g3a,0.6134,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c32-g3,1.2326,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c32-g3a,1.2326,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c48-g3,1.8518,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c48-g3a,1.8518,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c64-g3,2.4711,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,c64-g3a,2.4711,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m2-g3,0.1172,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m2-g3a,0.1172,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m4-g3,0.2403,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m4-g3a,0.2403,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m8-g3,0.4858,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m8-g3a,0.4858,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m16-g3,0.9775,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m16-g3a,0.9775,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m32-g3,1.9602,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m32-g3a,1.9602,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m48-g3,2.9429,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,SGN,m48-g3a,2.9429,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s2-g3,0.0922,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s2-g3a,0.0922,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s4-g3,0.1895,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s4-g3a,0.1895,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s8-g3,0.3833,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s8-g3a,0.3833,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s16-g3,0.7726,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s16-g3a,0.7726,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s32-g3,1.5511,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s32-g3a,1.5511,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s48-g3,2.3296,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s48-g3a,2.3296,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s64-g3,3.1080,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,s64-g3a,3.1080,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c2-g3,0.0737,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c2-g3a,0.0737,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c4-g3,0.1533,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c4-g3a,0.1533,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c8-g3,0.3126,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c8-g3a,0.3126,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c16-g3,0.6310,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c16-g3a,0.6310,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c32-g3,1.2680,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c32-g3a,1.2680,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c48-g3,1.9049,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c48-g3a,1.9049,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c64-g3,2.5419,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,c64-g3a,2.5419,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m2-g3,0.1187,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m2-g3a,0.1187,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m4-g3,0.2425,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m4-g3a,0.2425,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m8-g3,0.4910,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m8-g3a,0.4910,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m16-g3,0.9871,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m16-g3a,0.9871,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m32-g3,1.9801,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m32-g3a,1.9801,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m48-g3,2.9731,USD,-1,,,,,,,,,,default,default,,,,,,vm
-NCP,JPN,m48-g3a,2.9731,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s2-g3,0.0847,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s2-g3a,0.0847,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s4-g3,0.1745,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s4-g3a,0.1745,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s8-g3,0.3541,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s8-g3a,0.3541,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s16-g3,0.7141,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s16-g3a,0.7141,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s32-g3,1.4341,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s32-g3a,1.4341,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s48-g3,2.1541,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s48-g3a,2.1541,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s64-g3,2.8741,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s64-g3a,2.8741,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c2-g3,0.0677,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c2-g3a,0.0677,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c4-g3,0.1414,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c4-g3a,0.1414,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c8-g3,0.2886,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c8-g3a,0.2886,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c16-g3,0.5831,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c16-g3a,0.5831,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c32-g3,1.1720,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c32-g3a,1.1720,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c48-g3,1.7610,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c48-g3a,1.7610,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c64-g3,2.3500,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c64-g3a,2.3500,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m2-g3,0.1171,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m2-g3a,0.1171,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m4-g3,0.2400,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m4-g3a,0.2400,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m8-g3,0.4852,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m8-g3a,0.4852,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m16-g3,0.9762,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m16-g3a,0.9762,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m32-g3,1.9576,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m32-g3a,1.9576,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m48-g3,2.9389,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m48-g3a,2.9389,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,ci2-g3,0.0729,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,ci4-g3,0.1509,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,ci8-g3,0.3070,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,ci16-g3,0.6199,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,ci32-g3,1.2457,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,ci48-g3,1.8773,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,ci64-g3,2.5031,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,mi1-g3,0.0110,USD,-1,,,,,,,,,,default,10,,,,,,vm
+NCP,KR,gp1l4-g3,1.0653,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA L4,1,24,,vm
+NCP,KR,gp1l8-g3,1.1411,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA L4,1,24,,vm
+NCP,KR,gp2l8-g3,2.1298,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA L4,2,24,,vm
+NCP,KR,gp2l16-g3,2.2822,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA L4,2,24,,vm
+NCP,KR,gp4l16-g3,3.4756,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA L4,4,24,,vm
+NCP,KR,gp4l32-g3,4.0498,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA L4,4,24,,vm
+NCP,KR,gp8ap56-g3,36.7570,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA A100P,8,80,,vm
+NCP,KR,s2-g2-h50,0.0876,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s2-g2-h100,0.0906,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s2-g2-s50,0.0906,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s2-g2-s100,0.0964,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s4-g2-h50,0.1774,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s4-g2-h100,0.1804,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s4-g2-s50,0.1804,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s4-g2-s100,0.1863,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s8-g2-h50,0.3571,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s8-g2-h100,0.3600,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s8-g2-s50,0.3600,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s8-g2-s100,0.3659,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s16-g2-h50,0.7171,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s16-g2-h100,0.7200,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s16-g2-s50,0.7200,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s16-g2-s100,0.7259,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s32-g2-h50,1.4371,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s32-g2-h100,1.4400,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s32-g2-s50,1.4400,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,s32-g2-s100,1.4459,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c2-g2-h50,0.0707,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c2-g2-h100,0.0736,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c2-g2-s50,0.0736,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c2-g2-s100,0.0795,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c4-g2-h50,0.1443,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c4-g2-h100,0.1472,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c4-g2-s50,0.1472,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c4-g2-s100,0.1531,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c8-g2-h50,0.2915,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c8-g2-h100,0.2945,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c8-g2-s50,0.2945,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c8-g2-s100,0.3004,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c16-g2-h50,0.5860,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c16-g2-h100,0.5890,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c16-g2-s50,0.5890,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c16-g2-s100,0.5948,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c32-g2-h50,1.1750,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c32-g2-h100,1.1779,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c32-g2-s50,1.1779,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,c32-g2-s100,1.1838,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m2-g2-h50,0.1200,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m2-g2-h100,0.1229,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m2-g2-s50,0.1229,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m2-g2-s100,0.1288,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m4-g2-h50,0.2429,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m4-g2-h100,0.2459,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m4-g2-s50,0.2459,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m4-g2-s100,0.2518,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m8-g2-h50,0.4881,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m8-g2-h100,0.4910,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m8-g2-s50,0.4910,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m8-g2-s100,0.4969,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m16-g2-h50,0.9791,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m16-g2-h100,0.9821,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m16-g2-s50,0.9821,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m16-g2-s100,0.9880,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m32-g2-h50,1.9605,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m32-g2-h100,1.9634,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m32-g2-s50,1.9634,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,m32-g2-s100,1.9693,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,KR,gp1t4-g1-h50,0.5087,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t4-g1-h100,0.5117,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t4-g1-s50,0.5117,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t4-g1-s100,0.5175,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t8-g1-h50,0.6883,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t8-g1-h100,0.6913,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t8-g1-s50,0.6913,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t8-g1-s100,0.6972,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t16-g1-h50,1.0483,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t16-g1-h100,1.0513,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t16-g1-s50,1.0513,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp1t16-g1-s100,1.0572,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,KR,gp2t8-g1-h50,1.0196,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t8-g1-h100,1.0226,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t8-g1-s50,1.0226,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t8-g1-s100,1.0285,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t16-g1-h50,1.3796,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t16-g1-h100,1.3826,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t16-g1-s50,1.3826,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t16-g1-s100,1.3885,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t32-g1-h50,2.0996,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t32-g1-h100,2.1026,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t32-g1-s50,2.1026,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,KR,gp2t32-g1-s100,2.1085,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,s2-g3,0.0891,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s2-g3a,0.0891,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s4-g3,0.1833,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s4-g3a,0.1833,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s8-g3,0.3718,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s8-g3a,0.3718,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s16-g3,0.7502,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s16-g3a,0.7502,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s32-g3,1.5063,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s32-g3a,1.5063,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s48-g3,2.2623,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s48-g3a,2.2623,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s64-g3,3.0184,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s64-g3a,3.0184,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c2-g3,0.0714,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c2-g3a,0.0714,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c4-g3,0.1487,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c4-g3a,0.1487,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c8-g3,0.3033,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c8-g3a,0.3033,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c16-g3,0.6125,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c16-g3a,0.6125,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c32-g3,1.2309,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c32-g3a,1.2309,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c48-g3,1.8493,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c48-g3a,1.8493,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c64-g3,2.4677,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c64-g3a,2.4677,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m2-g3,0.1171,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m2-g3a,0.1171,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m4-g3,0.2400,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m4-g3a,0.2400,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m8-g3,0.4852,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m8-g3a,0.4852,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m16-g3,0.9762,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m16-g3a,0.9762,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m32-g3,1.9576,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m32-g3a,1.9576,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m48-g3,2.9389,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m48-g3a,2.9389,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s2-g2-h50,0.0920,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s2-g2-h100,0.0950,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s2-g2-s50,0.0950,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s2-g2-s100,0.1009,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s4-g2-h50,0.1863,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s4-g2-h100,0.1892,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s4-g2-s50,0.1892,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s4-g2-s100,0.1951,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s8-g2-h50,0.3747,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s8-g2-h100,0.3777,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s8-g2-s50,0.3777,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s8-g2-s100,0.3836,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s16-g2-h50,0.7531,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s16-g2-h100,0.7561,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s16-g2-s50,0.7561,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s16-g2-s100,0.7620,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s32-g2-h50,1.5092,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s32-g2-h100,1.5122,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s32-g2-s50,1.5122,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,s32-g2-s100,1.5180,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c2-g2-h50,0.0744,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c2-g2-h100,0.0773,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c2-g2-s50,0.0773,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c2-g2-s100,0.0832,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c4-g2-h50,0.1517,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c4-g2-h100,0.1546,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c4-g2-s50,0.1546,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c4-g2-s100,0.1605,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c8-g2-h50,0.3063,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c8-g2-h100,0.3092,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c8-g2-s50,0.3092,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c8-g2-s100,0.3151,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c16-g2-h50,0.6155,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c16-g2-h100,0.6184,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c16-g2-s50,0.6184,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c16-g2-s100,0.6243,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c32-g2-h50,1.2339,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c32-g2-h100,1.2368,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c32-g2-s50,1.2368,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,c32-g2-s100,1.2427,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m2-g2-h50,0.1200,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m2-g2-h100,0.1229,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m2-g2-s50,0.1229,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m2-g2-s100,0.1288,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m4-g2-h50,0.2429,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m4-g2-h100,0.2459,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m4-g2-s50,0.2459,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m4-g2-s100,0.2518,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m8-g2-h50,0.4881,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m8-g2-h100,0.4910,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m8-g2-s50,0.4910,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m8-g2-s100,0.4969,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m16-g2-h50,0.9791,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m16-g2-h100,0.9821,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m16-g2-s50,0.9821,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m16-g2-s100,0.9880,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m32-g2-h50,1.9605,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m32-g2-h100,1.9634,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m32-g2-s50,1.9634,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,m32-g2-s100,1.9693,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,SGN,gp1t4-g1-h50,0.5190,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t4-g1-h100,0.5220,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t4-g1-s50,0.5220,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t4-g1-s100,0.5279,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t8-g1-h50,0.7369,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t8-g1-h100,0.7399,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t8-g1-s50,0.7399,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t8-g1-s100,0.7458,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t16-g1-h50,1.1956,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t16-g1-h100,1.1985,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t16-g1-s50,1.1985,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp1t16-g1-s100,1.2044,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,SGN,gp2t8-g1-h50,1.0403,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t8-g1-h100,1.0432,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t8-g1-s50,1.0432,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t8-g1-s100,1.0491,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t16-g1-h50,1.4761,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t16-g1-h100,1.4790,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t16-g1-s50,1.4790,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t16-g1-s100,1.4849,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t32-g1-h50,2.3941,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t32-g1-h100,2.3971,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t32-g1-s50,2.3971,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp2t32-g1-s100,2.4030,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,SGN,gp1v8-g1-h50,3.1517,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,SGN,gp1v8-g1-h100,3.1546,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,SGN,gp1v8-g1-s50,3.1546,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,SGN,gp1v8-g1-s100,3.1605,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,SGN,gp2v16-g1-h50,6.3063,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,SGN,gp2v16-g1-h100,6.3092,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,SGN,gp2v16-g1-s50,6.3092,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,SGN,gp2v16-g1-s100,6.3151,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,SGN,gp4v32-g1-h50,12.6155,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,4,32,,vm
+NCP,SGN,gp4v32-g1-h100,12.6185,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,4,32,,vm
+NCP,SGN,gp4v32-g1-s50,12.6185,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,4,32,,vm
+NCP,SGN,gp4v32-g1-s100,12.6244,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,4,32,,vm
+NCP,SGN,gp8v32-g1-h50,24.3535,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,8,32,,vm
+NCP,SGN,gp8v32-g1-h100,24.3564,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,8,32,,vm
+NCP,SGN,gp8v32-g1-s50,24.3564,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,8,32,,vm
+NCP,SGN,gp8v32-g1-s100,24.3623,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,8,32,,vm
+NCP,JPN,s2-g3,0.0920,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s2-g3a,0.0920,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s4-g3,0.1892,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s4-g3a,0.1892,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s8-g3,0.3828,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s8-g3a,0.3828,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s16-g3,0.7715,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s16-g3a,0.7715,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s32-g3,1.5490,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s32-g3a,1.5490,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s48-g3,2.3264,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s48-g3a,2.3264,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s64-g3,3.1038,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s64-g3a,3.1038,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c2-g3,0.0736,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c2-g3a,0.0736,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c4-g3,0.1531,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c4-g3a,0.1531,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c8-g3,0.3121,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c8-g3a,0.3121,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c16-g3,0.6302,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c16-g3a,0.6302,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c32-g3,1.2663,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c32-g3a,1.2663,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c48-g3,1.9023,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c48-g3a,1.9023,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c64-g3,2.5384,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c64-g3a,2.5384,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m2-g3,0.1185,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m2-g3a,0.1185,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m4-g3,0.2422,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m4-g3a,0.2422,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m8-g3,0.4903,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m8-g3a,0.4903,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m16-g3,0.9858,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m16-g3a,0.9858,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m32-g3,1.9774,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m32-g3a,1.9774,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m48-g3,2.9691,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m48-g3a,2.9691,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s2-g2-h50,0.0950,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s2-g2-h100,0.0979,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s2-g2-s50,0.0979,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s2-g2-s100,0.1038,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s4-g2-h50,0.1921,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s4-g2-h100,0.1951,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s4-g2-s50,0.1951,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s4-g2-s100,0.2010,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s8-g2-h50,0.3858,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s8-g2-h100,0.3887,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s8-g2-s50,0.3887,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s8-g2-s100,0.3946,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s16-g2-h50,0.7745,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s16-g2-h100,0.7774,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s16-g2-s50,0.7774,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s16-g2-s100,0.7833,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s32-g2-h50,1.5519,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s32-g2-h100,1.5549,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s32-g2-s50,1.5549,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,s32-g2-s100,1.5607,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c2-g2-h50,0.0766,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c2-g2-h100,0.0795,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c2-g2-s50,0.0795,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c2-g2-s100,0.0854,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c4-g2-h50,0.1561,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c4-g2-h100,0.1590,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c4-g2-s50,0.1590,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c4-g2-s100,0.1649,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c8-g2-h50,0.3151,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c8-g2-h100,0.3180,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c8-g2-s50,0.3180,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c8-g2-s100,0.3239,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c16-g2-h50,0.6331,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c16-g2-h100,0.6361,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c16-g2-s50,0.6361,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c16-g2-s100,0.6420,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c32-g2-h50,1.2692,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c32-g2-h100,1.2722,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c32-g2-s50,1.2722,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,c32-g2-s100,1.2780,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m2-g2-h50,0.1215,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m2-g2-h100,0.1244,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m2-g2-s50,0.1244,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m2-g2-s100,0.1303,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m4-g2-h50,0.2452,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m4-g2-h100,0.2481,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m4-g2-s50,0.2481,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m4-g2-s100,0.2540,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m8-g2-h50,0.4933,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m8-g2-h100,0.4962,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m8-g2-s50,0.4962,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m8-g2-s100,0.5021,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m16-g2-h50,0.9887,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m16-g2-h100,0.9917,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m16-g2-s50,0.9917,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m16-g2-s100,0.9976,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m32-g2-h50,1.9804,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m32-g2-h100,1.9833,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m32-g2-s50,1.9833,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,m32-g2-s100,1.9892,USD,-1,,,,,,,,,,default,default,,,,,,vm
+NCP,JPN,gp1t4-g1-h50,0.5293,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t4-g1-h100,0.5323,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t4-g1-s50,0.5323,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t4-g1-s100,0.5382,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t8-g1-h50,0.7163,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t8-g1-h100,0.7193,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t8-g1-s50,0.7193,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t8-g1-s100,0.7252,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t16-g1-h50,1.0903,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t16-g1-h100,1.0933,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t16-g1-s50,1.0933,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp1t16-g1-s100,1.0991,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,1,16,,vm
+NCP,JPN,gp2t8-g1-h50,1.0609,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t8-g1-h100,1.0638,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t8-g1-s50,1.0638,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t8-g1-s100,1.0697,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t16-g1-h50,1.4349,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t16-g1-h100,1.4378,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t16-g1-s50,1.4378,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t16-g1-s100,1.4437,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t32-g1-h50,2.1836,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t32-g1-h100,2.1865,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t32-g1-s50,2.1865,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp2t32-g1-s100,2.1924,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA T4,2,16,,vm
+NCP,JPN,gp1v8-g1-h50,3.1517,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,JPN,gp1v8-g1-h100,3.1546,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,JPN,gp1v8-g1-s50,3.1546,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,JPN,gp1v8-g1-s100,3.1605,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,1,32,,vm
+NCP,JPN,gp2v16-g1-h50,6.3063,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,JPN,gp2v16-g1-h100,6.3092,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,JPN,gp2v16-g1-s50,6.3092,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,JPN,gp2v16-g1-s100,6.3151,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,2,32,,vm
+NCP,JPN,gp8v32-g1-h50,24.3535,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,8,32,,vm
+NCP,JPN,gp8v32-g1-s50,24.3564,USD,-1,,,,,,,,,,default,default,gpu,NVIDIA TESLA V100,8,32,,vm
 NHN,all,t2.c1m1,24,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,all,u2.c1m1,13.4,KRW,-1,,,,,,,,,,default,20,,,,,,vm|k8s
+NHN,all,u2.c1m2,19.4,KRW,-1,,,,,,,,,,default,20,,,,,,vm|k8s
+NHN,all,u2.c2m2,23.9,KRW,-1,,,,,,,,,,default,50,,,,,,vm|k8s
+NHN,all,u2.c2m4,47.9,KRW,-1,,,,,,,,,,default,50,,,,,,vm|k8s
+NHN,all,u2.c4m4,95.8,KRW,-1,,,,,,,,,,default,100,,,,,,vm|k8s
 NHN,all,m2.c1m2,43,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,m2.c2m4,93,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,m2.c4m8,196,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
@@ -125,6 +429,7 @@ NHN,all,c2.c8m8,250,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,c2.c16m16,509,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,r2.c2m8,128,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,r2.c4m16,264,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,all,r2.c4m32,277.8,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,r2.c8m32,534,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,r2.c8m64,674,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,x1.c16m64,1029,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
@@ -133,14 +438,31 @@ NHN,all,x1.c32m128,2058,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,x1.c32m256,2775,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,x1.c64m256,4201,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 NHN,all,g2.v100.c8m90,4157,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm|k8s
-NHN,all,g2.v100.c16m180,7898,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,2,64,,vm|k8s
-NHN,all,g2.v100.c32m360,16630,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,4,128,,vm|k8s
-NHN,all,g2.v100.c64m720,33261,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,8,256,,vm|k8s
-NHN,all,g2.t4.c4m32,797,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,1,32,,vm|k8s
-NHN,all,g2.t4.c8m64,1639,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,2,64,,vm|k8s
-NHN,all,g2.t4.c16m128,3279,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,4,128,,vm|k8s
-NHN,all,g2.t4.c32m256,6582,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,8,256,,vm|k8s
-NHN,all,g4.c92m1800,47848,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,8,320,,vm|k8s
+NHN,all,g2.v100.c16m180,7898,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,2,32,,vm|k8s
+NHN,all,g2.v100.c32m360,16630,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,4,32,,vm|k8s
+NHN,all,g2.v100.c64m720,33261,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,8,32,,vm|k8s
+NHN,all,g2.t4.c4m32,797,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,1,16,,vm|k8s
+NHN,all,g2.t4.c8m64,1639,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,2,16,,vm|k8s
+NHN,all,g2.t4.c16m128,3279,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,4,16,,vm|k8s
+NHN,all,g2.t4.c32m256,6582,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,8,16,,vm|k8s
+NHN,all,g4.c92m1800,47848,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,8,40,,vm|k8s
+NHN,jp1,m2.c1m2,48.4,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,m2.c2m4,96.8,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,m2.c4m8,193.6,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,m2.c8m16,387.2,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,m2.c16m32,774.4,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,c2.c2m2,88,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,c2.c4m4,176,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,c2.c8m8,352,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,c2.c16m16,704,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,r2.c2m8,109.1,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,r2.c4m16,218.2,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,r2.c8m32,436.5,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,r2.c8m64,535,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,x1.c16m64,982.1,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,x1.c16m128,1203.8,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,x1.c32m128,1964.2,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
+NHN,jp1,x1.c32m256,2407.7,KRW,-1,,,,,,,,,,default,default,,,,,,vm|k8s
 kt,kr1,1x1.itl,31,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,1x2.itl,53,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,2x2.itl,64,KRW,-1,,,,,,,,,,default,default,,,,,,vm
@@ -151,6 +473,7 @@ kt,kr1,4x4.itl,129,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,4x8.itl,214,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,4x16.itl,274,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,4x32.itl,334,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x64.itl,394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,8x8.itl,259,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,8x16.itl,429,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,8x32.itl,549,KRW,-1,,,,,,,,,,default,default,,,,,,vm
@@ -161,6 +484,7 @@ kt,kr1,16x64.itl,1098,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,16x128.itl,1337,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,24x24.itl,779,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,24x48.itl,1288,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x64.itl,1408,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,24x96.itl,1647,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,24x192.itl,2006,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,32x32.itl,1039,KRW,-1,,,,,,,,,,default,default,,,,,,vm
@@ -170,5 +494,40 @@ kt,kr1,32x256.itl,2675,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,64x64.itl,2079,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,64x128.itl,3436,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,64x256.itl,4394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,1x1.amd,31,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,1x2.amd,53,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x2.amd,64,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x4.amd,107,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x8.amd,137,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x16.amd,167,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x4.amd,129,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x8.amd,214,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x16.amd,274,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x32.amd,334,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x64.amd,394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x8.amd,259,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x16.amd,429,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x32.amd,549,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x64.amd,668,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x16.amd,519,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x32.amd,859,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x64.amd,1098,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x128.amd,1337,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x24.amd,779,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x48.amd,1288,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x64.amd,1408,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x96.amd,1647,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x192.amd,2006,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x32.amd,1039,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x64.amd,1718,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x128.amd,2197,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x256.amd,2675,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x64.amd,2079,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x128.amd,3436,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x256.amd,4394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,128x128.amd,4158,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,128x256.amd,6872,KRW,-1,,,,,,,,,,default,default,,,,,,vm
 kt,kr1,8x64.itl.v100-1,4048,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
 kt,kr1,16x64.itl.v100-1,4477,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
+kt,kr1,16x90.itl.a100-1,6716,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,1,40,,vm
+kt,kr1,32x180.itl.a100-2,12090,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,2,40,,vm

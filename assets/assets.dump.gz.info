@@ -1,19 +1,19 @@
 CB-Tumblebug assets backup
-created: 2026-08-21 14:55:03 UTC
-summary: 89962 specs (94% priced), 203161 images across 10 CSPs
-size:    39M
+created: 2026-10-29 16:41:54 UTC
+summary: 98960 specs (94% priced), 234602 images across 10 CSPs
+size:    44M
 
 Asset Summary (by CSP)
 Provider      Images     Specs    (Priced)
 ----------  --------  --------  ----------
-alibaba          401      4999         92%
-aws           200523     21207         98%
-azure            850     46176         94%
-gcp              245     11946         91%
-ibm              761      2002         97%
-kt                31       220         14%
-ncp               67       393         45%
-nhn              127        71         92%
-openstack          7         6          0%
-tencent          149      2942        100%
-Totals: specs=89962 (94% priced), images=203161
+alibaba          432      8861         95%
+aws           231722     22001         98%
+azure            906     49954         92%
+gcp              273     12388         93%
+ibm              820      2003         99%
+kt                24       220         30%
+ncp               84       407         97%
+nhn               85        71        100%
+openstack          8         6          0%
+tencent          248      3049        100%
+Totals: specs=98960 (94% priced), images=234602

@@ -60,10 +60,12 @@ type GCPPriceCache struct {
 var (
 	// regionPattern matches "RegionDisplayName (region-code)" in the JSON data
 	regionPattern = regexp.MustCompile(`([A-Z][a-zA-Z,\s]+)\s*\(([a-z]+-[a-z]+-?\w*)\)`)
-	// machineNamePattern matches a machine type name in a <p> tag.
+	// machineNamePattern matches a machine type name in a <p> tag, including single-hyphen
+	// types (e2-micro, f1-micro, g1-small) and types followed by an <a> footnote link
+	// (e.g., n1-standard-96\u00a0<a href="...">Skylake Platform only</a>).
 	// Used as the first step to find machine entries; vCPU/Memory are searched
 	// separately within a limited forward window to prevent cross-machine spanning.
-	machineNamePattern = regexp.MustCompile(`<p>([a-z][a-z0-9]+-[a-z]+-[a-z0-9-]+)</p>`)
+	machineNamePattern = regexp.MustCompile(`<p>([a-z][a-z0-9]*-[a-z0-9-]+?)(?:</p>|[\s\x{00a0}]*<a\b)`)
 	// vcpuStdPattern matches standard vCPU: <p>32</p>
 	vcpuStdPattern = regexp.MustCompile(`<p>(\d+(?:\.\d+)?)</p>`)
 	// vcpuAccelPattern matches accelerator vCPU: <p>vCPUs: 32</p>
@@ -72,8 +74,8 @@ var (
 	memPattern = regexp.MustCompile(`<p>([0-9.,]+)\s*(?:GiB|GB)</p>`)
 	// memAccelPattern matches accelerator memory: <p>Memory: 128GiB</p>
 	memAccelPattern = regexp.MustCompile(`<p>Memory:\s*([0-9.,]+)\s*(?:GiB|GB)</p>`)
-	// pricePattern matches "$X.XXXXXX / 1 hour"
-	pricePattern = regexp.MustCompile(`\$([0-9.]+)\s*/\s*1\s*hour`)
+	// pricePattern matches "$X.XXXXXX / 1 hour" (tolerating occasional spaces before the decimal point)
+	pricePattern = regexp.MustCompile(`\$([0-9]+(?:\s*\.[0-9]+)?)\s*/\s*1\s*hour`)
 	// spanTagPattern matches opening <span ...> tags that some machine families
 	// (e.g., c4a-*-lssd, g2-standard-32) wrap around vCPU/Memory cell values.
 	// These must be stripped before regex matching to prevent match failures.
@@ -152,6 +154,10 @@ func FetchAllGCPPrices() (*GCPPriceCache, error) {
 		log.Warn().Msgf("GCP pricing: %d/%d pages had errors: %s",
 			len(fetchErrors), len(gcpPricingSubPages), strings.Join(fetchErrors, "; "))
 	}
+
+	cache.mu.Lock()
+	applyGCPPriceAliasesAndFallbacks(cache.data)
+	cache.mu.Unlock()
 
 	totalRegions := len(cache.data)
 	totalEntries := 0
@@ -282,17 +288,57 @@ func parsePricingPage(html string) (map[string]map[string]nodePriceEntry, error)
 			continue
 		}
 
-		// Convert section to string for regex processing
-		secStr, err := json.Marshal(sec)
-		if err != nil {
-			continue
+		if !parseSectionStructured(sec, results) {
+			// Fallback to legacy linear string scan if no structured table blocks matched
+			secStr, err := json.Marshal(sec)
+			if err != nil {
+				continue
+			}
+			decoded := decodeUnicodeEscapes(string(secStr))
+			parseSection(decoded, results)
 		}
-		decoded := decodeUnicodeEscapes(string(secStr))
-
-		parseSection(decoded, results)
 	}
 
 	return results, nil
+}
+
+// parseSectionStructured walks a type=117 section JSON tree to find regional pricing table
+// blocks of the form [headerRows, bodyRows, "RegionName (region-code)", ...] and parses
+// bodyRows directly for that region code. This avoids off-by-one region shifts caused by
+// the region label appearing after bodyRows in the serialized JSON array.
+func parseSectionStructured(node any, results map[string]map[string]nodePriceEntry) bool {
+	arr, ok := node.([]any)
+	if !ok {
+		return false
+	}
+
+	if len(arr) >= 3 {
+		_, ok0 := arr[0].([]any)
+		bodyRows, ok1 := arr[1].([]any)
+		regionLabel, ok2 := arr[2].(string)
+		if ok0 && ok1 && ok2 {
+			if m := regionPattern.FindStringSubmatch(regionLabel); m != nil {
+				name := strings.TrimSpace(m[1])
+				code := m[2]
+				if len(name) > 2 && !strings.HasPrefix(name, "Compute") && !strings.HasPrefix(name, "Resource") {
+					bodyBytes, err := json.Marshal(bodyRows)
+					if err == nil {
+						decoded := decodeUnicodeEscapes(string(bodyBytes))
+						parseSectionWithDefaultRegion(decoded, code, results)
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	matched := false
+	for _, child := range arr {
+		if parseSectionStructured(child, results) {
+			matched = true
+		}
+	}
+	return matched
 }
 
 // extractDataArray extracts and parses the JSON data array from the AF_initDataCallback block.
@@ -367,6 +413,13 @@ type token struct {
 // parseSection extracts region -> machine -> price mappings from a section string
 // and merges them into the results map.
 func parseSection(sectionStr string, results map[string]map[string]nodePriceEntry) {
+	parseSectionWithDefaultRegion(sectionStr, "", results)
+}
+
+// parseSectionWithDefaultRegion extracts machine -> price mappings from a serialized JSON
+// block using initialRegion as the starting region code (used when parsing a structured
+// table block whose region code is already known).
+func parseSectionWithDefaultRegion(sectionStr string, initialRegion string, results map[string]map[string]nodePriceEntry) {
 	// Strip <span> tags that some machine families (e.g., c4a-*-lssd) wrap around
 	// vCPU/Memory values: <p><span style="...">16</span></p> → <p>16</p>
 	sectionStr = spanTagPattern.ReplaceAllString(sectionStr, "")
@@ -374,13 +427,15 @@ func parseSection(sectionStr string, results map[string]map[string]nodePriceEntr
 
 	var tokens []token
 
-	// Find regions: "CityName (region-code)"
-	for _, m := range regionPattern.FindAllStringSubmatchIndex(sectionStr, -1) {
-		name := strings.TrimSpace(sectionStr[m[2]:m[3]])
-		code := sectionStr[m[4]:m[5]]
-		// Skip false positives (e.g., "Compute Flexible CUD..." starts with capital)
-		if len(name) > 2 && !strings.HasPrefix(name, "Compute") && !strings.HasPrefix(name, "Resource") {
-			tokens = append(tokens, token{pos: m[0], kind: "REGION", val: code})
+	if initialRegion == "" {
+		// Find regions: "CityName (region-code)"
+		for _, m := range regionPattern.FindAllStringSubmatchIndex(sectionStr, -1) {
+			name := strings.TrimSpace(sectionStr[m[2]:m[3]])
+			code := sectionStr[m[4]:m[5]]
+			// Skip false positives (e.g., "Compute Flexible CUD..." starts with capital)
+			if len(name) > 2 && !strings.HasPrefix(name, "Compute") && !strings.HasPrefix(name, "Resource") {
+				tokens = append(tokens, token{pos: m[0], kind: "REGION", val: code})
+			}
 		}
 	}
 
@@ -423,7 +478,7 @@ func parseSection(sectionStr string, results map[string]map[string]nodePriceEntr
 
 	// Find prices: $X.XXXXXX / 1 hour
 	for _, m := range pricePattern.FindAllStringSubmatchIndex(sectionStr, -1) {
-		price := sectionStr[m[2]:m[3]]
+		price := strings.ReplaceAll(sectionStr[m[2]:m[3]], " ", "")
 		tokens = append(tokens, token{pos: m[0], kind: "PRICE", val: price})
 	}
 
@@ -434,12 +489,7 @@ func parseSection(sectionStr string, results map[string]map[string]nodePriceEntr
 		return
 	}
 
-	// Process tokens linearly:
-	// Pattern: REGION ... [MACHINE PRICE PRICE PRICE PRICE PRICE]+ ... REGION ...
-	// The first set of machine rows appears after the initial region list
-	// (the last region in the initial list is the default region).
-	// After that, each region block has: REGION, then machine rows with prices.
-	var currentRegion string
+	currentRegion := initialRegion
 
 	i := 0
 	for i < len(tokens) {
@@ -457,7 +507,7 @@ func parseSection(sectionStr string, results map[string]map[string]nodePriceEntr
 			machineType, vcpu, mem := parts[0], parts[1], parts[2]
 
 			// Collect the first price (on-demand) from subsequent PRICE tokens.
-			// Each machine row is followed by 5 prices:
+			// Each machine row is followed by up to 5 prices:
 			// [Default, CUD-Flex-1yr, CUD-Flex-3yr, CUD-Res-1yr, CUD-Res-3yr]
 			// We only need the first one (on-demand Default).
 			j := i + 1
@@ -474,13 +524,13 @@ func parseSection(sectionStr string, results map[string]map[string]nodePriceEntr
 				j++
 			}
 
-			if priceFound {
+			if priceFound && !strings.HasSuffix(machineType, "-spot") {
 				if results[currentRegion] == nil {
 					results[currentRegion] = make(map[string]nodePriceEntry)
 				}
 				// Keep the highest price per region+machine. The section data contains
-				// multiple pricing tiers (on-demand, CUD-1yr, CUD-3yr) and CUD tables
-				// may appear before on-demand. The on-demand price is always the highest.
+				// multiple pricing tiers (on-demand, DWS, CUD-1yr, CUD-3yr) and DWS/CUD
+				// tables may appear before on-demand. The on-demand price is always the highest.
 				existing, exists := results[currentRegion][machineType]
 				if !exists || onDemandPrice > existing.OnDemand {
 					results[currentRegion][machineType] = nodePriceEntry{
@@ -494,6 +544,89 @@ func parseSection(sectionStr string, results map[string]map[string]nodePriceEntr
 			i = j
 		default:
 			i++
+		}
+	}
+}
+
+// applyGCPPriceAliasesAndFallbacks normalizes naming discrepancies between the GCP pricing
+// documentation and Compute Engine machineType API names, and propagates accelerator-optimized
+// (A2/A3/A4) prices from us-central1 as a fallback when Google's regional dropdown table omits them.
+func applyGCPPriceAliasesAndFallbacks(data map[string]map[string]nodePriceEntry) {
+	// 1. Per-region aliases and sub-shape derivations
+	for _, machines := range data {
+		// z3-highmem-* is listed as z3-highmem-*-standardlssd in the storage-optimized table;
+		// n1-megamem-96 and n1-ultramem-* were renamed to m1-* on the memory-optimized pricing page.
+		aliasPairs := [][2]string{
+			{"z3-highmem-88-standardlssd", "z3-highmem-88"},
+			{"z3-highmem-176-standardlssd", "z3-highmem-176"},
+			{"a3-ultragpu-8g", "a3-ultragpu-8g-nolssd"},
+			{"m1-megamem-96", "n1-megamem-96"},
+			{"m1-ultramem-40", "n1-ultramem-40"},
+			{"m1-ultramem-80", "n1-ultramem-80"},
+			{"m1-ultramem-160", "n1-ultramem-160"},
+		}
+		for _, pair := range aliasPairs {
+			src, dst := pair[0], pair[1]
+			if entry, ok := machines[src]; ok {
+				if _, exists := machines[dst]; !exists {
+					cloned := entry
+					cloned.MachineType = dst
+					machines[dst] = cloned
+				}
+			}
+		}
+
+		// Derive a3-highgpu-1g/2g/4g and a3-edgegpu-8g* from a3-highgpu-8g if present
+		if a3Base, ok := machines["a3-highgpu-8g"]; ok && a3Base.OnDemand > 0 {
+			a3Derived := []struct {
+				name      string
+				vcpu      string
+				mem       string
+				scale     float64
+			}{
+				{"a3-highgpu-1g", "26", "234 GiB", 0.125},
+				{"a3-highgpu-2g", "52", "468 GiB", 0.25},
+				{"a3-highgpu-4g", "104", "936 GiB", 0.5},
+				{"a3-edgegpu-8g", "208", "1872 GiB", 1.0},
+				{"a3-edgegpu-8g-nolssd", "208", "1872 GiB", 1.0},
+			}
+			for _, d := range a3Derived {
+				if _, exists := machines[d.name]; !exists {
+					machines[d.name] = nodePriceEntry{
+						MachineType: d.name,
+						VCPU:        d.vcpu,
+						MemoryGiB:   d.mem,
+						OnDemand:    a3Base.OnDemand * d.scale,
+					}
+				}
+			}
+		}
+	}
+
+	// 2. Propagate A2/A3/A4 accelerator entries from us-central1 to regions where the
+	// accelerator-optimized regional dropdown only lists G2/G4.
+	usCentral, ok := data["us-central1"]
+	if !ok {
+		return
+	}
+	var accelEntries []nodePriceEntry
+	for name, entry := range usCentral {
+		if strings.HasPrefix(name, "a2-") || strings.HasPrefix(name, "a3-") || strings.HasPrefix(name, "a4-") {
+			accelEntries = append(accelEntries, entry)
+		}
+	}
+	if len(accelEntries) == 0 {
+		return
+	}
+
+	for region, machines := range data {
+		if region == "us-central1" {
+			continue
+		}
+		for _, entry := range accelEntries {
+			if _, exists := machines[entry.MachineType]; !exists {
+				machines[entry.MachineType] = entry
+			}
 		}
 	}
 }

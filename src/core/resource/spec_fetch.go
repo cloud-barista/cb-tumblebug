@@ -134,7 +134,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 		specsInConnection, err = alibabaPricing.FetchAvailableSpecListByRegion(
 			directCtx,
 			connConfig.RegionDetail.RegionName,
-			connConfig.RegionZoneInfo.AssignedZone,
+			"",
 		)
 		if err != nil {
 			log.Error().Err(err).Msgf("Cannot fetch Alibaba available specs directly in %s", connConfigName)
@@ -309,15 +309,9 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 		return nil, err
 	}
 
-	// Initialize result object
-	result.TotalRegions = len(connConfigs.Connectionconfig)
-	result.FetchOption = *option
-	result.ResultInDetail = make([]ConnectionSpecResult, 0, len(connConfigs.Connectionconfig))
-
-	updateFetchSpecsProgress(nsId, result)
-
 	// Group connection configs by provider
 	providerConnMap := make(map[string][]model.ConnConfig)
+	totalTargetConns := 0
 	for _, connConfig := range connConfigs.Connectionconfig {
 		provider := connConfig.ProviderName
 
@@ -350,10 +344,19 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 		}
 
 		providerConnMap[provider] = append(providerConnMap[provider], connConfig)
+		totalTargetConns++
 	}
 
-	log.Info().Msgf("[%s] Grouped connections by provider: %d providers",
-		nsId, len(providerConnMap))
+	// Initialize result object with exact target connection count
+	lastFetchSpecsResult.Lock()
+	result.TotalRegions = totalTargetConns
+	result.FetchOption = *option
+	result.ResultInDetail = make([]ConnectionSpecResult, 0, totalTargetConns)
+	lastFetchSpecsResult.Result[nsId] = result
+	lastFetchSpecsResult.Unlock()
+
+	log.Info().Msgf("[%s] Grouped connections by provider: %d providers (%d connections)",
+		nsId, len(providerConnMap), totalTargetConns)
 
 	// Channel to collect results from all goroutines
 	resultChan := make(chan ConnectionSpecResult, len(connConfigs.Connectionconfig))
@@ -471,8 +474,9 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 		close(resultChan)
 	}()
 
-	// Collect results from all connections
+	// Collect results from all connections and update progress in real time
 	for connResult := range resultChan {
+		lastFetchSpecsResult.Lock()
 		result.ResultInDetail = append(result.ResultInDetail, connResult)
 
 		if connResult.Success {
@@ -481,13 +485,17 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 		} else {
 			result.FailedRegions++
 		}
+		result.ElapsedTime = time.Since(result.StartTime).Round(time.Second).String()
+		lastFetchSpecsResult.Unlock()
 	}
 
 	// Finalize result
 	endTime := time.Now()
+	lastFetchSpecsResult.Lock()
 	result.ElapsedTime = endTime.Sub(result.StartTime).String()
 	result.InProgress = false
-	updateFetchSpecsProgress(nsId, result)
+	lastFetchSpecsResult.Result[nsId] = result
+	lastFetchSpecsResult.Unlock()
 
 	// Log provider statistics
 	providerStats := make(map[string]struct {
@@ -551,22 +559,22 @@ func FetchSpecsForAllConnConfigsAsync(nsId string, option *model.SpecFetchOption
 	return nil
 }
 
-// GetFetchSpecsAsyncResult returns the result of the most recent fetch specs operation
+// GetFetchSpecsAsyncResult returns a snapshot of the most recent fetch specs operation
 func GetFetchSpecsAsyncResult(nsId string) (*FetchSpecsAsyncResult, error) {
 	lastFetchSpecsResult.RLock()
 	defer lastFetchSpecsResult.RUnlock()
 
 	result, exists := lastFetchSpecsResult.Result[nsId]
-	if !exists {
+	if !exists || result == nil {
 		return nil, fmt.Errorf("no fetch specs result found for namespace %s", nsId)
 	}
 
-	// Update elapsed time if still in progress
-	if result.InProgress {
-		result.ElapsedTime = time.Since(result.StartTime).String()
+	snapshot := *result
+	if snapshot.InProgress {
+		snapshot.ElapsedTime = time.Since(snapshot.StartTime).Round(time.Second).String()
 	}
 
-	return result, nil
+	return &snapshot, nil
 }
 
 // FetchSpecsForAllConnConfigs synchronously fetches specs for all connection configs in the namespace
@@ -738,7 +746,18 @@ func UpdateSpecsFromAsset(nsId string) error {
 	}
 	log.Info().Msgf("Loaded %d existing specs into memory in %v", len(existingSpecsMap), time.Since(startTime))
 
-	var specList []model.SpecInfo
+	modifiedIds := make(map[string]bool)
+	enrichedCount := 0
+	for id, spec := range existingSpecsMap {
+		if enrichSpecAcceleratorInfo(&spec) {
+			existingSpecsMap[id] = spec
+			modifiedIds[id] = true
+			enrichedCount++
+		}
+	}
+	if enrichedCount > 0 {
+		log.Info().Msgf("Auto-enriched GPU accelerator info for %d existing specs in namespace %s", enrichedCount, nsId)
+	}
 
 	// Process each row (skip header)
 	for _, row := range rows[1:] {
@@ -858,7 +877,8 @@ func UpdateSpecsFromAsset(nsId string) error {
 			// Existing spec found - merge with CSV data
 			// log.Debug().Msgf("Found existing spec: %s, merging with CSV data", specInfo.Id)
 			mergedSpec := mergeSpecWithCSVData(existingSpec, specInfo)
-			specList = append(specList, mergedSpec)
+			existingSpecsMap[specInfo.Id] = mergedSpec
+			modifiedIds[specInfo.Id] = true
 		} else {
 			// Spec not found in DB - try LookupSpec from CSP
 			log.Debug().Msgf("Spec %s not found in DB, recommended to remove from assets", specInfo.Id)
@@ -866,7 +886,15 @@ func UpdateSpecsFromAsset(nsId string) error {
 		// clear memory for specInfo
 		specInfo = model.SpecInfo{}
 	}
+
+	specList := make([]model.SpecInfo, 0, len(modifiedIds))
+	for id := range modifiedIds {
+		if spec, exists := existingSpecsMap[id]; exists {
+			specList = append(specList, spec)
+		}
+	}
 	existingSpecsMap = nil
+	modifiedIds = nil
 	runtime.GC()
 
 	// Update database with bulk operation
@@ -876,7 +904,7 @@ func UpdateSpecsFromAsset(nsId string) error {
 			log.Error().Err(err).Msg("RegisterSpecWithInfoInBulk failed")
 			return err
 		}
-		log.Info().Msgf("Updated %d specs from asset file", len(specList))
+		log.Info().Msgf("Updated %d specs from asset file and GPU auto-enrichment", len(specList))
 	} else {
 		log.Warn().Msg("No specs were processed from the asset file")
 	}
@@ -910,9 +938,8 @@ func loadAllSpecsIntoMemory(nsId string) (map[string]model.SpecInfo, error) {
 func mergeSpecWithCSVData(existingSpec model.SpecInfo, csvSpec model.SpecInfo) model.SpecInfo {
 	mergedSpec := existingSpec
 
-	// Merge cost information (existingSpec priority)
-	// If existingSpec.CostPerHour is -1 or 0, use CSV value
-	if existingSpec.CostPerHour <= 0 {
+	// Merge cost information (CSV data has priority for valid positive values)
+	if csvSpec.CostPerHour > 0 {
 		mergedSpec.CostPerHour = csvSpec.CostPerHour
 	}
 
@@ -956,14 +983,17 @@ func mergeSpecWithCSVData(existingSpec model.SpecInfo, csvSpec model.SpecInfo) m
 		mergedSpec.RootDiskSize = csvSpec.RootDiskSize
 	}
 
-	// Merge accelerator specifications (existingSpec priority)
-	if existingSpec.AcceleratorModel == "" {
+	// Merge accelerator specifications (replace empty or placeholder "NA" values)
+	if csvSpec.AcceleratorType != "" && existingSpec.AcceleratorType == "" {
+		mergedSpec.AcceleratorType = csvSpec.AcceleratorType
+	}
+	if csvSpec.AcceleratorModel != "" && isPlaceholderAcceleratorModel(existingSpec.AcceleratorModel) {
 		mergedSpec.AcceleratorModel = csvSpec.AcceleratorModel
 	}
-	if existingSpec.AcceleratorCount <= 0 {
+	if existingSpec.AcceleratorCount <= 0 && csvSpec.AcceleratorCount > 0 {
 		mergedSpec.AcceleratorCount = csvSpec.AcceleratorCount
 	}
-	if existingSpec.AcceleratorMemoryGB <= 0 {
+	if csvSpec.AcceleratorMemoryGB > 0 {
 		mergedSpec.AcceleratorMemoryGB = csvSpec.AcceleratorMemoryGB
 	}
 

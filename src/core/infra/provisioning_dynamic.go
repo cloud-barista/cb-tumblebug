@@ -72,7 +72,9 @@ func CheckInfraDynamicReq(ctx context.Context, req *model.InfraConnectionConfigC
 		}
 
 		nodeReqInfo.Spec = specInfo
-		availableImageList, err := resource.GetImagesByRegion(model.SystemCommonNs, specInfo.ProviderName, specInfo.RegionName)
+		availableImageList, _, err := resource.SearchImage(model.SystemCommonNs, model.SearchImageRequest{
+			MatchedSpecId: k,
+		}, false)
 		if err != nil {
 			errMessage += "//Failed to search images for Spec (" + k + ")"
 		}
@@ -705,9 +707,13 @@ func checkCommonResAvailableForNodeGroupDynamicReq(ctx context.Context, req *mod
 		// Use the provider-agnostic availability checker; fall back to
 		// CB-Spider LookupSpec when no checker is registered for the provider.
 		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
-			Provider:     csp.ResolveCloudPlatform(specInfo.ProviderName),
-			Region:       specInfo.RegionName,
-			InstanceType: specInfo.CspSpecName,
+			Provider:         csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:           specInfo.RegionName,
+			InstanceType:     specInfo.CspSpecName,
+			AcceleratorModel: specInfo.AcceleratorModel,
+			AcceleratorCount: int(specInfo.AcceleratorCount),
+			VCPU:             int(specInfo.VCPU),
+			MemoryGiB:        specInfo.MemoryGiB,
 		})
 		if availability.Source == "none" {
 			_, specCheckErr = resource.LookupSpec(resolvedConnectionName, specInfo.CspSpecName)
@@ -859,6 +865,8 @@ func specAvailableZonesOrdered(ctx context.Context, specInfo model.SpecInfo) []s
 		InstanceType:     specInfo.CspSpecName,
 		AcceleratorModel: specInfo.AcceleratorModel,
 		AcceleratorCount: int(specInfo.AcceleratorCount),
+		VCPU:             int(specInfo.VCPU),
+		MemoryGiB:        specInfo.MemoryGiB,
 	})
 	if avail.Source == "none" || len(avail.Zones) == 0 {
 		return nil
@@ -891,6 +899,8 @@ func ensureSpecAvailableSubnets(ctx context.Context, nsId, vNetId string, specIn
 		InstanceType:     specInfo.CspSpecName,
 		AcceleratorModel: specInfo.AcceleratorModel,
 		AcceleratorCount: int(specInfo.AcceleratorCount),
+		VCPU:             int(specInfo.VCPU),
+		MemoryGiB:        specInfo.MemoryGiB,
 	})
 	if avail.Source == "none" || len(avail.Zones) == 0 {
 		return nil // no per-zone data; best-effort, nothing to ensure

@@ -138,7 +138,10 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		}
 	}
 
-	if !result.Available {
+	if result.Available {
+		result.Status = model.AvailabilityAvailable
+	} else {
+		result.Status = model.AvailabilitySoldOut
 		// Render disk hint as "any" when no specific category was requested,
 		// so the user-facing message doesn't show an empty quoted string.
 		diskHint := strings.TrimSpace(q.SystemDiskCategory)

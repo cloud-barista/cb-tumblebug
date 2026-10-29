@@ -26,7 +26,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/singleflight"
 )
 
 // azureCreds holds Azure service principal credentials fetched from OpenBao.
@@ -39,20 +41,25 @@ type azureCreds struct {
 
 // SpecCheckResult holds the detailed result of an Azure spec availability check.
 type SpecCheckResult struct {
-	Available    bool   // true if the spec can be provisioned
-	Reason       string // human-readable reason when not available
-	VCPUs        int32  // vCPU count required by this spec
-	QuotaFamily  string // vCPU family name (e.g., "standardDSv3Family")
-	QuotaCurrent int64  // current vCPU usage in this family
-	QuotaLimit   int64  // vCPU limit for this family
+	Available    bool                     // true if the spec can be provisioned
+	Status       model.AvailabilityStatus // standardized status: Available, QuotaExceeded, SoldOut, Unsupported
+	Reason       string                   // human-readable reason when not available
+	VCPUs        int32                    // vCPU count required by this spec
+	QuotaFamily  string                   // vCPU family name (e.g., "standardDSv3Family")
+	QuotaCurrent int64                    // current vCPU usage in this family
+	QuotaLimit   int64                    // vCPU limit for this family
+	Zones        []model.ZoneAvailability // per-zone availability when Azure reports LocationInfo.Zones
 }
 
 // skuDetail stores parsed SKU information.
 type skuDetail struct {
-	family     string
-	vcpus      int32
-	restricted bool
-	reasonCode string // "NotAvailableForSubscription", "QuotaId"
+	family          string
+	vcpus           int32
+	restricted      bool
+	reasonCode      string          // "NotAvailableForSubscription", "QuotaId"
+	zones           []string        // zones offered in this location (e.g. ["1", "2", "3"])
+	restrictedZones map[string]bool // zones restricted in this location
+	zoneReasonCode  string
 }
 
 type specCacheEntry struct {
@@ -71,11 +78,14 @@ type quotaCacheEntry struct {
 }
 
 var (
-	specCache    = make(map[string]*specCacheEntry)
-	specCacheMu  sync.RWMutex
-	quotaCache   = make(map[string]*quotaCacheEntry)
-	quotaCacheMu sync.RWMutex
-	cacheTTL     = 10 * time.Minute
+	specCache       = make(map[string]*specCacheEntry)
+	specCacheMu     sync.RWMutex
+	quotaCache      = make(map[string]*quotaCacheEntry)
+	quotaCacheMu    sync.RWMutex
+	specFetchGroup  singleflight.Group
+	quotaFetchGroup singleflight.Group
+	specCacheTTL    = 30 * time.Minute
+	quotaCacheTTL   = 2 * time.Minute
 )
 
 func init() {
@@ -86,14 +96,14 @@ func init() {
 			now := time.Now()
 			specCacheMu.Lock()
 			for k, e := range specCache {
-				if now.Sub(e.fetchedAt) > cacheTTL {
+				if now.Sub(e.fetchedAt) > specCacheTTL {
 					delete(specCache, k)
 				}
 			}
 			specCacheMu.Unlock()
 			quotaCacheMu.Lock()
 			for k, e := range quotaCache {
-				if now.Sub(e.fetchedAt) > cacheTTL {
+				if now.Sub(e.fetchedAt) > quotaCacheTTL {
 					delete(quotaCache, k)
 				}
 			}
@@ -104,7 +114,8 @@ func init() {
 
 // CheckSpecAvailability checks whether a given Azure VM spec is available
 // in the specified region by checking both SKU restrictions (including
-// opt-in / subscription-level) and vCPU quota.
+// opt-in / subscription-level and per-zone restrictions) and vCPU quota
+// (both VM family quota and total regional vCPU quota).
 func CheckSpecAvailability(ctx context.Context, region, nodeSize string) (*SpecCheckResult, error) {
 	creds, err := getCreds(ctx)
 	if err != nil {
@@ -128,47 +139,105 @@ func CheckSpecAvailability(ctx context.Context, region, nodeSize string) (*SpecC
 	if sku == nil {
 		return &SpecCheckResult{
 			Available: false,
+			Status:    model.AvailabilityUnsupported,
 			Reason:    fmt.Sprintf("VM size '%s' does not exist in region '%s'", nodeSize, region),
 		}, nil
 	}
 
-	if sku.restricted {
+	var zones []model.ZoneAvailability
+	availZoneCount := 0
+	for _, z := range sku.zones {
+		isRestricted := sku.restricted || sku.restrictedZones[z]
+		za := model.ZoneAvailability{
+			ZoneId:    z,
+			Available: !isRestricted,
+		}
+		if isRestricted {
+			za.Status = "Restricted"
+			rc := sku.zoneReasonCode
+			if rc == "" {
+				rc = sku.reasonCode
+			}
+			if rc != "" {
+				za.Reason = fmt.Sprintf("zone %s restricted (%s)", z, rc)
+			} else {
+				za.Reason = fmt.Sprintf("zone %s restricted", z)
+			}
+		} else {
+			za.Status = "Available"
+			availZoneCount++
+		}
+		zones = append(zones, za)
+	}
+
+	allZonesRestricted := len(sku.zones) > 0 && availZoneCount == 0
+	if sku.restricted || allZonesRestricted {
+		reasonCode := sku.reasonCode
+		if reasonCode == "" {
+			reasonCode = sku.zoneReasonCode
+		}
 		reason := fmt.Sprintf("VM size '%s' is restricted in region '%s'", nodeSize, region)
-		switch sku.reasonCode {
+		status := model.AvailabilitySoldOut
+		switch reasonCode {
 		case "NotAvailableForSubscription":
-			reason = fmt.Sprintf("VM size '%s' requires opt-in for your subscription in region '%s' (request via Azure Portal > Subscription > Usage + quotas)", nodeSize, region)
+			reason = fmt.Sprintf("VM size '%s' requires opt-in or capacity unlock for your subscription in region '%s' (request via Azure Portal > Subscription > Usage + quotas)", nodeSize, region)
+			status = model.AvailabilityQuotaExceeded
 		case "QuotaId":
 			reason = fmt.Sprintf("VM size '%s' is restricted by quota policy in region '%s'", nodeSize, region)
+			status = model.AvailabilityQuotaExceeded
 		}
 		return &SpecCheckResult{
 			Available:   false,
+			Status:      status,
 			Reason:      reason,
 			VCPUs:       sku.vcpus,
 			QuotaFamily: sku.family,
+			Zones:       zones,
 		}, nil
 	}
 
 	result := &SpecCheckResult{
 		Available:   true,
+		Status:      model.AvailabilityAvailable,
 		VCPUs:       sku.vcpus,
 		QuotaFamily: sku.family,
+		Zones:       zones,
 	}
 
-	// Step 2: vCPU quota check
-	if sku.family != "" && sku.vcpus > 0 {
-		quota, qErr := getQuotaUsage(ctx, creds, credential, cacheKey, region, sku.family)
-		if qErr != nil {
-			log.Warn().Err(qErr).Str("region", region).Msg("[AzureSpec] Failed to check vCPU quota, skipping quota validation")
-		} else if quota != nil {
-			result.QuotaCurrent = quota.currentValue
-			result.QuotaLimit = quota.limit
-			remaining := quota.limit - quota.currentValue
-			if int64(sku.vcpus) > remaining {
-				result.Available = false
-				result.Reason = fmt.Sprintf(
-					"Insufficient vCPU quota for '%s' in region '%s': need %d vCPUs but only %d remaining (used %d / limit %d, family: %s). Request increase via Azure Portal > Subscription > Usage + quotas",
-					nodeSize, region, sku.vcpus, remaining, quota.currentValue, quota.limit, sku.family,
-				)
+	// Step 2: vCPU quota check (both per-family and total regional "cores")
+	if sku.vcpus > 0 {
+		if sku.family != "" {
+			quota, qErr := getQuotaUsage(ctx, creds, credential, cacheKey, region, sku.family)
+			if qErr != nil {
+				log.Warn().Err(qErr).Str("region", region).Msg("[AzureSpec] Failed to check vCPU quota, skipping quota validation")
+			} else if quota != nil {
+				result.QuotaCurrent = quota.currentValue
+				result.QuotaLimit = quota.limit
+				remaining := quota.limit - quota.currentValue
+				if int64(sku.vcpus) > remaining {
+					result.Available = false
+					result.Status = model.AvailabilityQuotaExceeded
+					result.Reason = fmt.Sprintf(
+						"Insufficient vCPU quota for '%s' in region '%s': need %d vCPUs but only %d remaining (used %d / limit %d, family: %s). Request increase via Azure Portal > Subscription > Usage + quotas",
+						nodeSize, region, sku.vcpus, remaining, quota.currentValue, quota.limit, sku.family,
+					)
+				}
+			}
+		}
+		if result.Available {
+			totalCoresQuota, tErr := getQuotaUsage(ctx, creds, credential, cacheKey, region, "cores")
+			if tErr == nil && totalCoresQuota != nil {
+				remainingCores := totalCoresQuota.limit - totalCoresQuota.currentValue
+				if int64(sku.vcpus) > remainingCores {
+					result.Available = false
+					result.Status = model.AvailabilityQuotaExceeded
+					result.QuotaCurrent = totalCoresQuota.currentValue
+					result.QuotaLimit = totalCoresQuota.limit
+					result.Reason = fmt.Sprintf(
+						"Insufficient total regional vCPU quota for '%s' in region '%s': need %d vCPUs but only %d remaining (used %d / limit %d, total regional cores). Request increase via Azure Portal > Subscription > Usage + quotas",
+						nodeSize, region, sku.vcpus, remainingCores, totalCoresQuota.currentValue, totalCoresQuota.limit,
+					)
+				}
 			}
 		}
 	}
@@ -177,9 +246,11 @@ func CheckSpecAvailability(ctx context.Context, region, nodeSize string) (*SpecC
 		Str("region", region).
 		Str("nodeSize", nodeSize).
 		Bool("available", result.Available).
+		Str("status", string(result.Status)).
 		Str("reason", result.Reason).
 		Int32("vcpus", result.VCPUs).
 		Str("family", result.QuotaFamily).
+		Int("zones", len(result.Zones)).
 		Msg("[AzureSpec] Spec check completed")
 
 	return result, nil
@@ -191,21 +262,34 @@ func getSKUDetail(ctx context.Context, creds *azureCreds, cred *azidentity.Clien
 	entry, ok := specCache[cacheKey]
 	specCacheMu.RUnlock()
 
-	if ok && time.Since(entry.fetchedAt) < cacheTTL {
+	if ok && time.Since(entry.fetchedAt) < specCacheTTL {
 		log.Debug().Str("region", region).Msg("[AzureSpec] SKU cache hit")
 		return entry.skus[nodeSizeLower], nil
 	}
 
-	log.Debug().Str("region", region).Msg("[AzureSpec] Fetching resource SKUs from Azure")
-	skus, err := fetchNodeSKUs(ctx, creds, cred, region)
+	v, err, _ := specFetchGroup.Do(cacheKey, func() (any, error) {
+		specCacheMu.RLock()
+		entry, ok := specCache[cacheKey]
+		specCacheMu.RUnlock()
+		if ok && time.Since(entry.fetchedAt) < specCacheTTL {
+			return entry.skus, nil
+		}
+
+		log.Debug().Str("region", region).Msg("[AzureSpec] Fetching resource SKUs from Azure")
+		skus, err := fetchNodeSKUs(ctx, creds, cred, region)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch Azure SKUs for region %s: %w", region, err)
+		}
+
+		specCacheMu.Lock()
+		specCache[cacheKey] = &specCacheEntry{skus: skus, fetchedAt: time.Now()}
+		specCacheMu.Unlock()
+		return skus, nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch Azure SKUs for region %s: %w", region, err)
+		return nil, err
 	}
-
-	specCacheMu.Lock()
-	specCache[cacheKey] = &specCacheEntry{skus: skus, fetchedAt: time.Now()}
-	specCacheMu.Unlock()
-
+	skus := v.(map[string]*skuDetail)
 	return skus[nodeSizeLower], nil
 }
 
@@ -217,21 +301,34 @@ func getQuotaUsage(ctx context.Context, creds *azureCreds, cred *azidentity.Clie
 	entry, ok := quotaCache[cacheKey]
 	quotaCacheMu.RUnlock()
 
-	if ok && time.Since(entry.fetchedAt) < cacheTTL {
+	if ok && time.Since(entry.fetchedAt) < quotaCacheTTL {
 		log.Debug().Str("region", region).Msg("[AzureSpec] Quota cache hit")
 		return entry.usages[familyLower], nil
 	}
 
-	log.Debug().Str("region", region).Msg("[AzureSpec] Fetching vCPU quotas from Azure")
-	usages, err := fetchQuotas(ctx, creds, cred, region)
+	v, err, _ := quotaFetchGroup.Do(cacheKey, func() (any, error) {
+		quotaCacheMu.RLock()
+		entry, ok := quotaCache[cacheKey]
+		quotaCacheMu.RUnlock()
+		if ok && time.Since(entry.fetchedAt) < quotaCacheTTL {
+			return entry.usages, nil
+		}
+
+		log.Debug().Str("region", region).Msg("[AzureSpec] Fetching vCPU quotas from Azure")
+		usages, err := fetchQuotas(ctx, creds, cred, region)
+		if err != nil {
+			return nil, err
+		}
+
+		quotaCacheMu.Lock()
+		quotaCache[cacheKey] = &quotaCacheEntry{usages: usages, fetchedAt: time.Now()}
+		quotaCacheMu.Unlock()
+		return usages, nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	quotaCacheMu.Lock()
-	quotaCache[cacheKey] = &quotaCacheEntry{usages: usages, fetchedAt: time.Now()}
-	quotaCacheMu.Unlock()
-
+	usages := v.(map[string]*quotaUsage)
 	return usages[familyLower], nil
 }
 
@@ -274,7 +371,19 @@ func fetchNodeSKUs(ctx context.Context, creds *azureCreds, cred *azidentity.Clie
 				}
 			}
 
-			// Check restrictions (Location type with reason code)
+			// Extract offered zones from LocationInfo
+			for _, li := range sku.LocationInfo {
+				if li == nil || li.Location == nil || !strings.EqualFold(*li.Location, region) {
+					continue
+				}
+				for _, z := range li.Zones {
+					if z != nil && *z != "" {
+						d.zones = append(d.zones, *z)
+					}
+				}
+			}
+
+			// Check restrictions (Location and Zone types with reason code)
 			for _, r := range sku.Restrictions {
 				if r.Type == nil {
 					continue
@@ -289,9 +398,27 @@ func fetchNodeSKUs(ctx context.Context, creds *azureCreds, cred *azidentity.Clie
 							break
 						}
 					}
-				}
-				if d.restricted {
-					break
+				} else if *r.Type == armcompute.ResourceSKURestrictionsTypeZone && r.RestrictionInfo != nil {
+					matchesLoc := len(r.RestrictionInfo.Locations) == 0
+					for _, loc := range r.RestrictionInfo.Locations {
+						if loc != nil && strings.EqualFold(*loc, region) {
+							matchesLoc = true
+							break
+						}
+					}
+					if matchesLoc {
+						if d.restrictedZones == nil {
+							d.restrictedZones = make(map[string]bool)
+						}
+						for _, z := range r.RestrictionInfo.Zones {
+							if z != nil && *z != "" {
+								d.restrictedZones[*z] = true
+							}
+						}
+						if r.ReasonCode != nil && d.zoneReasonCode == "" {
+							d.zoneReasonCode = string(*r.ReasonCode)
+						}
+					}
 				}
 			}
 

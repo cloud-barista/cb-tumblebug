@@ -42,6 +42,25 @@ func NormalizeDiskTypeForQuery(rootDiskType string) string {
 	return strings.TrimSpace(rootDiskType)
 }
 
+// AvailabilityStatus represents the concise, standardized runtime availability state
+// of a VM spec in a given region/credential context.
+// Designed as single-token PascalCase values for clean UI (e.g., cb-mapui) classification.
+type AvailabilityStatus string
+
+const (
+	// AvailabilityAvailable means the spec has passed pre-flight capacity/quota checks.
+	AvailabilityAvailable AvailabilityStatus = "Available"
+	// AvailabilitySoldOut means the spec is temporarily out of stock in the region/zone.
+	AvailabilitySoldOut AvailabilityStatus = "SoldOut"
+	// AvailabilityQuotaExceeded means the credential holder's account quota is insufficient
+	// or the subscription requires opt-in/quota increase for this spec family.
+	AvailabilityQuotaExceeded AvailabilityStatus = "QuotaExceeded"
+	// AvailabilityUnsupported means the spec is not offered in the target region/zone.
+	AvailabilityUnsupported AvailabilityStatus = "Unsupported"
+	// AvailabilityUnverified means real-time availability was not checked or no checker exists for the CSP.
+	AvailabilityUnverified AvailabilityStatus = "Unverified"
+)
+
 // AvailabilityQuery is the provider-agnostic input for a pre-flight
 // availability check against a CSP. Implementations of the underlying
 // checker may use a subset of these fields depending on what their CSP
@@ -59,6 +78,12 @@ type AvailabilityQuery struct {
 	AcceleratorModel string
 	// AcceleratorCount is the number of GPU accelerators per instance.
 	AcceleratorCount int
+	// VCPU is the number of vCPUs required by the instance spec (optional, used by quota checkers).
+	VCPU int
+	// MemoryGiB is the memory in GiB required by the instance spec (optional, used by quota checkers).
+	MemoryGiB float32
+	// ForceRefresh bypasses any cached entry and queries the CSP directly.
+	ForceRefresh bool
 }
 
 // ZoneAvailability describes per-zone availability for the queried
@@ -80,9 +105,12 @@ type AvailabilityResult struct {
 	Region       string             `json:"region"`
 	InstanceType string             `json:"instanceType"`
 	Available    bool               `json:"available"`
+	Status       AvailabilityStatus `json:"status,omitempty"`       // standardized status: Available, SoldOut, QuotaExceeded, Unsupported, Unverified
 	Zones        []ZoneAvailability `json:"zones,omitempty"`
-	Reason       string             `json:"reason,omitempty"` // explanation when Available is false (or when no checker)
-	Source       string             `json:"source,omitempty"` // checker identifier for tracing (e.g., "alibaba:DescribeAvailableResource")
-	Cached       bool               `json:"cached,omitempty"` // true if served from cache
-	QueriedAt    time.Time          `json:"queriedAt"`        // time of original (uncached) query
+	Reason       string             `json:"reason,omitempty"`       // explanation when Available is false (or when no checker)
+	Source       string             `json:"source,omitempty"`       // checker identifier for tracing (e.g., "alibaba:DescribeAvailableResource")
+	Cached       bool               `json:"cached,omitempty"`       // true if served from cache
+	QueriedAt    time.Time          `json:"queriedAt"`              // time of original (uncached) query
+	RefreshAfter *time.Time         `json:"refreshAfter,omitempty"` // when the cached status will expire and be re-evaluated
+	TTLSeconds   int                `json:"ttlSeconds,omitempty"`   // cache TTL in seconds applied to this result
 }

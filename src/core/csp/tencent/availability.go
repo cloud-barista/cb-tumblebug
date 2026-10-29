@@ -37,12 +37,14 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	cspconst "github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/singleflight"
 
 	tcerrors "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -58,9 +60,77 @@ type availabilityChecker struct{}
 
 func (c *availabilityChecker) Provider() string { return cspconst.Tencent }
 
+type tencentQuotaEntry struct {
+	postPaidRemainingByZone map[string]uint64
+	postPaidLimitByZone     map[string]uint64
+	fetchedAt               time.Time
+}
+
+var (
+	tencentQuotaCache   = make(map[string]*tencentQuotaEntry)
+	tencentQuotaCacheMu sync.RWMutex
+	tencentQuotaSF      singleflight.Group
+	tencentQuotaTTL     = 2 * time.Minute
+)
+
+func getTencentPostPaidQuotas(ctx context.Context, client *cvm.Client, secretID, region string) (*tencentQuotaEntry, error) {
+	cacheKey := csp.CredKey(secretID) + "+" + region
+	tencentQuotaCacheMu.RLock()
+	entry, ok := tencentQuotaCache[cacheKey]
+	tencentQuotaCacheMu.RUnlock()
+	if ok && time.Since(entry.fetchedAt) < tencentQuotaTTL {
+		return entry, nil
+	}
+
+	v, err, _ := tencentQuotaSF.Do(cacheKey, func() (any, error) {
+		tencentQuotaCacheMu.RLock()
+		entry, ok := tencentQuotaCache[cacheKey]
+		tencentQuotaCacheMu.RUnlock()
+		if ok && time.Since(entry.fetchedAt) < tencentQuotaTTL {
+			return entry, nil
+		}
+
+		qReq := cvm.NewDescribeAccountQuotaRequest()
+		qResp, err := client.DescribeAccountQuotaWithContext(ctx, qReq)
+		if err != nil {
+			return nil, err
+		}
+		rem := make(map[string]uint64)
+		lim := make(map[string]uint64)
+		if qResp != nil && qResp.Response != nil && qResp.Response.AccountQuotaOverview != nil && qResp.Response.AccountQuotaOverview.AccountQuota != nil {
+			for _, pq := range qResp.Response.AccountQuotaOverview.AccountQuota.PostPaidQuotaSet {
+				if pq == nil || pq.Zone == nil {
+					continue
+				}
+				z := *pq.Zone
+				if pq.RemainingQuota != nil {
+					rem[z] = *pq.RemainingQuota
+				}
+				if pq.TotalQuota != nil {
+					lim[z] = *pq.TotalQuota
+				}
+			}
+		}
+		e := &tencentQuotaEntry{
+			postPaidRemainingByZone: rem,
+			postPaidLimitByZone:     lim,
+			fetchedAt:               time.Now(),
+		}
+		tencentQuotaCacheMu.Lock()
+		tencentQuotaCache[cacheKey] = e
+		tencentQuotaCacheMu.Unlock()
+		return e, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return v.(*tencentQuotaEntry), nil
+}
+
 // CheckInstance queries Tencent CVM DescribeZoneInstanceConfigInfos for the
 // given (region, instance type, optional zone) and returns per-zone
-// availability based on the Status field ("SELL" / "SOLD_OUT").
+// availability based on the Status field ("SELL" / "SOLD_OUT") and
+// DescribeAccountQuota (PostPaidQuotaSet).
 func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.AvailabilityQuery) (model.AvailabilityResult, error) {
 	region := strings.TrimSpace(q.Region)
 	instanceType := strings.TrimSpace(q.InstanceType)
@@ -100,8 +170,6 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 	resp, err := client.DescribeZoneInstanceConfigInfosWithContext(ctx, req)
 	elapsed := time.Since(start)
 	if err != nil {
-		// Surface known SDK errors with their code so callers can see them
-		// in the dispatcher's "treated as available" warn log.
 		if sdkErr, ok := err.(*tcerrors.TencentCloudSDKError); ok {
 			return model.AvailabilityResult{}, fmt.Errorf("DescribeZoneInstanceConfigInfos(region=%s, instanceType=%s) failed after %s: code=%s, message=%s",
 				region, instanceType, elapsed, sdkErr.Code, sdkErr.Message)
@@ -118,51 +186,79 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		QueriedAt:    time.Now(),
 	}
 
-	// One quota item per (zone, instance type, charge type, ...). Multiple
-	// items can therefore reference the same zone (e.g., POSTPAID_BY_HOUR
-	// vs SPOTPAID); merge them so the zone is "Available" if at least one
-	// charge type is sellable.
-	zoneIndex := map[string]int{}
+	var items []*cvm.InstanceTypeQuotaItem
 	if resp != nil && resp.Response != nil {
-		for _, item := range resp.Response.InstanceTypeQuotaSet {
-			if item == nil || item.Zone == nil {
-				continue
-			}
-			zoneID := *item.Zone
-			status := ""
-			if item.Status != nil {
-				status = *item.Status
-			}
-			// Tencent enum: "SELL" (available) / "SOLD_OUT" (out of stock).
-			zoneOk := strings.EqualFold(status, "SELL")
+		items = resp.Response.InstanceTypeQuotaSet
+	}
 
-			if idx, ok := zoneIndex[zoneID]; ok {
-				z := result.Zones[idx]
-				if zoneOk {
-					z.Available = true
-					z.Status = status
-					z.Reason = ""
-				}
-				result.Zones[idx] = z
-			} else {
-				z := model.ZoneAvailability{
-					ZoneId:    zoneID,
-					Status:    status,
-					Available: zoneOk,
-				}
-				if !zoneOk {
-					z.Reason = fmt.Sprintf("zone status=%q", status)
-				}
-				zoneIndex[zoneID] = len(result.Zones)
-				result.Zones = append(result.Zones, z)
+	// Prefer POSTPAID_BY_HOUR items for on-demand VM provisioning so SPOTPAID stock
+	// does not mask an on-demand SOLD_OUT state.
+	var postPaidItems []*cvm.InstanceTypeQuotaItem
+	for _, item := range items {
+		if item != nil && item.InstanceChargeType != nil && strings.EqualFold(*item.InstanceChargeType, "POSTPAID_BY_HOUR") {
+			postPaidItems = append(postPaidItems, item)
+		}
+	}
+	if len(postPaidItems) > 0 {
+		items = postPaidItems
+	}
+
+	quotaEntry, _ := getTencentPostPaidQuotas(ctx, client, secretID, region)
+	quotaExhaustedZones := 0
+
+	zoneIndex := map[string]int{}
+	for _, item := range items {
+		if item == nil || item.Zone == nil {
+			continue
+		}
+		zoneID := *item.Zone
+		status := ""
+		if item.Status != nil {
+			status = *item.Status
+		}
+		zoneOk := strings.EqualFold(status, "SELL")
+		reason := ""
+		if !zoneOk {
+			reason = fmt.Sprintf("zone status=%q", status)
+		} else if quotaEntry != nil {
+			if rem, hasQuota := quotaEntry.postPaidRemainingByZone[zoneID]; hasQuota && rem == 0 {
+				zoneOk = false
+				status = "QUOTA_EXCEEDED"
+				reason = fmt.Sprintf("postpaid quota exhausted in zone %s (remaining=0 / limit=%d)", zoneID, quotaEntry.postPaidLimitByZone[zoneID])
+				quotaExhaustedZones++
 			}
+		}
+
+		if idx, ok := zoneIndex[zoneID]; ok {
+			z := result.Zones[idx]
 			if zoneOk {
-				result.Available = true
+				z.Available = true
+				z.Status = status
+				z.Reason = ""
 			}
+			result.Zones[idx] = z
+		} else {
+			z := model.ZoneAvailability{
+				ZoneId:    zoneID,
+				Status:    status,
+				Available: zoneOk,
+				Reason:    reason,
+			}
+			zoneIndex[zoneID] = len(result.Zones)
+			result.Zones = append(result.Zones, z)
+		}
+		if zoneOk {
+			result.Available = true
 		}
 	}
 
-	if !result.Available {
+	if result.Available {
+		result.Status = model.AvailabilityAvailable
+	} else if quotaExhaustedZones > 0 && quotaExhaustedZones == len(result.Zones) {
+		result.Status = model.AvailabilityQuotaExceeded
+		result.Reason = fmt.Sprintf("Tencent postpaid instance quota is exhausted across all zones for %q in region %q.", instanceType, region)
+	} else {
+		result.Status = model.AvailabilitySoldOut
 		if len(result.Zones) == 0 {
 			result.Reason = fmt.Sprintf("Tencent reports no zones for instance type %q in region %q right now. "+
 				"This usually means temporary out-of-stock for this instance family in this region; "+
@@ -190,6 +286,7 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		Str("region", region).
 		Str("instanceType", instanceType).
 		Bool("available", result.Available).
+		Str("status", string(result.Status)).
 		Int("zoneCount", len(result.Zones)).
 		Dur("elapsed", elapsed).
 		Msg("tencent availability check completed")

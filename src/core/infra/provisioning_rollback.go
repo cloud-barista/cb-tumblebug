@@ -14,6 +14,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -102,6 +103,36 @@ func recordNodeFailure(nodeInfoData *model.NodeInfo, provider, attemptedZone str
 	}
 	if nodeInfoData.Region.Zone == "" {
 		nodeInfoData.Region.Zone = failure.AttemptedZone
+	}
+
+	// Write-through to the availability cache: if provisioning failed due to capacity
+	// (SoldOut), quota (QuotaExceeded), or unsupported spec, immediately update the
+	// credential holder's availability cache so subsequent spec list / recommendation
+	// queries reflect the real failure without waiting for the 1-hour Available TTL.
+	instanceType := strings.TrimSpace(nodeInfoData.CspSpecName)
+	if instanceType == "" {
+		instanceType = strings.TrimSpace(nodeInfoData.Spec.CspSpecName)
+	}
+	if instanceType == "" && nodeInfoData.SpecId != "" {
+		if parts := strings.SplitN(nodeInfoData.SpecId, "+", 3); len(parts) == 3 {
+			instanceType = parts[2]
+		}
+	}
+	if instanceType != "" && region != "" && provider != "" {
+		holder := nodeInfoData.ConnectionConfig.CredentialHolder
+		if holder == "" {
+			holder = model.DefaultCredentialHolder
+		}
+		sdkCtx := context.WithValue(context.Background(), model.CtxKeyCredentialHolder, holder)
+		cspcheck.RecordProvisioningFailureToCache(sdkCtx, model.AvailabilityQuery{
+			Provider:           provider,
+			Region:             region,
+			InstanceType:       instanceType,
+			SystemDiskCategory: model.NormalizeDiskTypeForQuery(nodeInfoData.RootDiskType),
+			PreferredZone:      failure.AttemptedZone,
+			AcceleratorModel:   nodeInfoData.Spec.AcceleratorModel,
+			AcceleratorCount:   int(nodeInfoData.Spec.AcceleratorCount),
+		}, failure)
 	}
 }
 

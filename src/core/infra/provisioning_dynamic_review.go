@@ -111,11 +111,15 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 		cspSpecName := specInfo.CspSpecName
 
 		availability := cspcheck.CheckAvailability(ctx, model.AvailabilityQuery{
-			Provider:         csp.ResolveCloudPlatform(specInfo.ProviderName),
-			Region:           specInfo.RegionName,
-			InstanceType:     specInfo.CspSpecName,
-			AcceleratorModel: specInfo.AcceleratorModel,
-			AcceleratorCount: int(specInfo.AcceleratorCount),
+			Provider:           csp.ResolveCloudPlatform(specInfo.ProviderName),
+			Region:             specInfo.RegionName,
+			InstanceType:       specInfo.CspSpecName,
+			SystemDiskCategory: model.NormalizeDiskTypeForQuery(nodeGroupDynamicReq.RootDiskType),
+			PreferredZone:      strings.TrimSpace(nodeGroupDynamicReq.Zone),
+			AcceleratorModel:   specInfo.AcceleratorModel,
+			AcceleratorCount:   int(specInfo.AcceleratorCount),
+			VCPU:               int(specInfo.VCPU),
+			MemoryGiB:          specInfo.MemoryGiB,
 		})
 
 		if availability.Source == "none" {
@@ -157,7 +161,12 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
 				Status:        "Available",
+				Message:       availability.Reason,
 				CspResourceId: cspSpecName,
+			}
+			if availability.Reason != "" {
+				nodeReview.Warnings = append(nodeReview.Warnings, fmt.Sprintf("Zone availability notice for '%s': %s", specInfo.CspSpecName, availability.Reason))
+				hasNodeWarning = true
 			}
 
 			// Add cost estimation if available
@@ -211,6 +220,16 @@ func reviewSingleNodeGroupDynamicReq(ctx context.Context, nsId string, infraSgTe
 					nodeReview.Warnings = append(nodeReview.Warnings, warn)
 					hasNodeWarning = true
 				}
+			}
+
+			// Validate Spec ↔ Image compatibility (architecture, hypervisor, boot mode, disk controller, etc.)
+			if compatErr := resource.CheckSpecImageCompatibility(*specInfoPtr, imageInfo); compatErr != nil {
+				nodeReview.Errors = append(nodeReview.Errors, compatErr.Error())
+				nodeReview.ImageValidation.IsAvailable = false
+				nodeReview.ImageValidation.Status = "Incompatible"
+				nodeReview.ImageValidation.Message = compatErr.Error()
+				nodeReview.CanCreate = false
+				viable = false
 			}
 		}
 	}
@@ -518,6 +537,8 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 			PreferredZone:      normalizedZone,
 			AcceleratorModel:   specInfo.AcceleratorModel,
 			AcceleratorCount:   int(specInfo.AcceleratorCount),
+			VCPU:               int(specInfo.VCPU),
+			MemoryGiB:          specInfo.MemoryGiB,
 		})
 
 		switch availability.Source {
@@ -618,7 +639,14 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 				ResourceName:  specInfo.CspSpecName,
 				IsAvailable:   true,
 				Status:        "Available",
+				Message:       availability.Reason,
 				CspResourceId: specInfo.CspSpecName,
+			}
+			if availability.Reason != "" {
+				result.Warnings = append(result.Warnings, fmt.Sprintf("Zone availability notice for '%s': %s", specInfo.CspSpecName, availability.Reason))
+				if result.Status == "OK" {
+					result.Status = "Warning"
+				}
 			}
 
 			// Add cost estimation if available
@@ -674,6 +702,23 @@ func ReviewSpecImagePair(ctx context.Context, specId, imageId, rootDiskType, zon
 				IsAvailable:   true,
 				Status:        status,
 				CspResourceId: imageInfo.CspImageName,
+			}
+
+			// Validate Spec ↔ Image compatibility (architecture, hypervisor, boot mode, disk controller, etc.)
+			if result.SpecDetails != nil {
+				if compatErr := resource.CheckSpecImageCompatibility(*result.SpecDetails, imageInfo); compatErr != nil {
+					result.Errors = append(result.Errors, compatErr.Error())
+					result.ImageValidation.IsAvailable = false
+					result.ImageValidation.Status = "Incompatible"
+					result.ImageValidation.Message = compatErr.Error()
+					result.IsValid = false
+					result.Status = "Error"
+					if result.Message == "" {
+						result.Message = compatErr.Error()
+					} else {
+						result.Message += "; " + compatErr.Error()
+					}
+				}
 			}
 		}
 	} else {

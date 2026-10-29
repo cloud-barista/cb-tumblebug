@@ -2092,6 +2092,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /loadAssetsStatus:
+    get:
+      tags:
+      - "[Admin] System Configuration"
+      summary: Get real-time progress of LoadAssets and FetchPrice
+      description: "Returns the current phase, processed/total regions, and registered\
+        \ specs/images counts while LoadAssets or FetchPrice is running."
+      operationId: GetLoadAssetsStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.LoadAssetsStatus'
   /lookupImage:
     post:
       tags:
@@ -20393,6 +20408,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /updateSpecsFromAsset:
+    post:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Update specs from cloudspec.csv asset file
+      description: "Update spec information (costPerHour, accelerator, evaluationScore,\
+        \ etc.) based on the cloudspec.csv asset file"
+      operationId: UpdateSpecsFromAsset
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      - name: x-credential-holder
+        in: header
+        description: "Credential holder ID for selecting which credentials to use\
+          \ (default: system default holder)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /util/net/design:
     post:
       tags:
@@ -31746,6 +31800,31 @@ components:
           type: integer
         totalRegions:
           type: integer
+    resource.FetchPriceStatus:
+      type: object
+      properties:
+        activeProviders:
+          type: array
+          items:
+            type: string
+        completedProviders:
+          type: array
+          items:
+            type: string
+        elapsedSeconds:
+          type: integer
+        elapsedTime:
+          type: string
+        failedRegions:
+          type: integer
+        inProgress:
+          type: boolean
+        processedRegions:
+          type: integer
+        succeedRegions:
+          type: integer
+        totalRegions:
+          type: integer
     resource.FetchSpecsAsyncResult:
       type: object
       properties:
@@ -31773,6 +31852,27 @@ components:
           type: integer
     resource.JSONResult:
       type: object
+    resource.LoadAssetsStatus:
+      type: object
+      properties:
+        currentPhase:
+          type: string
+        elapsedSeconds:
+          type: integer
+        elapsedTime:
+          type: string
+        imageFetch:
+          $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
+        inProgress:
+          type: boolean
+        phaseIndex:
+          type: integer
+        priceFetch:
+          $ref: '#/components/schemas/resource.FetchPriceStatus'
+        specFetch:
+          $ref: '#/components/schemas/resource.FetchSpecsAsyncResult'
+        totalPhases:
+          type: integer
     resource.RestFilterSpecsResponse:
       type: object
       properties:

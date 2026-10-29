@@ -454,47 +454,100 @@ func FetchAvailableSpecListByRegion(ctx context.Context, region string, zoneID s
 	return out, nil
 }
 
+func describeAvailableResourceWithRetry(client *ecs.Client, req *ecs.DescribeAvailableResourceRequest) (*ecs.DescribeAvailableResourceResponse, error) {
+	const maxRetries = 4
+	baseBackoff := 400
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		resp, err := client.DescribeAvailableResource(req)
+		if err == nil {
+			return resp, nil
+		}
+		lastErr = err
+		errStr := err.Error()
+		if strings.Contains(errStr, "ErrorCode: Throttling") || strings.Contains(errStr, "TooManyRequests") || isAlibabaRetryableTransientNetworkError(errStr) {
+			sleepMs := baseBackoff*(attempt+1) + rand.Intn(300)
+			time.Sleep(time.Duration(sleepMs) * time.Millisecond)
+			continue
+		}
+		break
+	}
+	return nil, lastErr
+}
+
+func describeInstanceTypesWithRetry(client *ecs.Client, req *ecs.DescribeInstanceTypesRequest) (*ecs.DescribeInstanceTypesResponse, error) {
+	const maxRetries = 4
+	baseBackoff := 400
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		resp, err := client.DescribeInstanceTypes(req)
+		if err == nil {
+			return resp, nil
+		}
+		lastErr = err
+		errStr := err.Error()
+		if strings.Contains(errStr, "ErrorCode: Throttling") || strings.Contains(errStr, "TooManyRequests") || isAlibabaRetryableTransientNetworkError(errStr) {
+			sleepMs := baseBackoff*(attempt+1) + rand.Intn(300)
+			time.Sleep(time.Duration(sleepMs) * time.Millisecond)
+			continue
+		}
+		break
+	}
+	return nil, lastErr
+}
+
 func listAvailableInstanceTypes(client *ecs.Client, region string, zoneID string) (map[string]struct{}, error) {
-	req := ecs.CreateDescribeAvailableResourceRequest()
-	req.Scheme = "https"
-	req.RegionId = region
-	req.ResourceType = "instance"
-	req.DestinationResource = "InstanceType"
-	if zoneID != "" {
-		req.ZoneId = zoneID
-	}
-
-	resp, err := client.DescribeAvailableResource(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list Alibaba available resources for region %s: %s", region, csp.RedactErr(err))
-	}
-
-	available := make(map[string]struct{})
-	for _, z := range resp.AvailableZones.AvailableZone {
-		if zoneID != "" && !strings.EqualFold(strings.TrimSpace(z.ZoneId), zoneID) {
-			continue
-		}
-		if !strings.EqualFold(strings.TrimSpace(z.Status), "available") {
-			continue
+	queryZone := func(targetZone string) (map[string]struct{}, error) {
+		req := ecs.CreateDescribeAvailableResourceRequest()
+		req.Scheme = "https"
+		req.RegionId = region
+		req.ResourceType = "instance"
+		req.DestinationResource = "InstanceType"
+		if targetZone != "" {
+			req.ZoneId = targetZone
 		}
 
-		for _, r := range z.AvailableResources.AvailableResource {
-			if !strings.EqualFold(strings.TrimSpace(r.Type), "instancetype") {
+		resp, err := describeAvailableResourceWithRetry(client, req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list Alibaba available resources for region %s: %s", region, csp.RedactErr(err))
+		}
+
+		available := make(map[string]struct{})
+		for _, z := range resp.AvailableZones.AvailableZone {
+			if targetZone != "" && !strings.EqualFold(strings.TrimSpace(z.ZoneId), targetZone) {
 				continue
 			}
-			for _, s := range r.SupportedResources.SupportedResource {
-				if !strings.EqualFold(strings.TrimSpace(s.Status), "available") {
+			if !strings.EqualFold(strings.TrimSpace(z.Status), "available") {
+				continue
+			}
+
+			for _, r := range z.AvailableResources.AvailableResource {
+				if !strings.EqualFold(strings.TrimSpace(r.Type), "instancetype") {
 					continue
 				}
-				name := strings.TrimSpace(s.Value)
-				if name == "" {
-					continue
+				for _, s := range r.SupportedResources.SupportedResource {
+					if !strings.EqualFold(strings.TrimSpace(s.Status), "available") {
+						continue
+					}
+					name := strings.TrimSpace(s.Value)
+					if name == "" {
+						continue
+					}
+					available[name] = struct{}{}
 				}
-				available[name] = struct{}{}
 			}
 		}
+		return available, nil
 	}
 
+	available, err := queryZone(zoneID)
+	if err != nil {
+		return nil, err
+	}
+	// If the default assigned zone is retired/sold-out (e.g. cn-shenzhen-a), fall back to region-wide available types.
+	if len(available) == 0 && zoneID != "" {
+		return queryZone("")
+	}
 	return available, nil
 }
 
@@ -511,7 +564,7 @@ func listInstanceTypeDetails(client *ecs.Client, region string) ([]ecs.InstanceT
 			req.NextToken = nextToken
 		}
 
-		resp, err := client.DescribeInstanceTypes(req)
+		resp, err := describeInstanceTypesWithRetry(client, req)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list Alibaba instance type details for region %s: %s", region, csp.RedactErr(err))
 		}

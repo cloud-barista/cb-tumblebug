@@ -1898,6 +1898,62 @@ func GetNameFromStruct(u any) (string, error) {
 	return idStruct.Name, nil
 }
 
+// LoadAssetsStatus represents the unified real-time progress of LoadAssets and FetchPrice.
+type LoadAssetsStatus struct {
+	InProgress     bool                    `json:"inProgress"`
+	CurrentPhase   string                  `json:"currentPhase"`
+	PhaseIndex     int                     `json:"phaseIndex"`
+	TotalPhases    int                     `json:"totalPhases"`
+	ElapsedSeconds int                     `json:"elapsedSeconds"`
+	ElapsedTime    string                  `json:"elapsedTime,omitempty"`
+	SpecFetch      *FetchSpecsAsyncResult  `json:"specFetch,omitempty"`
+	ImageFetch     *FetchImagesAsyncResult `json:"imageFetch,omitempty"`
+	PriceFetch     FetchPriceStatus        `json:"priceFetch"`
+}
+
+var (
+	loadAssetsStatusMutex sync.RWMutex
+	loadAssetsStatus      LoadAssetsStatus
+	loadAssetsStartedAt   time.Time
+)
+
+func setLoadAssetsPhase(inProgress bool, phase string, phaseIdx int) {
+	loadAssetsStatusMutex.Lock()
+	defer loadAssetsStatusMutex.Unlock()
+	loadAssetsStatus.InProgress = inProgress
+	loadAssetsStatus.CurrentPhase = phase
+	loadAssetsStatus.PhaseIndex = phaseIdx
+	loadAssetsStatus.TotalPhases = 4
+	if !loadAssetsStartedAt.IsZero() {
+		elapsed := time.Since(loadAssetsStartedAt)
+		loadAssetsStatus.ElapsedSeconds = int(elapsed.Seconds())
+		loadAssetsStatus.ElapsedTime = elapsed.Round(time.Second).String()
+	}
+}
+
+// GetLoadAssetsStatus returns a real-time snapshot of LoadAssets (spec fetch, image fetch) and FetchPrice progress.
+func GetLoadAssetsStatus() LoadAssetsStatus {
+	loadAssetsStatusMutex.RLock()
+	snapshot := loadAssetsStatus
+	startedAt := loadAssetsStartedAt
+	loadAssetsStatusMutex.RUnlock()
+
+	if snapshot.InProgress && !startedAt.IsZero() {
+		elapsed := time.Since(startedAt)
+		snapshot.ElapsedSeconds = int(elapsed.Seconds())
+		snapshot.ElapsedTime = elapsed.Round(time.Second).String()
+	}
+
+	if specRes, err := GetFetchSpecsAsyncResult(model.SystemCommonNs); err == nil && specRes != nil {
+		snapshot.SpecFetch = specRes
+	}
+	if imgRes, err := GetFetchImagesAsyncResult(model.SystemCommonNs); err == nil && imgRes != nil {
+		snapshot.ImageFetch = imgRes
+	}
+	snapshot.PriceFetch = GetFetchPriceStatus()
+	return snapshot
+}
+
 // LoadAssets is to register common resources from asset files (../assets/*.csv)
 // includeAzure: if true, Azure images will be fetched (may take 40+ minutes)
 // LoadAssets fetches specs and images into the system namespace.
@@ -1910,6 +1966,20 @@ func GetNameFromStruct(u any) (string, error) {
 func LoadAssets(includeAzure bool, targetProviders []string) (*model.IdList, error) {
 
 	regiesteredIds := &model.IdList{}
+
+	loadAssetsStatusMutex.Lock()
+	loadAssetsStartedAt = time.Now()
+	loadAssetsStatus = LoadAssetsStatus{
+		InProgress:   true,
+		CurrentPhase: "initializing",
+		PhaseIndex:   0,
+		TotalPhases:  4,
+	}
+	loadAssetsStatusMutex.Unlock()
+
+	defer func() {
+		setLoadAssetsPhase(false, "completed", 4)
+	}()
 
 	// Check common namespace. Create one if not.
 	_, err := common.GetNs(model.SystemCommonNs)
@@ -1931,14 +2001,16 @@ func LoadAssets(includeAzure bool, targetProviders []string) (*model.IdList, err
 		log.Info().Strs("providers", targetProviders).Msg("Loading assets for the selected providers only")
 	}
 
+	setLoadAssetsPhase(true, "fetching_specs", 1)
 	resultFetchSpecsForAllConnConfigs, err := FetchSpecsForAllConnConfigs(model.SystemCommonNs, reqBodySpecFetchOption)
 	if err != nil {
-		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")
+		log.Error().Err(err).Msg("FetchSpecsForAllConnConfigs failed")
 	}
 	elapsedFetchSpec := time.Since(startTime)
 	log.Debug().Msgf("resultFetchSpecsForAllConnConfigs.RegisteredSpecs: %+v elapsed: [%s]", resultFetchSpecsForAllConnConfigs.RegisteredSpecs, elapsedFetchSpec)
 
 	startTime = time.Now()
+	setLoadAssetsPhase(true, "updating_specs_from_asset", 2)
 	err = UpdateSpecsFromAsset(model.SystemCommonNs)
 	if err != nil {
 		log.Error().Err(err).Msg("UpdateSpecsFromAsset failed")
@@ -1971,6 +2043,7 @@ func LoadAssets(includeAzure bool, targetProviders []string) (*model.IdList, err
 		reqBodyImageFetchOption.ExcludedProviders = []string{csp.Azure}
 		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP}
 	}
+	setLoadAssetsPhase(true, "fetching_images", 3)
 	resultFetchImagesForAllConnConfigs, err := FetchImagesForAllConnConfigs(model.SystemCommonNs, reqBodyImageFetchOption)
 	if err != nil {
 		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")
@@ -1982,6 +2055,7 @@ func LoadAssets(includeAzure bool, targetProviders []string) (*model.IdList, err
 	runtime.GC()
 
 	startTime = time.Now()
+	setLoadAssetsPhase(true, "updating_images_from_asset", 4)
 	resultUpdateImagesFromAsset, err := UpdateImagesFromAsset(model.SystemCommonNs)
 	if err != nil {
 		log.Error().Err(err).Msg("UpdateImagesFromAsset failed")

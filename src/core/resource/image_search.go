@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -103,11 +104,12 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 	}
 
 	if req.OSArchitecture != "" {
-		// Include images with the requested architecture OR "na" (not available/specified by the CSP)
-		// Images with "na" architecture are treated as compatible with any architecture
+		// Include images with the requested architecture OR "na" / empty (not available/specified by the CSP)
+		// Images with "na" or empty architecture are treated as compatible with any architecture
 		sqlQuery = sqlQuery.Where(
 			model.ORM.Where("LOWER(os_architecture) = ?", strings.ToLower(string(req.OSArchitecture))).
-				Or("LOWER(os_architecture) = ?", strings.ToLower(string(model.ArchitectureNA))))
+				Or("LOWER(os_architecture) = ?", strings.ToLower(string(model.ArchitectureNA))).
+				Or("os_architecture = ''"))
 	}
 
 	if req.IsGPUImage != nil {
@@ -166,6 +168,18 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 	}
 	cnt = len(images)
 
+	// Apply CSP-specific image filtering based on spec compatibility first,
+	// before deduplicating by date/version, so spec-compatible images are never dropped prematurely.
+	if specInfo != nil && len(images) > 0 {
+		filteredImages := applyCspSpecificImageFiltering(images, *specInfo)
+		if len(filteredImages) != len(images) {
+			log.Info().Msgf("SearchImage: CSP-specific filtering removed %d images, %d images remaining for provider %s",
+				len(images)-len(filteredImages), len(filteredImages), specInfo.ProviderName)
+			images = filteredImages
+			cnt = len(images)
+		}
+	}
+
 	// Filter duplicate images with same OS details but different dates, keeping only the latest 2
 	allowedDuplicationCount := 2
 
@@ -177,9 +191,9 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 		cnt = len(images)
 	}
 
-	// Sort images by OS disctibution in descending order
+	// Sort images by OSDistribution in natural descending order (so "Rocky Linux 8.10" > "Rocky Linux 8.8")
 	sort.Slice(images, func(i, j int) bool {
-		return images[i].OSDistribution > images[j].OSDistribution
+		return compareNaturalDesc(images[i].OSDistribution, images[j].OSDistribution)
 	})
 
 	// Additional filtering: Keep only the top image for each group with same base distribution text
@@ -189,17 +203,6 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 			len(images)-len(finalImages), len(finalImages))
 		images = finalImages
 		cnt = len(images)
-	}
-
-	// Apply CSP-specific image filtering based on spec compatibility
-	if specInfo != nil && len(images) > 0 {
-		filteredImages := applyCspSpecificImageFiltering(images, *specInfo)
-		if len(filteredImages) != len(images) {
-			log.Info().Msgf("SearchImage: CSP-specific filtering removed %d images, %d images remaining for provider %s",
-				len(images)-len(filteredImages), len(filteredImages), specInfo.ProviderName)
-			images = filteredImages
-			cnt = len(images)
-		}
 	}
 
 	// Move basic images and basic GPU images to the front using partition approach (O(n))
@@ -245,6 +248,43 @@ func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) 
 	}
 
 	return images, cnt, nil
+}
+
+// compareNaturalDesc returns true if string a is greater than string b using natural
+// numeric comparison (e.g., "Rocky Linux 8.10" > "Rocky Linux 8.8").
+func compareNaturalDesc(a, b string) bool {
+	ia, ib := 0, 0
+	for ia < len(a) && ib < len(b) {
+		ca, cb := a[ia], b[ib]
+		isDigitA := ca >= '0' && ca <= '9'
+		isDigitB := cb >= '0' && cb <= '9'
+		if isDigitA && isDigitB {
+			ja := ia
+			for ja < len(a) && a[ja] >= '0' && a[ja] <= '9' {
+				ja++
+			}
+			jb := ib
+			for jb < len(b) && b[jb] >= '0' && b[jb] <= '9' {
+				jb++
+			}
+			numA := strings.TrimLeft(a[ia:ja], "0")
+			numB := strings.TrimLeft(b[ib:jb], "0")
+			if len(numA) != len(numB) {
+				return len(numA) > len(numB)
+			}
+			if numA != numB {
+				return numA > numB
+			}
+			ia, ib = ja, jb
+			continue
+		}
+		if ca != cb {
+			return ca > cb
+		}
+		ia++
+		ib++
+	}
+	return len(a) > len(b)
 }
 
 // filterDuplicateImagesByDate filters duplicate images keeping only the latest 2 versions
@@ -344,6 +384,11 @@ func filterDuplicateImagesByVersion(images []model.ImageInfo) []model.ImageInfo 
 				if imgDate.After(latestDate) {
 					latestImg = group[i]
 					latestDate = imgDate
+				} else if imgDate.Equal(latestDate) {
+					if compareNaturalDesc(group[i].OSDistribution, latestImg.OSDistribution) ||
+						(group[i].OSDistribution == latestImg.OSDistribution && compareNaturalDesc(group[i].CspImageName, latestImg.CspImageName)) {
+						latestImg = group[i]
+					}
 				}
 			}
 
@@ -399,18 +444,20 @@ func sortImagesByDateInDistribution(images []model.ImageInfo) []model.ImageInfo 
 		dateI := extractLatestDateFromDistribution(images[i].OSDistribution)
 		dateJ := extractLatestDateFromDistribution(images[j].OSDistribution)
 
-		// If dates are equal, compare by creation date or name
+		// If dates are equal, compare by creation date or natural distribution/name order
 		if dateI.Equal(dateJ) {
 			// Parse creation date if available
 			if images[i].CreationDate != "" && images[j].CreationDate != "" {
 				timeI, errI := time.Parse("2006-01-02T15:04:05.000Z", images[i].CreationDate)
 				timeJ, errJ := time.Parse("2006-01-02T15:04:05.000Z", images[j].CreationDate)
-				if errI == nil && errJ == nil {
+				if errI == nil && errJ == nil && !timeI.Equal(timeJ) {
 					return timeI.After(timeJ)
 				}
 			}
-			// Fallback to name comparison for stable sorting
-			return images[i].Name > images[j].Name
+			if images[i].OSDistribution != images[j].OSDistribution {
+				return compareNaturalDesc(images[i].OSDistribution, images[j].OSDistribution)
+			}
+			return compareNaturalDesc(images[i].Name, images[j].Name)
 		}
 
 		return dateI.After(dateJ) // Newest first
@@ -616,15 +663,490 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 // updates and returns the updated TB image objects
 
 func applyCspSpecificImageFiltering(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	var filtered []model.ImageInfo
 	switch csp.ResolveCloudPlatform(specInfo.ProviderName) {
 	case csp.NCP:
-		return filterImagesByCorrespondingIds(images, specInfo)
+		filtered = filterImagesByCorrespondingIds(images, specInfo)
 	case csp.Azure:
-		return filterImagesByHyperVGeneration(images, specInfo)
+		filtered = filterImagesForAzure(images, specInfo)
+	case csp.NHN:
+		filtered = filterImagesForNHN(images, specInfo)
+	case csp.AWS:
+		filtered = filterImagesForAWS(images, specInfo)
+	case csp.Alibaba:
+		filtered = filterImagesForAlibaba(images, specInfo)
+	case csp.GCP:
+		filtered = filterImagesForGCP(images, specInfo)
+	case csp.IBM:
+		filtered = filterImagesForIBM(images, specInfo)
 	default:
-		// No specific filtering for other CSPs
+		filtered = images
+	}
+	return filterImagesByFixedRootDisk(filtered, specInfo)
+}
+
+// CheckSpecImageCompatibility checks whether a specific SpecInfo and ImageInfo pair are compatible
+// (architecture, hypervisor, boot mode, disk controller, virtualization type, root disk size, etc.).
+// Returns nil if compatible, or a descriptive error explaining why VM creation would fail.
+func CheckSpecImageCompatibility(specInfo model.SpecInfo, imageInfo model.ImageInfo) error {
+	// Skip strict metadata checks for custom user snapshots/MyImages that may lack full CSP catalog Details
+	if imageInfo.ResourceType == model.StrCustomImage {
+		return nil
+	}
+
+	// 1. OS Architecture check
+	specArch := strings.TrimSpace(specInfo.Architecture)
+	imgArch := strings.TrimSpace(string(imageInfo.OSArchitecture))
+	if specArch != "" && specArch != string(model.ArchitectureUnknown) && specArch != string(model.ArchitectureNA) &&
+		imgArch != "" && imgArch != string(model.ArchitectureUnknown) && imgArch != string(model.ArchitectureNA) {
+		if !strings.EqualFold(specArch, imgArch) {
+			return fmt.Errorf("architecture mismatch: spec '%s' is '%s' but image '%s' is '%s'",
+				specInfo.CspSpecName, specArch, imageInfo.CspImageName, imgArch)
+		}
+	}
+
+	// 2. Fixed local root disk size check (for CSPs where SpecInfo.RootDiskSize is a fixed OS disk limit)
+	if hasFixedOSRootDisk(specInfo) && imageInfo.OSDiskSizeGB > 0 && imageInfo.OSDiskSizeGB > float64(specInfo.RootDiskSize) {
+		return fmt.Errorf("root disk size mismatch: spec '%s' has fixed %d GB root disk, which is smaller than image '%s' minimum disk size (%.0f GB)",
+			specInfo.CspSpecName, specInfo.RootDiskSize, imageInfo.CspImageName, imageInfo.OSDiskSizeGB)
+	}
+
+	// 3. CSP-specific hypervisor / boot mode / controller / flavor compatibility checks
+	switch csp.ResolveCloudPlatform(specInfo.ProviderName) {
+	case csp.NCP:
+		specHV := extractNCPHypervisorCode(specInfo.Details, specInfo.CspSpecName)
+		imgHV := extractNCPHypervisorCode(imageInfo.Details, imageInfo.OSDistribution)
+		if specHV != "" && imgHV != "" && !strings.EqualFold(specHV, imgHV) {
+			return fmt.Errorf("hypervisor mismatch: NCP spec '%s' requires '%s' hypervisor, but image '%s' (%s) is for '%s' hypervisor",
+				specInfo.CspSpecName, specHV, imageInfo.CspImageName, imageInfo.OSDistribution, imgHV)
+		}
+		correspondingIds := extractCorrespondingImageIds(specInfo.Details)
+		if len(correspondingIds) > 0 && imageInfo.CspImageName != "" {
+			matched := false
+			for _, id := range correspondingIds {
+				if strings.EqualFold(strings.TrimSpace(id), strings.TrimSpace(imageInfo.CspImageName)) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				return fmt.Errorf("NCP spec '%s' does not list image '%s' in its CorrespondingImageIds",
+					specInfo.CspSpecName, imageInfo.CspImageName)
+			}
+		}
+
+	case csp.Azure:
+		if !isAzureImageCompatible(imageInfo, specInfo) {
+			return fmt.Errorf("Azure spec '%s' (HyperVGenerations=%q, DiskControllerTypes=%q, ConfidentialComputingType=%q) is incompatible with image '%s'",
+				specInfo.CspSpecName,
+				common.LookupKeyValueList(specInfo.Details, "HyperVGenerations"),
+				common.LookupKeyValueList(specInfo.Details, "DiskControllerTypes"),
+				common.LookupKeyValueList(specInfo.Details, "ConfidentialComputingType"),
+				imageInfo.CspImageName)
+		}
+
+	case csp.AWS:
+		if !isAWSImageCompatible(imageInfo, specInfo) {
+			return fmt.Errorf("AWS spec '%s' (BootModes=%q, VirtTypes=%q, Hypervisor=%q) is incompatible with image '%s' (BootMode=%q, VirtType=%q, EnaSupport=%q)",
+				specInfo.CspSpecName,
+				common.LookupKeyValueList(specInfo.Details, "SupportedBootModes"),
+				common.LookupKeyValueList(specInfo.Details, "SupportedVirtualizationTypes"),
+				common.LookupKeyValueList(specInfo.Details, "Hypervisor"),
+				imageInfo.CspImageName,
+				common.LookupKeyValueList(imageInfo.Details, "BootMode"),
+				common.LookupKeyValueList(imageInfo.Details, "VirtualizationType"),
+				common.LookupKeyValueList(imageInfo.Details, "EnaSupport"))
+		}
+
+	case csp.Alibaba:
+		if !isAlibabaImageCompatible(imageInfo, specInfo) {
+			return fmt.Errorf("Alibaba spec '%s' is incompatible with image '%s' (BootMode=%q, Features=%q)",
+				specInfo.CspSpecName, imageInfo.CspImageName,
+				common.LookupKeyValueList(imageInfo.Details, "BootMode"),
+				common.LookupKeyValueList(imageInfo.Details, "Features"))
+		}
+
+	case csp.GCP:
+		if !isGCPImageCompatible(imageInfo, specInfo) {
+			return fmt.Errorf("GCP spec '%s' is incompatible with image '%s' (GuestOsFeatures=%q)",
+				specInfo.CspSpecName, imageInfo.CspImageName,
+				common.LookupKeyValueList(imageInfo.Details, "GuestOsFeatures"))
+		}
+
+	case csp.IBM:
+		if !isIBMImageCompatible(imageInfo) {
+			return fmt.Errorf("IBM image '%s' is restricted (bare-metal-only or dedicated-host-only) and cannot be used with VSI profile '%s'",
+				imageInfo.CspImageName, specInfo.CspSpecName)
+		}
+
+	case csp.NHN:
+		if !isNHNImageCompatible(imageInfo, specInfo) {
+			return fmt.Errorf("NHN spec '%s' is incompatible with image '%s' based on NHN image properties",
+				specInfo.CspSpecName, imageInfo.CspImageName)
+		}
+	}
+
+	return nil
+}
+
+var reNHNMinCPU = regexp.MustCompile(`min_cpu:(\d+)`)
+
+func isNHNImageCompatible(img model.ImageInfo, specInfo model.SpecInfo) bool {
+	props := strings.ToLower(common.LookupKeyValueList(img.Details, "Properties"))
+	if props == "" {
+		return true
+	}
+	isGPUSpec := specInfo.AcceleratorCount > 0
+	isLocalBootSpec := specInfo.RootDiskSize > 0
+
+	if strings.Contains(props, "nhncloud_allow_compute_flavor:false") &&
+		strings.Contains(props, "nhncloud_allow_gpu_flavor:false") {
+		return false
+	}
+	if isGPUSpec {
+		if strings.Contains(props, "nhncloud_allow_gpu_flavor:false") {
+			return false
+		}
+	} else {
+		if strings.Contains(props, "nhncloud_allow_cpu_flavor:false") {
+			return false
+		}
+	}
+	if isLocalBootSpec && strings.Contains(props, "nhncloud_allow_local_bootdisk_flavor:false") {
+		return false
+	}
+	if specInfo.VCPU > 0 {
+		if m := reNHNMinCPU.FindStringSubmatch(props); len(m) == 2 {
+			if minCPU, err := strconv.Atoi(m[1]); err == nil && minCPU > int(specInfo.VCPU) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// filterImagesForNHN filters NHN Cloud images using the explicit compatibility flags in Properties:
+//   - nhncloud_allow_compute_flavor / nhncloud_allow_cpu_flavor / nhncloud_allow_gpu_flavor
+//   - nhncloud_allow_local_bootdisk_flavor (when specInfo.RootDiskSize > 0, e.g., u2.* flavors)
+//   - min_cpu:<N> vs specInfo.VCPU
+func filterImagesForNHN(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	var filtered []model.ImageInfo
+	for _, img := range images {
+		if isNHNImageCompatible(img, specInfo) {
+			filtered = append(filtered, img)
+		}
+	}
+	if len(filtered) == 0 {
 		return images
 	}
+	return filtered
+}
+
+func isAWSImageCompatible(img model.ImageInfo, specInfo model.SpecInfo) bool {
+	if len(img.Details) == 0 {
+		return true
+	}
+	specBootModes := strings.ToLower(common.LookupKeyValueList(specInfo.Details, "SupportedBootModes"))
+	specVirtTypes := strings.ToLower(common.LookupKeyValueList(specInfo.Details, "SupportedVirtualizationTypes"))
+	specRootDevs := strings.ToLower(common.LookupKeyValueList(specInfo.Details, "SupportedRootDeviceTypes"))
+	specNetInfo := strings.ToLower(common.LookupKeyValueList(specInfo.Details, "NetworkInfo"))
+	specHypervisor := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(specInfo.Details, "Hypervisor")))
+
+	supportsUEFI := strings.Contains(specBootModes, "uefi")
+	supportsBIOS := strings.Contains(specBootModes, "legacy-bios")
+	exclusiveBootMode := specBootModes != "" && (supportsUEFI != supportsBIOS)
+	enaRequired := strings.Contains(specNetInfo, "enasupport:required") || specHypervisor == "nitro"
+
+	if specVirtTypes != "" {
+		imgVirt := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(img.Details, "VirtualizationType")))
+		if imgVirt != "" && !strings.Contains(specVirtTypes, imgVirt) {
+			return false
+		}
+	}
+	if specRootDevs != "" {
+		imgRoot := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(img.Details, "RootDeviceType")))
+		if imgRoot != "" && !strings.Contains(specRootDevs, imgRoot) {
+			return false
+		}
+	}
+	if enaRequired {
+		imgEna := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(img.Details, "EnaSupport")))
+		if imgEna == "false" || (imgEna != "true" && common.LookupKeyValueList(img.Details, "VirtualizationType") != "") {
+			return false
+		}
+	}
+	if exclusiveBootMode {
+		imgBoot := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(img.Details, "BootMode")))
+		if supportsUEFI && !supportsBIOS {
+			if imgBoot == "legacy-bios" || (imgBoot == "" && img.OSArchitecture == model.X86_64) {
+				return false
+			}
+		} else if supportsBIOS && !supportsUEFI {
+			if imgBoot == "uefi" {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// filterImagesForAWS filters AWS AMIs by SupportedBootModes, SupportedVirtualizationTypes, SupportedRootDeviceTypes, and EnaSupport.
+func filterImagesForAWS(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	var filtered []model.ImageInfo
+	for _, img := range images {
+		if isAWSImageCompatible(img, specInfo) {
+			filtered = append(filtered, img)
+		}
+	}
+	if len(filtered) == 0 {
+		return images
+	}
+	return filtered
+}
+
+func isAlibabaLegacyBIOSOnlyFamily(family string) bool {
+	f := strings.ToLower(strings.TrimSpace(family))
+	switch {
+	case strings.HasPrefix(f, "g5"), strings.HasPrefix(f, "c5"), strings.HasPrefix(f, "r5"),
+		strings.HasPrefix(f, "hfc5"), strings.HasPrefix(f, "hfg5"), strings.HasPrefix(f, "ic5"),
+		strings.HasPrefix(f, "t5"), strings.HasPrefix(f, "s6"), strings.HasPrefix(f, "n4"),
+		strings.HasPrefix(f, "mn4"), strings.HasPrefix(f, "e4"), strings.HasPrefix(f, "c4"),
+		strings.HasPrefix(f, "ce4"), strings.HasPrefix(f, "cm4"), strings.HasPrefix(f, "sn1"),
+		strings.HasPrefix(f, "sn2"), strings.HasPrefix(f, "se1"), strings.HasPrefix(f, "d1"),
+		strings.HasPrefix(f, "i1"), strings.HasPrefix(f, "i2"), strings.HasPrefix(f, "gn5"):
+		return true
+	default:
+		return false
+	}
+}
+
+func isAlibabaNVMeRequiredFamily(family string) bool {
+	f := strings.ToLower(strings.TrimSpace(family))
+	switch {
+	case strings.HasPrefix(f, "g7se"), strings.HasPrefix(f, "c7se"), strings.HasPrefix(f, "r7se"),
+		strings.HasPrefix(f, "g8"), strings.HasPrefix(f, "c8"), strings.HasPrefix(f, "r8"),
+		strings.HasPrefix(f, "hfc8"), strings.HasPrefix(f, "hfg8"), strings.HasPrefix(f, "hfr8"),
+		strings.HasPrefix(f, "hpc8"), strings.HasPrefix(f, "re8"),
+		strings.HasPrefix(f, "g9"), strings.HasPrefix(f, "c9"), strings.HasPrefix(f, "r9"),
+		strings.HasPrefix(f, "hfc9"), strings.HasPrefix(f, "hfg9"), strings.HasPrefix(f, "hfr9"),
+		strings.HasPrefix(f, "ebm"), strings.HasPrefix(f, "i4"), strings.HasPrefix(f, "i5"),
+		strings.HasPrefix(f, "d3s"), strings.HasPrefix(f, "gn8"), strings.HasPrefix(f, "gn9"),
+		strings.HasPrefix(f, "sgn8"), strings.HasPrefix(f, "u2"):
+		return true
+	default:
+		return false
+	}
+}
+
+func isAlibabaImageCompatible(img model.ImageInfo, specInfo model.SpecInfo) bool {
+	if len(img.Details) == 0 {
+		return true
+	}
+	parts := strings.Split(specInfo.CspSpecName, ".")
+	family := ""
+	if len(parts) >= 2 {
+		family = parts[1]
+	}
+
+	isARM := strings.EqualFold(specInfo.Architecture, string(model.ARM64))
+	bootMode := strings.ToUpper(strings.TrimSpace(common.LookupKeyValueList(img.Details, "BootMode")))
+	features := strings.ToLower(common.LookupKeyValueList(img.Details, "Features"))
+	nvmeSupport := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(img.Details, "NvmeSupport")))
+
+	if isARM && bootMode == "BIOS" {
+		return false
+	}
+	if !isARM && isAlibabaLegacyBIOSOnlyFamily(family) && bootMode == "UEFI" {
+		return false
+	}
+	if isAlibabaNVMeRequiredFamily(family) && (strings.Contains(features, "nvmesupport:unsupported") || nvmeSupport == "unsupported") {
+		return false
+	}
+	return true
+}
+
+// filterImagesForAlibaba filters Alibaba Cloud images by BootMode (BIOS vs UEFI vs UEFI-Preferred)
+// and NvmeSupport (for Gen 7se/8/9, bare-metal, and local-NVMe instance families).
+func filterImagesForAlibaba(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	var filtered []model.ImageInfo
+	for _, img := range images {
+		if isAlibabaImageCompatible(img, specInfo) {
+			filtered = append(filtered, img)
+		}
+	}
+	if len(filtered) == 0 {
+		return images
+	}
+	return filtered
+}
+
+func isGCPImageCompatible(img model.ImageInfo, specInfo model.SpecInfo) bool {
+	guestFeatures := strings.ToUpper(common.LookupKeyValueList(img.Details, "GuestOsFeatures"))
+	if guestFeatures == "" {
+		return true
+	}
+	series := strings.ToLower(strings.SplitN(specInfo.CspSpecName, "-", 2)[0])
+	switch series {
+	case "n1", "n2", "n2d", "e2", "c2", "c2d", "t2d", "m1", "m2", "a2":
+		if !strings.Contains(guestFeatures, "VIRTIO_SCSI_MULTIQUEUE") {
+			return false
+		}
+	case "c4", "c4a", "c4d", "n4", "n4a", "n4d", "a4", "a4x", "x4", "m4":
+		if !strings.Contains(guestFeatures, "IDPF") {
+			return false
+		}
+	}
+	return true
+}
+
+// filterImagesForGCP filters GCP images by GuestOsFeatures (VIRTIO_SCSI_MULTIQUEUE for Gen 1/2 SCSI series,
+// and IDPF for Gen 4 / Blackwell / Titanium series).
+func filterImagesForGCP(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	var filtered []model.ImageInfo
+	for _, img := range images {
+		if isGCPImageCompatible(img, specInfo) {
+			filtered = append(filtered, img)
+		}
+	}
+	if len(filtered) == 0 {
+		return images
+	}
+	return filtered
+}
+
+func isIBMImageCompatible(img model.ImageInfo) bool {
+	allowedUse := strings.ToLower(common.LookupKeyValueList(img.Details, "AllowedUse"))
+	if strings.Contains(allowedUse, "instance:false") {
+		return false
+	}
+	osInfo := strings.ToLower(common.LookupKeyValueList(img.Details, "OperatingSystem"))
+	if strings.Contains(osInfo, "dedicated_host_only:true") {
+		return false
+	}
+	return true
+}
+
+// filterImagesForIBM excludes IBM Cloud images restricted to bare metal servers (instance:false) or dedicated hosts.
+func filterImagesForIBM(images []model.ImageInfo, _ model.SpecInfo) []model.ImageInfo {
+	var filtered []model.ImageInfo
+	for _, img := range images {
+		if isIBMImageCompatible(img) {
+			filtered = append(filtered, img)
+		}
+	}
+	if len(filtered) == 0 {
+		return images
+	}
+	return filtered
+}
+
+func isAzureImageCompatible(img model.ImageInfo, specInfo model.SpecInfo) bool {
+	specGen := strings.TrimSpace(common.LookupKeyValueList(specInfo.Details, "HyperVGenerations"))
+	supportsV1 := strings.Contains(specGen, "V1")
+	supportsV2 := strings.Contains(specGen, "V2")
+	if specGen != "" && (supportsV1 != supportsV2) {
+		requiredGen := "V2"
+		if supportsV1 {
+			requiredGen = "V1"
+		}
+		imgGen := strings.TrimSpace(common.LookupKeyValueList(img.Details, "HyperVGeneration"))
+		if imgGen != "" && imgGen != requiredGen {
+			return false
+		}
+	}
+
+	specDiskCtrl := strings.ToUpper(strings.TrimSpace(common.LookupKeyValueList(specInfo.Details, "DiskControllerTypes")))
+	specConfType := strings.TrimSpace(common.LookupKeyValueList(specInfo.Details, "ConfidentialComputingType"))
+	supportsNVMe := strings.Contains(specDiskCtrl, "NVME")
+	supportsSCSI := strings.Contains(specDiskCtrl, "SCSI")
+	nvmeOnly := specDiskCtrl != "" && supportsNVMe && !supportsSCSI
+	scsiOnly := specDiskCtrl != "" && supportsSCSI && !supportsNVMe
+
+	features := strings.ToUpper(common.LookupKeyValueList(img.Details, "Features"))
+	if features != "" {
+		if specConfType != "" && !strings.Contains(features, "CONFIDENTIALVMSUPPORTED") {
+			return false
+		}
+		if strings.Contains(features, "DISKCONTROLLERTYPES=") {
+			idx := strings.Index(features, "DISKCONTROLLERTYPES=")
+			sub := features[idx+len("DISKCONTROLLERTYPES="):]
+			if eqIdx := strings.Index(sub, "="); eqIdx != -1 {
+				sub = sub[:eqIdx]
+			}
+			if nvmeOnly && !strings.Contains(sub, "NVME") {
+				return false
+			}
+			if scsiOnly && !strings.Contains(sub, "SCSI") {
+				return false
+			}
+		} else if nvmeOnly {
+			return false
+		}
+	}
+	return true
+}
+
+// filterImagesForAzure filters Azure images by HyperVGeneration, DiskControllerTypes (NVMe vs SCSI),
+// and ConfidentialComputingType (SNP/TDX).
+func filterImagesForAzure(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	filtered := filterImagesByHyperVGeneration(images, specInfo)
+
+	specDiskCtrl := strings.ToUpper(strings.TrimSpace(common.LookupKeyValueList(specInfo.Details, "DiskControllerTypes")))
+	specConfType := strings.TrimSpace(common.LookupKeyValueList(specInfo.Details, "ConfidentialComputingType"))
+
+	supportsNVMe := strings.Contains(specDiskCtrl, "NVME")
+	supportsSCSI := strings.Contains(specDiskCtrl, "SCSI")
+	nvmeOnly := specDiskCtrl != "" && supportsNVMe && !supportsSCSI
+	scsiOnly := specDiskCtrl != "" && supportsSCSI && !supportsNVMe
+
+	if !nvmeOnly && !scsiOnly && specConfType == "" {
+		return filtered
+	}
+
+	var ctrlFiltered []model.ImageInfo
+	for _, img := range filtered {
+		if isAzureImageCompatible(img, specInfo) {
+			ctrlFiltered = append(ctrlFiltered, img)
+		}
+	}
+
+	if len(ctrlFiltered) == 0 {
+		return filtered
+	}
+	return ctrlFiltered
+}
+
+func hasFixedOSRootDisk(specInfo model.SpecInfo) bool {
+	if specInfo.RootDiskSize <= 0 {
+		return false
+	}
+	switch csp.ResolveCloudPlatform(specInfo.ProviderName) {
+	case csp.NHN, csp.KT, csp.OpenStack, csp.NCP:
+		return true
+	default:
+		return false
+	}
+}
+
+// filterImagesByFixedRootDisk excludes images whose minimum OS disk size exceeds a spec's fixed local root disk size.
+// Note: Only applied to CSPs where SpecInfo.RootDiskSize represents a fixed OS root disk (NHN, KT, OpenStack, NCP),
+// not Azure/Alibaba where Spider's DiskSizeGB reflects temporary scratch or local NVMe data disks.
+func filterImagesByFixedRootDisk(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	if !hasFixedOSRootDisk(specInfo) {
+		return images
+	}
+	maxDiskGB := float64(specInfo.RootDiskSize)
+	var filtered []model.ImageInfo
+	for _, img := range images {
+		if img.OSDiskSizeGB > 0 && img.OSDiskSizeGB > maxDiskGB {
+			continue
+		}
+		filtered = append(filtered, img)
+	}
+	if len(filtered) == 0 {
+		return images
+	}
+	return filtered
 }
 
 // filterImagesByHyperVGeneration filters Azure images to match the Hyper-V generation
@@ -701,31 +1223,59 @@ func filterImagesByHyperVGeneration(images []model.ImageInfo, specInfo model.Spe
 	return filtered
 }
 
-// filterImagesByCorrespondingIds filters images based on CorrespondingImageIds from spec details
-func filterImagesByCorrespondingIds(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
-	// Find CorrespondingImageIds from spec details
-	correspondingIds := extractCorrespondingImageIds(specInfo.Details)
-	if len(correspondingIds) == 0 {
-		log.Warn().Msgf("No CorrespondingImageIds found in spec %s for provider %s", specInfo.Id, specInfo.ProviderName)
-		return images
+func extractNCPHypervisorCode(details []model.KeyValue, fallbackStr string) string {
+	hvRaw := strings.ToUpper(common.LookupKeyValueList(details, "HypervisorType"))
+	switch {
+	case strings.Contains(hvRaw, "KVM"):
+		return "KVM"
+	case strings.Contains(hvRaw, "XEN"):
+		return "XEN"
+	case strings.Contains(hvRaw, "BM"):
+		return "BM"
 	}
+	upper := strings.ToUpper(fallbackStr)
+	switch {
+	case strings.Contains(upper, "HYPERVISOR:KVM") || strings.Contains(upper, "-G3"):
+		return "KVM"
+	case strings.Contains(upper, "HYPERVISOR:XEN") || strings.Contains(upper, "-G2") || strings.Contains(upper, "-G1"):
+		return "XEN"
+	case strings.Contains(upper, "HYPERVISOR:BM"):
+		return "BM"
+	}
+	return ""
+}
 
-	// Convert to map for efficient lookup
-	validImageIds := make(map[string]bool)
+// filterImagesByCorrespondingIds filters NCP images based on HypervisorType (KVM vs XEN vs BM)
+// and CorrespondingImageIds from spec details.
+func filterImagesByCorrespondingIds(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
+	specHV := extractNCPHypervisorCode(specInfo.Details, specInfo.CspSpecName)
+	correspondingIds := extractCorrespondingImageIds(specInfo.Details)
+
+	validImageIds := make(map[string]bool, len(correspondingIds))
 	for _, id := range correspondingIds {
 		validImageIds[strings.TrimSpace(id)] = true
 	}
 
-	// Filter images based on cspImageName matching
 	var filteredImages []model.ImageInfo
 	for _, image := range images {
-		if validImageIds[image.CspImageName] {
-			filteredImages = append(filteredImages, image)
+		if specHV != "" {
+			imgHV := extractNCPHypervisorCode(image.Details, image.OSDistribution)
+			if imgHV != "" && !strings.EqualFold(specHV, imgHV) {
+				continue
+			}
 		}
+		if len(validImageIds) > 0 && !validImageIds[image.CspImageName] {
+			continue
+		}
+		filteredImages = append(filteredImages, image)
 	}
 
-	log.Info().Msgf("CorrespondingIds filtering: %d corresponding image IDs found, filtered from %d to %d images for provider %s",
-		len(correspondingIds), len(images), len(filteredImages), specInfo.ProviderName)
+	if len(filteredImages) == 0 && len(correspondingIds) == 0 {
+		return images
+	}
+
+	log.Info().Msgf("NCP CorrespondingIds/Hypervisor(%s) filtering: %d corresponding IDs, filtered from %d to %d images for provider %s",
+		specHV, len(correspondingIds), len(images), len(filteredImages), specInfo.ProviderName)
 
 	return filteredImages
 }

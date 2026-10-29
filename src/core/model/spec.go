@@ -188,6 +188,14 @@ type SpecInfo struct { // Tumblebug
 	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
 	SystemLabel string     `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
 	Details     []KeyValue `json:"details" gorm:"type:text;serializer:json"`
+
+	// Runtime-only availability fields (never persisted to PostgreSQL; populated from cache or live CSP check).
+	AvailabilityStatus       AvailabilityStatus `json:"availabilityStatus,omitempty" gorm:"-" example:"Available"`
+	AvailabilityReason       string             `json:"availabilityReason,omitempty" gorm:"-"`
+	AvailableZones           []string           `json:"availableZones,omitempty" gorm:"-"`
+	UnavailableZones         []string           `json:"unavailableZones,omitempty" gorm:"-"`
+	AvailabilityCheckedAt    *time.Time         `json:"availabilityCheckedAt,omitempty" gorm:"-"`
+	AvailabilityRefreshAfter *time.Time         `json:"availabilityRefreshAfter,omitempty" gorm:"-"`
 }
 
 // LatencyInfo is a struct that represents TB latency map object.
@@ -240,6 +248,7 @@ type FilterSpecsByRangeRequest struct {
 	EvaluationScore09   Range   `json:"evaluationScore09"`
 	EvaluationScore10   Range   `json:"evaluationScore10"`
 	Limit               int     `json:"limit" example:"0" description:"Maximum number of results to return (0 for no limit - returns all results)"`
+	CheckAvailability   bool    `json:"checkAvailability,omitempty" example:"false" description:"If true, actively query CSP APIs in parallel for real-time spec availability/quota status"`
 }
 
 // SpiderSpecList is a struct to handle spec list from the CB-Spider's REST API response

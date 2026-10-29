@@ -33,9 +33,8 @@ type availabilityChecker struct{}
 
 func (c *availabilityChecker) Provider() string { return cspconst.Azure }
 
-// CheckInstance wraps CheckSpecAvailability. Azure's API is not zone-aware
-// in the same way Alibaba's is for stock, so the result has no per-zone
-// breakdown; the boolean Available is sufficient for the pre-flight purpose.
+// CheckInstance wraps CheckSpecAvailability, returning SKU offering, per-zone
+// restrictions, and vCPU quota status.
 func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.AvailabilityQuery) (model.AvailabilityResult, error) {
 	specResult, err := CheckSpecAvailability(ctx, q.Region, q.InstanceType)
 	if err != nil {
@@ -46,6 +45,8 @@ func (c *availabilityChecker) CheckInstance(ctx context.Context, q model.Availab
 		Region:       q.Region,
 		InstanceType: q.InstanceType,
 		Available:    specResult.Available,
+		Status:       specResult.Status,
+		Zones:        specResult.Zones,
 		Source:       "azure:CheckSpecAvailability",
 	}
 	if !specResult.Available {

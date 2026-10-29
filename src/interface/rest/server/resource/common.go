@@ -428,6 +428,19 @@ func RestLoadAssets(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestGetLoadAssetsStatus godoc
+// @ID GetLoadAssetsStatus
+// @Summary Get real-time progress of LoadAssets and FetchPrice
+// @Description Returns the current phase, processed/total regions, and registered specs/images counts while LoadAssets or FetchPrice is running.
+// @Tags [Admin] System Configuration
+// @Produce json
+// @Success 200 {object} resource.LoadAssetsStatus
+// @Router /loadAssetsStatus [get]
+func RestGetLoadAssetsStatus(c echo.Context) error {
+	status := resource.GetLoadAssetsStatus()
+	return clientManager.EndRequestWithLog(c, nil, status)
+}
+
 // RestCreateSharedResource godoc
 // @ID CreateSharedResource
 // @Summary Create shared resources for MC-Infra

@@ -22,6 +22,7 @@ import (
 	"os"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -201,13 +202,6 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 		return nil, err
 	}
 
-	// Initialize result object
-	result.TotalRegions = len(connConfigs.Connectionconfig)
-	result.FetchOption = *option
-	result.ResultInDetail = make([]ConnectionImageResult, 0, len(connConfigs.Connectionconfig))
-
-	updateFetchImagesProgress(nsId, result)
-
 	// Group connection configs by provider
 	providerConnMap := make(map[string][]model.ConnConfig)
 	for _, connConfig := range connConfigs.Connectionconfig {
@@ -237,8 +231,26 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 		providerConnMap[provider] = append(providerConnMap[provider], connConfig)
 	}
 
-	log.Info().Msgf("[%s] Grouped connections by provider: %d providers",
-		nsId, len(providerConnMap))
+	// Calculate exact target connection count (region-agnostic providers execute 1 connection)
+	totalTargetConns := 0
+	for provider, connList := range providerConnMap {
+		if slices.Contains(option.RegionAgnosticProviders, provider) && len(connList) > 0 {
+			totalTargetConns += 1
+		} else {
+			totalTargetConns += len(connList)
+		}
+	}
+
+	// Initialize result object
+	lastFetchResult.Lock()
+	result.TotalRegions = totalTargetConns
+	result.FetchOption = *option
+	result.ResultInDetail = make([]ConnectionImageResult, 0, totalTargetConns)
+	lastFetchResult.Result[nsId] = result
+	lastFetchResult.Unlock()
+
+	log.Info().Msgf("[%s] Grouped connections by provider: %d providers (%d effective connections)",
+		nsId, len(providerConnMap), totalTargetConns)
 
 	// Channel to collect results from all goroutines
 	resultChan := make(chan ConnectionImageResult, len(connConfigs.Connectionconfig))
@@ -367,8 +379,9 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 		close(resultChan)
 	}()
 
-	// Collect results from all connections
+	// Collect results from all connections and update progress in real time
 	for connResult := range resultChan {
+		lastFetchResult.Lock()
 		result.ResultInDetail = append(result.ResultInDetail, connResult)
 
 		if connResult.Success {
@@ -377,13 +390,17 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 		} else {
 			result.FailedRegions++
 		}
+		result.ElapsedTime = time.Since(result.StartTime).Round(time.Second).String()
+		lastFetchResult.Unlock()
 	}
 
 	// Finalize result
 	endTime := time.Now()
+	lastFetchResult.Lock()
 	result.ElapsedTime = endTime.Sub(result.StartTime).String()
 	result.InProgress = false
-	updateFetchImagesProgress(nsId, result)
+	lastFetchResult.Result[nsId] = result
+	lastFetchResult.Unlock()
 
 	// Log provider statistics
 	providerStats := make(map[string]struct {
@@ -473,18 +490,22 @@ func FetchImagesForAllConnConfigs(nsId string, option *model.ImageFetchOption) (
 	return result, nil
 }
 
-// GetFetchImagesAsyncResult returns the result of the most recent fetch images operation
+// GetFetchImagesAsyncResult returns a snapshot of the most recent fetch images operation
 func GetFetchImagesAsyncResult(nsId string) (*FetchImagesAsyncResult, error) {
 	lastFetchResult.RLock()
 	defer lastFetchResult.RUnlock()
 
 	result, exists := lastFetchResult.Result[nsId]
-	result.ElapsedTime = time.Since(result.StartTime).String()
-	if !exists {
-		return nil, fmt.Errorf("No fetch images result found for namespace %s", nsId)
+	if !exists || result == nil {
+		return nil, fmt.Errorf("no fetch images result found for namespace %s", nsId)
 	}
 
-	return result, nil
+	snapshot := *result
+	if snapshot.InProgress {
+		snapshot.ElapsedTime = time.Since(snapshot.StartTime).Round(time.Second).String()
+	}
+
+	return &snapshot, nil
 }
 
 // createBasicImageInfoFromCSV creates a basic ImageInfo structure from CSV data
@@ -514,6 +535,13 @@ func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, c
 
 	// Set infra type
 	imageInfo.InfraType = expandInfraType(infraType)
+	imageInfo.ImageStatus = model.ImageAvailable
+	if strings.Contains(strings.ToLower(osType+" "+osDistribution), "windows") {
+		imageInfo.OSPlatform = model.Windows
+	} else {
+		imageInfo.OSPlatform = model.Linux_UNIX
+	}
+	imageInfo.OSDiskSizeGB = -1
 
 	// Set architecture and distribution from CSV if provided.
 	// These are populated for CSP images that cannot be enriched via CSP lookup (e.g., EKS/GKE node images).
@@ -528,6 +556,8 @@ func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, c
 	// They are not real imageIds but abstract type identifiers (ami-type / image-type / NodePoolOs).
 	if usesTypeIdentifierK8sImage(providerName) {
 		imageInfo.IsKubernetesImage = true
+	} else if imageInfo.OSDistribution != "" {
+		imageInfo.IsBasicImage = common.CheckBasicOSImage(imageInfo.OSDistribution, providerName)
 	}
 
 	return imageInfo
@@ -762,6 +792,12 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 		log.Info().Err(err).Msg("RegisterImage WithInfo failed")
 	}
 
+	if updatedCount, refreshErr := refreshImageOSTypesFromPatterns(nsId); refreshErr != nil {
+		log.Warn().Err(refreshErr).Msg("Failed to refresh existing image OS types from extractionpatterns.yaml")
+	} else if updatedCount > 0 {
+		log.Info().Int("updatedImages", updatedCount).Msg("Refreshed existing image OS types from extractionpatterns.yaml")
+	}
+
 	elapsedUpdateImg := time.Since(startTime)
 
 	log.Info().Msgf("Updated the registered Images according to the asset file. Elapsed [%s]", elapsedUpdateImg)
@@ -772,4 +808,214 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 	return result, nil
 }
 
-// SearchImage returns a list of images based on the search criteria
+// refreshImageOSTypesFromPatterns re-evaluates os_type, basic/k8s/gpu flags, architecture, and disk size
+// for existing images in DB using the current extractionpatterns.yaml and utility_image.go logic.
+func refreshImageOSTypesFromPatterns(nsId string) (int, error) {
+	totalUpdated := 0
+
+	// 1. Normalize NCP Bare Metal hypervisor suffix in os_distribution if present
+	ncpFixRes := model.ORM.Exec(`
+		UPDATE image_infos
+		SET os_distribution = REPLACE(os_distribution, '(Hypervisor:{code:BM,codeName:BM})', '(Hypervisor:BM)')
+		WHERE namespace = ? AND provider_name = 'ncp' AND os_distribution LIKE '%(Hypervisor:{code:BM,codeName:BM})%'
+	`, nsId)
+	if ncpFixRes.Error == nil {
+		totalUpdated += int(ncpFixRes.RowsAffected)
+	}
+
+	// 2. Refresh os_type and is_basic_image (for non-GPU images) based on current extractionpatterns.yaml
+	type distRow struct {
+		ProviderName   string `gorm:"column:provider_name"`
+		OSDistribution string `gorm:"column:os_distribution"`
+		OSType         string `gorm:"column:os_type"`
+		IsGPUImage     bool   `gorm:"column:is_gpu_image"`
+		IsBasicImage   bool   `gorm:"column:is_basic_image"`
+		FromAssets     bool   `gorm:"column:from_assets"`
+	}
+	var rows []distRow
+	if err := model.ORM.Model(&model.ImageInfo{}).
+		Select("DISTINCT provider_name, os_distribution, os_type, is_gpu_image, is_basic_image, (COALESCE(system_label, '') = ?) AS from_assets", model.StrFromAssets).
+		Where("namespace = ? AND os_distribution != ''", nsId).
+		Find(&rows).Error; err != nil {
+		return totalUpdated, err
+	}
+
+	type groupKey struct {
+		provider     string
+		newOSType    string
+		isGPU        bool
+		newBasic     bool
+		fromAssets   bool
+		updateOSType bool
+	}
+	updates := make(map[groupKey][]string)
+	for _, r := range rows {
+		newOS := common.ExtractOSInfo(r.OSDistribution)
+		if r.FromAssets || newOS == "" {
+			newOS = r.OSType
+		}
+		newBasic := !r.IsGPUImage && common.CheckBasicOSImage(r.OSDistribution, r.ProviderName)
+
+		if newOS != r.OSType || newBasic != r.IsBasicImage {
+			k := groupKey{
+				provider:     r.ProviderName,
+				newOSType:    newOS,
+				isGPU:        r.IsGPUImage,
+				newBasic:     newBasic,
+				fromAssets:   r.FromAssets,
+				updateOSType: !r.FromAssets && newOS != "",
+			}
+			updates[k] = append(updates[k], r.OSDistribution)
+		}
+	}
+
+	for k, dists := range updates {
+		for i := 0; i < len(dists); i += 200 {
+			end := min(i+200, len(dists))
+			updateMap := map[string]interface{}{
+				"is_basic_image": k.newBasic,
+			}
+			if k.updateOSType {
+				updateMap["os_type"] = k.newOSType
+			}
+			q := model.ORM.Model(&model.ImageInfo{}).
+				Where("namespace = ? AND provider_name = ? AND is_gpu_image = ? AND os_distribution IN ?",
+					nsId, k.provider, k.isGPU, dists[i:end])
+			if k.fromAssets {
+				q = q.Where("COALESCE(system_label, '') = ?", model.StrFromAssets)
+			} else {
+				q = q.Where("COALESCE(system_label, '') != ?", model.StrFromAssets)
+			}
+			res := q.Updates(updateMap)
+			if res.Error != nil {
+				return totalUpdated, res.Error
+			}
+			totalUpdated += int(res.RowsAffected)
+		}
+	}
+
+	// 2b. Refresh is_basic_gpu_image for GPU images (excluding AWS where 90k DLAMIs are evaluated by OS/distribution)
+	var gpuImages []model.ImageInfo
+	if err := model.ORM.Select("provider_name, csp_image_name, name, os_distribution, is_basic_gpu_image").
+		Where("namespace = ? AND is_gpu_image = true AND provider_name != 'aws'", nsId).
+		Find(&gpuImages).Error; err == nil {
+		var setTrueIDs, setFalseIDs []string
+		for _, img := range gpuImages {
+			searchStr := strings.Join([]string{img.OSDistribution, img.CspImageName, img.Name}, " ")
+			want := common.CheckBasicGpuImage(searchStr, img.ProviderName)
+			if want != img.IsBasicGpuImage {
+				if want {
+					setTrueIDs = append(setTrueIDs, img.CspImageName)
+				} else {
+					setFalseIDs = append(setFalseIDs, img.CspImageName)
+				}
+			}
+		}
+		if len(setTrueIDs) > 0 {
+			res := model.ORM.Model(&model.ImageInfo{}).
+				Where("namespace = ? AND provider_name != 'aws' AND csp_image_name IN ?", nsId, setTrueIDs).
+				Update("is_basic_gpu_image", true)
+			if res.Error == nil {
+				totalUpdated += int(res.RowsAffected)
+			}
+		}
+		if len(setFalseIDs) > 0 {
+			res := model.ORM.Model(&model.ImageInfo{}).
+				Where("namespace = ? AND provider_name != 'aws' AND csp_image_name IN ?", nsId, setFalseIDs).
+				Update("is_basic_gpu_image", false)
+			if res.Error == nil {
+				totalUpdated += int(res.RowsAffected)
+			}
+		}
+	}
+
+	// 3. Re-evaluate is_kubernetes_image for non-asset images currently marked true
+	var k8sCandidates []model.ImageInfo
+	if err := model.ORM.Where("namespace = ? AND is_kubernetes_image = true AND COALESCE(system_label, '') != ?",
+		nsId, model.StrFromAssets).Find(&k8sCandidates).Error; err == nil {
+		falseIDs := make([]string, 0)
+		for _, img := range k8sCandidates {
+			var kvStrBuilder strings.Builder
+			for _, kv := range img.Details {
+				kvStrBuilder.WriteString(kv.Key + ":" + kv.Value + " ")
+			}
+			fullSearchStr := strings.Join([]string{img.OSDistribution, img.CspImageName, img.Name, kvStrBuilder.String()}, " ")
+			if !common.IsK8sImage(fullSearchStr) {
+				falseIDs = append(falseIDs, img.CspImageName)
+			}
+		}
+		for i := 0; i < len(falseIDs); i += 200 {
+			end := min(i+200, len(falseIDs))
+			res := model.ORM.Model(&model.ImageInfo{}).
+				Where("namespace = ? AND COALESCE(system_label, '') != ? AND csp_image_name IN ?",
+					nsId, model.StrFromAssets, falseIDs[i:end]).
+				Update("is_kubernetes_image", false)
+			if res.Error == nil {
+				totalUpdated += int(res.RowsAffected)
+			}
+		}
+	}
+
+	// 4. Repair missing os_architecture ('na' or '') for GCP/KT/OpenStack/Tencent/etc.
+	var naArchImages []model.ImageInfo
+	if err := model.ORM.Where("namespace = ? AND os_architecture IN ('na', '')", nsId).Find(&naArchImages).Error; err == nil {
+		for _, img := range naArchImages {
+			lowerStr := strings.ToLower(img.OSDistribution + " " + img.CspImageName + " " + img.Name)
+			newArch := model.OSArchitecture("")
+			switch {
+			case strings.Contains(lowerStr, "arm64") || strings.Contains(lowerStr, "aarch64"):
+				newArch = model.ARM64
+			case strings.Contains(lowerStr, "s390x"):
+				newArch = model.S390X
+			case strings.Contains(lowerStr, "32bit") || strings.Contains(lowerStr, "32-bit") || strings.Contains(lowerStr, "i386"):
+				newArch = model.X86_32
+			case strings.Contains(lowerStr, "x86_64") || strings.Contains(lowerStr, "amd64") ||
+				strings.Contains(lowerStr, "x64") || strings.Contains(lowerStr, "64bit") || strings.Contains(lowerStr, "64-bit"):
+				newArch = model.X86_64
+			case strings.EqualFold(img.ProviderName, csp.KT) ||
+				strings.EqualFold(img.ProviderName, csp.GCP) ||
+				strings.EqualFold(img.ProviderName, csp.OpenStack):
+				newArch = model.X86_64
+			}
+			if newArch != "" {
+				res := model.ORM.Model(&model.ImageInfo{}).
+					Where("namespace = ? AND provider_name = ? AND csp_image_name = ?", nsId, img.ProviderName, img.CspImageName).
+					Update("os_architecture", newArch)
+				if res.Error == nil {
+					totalUpdated += int(res.RowsAffected)
+				}
+			}
+		}
+	}
+
+	// 5. Repair missing os_disk_size_gb (<= 0) from Details KeyValueList (KT, IBM, etc.)
+	var missingDiskImages []model.ImageInfo
+	if err := model.ORM.Where("namespace = ? AND os_disk_size_gb <= 0 AND provider_name IN ('kt', 'ibm')", nsId).Find(&missingDiskImages).Error; err == nil {
+		for _, img := range missingDiskImages {
+			var parsedDisk float64
+			for _, kv := range img.Details {
+				kLower := strings.ToLower(strings.TrimSpace(kv.Key))
+				if kLower == "mindiskgigabytes" || kLower == "minimumprovisionedsize" ||
+					kLower == "disksizegb" || kLower == "mindisk" || kLower == "size" || kLower == "imagesize" {
+					if v, err := strconv.ParseFloat(strings.TrimSpace(kv.Value), 64); err == nil && v > 0 {
+						if v > 1024*1024*1024 {
+							v = float64(int64((v + (1024*1024*1024 - 1)) / (1024 * 1024 * 1024)))
+						}
+						parsedDisk = v
+						break
+					}
+				}
+			}
+			if parsedDisk > 0 {
+				res := model.ORM.Model(&model.ImageInfo{}).
+					Where("namespace = ? AND provider_name = ? AND csp_image_name = ?", nsId, img.ProviderName, img.CspImageName).
+					Update("os_disk_size_gb", parsedDisk)
+				if res.Error == nil {
+					totalUpdated += int(res.RowsAffected)
+				}
+			}
+		}
+	}
+
+	return totalUpdated, nil
+}

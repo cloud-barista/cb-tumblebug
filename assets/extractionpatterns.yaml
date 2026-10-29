@@ -5,7 +5,7 @@ extractionPatterns:
   osType:
     ubuntu:
       name: "Ubuntu"
-      versions: ["16.04", "18.04", "20.04", "22.04", "22.10", "23.10", "23.04", "24.04", "24.10", "25.04"]
+      versions: ["26.04", "25.10", "25.04", "24.10", "24.04", "23.10", "23.04", "22.10", "22.04", "20.04", "18.04", "16.04"]
       defaultVersion: ""
       patterns: ["ubuntu", "canonical"]
       
@@ -22,15 +22,27 @@ extractionPatterns:
             - "*ubuntu*minimal*"     # Any image with "ubuntu" and "minimal" keywords
             - "*ubuntu*base*"        # Any image with "ubuntu" and "base" keywords
             - "*ubuntu*64bit*"       # 64-bit format without space (kt, alibaba, etc.)
+            - "*os-ubuntu*image*"    # KT Cloud standard Ubuntu image format (e.g., os-ubuntu24.04-image-20260929)
+            - "ubuntu-* (hypervisor:bm)" # NCP Bare Metal Ubuntu image format
             - "*ubuntu*lts*"         # LTS images with any separator (GCP format)
             - "ubuntu/images/*"      # Path-style naming (common in AWS)
             # Description-based patterns
             - "ubuntu server*"       # Images named/described as Ubuntu Server
             - "ubuntu * lts*"        # LTS version images
-            - "ubuntu * 64 bit"      # 64-bit specification format
+            - "ubuntu * 64 bit*"     # 64-bit specification format (including "64 bit ARM Edition" on Alibaba)
+            - "ubuntu *(arm64)"      # Tencent ARM64 Ubuntu format (e.g., "Ubuntu 22.04(arm64)")
+            - "ubuntu-2*.04"         # OpenStack standard Ubuntu image format (e.g., "ubuntu-22.04", "ubuntu-24.04")
           exclude:
             # Note: Pattern matching is case-insensitive
             # Use specific patterns to avoid false positives
+            # Legacy 32-bit or special boot/hardware-only variants
+            - "*32bit*"              # Exclude legacy 32-bit images (e.g., Tencent Ubuntu 14.04/16.04 32bit)
+            - "*32-bit*"
+            - "*uefi edition*"       # Exclude Alibaba UEFI-only edition when standard UEFI-Preferred base exists
+            - "* for amd*"           # Exclude Alibaba CPU-vendor-specific edition
+            - "* for scc*"           # Exclude Alibaba Super Computing Cluster edition
+            - "*trust edition*"      # Exclude Alibaba Trust edition
+            - "*dengbao*"            # Exclude Alibaba DengBao compliance edition
             # Commercial/Enterprise variants
             - "*ubuntu-pro*"         # Ubuntu Pro (paid support)
             - "*-pro-*"              # Pro variants with dashes
@@ -113,71 +125,101 @@ extractionPatterns:
               - "*fedora*minimal*"
     centos:
       name: "CentOS"
-      versions: ["7", "8", "9"]
+      versions: ["10", "9", "8", "7"]
       defaultVersion: ""
       patterns: ["centos", "centoscore"]
     debian:
       name: "Debian"
-      versions: ["9", "10", "11", "12"]
+      versions: ["13", "12", "11", "10", "9"]
       defaultVersion: ""
       patterns: ["debian"]
     windows:
       name: "Windows"
-      versions: ["2016", "2019", "2022", "10", "11"]
+      versions: ["2025", "2022", "2019", "2016", "11", "10"]
       defaultVersion: ""
-      patterns: ["windows", "win"]
+      patterns: ["windows", "win", "ws2025", "ws2022", "ws2019", "ws2016"]
     rhel:
       name: "Red Hat Enterprise Linux"
-      versions: ["7", "8", "9"]
+      versions: ["10", "9", "8", "7"]
       defaultVersion: ""
       patterns: ["rhel", "red hat", "redhat"]
     amazonlinux:
       name: "Amazon Linux"
-      versions: ["2", "2023"]
+      versions: ["2023", "2"]
       defaultVersion: ""
       # Note: "amazon" pattern removed - too broad, matches AWS image metadata (ImageOwnerAlias: "amazon")
       # and causes Ubuntu/Windows images to be misclassified as Amazon Linux
       patterns: ["amazon linux", "amazon_linux", "amzn", "al20", "amazon-eks", "bottlerocket"]
     azurelinux:
       name: "Azure Linux"
-      versions: ["2", "3"]
+      versions: ["3", "2"]
       defaultVersion: ""
-      patterns: ["azurelinux", "azure linux"]
+      patterns: ["azure-linux", "azurelinux", "azure linux"]
     fedora:
       name: "Fedora"
-      versions: ["35", "36", "37", "38", "39"]
+      versions: ["42", "41", "40", "39", "38", "37", "36", "35"]
       defaultVersion: ""
       patterns: ["fedora"]
     suse:
       name: "SUSE Linux Enterprise Server"
-      versions: ["12", "15"]
+      versions: ["16", "15", "12"]
       defaultVersion: ""
       patterns: ["suse", "sles", "sles-sap"]
     rocky:
       name: "Rocky Linux"
-      versions: ["8", "9"]
+      versions: ["10", "9", "8"]
       defaultVersion: ""
-      patterns: ["rocky"]
+      patterns: ["rocky", "rlc-pro"]
     oracle:
       name: "Oracle Linux"
-      versions: ["7", "8", "9"]
+      versions: ["10", "9", "8", "7"]
       defaultVersion: "9"
       patterns: ["oracle"]
     alma:
       name: "AlmaLinux"
-      versions: ["8", "9"]
+      versions: ["10", "9", "8"]
       defaultVersion: ""
       patterns: ["alma"]
     alibaba:
       name: "Alibaba Cloud Linux"
-      versions: ["2", "3"]
+      versions: ["4", "3", "2"]
       defaultVersion: ""
-      patterns: ["aliyun", "alibaba linux"]
+      patterns: ["alibaba cloud linux", "aliyun", "alibaba linux"]
     tencent:
       name: "Tencent Linux"
-      versions: ["2", "3"]
+      versions: ["4", "3", "2"]
       defaultVersion: ""
       patterns: ["tlinux", "tencentos"]
+    navix:
+      name: "NAVIx"
+      versions: ["9"]
+      defaultVersion: ""
+      patterns: ["navix"]
+    anolis:
+      name: "Anolis OS"
+      versions: ["23", "8", "7"]
+      defaultVersion: ""
+      patterns: ["anolis"]
+    freebsd:
+      name: "FreeBSD"
+      versions: ["15", "14", "13", "12", "11"]
+      defaultVersion: ""
+      patterns: ["freebsd"]
+    opencloudos:
+      name: "OpenCloudOS"
+      versions: ["9", "8", "7"]
+      defaultVersion: ""
+      patterns: ["opencloudos"]
+    cos:
+      name: "Container-Optimized OS"
+      versions: ["125", "121", "117", "113", "109", "105"]
+      defaultVersion: ""
+      patterns: ["container-optimized os", "cos-stable", "cos-1", "cos_containerd"]
+    flatcar:
+      name: "Flatcar Container Linux"
+      versions: []
+      defaultVersion: ""
+      patterns: ["flatcar"]
     
   # GPU image identification patterns (case-insensitive, any match = GPU)
   gpuPatterns:
@@ -220,7 +262,7 @@ extractionPatterns:
         include:
           - "*microsoft-dsvm:ubuntu-hpc*"   # Ubuntu HPC (GPU-optimized)
           - "*microsoft-dsvm:ubuntu-2004*"  # DSVM Ubuntu 20.04
-          - "*microsoft-dsvm:ubuntu-2204*"  # DSVM Ubuntu 22.04
+          - "*microsoft-dsvm:ubuntu-2204*"  # DSVM Ubuntu 20.04
       ibm:
         include:
           - "*red hat enterprise linux ai*nvidia*"  # RHEL AI for NVIDIA accelerators
@@ -231,6 +273,7 @@ extractionPatterns:
         include:
           - "*ubuntu*gpu*"   # Ubuntu GPU image (e.g. ubuntu-24.04-gpu)
           - "*rocky*gpu*"    # Rocky Linux GPU image
+          - "*navix*gpu*"    # NAVIx GPU image
       kt:
         include:
           - "*ubuntu*gpusvr*"   # KT GPU server Ubuntu images (CUDA pre-installed)

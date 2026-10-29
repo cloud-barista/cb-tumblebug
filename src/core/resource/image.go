@@ -119,6 +119,30 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
 	tumblebugImage.CreationDate = common.LookupKeyValueList(spiderImage.KeyValueList, "CreationDate")
 
+	tumblebugImage.OSPlatform = spiderImage.OSPlatform
+	tumblebugImage.OSDistribution = spiderImage.OSDistribution
+	if platformName == csp.NHN {
+		// For NHN Cloud, we need to extract the OS distribution from KeyValueList
+		tumblebugImage.OSDistribution = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
+	}
+	if platformName == csp.NCP {
+		// For NCP, we need to extract the hypervisor type from KeyValueList and append it to the OSDistribution
+		hypervisorInfo := common.LookupKeyValueList(spiderImage.KeyValueList, "HypervisorType")
+		if hypervisorInfo != "" {
+			if strings.Contains(strings.ToUpper(hypervisorInfo), "KVM") {
+				hypervisorInfo = "KVM"
+			} else if strings.Contains(strings.ToUpper(hypervisorInfo), "XEN") {
+				hypervisorInfo = "Xen"
+			} else if strings.Contains(strings.ToUpper(hypervisorInfo), "BM") {
+				hypervisorInfo = "BM"
+			}
+		} else {
+			// If hypervisor type is not found, we can set it to "Unknown"
+			hypervisorInfo = "Unknown"
+		}
+		tumblebugImage.OSDistribution += " (Hypervisor:" + hypervisorInfo + ")"
+	}
+
 	// Stringify Values in the KeyValueList for information extraction
 	strDetails := ""
 	strSeparator := " "
@@ -128,11 +152,16 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	}
 	strDetails = strings.Join(values, strSeparator)
 
-	// Extract OS, GPU, K8s information
-	searchStr := fmt.Sprintf("%s%s%s%s%s", spiderImage.OSDistribution, strSeparator, spiderImage.IId.NameId, strSeparator, strDetails)
-	tumblebugImage.OSType = common.ExtractOSInfo(searchStr)
+	// Extract OS Type primarily from OSDistribution and NameId to avoid false version matches
+	// from random numbers/UUIDs/dates in KeyValueList; fall back to full details only if empty.
+	primaryOSStr := fmt.Sprintf("%s%s%s", tumblebugImage.OSDistribution, strSeparator, spiderImage.IId.NameId)
+	tumblebugImage.OSType = common.ExtractOSInfo(primaryOSStr)
+	if tumblebugImage.OSType == "" {
+		fullOSStr := fmt.Sprintf("%s%s%s", primaryOSStr, strSeparator, strDetails)
+		tumblebugImage.OSType = common.ExtractOSInfo(fullOSStr)
+	}
 
-	searchStr = fmt.Sprintf("%s%s%s%s%s", spiderImage.IId.NameId, strSeparator, spiderImage.OSDistribution, strSeparator, strDetails)
+	searchStr := fmt.Sprintf("%s%s%s%s%s", spiderImage.IId.NameId, strSeparator, tumblebugImage.OSDistribution, strSeparator, strDetails)
 	// Check if this is a GPU image
 	if common.IsGPUImage(searchStr) {
 		tumblebugImage.IsGPUImage = true
@@ -154,38 +183,23 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	// Set additional fields
 	tumblebugImage.OSArchitecture = model.OSArchitecture(strings.ToLower(string(spiderImage.OSArchitecture)))
 
-	// Handle specific cases for OSArchitecture
-	// KT Cloud and IBM Cloud have specific architecture mappings
-	if spiderImage.OSArchitecture == model.ArchitectureNA {
-		// For KT Cloud, we set X86_64 if the architecture is not specified
-		if platformName == csp.KT {
+	// Handle specific cases for OSArchitecture when Spider returns NA or empty
+	if spiderImage.OSArchitecture == model.ArchitectureNA || tumblebugImage.OSArchitecture == "" {
+		primaryLower := strings.ToLower(primaryOSStr)
+		switch {
+		case strings.Contains(primaryLower, "arm64") || strings.Contains(primaryLower, "aarch64"):
+			tumblebugImage.OSArchitecture = model.ARM64
+		case strings.Contains(primaryLower, "s390x"):
+			tumblebugImage.OSArchitecture = model.S390X
+		case strings.Contains(primaryLower, "32bit") || strings.Contains(primaryLower, "32-bit") || strings.Contains(primaryLower, "i386"):
+			tumblebugImage.OSArchitecture = model.X86_32
+		case strings.Contains(primaryLower, "x86_64") || strings.Contains(primaryLower, "amd64") || strings.Contains(primaryLower, "x64") || strings.Contains(primaryLower, "64bit"):
 			tumblebugImage.OSArchitecture = model.X86_64
-		}
-		// For IBM Cloud, we set S390X if the architecture is not specified
-		if platformName == csp.IBM {
+		case platformName == csp.KT || platformName == csp.GCP || platformName == csp.OpenStack:
+			tumblebugImage.OSArchitecture = model.X86_64
+		case platformName == csp.IBM:
 			tumblebugImage.OSArchitecture = model.S390X
 		}
-	}
-	tumblebugImage.OSPlatform = spiderImage.OSPlatform
-	tumblebugImage.OSDistribution = spiderImage.OSDistribution
-	if platformName == csp.NHN {
-		// For NHN Cloud, we need to extract the OS distribution from KeyValueList
-		tumblebugImage.OSDistribution = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
-	}
-	if platformName == csp.NCP {
-		// For NCP, we need to extract the hypervisor type from KeyValueList and append it to the OSDistribution
-		hypervisorInfo := common.LookupKeyValueList(spiderImage.KeyValueList, "HypervisorType")
-		if hypervisorInfo != "" {
-			if strings.Contains(strings.ToUpper(hypervisorInfo), "KVM") {
-				hypervisorInfo = "KVM"
-			} else if strings.Contains(strings.ToUpper(hypervisorInfo), "XEN") {
-				hypervisorInfo = "Xen"
-			}
-		} else {
-			// If hypervisor type is not found, we can set it to "Unknown"
-			hypervisorInfo = "Unknown"
-		}
-		tumblebugImage.OSDistribution += " (Hypervisor:" + hypervisorInfo + ")"
 	}
 
 	// Only mark as basic image if the image is "Available"
@@ -208,6 +222,16 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 
 	tumblebugImage.OSDiskType = spiderImage.OSDiskType
 	tumblebugImage.OSDiskSizeGB, _ = strconv.ParseFloat(spiderImage.OSDiskSizeGB, 64)
+	if tumblebugImage.OSDiskSizeGB <= 0 {
+		for _, diskKey := range []string{"MinDiskGigabytes", "MinimumProvisionedSize", "DiskSizeGb", "Size", "ImageSize"} {
+			if valStr := common.LookupKeyValueList(spiderImage.KeyValueList, diskKey); valStr != "" {
+				if parsed, err := strconv.ParseFloat(strings.TrimSpace(valStr), 64); err == nil && parsed > 0 {
+					tumblebugImage.OSDiskSizeGB = parsed
+					break
+				}
+			}
+		}
+	}
 
 	tumblebugImage.Details = spiderImage.KeyValueList
 
