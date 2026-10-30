@@ -31208,6 +31208,15 @@ components:
           type: string
           description: Name for the new Infra to be created from the template
           example: my-new-infra
+        policyOnPartialFailure:
+          type: string
+          description: "PolicyOnPartialFailure specifies how to handle partial node\
+            \ creation failures (optional: \"continue\", \"rollback\", \"refine\")"
+          example: continue
+          enum:
+          - continue
+          - rollback
+          - refine
     model.UpdateScheduleJobRequest:
       type: object
       properties:
