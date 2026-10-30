@@ -1064,16 +1064,25 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 			return nil, fmt.Errorf("cannot retrieve connection config for VM '%s': %w", nodeGroupReq.Name, err)
 		}
 
-		// Pre-resolve CspImageName once per nodeGroup so each per-VM CreateNode call can skip
-		// the redundant GetImage DB query.  Custom images stay empty and go through the full path.
-		if nodeGroupReq.CspImageName == "" && nodeGroupReq.ImageId != "" {
-			if imgInfo, err := resource.GetImage(nsId, nodeGroupReq.ImageId); err == nil &&
-				imgInfo.ResourceType != model.StrCustomImage {
-				resolved := resource.ResolveLatestImageForVMCreation(ctx, nodeGroupReq.ConnectionName, imgInfo)
-				if resolved.CspImageName != "" {
-					nodeGroupReq.CspImageName = resolved.CspImageName
-				} else {
-					nodeGroupReq.CspImageName = imgInfo.CspImageName
+		// Pre-resolve CspImageName and ImageSummary once per nodeGroup so each per-VM CreateNode
+		// call can skip redundant GetImage DB queries and pass the OS hint (WindowsType) to Spider.
+		var ngImageSummary model.ImageSummary
+		if nodeGroupReq.ImageId != "" {
+			if imgInfo, err := resource.GetImage(nsId, nodeGroupReq.ImageId); err == nil {
+				if nodeGroupReq.CspImageName == "" && imgInfo.ResourceType != model.StrCustomImage {
+					resolved := resource.ResolveLatestImageForVMCreation(ctx, nodeGroupReq.ConnectionName, imgInfo)
+					if resolved.CspImageName != "" {
+						nodeGroupReq.CspImageName = resolved.CspImageName
+					} else {
+						nodeGroupReq.CspImageName = imgInfo.CspImageName
+					}
+				}
+				ngImageSummary = model.ImageSummary{
+					ResourceType:   imgInfo.ResourceType,
+					CspImageName:   nodeGroupReq.CspImageName,
+					OSType:         imgInfo.OSType,
+					OSArchitecture: imgInfo.OSArchitecture,
+					OSDistribution: imgInfo.OSDistribution,
 				}
 			}
 		}
@@ -1119,6 +1128,7 @@ func CreateInfra(ctx context.Context, nsId string, req *model.InfraReq, option s
 				SpecId:           nodeGroupReq.SpecId,
 				ImageId:          nodeGroupReq.ImageId,
 				CspImageName:     nodeGroupReq.CspImageName,
+				Image:            ngImageSummary,
 				VNetId:           nodeGroupReq.VNetId,
 				SubnetId:         nodeGroupReq.SubnetId,
 				SecurityGroupIds: nodeGroupReq.SecurityGroupIds,
