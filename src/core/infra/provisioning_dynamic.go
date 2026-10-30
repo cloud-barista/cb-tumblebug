@@ -2003,6 +2003,10 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			// NodeGroup, whose CspImageName is set for custom images too, so CspImageName alone
 			// cannot tell them apart and the MyImage type would be dropped.
 			requestBody.ReqInfo.ImageName = nodeInfoData.CspImageName
+			if osHint := strings.TrimSpace(nodeInfoData.Image.OSType + " " + nodeInfoData.Image.OSDistribution); osHint != "" {
+				isWin := strings.Contains(strings.ToLower(osHint), "windows")
+				requestBody.ReqInfo.WindowsType = &isWin
+			}
 		} else {
 			// Full path: custom images and any node not going through the dynamic creation flow.
 			imageInfo, err := resource.GetImage(nsId, nodeInfoData.ImageId)
@@ -2033,6 +2037,10 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 					requestBody.ReqInfo.ImageName, requestBody.ReqInfo.RootDiskType, requestBody.ReqInfo.RootDiskSize)
 			} else {
 				requestBody.ReqInfo.ImageName = imageInfo.CspImageName
+			}
+			if osHint := strings.TrimSpace(string(imageInfo.OSPlatform) + " " + imageInfo.OSType + " " + imageInfo.OSDistribution); osHint != "" {
+				isWin := strings.Contains(strings.ToLower(osHint), "windows")
+				requestBody.ReqInfo.WindowsType = &isWin
 			}
 		}
 

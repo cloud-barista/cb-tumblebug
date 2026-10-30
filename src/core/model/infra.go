@@ -749,6 +749,7 @@ type SpiderVMReqInfo struct {
 	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
 	RootDiskSize string // "default", "50", "1000" (GB)
 	ImageType    SpiderImageType
+	WindowsType  *bool `json:"WindowsType,omitempty"`
 }
 
 // Ref: cb-spider/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
