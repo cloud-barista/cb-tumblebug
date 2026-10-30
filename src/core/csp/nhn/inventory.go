@@ -89,7 +89,17 @@ func newComputeClient(ctx context.Context, region string) (*nhnsdk.ServiceClient
 	return client, nil
 }
 
-func listServers(ctx context.Context, region string) ([]servers.Server, error) {
+// nhnServer decodes only the fields needed from Nova servers without triggering
+// servers.Server.UnmarshalJSON, which fails on NHN's timezone-less timestamps (e.g. "2026-04-17T06:22:08").
+type nhnServer struct {
+	ID        string                 `json:"id"`
+	Name      string                 `json:"name"`
+	Status    string                 `json:"status"`
+	Addresses map[string]interface{} `json:"addresses"`
+	Metadata  map[string]string      `json:"metadata"`
+}
+
+func listServers(ctx context.Context, region string) ([]nhnServer, error) {
 	client, err := newComputeClient(ctx, region)
 	if err != nil {
 		return nil, err
@@ -98,7 +108,11 @@ func listServers(ctx context.Context, region string) ([]servers.Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("NHN servers.List failed (region=%s): %w", region, err)
 	}
-	return servers.ExtractServers(pages)
+	var list []nhnServer
+	if err := servers.ExtractServersInto(pages, &list); err != nil {
+		return nil, fmt.Errorf("NHN ExtractServersInto failed (region=%s): %w", region, err)
+	}
+	return list, nil
 }
 
 // ListVMs lists every server in region directly from NHN Cloud.

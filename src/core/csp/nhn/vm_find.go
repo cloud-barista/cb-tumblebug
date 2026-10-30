@@ -46,9 +46,10 @@ func FindInstancesByUIDs(ctx context.Context, region string, uids []string) (map
 		if err != nil {
 			return nil, fmt.Errorf("NHN servers.List by Name failed (region=%s, uid=%s): %w", region, uid, err)
 		}
-		serverList, err := servers.ExtractServers(pages)
+		var serverList []nhnServer
+		err = servers.ExtractServersInto(pages, &serverList)
 		if err != nil {
-			return nil, fmt.Errorf("NHN ExtractServers failed: %w", err)
+			return nil, fmt.Errorf("NHN ExtractServersInto failed: %w", err)
 		}
 		for _, s := range serverList {
 			if s.Name == uid {

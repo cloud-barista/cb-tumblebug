@@ -717,10 +717,18 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 		return temp, err
 	}
 
-	// Get Infra information to check if it's being terminated
-	infraInfo, err := GetInfraInfo(nsId, infraId)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to get Infra info")
+	// Read Infra header object directly to check if it is being terminated,
+	// avoiding GetInfraInfo's full GetInfraStatus + per-node label scan.
+	infraKey := common.GenInfraKey(nsId, infraId, "")
+	infraKV, exists, err := kvstore.GetKv(infraKey)
+	if err != nil || !exists {
+		err := fmt.Errorf("failed to get Infra info for %s", infraId)
+		log.Error().Err(err).Msg("")
+		return temp, err
+	}
+	infraInfo := model.InfraInfo{}
+	if err := json.Unmarshal([]byte(infraKV.Value), &infraInfo); err != nil {
+		log.Error().Err(err).Msg("failed to unmarshal Infra info")
 		return temp, err
 	}
 
@@ -745,7 +753,30 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	// Groups are gathered concurrently; each node in them costs a live CSP round trip.
+	// Cache SSH key info per SshKeyId so large infras don't query etcd/OpenBao N times for the same key.
+	type cachedSshKey struct {
+		userName         string
+		verifiedUserName string
+		privateKey       string
+		err              error
+	}
+	var sshKeyCache sync.Map // map[string]cachedSshKey
+
+	getSshKeyCached := func(sshKeyId, sampleNodeId string) cachedSshKey {
+		if sshKeyId != "" {
+			if v, ok := sshKeyCache.Load(sshKeyId); ok {
+				return v.(cachedSshKey)
+			}
+		}
+		u, vu, pk, kErr := GetNodeSshKey(nsId, infraId, sampleNodeId)
+		res := cachedSshKey{userName: u, verifiedUserName: vu, privateKey: pk, err: kErr}
+		if sshKeyId != "" && kErr == nil {
+			sshKeyCache.Store(sshKeyId, res)
+		}
+		return res
+	}
+
+	// Groups are gathered concurrently.
 	groupResults := make([]model.InfraNodeGroupAccessInfo, len(nodeGroupList))
 	groupErrs := make([]error, len(nodeGroupList))
 	var groupWg sync.WaitGroup
@@ -768,7 +799,7 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 				return
 			}
 			var wg sync.WaitGroup
-			chanResults := make(chan model.InfraNodeAccessInfo)
+			chanResults := make(chan model.InfraNodeAccessInfo, len(nodeList))
 
 			// Pre-load parent NodeGroup for hydration
 			var groupNgMap map[string]model.NodeGroupInfo
@@ -791,51 +822,63 @@ func GetInfraAccessInfo(nsId string, infraId string, option string) (*model.Infr
 				}
 
 				wg.Add(1)
-				go func(nsId string, infraId string, nodeId string, option string, chanResults chan model.InfraNodeAccessInfo) {
+				go func(nodeObj model.NodeInfo, chanResults chan model.InfraNodeAccessInfo) {
 					defer wg.Done()
-					common.RandomSleep(0, len(nodeList)/2*1000)
-					nodeInfo, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId)
 
-					nodeAccessInfo := model.InfraNodeAccessInfo{}
-					if err != nil {
-						log.Info().Err(err).Msg("")
-						nodeAccessInfo.PublicIP = ""
-						nodeAccessInfo.PrivateIP = ""
-						nodeAccessInfo.SSHPort = 0
-					} else {
-						nodeAccessInfo.PublicIP = nodeInfo.PublicIp
-						nodeAccessInfo.PrivateIP = nodeInfo.PrivateIp
-						nodeAccessInfo.SSHPort = nodeInfo.SSHPort
+					nodeAccessInfo := model.InfraNodeAccessInfo{
+						NodeId:           nodeObj.Id,
+						PublicIP:         nodeObj.PublicIP,
+						PrivateIP:        nodeObj.PrivateIP,
+						SSHPort:          nodeObj.SSHPort,
+						ConnectionConfig: nodeObj.ConnectionConfig,
 					}
-					nodeAccessInfo.NodeId = nodeId
 
-					nodeObject, err := GetNodeObjectWithNodeGroups(nsId, infraId, nodeId, groupNgMap)
-					if err != nil {
-						log.Info().Err(err).Msg("")
-					} else {
-						nodeAccessInfo.ConnectionConfig = nodeObject.ConnectionConfig
-						if nodeAccessInfo.PublicIP != "" && nodeObject.PublicIP != nodeAccessInfo.PublicIP {
-							nodeObject.PublicIP = nodeAccessInfo.PublicIP
-							nodeObject.SSHPort = nodeAccessInfo.SSHPort
-							UpdateNodeInfo(nsId, infraId, nodeObject)
+					// Overlay fresher IP/SSHPort from in-memory StatusStore if available
+					if entry, ok := globalStatusStore.Get(nsId, infraId, nodeObj.Id); ok {
+						if entry.PublicIP != "" {
+							nodeAccessInfo.PublicIP = entry.PublicIP
+						}
+						if entry.PrivateIP != "" {
+							nodeAccessInfo.PrivateIP = entry.PrivateIP
+						}
+						if entry.SSHPort != 0 {
+							nodeAccessInfo.SSHPort = entry.SSHPort
 						}
 					}
 
-					userName, verifiedUserName, privateKey, err := GetNodeSshKey(nsId, infraId, nodeId)
-					if err != nil {
-						log.Error().Err(err).Msg("")
+					// Only fall back to a live Spider GET /vm call if both PublicIP and PrivateIP are still empty
+					if nodeAccessInfo.PublicIP == "" && nodeAccessInfo.PrivateIP == "" &&
+						strings.EqualFold(nodeObj.Status, model.StatusRunning) {
+						nodeInfo, ipErr := GetNodeCurrentPublicIp(nsId, infraId, nodeObj.Id)
+						if ipErr != nil {
+							log.Info().Err(ipErr).Msg("")
+						} else {
+							nodeAccessInfo.PublicIP = nodeInfo.PublicIp
+							nodeAccessInfo.PrivateIP = nodeInfo.PrivateIp
+							nodeAccessInfo.SSHPort = nodeInfo.SSHPort
+							if nodeAccessInfo.PublicIP != "" && nodeObj.PublicIP != nodeAccessInfo.PublicIP {
+								nodeObj.PublicIP = nodeAccessInfo.PublicIP
+								nodeObj.SSHPort = nodeAccessInfo.SSHPort
+								UpdateNodeInfo(nsId, infraId, nodeObj)
+							}
+						}
+					}
+
+					keyRes := getSshKeyCached(nodeObj.SshKeyId, nodeObj.Id)
+					if keyRes.err != nil {
+						log.Error().Err(keyRes.err).Msg("")
 						nodeAccessInfo.PrivateKey = ""
 						nodeAccessInfo.NodeUserName = ""
 					} else {
 						if strings.EqualFold(option, "showSshKey") {
-							nodeAccessInfo.PrivateKey = privateKey
+							nodeAccessInfo.PrivateKey = keyRes.privateKey
 						}
-						nodeAccessInfo.NodeUserName = ResolveSshUserName(verifiedUserName, userName)
+						nodeAccessInfo.NodeUserName = ResolveSshUserName(keyRes.verifiedUserName, keyRes.userName)
 					}
 
 					//nodeAccessInfo.NodeUserPassword
 					chanResults <- nodeAccessInfo
-				}(nsId, infraId, nodeId, option, chanResults)
+				}(nodeObject, chanResults)
 			}
 			go func() {
 				wg.Wait()
