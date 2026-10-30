@@ -845,14 +845,88 @@ var vnetSubnetEnsureMu sync.Map // key: "{nsId}/{vNetId}" -> *sync.Mutex
 // nextSubnetCidr derives the next non-overlapping subnet CIDR inside the VNet's CIDR block,
 // based on the last existing subnet. Returns an error when the VNet is out of address space.
 func nextSubnetCidr(vNetInfo model.VNetInfo) (string, error) {
-	if vNetInfo.CidrBlock == "" {
+	parentCidr := resource.EffectiveVNetCidrBlock(vNetInfo)
+	if parentCidr == "" {
 		return "", fmt.Errorf("VNet '%s' has no CIDR block", vNetInfo.Id)
 	}
 	if len(vNetInfo.SubnetInfoList) == 0 {
 		return "", fmt.Errorf("VNet '%s' has no existing subnet to derive the next CIDR from", vNetInfo.Id)
 	}
 	last := vNetInfo.SubnetInfoList[len(vNetInfo.SubnetInfoList)-1].IPv4_CIDR
-	return netutil.NextSubnet(last, vNetInfo.CidrBlock)
+	return netutil.NextSubnet(last, parentCidr)
+}
+
+// ensureZoneSubnet finds a subnet in vNetId that matches the requested zone, or creates one
+// on demand inside the same VNet when none exists yet. This allows multiple NodeGroups or
+// Infras in different zones of the same region to share a single regional VNet instead of
+// creating separate zone-scoped VNets with conflicting CIDRs.
+func ensureZoneSubnet(ctx context.Context, nsId, vNetId, zone string) (string, string, error) {
+	zone = strings.TrimSpace(zone)
+	vNetInfo, err := resource.GetVNet(nsId, vNetId)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get VNet '%s': %w", vNetId, err)
+	}
+	if len(vNetInfo.SubnetInfoList) == 0 {
+		return "", "", fmt.Errorf("VNet '%s' has no subnets", vNetId)
+	}
+	if zone == "" {
+		return vNetInfo.SubnetInfoList[0].Id, vNetInfo.SubnetInfoList[0].Zone, nil
+	}
+
+	// Fast path: check if a matching subnet already exists.
+	for _, s := range vNetInfo.SubnetInfoList {
+		if strings.EqualFold(s.Zone, zone) {
+			return s.Id, s.Zone, nil
+		}
+	}
+
+	// If the provider does not support zone-based subnet control (e.g. KT Cloud) or the region
+	// has at most one zone, use the default subnet as-is without attempting to add a new subnet.
+	zc := common.ResolveZoneCapability(vNetInfo.ConnectionName)
+	if !zc.ZoneControl || len(zc.Zones) <= 1 {
+		log.Info().Msgf("ensureZoneSubnet: connection '%s' is single-zone or lacks zone-based control; using default subnet '%s' for requested zone '%s'",
+			vNetInfo.ConnectionName, vNetInfo.SubnetInfoList[0].Id, zone)
+		return vNetInfo.SubnetInfoList[0].Id, vNetInfo.SubnetInfoList[0].Zone, nil
+	}
+	if len(zc.Zones) > 0 && !containsFold(zc.Zones, zone) {
+		log.Warn().Msgf("ensureZoneSubnet: requested zone '%s' is not in region zones %v for connection '%s'; falling back to default subnet '%s'",
+			zone, zc.Zones, vNetInfo.ConnectionName, vNetInfo.SubnetInfoList[0].Id)
+		return vNetInfo.SubnetInfoList[0].Id, vNetInfo.SubnetInfoList[0].Zone, nil
+	}
+
+	// Serialize subnet creation per VNet and re-check under lock.
+	lk, _ := vnetSubnetEnsureMu.LoadOrStore(nsId+"/"+vNetId, &sync.Mutex{})
+	mu := lk.(*sync.Mutex)
+	mu.Lock()
+	defer mu.Unlock()
+
+	vNetInfo, err = resource.GetVNet(nsId, vNetId)
+	if err != nil || len(vNetInfo.SubnetInfoList) == 0 {
+		return "", "", fmt.Errorf("failed to re-read VNet '%s': %w", vNetId, err)
+	}
+	for _, s := range vNetInfo.SubnetInfoList {
+		if strings.EqualFold(s.Zone, zone) {
+			return s.Id, s.Zone, nil
+		}
+	}
+
+	newCidr, cErr := nextSubnetCidr(vNetInfo)
+	if cErr != nil {
+		log.Warn().Err(cErr).Msgf("ensureZoneSubnet: no CIDR space in VNet '%s' to add subnet for zone '%s'; using default subnet", vNetId, zone)
+		return vNetInfo.SubnetInfoList[0].Id, vNetInfo.SubnetInfoList[0].Zone, nil
+	}
+	subReq := &model.SubnetReq{
+		Name:      fmt.Sprintf("%s-%02d", vNetId, len(vNetInfo.SubnetInfoList)),
+		IPv4_CIDR: newCidr,
+		Zone:      zone,
+	}
+	created, sErr := resource.CreateSubnet(ctx, nsId, vNetId, subReq)
+	if sErr != nil {
+		log.Warn().Err(sErr).Msgf("ensureZoneSubnet: could not add subnet in zone '%s' to VNet '%s'; using default subnet", zone, vNetId)
+		return vNetInfo.SubnetInfoList[0].Id, vNetInfo.SubnetInfoList[0].Zone, nil
+	}
+	log.Info().Msgf("ensureZoneSubnet: added subnet '%s' (zone %s, cidr %s) to VNet '%s'", created.Id, created.Zone, newCidr, vNetId)
+	return created.Id, created.Zone, nil
 }
 
 // specAvailableZonesOrdered returns the zones (in checker order) where the spec is offered, via the
@@ -1022,13 +1096,6 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 		return &NodeReqWithCreatedResources{VmReq: &model.CreateNodeGroupReq{Name: req.Name, ConnectionName: nodeGroupReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
 	}
 
-	// Base shared resource name pattern: nsId + "-shared-" + connectionName [+ "-" + zone]
-	baseResourceName := nsId + model.StrSharedResourceName + nodeGroupReq.ConnectionName
-	if req.Zone != "" {
-		baseResourceName = baseResourceName + "-" + req.Zone
-		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s) for VM '%s'", baseResourceName, req.Zone, req.Name)
-	}
-
 	// VNet resource name: shared per-connection by default, or dedicated per-Infra when the
 	// resolved VNet template requests it (vNetPolicy.Dedicated). Centralized in
 	// GenVNetResourceName so this name and the one used when actually creating the VNet
@@ -1101,12 +1168,11 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 			}
 			if req.Zone != "" {
 				sharedResourceOpts.Zone = req.Zone
-				log.Info().Msgf("Creating VNet with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
-			} else if p := csp.ResolveCloudPlatform(specInfo.ProviderName); p != csp.GCP && p != csp.Azure {
-				// Place the initial subnets in the spec's offering zones (layer 1) so we don't create
-				// subnets in zones the spec can't use — avoids leaving unused subnets. Restricted to
-				// zonal-subnet CSPs; GCP/Azure subnets are regional (no per-zone placement), and CSPs
-				// without a per-zone checker return no zones and keep default placement.
+				log.Info().Msgf("Creating VNet with explicit initial subnet zone '%s' for VM '%s'", req.Zone, req.Name)
+			} else {
+				// Place the initial subnets in the spec's offering zones so we don't create
+				// subnets in zones the spec can't use. CSPs without a per-zone checker (or
+				// non-zonal SKUs) return no zones and keep default placement.
 				sharedResourceOpts.PreferredZones = specAvailableZonesOrdered(ctx, specInfo)
 			}
 			err2 := createSharedResourceWithRetry(ctx, nsId, model.StrVNet, nodeGroupReq.ConnectionName, sharedResourceOpts)
@@ -1162,14 +1228,14 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 	}
 
 	// Select subnet based on user-specified zone or VNet template.
-	// - Zone specified: find a subnet matching that zone via FindSubnetByZone
+	// - Zone specified: find or dynamically create a subnet matching that zone inside the VNet
 	// - Template used (no zone): look up VNet to get first subnet's actual ID
 	//   (template subnets may have custom names, not matching vNetResourceName)
 	// - Default (no zone, no template): subnet has same name as VNet (hard-coded convention)
 	if req.Zone != "" {
-		subnetId, subnetZone, err := resource.FindSubnetByZone(nsId, nodeGroupReq.VNetId, req.Zone)
+		subnetId, subnetZone, err := ensureZoneSubnet(ctx, nsId, nodeGroupReq.VNetId, req.Zone)
 		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to find subnet by zone '%s', using default subnet", req.Zone)
+			log.Warn().Err(err).Msgf("Failed to ensure subnet by zone '%s', using default subnet", req.Zone)
 			nodeGroupReq.SubnetId = vNetResourceName
 		} else {
 			nodeGroupReq.SubnetId = subnetId
@@ -1265,12 +1331,9 @@ func getNodeGroupReqFromDynamicReq(ctx context.Context, nsId string, infraId str
 		}
 	}
 
-	// SSHKey is dedicated per Infra ("{infraId}-{conn}[-zone]") for credential isolation, so a
+	// SSHKey is dedicated per Infra ("{infraId}-{conn}") for credential isolation, so a
 	// compromised key is scoped to a single Infra instead of every Infra on the connection.
 	sshKeyResourceName := infraId + "-" + nodeGroupReq.ConnectionName
-	if req.Zone != "" {
-		sshKeyResourceName = sshKeyResourceName + "-" + req.Zone
-	}
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + sshKeyResourceName, Time: time.Now()})
 	nodeGroupReq.SshKeyId = sshKeyResourceName
 	_, err = resource.GetResource(nsId, model.StrSSHKey, nodeGroupReq.SshKeyId)

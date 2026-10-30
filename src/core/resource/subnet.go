@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +33,26 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
+
+// EffectiveVNetCidrBlock returns a parseable parent CIDR block for a VNet.
+// For CSPs like GCP whose VPCs carry no VPC-level CIDR (or where CB-Spider
+// populates a placeholder string like "GCP VPC does not support IPv4_CIDR"),
+// it derives the enclosing /16 supernet from the first existing subnet CIDR.
+func EffectiveVNetCidrBlock(vNetInfo model.VNetInfo) string {
+	if _, _, err := net.ParseCIDR(vNetInfo.CidrBlock); err == nil {
+		return vNetInfo.CidrBlock
+	}
+	for _, s := range vNetInfo.SubnetInfoList {
+		if ip, ipNet, err := net.ParseCIDR(s.IPv4_CIDR); err == nil {
+			ones, bits := ipNet.Mask.Size()
+			if bits == 32 && ones > 16 {
+				mask16 := net.CIDRMask(16, 32)
+				return ip.Mask(mask16).String() + "/16"
+			}
+		}
+	}
+	return vNetInfo.CidrBlock
+}
 
 // SubnetReqStructLevelValidation is a function to validate 'SubnetReq' object.
 func SubnetReqStructLevelValidation(sl validator.StructLevel) {
@@ -86,7 +107,7 @@ func ValidateSubnetReq(subnetReq *model.SubnetReq, existingVNet model.VNetInfo) 
 	var subnets []netutil.Network
 
 	network = netutil.Network{
-		CidrBlock: existingVNet.CidrBlock,
+		CidrBlock: EffectiveVNetCidrBlock(existingVNet),
 	}
 	for _, subnetInfo := range existingVNet.SubnetInfoList {
 		subnet := netutil.Network{

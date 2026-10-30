@@ -192,7 +192,7 @@ func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolic
 			} else {
 				subnet.Zone = assignedZone
 			}
-		} else if multiZone && zoneCount > 1 {
+		} else if multiZone && zoneCount > 1 && resolvedProvider != csp.Azure {
 			subnet.Zone = zones[i]
 		}
 
@@ -203,14 +203,17 @@ func applyVNetPolicy(nsId string, reqTmp *model.VNetReq, policy *model.VNetPolic
 }
 
 // GenVNetResourceName returns the VNet resource name used by dynamic provisioning, honoring the
-// resolved VNet template's isolation policy: dedicated per-Infra ("{infraId}-{conn}[-zone]") when
+// resolved VNet template's isolation policy: dedicated per-Infra ("{infraId}-{conn}") when
 // the template's vNetPolicy.Dedicated is set (and infraId is non-empty), otherwise shared
-// ("{ns}-shared-{conn}[-zone]"). A template-id suffix is appended when a non-default template is
-// explicitly requested so different templates yield independent VNets. This is the single source
-// of the VNet name so provisioning and shared-resource creation always agree (SG references the
-// VNet by this name). Falls back to the shared name if the template cannot be read (creation then
-// fails with a clear error).
+// ("{ns}-shared-{conn}"). A template-id suffix is appended when a non-default template is
+// explicitly requested so different templates yield independent VNets.
+//
+// Zone is intentionally NOT appended to the VNet name: VNets are connection/region-scoped, and
+// zone placement is satisfied by selecting or creating a zone-matching subnet inside the VNet.
+// This avoids creating duplicate VPCs with identical CIDRs or exceeding single-VPC CSP limits
+// (e.g. KT Cloud, issue #2841).
 func GenVNetResourceName(nsId, infraId, connectionName, zone, vNetTemplateId string) string {
+	_ = zone
 	effectiveId := model.DefaultVNetTemplateId
 	if vNetTemplateId != "" {
 		effectiveId = vNetTemplateId
@@ -227,9 +230,6 @@ func GenVNetResourceName(nsId, infraId, connectionName, zone, vNetTemplateId str
 	name := nsId + model.StrSharedResourceName + connectionName
 	if dedicated && infraId != "" {
 		name = infraId + "-" + connectionName
-	}
-	if zone != "" {
-		name = name + "-" + zone
 	}
 	if vNetTemplateId != "" {
 		name = name + "-" + vNetTemplateId
@@ -295,12 +295,9 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 	}
 	sliceIndex = (sliceIndex % 254) + 1
 
-	// Base shared resource name: nsId + "-shared-" + connectionName [+ "-" + zone]
+	// Base shared resource name: nsId + "-shared-" + connectionName (connection-scoped;
+	// zone placement is handled at the subnet level inside the shared VNet).
 	baseResourceName := nsId + model.StrSharedResourceName + connectionName
-	if options != nil && options.Zone != "" {
-		baseResourceName = baseResourceName + "-" + options.Zone
-		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s)", baseResourceName, options.Zone)
-	}
 
 	// VNet resource name: shared per-connection by default, or dedicated per-Infra when the
 	// resolved VNet template requests it. Centralized in GenVNetResourceName so the SG's VNetId
@@ -317,8 +314,8 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 	//   - per-NodeGroup ("{infraId}-{nodeGroupName}") when NodeGroupName is set, so app-specific
 	//     firewall rules stay scoped to the NodeGroup deploying the app. NodeGroup names are unique
 	//     within an Infra, so no connection/zone/template suffix is needed for uniqueness.
-	//   - per-Infra ("{infraId}-{conn}[-zone][-sgTemplateId]") when only InfraId is set.
-	//   - shared per-connection ("{ns}-shared-{conn}[-zone][-sgTemplateId]") otherwise.
+	//   - per-Infra ("{infraId}-{conn}[-sgTemplateId]") when only InfraId is set.
+	//   - shared per-connection ("{ns}-shared-{conn}[-sgTemplateId]") otherwise.
 	sgResourceName := baseResourceName
 	if options != nil && options.InfraId != "" && options.NodeGroupName != "" {
 		sgResourceName = options.InfraId + "-" + options.NodeGroupName
@@ -326,9 +323,6 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 		sgBaseName := baseResourceName
 		if options != nil && options.InfraId != "" {
 			sgBaseName = options.InfraId + "-" + connectionName
-			if options.Zone != "" {
-				sgBaseName = sgBaseName + "-" + options.Zone
-			}
 		}
 		sgResourceName = sgBaseName
 		if options != nil && options.SgTemplateId != "" {
@@ -336,14 +330,11 @@ func CreateSharedResourceWithOptions(ctx context.Context, nsId string, resType s
 		}
 	}
 
-	// SSHKey resource name: dedicated per-Infra when InfraId is set ("{infraId}-{conn}[-zone]")
+	// SSHKey resource name: dedicated per-Infra when InfraId is set ("{infraId}-{conn}")
 	// for credential isolation, otherwise shared per-connection. No template support.
 	resourceName := baseResourceName
 	if options != nil && options.InfraId != "" {
 		resourceName = options.InfraId + "-" + connectionName
-		if options.Zone != "" {
-			resourceName = resourceName + "-" + options.Zone
-		}
 	}
 
 	description := "Generated Default Resource"

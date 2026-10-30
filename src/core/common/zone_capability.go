@@ -24,20 +24,11 @@ import (
 	"sync"
 	"time"
 
-	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/rs/zerolog/log"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 )
 
-// spiderDriverCapability is the subset of CB-Spider's driver capability
-// response that zone placement depends on.
-type spiderDriverCapability struct {
-	ZoneBasedControl bool
-}
-
-// zoneCapabilityTTL bounds how long a resolved capability is reused. Driver
-// capability never changes at runtime and a region's zone list changes rarely,
-// so this only exists to keep repeated retry planning off CB-Spider.
+// zoneCapabilityTTL bounds how long a resolved capability is reused.
 const zoneCapabilityTTL = 30 * time.Minute
 
 type zoneCapabilityEntry struct {
@@ -48,15 +39,12 @@ type zoneCapabilityEntry struct {
 var zoneCapabilityCache sync.Map
 
 // ResolveZoneCapability reports whether nodes on this connection can be placed
-// in a chosen zone, and which zones are candidates.
+// in a chosen zone, and which zones are candidates, using CB-Tumblebug's
+// authoritative cloudinfo.yaml and CSP platform metadata.
 //
 // Both gates must pass:
-//   - the CSP driver declares ZoneBasedControl (false only for KT and KT Classic)
-//   - the region has at least two zones (10 of Azure's 48 regions have none)
-//
-// A CB-Spider lookup failure is not fatal: the capability falls back to the
-// region's zone list alone, since a wrong "not shiftable" would silently
-// disable a retry that would have worked.
+//   - the CSP platform supports zone-based subnet/VM control (false only for KT and KT Classic)
+//   - the region has at least two zones in cloudinfo.yaml (e.g. some Azure regions have none)
 func ResolveZoneCapability(connectionName string) model.ZoneCapability {
 	connectionName = strings.TrimSpace(connectionName)
 	if connectionName == "" {
@@ -76,16 +64,20 @@ func ResolveZoneCapability(connectionName string) model.ZoneCapability {
 		zc.Reason = "connection config not found: " + err.Error()
 		return zc
 	}
-	zc.Zones = connConfig.RegionDetail.Zones
 
-	zoneControl, err := getSpiderZoneBasedControl(connectionName)
-	if err != nil {
-		// Assume supported: all providers but KT declare it, and wrongly
-		// reporting "not shiftable" would disable a viable retry.
-		log.Debug().Err(err).Msgf("zone capability: CB-Spider capability lookup failed for '%s'; assuming zone-based control", connectionName)
-		zoneControl = true
+	regionName := connConfig.RegionDetail.RegionName
+	if regionName == "" {
+		regionName = connConfig.RegionZoneInfo.AssignedRegion
 	}
-	zc = decideZoneCapability(zoneControl, zc.Zones, connConfig.RegionDetail.RegionName)
+	zones := connConfig.RegionDetail.Zones
+	if len(zones) == 0 && connConfig.ProviderName != "" && regionName != "" {
+		if regionDetail, rErr := GetRegion(connConfig.ProviderName, regionName); rErr == nil && len(regionDetail.Zones) > 0 {
+			zones = regionDetail.Zones
+		}
+	}
+
+	zoneControl := SupportsZoneBasedControl(connConfig.ProviderName)
+	zc = decideZoneCapability(zoneControl, zones, regionName)
 
 	zoneCapabilityCache.Store(connectionName, &zoneCapabilityEntry{
 		value:     zc,
@@ -94,27 +86,11 @@ func ResolveZoneCapability(connectionName string) model.ZoneCapability {
 	return zc
 }
 
-func getSpiderZoneBasedControl(connectionName string) (bool, error) {
-	var callResult spiderDriverCapability
-	client := clientManager.NewHttpClient()
-	client.SetTimeout(clientManager.AvailabilityCheckTimeout)
-	url := model.SpiderRestUrl + "/driver/capability?ConnectionName=" + connectionName
-	requestBody := clientManager.NoBody
-
-	_, err := clientManager.ExecuteHttpRequest(
-		client,
-		"GET",
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		clientManager.MediumDuration,
-	)
-	if err != nil {
-		return false, err
-	}
-	return callResult.ZoneBasedControl, nil
+// SupportsZoneBasedControl reports whether the given CSP supports zone-based
+// subnet/VM placement. Only KT and KT Classic lack zone-based control.
+func SupportsZoneBasedControl(providerName string) bool {
+	platform := csp.ResolveCloudPlatform(providerName)
+	return platform != csp.KT && platform != "ktclassic"
 }
 
 // decideZoneCapability applies the two gates. Split out from the lookup so the

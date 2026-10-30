@@ -37,3 +37,17 @@ func TestDecideZoneCapability(t *testing.T) {
 		})
 	}
 }
+
+func TestSupportsZoneBasedControl(t *testing.T) {
+	for _, provider := range []string{"aws", "azure", "gcp", "alibaba", "tencent", "ibm", "ncp", "nhn", "openstack"} {
+		if !SupportsZoneBasedControl(provider) {
+			t.Errorf("SupportsZoneBasedControl(%q) = false, want true", provider)
+		}
+	}
+	for _, provider := range []string{"kt", "KT", "ktclassic"} {
+		if SupportsZoneBasedControl(provider) {
+			t.Errorf("SupportsZoneBasedControl(%q) = true, want false", provider)
+		}
+	}
+}
+

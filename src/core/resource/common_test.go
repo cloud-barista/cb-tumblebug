@@ -186,3 +186,41 @@ func TestContainsZone(t *testing.T) {
 		t.Errorf("expected ContainsZone to return false for nil slice")
 	}
 }
+
+func TestGenVNetResourceName(t *testing.T) {
+	// Shared VNet names are always connection/region-scoped regardless of whether zone is passed.
+	if got := GenVNetResourceName("default", "infra1", "kt-kr1", "", ""); got != "default-shared-kt-kr1" {
+		t.Errorf("GenVNetResourceName(default, infra1, kt-kr1, '', '') = %q, want %q", got, "default-shared-kt-kr1")
+	}
+	if got := GenVNetResourceName("default", "infra1", "kt-kr1", "DX-M1", ""); got != "default-shared-kt-kr1" {
+		t.Errorf("GenVNetResourceName(default, infra1, kt-kr1, DX-M1, '') = %q, want %q", got, "default-shared-kt-kr1")
+	}
+	if got := GenVNetResourceName("default", "infra1", "aws-ap-northeast-2", "ap-northeast-2a", ""); got != "default-shared-aws-ap-northeast-2" {
+		t.Errorf("GenVNetResourceName(default, infra1, aws-ap-northeast-2, ap-northeast-2a, '') = %q, want %q", got, "default-shared-aws-ap-northeast-2")
+	}
+}
+
+func TestEffectiveVNetCidrBlock(t *testing.T) {
+	// Standard VNet with explicit /16 CidrBlock
+	vNetStd := model.VNetInfo{
+		CidrBlock: "10.32.0.0/16",
+		SubnetInfoList: []model.SubnetInfo{
+			{IPv4_CIDR: "10.32.0.0/18"},
+		},
+	}
+	if got := EffectiveVNetCidrBlock(vNetStd); got != "10.32.0.0/16" {
+		t.Errorf("EffectiveVNetCidrBlock(std) = %q, want %q", got, "10.32.0.0/16")
+	}
+
+	// GCP VNet where CidrBlock is non-CIDR sentinel string
+	vNetGCP := model.VNetInfo{
+		CidrBlock: "GCP VPC does not support IPv4_CIDR",
+		SubnetInfoList: []model.SubnetInfo{
+			{IPv4_CIDR: "10.144.0.0/18"},
+		},
+	}
+	if got := EffectiveVNetCidrBlock(vNetGCP); got != "10.144.0.0/16" {
+		t.Errorf("EffectiveVNetCidrBlock(gcp) = %q, want %q", got, "10.144.0.0/16")
+	}
+}
+
