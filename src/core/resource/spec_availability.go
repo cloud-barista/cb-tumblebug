@@ -816,31 +816,30 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 	// When cloudinfo.yaml is available, this slice contains the full known zone list
 	// for the region; for Alibaba, Step 6 further filters it via CSP API.
 
-	// Check whether this CSP uses empty representative zone (e.g., Azure).
-	// When useEmptyRepresentativeZone is true, callers must NOT specify a zone —
-	// doing so can cause OverconstrainedZonalAllocationRequest errors for GPU VMs.
-	// Return auto-selection (HasZoneConcept: false) for such providers regardless
-	// of whether cloudinfo.yaml lists zones for the region.
-	cloudInfo, cloudInfoErr := common.GetCloudInfo()
-	if cloudInfoErr == nil {
+	// Providers whose driver does not support zone-based control (KT, KT Classic)
+	// cannot place subnets/VMs into user-selected zones; return auto-selection.
+	if !common.SupportsZoneBasedControl(specInfo.ProviderName) {
+		log.Info().
+			Str("specId", specId).
+			Str("provider", specInfo.ProviderName).
+			Str("region", specInfo.RegionName).
+			Msg("CSP does not support zone-based control, returning auto-selection")
+		return &model.AvailableZonesInfo{
+			SpecId:           specId,
+			ProviderName:     specInfo.ProviderName,
+			RegionName:       specInfo.RegionName,
+			CspSpecName:      specInfo.CspSpecName,
+			CredentialHolder: credentialHolder,
+			AvailableZones:   []string{},
+			HasZoneConcept:   false,
+			QueryDurationMs:  time.Since(startTime).Milliseconds(),
+		}, nil
+	}
+
+	useEmptyRepZone := false
+	if cloudInfo, cloudInfoErr := common.GetCloudInfo(); cloudInfoErr == nil {
 		if cspDetail, ok := cloudInfo.CSPs[strings.ToLower(specInfo.ProviderName)]; ok {
-			if cspDetail.UseEmptyRepresentativeZone {
-				log.Info().
-					Str("specId", specId).
-					Str("provider", specInfo.ProviderName).
-					Str("region", specInfo.RegionName).
-					Msg("CSP uses empty representative zone (useEmptyRepresentativeZone=true), returning auto-selection")
-				return &model.AvailableZonesInfo{
-					SpecId:           specId,
-					ProviderName:     specInfo.ProviderName,
-					RegionName:       specInfo.RegionName,
-					CspSpecName:      specInfo.CspSpecName,
-					CredentialHolder: credentialHolder,
-					AvailableZones:   []string{},
-					HasZoneConcept:   false,
-					QueryDurationMs:  time.Since(startTime).Milliseconds(),
-				}, nil
-			}
+			useEmptyRepZone = cspDetail.UseEmptyRepresentativeZone
 		}
 	}
 
@@ -923,7 +922,19 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 	// without a checker keep the previous behavior. This makes the region zone list from
 	// cloudinfo.yaml accurate (previously only Alibaba was filtered, so e.g. AWS listed zones that
 	// do not actually offer the instance type).
-	availableZones, unavailableZones, filterErr := filterZonesBySpecAvailability(ctx, specInfo, verifiedZones)
+	availableZones, unavailableZones, regionalOnlySku, filterErr := filterZonesBySpecAvailability(ctx, specInfo, verifiedZones, useEmptyRepZone)
+	if regionalOnlySku {
+		log.Info().
+			Str("specId", specId).
+			Str("provider", specInfo.ProviderName).
+			Str("region", specInfo.RegionName).
+			Msg("Spec is regional-only (non-zonal SKU in a zoned region); returning auto-selection")
+		result.HasZoneConcept = false
+		result.AvailableZones = []string{}
+		result.AllVerifiedZones = []string{}
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, nil
+	}
 	if filterErr != nil {
 		// Log warning but don't fail - return all verified zones
 		log.Warn().Err(filterErr).
@@ -969,9 +980,19 @@ func GetAvailableZonesForSpec(ctx context.Context, specId string) (*model.Availa
 //
 // When there is no checker for the provider, the checker errored, or it returned no per-zone
 // breakdown, this falls back to "all verified zones available" (best-effort) so we never hide
-// zones the user might actually be able to use.
-func filterZonesBySpecAvailability(ctx context.Context, specInfo model.SpecInfo, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
+// zones the user might actually be able to use. For providers with useEmptyRepZone (e.g. Azure),
+// a live checker returning Available=true with empty Zones indicates a non-zonal (regional-only)
+// SKU that must not have a zone specified.
+func filterZonesBySpecAvailability(ctx context.Context, specInfo model.SpecInfo, verifiedZones []string, useEmptyRepZone bool) (availableZones []string, unavailableZones []string, regionalOnlySku bool, err error) {
 	availability := cspcheck.CheckAvailability(ctx, buildAvailabilityQueryForSpec(specInfo))
+
+	if useEmptyRepZone &&
+		availability.Source != "none" &&
+		!strings.HasSuffix(availability.Source, ":error") &&
+		availability.Available &&
+		len(availability.Zones) == 0 {
+		return nil, nil, true, nil
+	}
 
 	// No trustworthy per-zone data: missing/errored checker, or a checker that reports the spec
 	// as available without a per-zone breakdown. Fall back to all verified zones (best-effort).
@@ -988,7 +1009,7 @@ func filterZonesBySpecAvailability(ctx context.Context, specInfo model.SpecInfo,
 			Str("instanceType", specInfo.CspSpecName).
 			Str("region", specInfo.RegionName).
 			Msg("availability dispatcher returned no per-zone data; treating all verified zones as available")
-		return verifiedZones, nil, nil
+		return verifiedZones, nil, false, nil
 	}
 
 	// Build the set of zones the CSP currently reports as available
@@ -1009,7 +1030,7 @@ func filterZonesBySpecAvailability(ctx context.Context, specInfo model.SpecInfo,
 		}
 	}
 
-	return availableZones, unavailableZones, nil
+	return availableZones, unavailableZones, false, nil
 }
 
 const (
