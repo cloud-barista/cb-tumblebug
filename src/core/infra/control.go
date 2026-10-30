@@ -643,6 +643,29 @@ func ControlNodesInParallel(nsId, infraId string, nodeList []string, action stri
 				return
 			}
 
+			// Never allow non-Terminate actions on Failed or never-created VMs even with force=true:
+			// otherwise applyBulkTransitionalStatus overwrites them to Suspending/Resuming with no
+			// CSP resource to poll, pinning them in a transitional state forever.
+			if !strings.EqualFold(action, model.ActionTerminate) &&
+				(strings.EqualFold(nodeInfo.Status, model.StatusFailed) ||
+					(nodeInfo.CspResourceName == "" && nodeInfo.CspResourceId == "")) {
+				errMsg := fmt.Sprintf("%s is not allowed for VM under %s (no CSP resource)", action, nodeInfo.Status)
+				log.Debug().Msgf("[ControlNodesInParallel] Skipping VM %s: %s", nodeId, errMsg)
+				nodeResultsMu.Lock()
+				nodeResultsMap[nodeId] = model.NodeActionResult{
+					Message:      fmt.Sprintf("Skipped VM %s: %s", nodeId, errMsg),
+					NodeId:       nodeId,
+					ProviderName: nodeInfo.ConnectionConfig.ProviderName,
+					RegionName:   nodeInfo.Region.Region,
+					Action:       action,
+					Success:      false,
+					Status:       nodeInfo.Status,
+					Error:        errMsg,
+				}
+				nodeResultsMu.Unlock()
+				return
+			}
+
 			providerName := nodeInfo.ConnectionConfig.ProviderName
 			regionName := nodeInfo.Region.Region
 
@@ -1567,10 +1590,11 @@ func ControlNodeAsync(wg *sync.WaitGroup, nsId string, infraId string, nodeId st
 		}
 	}
 
-	if action != model.ActionTerminate {
-		//When VM is restarted, temporal PublicIP will be changed. Need update.
-		UpdateNodePublicIp(nsId, infraId, temp)
-	} else { // if action == model.ActionTerminate
+	// Note: FetchNodeStatus above already updates PublicIP and persists the fresh
+	// NodeInfo to etcd and StatusStore. Do NOT call UpdateNodePublicIp(nsId, infraId, temp)
+	// here because temp holds the pre-FetchNodeStatus transitional state (e.g. Suspending/Resuming)
+	// and would overwrite the completed Status/TargetAction in etcd.
+	if action == model.ActionTerminate {
 		_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, temp.ImageId, model.StrDelete, key)
 		if err != nil {
 			resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, temp.ImageId, model.StrDelete, key)
@@ -1644,7 +1668,7 @@ func checkAllowedNodeStatusTransition(status, currentTargetAction, action string
 		}
 	}
 	// redundant action
-	if strings.EqualFold(status, model.StatusTerminated) {
+	if strings.EqualFold(status, model.StatusTerminated) || strings.EqualFold(status, model.StatusFailed) {
 		if strings.EqualFold(action, model.ActionTerminate) {
 			return nil
 		}

@@ -1165,7 +1165,9 @@ func GetNodeObjectWithNodeGroups(nsId string, infraId string, nodeId string, ngM
 		nodeTmp.Status = entry.Status
 		nodeTmp.TargetStatus = entry.TargetStatus
 		nodeTmp.TargetAction = entry.TargetAction
-		if entry.PublicIP != "" {
+		if strings.EqualFold(entry.Status, model.StatusSuspended) {
+			nodeTmp.PublicIP = ""
+		} else if entry.PublicIP != "" {
 			nodeTmp.PublicIP = entry.PublicIP
 		}
 	}
@@ -2244,22 +2246,6 @@ func DelAllInfra(nsId string, option string) (string, error) {
 	default:
 		return "All Infras have been deleted", nil
 	}
-}
-
-// UpdateNodePublicIp is func to update Node public IP
-func UpdateNodePublicIp(nsId string, infraId string, nodeInfoData model.NodeInfo) error {
-
-	nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfoData.Id)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-	if nodeInfoData.PublicIP != nodeInfoTmp.PublicIp || nodeInfoData.SSHPort != nodeInfoTmp.SSHPort {
-		nodeInfoData.PublicIP = nodeInfoTmp.PublicIp
-		nodeInfoData.SSHPort = nodeInfoTmp.SSHPort
-		UpdateNodeInfo(nsId, infraId, nodeInfoData)
-	}
-	return nil
 }
 
 // GetNodeTemplate is func to get Node template
