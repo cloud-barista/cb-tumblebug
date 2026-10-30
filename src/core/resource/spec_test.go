@@ -220,3 +220,258 @@ func TestConvertSpiderSpecToTumblebugSpec(t *testing.T) {
 		t.Errorf("expected architecture arm64, got %q", tbSpec.Architecture)
 	}
 }
+
+func TestGeneralizedGPUAcceleratorEnrichment(t *testing.T) {
+	t.Run("ConvertSpiderSpecToTumblebugSpec fractional GPU from Spider", func(t *testing.T) {
+		connConfig := model.ConnConfig{
+			ConfigName:   "azure-eastus",
+			ProviderName: "azure",
+			RegionDetail: model.RegionDetail{RegionName: "eastus"},
+		}
+		spiderSpec := model.SpiderSpecInfo{
+			Region:     "eastus",
+			Name:       "Standard_NV6ads_A10_v5",
+			VCpu:       model.SpiderVCpuInfo{Count: "6"},
+			MemSizeMiB: "56320",
+			DiskSizeGB: "1023",
+			Gpu: []model.SpiderGpuInfo{
+				{
+					Mfr:            "NVIDIA",
+					Model:          "A10",
+					Count:          "0.167",
+					MemSizeGB:      "24",
+					TotalMemSizeGB: "4",
+				},
+			},
+		}
+		tbSpec, err := ConvertSpiderSpecToTumblebugSpec(connConfig, spiderSpec)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if tbSpec.AcceleratorCount != 1 {
+			t.Errorf("expected AcceleratorCount 1, got %d", tbSpec.AcceleratorCount)
+		}
+		if tbSpec.AcceleratorPartitionSize != float32(1.0/6.0) {
+			t.Errorf("expected AcceleratorPartitionSize 1/6, got %f", tbSpec.AcceleratorPartitionSize)
+		}
+		if tbSpec.AcceleratorMemoryGB != 4 {
+			t.Errorf("expected AcceleratorMemoryGB 4, got %f", tbSpec.AcceleratorMemoryGB)
+		}
+	})
+
+	t.Run("AWS dynamic extraction from GpuInfo Details", func(t *testing.T) {
+		spec := model.SpecInfo{
+			ProviderName:     "aws",
+			CspSpecName:      "g7f.future-xlarge",
+			AcceleratorType:  "gpu",
+			AcceleratorModel: "NVIDIA L4",
+			AcceleratorCount: 0,
+			Details: []model.KeyValue{
+				{
+					Key:   "GpuInfo",
+					Value: "{Gpus:[{Count:0,GpuPartitionSize:0.125,LogicalGpuCount:1,Manufacturer:NVIDIA,MemoryInfo:{SizeInMiB:2861},Name:L4}],TotalGpuMemoryInMiB:2861}",
+				},
+			},
+		}
+		enrichSpecAcceleratorInfo(&spec)
+		if spec.AcceleratorCount != 1 || spec.AcceleratorPartitionSize != 0.125 || spec.AcceleratorMemoryGB != 3 {
+			t.Errorf("unexpected AWS enrichment: count=%d, part=%f, mem=%f",
+				spec.AcceleratorCount, spec.AcceleratorPartitionSize, spec.AcceleratorMemoryGB)
+		}
+
+		// Binary GiB multiple in AWS EC2 SizeInMiB (e.g., T4 16384 MiB = 16 GiB, where Spider's 1.07374 multiplier gave 17 GB)
+		t4Spec := model.SpecInfo{
+			ProviderName:        "aws",
+			CspSpecName:         "g4dn.xlarge",
+			AcceleratorType:     "gpu",
+			AcceleratorModel:    "NVIDIA T4",
+			AcceleratorCount:    1,
+			AcceleratorMemoryGB: 17,
+			Details: []model.KeyValue{
+				{
+					Key:   "GpuInfo",
+					Value: "{Gpus:[{Count:1,Manufacturer:NVIDIA,MemoryInfo:{SizeInMiB:16384},Name:T4}],TotalGpuMemoryInMiB:16384}",
+				},
+			},
+		}
+		enrichSpecAcceleratorInfo(&t4Spec)
+		if t4Spec.AcceleratorMemoryGB != 16 {
+			t.Errorf("expected T4 AcceleratorMemoryGB=16, got %f", t4Spec.AcceleratorMemoryGB)
+		}
+
+		// Decimal GB reported in MiB (e.g., L4 22888 MiB = 24 GB)
+		l4Spec := model.SpecInfo{
+			ProviderName:        "aws",
+			CspSpecName:         "g6.xlarge",
+			AcceleratorType:     "gpu",
+			AcceleratorModel:    "NVIDIA L4",
+			AcceleratorCount:    1,
+			AcceleratorMemoryGB: 24,
+			Details: []model.KeyValue{
+				{
+					Key:   "GpuInfo",
+					Value: "{Gpus:[{Count:1,Manufacturer:NVIDIA,MemoryInfo:{SizeInMiB:22888},Name:L4}],TotalGpuMemoryInMiB:22888}",
+				},
+			},
+		}
+		enrichSpecAcceleratorInfo(&l4Spec)
+		if l4Spec.AcceleratorMemoryGB != 24 {
+			t.Errorf("expected L4 AcceleratorMemoryGB=24, got %f", l4Spec.AcceleratorMemoryGB)
+		}
+	})
+
+	t.Run("Alibaba dynamic GPUSpec fraction and family rules", func(t *testing.T) {
+		cases := []struct {
+			specName string
+			inModel  string
+			inMem    float32
+			wantMod  string
+			wantPart float32
+			wantMem  float32
+		}{
+			{"ecs.sgn7i-vws-m2.xlarge", "NVIDIA A10*1/12", 2, "NVIDIA A10", float32(1.0 / 12.0), 2},
+			{"ecs.vgn6i-m4-vws.xlarge", "NVIDIA T4/4", 4, "NVIDIA T4", 0.25, 4},
+			{"ecs.sgn8ia-m4.2xlarge", "NVIDIA VGPU8-4G", 0, "NVIDIA L20", float32(1.0 / 12.0), 4},
+			{"ecs.sgn8ia-m48.24xlarge", "NVIDIA VGPU8-48G", 0, "NVIDIA L20", 0, 48},
+		}
+		for _, tc := range cases {
+			spec := model.SpecInfo{
+				ProviderName:        "alibaba",
+				CspSpecName:         tc.specName,
+				AcceleratorType:     "gpu",
+				AcceleratorModel:    tc.inModel,
+				AcceleratorCount:    1,
+				AcceleratorMemoryGB: tc.inMem,
+			}
+			enrichSpecAcceleratorInfo(&spec)
+			if spec.AcceleratorModel != tc.wantMod || spec.AcceleratorPartitionSize != tc.wantPart || spec.AcceleratorMemoryGB != tc.wantMem {
+				t.Errorf("%s: got (model=%q, part=%f, mem=%f), want (model=%q, part=%f, mem=%f)",
+					tc.specName, spec.AcceleratorModel, spec.AcceleratorPartitionSize, spec.AcceleratorMemoryGB,
+					tc.wantMod, tc.wantPart, tc.wantMem)
+			}
+		}
+	})
+
+	t.Run("Azure dynamic series ratio and Details GPUs extraction", func(t *testing.T) {
+		cases := []struct {
+			specName string
+			vcpu     uint16
+			details  []model.KeyValue
+			wantMod  string
+			wantCnt  uint8
+			wantPart float32
+			wantMem  float32
+		}{
+			{"Standard_NV4as_v4", 4, nil, "AMD Instinct MI25", 1, 0.125, 2},
+			{"Standard_NV4ads_V710_v5", 4, nil, "AMD Radeon PRO V710", 1, float32(1.0 / 6.0), 4},
+			{"Standard_NV8ads_V710_v5", 8, nil, "AMD Radeon PRO V710", 1, float32(1.0 / 3.0), 8},
+			{"Standard_NG8ads_V620_v1", 8, nil, "AMD Radeon PRO V620", 1, 0.25, 8},
+			{"Standard_NV4ads_A10_v5", 4, nil, "NVIDIA A10", 1, float32(1.0 / 6.0), 4},
+			{"Standard_NV12ads_A10_v5", 12, nil, "NVIDIA A10", 1, float32(1.0 / 3.0), 8},
+			{"Standard_NV48s_v3", 48, nil, "NVIDIA Tesla M60", 4, 0, 8},
+			{
+				"Standard_NC288ds_xl_RTXPRO6000BSE_v6",
+				288,
+				[]model.KeyValue{{Key: "GPUs", Value: "2"}},
+				"NVIDIA RTX PRO 6000",
+				2,
+				0,
+				96,
+			},
+			{"Standard_ND128isr_GB300_v6", 128, nil, "NVIDIA GB300", 4, 0, 288},
+		}
+		for _, tc := range cases {
+			spec := model.SpecInfo{
+				ProviderName: "azure",
+				CspSpecName:  tc.specName,
+				VCPU:         tc.vcpu,
+				Details:      tc.details,
+			}
+			enrichSpecAcceleratorInfo(&spec)
+			if spec.AcceleratorModel != tc.wantMod || spec.AcceleratorCount != tc.wantCnt ||
+				spec.AcceleratorPartitionSize != tc.wantPart || spec.AcceleratorMemoryGB != tc.wantMem {
+				t.Errorf("%s: got (model=%q, cnt=%d, part=%f, mem=%f), want (model=%q, cnt=%d, part=%f, mem=%f)",
+					tc.specName, spec.AcceleratorModel, spec.AcceleratorCount, spec.AcceleratorPartitionSize, spec.AcceleratorMemoryGB,
+					tc.wantMod, tc.wantCnt, tc.wantPart, tc.wantMem)
+			}
+		}
+	})
+
+	t.Run("Spec metadata normalization (Architecture, vCPUsAvailable, MemoryGiB, DiskSizeGB)", func(t *testing.T) {
+		gcpArm := model.SpecInfo{
+			ProviderName: "gcp",
+			CspSpecName:  "c4a-standard-4",
+			VCPU:         4,
+			MemoryGiB:    16,
+			Architecture: string(model.X86_64),
+			Details:      []model.KeyValue{{Key: "Architecture", Value: "ARM64"}},
+		}
+		enrichSpecAcceleratorInfo(&gcpArm)
+		if gcpArm.Architecture != string(model.ARM64) {
+			t.Errorf("expected GCP c4a-standard-4 Architecture=arm64, got %s", gcpArm.Architecture)
+		}
+
+		gcpHighCpu := model.SpecInfo{
+			ProviderName: "gcp",
+			CspSpecName:  "n1-highcpu-2",
+			VCPU:         2,
+			MemoryGiB:    float32(1843.0 / 1024.0), // 1.7998047
+		}
+		enrichSpecAcceleratorInfo(&gcpHighCpu)
+		if gcpHighCpu.MemoryGiB != 1.8 {
+			t.Errorf("expected GCP n1-highcpu-2 MemoryGiB=1.8, got %f", gcpHighCpu.MemoryGiB)
+		}
+
+		azureConstrained := model.SpecInfo{
+			ProviderName: "azure",
+			CspSpecName:  "Standard_E16-4s_v5",
+			VCPU:         16,
+			MemoryGiB:    128,
+			DiskSizeGB:   17,
+			RootDiskSize: 17,
+			Architecture: string(model.X86_64),
+			Details: []model.KeyValue{
+				{Key: "vCPUs", Value: "16"},
+				{Key: "vCPUsAvailable", Value: "4"},
+				{Key: "ResourceDiskSizeInMB", Value: "16384"},
+				{Key: "CpuArchitectureType", Value: "x64"},
+			},
+		}
+		enrichSpecAcceleratorInfo(&azureConstrained)
+		if azureConstrained.VCPU != 4 || azureConstrained.DiskSizeGB != 16 || azureConstrained.RootDiskSize != 16 {
+			t.Errorf("unexpected Azure constrained normalization: vcpu=%d, disk=%f, rootDisk=%d",
+				azureConstrained.VCPU, azureConstrained.DiskSizeGB, azureConstrained.RootDiskSize)
+		}
+
+		tencentRemark := model.SpecInfo{
+			ProviderName:     "tencent",
+			CspSpecName:      "BMG5t.24XLARGE384",
+			AcceleratorType:  "gpu",
+			AcceleratorModel: "NVIDIA",
+			AcceleratorCount: 4,
+			Details: []model.KeyValue{
+				{Key: "InstanceFamily", Value: "BMG5t"},
+				{Key: "Remark", Value: "4 NVIDIA T4"},
+			},
+		}
+		enrichSpecAcceleratorInfo(&tencentRemark)
+		if tencentRemark.AcceleratorModel != "NVIDIA T4" || tencentRemark.AcceleratorMemoryGB != 16 {
+			t.Errorf("expected Tencent BMG5t.24XLARGE384 model=NVIDIA T4 mem=16, got model=%q mem=%f",
+				tencentRemark.AcceleratorModel, tencentRemark.AcceleratorMemoryGB)
+		}
+
+		ibmGaudi := model.SpecInfo{
+			ProviderName:     "ibm",
+			CspSpecName:      "gx3d-160x1792x8gaudi3",
+			AcceleratorType:  "gpu",
+			AcceleratorModel: "NVIDIA GAUDI3",
+			AcceleratorCount: 8,
+		}
+		enrichSpecAcceleratorInfo(&ibmGaudi)
+		if ibmGaudi.AcceleratorModel != "Intel GAUDI3" || ibmGaudi.AcceleratorMemoryGB != 128 {
+			t.Errorf("expected IBM gx3d-160x1792x8gaudi3 model=Intel GAUDI3 mem=128, got model=%q mem=%f",
+				ibmGaudi.AcceleratorModel, ibmGaudi.AcceleratorMemoryGB)
+		}
+	})
+}
+

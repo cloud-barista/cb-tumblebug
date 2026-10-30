@@ -2382,14 +2382,15 @@ func CreateNode(ctx context.Context, wg *sync.WaitGroup, nsId string, infraId st
 			log.Warn().Err(err).Msgf("Failed to get spec info for SpecSummary: %s", nodeInfoData.SpecId)
 		} else {
 			nodeInfoData.Spec = model.SpecSummary{
-				CspSpecName:         specInfo.CspSpecName,
-				VCPU:                specInfo.VCPU,
-				MemoryGiB:           specInfo.MemoryGiB,
-				AcceleratorModel:    specInfo.AcceleratorModel,
-				AcceleratorCount:    specInfo.AcceleratorCount,
-				AcceleratorMemoryGB: specInfo.AcceleratorMemoryGB,
-				AcceleratorType:     specInfo.AcceleratorType,
-				CostPerHour:         specInfo.CostPerHour,
+				CspSpecName:              specInfo.CspSpecName,
+				VCPU:                     specInfo.VCPU,
+				MemoryGiB:                specInfo.MemoryGiB,
+				AcceleratorModel:         specInfo.AcceleratorModel,
+				AcceleratorCount:         specInfo.AcceleratorCount,
+				AcceleratorPartitionSize: specInfo.AcceleratorPartitionSize,
+				AcceleratorMemoryGB:      specInfo.AcceleratorMemoryGB,
+				AcceleratorType:          specInfo.AcceleratorType,
+				CostPerHour:              specInfo.CostPerHour,
 			}
 		}
 	}

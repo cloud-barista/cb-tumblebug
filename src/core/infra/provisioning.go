@@ -360,10 +360,15 @@ func newNodeGroupInfo(ctx context.Context, nsId string, nodeRequest *model.Creat
 		if specInfo, err := resource.GetSpec(model.SystemCommonNs, nodeRequest.SpecId); err == nil {
 			nodeGroupInfoData.CspSpecName = specInfo.CspSpecName
 			nodeGroupInfoData.Spec = model.SpecSummary{
-				CspSpecName: specInfo.CspSpecName,
-				VCPU:        specInfo.VCPU,
-				MemoryGiB:   specInfo.MemoryGiB,
-				CostPerHour: specInfo.CostPerHour,
+				CspSpecName:              specInfo.CspSpecName,
+				VCPU:                     specInfo.VCPU,
+				MemoryGiB:                specInfo.MemoryGiB,
+				AcceleratorModel:         specInfo.AcceleratorModel,
+				AcceleratorCount:         specInfo.AcceleratorCount,
+				AcceleratorPartitionSize: specInfo.AcceleratorPartitionSize,
+				AcceleratorMemoryGB:      specInfo.AcceleratorMemoryGB,
+				AcceleratorType:          specInfo.AcceleratorType,
+				CostPerHour:              specInfo.CostPerHour,
 			}
 		}
 	}
