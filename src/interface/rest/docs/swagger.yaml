@@ -22970,6 +22970,8 @@ components:
           $ref: '#/components/schemas/model.Range'
         acceleratorModel:
           type: string
+        acceleratorPartitionSize:
+          $ref: '#/components/schemas/model.Range'
         acceleratorType:
           type: string
         architecture:
@@ -30179,6 +30181,9 @@ components:
           type: number
         acceleratorModel:
           type: string
+        acceleratorPartitionSize:
+          type: number
+          example: 0.125
         acceleratorType:
           type: string
         architecture:
@@ -30420,6 +30425,9 @@ components:
         acceleratorModel:
           type: string
           example: NVIDIA Tesla V100
+        acceleratorPartitionSize:
+          type: number
+          example: 0.125
         acceleratorType:
           type: string
           example: GPU
@@ -30456,6 +30464,30 @@ components:
               type: array
               items:
                 type: string
+    model.SpiderAcceleratorInfo:
+      type: object
+      properties:
+        Count:
+          type: string
+          example: "1"
+        Fraction:
+          type: string
+          example: 1/6
+        MemSizeGB:
+          type: string
+          example: "4"
+        Mfr:
+          type: string
+          example: NVIDIA
+        Model:
+          type: string
+          example: A10
+        TotalMemSizeGB:
+          type: string
+          example: "4"
+        Type:
+          type: string
+          example: GPU
     model.SpiderAccessInfo:
       type: object
       properties:
@@ -30714,6 +30746,11 @@ components:
       - VCpu
       type: object
       properties:
+        Accelerator:
+          type: array
+          description: Accelerator details (including Fraction) if available
+          items:
+            $ref: '#/components/schemas/model.SpiderAcceleratorInfo'
         DiskSizeGB:
           type: string
           description: "Disk size in GB, \"-1\" when not applicable"
