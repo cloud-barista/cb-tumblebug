@@ -29,8 +29,9 @@ type SpiderSpecInfo struct {
 	Name       string          `json:"Name" validate:"required" example:"t2.micro"`    // Name of the VM spec
 	VCpu       SpiderVCpuInfo  `json:"VCpu" validate:"required"`                       // CPU details of the VM spec
 	MemSizeMiB string          `json:"MemSizeMib" validate:"required" example:"1024"`  // Memory size in MiB
-	DiskSizeGB string          `json:"DiskSizeGB" validate:"required" example:"8"`     // Disk size in GB, "-1" when not applicable
-	Gpu        []SpiderGpuInfo `json:"Gpu,omitempty" validate:"omitempty"`             // GPU details if available
+	DiskSizeGB  string                  `json:"DiskSizeGB" validate:"required" example:"8"`     // Disk size in GB, "-1" when not applicable
+	Gpu         []SpiderGpuInfo         `json:"Gpu,omitempty" validate:"omitempty"`             // GPU details if available
+	Accelerator []SpiderAcceleratorInfo `json:"Accelerator,omitempty" validate:"omitempty"`     // Accelerator details (including Fraction) if available
 
 	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty"` // Additional key-value pairs for the VM spec
 }
@@ -48,6 +49,17 @@ type SpiderGpuInfo struct {
 	Model          string `json:"Model,omitempty" validate:"omitempty" example:"Tesla K80"`   // Model of the GPU, NA when not applicable
 	MemSizeGB      string `json:"MemSizeGB,omitempty" validate:"omitempty" example:"12"`      // Memory size of the GPU in GB, "-1" when not applicable
 	TotalMemSizeGB string `json:"TotalMemSizeGB,omitempty" validate:"omitempty" example:"24"` // Total Memory size of the GPU in GB, "-1" when not applicable
+}
+
+// SpiderAcceleratorInfo is a struct to handle Accelerator Info from CB-Spider.
+type SpiderAcceleratorInfo struct {
+	Type           string `json:"Type,omitempty" example:"GPU"`
+	Mfr            string `json:"Mfr,omitempty" example:"NVIDIA"`
+	Model          string `json:"Model,omitempty" example:"A10"`
+	Count          string `json:"Count,omitempty" example:"1"`
+	Fraction       string `json:"Fraction,omitempty" example:"1/6"`
+	MemSizeGB      string `json:"MemSizeGB,omitempty" example:"4"`
+	TotalMemSizeGB string `json:"TotalMemSizeGB,omitempty" example:"4"`
 }
 
 // SpiderCloudPrice represents the pricing information for a specific cloud provider.
@@ -115,14 +127,15 @@ type SpiderPriceInfoHandler interface {
 
 // SpecSummary is a lightweight struct containing essential spec information for NodeInfo
 type SpecSummary struct {
-	CspSpecName         string  `json:"cspSpecName,omitempty" example:"t3.medium"`
-	VCPU                uint16  `json:"vCPU,omitempty" example:"2"`
-	MemoryGiB           float32 `json:"memoryGiB,omitempty" example:"4"`
-	AcceleratorModel    string  `json:"acceleratorModel,omitempty" example:"NVIDIA Tesla V100"`
-	AcceleratorCount    uint8   `json:"acceleratorCount,omitempty" example:"1"`
-	AcceleratorMemoryGB float32 `json:"acceleratorMemoryGB,omitempty" example:"16"`
-	AcceleratorType     string  `json:"acceleratorType,omitempty" example:"GPU"`
-	CostPerHour         float32 `json:"costPerHour,omitempty" example:"0.0416"`
+	CspSpecName              string  `json:"cspSpecName,omitempty" example:"t3.medium"`
+	VCPU                     uint16  `json:"vCPU,omitempty" example:"2"`
+	MemoryGiB                float32 `json:"memoryGiB,omitempty" example:"4"`
+	AcceleratorModel         string  `json:"acceleratorModel,omitempty" example:"NVIDIA Tesla V100"`
+	AcceleratorCount         uint8   `json:"acceleratorCount,omitempty" example:"1"`
+	AcceleratorPartitionSize float32 `json:"acceleratorPartitionSize,omitempty" example:"0.125"`
+	AcceleratorMemoryGB      float32 `json:"acceleratorMemoryGB,omitempty" example:"16"`
+	AcceleratorType          string  `json:"acceleratorType,omitempty" example:"GPU"`
+	CostPerHour              float32 `json:"costPerHour,omitempty" example:"0.0416"`
 }
 
 // SpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
@@ -154,36 +167,37 @@ type SpecInfo struct { // Tumblebug
 	RegionLatitude  float64 `json:"regionLatitude"`
 	RegionLongitude float64 `json:"regionLongitude"`
 	// InfraType can be one of vm|k8s|kubernetes|container, etc.
-	InfraType             string   `json:"infraType,omitempty"`
-	Architecture          string   `json:"architecture,omitempty" example:"x86_64"`
-	OsType                string   `json:"osType,omitempty"`
-	VCPU                  uint16   `json:"vCPU,omitempty"`
-	MemoryGiB             float32  `json:"memoryGiB,omitempty"`
-	DiskSizeGB            float32  `json:"diskSizeGB,omitempty"`
-	MaxTotalStorageTiB    uint16   `json:"maxTotalStorageTiB,omitempty"`
-	NetBwGbps             uint16   `json:"netBwGbps,omitempty"`
-	AcceleratorModel      string   `json:"acceleratorModel,omitempty"`
-	AcceleratorCount      uint8    `json:"acceleratorCount,omitempty"`
-	AcceleratorMemoryGB   float32  `json:"acceleratorMemoryGB,omitempty"`
-	AcceleratorType       string   `json:"acceleratorType,omitempty"`
-	CostPerHour           float32  `json:"costPerHour,omitempty"`
-	Description           string   `json:"description,omitempty"`
-	OrderInFilteredResult uint16   `json:"orderInFilteredResult,omitempty"`
-	EvaluationStatus      string   `json:"evaluationStatus,omitempty"`
-	EvaluationScore01     float32  `json:"evaluationScore01"`
-	EvaluationScore02     float32  `json:"evaluationScore02"`
-	EvaluationScore03     float32  `json:"evaluationScore03"`
-	EvaluationScore04     float32  `json:"evaluationScore04"`
-	EvaluationScore05     float32  `json:"evaluationScore05"`
-	EvaluationScore06     float32  `json:"evaluationScore06"`
-	EvaluationScore07     float32  `json:"evaluationScore07"`
-	EvaluationScore08     float32  `json:"evaluationScore08"`
-	EvaluationScore09     float32  `json:"evaluationScore09"`
-	EvaluationScore10     float32  `json:"evaluationScore10"`
-	RootDiskType          string   `json:"rootDiskType"`
-	RootDiskSize          int      `json:"rootDiskSize"`
-	AssociatedObjectList  []string `json:"associatedObjectList,omitempty" gorm:"type:text;serializer:json"`
-	IsAutoGenerated       bool     `json:"isAutoGenerated,omitempty"`
+	InfraType                string   `json:"infraType,omitempty"`
+	Architecture             string   `json:"architecture,omitempty" example:"x86_64"`
+	OsType                   string   `json:"osType,omitempty"`
+	VCPU                     uint16   `json:"vCPU,omitempty"`
+	MemoryGiB                float32  `json:"memoryGiB,omitempty"`
+	DiskSizeGB               float32  `json:"diskSizeGB,omitempty"`
+	MaxTotalStorageTiB       uint16   `json:"maxTotalStorageTiB,omitempty"`
+	NetBwGbps                uint16   `json:"netBwGbps,omitempty"`
+	AcceleratorModel         string   `json:"acceleratorModel,omitempty"`
+	AcceleratorCount         uint8    `json:"acceleratorCount,omitempty"`
+	AcceleratorPartitionSize float32  `json:"acceleratorPartitionSize,omitempty" example:"0.125"`
+	AcceleratorMemoryGB      float32  `json:"acceleratorMemoryGB,omitempty"`
+	AcceleratorType          string   `json:"acceleratorType,omitempty"`
+	CostPerHour              float32  `json:"costPerHour,omitempty"`
+	Description              string   `json:"description,omitempty"`
+	OrderInFilteredResult    uint16   `json:"orderInFilteredResult,omitempty"`
+	EvaluationStatus         string   `json:"evaluationStatus,omitempty"`
+	EvaluationScore01        float32  `json:"evaluationScore01"`
+	EvaluationScore02        float32  `json:"evaluationScore02"`
+	EvaluationScore03        float32  `json:"evaluationScore03"`
+	EvaluationScore04        float32  `json:"evaluationScore04"`
+	EvaluationScore05        float32  `json:"evaluationScore05"`
+	EvaluationScore06        float32  `json:"evaluationScore06"`
+	EvaluationScore07        float32  `json:"evaluationScore07"`
+	EvaluationScore08        float32  `json:"evaluationScore08"`
+	EvaluationScore09        float32  `json:"evaluationScore09"`
+	EvaluationScore10        float32  `json:"evaluationScore10"`
+	RootDiskType             string   `json:"rootDiskType"`
+	RootDiskSize             int      `json:"rootDiskSize"`
+	AssociatedObjectList     []string `json:"associatedObjectList,omitempty" gorm:"type:text;serializer:json"`
+	IsAutoGenerated          bool     `json:"isAutoGenerated,omitempty"`
 
 	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
 	SystemLabel string     `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
@@ -214,26 +228,27 @@ type LatencyInfo struct {
 
 // FilterSpecsByRangeRequest is for 'FilterSpecsByRange'
 type FilterSpecsByRangeRequest struct {
-	Id                  string  `json:"id"`
-	Name                string  `json:"name"`
-	ConnectionName      string  `json:"connectionName"`
-	ProviderName        string  `json:"providerName"`
-	RegionName          string  `json:"regionName"`
-	RegionLatitude      float64 `json:"regionLatitude"`
-	RegionLongitude     float64 `json:"regionLongitude"`
-	CspSpecName         string  `json:"cspSpecName"`
-	InfraType           string  `json:"infraType"`
-	Architecture        string  `json:"architecture"`
-	OsType              string  `json:"osType"`
-	VCPU                Range   `json:"vCPU"`
-	MemoryGiB           Range   `json:"memoryGiB"`
-	DiskSizeGB          Range   `json:"diskSizeGB"`
-	MaxTotalStorageTiB  Range   `json:"maxTotalStorageTiB"`
-	NetBwGbps           Range   `json:"netBwGbps"`
-	AcceleratorModel    string  `json:"acceleratorModel"`
-	AcceleratorCount    Range   `json:"acceleratorCount"`
-	AcceleratorMemoryGB Range   `json:"acceleratorMemoryGB"`
-	AcceleratorType     string  `json:"acceleratorType"`
+	Id                       string  `json:"id"`
+	Name                     string  `json:"name"`
+	ConnectionName           string  `json:"connectionName"`
+	ProviderName             string  `json:"providerName"`
+	RegionName               string  `json:"regionName"`
+	RegionLatitude           float64 `json:"regionLatitude"`
+	RegionLongitude          float64 `json:"regionLongitude"`
+	CspSpecName              string  `json:"cspSpecName"`
+	InfraType                string  `json:"infraType"`
+	Architecture             string  `json:"architecture"`
+	OsType                   string  `json:"osType"`
+	VCPU                     Range   `json:"vCPU"`
+	MemoryGiB                Range   `json:"memoryGiB"`
+	DiskSizeGB               Range   `json:"diskSizeGB"`
+	MaxTotalStorageTiB       Range   `json:"maxTotalStorageTiB"`
+	NetBwGbps                Range   `json:"netBwGbps"`
+	AcceleratorModel         string  `json:"acceleratorModel"`
+	AcceleratorCount         Range   `json:"acceleratorCount"`
+	AcceleratorPartitionSize Range   `json:"acceleratorPartitionSize"`
+	AcceleratorMemoryGB      Range   `json:"acceleratorMemoryGB"`
+	AcceleratorType          string  `json:"acceleratorType"`
 	CostPerHour         Range   `json:"costPerHour"`
 	Description         string  `json:"description"`
 	EvaluationStatus    string  `json:"evaluationStatus"`

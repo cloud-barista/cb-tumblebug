@@ -702,9 +702,10 @@ func UpdateSpecsFromAsset(nsId string) error {
 	// row[17]	acceleratorType
 	// row[18]	acceleratorModel
 	// row[19]	acceleratorCount
-	// row[20]	acceleratorMemoryGB
-	// row[21]	description
-	// row[22]	infraType
+	// row[20]	acceleratorPartitionSize
+	// row[21]	acceleratorMemoryGB
+	// row[22]	description
+	// row[23]	infraType
 
 	// expending rows with "all" connectionName into each region
 	// "all" means the values in the row are applicable to all connectionNames in a CSP
@@ -776,21 +777,23 @@ func UpdateSpecsFromAsset(nsId string) error {
 		}
 		acceleratorType := row[17]
 		acceleratorModel := row[18]
-		acceleratorCount := 0
-		if s, err := strconv.Atoi(strings.ReplaceAll(row[19], " ", "")); err == nil {
-			// Enforce bounds for uint8 before conversion
-			if s < 0 || s > 255 {
-				acceleratorCount = 0 // or choose another safe default, e.g., 255
-			} else {
-				acceleratorCount = s
-			}
+
+		var partitionStr, memStr, description, infraType string
+		if len(row) >= 24 {
+			partitionStr = strings.ReplaceAll(row[20], " ", "")
+			memStr = strings.ReplaceAll(row[21], " ", "")
+			description = row[22]
+			infraType = strings.ToLower(row[23])
+		} else {
+			memStr = strings.ReplaceAll(row[20], " ", "")
+			description = row[21]
+			infraType = strings.ToLower(row[22])
 		}
+		acceleratorCount, acceleratorPartitionSize := parseAcceleratorCountAndPartition(strings.ReplaceAll(row[19], " ", ""), partitionStr)
 		acceleratorMemoryGB := 0.0
-		if s, err := strconv.ParseFloat(strings.ReplaceAll(row[20], " ", ""), 32); err == nil {
+		if s, err := strconv.ParseFloat(memStr, 32); err == nil {
 			acceleratorMemoryGB = s
 		}
-		description := row[21]
-		infraType := strings.ToLower(row[22])
 		costPerHour, err := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
 		currency := strings.ToUpper(row[4])
 
@@ -854,7 +857,8 @@ func UpdateSpecsFromAsset(nsId string) error {
 		specInfo.RootDiskSize = rootDiskSize
 		specInfo.AcceleratorType = acceleratorType
 		specInfo.AcceleratorModel = acceleratorModel
-		specInfo.AcceleratorCount = uint8(acceleratorCount)
+		specInfo.AcceleratorCount = acceleratorCount
+		specInfo.AcceleratorPartitionSize = acceleratorPartitionSize
 		specInfo.AcceleratorMemoryGB = float32(acceleratorMemoryGB)
 		specInfo.EvaluationScore01 = float32(evaluationScore01)
 		specInfo.EvaluationScore02 = float32(evaluationScore02)
@@ -983,15 +987,18 @@ func mergeSpecWithCSVData(existingSpec model.SpecInfo, csvSpec model.SpecInfo) m
 		mergedSpec.RootDiskSize = csvSpec.RootDiskSize
 	}
 
-	// Merge accelerator specifications (replace empty or placeholder "NA" values)
+	// Merge accelerator specifications (replace empty or placeholder "NA" / generic "GPU" values)
 	if csvSpec.AcceleratorType != "" && existingSpec.AcceleratorType == "" {
 		mergedSpec.AcceleratorType = csvSpec.AcceleratorType
 	}
-	if csvSpec.AcceleratorModel != "" && isPlaceholderAcceleratorModel(existingSpec.AcceleratorModel) {
+	if csvSpec.AcceleratorModel != "" && (isPlaceholderAcceleratorModel(existingSpec.AcceleratorModel) || existingSpec.AcceleratorModel == "AMD GPU" || existingSpec.AcceleratorModel == "GPU") {
 		mergedSpec.AcceleratorModel = csvSpec.AcceleratorModel
 	}
 	if existingSpec.AcceleratorCount <= 0 && csvSpec.AcceleratorCount > 0 {
 		mergedSpec.AcceleratorCount = csvSpec.AcceleratorCount
+	}
+	if csvSpec.AcceleratorPartitionSize > 0 {
+		mergedSpec.AcceleratorPartitionSize = csvSpec.AcceleratorPartitionSize
 	}
 	if csvSpec.AcceleratorMemoryGB > 0 {
 		mergedSpec.AcceleratorMemoryGB = csvSpec.AcceleratorMemoryGB

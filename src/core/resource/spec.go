@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -111,7 +112,7 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.VCPU = uint16(tempUint64)
 	tempFloat64, _ := strconv.ParseFloat(spiderSpec.MemSizeMiB, 32)
-	tumblebugSpec.MemoryGiB = float32(tempFloat64 / 1024)
+	tumblebugSpec.MemoryGiB = normalizeMemoryGiB(float32(tempFloat64 / 1024))
 	tempFloat64, _ = strconv.ParseFloat(spiderSpec.DiskSizeGB, 32)
 	tumblebugSpec.DiskSizeGB = float32(tempFloat64)
 	if rootDiskSizeInt, err := strconv.Atoi(spiderSpec.DiskSizeGB); err == nil {
@@ -127,113 +128,166 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	}
 
 	// GPU(Accelerator) information conversion
-	if len(spiderSpec.Gpu) > 0 {
-		// Set AcceleratorType to "gpu" when GPU exists
+	if len(spiderSpec.Gpu) > 0 || len(spiderSpec.Accelerator) > 0 {
 		tumblebugSpec.AcceleratorType = "gpu"
 
-		// Use the first GPU information
-		firstGpu := spiderSpec.Gpu[0]
+		var mfr, modelName, countStr, fractionStr, memSizeGB, totalMemSizeGB string
+		if len(spiderSpec.Gpu) > 0 {
+			firstGpu := spiderSpec.Gpu[0]
+			mfr = firstGpu.Mfr
+			modelName = firstGpu.Model
+			countStr = firstGpu.Count
+			memSizeGB = firstGpu.MemSizeGB
+			totalMemSizeGB = firstGpu.TotalMemSizeGB
+			if len(spiderSpec.Gpu) > 1 {
+				log.Warn().Msgf("Spec %s has multiple GPUs defined (%d GPUs). Only using the first GPU information.",
+					spiderSpec.Name, len(spiderSpec.Gpu))
+			}
+		}
+		if len(spiderSpec.Accelerator) > 0 {
+			firstAcc := spiderSpec.Accelerator[0]
+			if firstAcc.Type != "" {
+				tumblebugSpec.AcceleratorType = strings.ToLower(firstAcc.Type)
+			}
+			if mfr == "" {
+				mfr = firstAcc.Mfr
+			}
+			if modelName == "" {
+				modelName = firstAcc.Model
+			}
+			if countStr == "" || countStr == "-1" {
+				countStr = firstAcc.Count
+			}
+			if firstAcc.Fraction != "" && firstAcc.Fraction != "-1" {
+				fractionStr = firstAcc.Fraction
+			}
+			if (memSizeGB == "" || memSizeGB == "-1") && firstAcc.MemSizeGB != "" && firstAcc.MemSizeGB != "-1" {
+				memSizeGB = firstAcc.MemSizeGB
+			}
+			if (totalMemSizeGB == "" || totalMemSizeGB == "-1") && firstAcc.TotalMemSizeGB != "" && firstAcc.TotalMemSizeGB != "-1" {
+				totalMemSizeGB = firstAcc.TotalMemSizeGB
+			}
+		}
 
 		// Combine Mfr and Model to form AcceleratorModel
-		if firstGpu.Mfr != "" && firstGpu.Model != "" {
-			// Check if Model already starts with Mfr to avoid duplication
-			if strings.HasPrefix(firstGpu.Model, firstGpu.Mfr) {
-				// Model already includes Mfr, so just use Model
-				tumblebugSpec.AcceleratorModel = firstGpu.Model
+		if mfr != "" && modelName != "" {
+			if strings.HasPrefix(strings.ToUpper(modelName), strings.ToUpper(mfr)) {
+				tumblebugSpec.AcceleratorModel = modelName
 			} else {
-				// Model doesn't include Mfr, so combine them
-				tumblebugSpec.AcceleratorModel = firstGpu.Mfr + " " + firstGpu.Model
+				tumblebugSpec.AcceleratorModel = mfr + " " + modelName
 			}
-		} else if firstGpu.Model != "" {
-			tumblebugSpec.AcceleratorModel = firstGpu.Model
-		} else if firstGpu.Mfr != "" {
-			tumblebugSpec.AcceleratorModel = firstGpu.Mfr
+		} else if modelName != "" {
+			tumblebugSpec.AcceleratorModel = modelName
+		} else if mfr != "" {
+			tumblebugSpec.AcceleratorModel = mfr
 		}
 
-		// Convert GPU count
-		if firstGpu.Count != "" && firstGpu.Count != "-1" {
-			tempCount, err := strconv.ParseUint(firstGpu.Count, 10, 8)
-			if err == nil {
-				tumblebugSpec.AcceleratorCount = uint8(tempCount)
-			}
+		// Convert GPU count and optional partition fraction (handles integers, decimals like "0.125", and fractions like "1/6")
+		cnt, partSize := parseAcceleratorCountAndPartition(countStr, fractionStr)
+		if cnt > 0 {
+			tumblebugSpec.AcceleratorCount = cnt
+		}
+		if partSize > 0 {
+			tumblebugSpec.AcceleratorPartitionSize = partSize
 		}
 
-		// Convert GPU memory size
-		if firstGpu.MemSizeGB != "" && firstGpu.MemSizeGB != "-1" {
-			tempMemory, err := strconv.ParseFloat(firstGpu.MemSizeGB, 32)
-			if err == nil {
+		// Convert GPU memory size: for fractional GPUs, CB-Spider sets MemSizeGB to the full physical card
+		// memory and TotalMemSizeGB to the partition's memory available to the VM.
+		if tumblebugSpec.AcceleratorPartitionSize > 0 && totalMemSizeGB != "" && totalMemSizeGB != "-1" {
+			if tempMemory, err := strconv.ParseFloat(totalMemSizeGB, 32); err == nil && tempMemory > 0 {
 				tumblebugSpec.AcceleratorMemoryGB = float32(tempMemory)
+			}
+		}
+		if tumblebugSpec.AcceleratorMemoryGB == 0 && memSizeGB != "" && memSizeGB != "-1" {
+			if tempMemory, err := strconv.ParseFloat(memSizeGB, 32); err == nil && tempMemory > 0 {
+				if tumblebugSpec.AcceleratorPartitionSize > 0 {
+					tumblebugSpec.AcceleratorMemoryGB = float32(math.Round(tempMemory * float64(tumblebugSpec.AcceleratorPartitionSize)))
+				} else {
+					tumblebugSpec.AcceleratorMemoryGB = float32(tempMemory)
+				}
 			}
 		}
 
 		// Correct manufacturer when Spider reports incorrect info (e.g., IBM labels Gaudi/MI300X as NVIDIA)
 		tumblebugSpec.AcceleratorModel = normalizeAcceleratorModel(tumblebugSpec.AcceleratorModel)
-
-		// Log if there are multiple GPUs defined
-		if len(spiderSpec.Gpu) > 1 {
-			log.Warn().Msgf("Spec %s has multiple GPUs defined (%d GPUs). Only using the first GPU information.",
-				spiderSpec.Name, len(spiderSpec.Gpu))
-		}
 	}
 
-	// Enrich missing or incomplete GPU metadata across CSPs (KT, GCP, IBM, Tencent)
+	// Enrich missing or incomplete GPU metadata across CSPs using CSP Details and family/model rules
 	enrichSpecAcceleratorInfo(&tumblebugSpec)
 
 	return tumblebugSpec, nil
 }
 
-// gcpAcceleratorMemoryGBByType maps GCP guestAcceleratorType values (as returned by the GCP
-// Compute API) to the GPU memory size in GB per GPU unit. This is needed because the GCP API
-// only returns the type name string (e.g., "nvidia-l4"), not the memory size, and CB-Spider
-// cannot infer memory for types whose name lacks a "gb" suffix.
-var gcpAcceleratorMemoryGBByType = map[string]float32{
-	"nvidia-l4":           24,  // NVIDIA L4 - 24 GB GDDR6
-	"nvidia-l40s":         48,  // NVIDIA L40S - 48 GB GDDR6
-	"nvidia-tesla-t4":     16,  // NVIDIA T4 - 16 GB GDDR6
-	"nvidia-tesla-k80":    12,  // NVIDIA K80 - 12 GB GDDR5 per GPU unit
-	"nvidia-tesla-p4":     8,   // NVIDIA P4 - 8 GB GDDR5
-	"nvidia-tesla-p100":   16,  // NVIDIA P100 - 16 GB HBM2
-	"nvidia-tesla-v100":   16,  // NVIDIA V100 - 16 GB HBM2
-	"nvidia-tesla-a100":   40,  // NVIDIA A100 SXM4 40 GB HBM2 (a2-highgpu / a2-megagpu families)
-	"nvidia-b200":         192, // NVIDIA B200 - 192 GB HBM3e
-	"nvidia-gb200":        186, // NVIDIA GB200 Grace Blackwell - 186 GB HBM3e per GPU
-	"nvidia-gb300":        288, // NVIDIA GB300 Grace Blackwell Ultra - 288 GB HBM3e per GPU
-	"nvidia-rtx-pro-6000": 96,  // NVIDIA RTX PRO 6000 Blackwell - 96 GB GDDR7
+// normalizePartitionFraction snaps a fractional GPU partition value (e.g. 0.167 from 3-decimal rounding)
+// to its exact standard fraction (1/d or n/d for d in 2, 3, 4, 6, 8, 12, 16, 24, 32) when within tolerance.
+func normalizePartitionFraction(f float32) float32 {
+	if f <= 0 || f >= 1 {
+		return 0
+	}
+	denoms := []int{2, 3, 4, 6, 8, 12, 16, 24, 32}
+	for _, d := range denoms {
+		for n := 1; n < d; n++ {
+			exact := float64(n) / float64(d)
+			if math.Abs(float64(f)-exact) < 0.005 {
+				return float32(exact)
+			}
+		}
+	}
+	return f
 }
 
-// ibmAcceleratorMemoryGBByModel maps IBM GPU model names to per-GPU memory in GB.
-var ibmAcceleratorMemoryGBByModel = map[string]float32{
-	"NVIDIA V100":  16,  // gx2-*v100 uses 16 GB V100
-	"NVIDIA L4":    24,  // gx3-*l4 uses 24 GB L4
-	"NVIDIA L40S":  48,  // gx3-*l40s uses 48 GB L40S
-	"NVIDIA A100P": 80,  // gx3d-*a100p uses 80 GB A100 PCIe
-	"NVIDIA A100":  80,  // 80 GB A100
-	"NVIDIA H100":  80,  // gx3d-*h100 uses 80 GB H100
-	"NVIDIA H200":  141, // gx3d-*h200 uses 141 GB H200
-	"Intel GAUDI3": 128, // gx3d-*gaudi3 uses 128 GB HL-325L
+// parseFractionString parses a fraction string ("1/6", "0.125") into a float64.
+func parseFractionString(s string) (float64, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" || s == "-1" {
+		return 0, false
+	}
+	if strings.Contains(s, "/") {
+		parts := strings.SplitN(s, "/", 2)
+		num, err1 := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+		den, err2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+		if err1 == nil && err2 == nil && num > 0 && den > 0 {
+			return num / den, true
+		}
+		return 0, false
+	}
+	if v, err := strconv.ParseFloat(s, 64); err == nil && v > 0 {
+		return v, true
+	}
+	return 0, false
 }
 
-type gpuModelMemory struct {
-	model string
-	memGB float32
-}
+// parseAcceleratorCountAndPartition parses count and optional fraction strings from CB-Spider or CSV assets.
+// Examples:
+//   - countStr="2", fractionStr="" -> count=2, partitionSize=0
+//   - countStr="0.125", fractionStr="" -> count=1, partitionSize=0.125
+//   - countStr="1", fractionStr="1/6" -> count=1, partitionSize=0.16666667
+//   - countStr="1/8", fractionStr="" -> count=1, partitionSize=0.125
+func parseAcceleratorCountAndPartition(countStr, fractionStr string) (count uint8, partitionSize float32) {
+	if f, ok := parseFractionString(fractionStr); ok && f > 0 && f < 1 {
+		partitionSize = normalizePartitionFraction(float32(f))
+	}
 
-// tencentGPUFamilyMap maps Tencent Cloud GPU instance family prefixes (lowercase) to GPU model and per-GPU memory (GB).
-var tencentGPUFamilyMap = map[string]gpuModelMemory{
-	"gn7":     {model: "NVIDIA T4", memGB: 16},
-	"gi1":     {model: "NVIDIA T4", memGB: 16},
-	"gn10x":   {model: "NVIDIA V100", memGB: 16},
-	"gn10xp":  {model: "NVIDIA V100", memGB: 32},
-	"bmg5t":   {model: "NVIDIA V100", memGB: 32},
-	"hccg5v":  {model: "NVIDIA V100", memGB: 32},
-	"gt4":     {model: "NVIDIA A100", memGB: 40},
-	"gn8":     {model: "NVIDIA P40", memGB: 24},
-	"gn6s":    {model: "NVIDIA P4", memGB: 8},
-	"gnv4":    {model: "AMD Radeon Pro V520", memGB: 8},
-	"gc50sgc": {model: "NVIDIA L20", memGB: 48},
+	if v, ok := parseFractionString(countStr); ok {
+		if v > 0 && v < 1 {
+			count = 1
+			if partitionSize == 0 {
+				partitionSize = normalizePartitionFraction(float32(v))
+			}
+		} else if v >= 1 && v <= 255 {
+			count = uint8(math.Round(v))
+		}
+	} else if partitionSize > 0 {
+		count = 1
+	}
+
+	return count, partitionSize
 }
 
 var (
+	reExplicitGPUMemGB = regexp.MustCompile(`(?i)(?:^|[-_\s])(\d+)\s*gb?(?:$|[-_\s])`)
+	reTencentRemarkGPU = regexp.MustCompile(`(?i)(?:^\d+\s*\*\s*|\b\d+\s+)?((?:nvidia|amd|intel)\s+[a-z0-9][a-z0-9\s._-]*)`)
+
 	reKTA10080GXe   = regexp.MustCompile(`(?i)a100-80g-[a-z0-9]+-(\d+)ea`)
 	reKTA10080GUnd  = regexp.MustCompile(`(?i)a100_80g_(\d+)`)
 	reKTA10080G     = regexp.MustCompile(`(?i)a100[-_]80g`)
@@ -245,7 +299,76 @@ var (
 	reKTRTXShortOne = regexp.MustCompile(`(?i)-rtx$`)
 	reKTT4Count     = regexp.MustCompile(`(?i)t4[-x](\d+)`)
 	reKTT4Dot       = regexp.MustCompile(`(?i)\.t4\.`)
+
+	reAWSGpuPartitionSize = regexp.MustCompile(`GpuPartitionSize:([0-9.]+)`)
+	reAWSLogicalGpuCount  = regexp.MustCompile(`LogicalGpuCount:(\d+)`)
+	reAWSGpuCount         = regexp.MustCompile(`\bCount:(\d+)`)
+	reAWSGpuSizeInMiB     = regexp.MustCompile(`SizeInMiB:(\d+)`)
+	reAWSGpuMfr           = regexp.MustCompile(`Manufacturer:([^,}]+)`)
+	reAWSGpuName          = regexp.MustCompile(`\bName:([^,}]+)`)
+
+	reAlibabaGPUFraction = regexp.MustCompile(`(?i)^(.+?)\s*(?:\*(\d+)\s*/\s*(\d+)|/\s*(\d+))$`)
+	reAlibabaVGPUMem     = regexp.MustCompile(`(?i)\bvgpu(\d*)-(\d+)g\b`)
+	reAlibabaSpecMemTag  = regexp.MustCompile(`(?i)-m(\d+)s?(?:\.|-|$)`)
 )
+
+// inferGPUMemoryGBFromModel infers standard per-card GPU VRAM (GB) from the extracted GPU model name
+// and spec name across all CSPs when the CSP driver does not report memory size directly.
+func inferGPUMemoryGBFromModel(modelName, specName string) float32 {
+	lowerModel := strings.ToLower(strings.TrimSpace(modelName))
+	lowerSpec := strings.ToLower(strings.TrimSpace(specName))
+	if lowerModel == "" {
+		return 0
+	}
+
+	// 1. Check if the model string itself encodes an explicit GB size (e.g., "NVIDIA A100-SXM4-40GB", "A100 80GB")
+	if m := reExplicitGPUMemGB.FindStringSubmatch(lowerModel); len(m) > 1 {
+		if v, err := strconv.ParseFloat(m[1], 32); err == nil && v > 0 {
+			return float32(v)
+		}
+	}
+
+	// 2. Match standard GPU hardware chip models (longest/most specific tokens first)
+	switch {
+	case strings.Contains(lowerModel, "gb300") || strings.Contains(lowerModel, "b300"):
+		return 288
+	case strings.Contains(lowerModel, "b200") || strings.Contains(lowerModel, "mi300x"):
+		return 192
+	case strings.Contains(lowerModel, "gb200"):
+		return 186
+	case strings.Contains(lowerModel, "h200"):
+		return 141
+	case strings.Contains(lowerModel, "gaudi3") || strings.Contains(lowerModel, "mi250"):
+		return 128
+	case strings.Contains(lowerModel, "rtx pro 6000") || strings.Contains(lowerModel, "rtxpro6000") || strings.Contains(lowerModel, "rtx pro server 6000"):
+		return 96
+	case strings.Contains(lowerModel, "h100") || strings.Contains(lowerModel, "a100p") || strings.Contains(lowerModel, "h800") || strings.Contains(lowerModel, "a800"):
+		return 80
+	case strings.Contains(lowerModel, "a100"):
+		if strings.Contains(lowerSpec, "ultragpu") || strings.Contains(lowerSpec, "amsr") || strings.Contains(lowerSpec, "80g") || strings.HasPrefix(lowerSpec, "gx") {
+			return 80
+		}
+		return 40
+	case strings.Contains(lowerModel, "l40s") || strings.Contains(lowerModel, "l40") || strings.Contains(lowerModel, "l20") || strings.Contains(lowerModel, "a40"):
+		return 48
+	case strings.Contains(lowerModel, "v100s") || strings.Contains(lowerModel, "v620") || strings.Contains(lowerModel, "rtx pro 4500"):
+		return 32
+	case strings.Contains(lowerModel, "v100"):
+		if strings.Contains(lowerSpec, "gn10xp") || strings.Contains(lowerSpec, "hccg5v") || strings.Contains(lowerSpec, "nd40") || strings.Contains(lowerSpec, ".v100") {
+			return 32
+		}
+		return 16
+	case strings.Contains(lowerModel, "l4") || strings.Contains(lowerModel, "a10g") || strings.Contains(lowerModel, "a10") || strings.Contains(lowerModel, "p40") || strings.Contains(lowerModel, "v710"):
+		return 24
+	case strings.Contains(lowerModel, "t4") || strings.Contains(lowerModel, "p100") || strings.Contains(lowerModel, "mi25"):
+		return 16
+	case strings.Contains(lowerModel, "k80"):
+		return 12
+	case strings.Contains(lowerModel, "p4") || strings.Contains(lowerModel, "m60") || strings.Contains(lowerModel, "rtx 4000") || strings.Contains(lowerModel, "v520"):
+		return 8
+	}
+	return 0
+}
 
 func parseUint8Match(matches []string, fallback uint8) uint8 {
 	if len(matches) > 1 {
@@ -294,7 +417,7 @@ func parseKTAcceleratorFromSpecName(specName string) (accelType string, modelNam
 	case reKTT4Dot.MatchString(lower):
 		return "gpu", "NVIDIA T4", 1, 16, true
 	case strings.Contains(lower, ".amd.sdgpu"):
-		return "gpu", "AMD GPU", 1, 0, true
+		return "gpu", "AMD Instinct MI250", 1, 128, true
 	case strings.Contains(lower, ".gpu") || strings.Contains(lower, "gpu"):
 		return "gpu", "GPU", 1, 0, true
 	default:
@@ -307,22 +430,578 @@ func isPlaceholderAcceleratorModel(m string) bool {
 	return trimmed == "" || trimmed == "NA" || strings.HasPrefix(trimmed, "NA ") || strings.HasSuffix(trimmed, " NA")
 }
 
-// enrichSpecAcceleratorInfo fills in missing or placeholder GPU accelerator fields using
-// CSP-specific naming conventions and static lookup tables. Returns true if any field was modified.
+// convertAWSMiBToGB converts AWS EC2 GpuInfo.MemoryInfo.SizeInMiB to nominal GPU memory (GB).
+// AWS reports exact binary GiB multiples (mib % 1024 == 0) for some GPUs (e.g., T4=16384->16, V100=32768->32,
+// A100=40960/81920->40/80, H100=81920->80, H200=144384->141, RTX PRO 6000=98304->96), and decimal GB converted
+// to MiB (mib % 1024 != 0) for others (e.g., L4=22888->24, L40S=45776->48, B200=183359->192, B300=275040->288).
+// CB-Spider's ConvertMiBToGBInt64 unconditionally multiplies by 1.073741824, inflating binary GiB values (16->17, 32->34, 80->86).
+func convertAWSMiBToGB(mib int64) float32 {
+	if mib <= 0 {
+		return 0
+	}
+	if mib%1024 == 0 {
+		return float32(mib / 1024)
+	}
+	return float32(math.Round(float64(mib) / 1024.0 * 1.073741824))
+}
+
+// enrichAWSAcceleratorInfo extracts GPU count, partition fraction (GpuPartitionSize), LogicalGpuCount,
+// and memory directly from the EC2 "GpuInfo" object stored in spec.Details.
+func enrichAWSAcceleratorInfo(spec *model.SpecInfo) bool {
+	gpuInfoRaw := common.LookupKeyValueList(spec.Details, "GpuInfo")
+	if gpuInfoRaw == "" {
+		return false
+	}
+	changed := false
+
+	if spec.AcceleratorType == "" {
+		spec.AcceleratorType = "gpu"
+		changed = true
+	}
+
+	if isPlaceholderAcceleratorModel(spec.AcceleratorModel) {
+		var mfr, name string
+		if m := reAWSGpuMfr.FindStringSubmatch(gpuInfoRaw); len(m) > 1 {
+			mfr = strings.TrimSpace(m[1])
+		}
+		if m := reAWSGpuName.FindStringSubmatch(gpuInfoRaw); len(m) > 1 {
+			name = strings.TrimSpace(m[1])
+		}
+		modelStr := strings.TrimSpace(mfr + " " + name)
+		if modelStr != "" && spec.AcceleratorModel != modelStr {
+			spec.AcceleratorModel = modelStr
+			changed = true
+		}
+	}
+
+	if m := reAWSGpuPartitionSize.FindStringSubmatch(gpuInfoRaw); len(m) > 1 {
+		if partVal, err := strconv.ParseFloat(m[1], 32); err == nil && partVal > 0 && partVal < 1 {
+			normPart := normalizePartitionFraction(float32(partVal))
+			if spec.AcceleratorPartitionSize != normPart {
+				spec.AcceleratorPartitionSize = normPart
+				changed = true
+			}
+			logicalCnt := uint8(1)
+			if lm := reAWSLogicalGpuCount.FindStringSubmatch(gpuInfoRaw); len(lm) > 1 {
+				if v, err := strconv.ParseUint(lm[1], 10, 8); err == nil && v > 0 {
+					logicalCnt = uint8(v)
+				}
+			}
+			if spec.AcceleratorCount == 0 {
+				spec.AcceleratorCount = logicalCnt
+				changed = true
+			}
+		}
+	} else if spec.AcceleratorCount == 0 {
+		if m := reAWSGpuCount.FindStringSubmatch(gpuInfoRaw); len(m) > 1 {
+			if v, err := strconv.ParseUint(m[1], 10, 8); err == nil && v > 0 {
+				spec.AcceleratorCount = uint8(v)
+				changed = true
+			}
+		}
+	}
+
+	if m := reAWSGpuSizeInMiB.FindStringSubmatch(gpuInfoRaw); len(m) > 1 {
+		if mib, err := strconv.ParseInt(m[1], 10, 64); err == nil && mib > 0 {
+			memGB := convertAWSMiBToGB(mib)
+			if memGB > 0 && spec.AcceleratorMemoryGB != memGB {
+				spec.AcceleratorMemoryGB = memGB
+				changed = true
+			}
+		}
+	}
+
+	return changed
+}
+
+// enrichAlibabaAcceleratorInfo parses fractional GPU notation in Alibaba ECS GPUSpec strings
+// (e.g., "NVIDIA A10*1/12", "NVIDIA T4/4", "NVIDIA VGPU8-2G") and derives partition ratios
+// dynamically using the extracted GPU model and physical card memory.
+func enrichAlibabaAcceleratorInfo(spec *model.SpecInfo) bool {
+	if spec.AcceleratorType != "gpu" && !strings.Contains(strings.ToLower(spec.CspSpecName), "gn") {
+		return false
+	}
+	changed := false
+
+	// 1. Parse inline fraction suffix in AcceleratorModel (e.g., "NVIDIA A10*1/12" or "NVIDIA T4/4")
+	if m := reAlibabaGPUFraction.FindStringSubmatch(strings.TrimSpace(spec.AcceleratorModel)); len(m) > 0 {
+		baseModel := strings.TrimSpace(m[1])
+		var num, den float64
+		if m[2] != "" && m[3] != "" {
+			num, _ = strconv.ParseFloat(m[2], 64)
+			den, _ = strconv.ParseFloat(m[3], 64)
+		} else if m[4] != "" {
+			num = 1
+			den, _ = strconv.ParseFloat(m[4], 64)
+		}
+		if baseModel != "" && spec.AcceleratorModel != baseModel {
+			spec.AcceleratorModel = baseModel
+			changed = true
+		}
+		if num > 0 && den > num {
+			part := normalizePartitionFraction(float32(num / den))
+			if spec.AcceleratorPartitionSize != part {
+				spec.AcceleratorPartitionSize = part
+				changed = true
+			}
+			if spec.AcceleratorCount == 0 {
+				spec.AcceleratorCount = 1
+				changed = true
+			}
+		}
+	}
+
+	// 2. Parse "VGPU<gen>-<mem>G" pattern in AcceleratorModel (e.g., "NVIDIA VGPU8-2G")
+	if m := reAlibabaVGPUMem.FindStringSubmatch(spec.AcceleratorModel); len(m) > 2 {
+		gen := m[1]
+		if memVal, err := strconv.ParseFloat(m[2], 32); err == nil && memVal > 0 && spec.AcceleratorMemoryGB == 0 {
+			spec.AcceleratorMemoryGB = float32(memVal)
+			changed = true
+		}
+		if gen == "8" && spec.AcceleratorModel != "NVIDIA L20" {
+			spec.AcceleratorModel = "NVIDIA L20"
+			changed = true
+		}
+	}
+
+	// 3. For shared/virtual GPU families (sgn* / vgn*), infer missing partition memory or partition ratio
+	specLower := strings.ToLower(strings.TrimPrefix(strings.ToLower(spec.CspSpecName), "ecs."))
+	if strings.HasPrefix(specLower, "sgn") || strings.HasPrefix(specLower, "vgn") {
+		if spec.AcceleratorType == "" {
+			spec.AcceleratorType = "gpu"
+			changed = true
+		}
+		if spec.AcceleratorCount == 0 {
+			spec.AcceleratorCount = 1
+			changed = true
+		}
+		if spec.AcceleratorMemoryGB == 0 {
+			if mm := reAlibabaSpecMemTag.FindStringSubmatch(specLower); len(mm) > 1 {
+				if memVal, err := strconv.ParseFloat(mm[1], 32); err == nil && memVal > 0 {
+					spec.AcceleratorMemoryGB = float32(memVal)
+					changed = true
+				}
+			}
+		}
+		cardMem := inferGPUMemoryGBFromModel(spec.AcceleratorModel, spec.CspSpecName)
+		if cardMem > 0 && spec.AcceleratorMemoryGB > 0 {
+			if spec.AcceleratorMemoryGB < cardMem {
+				part := normalizePartitionFraction(spec.AcceleratorMemoryGB / cardMem)
+				if spec.AcceleratorPartitionSize != part {
+					spec.AcceleratorPartitionSize = part
+					changed = true
+				}
+			} else if spec.AcceleratorPartitionSize != 0 {
+				spec.AcceleratorPartitionSize = 0
+				changed = true
+			}
+		}
+	}
+
+	return changed
+}
+
+// enrichTencentAcceleratorInfo extracts GPU model from Tencent Cloud Details ("Remark", "InstanceFamily")
+// when CB-Spider's Tencent driver leaves AcceleratorModel as "NA".
+func enrichTencentAcceleratorInfo(spec *model.SpecInfo) bool {
+	if spec.AcceleratorType != "gpu" {
+		return false
+	}
+	changed := false
+
+	// 1. Check explicit GPU model in Details["Remark"] first (e.g., "4 NVIDIA T4")
+	var inferredModel string
+	if remark := strings.TrimSpace(common.LookupKeyValueList(spec.Details, "Remark")); remark != "" {
+		if m := reTencentRemarkGPU.FindStringSubmatch(remark); len(m) > 1 {
+			inferredModel = strings.TrimSpace(m[1])
+		}
+	}
+
+	// 2. Fallback to InstanceFamily from Details or spec name prefix when AcceleratorModel is placeholder
+	if inferredModel == "" && isPlaceholderAcceleratorModel(spec.AcceleratorModel) {
+		family := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(spec.Details, "InstanceFamily")))
+		if family == "" {
+			family = strings.ToLower(strings.SplitN(spec.CspSpecName, ".", 2)[0])
+		}
+		switch {
+		case strings.HasPrefix(family, "gt4"):
+			inferredModel = "NVIDIA A100"
+		case strings.HasPrefix(family, "gn10x"), strings.HasPrefix(family, "hccg5v"):
+			inferredModel = "NVIDIA V100"
+		case strings.HasPrefix(family, "gn7"), strings.HasPrefix(family, "gi1"), strings.HasPrefix(family, "bmg5t"):
+			inferredModel = "NVIDIA T4"
+		case strings.HasPrefix(family, "gn8"):
+			inferredModel = "NVIDIA P40"
+		case strings.HasPrefix(family, "gn6s"):
+			inferredModel = "NVIDIA P4"
+		case strings.HasPrefix(family, "gnv4"):
+			inferredModel = "AMD Radeon Pro V520"
+		case strings.HasPrefix(family, "gc50"):
+			inferredModel = "NVIDIA L20"
+		}
+	}
+
+	if inferredModel != "" && spec.AcceleratorModel != inferredModel {
+		spec.AcceleratorModel = inferredModel
+		// Reset memory if model was corrected (e.g. from Remark) so unified model-to-VRAM inference recalculates it
+		if !isPlaceholderAcceleratorModel(spec.AcceleratorModel) {
+			if memGB := inferGPUMemoryGBFromModel(inferredModel, spec.CspSpecName); memGB > 0 {
+				spec.AcceleratorMemoryGB = memGB
+			}
+		}
+		changed = true
+	}
+
+	return changed
+}
+
+// enrichAzureAcceleratorInfo derives GPU model, count, partition fraction, and VRAM for Azure N-series
+// VM sizes using:
+//  1. Azure ResourceSKU "GPUs" capability from spec.Details
+//  2. Azure partitioned GPU series ratio rules (NVas_v4, NVads_V710_v5, NGads_V620_v1, NVads_A10_v5)
+//  3. Embedded GPU chip token rules in the Azure SKU name (rtxpro6000, gb300, gb200, h200, h100, mi300x, a100, a10, t4)
+func enrichAzureAcceleratorInfo(spec *model.SpecInfo) bool {
+	lower := strings.ToLower(spec.CspSpecName)
+	trimmed := strings.TrimPrefix(lower, "standard_")
+	isGPUSeries := strings.HasPrefix(trimmed, "nc") || strings.HasPrefix(trimmed, "nd") ||
+		strings.HasPrefix(trimmed, "ng") || strings.HasPrefix(trimmed, "nv")
+	if !isGPUSeries && spec.AcceleratorType != "gpu" {
+		return false
+	}
+
+	changed := false
+	if spec.AcceleratorType != "gpu" {
+		spec.AcceleratorType = "gpu"
+		changed = true
+	}
+
+	// Authoritative GPU device count from Azure ResourceSKU capability ("GPUs" in spec.Details)
+	var detailsGPUs uint8
+	if gpusStr := common.LookupKeyValueList(spec.Details, "GPUs"); gpusStr != "" {
+		if v, err := strconv.ParseUint(strings.TrimSpace(gpusStr), 10, 8); err == nil && v > 0 {
+			detailsGPUs = uint8(v)
+		}
+	}
+
+	vcpu := float64(spec.VCPU)
+	if vcpu <= 0 {
+		if m := regexp.MustCompile(`^(?:nc|nd|ng|nv|ncc)(\d+)`).FindStringSubmatch(trimmed); len(m) > 1 {
+			if v, err := strconv.ParseFloat(m[1], 64); err == nil {
+				vcpu = v
+			}
+		}
+	}
+
+	// 1. Partitioned (fractional) GPU series in Azure
+	type azurePartitionedSeries struct {
+		matched     bool
+		model       string
+		cardMemGB   float32
+		fullGpuVCPU float64
+		shares      float64
+	}
+
+	var partSeries azurePartitionedSeries
+	switch {
+	case strings.HasPrefix(trimmed, "nv") && strings.Contains(trimmed, "v710"):
+		// NVads_V710_v5 series: AMD Radeon PRO V710 (24 GB physical card, 24 vCPUs per full GPU; NV28 is 1 full GPU)
+		shares := vcpu / 24.0
+		if shares > 1.0 && shares < 1.5 {
+			shares = 1.0
+		}
+		partSeries = azurePartitionedSeries{
+			matched:     true,
+			model:       "AMD Radeon PRO V710",
+			cardMemGB:   24,
+			fullGpuVCPU: 24,
+			shares:      shares,
+		}
+	case strings.HasPrefix(trimmed, "ng") && strings.Contains(trimmed, "v620"):
+		// NGads_V620_v1 series: AMD Radeon PRO V620 (32 GB physical card, 32 vCPUs per full GPU)
+		partSeries = azurePartitionedSeries{
+			matched:     true,
+			model:       "AMD Radeon PRO V620",
+			cardMemGB:   32,
+			fullGpuVCPU: 32,
+			shares:      vcpu / 32.0,
+		}
+	case strings.HasPrefix(trimmed, "nv") && strings.Contains(trimmed, "a10"):
+		// NVads_A10_v5 series: NVIDIA A10 (24 GB physical card, 36 vCPUs per full GPU).
+		// Constrained-vCPU variants (NV4, NV10, NV20, NV30, NV40) map to standard partition tiers (1/6, 1/3, 1/2, 1, 2).
+		var shares float64
+		switch {
+		case vcpu <= 6:
+			shares = 1.0 / 6.0
+		case vcpu <= 12:
+			shares = 1.0 / 3.0
+		case vcpu <= 20:
+			shares = 0.5
+		case vcpu <= 40:
+			shares = 1.0
+		default:
+			shares = math.Round(vcpu / 36.0)
+		}
+		partSeries = azurePartitionedSeries{
+			matched:     true,
+			model:       "NVIDIA A10",
+			cardMemGB:   24,
+			fullGpuVCPU: 36,
+			shares:      shares,
+		}
+	case strings.HasPrefix(trimmed, "nv") && strings.Contains(trimmed, "_v4"):
+		// NVas_v4 series: AMD Instinct MI25 (16 GB physical card, 32 vCPUs per full GPU)
+		partSeries = azurePartitionedSeries{
+			matched:     true,
+			model:       "AMD Instinct MI25",
+			cardMemGB:   16,
+			fullGpuVCPU: 32,
+			shares:      vcpu / 32.0,
+		}
+	}
+
+	if partSeries.matched && partSeries.shares > 0 {
+		if spec.AcceleratorModel != partSeries.model {
+			spec.AcceleratorModel = partSeries.model
+			changed = true
+		}
+		if partSeries.shares < 1.0 {
+			part := normalizePartitionFraction(float32(partSeries.shares))
+			partMem := float32(math.Round(float64(partSeries.cardMemGB) * partSeries.shares))
+			if spec.AcceleratorCount != 1 {
+				spec.AcceleratorCount = 1
+				changed = true
+			}
+			if spec.AcceleratorPartitionSize != part {
+				spec.AcceleratorPartitionSize = part
+				changed = true
+			}
+			if spec.AcceleratorMemoryGB != partMem {
+				spec.AcceleratorMemoryGB = partMem
+				changed = true
+			}
+		} else {
+			cnt := uint8(math.Round(partSeries.shares))
+			if detailsGPUs > 0 {
+				cnt = detailsGPUs
+			}
+			if spec.AcceleratorCount != cnt {
+				spec.AcceleratorCount = cnt
+				changed = true
+			}
+			if spec.AcceleratorPartitionSize != 0 {
+				spec.AcceleratorPartitionSize = 0
+				changed = true
+			}
+			if spec.AcceleratorMemoryGB != partSeries.cardMemGB {
+				spec.AcceleratorMemoryGB = partSeries.cardMemGB
+				changed = true
+			}
+		}
+		return changed
+	}
+
+	// 2. Full-GPU Azure series: infer GPU model, per-GPU VRAM, and default vCPUs-per-GPU from chip token
+	var modelName string
+	var memPerGPU float32
+	var defaultVCPUPerGPU float64
+	overrideSpiderFallback := false
+
+	switch {
+	case strings.Contains(trimmed, "rtxpro6000"):
+		modelName = "NVIDIA RTX PRO 6000"
+		memPerGPU = 96
+		defaultVCPUPerGPU = 144
+		overrideSpiderFallback = true
+	case strings.Contains(trimmed, "gb300"):
+		modelName = "NVIDIA GB300"
+		memPerGPU = 288
+		defaultVCPUPerGPU = 32
+		overrideSpiderFallback = true
+	case strings.Contains(trimmed, "gb200"):
+		modelName = "NVIDIA GB200"
+		memPerGPU = 186
+		defaultVCPUPerGPU = 32
+		overrideSpiderFallback = true
+	case strings.Contains(trimmed, "b200"):
+		modelName = "NVIDIA B200"
+		memPerGPU = 192
+		defaultVCPUPerGPU = 24
+		overrideSpiderFallback = true
+	case strings.Contains(trimmed, "h200"):
+		modelName = "NVIDIA H200"
+		memPerGPU = 141
+		defaultVCPUPerGPU = 12
+	case strings.Contains(trimmed, "h100"):
+		modelName = "NVIDIA H100"
+		if strings.HasPrefix(trimmed, "nc") {
+			memPerGPU = 94
+			defaultVCPUPerGPU = 40
+		} else {
+			memPerGPU = 80
+			defaultVCPUPerGPU = 12
+		}
+	case strings.Contains(trimmed, "mi300x"):
+		modelName = "AMD Instinct MI300X"
+		memPerGPU = 192
+		defaultVCPUPerGPU = 12
+	case strings.Contains(trimmed, "a100"):
+		modelName = "NVIDIA A100"
+		if strings.Contains(trimmed, "amsr") || strings.HasPrefix(trimmed, "nc") {
+			memPerGPU = 80
+		} else {
+			memPerGPU = 40
+		}
+		if strings.HasPrefix(trimmed, "nc") {
+			defaultVCPUPerGPU = 24
+		} else {
+			defaultVCPUPerGPU = 12
+		}
+		if strings.Contains(trimmed, "amsr") {
+			overrideSpiderFallback = true
+		}
+	case strings.Contains(trimmed, "a10"):
+		modelName = "NVIDIA A10"
+		memPerGPU = 24
+		defaultVCPUPerGPU = 16
+		overrideSpiderFallback = true
+	case strings.Contains(trimmed, "t4"):
+		modelName = "NVIDIA Tesla T4"
+		memPerGPU = 16
+		defaultVCPUPerGPU = 16
+	case strings.HasPrefix(trimmed, "nv") && (strings.Contains(trimmed, "_v2") || strings.Contains(trimmed, "_v3")):
+		modelName = "NVIDIA Tesla M60"
+		memPerGPU = 8
+		if strings.Contains(trimmed, "_v3") {
+			defaultVCPUPerGPU = 12
+		} else {
+			defaultVCPUPerGPU = 6
+		}
+		overrideSpiderFallback = true
+	}
+
+	if modelName != "" && (isPlaceholderAcceleratorModel(spec.AcceleratorModel) || overrideSpiderFallback) {
+		if spec.AcceleratorModel != modelName {
+			spec.AcceleratorModel = modelName
+			changed = true
+		}
+	}
+
+	normalized := normalizeAcceleratorModel(spec.AcceleratorModel)
+	if normalized != spec.AcceleratorModel {
+		spec.AcceleratorModel = normalized
+		changed = true
+	}
+
+	if overrideSpiderFallback && spec.AcceleratorPartitionSize != 0 {
+		spec.AcceleratorPartitionSize = 0
+		changed = true
+	}
+
+	if detailsGPUs > 0 && (spec.AcceleratorCount == 0 || overrideSpiderFallback || spec.AcceleratorCount != detailsGPUs) {
+		spec.AcceleratorCount = detailsGPUs
+		changed = true
+	} else if (spec.AcceleratorCount == 0 || overrideSpiderFallback) && defaultVCPUPerGPU > 0 && vcpu > 0 {
+		cnt := uint8(math.Max(1, math.Round(vcpu/defaultVCPUPerGPU)))
+		if spec.AcceleratorCount != cnt {
+			spec.AcceleratorCount = cnt
+			changed = true
+		}
+	}
+
+	if memPerGPU > 0 && (spec.AcceleratorMemoryGB <= 0 || overrideSpiderFallback) {
+		if spec.AcceleratorMemoryGB != memPerGPU {
+			spec.AcceleratorMemoryGB = memPerGPU
+			changed = true
+		}
+	}
+
+	return changed
+}
+
+// normalizeMemoryGiB cleans up floating-point division artifacts when MemSizeMiB is not an exact
+// binary GiB fraction (1/8 GiB = 128 MiB). For example, GCP n1-highcpu-* (0.9 GB/vCPU) reports
+// 1843 MiB -> 1.7998047 GiB (normalized to 1.8) and AWS m2.xlarge reports 17510 MiB -> 17.09961 GiB (normalized to 17.1).
+func normalizeMemoryGiB(memGiB float32) float32 {
+	if memGiB <= 0 {
+		return 0
+	}
+	val := float64(memGiB)
+	if math.Abs(val*8-math.Round(val*8)) < 1e-4 {
+		return float32(math.Round(val*8) / 8)
+	}
+	return float32(math.Round(val*10) / 10)
+}
+
+// enrichSpecAcceleratorInfo fills in missing or placeholder GPU accelerator fields and normalizes
+// CSP spec metadata (MemoryGiB precision, Architecture from Details, Azure constrained vCPUs, and
+// Azure ResourceDiskSizeInMB unit conversion). Returns true if any field was modified.
 func enrichSpecAcceleratorInfo(spec *model.SpecInfo) bool {
 	if spec == nil {
 		return false
 	}
 	changed := false
 
+	// 1. Normalize MemoryGiB floating-point precision (e.g., 1.7998047 -> 1.8, 32.015625 -> 32)
+	if spec.MemoryGiB > 0 {
+		normMem := normalizeMemoryGiB(spec.MemoryGiB)
+		if math.Abs(float64(spec.MemoryGiB-normMem)) > 1e-5 {
+			spec.MemoryGiB = normMem
+			changed = true
+		}
+	}
+
+	// 2. Re-verify CPU Architecture using Details and updated CSP naming patterns
+	if arch := extractArchitecture(spec.ProviderName, spec.Details, spec.CspSpecName); arch != "" && arch != string(model.ArchitectureUnknown) {
+		if spec.Architecture != arch {
+			spec.Architecture = arch
+			changed = true
+		}
+	}
+
 	switch csp.ResolveCloudPlatform(spec.ProviderName) {
+	case csp.AWS:
+		if enrichAWSAcceleratorInfo(spec) {
+			changed = true
+		}
+
+	case csp.Azure:
+		// Normalize Azure constrained-vCPU SKUs (e.g. Standard_E16-4s_v5, Standard_F64-16ams_v7)
+		// where Details["vCPUsAvailable"] gives the actual usable vCPU count inside the VM.
+		if availStr := strings.TrimSpace(common.LookupKeyValueList(spec.Details, "vCPUsAvailable")); availStr != "" {
+			if v, err := strconv.ParseUint(availStr, 10, 16); err == nil && v > 0 && spec.VCPU != uint16(v) {
+				spec.VCPU = uint16(v)
+				changed = true
+			}
+		}
+		// Normalize Azure DiskSizeGB from Details["ResourceDiskSizeInMB"] to fix CB-Spider's 1.07374x inflation (e.g., 16->17, 32->34)
+		if rdStr := strings.TrimSpace(common.LookupKeyValueList(spec.Details, "ResourceDiskSizeInMB")); rdStr != "" {
+			if mb, err := strconv.ParseInt(rdStr, 10, 64); err == nil && mb > 0 {
+				diskGB := convertAWSMiBToGB(mb)
+				if diskGB > 0 && spec.DiskSizeGB != diskGB {
+					if spec.RootDiskSize == int(spec.DiskSizeGB) {
+						spec.RootDiskSize = int(diskGB)
+					}
+					spec.DiskSizeGB = diskGB
+					changed = true
+				}
+			}
+		}
+		if enrichAzureAcceleratorInfo(spec) {
+			changed = true
+		}
+
+	case csp.Alibaba:
+		if enrichAlibabaAcceleratorInfo(spec) {
+			changed = true
+		}
+
 	case csp.KT:
 		if accelType, modelName, count, memGB, ok := parseKTAcceleratorFromSpecName(spec.CspSpecName); ok {
 			if spec.AcceleratorType != accelType {
 				spec.AcceleratorType = accelType
 				changed = true
 			}
-			if isPlaceholderAcceleratorModel(spec.AcceleratorModel) && modelName != "" {
+			if (isPlaceholderAcceleratorModel(spec.AcceleratorModel) || spec.AcceleratorModel == "AMD GPU") && modelName != "" && spec.AcceleratorModel != modelName {
 				spec.AcceleratorModel = modelName
 				changed = true
 			}
@@ -336,43 +1015,23 @@ func enrichSpecAcceleratorInfo(spec *model.SpecInfo) bool {
 			}
 		}
 
-	case csp.GCP:
-		if spec.AcceleratorType == "gpu" && spec.AcceleratorMemoryGB == 0 {
-			if accelType := extractGCPAcceleratorType(spec.Details); accelType != "" {
-				if memGB, ok := gcpAcceleratorMemoryGBByType[accelType]; ok {
-					spec.AcceleratorMemoryGB = memGB
-					changed = true
-				}
-			}
-		}
-
-	case csp.IBM:
-		if spec.AcceleratorType == "gpu" {
-			normalized := normalizeAcceleratorModel(spec.AcceleratorModel)
-			if normalized != spec.AcceleratorModel {
-				spec.AcceleratorModel = normalized
-				changed = true
-			}
-			if spec.AcceleratorMemoryGB == 0 {
-				if memGB, ok := ibmAcceleratorMemoryGBByModel[spec.AcceleratorModel]; ok {
-					spec.AcceleratorMemoryGB = memGB
-					changed = true
-				}
-			}
-		}
-
 	case csp.Tencent:
-		if spec.AcceleratorType == "gpu" {
-			family := strings.ToLower(strings.SplitN(spec.CspSpecName, ".", 2)[0])
-			if info, ok := tencentGPUFamilyMap[family]; ok {
-				if isPlaceholderAcceleratorModel(spec.AcceleratorModel) && info.model != "" {
-					spec.AcceleratorModel = info.model
-					changed = true
-				}
-				if spec.AcceleratorMemoryGB == 0 && info.memGB > 0 {
-					spec.AcceleratorMemoryGB = info.memGB
-					changed = true
-				}
+		if enrichTencentAcceleratorInfo(spec) {
+			changed = true
+		}
+	}
+
+	// 3. Unified cross-CSP GPU manufacturer normalization and model-to-VRAM inference
+	if spec.AcceleratorType == "gpu" {
+		normalized := normalizeAcceleratorModel(spec.AcceleratorModel)
+		if normalized != spec.AcceleratorModel {
+			spec.AcceleratorModel = normalized
+			changed = true
+		}
+		if spec.AcceleratorMemoryGB == 0 && !isPlaceholderAcceleratorModel(spec.AcceleratorModel) {
+			if memGB := inferGPUMemoryGBFromModel(spec.AcceleratorModel, spec.CspSpecName); memGB > 0 {
+				spec.AcceleratorMemoryGB = memGB
+				changed = true
 			}
 		}
 	}
@@ -380,31 +1039,14 @@ func enrichSpecAcceleratorInfo(spec *model.SpecInfo) bool {
 	return changed
 }
 
-// extractGCPAcceleratorType parses the "Accelerators" key from GCP spec Details and returns
-// the raw guestAcceleratorType string (e.g., "nvidia-l4"). GCP stores this as a comma-separated
-// key:value pair inside curly braces, e.g. "{guestAcceleratorCount:1,guestAcceleratorType:nvidia-l4}".
-func extractGCPAcceleratorType(details []model.KeyValue) string {
-	for _, kv := range details {
-		if kv.Key != "Accelerators" {
-			continue
-		}
-		// Strip surrounding braces and split on commas
-		val := strings.Trim(kv.Value, "{}")
-		for _, part := range strings.Split(val, ",") {
-			part = strings.TrimSpace(part)
-			if strings.HasPrefix(part, "guestAcceleratorType:") {
-				return strings.ToLower(strings.TrimPrefix(part, "guestAcceleratorType:"))
-			}
-		}
-	}
-	return ""
-}
-
 // normalizeAcceleratorModel corrects the manufacturer prefix based on known GPU model names.
 // Spider drivers may report incorrect manufacturer info (e.g., IBM labels Intel Gaudi and AMD MI300X as NVIDIA).
 // Models not listed here are left unchanged and trusted as-is.
 func normalizeAcceleratorModel(model string) string {
-	upper := strings.ToUpper(model)
+	upper := strings.ToUpper(strings.TrimSpace(model))
+	if strings.HasPrefix(upper, "AMD ") || strings.HasPrefix(upper, "INTEL ") {
+		return model
+	}
 
 	// Intel GPU models (order matters: longer/more specific first)
 	for _, m := range []string{"GAUDI3", "GAUDI2", "GAUDI"} {
@@ -467,12 +1109,6 @@ func extractArchitecture(providerName string, details []model.KeyValue, cspSpecN
 				return archInfo
 			}
 		}
-		// Fallback: check instance name patterns
-		// if strings.HasPrefix(cspSpecName, "mac1") {
-		// 	return string(model.X86_64_MAC)
-		// } else if strings.HasPrefix(cspSpecName, "mac2") {
-		// 	return string(model.ARM64_MAC)
-		// }
 
 	case csp.Alibaba:
 		// For Alibaba, CpuArchitecture is a direct key
@@ -515,27 +1151,37 @@ func extractArchitecture(providerName string, details []model.KeyValue, cspSpecN
 		return string(model.X86_64)
 
 	case csp.Azure:
-		// Azure doesn't provide architecture in details, use instance name patterns
-		// ref: https://learn.microsoft.com/ko-kr/azure/virtual-machines/sizes/overview?tabs=breakdownseries%2Cgeneralsizelist%2Ccomputesizelist%2Cmemorysizelist%2Cstoragesizelist%2Cgpusizelist%2Cfpgasizelist%2Chpcsizelist#compute-optimized
-		// According to Azure naming convention: lowercase 'p' indicates ARM CPU (Microsoft Cobalt or Ampere Altra)
-		// Examples: Standard_B2pls_v2 (Ampere Altra), Standard_Dpsv6 (Microsoft Cobalt)
-		//
-		// Key insight: Azure uses ONLY lowercase 'p' for ARM architecture
-		// - lowercase 'p' = ARM64 (e.g., B2ps, D2ps, E2ps)
-		// - uppercase 'P' = x86-64 with different meaning (e.g., Promo, NP-series, PB-series)
-
-		// Simple and future-proof: check for lowercase 'p' in spec name
-		if strings.Contains(cspSpecName, "p") {
+		// First check explicit CpuArchitectureType in Details (e.g., "Arm64" or "x64")
+		archInfo := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(details, "CpuArchitectureType")))
+		if archInfo != "" {
+			if strings.Contains(archInfo, "arm") {
+				return string(model.ARM64)
+			}
+			if strings.Contains(archInfo, "x64") || strings.Contains(archInfo, "x86") {
+				return string(model.X86_64)
+			}
+		}
+		// Fallback to naming convention: lowercase 'p' (Ampere/Cobalt ARM) or Grace Blackwell (GB200/GB300)
+		lowerName := strings.ToLower(cspSpecName)
+		if strings.Contains(cspSpecName, "p") || strings.Contains(lowerName, "gb200") || strings.Contains(lowerName, "gb300") {
 			return string(model.ARM64)
 		}
 		return string(model.X86_64)
 
 	case csp.GCP:
-		// ref: https://cloud.google.com/compute/docs/cpu-platforms
-		// GCP doesn't provide architecture in details, use instance name patterns
-		// Check for ARM-specific patterns
+		// First check explicit Architecture in Details (e.g., "ARM64" or "X86_64")
+		archInfo := strings.ToLower(strings.TrimSpace(common.LookupKeyValueList(details, "Architecture")))
+		if archInfo != "" {
+			if strings.Contains(archInfo, "arm") {
+				return string(model.ARM64)
+			}
+			if strings.Contains(archInfo, "x86") || strings.Contains(archInfo, "x64") {
+				return string(model.X86_64)
+			}
+		}
+		// Fallback to ARM-specific machine family prefixes (Tau T2A, C2A, Axion C4A/N4A, Grace Blackwell A4X)
 		patterns := []string{
-			"t2a", "c2a",
+			"t2a", "c2a", "c4a", "n4a", "a4x",
 		}
 
 		for _, pattern := range patterns {

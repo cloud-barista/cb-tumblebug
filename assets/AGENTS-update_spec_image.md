@@ -15,7 +15,7 @@ To handle these cases deterministically, `cb-tumblebug` merges static CSV assets
 
 | File | Purpose | Core Logic in Codebase |
 | :--- | :--- | :--- |
-| `assets/cloudspec.csv` | Static hourly cost (`costPerHour`), currency, `infraType` (`vm`, `k8s`, `vm\|k8s`), and GPU/Accelerator metadata (`acceleratorType`, `acceleratorModel`, `acceleratorCount`, `acceleratorMemoryGB`). | `src/core/resource/spec_fetch.go` (`UpdateSpecsFromAsset`, `readSpecAssetFile`, `mergeSpecWithCSVData`) |
+| `assets/cloudspec.csv` | Static hourly cost (`costPerHour`), currency, `infraType` (`vm`, `k8s`, `vm\|k8s`), and GPU/Accelerator metadata (`acceleratorType`, `acceleratorModel`, `acceleratorCount`, `acceleratorPartitionSize`, `acceleratorMemoryGB`). | `src/core/resource/spec_fetch.go` (`UpdateSpecsFromAsset`, `mergeSpecWithCSVData`) |
 | `assets/cloudimage.csv` | Curated VM baseline images (`AZURE`) and Managed Kubernetes node image type identifiers (`AWS`, `GCP`, `TENCENT`, `ALIBABA`). | `src/core/resource/image_fetch.go` (`UpdateImagesFromAsset`, `registerImagesFromAsset`) & `src/core/resource/image.go` (`usesTypeIdentifierK8sImage`) |
 | `assets/cloudspec_ignore.yaml` | Specs/regions excluded during CSP spec fetching. | `src/core/resource/spec_fetch.go` |
 | `assets/cloudimage_ignore.yaml` | Images excluded during CSP image fetching. | `src/core/resource/image_fetch.go` |
@@ -26,37 +26,30 @@ To handle these cases deterministically, `cb-tumblebug` merges static CSV assets
 
 ## 2. Updating `assets/cloudspec.csv`
 
-### 2.1 CSV Schema (23 Columns)
-Every row in `assets/cloudspec.csv` **must** have exactly 23 comma-separated fields:
+### 2.1 CSV Schema (24 Columns)
+Every row in `assets/cloudspec.csv` **must** have exactly 24 comma-separated fields:
 
 ```csv
-providerName,regionName,cspSpecName,costPerHour,currency,numvCPU,memGiB,storageGiB,description,osType,maxNumStorage,maxTotalStorageTiB,netBwGbps,acceleratorType,acceleratorModel,acceleratorCount,acceleratorMemoryGB,orderInFilteredResult,evaluationScore01,evaluationScore02,rootDiskType,rootDiskSize,infraType
+providerName,regionName,cspSpecName,costPerHour,currency,evaluationScore01,evaluationScore02,evaluationScore03,evaluationScore04,evaluationScore05,evaluationScore06,evaluationScore07,evaluationScore08,evaluationScore09,evaluationScore10,rootDiskType,rootDiskSize,acceleratorType,acceleratorModel,acceleratorCount,acceleratorPartitionSize,acceleratorMemoryGB,description,infraType
 ```
 
 ```text
- 1. providerName          (e.g., NCP, NHN, kt, AWS, GCP, ALIBABA, TENCENT) — case-insensitive matched via strings.ToLower
- 2. regionName            ("all" for provider-wide fallback, or specific region like "kr", "sgn", "jpn", "jp1")
- 3. cspSpecName           (Exact CSP spec name registered in cb-tumblebug, e.g., s2-g2, m2.c4m8, 8x16.itl)
- 4. costPerHour           (Float hourly price in the row's currency; "-1" or "na" means unknown)
- 5. currency              (USD, KRW, JPY, CNY, EUR; automatically converted to USD in DB via convertToUSD)
- 6. numvCPU               ("na" to keep CSP value, or integer override)
- 7. memGiB                ("na" to keep CSP value, or float override)
- 8. storageGiB            ("na" to keep CSP value, or float override)
- 9. description           ("na" or descriptive label, e.g., "Standard", "GPU V100", "D1 Compute")
-10. osType                ("na")
-11. maxNumStorage         ("na")
-12. maxTotalStorageTiB    ("na")
-13. netBwGbps             ("na")
-14. acceleratorType       ("na" or "gpu")
-15. acceleratorModel      ("na" or GPU model, e.g., "NVIDIA L4", "TESLA V100", "NVIDIA A100P", "NVIDIA A100")
-16. acceleratorCount      ("na" or integer count, e.g., "1", "2", "4")
-17. acceleratorMemoryGB   ("na" or total GPU VRAM in GB across all attached GPUs, e.g., "24", "40", "80")
-18. orderInFilteredResult ("na")
-19. evaluationScore01     ("na")
-20. evaluationScore02     ("na")
-21. rootDiskType          ("na")
-22. rootDiskSize          ("na")
-23. infraType             ("vm", "k8s", or "vm|k8s")
+ 1. providerName             (e.g., NCP, NHN, kt, AWS, GCP, ALIBABA, TENCENT) — case-insensitive matched via strings.ToLower
+ 2. regionName               ("all" for provider-wide fallback, or specific region like "kr", "sgn", "jpn", "jp1")
+ 3. cspSpecName              (Exact CSP spec name registered in cb-tumblebug, e.g., s2-g3, m2.c4m8, 8x16.itl)
+ 4. costPerHour              (Float hourly price in the row's currency; "-1" means unknown)
+ 5. currency                 (USD, KRW, JPY, CNY, EUR; automatically converted to USD in DB via ConvertToBaseCurrency)
+ 6. evaluationScore01        ("-1" or float score)
+ 7. evaluationScore02..10    (Columns 7..15; empty or "-1" if unset)
+16. rootDiskType             ("default" or specific disk type)
+17. rootDiskSize             ("default" or integer GB)
+18. acceleratorType          ("" or "gpu")
+19. acceleratorModel         ("" or GPU model, e.g., "NVIDIA L4", "NVIDIA TESLA V100", "NVIDIA A100")
+20. acceleratorCount         ("" or integer count of GPU / partition units, e.g., "1", "2", "4")
+21. acceleratorPartitionSize ("" for full GPU, or partition fraction per unit such as "0.125", "1/8", "1/6", "0.25", "0.5")
+22. acceleratorMemoryGB      ("" or GPU VRAM in GB per unit, e.g., "24", "40", "80")
+23. description              ("" or descriptive label)
+24. infraType                ("vm", "k8s", or "vm|k8s")
 ```
 
 ### 2.2 Merge & Precedence Rules (`readSpecAssetFile` & `mergeSpecWithCSVData`)
@@ -232,7 +225,7 @@ for path in ["assets/cloudspec.csv", "assets/cloudimage.csv"]:
 
 with open("assets/cloudspec.csv") as f:
     rows = [r for r in csv.reader(f) if r and not r[0].startswith("#")]
-assert all(len(r) == 23 for r in rows), "Invalid column count in cloudspec.csv"
+assert all(len(r) == 24 for r in rows), "Invalid column count in cloudspec.csv"
 keys = [(r[0].lower(), r[1].lower(), r[2].lower()) for r in rows[1:]]
 assert len(keys) == len(set(keys)), "Duplicate (provider, region, spec) in cloudspec.csv"
 print(f"cloudspec.csv OK: {len(rows)-1} data rows")
