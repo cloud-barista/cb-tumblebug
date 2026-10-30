@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -230,7 +231,9 @@ func RestDeleteAllInfraDynamicTemplate(c echo.Context) error {
 // @Param x-credential-holder header string false "Credential holder ID for selecting which credentials to use (default: system default holder)"
 // @Router /ns/{nsId}/infra/template/{templateId} [post]
 func RestPostInfraDynamicFromTemplate(c echo.Context) error {
-	ctx := c.Request().Context()
+	// Detach from HTTP request cancellation so long-running template provisioning
+	// does not abort mid-flight if the client or proxy times out, while preserving values (x-request-id, credential holder).
+	ctx := context.WithoutCancel(c.Request().Context())
 	nsId := c.Param("nsId")
 	templateId := c.Param("templateId")
 	option := c.QueryParam("option")

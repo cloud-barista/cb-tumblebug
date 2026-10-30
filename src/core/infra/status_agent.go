@@ -168,14 +168,13 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 	groups := make(map[batchKey][]batchNode)
 
 	for _, e := range globalStatusStore.Snapshot() {
-		// Batch steady Running (PollNormal) and Terminating nodes. Polling a large
-		// Terminating set individually at 15 s issues one FetchNodeStatus (etcd read
-		// + alloc) per node per interval, which floods memory and OOMs; grouped SDK
-		// calls keep it bounded. Other transitional states (Suspending/Resuming/
-		// Rebooting/Creating) keep the individual path, which carries their own
-		// state-machine handling and stays small.
+		// Batch steady Running (PollNormal) and Terminating/Suspending/Resuming nodes.
+		// Polling a large transitional set individually at 15 s issues one FetchNodeStatus
+		// (etcd read + Spider call) per node per interval; grouped SDK calls keep it bounded.
 		batchEligible := e.Priority == PollNormal ||
-			(e.Priority == PollHigh && strings.EqualFold(e.Status, model.StatusTerminating))
+			(e.Priority == PollHigh && (strings.EqualFold(e.Status, model.StatusTerminating) ||
+				strings.EqualFold(e.Status, model.StatusSuspending) ||
+				strings.EqualFold(e.Status, model.StatusResuming)))
 		if !batchEligible {
 			continue
 		}
@@ -272,6 +271,12 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 					if strings.EqualFold(n.targetAction, model.ActionTerminate) &&
 						!strings.EqualFold(newStatus, model.StatusTerminated) {
 						newStatus = model.StatusTerminating
+					} else if strings.EqualFold(n.targetAction, model.ActionSuspend) &&
+						!strings.EqualFold(newStatus, model.StatusSuspended) {
+						newStatus = model.StatusSuspending
+					} else if strings.EqualFold(n.targetAction, model.ActionResume) &&
+						!strings.EqualFold(newStatus, model.StatusRunning) {
+						newStatus = model.StatusResuming
 					}
 				} else {
 					// A clean batch response without the id means the CSP instance is gone:
@@ -284,17 +289,24 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 				globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
 					if e.Status != newStatus {
 						statusChanged = true
-						// Status changed: let the individual worker path write through to etcd.
-						e.Priority = priorityForStatus(newStatus, e.TargetAction)
-						e.NextPollAt = time.Now() // schedule immediate individual poll
 					}
 					e.Status = newStatus
 					e.NativeStatus = newStatus
 					e.LastUpdated = time.Now()
+					if strings.EqualFold(newStatus, model.StatusSuspended) {
+						e.PublicIP = ""
+					}
 					if strings.EqualFold(e.Status, e.TargetStatus) && e.TargetStatus != model.StatusTerminated {
 						e.TargetStatus = model.StatusComplete
 						e.TargetAction = model.ActionComplete
 						targetReached = true
+					}
+					if statusChanged || targetReached {
+						e.Priority = priorityForStatus(newStatus, e.TargetAction)
+						interval := pollIntervals[e.Priority]
+						if interval > 0 {
+							e.NextPollAt = time.Now().Add(interval)
+						}
 					}
 				})
 				if statusChanged || targetReached {
@@ -886,7 +898,9 @@ func persistBatchNodeStatus(nsId, infraId, nodeId, newStatus string, targetReach
 		nodeTmp.TargetStatus = model.StatusComplete
 		nodeTmp.TargetAction = model.ActionComplete
 	}
-	if strings.EqualFold(nodeTmp.Status, model.StatusRunning) && nodeTmp.PublicIP == "" {
+	if strings.EqualFold(nodeTmp.Status, model.StatusSuspended) {
+		nodeTmp.PublicIP = ""
+	} else if strings.EqualFold(nodeTmp.Status, model.StatusRunning) && nodeTmp.PublicIP == "" {
 		if nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeTmp.Id, 0); err == nil && nodeInfoTmp.PublicIp != "" {
 			nodeTmp.PublicIP = nodeInfoTmp.PublicIp
 			if nodeInfoTmp.SSHPort != 0 {

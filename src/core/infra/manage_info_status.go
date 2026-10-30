@@ -1618,31 +1618,36 @@ applyStatus:
 				clientManager.InvalidateGetCache(model.SpiderRestUrl+"/vm/"+cspResourceName, nil)
 			}
 
-			// Get current public IP when status has been changed (bypass 60s cache).
-			nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id, 0)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				statusInfo.SystemMessage = err.Error()
-				return statusInfo, err
-			}
+			if strings.EqualFold(nodeStatusTmp.Status, model.StatusSuspended) {
+				nodeInfo.PublicIP = ""
+				nodeStatusTmp.PublicIp = ""
+			} else {
+				// Get current public IP when status has been changed (bypass 60s cache).
+				nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id, 0)
+				if err != nil {
+					log.Error().Err(err).Msg("")
+					statusInfo.SystemMessage = err.Error()
+					return statusInfo, err
+				}
 
-			// For Resume or Reboot action on dynamic-IP nodes, CSPs (AWS, GCP) may take a few seconds
-			// after status becomes Running to attach the dynamic public IP to the network interface.
-			if (strings.EqualFold(completedAction, model.ActionResume) || strings.EqualFold(completedAction, model.ActionReboot)) &&
-				strings.EqualFold(nodeStatusTmp.Status, model.StatusRunning) && nodeInfoTmp.PublicIp == "" {
-				for retry := 0; retry < 5; retry++ {
-					time.Sleep(2 * time.Second)
-					if retryInfo, retryErr := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id, 0); retryErr == nil && retryInfo.PublicIp != "" {
-						nodeInfoTmp = retryInfo
-						break
+				// For Resume or Reboot action on dynamic-IP nodes, CSPs (AWS, GCP) may take a few seconds
+				// after status becomes Running to attach the dynamic public IP to the network interface.
+				if (strings.EqualFold(completedAction, model.ActionResume) || strings.EqualFold(completedAction, model.ActionReboot)) &&
+					strings.EqualFold(nodeStatusTmp.Status, model.StatusRunning) && nodeInfoTmp.PublicIp == "" {
+					for retry := 0; retry < 5; retry++ {
+						time.Sleep(2 * time.Second)
+						if retryInfo, retryErr := GetNodeCurrentPublicIp(nsId, infraId, nodeInfo.Id, 0); retryErr == nil && retryInfo.PublicIp != "" {
+							nodeInfoTmp = retryInfo
+							break
+						}
 					}
 				}
-			}
 
-			if nodeInfoTmp.PublicIp != "" || strings.EqualFold(nodeStatusTmp.Status, model.StatusSuspended) || strings.EqualFold(completedAction, model.ActionResume) || strings.EqualFold(completedAction, model.ActionReboot) {
-				nodeInfo.PublicIP = nodeInfoTmp.PublicIp
-				if nodeInfoTmp.SSHPort != 0 {
-					nodeInfo.SSHPort = nodeInfoTmp.SSHPort
+				if nodeInfoTmp.PublicIp != "" || strings.EqualFold(completedAction, model.ActionResume) || strings.EqualFold(completedAction, model.ActionReboot) {
+					nodeInfo.PublicIP = nodeInfoTmp.PublicIp
+					if nodeInfoTmp.SSHPort != 0 {
+						nodeInfo.SSHPort = nodeInfoTmp.SSHPort
+					}
 				}
 			}
 

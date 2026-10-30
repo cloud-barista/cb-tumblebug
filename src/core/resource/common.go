@@ -236,7 +236,29 @@ func deleteResourceIdsParallel(nsId string, resourceType string, ids []string, f
 
 					success := true
 					errMessage := ""
-					if err := DelResource(nsId, resourceType, resourceId, forceFlag); err != nil {
+					var err error
+					for attempt := 0; attempt <= 3; attempt++ {
+						if attempt > 0 {
+							backoff := time.Duration(1<<(attempt-1)) * time.Second
+							log.Warn().Msgf("Rate limit/throttling during deletion of %s %s (attempt %d/3), retrying in %v...", resourceType, resourceId, attempt, backoff)
+							time.Sleep(backoff)
+							common.RandomSleep(0, 500)
+						}
+						err = DelResource(nsId, resourceType, resourceId, forceFlag)
+						if err == nil {
+							break
+						}
+						errLower := strings.ToLower(err.Error())
+						isRateLimit := strings.Contains(errLower, "requestlimitexceeded") ||
+							strings.Contains(errLower, "throttling") ||
+							strings.Contains(errLower, "toomanyrequests") ||
+							strings.Contains(errLower, "rate limit") ||
+							strings.Contains(errLower, "429")
+						if !isRateLimit {
+							break
+						}
+					}
+					if err != nil {
 						success = false
 						errMessage = err.Error()
 						if atomic.LoadInt32(&errChanClosed) == 0 {

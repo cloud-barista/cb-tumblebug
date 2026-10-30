@@ -58,13 +58,15 @@ type InfraDynamicTemplateReq struct {
 }
 
 // TemplateApplyReq is struct for applying a template to create an Infra
-// Phase 1: Only name and description overrides are supported
 type TemplateApplyReq struct {
 	// Name for the new Infra to be created from the template
 	Name string `json:"name" validate:"required" example:"my-new-infra"`
 
 	// Description for the new Infra (optional, overrides template description)
 	Description string `json:"description" example:"Infra created from template"`
+
+	// PolicyOnPartialFailure specifies how to handle partial node creation failures (optional: "continue", "rollback", "refine")
+	PolicyOnPartialFailure string `json:"policyOnPartialFailure,omitempty" example:"continue" enums:"continue,rollback,refine"`
 }
 
 // InfraDynamicTemplateListResponse is struct for listing Infra Dynamic Templates

@@ -39,10 +39,16 @@ func CreateInfraDynamicFromTemplate(ctx context.Context, nsId string, templateId
 	// Create a copy of InfraDynamicReq from the template
 	infraReq := templateInfo.InfraDynamicReq
 
-	// Apply overrides (Phase 1: name and description only)
+	// Apply overrides
 	infraReq.Name = applyReq.Name
 	if applyReq.Description != "" {
 		infraReq.Description = applyReq.Description
+	}
+	if applyReq.PolicyOnPartialFailure != "" {
+		infraReq.PolicyOnPartialFailure = applyReq.PolicyOnPartialFailure
+	}
+	if infraReq.PolicyOnPartialFailure == "" {
+		infraReq.PolicyOnPartialFailure = "continue"
 	}
 
 	// Call the existing CreateInfraDynamic function
