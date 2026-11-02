@@ -56,6 +56,10 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 	client := ec2.NewFromConfig(newConfig(region, accessKey, secretKey))
 
 	result := make(map[string]string, len(instanceIds))
+	publicIPs := make(map[string]string, len(instanceIds))
+	for _, id := range instanceIds {
+		publicIPs[id] = ""
+	}
 
 	for i := 0; i < len(instanceIds); i += describeInstancesBatchSize {
 		end := min(i+describeInstancesBatchSize, len(instanceIds))
@@ -77,10 +81,19 @@ func BatchDescribeInstanceStatuses(ctx context.Context, region string, instanceI
 				if instance.InstanceId == nil || instance.State == nil {
 					continue
 				}
-				result[*instance.InstanceId] = awsStateToTBStatus(string(instance.State.Name))
+				id := *instance.InstanceId
+				st := awsStateToTBStatus(string(instance.State.Name))
+				result[id] = st
+				if st == model.StatusRunning && instance.PublicIpAddress != nil && *instance.PublicIpAddress != "" {
+					publicIPs[id] = *instance.PublicIpAddress
+				} else {
+					publicIPs[id] = ""
+				}
 			}
 		}
 	}
+
+	csp.StoreBatchPublicIPs(csptypes.AWS, region, publicIPs)
 
 	log.Trace().
 		Str("region", region).

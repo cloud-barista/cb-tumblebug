@@ -128,7 +128,16 @@ func (a *NodeStatusAgent) startBatchSweeper(ctx context.Context) {
 // batch-capable CSP node is settled as Terminated. At the 5-min sweep cadence this is
 // ~15 min; a clean direct-SDK omission is a reliable "gone" signal, so a small streak
 // only needs to guard against a rare transient batch omission.
-const batchNotFoundStreakMax = 3
+const (
+	batchNotFoundStreakMax          = 3
+	batchTerminateNotFoundStreakMax = 2
+	maxIPRefreshAttempts            = 6
+)
+
+var (
+	ipRefreshBackoffs  = [...]time.Duration{5 * time.Second, 10 * time.Second, 20 * time.Second, 40 * time.Second, 60 * time.Second}
+	ipRefreshSpiderSem = make(chan struct{}, 15)
+)
 
 // recordBatchNotFound advances the shared not-found streak (stored on the node's
 // StatusEntry so the BatchSweeper and the individual FetchNodeStatus path agree) and
@@ -139,6 +148,25 @@ func recordBatchNotFound(nsId, infraId, nodeId string) string {
 	globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
 		e.NotFoundStreak++
 		if e.NotFoundStreak >= batchNotFoundStreakMax {
+			status = model.StatusTerminated
+		}
+	})
+	return status
+}
+
+// recordBatchTerminateNotFound handles not-found batch responses for nodes with
+// TargetAction == ActionTerminate. It holds StatusTerminating on the first miss
+// (preventing both a premature PollSkip on a transient list omission and a false
+// Undefined flip) and settles as StatusTerminated on the 2nd consecutive miss.
+func recordBatchTerminateNotFound(nsId, infraId, nodeId string) string {
+	status := model.StatusTerminating
+	globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+		if e.Status == model.StatusTerminated {
+			status = model.StatusTerminated
+			return
+		}
+		e.NotFoundStreak++
+		if e.NotFoundStreak >= batchTerminateNotFoundStreakMax {
 			status = model.StatusTerminated
 		}
 	})
@@ -250,11 +278,14 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 			}
 
 			type statusUpdate struct {
-				nsId          string
-				infraId       string
-				nodeId        string
-				status        string
-				targetReached bool
+				nsId            string
+				infraId         string
+				nodeId          string
+				status          string
+				publicIP        string
+				targetReached   bool
+				persistState    bool
+				launchIPRefresh bool
 			}
 			var pendingPersist []statusUpdate
 
@@ -278,15 +309,26 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 						!strings.EqualFold(newStatus, model.StatusRunning) {
 						newStatus = model.StatusResuming
 					}
+				} else if strings.EqualFold(n.targetAction, model.ActionTerminate) {
+					newStatus = recordBatchTerminateNotFound(n.nsId, n.infraId, n.nodeId)
 				} else {
 					// A clean batch response without the id means the CSP instance is gone:
 					// advance the shared streak and settle as Terminated once reached, instead
 					// of leaving it Undefined forever (which keeps it polling / flip-flopping).
 					newStatus = recordBatchNotFound(n.nsId, n.infraId, n.nodeId)
 				}
+				var cachedIP string
+				if strings.EqualFold(newStatus, model.StatusRunning) {
+					cachedIP = cspdirect.GetCachedPublicIP(k.provider, k.region, n.instanceId)
+				}
 				statusChanged := false
 				targetReached := false
+				ipChanged := false
+				launchIPRefresh := false
 				globalStatusStore.Update(n.nsId, n.infraId, n.nodeId, func(e *StatusEntry) {
+					if e.Status == model.StatusTerminated && newStatus != model.StatusTerminated {
+						return
+					}
 					if e.Status != newStatus {
 						statusChanged = true
 					}
@@ -295,6 +337,15 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 					e.LastUpdated = time.Now()
 					if strings.EqualFold(newStatus, model.StatusSuspended) {
 						e.PublicIP = ""
+						e.IPRefreshAttempts = 0
+					} else if strings.EqualFold(newStatus, model.StatusRunning) {
+						if cachedIP != "" && e.PublicIP != cachedIP {
+							e.PublicIP = cachedIP
+							ipChanged = true
+						}
+						if statusChanged || e.PublicIP != "" {
+							e.IPRefreshAttempts = 0
+						}
 					}
 					if strings.EqualFold(e.Status, e.TargetStatus) && e.TargetStatus != model.StatusTerminated {
 						e.TargetStatus = model.StatusComplete
@@ -308,14 +359,24 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 							e.NextPollAt = time.Now().Add(interval)
 						}
 					}
+					if strings.EqualFold(newStatus, model.StatusRunning) &&
+						e.PublicIP == "" &&
+						!e.IPRefreshInFlight &&
+						e.IPRefreshAttempts < maxIPRefreshAttempts {
+						e.IPRefreshInFlight = true
+						launchIPRefresh = true
+					}
 				})
-				if statusChanged || targetReached {
+				if statusChanged || targetReached || ipChanged || launchIPRefresh {
 					pendingPersist = append(pendingPersist, statusUpdate{
-						nsId:          n.nsId,
-						infraId:       n.infraId,
-						nodeId:        n.nodeId,
-						status:        newStatus,
-						targetReached: targetReached,
+						nsId:            n.nsId,
+						infraId:         n.infraId,
+						nodeId:          n.nodeId,
+						status:          newStatus,
+						publicIP:        cachedIP,
+						targetReached:   targetReached,
+						persistState:    statusChanged || targetReached || ipChanged,
+						launchIPRefresh: launchIPRefresh,
 					})
 				}
 				updated++
@@ -324,7 +385,12 @@ func (a *NodeStatusAgent) runBatchSweep(ctx context.Context) {
 			if len(pendingPersist) > 0 {
 				go func(updates []statusUpdate) {
 					for _, u := range updates {
-						persistBatchNodeStatus(u.nsId, u.infraId, u.nodeId, u.status, u.targetReached)
+						if u.persistState {
+							persistBatchNodeStatus(u.nsId, u.infraId, u.nodeId, u.status, u.targetReached, u.publicIP)
+						}
+						if u.launchIPRefresh {
+							go refreshBatchNodePublicIP(u.nsId, u.infraId, u.nodeId)
+						}
 					}
 				}(pendingPersist)
 			}
@@ -421,14 +487,16 @@ func (a *NodeStatusAgent) dispatchEligible() {
 			continue
 		}
 
-		// Batch-capable Running (PollNormal) and Terminating nodes are handled
+		// Batch-capable Running (PollNormal) and Terminating/Suspending/Resuming nodes are handled
 		// exclusively by runBatchSweep (one grouped SDK call per region). Dispatching
 		// them individually here would issue DescribeInstances(ids=1) per node —
-		// magnified by thousands of Terminating nodes it floods FetchNodeStatus and
+		// magnified by thousands of transitional nodes it floods FetchNodeStatus and
 		// OOMs. Leave them for the batch sweeper; a status change there flips the node
-		// off PollNormal/PollHigh so this path picks it up once to persist the change.
+		// off PollNormal/PollHigh and persists the change via persistBatchNodeStatus.
 		if (e.Priority == PollNormal ||
-			(e.Priority == PollHigh && strings.EqualFold(e.Status, model.StatusTerminating))) &&
+			(e.Priority == PollHigh && (strings.EqualFold(e.Status, model.StatusTerminating) ||
+				strings.EqualFold(e.Status, model.StatusSuspending) ||
+				strings.EqualFold(e.Status, model.StatusResuming)))) &&
 			e.CspResourceId != "" {
 			if _, ok := cspdirect.GetBatchVMStatusHandler(e.ProviderName); ok {
 				continue
@@ -812,6 +880,11 @@ func writeStatusToStore(nsId, infraId, nodeId string, statusInfo model.NodeStatu
 	}
 
 	globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+		if (e.Status != statusInfo.Status && strings.EqualFold(statusInfo.Status, model.StatusRunning)) ||
+			strings.EqualFold(statusInfo.Status, model.StatusSuspended) ||
+			statusInfo.PublicIp != "" {
+			e.IPRefreshAttempts = 0
+		}
 		e.Status = statusInfo.Status
 		e.NativeStatus = statusInfo.NativeStatus
 		e.PublicIP = statusInfo.PublicIp
@@ -878,9 +951,9 @@ func fetchNodeStatusWithCache(nsId, infraId, nodeId string) (model.NodeStatusInf
 	return FetchNodeStatus(nsId, infraId, nodeId)
 }
 
-// persistBatchNodeStatus writes status changes detected by BatchSweeper to the KV store
-// so DB state remains in sync without triggering per-node CSP API calls.
-func persistBatchNodeStatus(nsId, infraId, nodeId, newStatus string, targetReached bool) {
+// persistBatchNodeStatus writes status (and batch-observed PublicIP) changes detected by
+// BatchSweeper to the KV store immediately so DB state remains in sync without blocking on Spider HTTP calls.
+func persistBatchNodeStatus(nsId, infraId, nodeId, newStatus string, targetReached bool, publicIP string) {
 	key := common.GenInfraKey(nsId, infraId, nodeId)
 	keyValue, exists, err := kvstore.GetKv(key)
 	if !exists || err != nil {
@@ -900,19 +973,79 @@ func persistBatchNodeStatus(nsId, infraId, nodeId, newStatus string, targetReach
 	}
 	if strings.EqualFold(nodeTmp.Status, model.StatusSuspended) {
 		nodeTmp.PublicIP = ""
-	} else if strings.EqualFold(nodeTmp.Status, model.StatusRunning) && nodeTmp.PublicIP == "" {
-		if nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeTmp.Id, 0); err == nil && nodeInfoTmp.PublicIp != "" {
-			nodeTmp.PublicIP = nodeInfoTmp.PublicIp
-			if nodeInfoTmp.SSHPort != 0 {
-				nodeTmp.SSHPort = nodeInfoTmp.SSHPort
-			}
-			globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
-				e.PublicIP = nodeTmp.PublicIP
-				if nodeTmp.SSHPort != 0 {
-					e.SSHPort = nodeTmp.SSHPort
-				}
-			})
-		}
+	} else if strings.EqualFold(nodeTmp.Status, model.StatusRunning) && publicIP != "" {
+		nodeTmp.PublicIP = publicIP
 	}
 	UpdateNodeInfo(nsId, infraId, nodeTmp)
 }
+
+// refreshBatchNodePublicIP asynchronously fetches and persists the PublicIP (and SSHPort)
+// for a Running node whose PublicIP is empty (e.g. after Resume), gated first by ipRefreshSpiderSem
+// (so IP refreshes never monopolize globalSpiderSem ahead of FetchNodeStatus) and bounded by
+// maxIPRefreshAttempts with 5/10/20/40/60s backoff (~135s total window).
+func refreshBatchNodePublicIP(nsId, infraId, nodeId string) {
+	defer globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+		e.IPRefreshInFlight = false
+	})
+
+	for attempt := 1; attempt <= maxIPRefreshAttempts; attempt++ {
+		entry, ok := globalStatusStore.Get(nsId, infraId, nodeId)
+		if !ok || !strings.EqualFold(entry.Status, model.StatusRunning) || entry.PublicIP != "" {
+			return
+		}
+
+		ipRefreshSpiderSem <- struct{}{}
+		globalSpiderSem <- struct{}{}
+
+		// Re-check after waiting on semaphores: a batch sweep may have populated PublicIP
+		// (or the node may have transitioned out of Running) while queued.
+		entry, ok = globalStatusStore.Get(nsId, infraId, nodeId)
+		if !ok || !strings.EqualFold(entry.Status, model.StatusRunning) || entry.PublicIP != "" {
+			<-globalSpiderSem
+			<-ipRefreshSpiderSem
+			return
+		}
+
+		globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+			e.IPRefreshAttempts++
+		})
+
+		nodeInfoTmp, err := GetNodeCurrentPublicIp(nsId, infraId, nodeId, 0)
+		<-globalSpiderSem
+		<-ipRefreshSpiderSem
+
+		if err == nil && nodeInfoTmp.PublicIp != "" {
+			key := common.GenInfraKey(nsId, infraId, nodeId)
+			if kv, exists, kvErr := kvstore.GetKv(key); exists && kvErr == nil {
+				var nodeTmp model.NodeInfo
+				if json.Unmarshal([]byte(kv.Value), &nodeTmp) == nil && nodeTmp.Status != model.StatusTerminated {
+					nodeTmp.PublicIP = nodeInfoTmp.PublicIp
+					if nodeInfoTmp.SSHPort != 0 {
+						nodeTmp.SSHPort = nodeInfoTmp.SSHPort
+					}
+					UpdateNodeInfo(nsId, infraId, nodeTmp)
+				}
+			}
+			globalStatusStore.Update(nsId, infraId, nodeId, func(e *StatusEntry) {
+				e.PublicIP = nodeInfoTmp.PublicIp
+				if nodeInfoTmp.SSHPort != 0 {
+					e.SSHPort = nodeInfoTmp.SSHPort
+				}
+				e.IPRefreshAttempts = 0
+			})
+			log.Debug().
+				Str("nsId", nsId).
+				Str("infraId", infraId).
+				Str("nodeId", nodeId).
+				Str("publicIP", nodeInfoTmp.PublicIp).
+				Int("attempt", attempt).
+				Msg("[BatchSweeper] refreshed PublicIP")
+			return
+		}
+
+		if attempt <= len(ipRefreshBackoffs) {
+			time.Sleep(ipRefreshBackoffs[attempt-1])
+		}
+	}
+}
+

@@ -85,6 +85,12 @@ type StatusEntry struct {
 	// and agree; reaching batchNotFoundStreakMax settles the node as Terminated.
 	NotFoundStreak int
 
+	// IPRefreshInFlight and IPRefreshAttempts bound asynchronous PublicIP recovery
+	// after Resume on batch-capable CSPs so sweeps do not enqueue duplicate Spider calls
+	// or loop forever on nodes without a public IP.
+	IPRefreshInFlight bool
+	IPRefreshAttempts int
+
 	// Operation lock.
 	// Zero value = not locked.
 	// When set and within operationLockTTL, the daemon skips this node because

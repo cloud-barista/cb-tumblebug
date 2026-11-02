@@ -15,6 +15,7 @@ package csp
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -38,6 +39,8 @@ type batchStatusEntry struct {
 	requested map[string]bool   // ids covered by the last fetch
 	statuses  map[string]string // id -> TB status (absent = not found at the CSP)
 	lastAsked map[string]time.Time
+	inflight  chan struct{} // non-nil while a fetch is running outside mu
+	lastErr   error         // error from the most recent fetch attempt
 }
 
 // batchStatusCoalesceWindow lets concurrent first-time pollers register their ids before one fetch
@@ -85,18 +88,33 @@ func BatchVMStatusCached(ctx context.Context, provider, region string, fn BatchV
 		e.mu.Unlock()
 		return s, ok, nil
 	}
-	gen := e.gen
 	e.mu.Unlock()
 
 	time.Sleep(batchStatusCoalesceWindow) // let concurrent pollers register their ids
 
-	e.mu.Lock() // serializes fetches per region; waiters then read the fresh result
-	defer e.mu.Unlock()
-	now = time.Now()
-	if e.gen != gen {
+	e.mu.Lock()
+	for e.inflight != nil {
+		waitCh := e.inflight
+		genBefore := e.gen
+		e.mu.Unlock()
+		<-waitCh
+		e.mu.Lock()
+		now = time.Now()
 		if s, ok, hit := e.lookupLocked(instanceId, now); hit {
+			e.mu.Unlock()
 			return s, ok, nil
 		}
+		if e.gen == genBefore && e.lastErr != nil {
+			ferr := e.lastErr
+			e.mu.Unlock()
+			return "", false, ferr
+		}
+	}
+
+	now = time.Now()
+	if s, ok, hit := e.lookupLocked(instanceId, now); hit {
+		e.mu.Unlock()
+		return s, ok, nil
 	}
 	ids := make([]string, 0, len(e.lastAsked))
 	for id, t := range e.lastAsked {
@@ -106,8 +124,36 @@ func BatchVMStatusCached(ctx context.Context, provider, region string, fn BatchV
 		}
 		ids = append(ids, id)
 	}
-	statuses, ferr := fn(ctx, region, ids)
+	doneCh := make(chan struct{})
+	e.inflight = doneCh
+	e.lastErr = nil
+	e.mu.Unlock()
+
+	var (
+		statuses map[string]string
+		ferr     error
+		finished bool
+	)
+	defer func() {
+		if !finished {
+			e.mu.Lock()
+			e.inflight = nil
+			e.lastErr = fmt.Errorf("batch status fetch panicked")
+			close(doneCh)
+			e.mu.Unlock()
+		}
+	}()
+
+	// Run the driver batch call outside e.mu so no callback can ever self-deadlock.
+	statuses, ferr = fn(ctx, region, ids)
+
+	e.mu.Lock()
+	finished = true
+	e.inflight = nil
 	if ferr != nil {
+		e.lastErr = ferr
+		close(doneCh)
+		e.mu.Unlock()
 		return "", false, ferr
 	}
 	e.gen++
@@ -117,7 +163,9 @@ func BatchVMStatusCached(ctx context.Context, provider, region string, fn BatchV
 	for _, id := range ids {
 		e.requested[id] = true
 	}
+	close(doneCh)
 	s, ok := statuses[instanceId]
+	e.mu.Unlock()
 	return s, ok, nil
 }
 
