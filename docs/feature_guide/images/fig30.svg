@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 904" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="896" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="852" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <line x1="440" y1="106" x2="440" y2="138" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="208" x2="440" y2="776" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="208" x2="440" y2="240" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="338" x2="440" y2="370" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="440" x2="440" y2="472" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="542" x2="440" y2="574" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="644" x2="440" y2="676" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="744" x2="440" y2="776" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="258" y="40" width="365" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="68" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">1. DELETE /ns/{nsId}/sharedResources</text>
+  <text x="440" y="88" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Staged Order: SG -&gt; VNet -&gt; SSHKey)</text>
+  <rect x="260" y="142" width="360" height="66" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="440" y="170" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">CSP DependencyViolation?</text>
+  <text x="440" y="190" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">(Untracked Orphan VM Holds Shared SG/VNet)</text>
+  <rect x="260" y="244" width="360" height="94" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="271" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Yes (Rejected by CSP)</text>
+  <line x1="276" y1="277" x2="604" y2="277" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="295" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Cascading Retention Guard:</text>
+  <text x="440" y="315" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Auto-Retain Parent VNet &amp; SSHKey</text>
+  <rect x="183" y="374" width="514" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="402" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">2. POST /ns/{nsId}/sharedResources/recoverDependencies</text>
+  <text x="440" y="422" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Run Targeted Dependency Recovery)</text>
+  <rect x="184" y="476" width="513" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="504" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Adopt Only Orphan SGs &amp; VMs Attached to Shared Footprint</text>
+  <text x="440" y="524" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">via Existing Resource Registration (&#x27;dep-*&#x27; Infra)</text>
+  <rect x="195" y="578" width="490" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="606" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">3. DELETE /ns/{nsId}/infra/dep-*?option=terminate</text>
+  <text x="440" y="626" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Cleanly Terminate Surfaced Orphan VMs via Standard Lifecycle)</text>
+  <rect x="228" y="680" width="424" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="717" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">4. Re-Run DELETE /ns/{nsId}/sharedResources</text>
+  <rect x="260" y="780" width="360" height="74" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="807" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ No (Clean)</text>
+  <line x1="276" y1="813" x2="604" y2="813" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="831" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">100% Shared Resources Released</text>
+</svg>

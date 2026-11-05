@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 572" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="564" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="156" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="45" fill="#1e40af" font-size="13" font-weight="700">Background: Status Synchronization Daemon</text>
+  <rect x="20" y="202" width="840" height="336" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="202" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="226" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="238" x2="860" y2="238" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="209" width="96" height="22" rx="5" fill="#16a34a"/>
+  <text x="84" y="224" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">SOLUTION</text>
+  <text x="144" y="225" fill="#166534" font-size="13" font-weight="700">Foreground: User API Request Path (0 CSP Calls)</text>
+  <line x1="261" y1="115" x2="325" y2="115" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="551" y1="115" x2="615" y2="115" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="316" x2="440" y2="348" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="418" x2="440" y2="450" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="39" y="72" width="222" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="150" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">15s Regional Batch</text>
+  <text x="150" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Sweeper</text>
+  <text x="150" y="140" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">&amp; 1s Priority Poller</text>
+  <rect x="329" y="72" width="222" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="110" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Direct CSP Batch SDK</text>
+  <text x="440" y="130" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">/ SP Fallback</text>
+  <rect x="619" y="72" width="222" height="86" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="730" y="110" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">In-Memory Status Store</text>
+  <text x="730" y="130" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">(Async State Refresh)</text>
+  <rect x="260" y="252" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="289" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">GET /infra/{id}?option=status</text>
+  <rect x="260" y="352" width="360" height="66" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="380" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">In-Memory Status Store</text>
+  <text x="440" y="400" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">(Instant Read)</text>
+  <rect x="260" y="454" width="360" height="64" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="491" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">O(1) Memory Read (35.61 ms)</text>
+</svg>

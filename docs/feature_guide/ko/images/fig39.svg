@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 816" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="808" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="278" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="45" fill="#1e40af" font-size="13" font-weight="700">TB 3계층 구조화 JSON 로그 출력기</text>
+  <rect x="20" y="324" width="840" height="136" rx="10" fill="#ffffff" stroke="#fed7aa" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="324" width="840" height="36" rx="10" fill="#fff7ed"/>
+  <rect x="20" y="348" width="840" height="12" fill="#fff7ed"/>
+  <line x1="20" y1="360" x2="860" y2="360" stroke="#fed7aa" stroke-width="1"/>
+  <rect x="36" y="331" width="84" height="22" rx="5" fill="#ea580c"/>
+  <text x="78" y="346" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">보호 계층</text>
+  <text x="132" y="347" fill="#9a3412" font-size="13" font-weight="700">로그 정제 및 Loki 파서 보호 계층</text>
+  <rect x="20" y="484" width="840" height="298" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="484" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="508" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="520" x2="860" y2="520" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="491" width="78" height="22" rx="5" fill="#16a34a"/>
+  <text x="75" y="506" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">해결책</text>
+  <text x="126" y="507" fill="#166534" font-size="13" font-weight="700">Loki + Prometheus -&gt; 2종 커스텀 Grafana 대시보드 (:3000)</text>
+  <path d="M 237 158 L 237 264 L 222 264 L 222 370" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 158 L 643 264 L 222 264 L 222 370" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 280 L 440 325 L 222 325 L 222 370" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="406" y1="407" x2="470" y2="407" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 658 440 L 658 485 L 237 485 L 237 530" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 640 L 237 656 L 440 656 L 440 672" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 640 L 643 656 L 440 656 L 440 672" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="44" y="72" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Layer 1: 인바운드 REST API</text>
+  <text x="237" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">요청 시작 / 완료 / 에러 로그</text>
+  <text x="237" y="140" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">필드: Method, URI, status, latency</text>
+  <rect x="450" y="72" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Layer 2: 아웃바운드 SP 호출</text>
+  <text x="643" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">내부 호출 시작 / 성공 / 실패 로그</text>
+  <text x="643" y="140" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">필드: Method, URI (/spider/op), status, latency</text>
+  <rect x="260" y="194" width="360" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="222" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Layer 3: Direct CSP SDK 호출</text>
+  <text x="440" y="242" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">SDK 호출 시작 / 성공 / 실패 로그</text>
+  <text x="440" y="262" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">필드: provider, op, region, count, latency</text>
+  <rect x="38" y="374" width="368" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="222" y="402" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">단일 라인 JSON 압축기</text>
+  <text x="222" y="422" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">멀티라인 CSP 에러 JSON을 한 줄로 압축</text>
+  <rect x="474" y="374" width="368" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="658" y="402" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">노이즈 필터 + 50 KB 본문 절삭</text>
+  <text x="658" y="422" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">헬스체크 및 고빈도 폴링 노이즈 억제</text>
+  <rect x="44" y="534" width="386" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="237" y="562" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Loki LogQL 엔진</text>
+  <text x="237" y="582" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">호출률 / p95 지연 / 에러율</text>
+  <text x="237" y="602" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ 실시간 진행 중 요청 차감 계산</text>
+  <text x="237" y="622" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ 서브시스템별 활동성</text>
+  <rect x="450" y="534" width="386" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="643" y="562" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Prometheus 엔진</text>
+  <text x="643" y="582" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Pod CPU/RAM/네트워크</text>
+  <text x="643" y="602" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ OOM/재시작 감시</text>
+  <text x="643" y="622" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ etcd DB 크기 &amp; WAL p99</text>
+  <rect x="260" y="676" width="360" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="704" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Grafana 대시보드:</text>
+  <text x="440" y="724" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">1. Control Plane &amp; etcd</text>
+  <text x="440" y="744" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">2. Interactions &amp; Load</text>
+</svg>

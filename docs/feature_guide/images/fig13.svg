@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 1050" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="1042" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="998" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <line x1="440" y1="104" x2="440" y2="136" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="206" x2="440" y2="238" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="308" x2="440" y2="340" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="410" x2="440" y2="442" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 510 L 440 526 L 237 526 L 237 542" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 510 L 440 526 L 643 526 L 643 542" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 640 L 643 656 L 237 656 L 237 672" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="643" y1="640" x2="643" y2="672" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 640 L 643 721 L 440 721 L 440 802" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="900" x2="440" y2="932" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="252" y="40" width="376" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="77" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Template / Dynamic Provisioning Request</text>
+  <rect x="163" y="140" width="555" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="168" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">1. On-Demand Spec Registration &amp; Dynamic Image Family Resolve</text>
+  <text x="440" y="188" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Alibaba Image Family / Azure Latest URN)</text>
+  <rect x="228" y="242" width="424" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="270" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">2. Direct SDK Live Quota &amp; Availability Check</text>
+  <text x="440" y="290" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Live vCPU Quota + Per-AZ Sold-Out Overlay)</text>
+  <rect x="260" y="344" width="360" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="372" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">3. Pre-Flight Risk Analysis Engine</text>
+  <text x="440" y="392" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Evaluate Historical Spec+Image Combo Risk)</text>
+  <rect x="219" y="446" width="442" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="483" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">4. Execute Provisioning (Async Failure Logging)</text>
+  <rect x="44" y="546" width="386" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="583" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Success</text>
+  <line x1="60" y1="589" x2="414" y2="589" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="607" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Record Success in History Store</text>
+  <rect x="450" y="546" width="386" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="573" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Failure</text>
+  <line x1="466" y1="579" x2="820" y2="579" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="597" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">5. Direct CSP Failure Analyzer</text>
+  <text x="643" y="617" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Extract Alternative Zones &amp; Redact Secrets)</text>
+  <rect x="44" y="676" width="386" height="94" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="237" y="703" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Account Quota / Throttling</text>
+  <line x1="60" y1="709" x2="414" y2="709" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="727" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Relax Risk Penalty</text>
+  <text x="237" y="747" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">(Keep Spec Viable for Future Runs)</text>
+  <rect x="450" y="676" width="386" height="94" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="703" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Zone Capacity Exhausted (Specific AZ)</text>
+  <line x1="466" y1="709" x2="820" y2="709" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="727" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Mark Only Affected AZ SoldOut</text>
+  <text x="643" y="747" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(Keep Sibling AZs Available)</text>
+  <rect x="223" y="806" width="434" height="94" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="833" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Invalid Spec / Image</text>
+  <line x1="239" y1="839" x2="641" y2="839" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="857" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Write-Through to PostgreSQL</text>
+  <text x="440" y="877" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Mark Spec/Image Unavailable &amp; Record Zone Capabilities</text>
+  <rect x="251" y="936" width="379" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="973" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Auto-Exclude in Subsequent Provisioning</text>
+</svg>

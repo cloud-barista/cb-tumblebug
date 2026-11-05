@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 398" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="390" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="346" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <line x1="440" y1="104" x2="440" y2="136" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 206 L 440 222 L 237 222 L 237 238" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 206 L 440 222 L 643 222 L 643 238" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="218" y="40" width="444" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="77" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Terminate 10,414 VMs / Partial Failure Recovery</text>
+  <rect x="190" y="140" width="500" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="168" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">1. Direct CSP Bulk Terminate &amp; Timed-Out Orphan Lookup</text>
+  <text x="440" y="188" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(Removes Cloud VMs &amp; Untracked Orphans)</text>
+  <rect x="44" y="242" width="386" height="106" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="237" y="290" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">2. Async SP IID Purge (50 Workers)</text>
+  <text x="237" y="310" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">Unregister SP DB Metadata Only (0 CSP Calls)</text>
+  <rect x="450" y="242" width="386" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="643" y="270" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">3. Direct SDK Truth Audit &amp; Residual</text>
+  <text x="643" y="290" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Cleanup</text>
+  <text x="643" y="310" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">(Clean Orphan NIC/ENI/EIP/PublicIP/Disk &amp;</text>
+  <text x="643" y="330" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Verify Before Delete)</text>
+</svg>

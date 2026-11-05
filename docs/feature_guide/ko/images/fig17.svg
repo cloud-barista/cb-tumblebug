@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 754" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="746" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="702" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <line x1="440" y1="104" x2="440" y2="136" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 204 L 440 220 L 237 220 L 237 236" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 204 L 440 220 L 643 220 L 643 236" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 204 L 440 285 L 237 285 L 237 366" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 204 L 440 285 L 643 285 L 643 366" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 464 L 643 535 L 237 535 L 237 606" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="643" y1="464" x2="643" y2="606" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="204" x2="440" y2="496" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="40" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="77" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">인바운드 GET /infra 요청</text>
+  <rect x="260" y="140" width="360" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="177" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">쿼리 옵션 분기</text>
+  <rect x="44" y="240" width="386" height="94" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="237" y="267" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ ?option=id</text>
+  <line x1="60" y1="273" x2="414" y2="273" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="291" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">etcd 키 전용 스캔</text>
+  <text x="237" y="311" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(Value 전송 0 바이트) -&gt; 16.71 ms</text>
+  <rect x="450" y="240" width="386" height="94" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="267" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ ?option=status</text>
+  <line x1="466" y1="273" x2="820" y2="273" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="291" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">인메모리 상태 저장소 직접 집계</text>
+  <text x="643" y="311" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(etcd 노드 읽기 0회) -&gt; 35.61 ms</text>
+  <rect x="44" y="370" width="386" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="407" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ GET /infra (목록 요약)</text>
+  <line x1="60" y1="413" x2="414" y2="413" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="431" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">인프라 + 노드그룹 헤더만 조회</text>
+  <rect x="450" y="370" width="386" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="397" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 전체 GET /infra/{id}</text>
+  <line x1="466" y1="403" x2="820" y2="403" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="421" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">읽기 캐시 히트?</text>
+  <text x="643" y="441" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(5s TTL Singleflight)</text>
+  <rect x="228" y="500" width="424" height="74" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="527" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ ?option=accessinfo</text>
+  <line x1="244" y1="533" x2="636" y2="533" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="551" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">읽기 캐시 + ~146개 고유 SSH 키 조회 -&gt; 788.65 ms</text>
+  <rect x="44" y="610" width="386" height="94" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="237" y="647" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Warm 히트</text>
+  <line x1="60" y1="653" x2="414" y2="653" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="671" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">캐시된 조립 완료 인프라 즉시 반환 -&gt; 370.11 ms</text>
+  <rect x="450" y="610" width="386" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="637" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Cold 미스</text>
+  <line x1="466" y1="643" x2="820" y2="643" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="661" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Range Read + 50-워커 병렬</text>
+  <text x="643" y="681" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">블루프린트 합성 조립 -&gt; 1,588.81 ms</text>
+</svg>

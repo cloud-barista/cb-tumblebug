@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 846" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="838" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="396" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="45" fill="#1e40af" font-size="13" font-weight="700">TB 하이브리드 제어 평면</text>
+  <rect x="20" y="442" width="840" height="164" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="442" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="466" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="478" x2="860" y2="478" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="449" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="464" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="465" fill="#1e40af" font-size="13" font-weight="700">하위 추상화 프레임워크</text>
+  <rect x="20" y="630" width="840" height="182" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="630" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="654" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="666" x2="860" y2="666" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="637" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="652" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="653" fill="#1e40af" font-size="13" font-weight="700">10개 클라우드 프로바이더 (146개 리전)</text>
+  <path d="M 237 138 L 237 313 L 440 313 L 440 488" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="586" x2="440" y2="676" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 138 L 237 219 L 440 219 L 440 300" fill="none" stroke="#2563eb" stroke-width="2.4" marker-end="url(#arrow-blue)"/>
+  <path d="M 643 138 L 643 154 L 440 154 L 440 170" fill="none" stroke="#475569" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="268" x2="440" y2="300" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="398" x2="440" y2="676" stroke="#2563eb" stroke-width="2.4" marker-end="url(#arrow-blue)"/>
+  <rect x="44" y="72" width="386" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="237" y="110" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">TB 코어 엔진</text>
+  <rect x="450" y="72" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">OpenBao KV v2</text>
+  <text x="643" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(멀티테넌트 CSP 자격증명)</text>
+  <rect x="221" y="174" width="438" height="94" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="201" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ HTTP Keep-Alive 재사용</text>
+  <line x1="237" y1="207" x2="643" y2="207" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="225" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">HTTP Keep-Alive 공유 클라이언트 + 5분 시크릿 캐시</text>
+  <text x="440" y="245" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ 자격증명 해시 지문 기반 SDK 클라이언트 캐시</text>
+  <rect x="247" y="304" width="387" height="94" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="331" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 추상화 한계 돌파 (배치/벌크/쿼터/감사/비동기 제어)</text>
+  <line x1="263" y1="337" x2="618" y2="337" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="355" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Direct CSP SDK 계층</text>
+  <text x="440" y="375" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(9대 추상화 우회 도메인)</text>
+  <rect x="260" y="492" width="360" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="519" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 표준 1:1 리소스 생성 및 기본 생명주기</text>
+  <line x1="276" y1="525" x2="604" y2="525" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="543" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">SP REST API</text>
+  <text x="440" y="563" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(1:1 단일 리소스 추상화 &amp; IID DB)</text>
+  <rect x="256" y="680" width="369" height="112" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="707" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 단건 드라이버 호출</text>
+  <text x="440" y="725" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 네이티브 배치/벌크/카탈로그 SDK 직접 호출</text>
+  <line x1="272" y1="731" x2="609" y2="731" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="749" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">AWS / GCP / Azure / Alibaba / Tencent /</text>
+  <text x="440" y="769" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">IBM / NCP / NHN / KT / OpenStack APIs</text>
+</svg>

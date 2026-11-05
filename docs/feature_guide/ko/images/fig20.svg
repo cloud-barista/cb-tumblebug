@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 1306" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="1298" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="104" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="146" width="840" height="318" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="146" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="170" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="182" x2="860" y2="182" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="153" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="168" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="169" fill="#1e40af" font-size="13" font-weight="700">Tier A: 초고속 벌크 &amp; 글로벌 클라우드 (리전 30 × 노드 20)</text>
+  <rect x="20" y="488" width="840" height="318" rx="10" fill="#ffffff" stroke="#fed7aa" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="488" width="840" height="36" rx="10" fill="#fff7ed"/>
+  <rect x="20" y="512" width="840" height="12" fill="#fff7ed"/>
+  <line x1="20" y1="524" x2="860" y2="524" stroke="#fed7aa" stroke-width="1"/>
+  <rect x="36" y="495" width="84" height="22" rx="5" fill="#ea580c"/>
+  <text x="78" y="510" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">보호 계층</text>
+  <text x="132" y="511" fill="#9a3412" font-size="13" font-weight="700">Tier B: 엄격한 API Rate-Limit &amp; 엔터프라이즈 클라우드</text>
+  <rect x="20" y="830" width="840" height="318" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="830" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="854" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="866" x2="860" y2="866" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="837" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="852" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="853" fill="#1e40af" font-size="13" font-weight="700">Tier C: 리전 특화 &amp; 프라이빗/파생 클라우드</text>
+  <rect x="20" y="1172" width="840" height="104" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 440 106 L 440 149 L 237 149 L 237 192" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 149 L 643 149 L 643 192" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 220 L 237 220 L 237 334" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 220 L 643 220 L 643 334" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 320 L 237 320 L 237 534" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 320 L 643 320 L 643 534" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="106" x2="440" y2="676" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 491 L 237 491 L 237 876" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 491 L 643 491 L 643 876" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="106" x2="440" y2="1018" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 302 L 237 744 L 440 744 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 302 L 643 744 L 440 744 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 444 L 237 815 L 440 815 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 444 L 643 815 L 440 815 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 644 L 237 915 L 440 915 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 644 L 643 915 L 440 915 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="786" x2="440" y2="1186" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 986 L 237 1086 L 440 1086 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 986 L 643 1086 L 440 1086 L 440 1186" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="1128" x2="440" y2="1186" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="230" y="40" width="420" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="68" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">10,456-Node 글로벌 프로비저닝 오케스트레이터</text>
+  <text x="440" y="88" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">(Level 1: 10개 CSP 완전 독립 실행 트리 + 0~5s 런치 지터)</text>
+  <rect x="44" y="196" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="224" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">1. AWS</text>
+  <text x="237" y="244" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드</text>
+  <text x="237" y="264" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 10 리전 × 30 노드 (1,000 ID 배치)</text>
+  <text x="237" y="284" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 스펙 가용 AZ 필터링 + 무지연 공인 IP 캐시</text>
+  <rect x="450" y="196" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="224" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">2. GCP</text>
+  <text x="643" y="244" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드 + 쿼터 대기 슬롯(60)</text>
+  <text x="643" y="264" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 12 리전 × 35 노드 (프로젝트 집계 1회)</text>
+  <text x="643" y="284" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 빈 VPC CIDR + Placeholder SSHKey</text>
+  <rect x="44" y="338" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="366" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">3. Azure</text>
+  <text x="237" y="386" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드 (독립 HTTP/2 Transport)</text>
+  <text x="237" y="406" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 8 리전 × 25 노드 (구독 스트림 조회)</text>
+  <text x="237" y="426" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 완료 대기 없는 비동기 제어 + 최신 URN 해석</text>
+  <rect x="450" y="338" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="366" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">4. Alibaba</text>
+  <text x="643" y="386" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드</text>
+  <text x="643" y="406" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 6 리전 × 20 노드 (100 ID/페이지)</text>
+  <text x="643" y="426" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 동적 이미지 패밀리 해석 (10m Singleflight)</text>
+  <rect x="44" y="538" width="386" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="237" y="566" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">5. Tencent Cloud</text>
+  <text x="237" y="586" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 5 노드 (초당 10 req 한도 대응!)</text>
+  <text x="237" y="606" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 6 리전 × 20 노드</text>
+  <text x="237" y="626" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• 등록: 2 커넥션 (2,000~5,000ms 스태거링)</text>
+  <rect x="450" y="538" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="566" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">6. IBM Cloud</text>
+  <text x="643" y="586" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드</text>
+  <text x="643" y="606" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 10 리전 × 30 노드</text>
+  <text x="643" y="626" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• VPC당 단일 서브넷 캡 + 공유 IAM + 3회 재시도</text>
+  <rect x="254" y="680" width="372" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="708" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">7. NCP (Naver Cloud)</text>
+  <text x="440" y="728" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 5 리전 × 15 노드 (제어 평면 보호)</text>
+  <text x="440" y="748" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 3 리전 × 15 노드</text>
+  <text x="440" y="768" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• 단일 존 고정 + 제어 타임아웃 +10분 + 로컬 RSA 키</text>
+  <rect x="44" y="880" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="908" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">8. NHN Cloud</text>
+  <text x="237" y="928" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드</text>
+  <text x="237" y="948" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 5 리전 × 20 노드</text>
+  <text x="237" y="968" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Floating IP TCP Reset 2회 지수 백오프 재시도</text>
+  <rect x="450" y="880" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="908" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">9. KT Cloud</text>
+  <text x="643" y="928" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드</text>
+  <text x="643" y="948" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 10 리전 × 30 노드</text>
+  <text x="643" y="968" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 단일 VPC 409 중복 CIDR 감지 시 /16 대역 자동 시프트</text>
+  <rect x="251" y="1022" width="378" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="1050" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">10. OpenStack (및 파생 클라우드)</text>
+  <text x="440" y="1070" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 생성: 30 리전 × 20 노드 (파생 클라우드 자동 통합)</text>
+  <text x="440" y="1090" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 상태: 5 리전 × 15 노드 (Direct Nova 배치)</text>
+  <text x="440" y="1110" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 50분 Keystone 토큰 캐시 &amp; 포트 필터</text>
+  <rect x="260" y="1190" width="360" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="1218" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">리전 조기 쿼터 취소 (대기열 즉시 정리)</text>
+  <text x="440" y="1238" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">+ 완료 후 공유 리소스 연관관계 일괄 병합 기록</text>
+</svg>

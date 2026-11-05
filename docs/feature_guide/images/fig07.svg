@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 856" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="848" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="804" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <line x1="440" y1="106" x2="440" y2="138" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="208" x2="440" y2="710" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="208" x2="440" y2="240" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 338 L 440 354 L 237 354 L 237 370" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 338 L 440 354 L 643 354 L 643 370" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 448 L 643 464 L 237 464 L 237 480" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 578 L 237 644 L 440 644 L 440 710" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="643" y1="448" x2="643" y2="480" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 578 L 643 594 L 440 594 L 440 610" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="678" x2="440" y2="710" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="40" width="360" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="68" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">1,000 Concurrent Workers Requesting</text>
+  <text x="440" y="88" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Same Connection / Spec / Verification GET</text>
+  <rect x="260" y="142" width="360" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="170" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">L1: Client Cache Hit?</text>
+  <text x="440" y="190" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(URL + SHA-256 Body Key)</text>
+  <rect x="260" y="244" width="360" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="271" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ No</text>
+  <line x1="276" y1="277" x2="604" y2="277" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="295" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Circuit Breaker Open?</text>
+  <text x="440" y="315" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(&gt;=5 Failures in 30s)</text>
+  <rect x="44" y="374" width="386" height="74" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="237" y="401" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Yes</text>
+  <line x1="60" y1="407" x2="414" y2="407" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="425" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">Fail Fast (Protect SP / CSP)</text>
+  <rect x="450" y="374" width="386" height="74" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="401" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ No</text>
+  <line x1="466" y1="407" x2="820" y2="407" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="425" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">In-Flight &lt;= 20?</text>
+  <rect x="44" y="484" width="386" height="94" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="237" y="511" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ No (980 Waiters)</text>
+  <line x1="60" y1="517" x2="414" y2="517" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="535" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Sleep 2s &amp; Re-Check Cache on Wakeup</text>
+  <text x="237" y="555" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">(Receive Result Populated by Leader)</text>
+  <rect x="450" y="484" width="386" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="521" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Yes (Leader)</text>
+  <line x1="466" y1="527" x2="820" y2="527" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="545" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Execute HTTP GET (3x Transient Retry)</text>
+  <rect x="260" y="614" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="651" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Store Result in Client Cache</text>
+  <rect x="257" y="714" width="367" height="92" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="741" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Yes (1s~300s TTL)</text>
+  <text x="440" y="759" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Populated by First Flight</text>
+  <line x1="273" y1="765" x2="608" y2="765" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="783" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Return Cached Result (0 Network Calls)</text>
+</svg>

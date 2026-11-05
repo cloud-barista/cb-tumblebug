@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 498" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="490" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="442" rx="10" fill="#ffffff" stroke="#fed7aa" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#fff7ed"/>
+  <rect x="20" y="46" width="840" height="12" fill="#fff7ed"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#fed7aa" stroke-width="1"/>
+  <rect x="36" y="29" width="78" height="22" rx="5" fill="#ea580c"/>
+  <text x="75" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">GUARD</text>
+  <text x="126" y="45" fill="#9a3412" font-size="13" font-weight="700">Dual-Semaphore SP Slot Protection</text>
+  <path d="M 237 138 L 237 154 L 440 154 L 440 170" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 138 L 643 205 L 440 205 L 440 272" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="240" x2="440" y2="272" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="342" x2="440" y2="374" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="44" y="72" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Fallback IP Refresh Workers</text>
+  <text x="237" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Backoff: 5s, 10s, 20s, 40s, 60s)</text>
+  <rect x="450" y="72" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="110" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Active Status Polling &amp; Control</text>
+  <rect x="260" y="174" width="360" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="202" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Dedicated IP-Refresh Semaphore</text>
+  <text x="440" y="222" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">(Max 15 Concurrent)</text>
+  <rect x="260" y="276" width="360" height="66" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="304" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Global SP Semaphore</text>
+  <text x="440" y="324" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">(Max 50 Concurrent)</text>
+  <rect x="251" y="378" width="379" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="406" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">SP REST API</text>
+  <text x="440" y="426" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(35+ Slots Always Reserved for Status/Control)</text>
+</svg>

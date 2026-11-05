@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 452" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="444" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="20" width="840" height="418" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <line x1="125" y1="110" x2="125" y2="424" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <rect x="28" y="32" width="195" height="78" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="125" y="67" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">NodeGroup Worker</text>
+  <text x="125" y="85" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">(Zone A)</text>
+  <line x1="334" y1="110" x2="334" y2="424" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <rect x="237" y="32" width="195" height="78" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="334" y="67" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">NodeGroup Worker</text>
+  <text x="334" y="85" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">(Zone B)</text>
+  <line x1="543" y1="110" x2="543" y2="424" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <rect x="446" y="32" width="195" height="78" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="543" y="58" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">Per-VNet Subnet</text>
+  <text x="543" y="76" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">Coordinator &amp; CIDR</text>
+  <text x="543" y="94" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">Allocator</text>
+  <line x1="752" y1="110" x2="752" y2="424" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <rect x="655" y="32" width="195" height="78" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="752" y="76" fill="#1e3a8a" font-size="11.5" font-weight="700" text-anchor="middle">Regional Shared VNet</text>
+  <line x1="125" y1="150" x2="539" y2="150" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <rect x="235" y="122" width="198" height="22" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="334" y="137" fill="#0f172a" font-size="11" font-weight="600" text-anchor="middle">1. Ensure Zone A Subnet</text>
+  <line x1="543" y1="206" x2="748" y2="206" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <rect x="455" y="178" width="384" height="22" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="647" y="193" fill="#0f172a" font-size="11" font-weight="600" text-anchor="middle">2. Allocate 10.x.1.0/24 &amp; Create Subnet in Zone A</text>
+  <line x1="334" y1="262" x2="539" y2="262" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <rect x="339" y="234" width="198" height="22" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="438" y="249" fill="#0f172a" font-size="11" font-weight="600" text-anchor="middle">3. Ensure Zone B Subnet</text>
+  <rect x="361" y="288" width="365" height="32" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="543" y="308" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">Serialized per VNet to prevent CIDR collision</text>
+  <line x1="543" y1="374" x2="748" y2="374" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <rect x="455" y="346" width="384" height="22" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="647" y="361" fill="#0f172a" font-size="11" font-weight="600" text-anchor="middle">4. Allocate 10.x.2.0/24 &amp; Create Subnet in Zone B</text>
+</svg>

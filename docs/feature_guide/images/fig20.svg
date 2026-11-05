@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 1406" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="1398" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="104" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="146" width="840" height="398" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="146" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="170" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="182" x2="860" y2="182" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="153" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="168" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="169" fill="#1e40af" font-size="13" font-weight="700">Tier A: High-Throughput Bulk &amp; Global Clouds (30 Regions × 20 Nodes)</text>
+  <rect x="20" y="568" width="840" height="338" rx="10" fill="#ffffff" stroke="#fed7aa" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="568" width="840" height="36" rx="10" fill="#fff7ed"/>
+  <rect x="20" y="592" width="840" height="12" fill="#fff7ed"/>
+  <line x1="20" y1="604" x2="860" y2="604" stroke="#fed7aa" stroke-width="1"/>
+  <rect x="36" y="575" width="78" height="22" rx="5" fill="#ea580c"/>
+  <text x="75" y="590" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">GUARD</text>
+  <text x="126" y="591" fill="#9a3412" font-size="13" font-weight="700">Tier B: Strict Rate-Limit &amp; Enterprise Clouds</text>
+  <rect x="20" y="930" width="840" height="318" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="930" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="954" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="966" x2="860" y2="966" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="937" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="952" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="953" fill="#1e40af" font-size="13" font-weight="700">Tier C: Regional &amp; Private/Derived Clouds</text>
+  <rect x="20" y="1272" width="840" height="104" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 440 106 L 440 149 L 237 149 L 237 192" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 149 L 643 149 L 643 192" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 240 L 237 240 L 237 374" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 240 L 643 240 L 643 374" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 360 L 237 360 L 237 614" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 360 L 643 360 L 643 614" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="106" x2="440" y2="776" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 541 L 237 541 L 237 976" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 106 L 440 541 L 643 541 L 643 976" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="106" x2="440" y2="1118" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 342 L 237 814 L 440 814 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 342 L 643 814 L 440 814 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 524 L 237 905 L 440 905 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 524 L 643 905 L 440 905 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 744 L 237 1015 L 440 1015 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 744 L 643 1015 L 440 1015 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="886" x2="440" y2="1286" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 1086 L 237 1186 L 440 1186 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 1086 L 643 1186 L 440 1186 L 440 1286" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="1228" x2="440" y2="1286" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="183" y="40" width="515" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="68" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">10,456-Node Global Provisioning Orchestrator</text>
+  <text x="440" y="88" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">(Level 1: 10 Independent CSP Execution Trees + 0~5s Launch Jitter)</text>
+  <rect x="44" y="196" width="386" height="146" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="244" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">1. AWS</text>
+  <text x="237" y="264" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes</text>
+  <text x="237" y="284" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 10 Regions × 30 Nodes (1,000 IDs/Batch)</text>
+  <text x="237" y="304" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Spec-Offered AZ Filter + Zero-Lag IP Cache</text>
+  <rect x="450" y="196" width="386" height="146" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="224" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">2. GCP</text>
+  <text x="643" y="244" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes + Quota-Wait Slots</text>
+  <text x="643" y="264" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(60)</text>
+  <text x="643" y="284" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 12 Regions × 35 Nodes (1 Project</text>
+  <text x="643" y="304" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Aggregated Call)</text>
+  <text x="643" y="324" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Empty VPC CIDR + Placeholder SSHKey</text>
+  <rect x="44" y="378" width="386" height="146" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="406" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">3. Azure</text>
+  <text x="237" y="426" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes (Isolated HTTP/2</text>
+  <text x="237" y="446" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Transport)</text>
+  <text x="237" y="466" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 8 Regions × 25 Nodes (Subscription</text>
+  <text x="237" y="486" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Stream Pager)</text>
+  <text x="237" y="506" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Non-Blocking Async Control + Latest URN Resolve</text>
+  <rect x="450" y="378" width="386" height="146" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="426" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">4. Alibaba</text>
+  <text x="643" y="446" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes</text>
+  <text x="643" y="466" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 6 Regions × 20 Nodes (100 IDs/Page)</text>
+  <text x="643" y="486" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Dynamic ImageFamily Resolve (10m Singleflight)</text>
+  <rect x="44" y="618" width="386" height="126" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="237" y="646" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">5. Tencent Cloud</text>
+  <text x="237" y="666" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 5 Nodes (10 req/s Account</text>
+  <text x="237" y="686" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Limit!)</text>
+  <text x="237" y="706" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 6 Regions × 20 Nodes</text>
+  <text x="237" y="726" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• Register: 2 Conns (2,000~5,000ms Stagger)</text>
+  <rect x="450" y="618" width="386" height="126" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="656" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">6. IBM Cloud</text>
+  <text x="643" y="676" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes</text>
+  <text x="643" y="696" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 10 Regions × 30 Nodes</text>
+  <text x="643" y="716" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 1 Subnet Cap/VPC + Shared IAM + 3x Retry</text>
+  <rect x="218" y="780" width="444" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="808" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">7. NCP (Naver Cloud)</text>
+  <text x="440" y="828" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 5 Regions × 15 Nodes (Control Plane Guard)</text>
+  <text x="440" y="848" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 3 Regions × 15 Nodes</text>
+  <text x="440" y="868" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">• Single-Zone Pin + Control Timeout +10m + Local RSA Key</text>
+  <rect x="44" y="980" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="1008" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">8. NHN Cloud</text>
+  <text x="237" y="1028" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes</text>
+  <text x="237" y="1048" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 5 Regions × 20 Nodes</text>
+  <text x="237" y="1068" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Floating IP TCP Reset 2x Exponential Retry</text>
+  <rect x="450" y="980" width="386" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="1008" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">9. KT Cloud</text>
+  <text x="643" y="1028" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes</text>
+  <text x="643" y="1048" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 10 Regions × 30 Nodes</text>
+  <text x="643" y="1068" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Auto /16 CIDR Shift on Single-VPC 409 Collision</text>
+  <rect x="230" y="1122" width="420" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="1150" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">10. OpenStack (&amp; Derived Clouds)</text>
+  <text x="440" y="1170" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Create: 30 Regions × 20 Nodes (Auto Family Mapping)</text>
+  <text x="440" y="1190" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• Status: 5 Regions × 15 Nodes (Direct Nova Batch)</text>
+  <text x="440" y="1210" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 50m Keystone Token Cache &amp; Port Filter</text>
+  <rect x="207" y="1290" width="467" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="1318" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Early Regional Quota Cancel (Drain Queued Waiters)</text>
+  <text x="440" y="1338" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">+ Batched Shared-Resource Association Write</text>
+</svg>

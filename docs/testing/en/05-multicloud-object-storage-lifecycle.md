@@ -59,21 +59,21 @@
 
 | CSP | Step 1: Bucket Create | Step 2: Meta, Location & Reconcile | Step 3a: CORS Set & Get | Step 3b: Versioning Enable | Step 4a: Presigned URL Object CRUD (CLI / SDK Client) | Step 4b: Presigned URL Object CRUD (MapUI Browser Direct XHR) | Step 5: Bucket Delete | Overall |
 |---|---|---|---|---|---|---|---|---|
-| **Alibaba** (`ap-northeast-2`) | ✅ | ✅ (`ap-northeast-2`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT · List · HEAD · GET · Ver Del) | ✅ (Browser Direct PUT · List · HEAD · GET · DEL) | ✅ | ✅ |
-| **AWS** (`ap-northeast-2`) | ✅ | ✅ (`ap-northeast-2`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT · List · HEAD · GET · Ver Del) | ✅ (Browser Direct PUT · List · HEAD · GET · DEL) | ✅ | ✅ |
-| **Azure** (`koreacentral`) | ✅ | ✅ (`koreacentral`) | ➖ (Account-level) | ➖ (Account-level) | ✅ (SAS PUT `BlockBlob` · List · HEAD · GET · Del) | ⚪ (Control-Plane `UpURL·DlURL·List` ✅ / Direct PUT requires Console CORS) | ✅ | ✅ |
-| **GCP** (`asia-northeast3`) | ✅ | ✅ (`asia-northeast3`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT · List · HEAD · GET · Ver Del) | ✅ (Browser Direct PUT · List · HEAD · GET · DEL) | ✅ | ✅ |
-| **IBM** (`us-south`) | ✅ | ✅ (`us-south`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT · List · HEAD · GET · Ver Del) | ✅ (Browser Direct PUT · List · HEAD · GET · DEL) | ✅ | ✅ |
-| **KT** (`kr1`) | ✅ | ✅ (`KR1`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT · List · HEAD · GET · Ver Del) | ✅ (Browser Direct PUT · List · HEAD · GET · DEL) | ✅ | ✅ |
-| **NCP** (`kr`) | ✅ | ✅ (`KR`) | ➖ (Unsupported) | ➖ (Unsupported) | ✅ (v1/v2 PUT · List · HEAD · GET · Del) | ⚪ (Control-Plane `UpURL·DlURL·List` ✅ / Direct PUT requires Console CORS) | ✅ | ✅ |
-| **NHN** (`kr1`) | ✅ | ✅ (`KR1`) | ➖ (Unsupported) | ➖ (Unsupported) | ✅ (v1/v2 PUT · List · HEAD · GET · Del) | ⚪ (Control-Plane `UpURL·DlURL·List` ✅ / Direct PUT requires Console CORS) | ✅ | ✅ |
-| **OpenStack** (`regionone`) | ✅ | ✅ (`RegionOne`) | ✅ | ➖ (Unsupported) | ✅ (v1/v2 PUT · List · HEAD · GET · Del) | ✅ (Direct PUT passes on `http://`; Control-Plane verified on `https://` due to Mixed Content) | ✅ | ✅ |
-| **Tencent** (`ap-seoul`) | ✅ | ✅ (`ap-seoul`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT · List · HEAD · GET · Ver Del) | ✅ (Browser Direct PUT · List · HEAD · GET · DEL) | ✅ | ✅ |
+| **Alibaba** (`ap-northeast-2`) | ✅ | ✅ (`ap-northeast-2`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT, List, HEAD, GET, Ver Del) | ✅ (Browser Direct PUT, List, HEAD, GET, DEL) | ✅ | ✅ |
+| **AWS** (`ap-northeast-2`) | ✅ | ✅ (`ap-northeast-2`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT, List, HEAD, GET, Ver Del) | ✅ (Browser Direct PUT, List, HEAD, GET, DEL) | ✅ | ✅ |
+| **Azure** (`koreacentral`) | ✅ | ✅ (`koreacentral`) | ➖ (Account-level) | ➖ (Account-level) | ✅ (SAS PUT `BlockBlob`, List, HEAD, GET, Del) | ⚪ (Control-Plane `UpURL, DlURL, List` ✅ / Direct PUT requires Console CORS) | ✅ | ✅ |
+| **GCP** (`asia-northeast3`) | ✅ | ✅ (`asia-northeast3`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT, List, HEAD, GET, Ver Del) | ✅ (Browser Direct PUT, List, HEAD, GET, DEL) | ✅ | ✅ |
+| **IBM** (`us-south`) | ✅ | ✅ (`us-south`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT, List, HEAD, GET, Ver Del) | ✅ (Browser Direct PUT, List, HEAD, GET, DEL) | ✅ | ✅ |
+| **KT** (`kr1`) | ✅ | ✅ (`KR1`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT, List, HEAD, GET, Ver Del) | ✅ (Browser Direct PUT, List, HEAD, GET, DEL) | ✅ | ✅ |
+| **NCP** (`kr`) | ✅ | ✅ (`KR`) | ➖ (Unsupported) | ➖ (Unsupported) | ✅ (v1/v2 PUT, List, HEAD, GET, Del) | ⚪ (Control-Plane `UpURL, DlURL, List` ✅ / Direct PUT requires Console CORS) | ✅ | ✅ |
+| **NHN** (`kr1`) | ✅ | ✅ (`KR1`) | ➖ (Unsupported) | ➖ (Unsupported) | ✅ (v1/v2 PUT, List, HEAD, GET, Del) | ⚪ (Control-Plane `UpURL, DlURL, List` ✅ / Direct PUT requires Console CORS) | ✅ | ✅ |
+| **OpenStack** (`regionone`) | ✅ | ✅ (`RegionOne`) | ✅ | ➖ (Unsupported) | ✅ (v1/v2 PUT, List, HEAD, GET, Del) | ✅ (Direct PUT passes on `http://`; Control-Plane verified on `https://` due to Mixed Content) | ✅ | ✅ |
+| **Tencent** (`ap-seoul`) | ✅ | ✅ (`ap-seoul`) | ✅ | ✅ (`Enabled`) | ✅ (v1/v2 PUT, List, HEAD, GET, Ver Del) | ✅ (Browser Direct PUT, List, HEAD, GET, DEL) | ✅ | ✅ |
 | **Total (10 CSPs)** | **10/10** | **10/10** | **7/7 (All Supported)** | **6/6 (All Supported)** | **10/10 (All Pass)** | **7/7 (CORS API CSPs) + 3/3 (Control-Plane Verified)** | **10/10 (`0` left)** | **Pass** |
 
 > **CLI/SDK (`Step 4a`) vs. MapUI Web Browser (`Step 4b`)**:
 > * **CLI / Backend SDK / `curl` (`Step 4a`)**: Non-browser HTTP clients are not subject to browser CORS Preflight (`OPTIONS`) or Mixed Content policies; all **10/10 CSPs pass full direct file upload (`PUT`) and download (`GET`)** using Tumblebug-issued Presigned URLs.
-> * **Web Browser JavaScript XHR (`Step 4b`)**: Browsers enforce CORS preflight checks (`Access-Control-Allow-Origin`) before sending cross-origin `PUT` requests. All 7 CSPs supporting the S3 CORS API pass browser direct upload automatically, whereas the 3 CSPs without an S3 CORS API (`Azure`, `NCP`, `NHN`) require a one-time CORS rule in their respective cloud consoles for browser XHR `PUT` (while `<a download>` browser file downloads and Control-Plane `UpURL·DlURL·List` checks work out of the box).
+> * **Web Browser JavaScript XHR (`Step 4b`)**: Browsers enforce CORS preflight checks (`Access-Control-Allow-Origin`) before sending cross-origin `PUT` requests. All 7 CSPs supporting the S3 CORS API pass browser direct upload automatically, whereas the 3 CSPs without an S3 CORS API (`Azure`, `NCP`, `NHN`) require a one-time CORS rule in their respective cloud consoles for browser XHR `PUT` (while `<a download>` browser file downloads and Control-Plane `UpURL, DlURL, List` checks work out of the box).
 
 ---
 
@@ -81,9 +81,9 @@
 
 | Stage | Per-CSP Range (10 CSPs) | Notes |
 |---|---|---|
-| Step 1: Empty Bucket Resource Create (`PUT /objectStorage`) | **0.44 – 7.45 s** | NHN (`0.44 s`), Azure (`0.74 s`), NCP (`0.87 s`) fastest · IBM (`7.45 s`) |
+| Step 1: Empty Bucket Resource Create (`PUT /objectStorage`) | **0.44 – 7.45 s** | NHN (`0.44 s`), Azure (`0.74 s`), NCP (`0.87 s`) fastest, IBM (`7.45 s`) |
 | Step 2: Meta, Location & Reconcile | **0.10 – 6.51 s** | Combined duration of `HEAD` + `GET` + `GET /location` + `PUT /reconcile` |
-| Step 3a: CORS Configure & Read (`PUT / GET /cors`) | **1.45 – 37.38 s** | GCP (`1.45 s`) fastest · S3-standard CSPs (`8.97 – 11.14 s`) · IBM global propagation (`37.38 – 68.92 s`) |
+| Step 3a: CORS Configure & Read (`PUT / GET /cors`) | **1.45 – 37.38 s** | GCP (`1.45 s`) fastest, S3-standard CSPs (`8.97 – 11.14 s`), IBM global propagation (`37.38 – 68.92 s`) |
 | Step 3b: Versioning Enable (`PUT / GET /versioning`) | **0.45 – 6.50 s** | Alibaba (`0.45 s`), KT (`0.98 s`), AWS (`1.60 s`), GCP (`1.77 s`), Tencent (`2.63 s`), IBM (`6.50 s`) |
 | Step 4: Full 5-Step Presigned URL File (Object) CRUD | **0.48 – 28.62 s** | Combined file upload (`PUT`) + List & `HEAD` + file download (`GET`) & verify + file delete |
 | Step 5: Empty Bucket Resource Delete (`DELETE /objectStorage/{osId}`) | **1.65 – 12.67 s** | Includes post-delete CSP absence verification (`PollResourceDeletedViaSpider`) |
@@ -129,7 +129,7 @@ The following checks were executed across all 10 CSPs and passed with zero discr
 |---|---|---|
 | **Lowercase Hostname Normalization for Presigned URLs (`SignatureDoesNotMatch` Root-Cause Fix)** | **NCP, NHN** | NCP (`KR`) and NHN (`KR1`) store uppercase region IDs, previously producing uppercase S3 endpoints (`KR.object.ncloudstorage.com`, `KR1-api-object-storage.nhncloudservice.com`). Standard HTTP clients (`curl`, `requests`) and web browsers (`fetch`/`axios`) normalize URL hostnames to lowercase per RFC 3986 before sending the `Host` header, causing `403 SignatureDoesNotMatch`. Fixed in CB-Spider `GetS3ConnectionInfo` ([`S3Manager.go`](file:///home/shson/go/src/github.com/cloud-barista/cb-spider/api-runtime/common-runtime/S3Manager.go#L241-L254)) via `strings.ToLower(regionID)`. |
 | **GCP Storage SDK CORS Preflight (`ResponseHeaders`) Compatibility** | **GCP** | Google Cloud Storage's `storage.CORS` struct uses `ResponseHeaders` for both `Access-Control-Expose-Headers` and `Access-Control-Allow-Headers` on `OPTIONS` preflight, and CB-Spider's `setGCPBucketCORS` maps `exposeHeader` to `ResponseHeaders`. Added `'Content-Type'` to `exposeHeader` in MapUI's `enableDefaultCors()` so browser direct `PUT` preflight requests pass immediately on GCS. |
-| **Browser XHR CORS Constraints vs. Control-Plane Verification** | **Azure, NCP, NHN** | Azure (Storage Account-level CORS), NHN (OpenStack Swift container metadata headers/Console), and NCP (Console-managed CORS) do not expose the standard S3 `PutBucketCors` API (`cors: false`). While CLI/SDK clients and `<a download>` browser links work directly without CORS, browser JavaScript (`axios.put`) direct uploads are blocked by the browser unless CORS is enabled in the CSP console. Without introducing an SSRF-prone server proxy, MapUI verifies the 3 Control-Plane APIs (`UpURL✓ · DlURL✓ · List✓`) and reports `PASS (Control-Plane)`. |
+| **Browser XHR CORS Constraints vs. Control-Plane Verification** | **Azure, NCP, NHN** | Azure (Storage Account-level CORS), NHN (OpenStack Swift container metadata headers/Console), and NCP (Console-managed CORS) do not expose the standard S3 `PutBucketCors` API (`cors: false`). While CLI/SDK clients and `<a download>` browser links work directly without CORS, browser JavaScript (`axios.put`) direct uploads are blocked by the browser unless CORS is enabled in the CSP console. Without introducing an SSRF-prone server proxy, MapUI verifies the 3 Control-Plane APIs (`UpURL✓, DlURL✓, List✓`) and reports `PASS (Control-Plane)`. |
 | **Automatic `requiredHeaders` Merging for Azure Blob SAS Uploads** | **Azure** | Azure Blob Storage requires `x-ms-blob-type: BlockBlob` on direct SAS `PUT` uploads. Updated MapUI's `uploadFileToBucket()` and `runE2eObjectCrudBenchmark()` to automatically merge `urlRes.data.requiredHeaders` into the `axios.put` request headers. |
 | **Immediate Object List Cache Invalidation After External Presigned Uploads** | **All CSPs (esp. fast CSPs)** | Because Presigned URL uploads go directly from the client/browser to the CSP, calling `GET .../object` within 2 seconds (`ShortDuration`) of an earlier bucket read could return a cached empty list. Fixed in Tumblebug `ListDataObjects()` by invalidating the Spider S3 GET cache prior to fetching. |
 | **Tencent COS AppId Bucket Suffix (`-<AppId>`)** | **Tencent** | Tencent COS appends the account `AppId` to the physical bucket name (`tbi0bd0kcsop2lsms2gk-1383606637`). CB-Spider resolves the `AppId` dynamically via Tencent CAM API, and MapUI displays both the Tumblebug ID and actual CSP bucket name with a 1-click Copy button. |

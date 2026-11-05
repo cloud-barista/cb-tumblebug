@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 558" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <!-- Outer Canvas Card -->
+  <rect x="4" y="4" width="872" height="550" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+
+  <!-- ===================================================================== -->
+  <!-- TOP PANEL: PROBLEM (Synchronous O(N) Call Storm)                      -->
+  <!-- ===================================================================== -->
+  <rect x="20" y="24" width="840" height="200" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="24" width="840" height="36" rx="10" fill="#fef2f2"/>
+  <rect x="20" y="48" width="840" height="12" fill="#fef2f2"/>
+  <line x1="20" y1="60" x2="860" y2="60" stroke="#fecaca" stroke-width="1"/>
+  <rect x="36" y="31" width="76" height="22" rx="5" fill="#dc2626"/>
+  <text x="74" y="46" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">문제점</text>
+  <text x="124" y="47" fill="#991b1b" font-size="13" font-weight="700">동기식 O(N) 개별 호출 폭풍: 요청 1회가 수만 건의 CSP API 호출 유발</text>
+
+  <!-- Node 1: User Request (x=36, w=164 -> 36..200) -->
+  <rect x="36" y="96" width="164" height="106" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="118" y="126" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">사용자 / 대시보드</text>
+  <text x="118" y="150" fill="#475569" font-size="11" text-anchor="middle">상태 조회, 접속정보,</text>
+  <text x="118" y="170" fill="#475569" font-size="11" text-anchor="middle">일괄 제어 요청</text>
+
+  <!-- Arrow 1 (x=200 -> 262, gap=70) -->
+  <line x1="200" y1="149" x2="262" y2="149" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text x="235" y="136" fill="#dc2626" font-size="10.5" font-weight="600" text-anchor="middle">동기 대기</text>
+
+  <!-- Node 2: TB (x=270, w=140 -> 270..410) -->
+  <rect x="270" y="96" width="140" height="106" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="340" y="126" fill="#0f172a" font-size="13.5" font-weight="700" text-anchor="middle">TB</text>
+  <text x="340" y="150" fill="#475569" font-size="11" text-anchor="middle">노드별 개별 루프</text>
+  <text x="340" y="170" fill="#475569" font-size="11" text-anchor="middle">(O(N) 호출)</text>
+
+  <!-- Arrow 2 (x=410 -> 482, gap=80; Pill placed cleanly ABOVE at y=120..142) -->
+  <line x1="410" y1="149" x2="482" y2="149" stroke="#dc2626" stroke-width="2.2" marker-end="url(#arrow-red)"/>
+  <rect x="390" y="68" width="120" height="22" rx="4" fill="#fee2e2"/>
+  <text x="450" y="83" fill="#b91c1c" font-size="10.5" font-weight="700" text-anchor="middle">10,456회 호출</text>
+  <text x="450" y="166" fill="#991b1b" font-size="10.5" text-anchor="middle">개별 REST</text>
+
+  <!-- Node 3: SP (x=490, w=140 -> 490..630) -->
+  <rect x="490" y="96" width="140" height="106" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="560" y="126" fill="#0f172a" font-size="13.5" font-weight="700" text-anchor="middle">SP</text>
+  <text x="560" y="150" fill="#475569" font-size="11" text-anchor="middle">단건 드라이버 및</text>
+  <text x="560" y="170" fill="#475569" font-size="11" text-anchor="middle">사전/사후 재조회</text>
+
+  <!-- Arrow 3 (x=630 -> 692, gap=70; Pill placed cleanly ABOVE at y=120..142) -->
+  <line x1="630" y1="149" x2="692" y2="149" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+  <rect x="600" y="68" width="130" height="22" rx="4" fill="#fee2e2"/>
+  <text x="665" y="83" fill="#b91c1c" font-size="10.5" font-weight="700" text-anchor="middle">40,000+회 호출</text>
+  <text x="665" y="166" fill="#991b1b" font-size="10.5" text-anchor="middle">중복 조회 누적</text>
+
+  <!-- Node 4: CSP APIs (Failure) (x=700, w=144 -> 700..844) -->
+  <rect x="700" y="92" width="144" height="114" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="772" y="118" fill="#991b1b" font-size="13" font-weight="700" text-anchor="middle">10개 CSP API</text>
+  <rect x="712" y="128" width="120" height="22" rx="4" fill="#dc2626"/>
+  <text x="772" y="143" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">429 쓰로틀링</text>
+  <text x="772" y="166" fill="#b91c1c" font-size="11" font-weight="600" text-anchor="middle">세션 단절 및</text>
+  <text x="772" y="184" fill="#b91c1c" font-size="11" font-weight="600" text-anchor="middle">120초 타임아웃</text>
+
+  <!-- ===================================================================== -->
+  <!-- BOTTOM PANEL: SOLUTION (Decoupled Reads + Regional Batch SDK + Cache) -->
+  <!-- ===================================================================== -->
+  <rect x="20" y="244" width="840" height="290" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="244" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="268" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="280" x2="860" y2="280" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="251" width="76" height="22" rx="5" fill="#16a34a"/>
+  <text x="74" y="266" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">해결책</text>
+  <text x="124" y="267" fill="#166534" font-size="13" font-weight="700">사용자 조회 분리 (CSP 호출 0회) + 리전 배치 SDK (~146회) + 다계층 캐시</text>
+
+  <!-- Row 1: Foreground User Query Path (x=36, w=230 -> 36..266) -->
+  <rect x="36" y="296" width="230" height="92" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="151" y="324" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">포그라운드: 조회 API</text>
+  <text x="151" y="348" fill="#166534" font-size="11" text-anchor="middle">상태 조회: 35.61 ms 응답</text>
+  <text x="151" y="368" fill="#166534" font-size="11" text-anchor="middle">접속정보: 788.65 ms 응답</text>
+
+  <!-- Arrow FG (x=266 -> 352, gap=94) -->
+  <line x1="266" y1="342" x2="352" y2="342" stroke="#16a34a" stroke-width="2.2" marker-end="url(#arrow-green)"/>
+  <rect x="256" y="304" width="112" height="22" rx="4" fill="#dcfce7"/>
+  <text x="312" y="319" fill="#15803d" font-size="10.5" font-weight="700" text-anchor="middle">CSP 호출 0회</text>
+  <text x="312" y="360" fill="#166534" font-size="10.5" text-anchor="middle">메모리 즉시 읽기</text>
+
+  <!-- Node: TB In-Memory StatusStore (x=360, w=250 -> 360..610) -->
+  <rect x="360" y="296" width="250" height="92" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="485" y="324" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">TB 인메모리 상태 저장소</text>
+  <text x="485" y="348" fill="#1e40af" font-size="11" text-anchor="middle">• 10,456 노드 상태/공인 IP 상주</text>
+  <text x="485" y="368" fill="#1e40af" font-size="11" text-anchor="middle">• 5초 공유 캐시 및 접속정보 조립</text>
+
+  <!-- Row 2: Background Batch Sync Path (x=36, w=230 -> 36..266) -->
+  <rect x="36" y="424" width="230" height="92" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="151" y="452" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">백그라운드: 상태 에이전트</text>
+  <text x="151" y="476" fill="#1e40af" font-size="11" text-anchor="middle">• 15초 주기 리전 배치 스위퍼</text>
+  <text x="151" y="496" fill="#1e40af" font-size="11" text-anchor="middle">• 5단계 적응형 우선순위 폴러</text>
+
+  <!-- Arrow from Background Agent to Direct SDK (x=266 -> 352) -->
+  <line x1="266" y1="470" x2="352" y2="470" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-blue)"/>
+  <text x="312" y="456" fill="#1d4ed8" font-size="10.5" font-weight="600" text-anchor="middle">리전 그룹화</text>
+  <text x="312" y="488" fill="#475569" font-size="10.5" text-anchor="middle">비동기 스윕</text>
+
+  <!-- Node: Direct CSP Batch/Bulk SDK (x=360, w=250 -> 360..610) -->
+  <rect x="360" y="424" width="250" height="92" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="485" y="452" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Direct 배치/벌크 SDK</text>
+  <text x="485" y="476" fill="#9a3412" font-size="11" text-anchor="middle">• 8초 TTL Singleflight 상태 캐시</text>
+  <text x="485" y="496" fill="#9a3412" font-size="11" text-anchor="middle">• 독립 공인 IP 캐시 (지연 0초)</text>
+
+  <!-- Vertical Arrow updating In-Memory Store from Direct SDK (y=476 -> 446, gap=36px) -->
+  <line x1="485" y1="424" x2="485" y2="394" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text x="536" y="411" fill="#1d4ed8" font-size="10.5" font-weight="600">비동기 갱신</text>
+
+  <!-- Arrow from Direct SDK to CSP APIs (x=610 -> 692, gap=90) -->
+  <line x1="610" y1="470" x2="692" y2="470" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <rect x="588" y="398" width="134" height="22" rx="4" fill="#dcfce7"/>
+  <text x="655" y="413" fill="#15803d" font-size="10.5" font-weight="700" text-anchor="middle">~146회 배치 호출</text>
+  <text x="655" y="488" fill="#166534" font-size="10.5" text-anchor="middle">SP 우회 통신</text>
+
+  <!-- Node: CSP APIs (Healthy) (x=700, w=144 -> 700..844) -->
+  <rect x="700" y="416" width="144" height="104" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="772" y="444" fill="#14532d" font-size="13" font-weight="700" text-anchor="middle">10개 CSP API</text>
+  <rect x="712" y="454" width="120" height="22" rx="4" fill="#16a34a"/>
+  <text x="772" y="469" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">쓰로틀링 0건</text>
+  <text x="772" y="496" fill="#15803d" font-size="11" font-weight="600" text-anchor="middle">안정적 제어 완료</text>
+</svg>
