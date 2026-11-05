@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 918" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="910" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="278" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="45" fill="#1e40af" font-size="13" font-weight="700">TB 3-Layer Structured JSON Log Emitters</text>
+  <rect x="20" y="324" width="840" height="238" rx="10" fill="#ffffff" stroke="#fed7aa" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="324" width="840" height="36" rx="10" fill="#fff7ed"/>
+  <rect x="20" y="348" width="840" height="12" fill="#fff7ed"/>
+  <line x1="20" y1="360" x2="860" y2="360" stroke="#fed7aa" stroke-width="1"/>
+  <rect x="36" y="331" width="78" height="22" rx="5" fill="#ea580c"/>
+  <text x="75" y="346" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">GUARD</text>
+  <text x="126" y="347" fill="#9a3412" font-size="13" font-weight="700">Log Sanitization &amp; Parser Protection</text>
+  <rect x="20" y="586" width="840" height="298" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="586" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="610" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="622" x2="860" y2="622" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="593" width="96" height="22" rx="5" fill="#16a34a"/>
+  <text x="84" y="608" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">SOLUTION</text>
+  <text x="144" y="609" fill="#166534" font-size="13" font-weight="700">Loki + Prometheus -&gt; Dual Grafana Dashboards (:3000)</text>
+  <path d="M 237 158 L 237 264 L 440 264 L 440 370" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 158 L 643 264 L 440 264 L 440 370" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="280" x2="440" y2="370" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="440" x2="440" y2="472" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 542 L 440 587 L 237 587 L 237 632" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 742 L 237 758 L 440 758 L 440 774" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 742 L 643 758 L 440 758 L 440 774" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="44" y="72" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Layer 1: Inbound REST API</text>
+  <text x="237" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Request Start / Complete / Error Logs</text>
+  <text x="237" y="140" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Fields: Method, URI, status, latency</text>
+  <rect x="450" y="72" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Layer 2: Outbound SP Calls</text>
+  <text x="643" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Internal Call Start / OK / Failed Logs</text>
+  <text x="643" y="140" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Fields: Method, URI (/spider/op), status, latency</text>
+  <rect x="260" y="194" width="360" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="222" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Layer 3: Direct CSP SDK Calls</text>
+  <text x="440" y="242" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Direct SDK Start / OK / Failed Logs</text>
+  <text x="440" y="262" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Fields: provider, op, region, count, latency</text>
+  <rect x="241" y="374" width="398" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="402" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Single-Line JSON Compactor</text>
+  <text x="440" y="422" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">Compacts Multi-Line CSP Error JSON into One Line</text>
+  <rect x="230" y="476" width="420" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="504" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Noise Filter + 50 KB Body Truncation</text>
+  <text x="440" y="524" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Suppresses Health Probes &amp; High-Frequency Poll Noise</text>
+  <rect x="44" y="636" width="386" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="237" y="664" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Loki LogQL Engine</text>
+  <text x="237" y="684" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Call Rate / p95 Latency / Error Rate</text>
+  <text x="237" y="704" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ Live In-Flight Request Delta</text>
+  <text x="237" y="724" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ Per-Subsystem Activity</text>
+  <rect x="450" y="636" width="386" height="106" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="643" y="664" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Prometheus Engine</text>
+  <text x="643" y="684" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">Pod CPU/RAM/Network</text>
+  <text x="643" y="704" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ OOM/Restarts</text>
+  <text x="643" y="724" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ etcd DB Size &amp; WAL p99</text>
+  <rect x="260" y="778" width="360" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="806" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Grafana Dashboards:</text>
+  <text x="440" y="826" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">1. Control Plane &amp; etcd</text>
+  <text x="440" y="846" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">2. Interactions &amp; Load</text>
+</svg>

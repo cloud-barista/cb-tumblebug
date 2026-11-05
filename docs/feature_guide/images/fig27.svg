@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 536" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="528" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="484" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <line x1="440" y1="106" x2="440" y2="138" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 206 L 440 222 L 237 222 L 237 238" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 206 L 440 222 L 643 222 L 643 238" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="206" x2="440" y2="388" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="40" width="360" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="68" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Provisioning Result:</text>
+  <text x="440" y="88" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">10,414 Running + 42 Failed</text>
+  <rect x="260" y="142" width="360" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="179" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Recovery Policy / Action</text>
+  <rect x="44" y="242" width="386" height="114" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="289" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ continue</text>
+  <line x1="60" y1="295" x2="414" y2="295" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="313" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Keep All 10,456 Records (Partial-Running)</text>
+  <rect x="450" y="242" width="386" height="114" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="269" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ refine / action=refine</text>
+  <line x1="466" y1="275" x2="820" y2="275" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="293" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Purge Only 42 Failed Nodes &amp; Orphan VMs in</text>
+  <text x="643" y="313" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">1.83s</text>
+  <text x="643" y="333" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; Normalized 10,414/10,414 (100%) Running Infra!</text>
+  <rect x="223" y="392" width="435" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="419" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ rollback</text>
+  <line x1="239" y1="425" x2="642" y2="425" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="443" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Parallel Ordered Teardown:</text>
+  <text x="440" y="463" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Terminate VMs -&gt; Delete SSH/SG -&gt; Wait -&gt; Delete VNets</text>
+</svg>

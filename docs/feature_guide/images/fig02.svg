@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 1020" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="1012" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="474" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#fef2f2"/>
+  <rect x="20" y="46" width="840" height="12" fill="#fef2f2"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#fecaca" stroke-width="1"/>
+  <rect x="36" y="29" width="87" height="22" rx="5" fill="#dc2626"/>
+  <text x="79" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">PROBLEM</text>
+  <text x="135" y="45" fill="#991b1b" font-size="13" font-weight="700">Problem: Synchronous O(N) Per-VM Call Storm</text>
+  <rect x="20" y="520" width="840" height="466" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="520" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="544" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="556" x2="860" y2="556" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="527" width="96" height="22" rx="5" fill="#16a34a"/>
+  <text x="84" y="542" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">SOLUTION</text>
+  <text x="144" y="543" fill="#166534" font-size="13" font-weight="700">Solution: Decoupled Read + Regional Batch + Multi-Layer Cache</text>
+  <line x1="440" y1="136" x2="440" y2="168" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="236" x2="440" y2="268" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="346" x2="440" y2="378" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="634" x2="440" y2="666" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="736" x2="440" y2="768" stroke="#475569" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="866" x2="440" y2="898" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="72" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="109" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">User / UI Poll or Control Request</text>
+  <rect x="260" y="172" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="209" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">TB</text>
+  <rect x="260" y="272" width="360" height="74" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="299" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 10,456 REST Calls</text>
+  <line x1="276" y1="305" x2="604" y2="305" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="323" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">SP</text>
+  <rect x="260" y="382" width="360" height="94" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="440" y="409" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 10,456 + 30,000 Pre/Post Calls</text>
+  <line x1="276" y1="415" x2="604" y2="415" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="433" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">CSP APIs</text>
+  <text x="440" y="453" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">(429 Throttling &amp; Dropped Sessions)</text>
+  <rect x="260" y="570" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="607" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">User Read API (35ms Status)</text>
+  <rect x="260" y="670" width="360" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="698" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">TB</text>
+  <text x="440" y="718" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">(In-Memory Status Store &amp; Read Cache)</text>
+  <rect x="260" y="772" width="360" height="94" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="799" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Background 15s Sweep (~146 Regional Calls)</text>
+  <line x1="276" y1="805" x2="604" y2="805" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="823" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Direct CSP Batch/Bulk SDK</text>
+  <text x="440" y="843" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">(8s Singleflight + Public IP Cache)</text>
+  <rect x="260" y="902" width="360" height="64" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="939" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">CSP APIs (Zero Throttling)</text>
+</svg>

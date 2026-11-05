@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 556" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="548" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="238" rx="10" fill="#ffffff" stroke="#fed7aa" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#fff7ed"/>
+  <rect x="20" y="46" width="840" height="12" fill="#fff7ed"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#fed7aa" stroke-width="1"/>
+  <rect x="36" y="29" width="84" height="22" rx="5" fill="#ea580c"/>
+  <text x="78" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">보호 계층</text>
+  <text x="132" y="45" fill="#9a3412" font-size="13" font-weight="700">Azure PR #1700: HTTP/2 GOAWAY Transport 격리</text>
+  <rect x="20" y="284" width="840" height="238" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="284" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="308" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="320" x2="860" y2="320" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="291" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="306" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="307" fill="#1e40af" font-size="13" font-weight="700">IBM PR #1776: 패키지 레벨 공유 IAM 인증기</text>
+  <line x1="440" y1="138" x2="440" y2="170" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="400" x2="440" y2="432" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="233" y="72" width="414" height="66" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="440" y="100" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">5개 ARM 클라이언트가 단일 HTTP Transport 공유</text>
+  <text x="440" y="120" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; 60s CANCEL 수신 시 병렬 VM 생성 전체 연쇄 실패</text>
+  <rect x="260" y="174" width="360" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="202" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">클라이언트별 독립 HTTP Transport 할당</text>
+  <text x="440" y="222" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; 리전당 25+ 병렬 생성 안정화</text>
+  <rect x="227" y="334" width="426" height="66" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="440" y="362" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">호출마다 7개 인증기 생성 + 정적 리전 조회 2회</text>
+  <text x="440" y="382" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; 요청 1건당 네트워크 왕복 5회 (13리전 검증 시 토큰 26회)</text>
+  <rect x="260" y="436" width="361" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="464" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">API Key당 1개 IAM 인증기 공유 캐시</text>
+  <text x="440" y="484" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; 요청당 왕복 5회 -&gt; 1회 (응답 속도 2~3배 향상)</text>
+</svg>

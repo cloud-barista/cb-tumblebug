@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 624" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="616" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="306" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#fef2f2"/>
+  <rect x="20" y="46" width="840" height="12" fill="#fef2f2"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#fecaca" stroke-width="1"/>
+  <rect x="36" y="29" width="78" height="22" rx="5" fill="#dc2626"/>
+  <text x="75" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">문제점</text>
+  <text x="126" y="45" fill="#991b1b" font-size="13" font-weight="700">문제점: 단일 거대 노드 레코드 (~10 KB x 10,456 = ~100 MB)</text>
+  <rect x="20" y="352" width="840" height="238" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="352" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="376" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="388" x2="860" y2="388" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="359" width="78" height="22" rx="5" fill="#16a34a"/>
+  <text x="75" y="374" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">해결책</text>
+  <text x="126" y="375" fill="#166534" font-size="13" font-weight="700">해결책: Hot/Cold 분리 + 블루프린트 델타 + OpenBao 오프로드</text>
+  <line x1="440" y1="178" x2="440" y2="210" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="72" width="360" height="106" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">etcd 내 단일 노드 키</text>
+  <text x="440" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 45개 중복 스펙/이미지/네트워크/위치 필드</text>
+  <text x="440" y="140" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 내장된 1.7 KB RSA 개인키</text>
+  <text x="440" y="160" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">• 수시로 변하는 상태 및 공인 IP</text>
+  <rect x="260" y="214" width="360" height="94" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="440" y="241" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 15초 상태 폴링마다</text>
+  <line x1="276" y1="247" x2="604" y2="247" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="265" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">10 KB 전체 JSON 재작성</text>
+  <text x="440" y="285" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; MVCC 리비전 폭증 &amp; NOSPACE 장애</text>
+  <rect x="44" y="402" width="386" height="66" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="237" y="430" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Hot: 인메모리 상태 저장소</text>
+  <text x="237" y="450" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ 경량 상태 키 (~200 B)</text>
+  <rect x="450" y="402" width="386" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="643" y="430" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Cold 블루프린트: 노드그룹 공통 정보</text>
+  <text x="643" y="450" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">(리전/그룹당 1개)</text>
+  <rect x="44" y="504" width="386" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="237" y="532" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Cold 델타: 경량 노드 레코드</text>
+  <text x="237" y="552" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(노드당 ~0.8-1.2 KB, 85-90% 축소)</text>
+  <rect x="450" y="504" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="532" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">OpenBao KV v2</text>
+  <text x="643" y="552" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(RSA 개인키 완전 분리)</text>
+</svg>

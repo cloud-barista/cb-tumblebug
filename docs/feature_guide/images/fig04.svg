@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 846" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="838" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="396" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="45" fill="#1e40af" font-size="13" font-weight="700">TB Hybrid Control Plane</text>
+  <rect x="20" y="442" width="840" height="164" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="442" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="466" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="478" x2="860" y2="478" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="449" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="464" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="465" fill="#1e40af" font-size="13" font-weight="700">Underlying Driver Framework</text>
+  <rect x="20" y="630" width="840" height="182" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="630" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="654" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="666" x2="860" y2="666" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="637" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="652" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="653" fill="#1e40af" font-size="13" font-weight="700">10 Cloud Service Providers (146 Regions)</text>
+  <path d="M 237 138 L 237 313 L 440 313 L 440 488" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="586" x2="440" y2="676" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 138 L 237 219 L 440 219 L 440 300" fill="none" stroke="#2563eb" stroke-width="2.4" marker-end="url(#arrow-blue)"/>
+  <path d="M 643 138 L 643 154 L 440 154 L 440 170" fill="none" stroke="#475569" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="268" x2="440" y2="300" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="398" x2="440" y2="676" stroke="#2563eb" stroke-width="2.4" marker-end="url(#arrow-blue)"/>
+  <rect x="44" y="72" width="386" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="237" y="110" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">TB Core Engine</text>
+  <rect x="450" y="72" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">OpenBao KV v2</text>
+  <text x="643" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Multi-Tenant CSP Credentials)</text>
+  <rect x="241" y="174" width="399" height="94" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="201" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ HTTP Keep-Alive Reuse</text>
+  <line x1="257" y1="207" x2="624" y2="207" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="225" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">Shared Keep-Alive Client + 5m Secret Cache</text>
+  <text x="440" y="245" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">+ Credential-Fingerprint SDK Client Cache</text>
+  <rect x="181" y="304" width="519" height="94" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="331" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Bypass Abstraction Limits (Batch/Bulk/Quota/Audit/Async Control)</text>
+  <line x1="197" y1="337" x2="684" y2="337" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="355" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Direct CSP SDK Layer</text>
+  <text x="440" y="375" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(9 Abstraction-Bypass Domains)</text>
+  <rect x="260" y="492" width="360" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="519" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Standard 1:1 Resource Creation &amp; Lifecycle</text>
+  <line x1="276" y1="525" x2="604" y2="525" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="543" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">SP REST API</text>
+  <text x="440" y="563" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(1:1 Single-Resource Abstraction &amp; IID DB)</text>
+  <rect x="256" y="680" width="369" height="112" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="707" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Single-Resource Driver Calls</text>
+  <text x="440" y="725" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ Direct Native Batch/Bulk/Catalog SDK Calls</text>
+  <line x1="272" y1="731" x2="609" y2="731" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="749" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">AWS / GCP / Azure / Alibaba / Tencent /</text>
+  <text x="440" y="769" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">IBM / NCP / NHN / KT / OpenStack APIs</text>
+</svg>

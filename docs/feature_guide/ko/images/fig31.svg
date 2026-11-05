@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 668" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="660" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="612" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="45" fill="#1e40af" font-size="13" font-weight="700">공유 리소스 의존성 정밀 타겟 스캔 &amp; 역등록 구조</text>
+  <line x1="440" y1="158" x2="440" y2="190" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 260 L 440 276 L 237 276 L 237 292" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 260 L 440 276 L 643 276 L 643 292" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 382 L 237 398 L 440 398 L 440 414" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 382 L 643 398 L 440 398 L 440 414" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 484 L 440 500 L 237 500 L 237 516" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 484 L 440 500 L 643 500 L 643 516" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="72" width="360" height="86" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="100" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">1. 공유 Footprint 추출</text>
+  <text x="440" y="120" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">공유 VNet / Subnet / SG의</text>
+  <text x="440" y="140" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">실제 CSP ID 집합 확보</text>
+  <rect x="260" y="194" width="360" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="222" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">2. 미추적 자원 스캔</text>
+  <text x="440" y="242" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(보안그룹 &amp; VM 노드)</text>
+  <rect x="44" y="296" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="324" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Case A: CSP에만 존재</text>
+  <text x="237" y="344" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(SP/TB 모두 미추적)</text>
+  <text x="237" y="364" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; VM이 참조 중인 VPC/SG 대조</text>
+  <rect x="450" y="296" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="324" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Case B: SP DB에만 잔류</text>
+  <text x="643" y="344" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(TB 미추적)</text>
+  <text x="643" y="364" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; SP VM 정보의 VPC/Subnet/SG 대조</text>
+  <rect x="260" y="418" width="360" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="446" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">공유 Footprint</text>
+  <text x="440" y="466" fill="#1e40af" font-size="11.5" font-weight="500" text-anchor="middle">일치 여부?</text>
+  <rect x="44" y="520" width="386" height="94" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="557" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 불일치 (외부 고객 워크로드)</text>
+  <line x1="60" y1="563" x2="414" y2="563" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="237" y="581" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">엄격히 건너뜀 (외부 자원 보호)</text>
+  <rect x="450" y="520" width="386" height="94" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="547" fill="#475569" font-size="10.5" font-weight="700" text-anchor="middle">▸ 일치 (삭제 가로막는 진짜 고아)</text>
+  <line x1="466" y1="553" x2="820" y2="553" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="643" y="571" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">기존 자원 등록 실행</text>
+  <text x="643" y="591" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(&#x27;dep-{shortCspId}&#x27; 인프라로 편입)</text>
+</svg>

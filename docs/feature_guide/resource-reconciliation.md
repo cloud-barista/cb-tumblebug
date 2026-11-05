@@ -214,7 +214,7 @@ Known gaps and deferred decisions, kept here so they aren't lost between session
 
 All four separate "restore" from "delete" into independently-triggered actions, matching Tumblebug's `Reconcile`/`Prune` split.
 
-Sources: [Terraform refresh-only](https://developer.hashicorp.com/terraform/tutorials/state/refresh) · [CloudFormation DetectStackDrift](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DetectStackDrift.html) · [Argo CD Auto-Sync](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/) · [Kubebuilder: Watching Resources](https://book.kubebuilder.io/reference/watching-resources)
+Sources: [Terraform refresh-only](https://developer.hashicorp.com/terraform/tutorials/state/refresh), [CloudFormation DetectStackDrift](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DetectStackDrift.html), [Argo CD Auto-Sync](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/), [Kubebuilder: Watching Resources](https://book.kubebuilder.io/reference/watching-resources)
 
 ### Field Precedent for Action Placement (Path Segment vs. Query Parameter)
 

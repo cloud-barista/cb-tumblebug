@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 748" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="740" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="234" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#fef2f2"/>
+  <rect x="20" y="46" width="840" height="12" fill="#fef2f2"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#fecaca" stroke-width="1"/>
+  <rect x="36" y="29" width="78" height="22" rx="5" fill="#dc2626"/>
+  <text x="75" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">문제점</text>
+  <text x="126" y="45" fill="#991b1b" font-size="13" font-weight="700">개선 전: 접속정보 조회 (&gt;120초 타임아웃)</text>
+  <rect x="20" y="280" width="840" height="434" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="280" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="304" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="316" x2="860" y2="316" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="287" width="78" height="22" rx="5" fill="#16a34a"/>
+  <text x="75" y="302" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">해결책</text>
+  <text x="126" y="303" fill="#166534" font-size="13" font-weight="700">개선 후: 인메모리 중복 제거 조립 (788.65 ms)</text>
+  <path d="M 440 136 L 440 152 L 237 152 L 237 168" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 136 L 440 152 L 643 152 L 643 168" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="394" x2="440" y2="426" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="494" x2="440" y2="526" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="594" x2="440" y2="626" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="72" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="109" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">GET ?option=accessinfo</text>
+  <rect x="44" y="172" width="386" height="64" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="237" y="209" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">10,456회 SP VM 단건 조회</text>
+  <rect x="450" y="172" width="386" height="64" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="643" y="209" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">10,456회 SP SSHKey 단건 조회</text>
+  <rect x="260" y="330" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="367" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">GET ?option=accessinfo</text>
+  <rect x="260" y="430" width="360" height="64" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="467" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">1. 읽기 캐시에서 인프라 정보 로드</text>
+  <rect x="222" y="530" width="436" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="567" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">2. 고유 SSHKey ID 기준 중복 제거 (~146개 리전 키)</text>
+  <rect x="255" y="630" width="370" height="64" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="667" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">3. 인메모리 즉시 조립 (SP / CSP 호출 0회)</text>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 372" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="364" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="156" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#fef2f2"/>
+  <rect x="20" y="46" width="840" height="12" fill="#fef2f2"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#fecaca" stroke-width="1"/>
+  <rect x="36" y="29" width="87" height="22" rx="5" fill="#dc2626"/>
+  <text x="79" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">PROBLEM</text>
+  <text x="135" y="45" fill="#991b1b" font-size="13" font-weight="700">Problem: Dual Failure Traps Across 146 Regions</text>
+  <rect x="20" y="202" width="840" height="136" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="202" width="840" height="36" rx="10" fill="#fef2f2"/>
+  <rect x="20" y="226" width="840" height="12" fill="#fef2f2"/>
+  <line x1="20" y1="238" x2="860" y2="238" stroke="#fecaca" stroke-width="1"/>
+  <rect x="36" y="209" width="87" height="22" rx="5" fill="#dc2626"/>
+  <text x="79" y="224" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">PROBLEM</text>
+  <text x="135" y="225" fill="#991b1b" font-size="13" font-weight="700">Solution: Quota-Aware Risk Engine + Live DB Write-Through</text>
+  <path d="M 237 158 L 237 203 L 643 203 L 643 248" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 158 L 643 203 L 237 203 L 237 248" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="44" y="72" width="386" height="86" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="237" y="100" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">Trap 1: Blindly Retrying Sold-Out Spec/</text>
+  <text x="237" y="120" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">Zone</text>
+  <text x="237" y="140" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; Wastes Hundreds of CSP API Calls</text>
+  <rect x="450" y="72" width="386" height="86" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="643" y="100" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">Trap 2: Naive Risk Blacklisting on Quota</text>
+  <text x="643" y="120" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">Error</text>
+  <text x="643" y="140" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; Falsely Blocks Valid Spec After 500 VMs</text>
+  <rect x="44" y="252" width="386" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="237" y="280" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Quota / Throttling Error -&gt; Relax Risk</text>
+  <text x="237" y="300" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Penalty (Keep Spec Viable)</text>
+  <rect x="450" y="252" width="386" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="280" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Sold-Out / Invalid Spec -&gt; Write-Through</text>
+  <text x="643" y="300" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Unavailable to PostgreSQL</text>
+</svg>

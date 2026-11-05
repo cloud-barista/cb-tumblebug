@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 358" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="350" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="306" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <path d="M 237 106 L 237 122 L 440 122 L 440 138" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 106 L 643 122 L 440 122 L 440 138" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="206" x2="440" y2="238" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="44" y="40" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="68" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">LogQL: 요청 시작 로그 집계</text>
+  <text x="237" y="88" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Method, 라우트 기준)</text>
+  <rect x="450" y="40" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="68" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">LogQL: 요청 완료/에러 로그 집계</text>
+  <text x="643" y="88" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Method, 라우트 기준)</text>
+  <rect x="260" y="142" width="360" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="179" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">차감 계산: 시작 수 - 완료 수 &gt; 0</text>
+  <rect x="260" y="242" width="360" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="440" y="270" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Grafana 실시간 테이블:</text>
+  <text x="440" y="290" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">현재 실행 중인 장기 API 요청 표시!</text>
+</svg>

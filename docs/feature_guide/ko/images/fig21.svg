@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 960" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="952" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="440" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="45" fill="#1e40af" font-size="13" font-weight="700">1. 공유 네트워크 &amp; 서브넷 적응</text>
+  <rect x="20" y="486" width="840" height="440" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="486" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="510" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="522" x2="860" y2="522" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="493" width="80" height="22" rx="5" fill="#2563eb"/>
+  <text x="76" y="508" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">아키텍처</text>
+  <text x="128" y="509" fill="#1e40af" font-size="13" font-weight="700">2. 이미지, SSH키, 제어 적응</text>
+  <path d="M 440 136 L 440 152 L 237 152 L 237 168" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 136 L 440 152 L 643 152 L 643 168" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 136 L 440 203 L 237 203 L 237 270" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 136 L 440 203 L 643 203 L 643 270" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="136" x2="440" y2="372" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 616 L 237 616 L 237 632" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 616 L 643 616 L 643 632" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 667 L 237 667 L 237 734" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 667 L 643 667 L 643 734" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="600" x2="440" y2="836" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="72" width="360" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="109" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">공유 VNet / Subnet 생성</text>
+  <rect x="44" y="172" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="200" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">AWS: 요청 스펙이 실제 제공되는 AZ에만</text>
+  <text x="237" y="220" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">온디맨드 서브넷 선별 생성</text>
+  <rect x="450" y="172" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="200" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">GCP: VPC 레벨 CIDR 생략</text>
+  <text x="643" y="220" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(서브넷 레벨 CIDR만 전달)</text>
+  <rect x="44" y="274" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="302" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">IBM: VPC당 서브넷 1개로 제한</text>
+  <text x="237" y="322" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(동일 Address Prefix 충돌 방지 + 3회 재시도)</text>
+  <rect x="450" y="274" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="302" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">NCP: 멀티존 비활성화 &amp; 단일 Zone 고정</text>
+  <text x="643" y="322" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(VPC 내 모든 서브넷 동일 Zone 강제)</text>
+  <rect x="241" y="376" width="399" height="66" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="404" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">KT Cloud: 단일 VPC 409 중복 CIDR 감지 시</text>
+  <text x="440" y="424" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">10.{altIndex}.0.0/16 대역으로 최대 3회 자동 시프트!</text>
+  <rect x="260" y="536" width="360" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="573" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">VM 생성 / 등록 / 생명주기 제어</text>
+  <rect x="44" y="636" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="664" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Alibaba &amp; Azure: 동적 최신 이미지 해석</text>
+  <text x="237" y="684" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(이미지 패밀리 / 최신 URN 자동 변환)</text>
+  <rect x="450" y="636" width="386" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="664" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Azure: 완료 대기 없는 비동기 제어 개시</text>
+  <text x="643" y="684" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">&amp; 일반 Terminate는 NIC 정리용 SP 경로 유지</text>
+  <rect x="44" y="738" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="766" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">GCP: 등록 시 Placeholder SSHKey 자동 생성</text>
+  <text x="237" y="786" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(독립 SSHKey 객체 부재 보정)</text>
+  <rect x="450" y="738" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="776" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">NCP: 제어 타임아웃 +10분 추가 연장</text>
+  <rect x="225" y="840" width="430" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="868" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">NHN: Floating IP 제어 중 TCP Reset/EOF 발생 시</text>
+  <text x="440" y="888" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">2s -&gt; 4s 지수 백오프 자동 재시도</text>
+</svg>

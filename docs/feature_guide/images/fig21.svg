@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 1000" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="992" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="440" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="46" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="29" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="45" fill="#1e40af" font-size="13" font-weight="700">1. Shared Network &amp; Subnet Adaptations</text>
+  <rect x="20" y="486" width="840" height="480" rx="10" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="486" width="840" height="36" rx="10" fill="#eff6ff"/>
+  <rect x="20" y="510" width="840" height="12" fill="#eff6ff"/>
+  <line x1="20" y1="522" x2="860" y2="522" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="36" y="493" width="78" height="22" rx="5" fill="#2563eb"/>
+  <text x="75" y="508" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">LAYER</text>
+  <text x="126" y="509" fill="#1e40af" font-size="13" font-weight="700">2. Image, SSHKey &amp; Control Adaptations</text>
+  <path d="M 440 136 L 440 152 L 237 152 L 237 168" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 136 L 440 152 L 643 152 L 643 168" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 136 L 440 203 L 237 203 L 237 270" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 136 L 440 203 L 643 203 L 643 270" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="136" x2="440" y2="372" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 616 L 237 616 L 237 632" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 616 L 643 616 L 643 632" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 677 L 237 677 L 237 754" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 440 600 L 440 677 L 643 677 L 643 754" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="440" y1="600" x2="440" y2="876" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="260" y="72" width="360" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="109" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">Shared VNet / Subnet Creation</text>
+  <rect x="44" y="172" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="200" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">AWS: Create Subnets Only in AZs</text>
+  <text x="237" y="220" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Where Requested Spec Is Offered</text>
+  <rect x="450" y="172" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="200" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">GCP: Omit VPC-Level CIDR</text>
+  <text x="643" y="220" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Assign CIDR Only at Subnet Level)</text>
+  <rect x="44" y="274" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="302" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">IBM: Cap Subnets at 1 per VPC</text>
+  <text x="237" y="322" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Prevent Duplicate Address Prefix + 3x Retry)</text>
+  <rect x="450" y="274" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="302" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">NCP: Disable Multi-Zone &amp; Pin Single Zone</text>
+  <text x="643" y="322" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(All Subnets in VPC Must Share 1 Zone)</text>
+  <rect x="232" y="376" width="416" height="66" rx="8" fill="#fffbeb" stroke="#ea580c" stroke-width="2"/>
+  <text x="440" y="404" fill="#7c2d12" font-size="12.5" font-weight="700" text-anchor="middle">KT Cloud: Detect 409 Duplicate Network CIDR</text>
+  <text x="440" y="424" fill="#9a3412" font-size="11.5" font-weight="500" text-anchor="middle">&amp; Auto-Shift 10.{altIndex}.0.0/16 up to 3x!</text>
+  <rect x="250" y="536" width="381" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="573" fill="#1e3a8a" font-size="12.5" font-weight="700" text-anchor="middle">VM Create / Register / Lifecycle Control</text>
+  <rect x="44" y="636" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="674" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Alibaba &amp; Azure: Dynamic Image Resolution</text>
+  <text x="237" y="694" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Image Family / Latest URN Auto-Resolve)</text>
+  <rect x="450" y="636" width="386" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="664" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Azure: Non-Blocking Async Control</text>
+  <text x="643" y="684" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Initiation</text>
+  <text x="643" y="704" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">&amp; Route Normal Terminate via SP for NIC Cleanup</text>
+  <rect x="44" y="758" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="786" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">GCP: Auto-Create Placeholder SSHKey on</text>
+  <text x="237" y="806" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Register</text>
+  <text x="237" y="826" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">(Compensates for No Standalone SSHKey Object)</text>
+  <rect x="450" y="758" width="386" height="86" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="806" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">NCP: Extend Control Timeout by +10 Minutes</text>
+  <rect x="260" y="880" width="360" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="908" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">NHN: Auto-Retry (2s -&gt; 4s Backoff)</text>
+  <text x="440" y="928" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">on Floating IP TCP Connection Reset / EOF</text>
+</svg>

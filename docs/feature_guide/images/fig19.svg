@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 718" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="710" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="22" width="840" height="340" rx="10" fill="#ffffff" stroke="#fecaca" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="22" width="840" height="36" rx="10" fill="#fef2f2"/>
+  <rect x="20" y="46" width="840" height="12" fill="#fef2f2"/>
+  <line x1="20" y1="58" x2="860" y2="58" stroke="#fecaca" stroke-width="1"/>
+  <rect x="36" y="29" width="87" height="22" rx="5" fill="#dc2626"/>
+  <text x="79" y="44" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">PROBLEM</text>
+  <text x="135" y="45" fill="#991b1b" font-size="13" font-weight="700">Problem: Uniform Parallelism &amp; Flat Semaphore Pools</text>
+  <rect x="20" y="386" width="840" height="298" rx="10" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="386" width="840" height="36" rx="10" fill="#f0fdf4"/>
+  <rect x="20" y="410" width="840" height="12" fill="#f0fdf4"/>
+  <line x1="20" y1="422" x2="860" y2="422" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="36" y="393" width="96" height="22" rx="5" fill="#16a34a"/>
+  <text x="84" y="408" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">SOLUTION</text>
+  <text x="144" y="409" fill="#166534" font-size="13" font-weight="700">Solution: 10-CSP Adaptive Engine + Slot Isolation</text>
+  <line x1="237" y1="138" x2="237" y2="170" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 237 138 L 237 154 L 643 154 L 643 170" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 643 138 L 643 205 L 237 205 L 237 272" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="643" y1="138" x2="643" y2="272" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="237" y1="240" x2="237" y2="432" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="643" y1="240" x2="643" y2="432" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="237" y1="342" x2="237" y2="574" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <line x1="643" y1="342" x2="643" y2="574" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="44" y="72" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="237" y="100" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Uniform Concurrency (e.g., 20 VMs/Region</text>
+  <text x="237" y="120" fill="#334155" font-size="11.5" font-weight="500" text-anchor="middle">Everywhere)</text>
+  <rect x="450" y="72" width="386" height="66" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="643" y="110" fill="#0f172a" font-size="12.5" font-weight="700" text-anchor="middle">Single Shared Semaphore Pool</text>
+  <rect x="44" y="174" width="386" height="66" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="237" y="202" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">Tencent (10 req/s Limit) &amp; NCP Control</text>
+  <text x="237" y="222" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">Plane Collapse</text>
+  <rect x="450" y="174" width="386" height="66" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="643" y="202" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">GCP VPC CIDR Rejection / NCP Multi-Zone</text>
+  <text x="643" y="222" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">Error / KT CIDR 409</text>
+  <rect x="44" y="276" width="386" height="66" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="237" y="304" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">Sleeping GCP Rate-Limit Waiters</text>
+  <text x="237" y="324" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">Hold Active Creation Slots for 30s+</text>
+  <rect x="450" y="276" width="386" height="66" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+  <text x="643" y="304" fill="#7f1d1d" font-size="12.5" font-weight="700" text-anchor="middle">Post-Resume IP Refresh Floods</text>
+  <text x="643" y="324" fill="#991b1b" font-size="11.5" font-weight="500" text-anchor="middle">All 50 SP Slots -&gt; Status Polling Starved!</text>
+  <rect x="44" y="436" width="386" height="106" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="237" y="464" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">10-CSP Concurrency Profiles &amp; Launch</text>
+  <text x="237" y="484" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Jitter</text>
+  <text x="237" y="504" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">+ Early Regional Quota Cancel + Batched</text>
+  <text x="237" y="524" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Associations</text>
+  <rect x="450" y="436" width="386" height="106" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="474" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">Per-CSP Network/Lifecycle Adaptation</text>
+  <text x="643" y="494" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Engine</text>
+  <text x="643" y="514" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">(VNet Policy / +10m Timeout / Auto CIDR Shift)</text>
+  <rect x="44" y="578" width="386" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="237" y="606" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">GCP Waiters Release Active Slots</text>
+  <text x="237" y="626" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Immediately</text>
+  <text x="237" y="646" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">&amp; Move to Dedicated Quota-Wait Slots (60)</text>
+  <rect x="450" y="578" width="386" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="643" y="606" fill="#14532d" font-size="12.5" font-weight="700" text-anchor="middle">IP Refresh Capped at 15 Dedicated Slots</text>
+  <text x="643" y="626" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">-&gt; 35/50 Slots Always Reserved for Status/</text>
+  <text x="643" y="646" fill="#166534" font-size="11.5" font-weight="500" text-anchor="middle">Control!</text>
+</svg>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 508" width="100%" height="auto" style="text-size-adjust: none; -webkit-text-size-adjust: none;" font-family="'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-4%" width="104%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="872" height="500" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="20" y="20" width="840" height="472" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="40" y="36" width="800" height="26" rx="5" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="440" y="53" fill="#1e3a8a" font-size="11.5" font-weight="600" text-anchor="middle">InfraInfo  (||--o{)  NodeGroupBlueprint  :  1 Blueprint per Region/Group</text>
+  <rect x="40" y="68" width="800" height="26" rx="5" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="440" y="85" fill="#1e3a8a" font-size="11.5" font-weight="600" text-anchor="middle">NodeGroupBlueprint  (||--o{)  CompactNodeDelta  :  Hydrates 10,456 Nodes in Memory</text>
+  <rect x="40" y="100" width="800" height="26" rx="5" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="440" y="117" fill="#1e3a8a" font-size="11.5" font-weight="600" text-anchor="middle">CompactNodeDelta  (||--||)  HotNodeStatus  :  Overlays Hot Status &amp; PublicIP</text>
+  <rect x="40" y="132" width="800" height="26" rx="5" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="440" y="149" fill="#1e3a8a" font-size="11.5" font-weight="600" text-anchor="middle">NodeGroupBlueprint  (}o--||)  OpenBaoKV  :  References Vault Secret</text>
+  <rect x="40" y="176" width="390" height="136" rx="8" fill="#f8fafc" stroke="#2563eb" stroke-width="1.8"/>
+  <rect x="40" y="176" width="390" height="30" rx="8" fill="#2563eb"/>
+  <rect x="40" y="194" width="390" height="12" fill="#2563eb"/>
+  <text x="235" y="196" fill="#ffffff" font-size="12.5" font-weight="700" text-anchor="middle">NodeGroupBlueprint</text>
+  <text x="235" y="224" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">Id (string): Blueprint ID</text>
+  <text x="235" y="243" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">SpecId (string): Shared Spec, Image, VNet, SG, SSHKey</text>
+  <text x="235" y="262" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">Location (object): Shared Provider &amp; Geo-Coordinates</text>
+  <rect x="450" y="176" width="390" height="136" rx="8" fill="#f8fafc" stroke="#2563eb" stroke-width="1.8"/>
+  <rect x="450" y="176" width="390" height="30" rx="8" fill="#2563eb"/>
+  <rect x="450" y="194" width="390" height="12" fill="#2563eb"/>
+  <text x="645" y="196" fill="#ffffff" font-size="12.5" font-weight="700" text-anchor="middle">CompactNodeDelta</text>
+  <text x="645" y="224" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">Id (string): Node ID (~0.8-1.2 KB in etcd)</text>
+  <text x="645" y="243" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">CspResourceId (string): Instance ID, Zone Subnet, IPs</text>
+  <rect x="40" y="326" width="390" height="136" rx="8" fill="#f8fafc" stroke="#2563eb" stroke-width="1.8"/>
+  <rect x="40" y="326" width="390" height="30" rx="8" fill="#2563eb"/>
+  <rect x="40" y="344" width="390" height="12" fill="#2563eb"/>
+  <text x="235" y="346" fill="#ffffff" font-size="12.5" font-weight="700" text-anchor="middle">HotNodeStatus</text>
+  <text x="235" y="374" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">Status (string): Running / Suspended / Terminated (~200</text>
+  <text x="235" y="393" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">B)</text>
+  <text x="235" y="412" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">PublicIP (string): Hot Public IP</text>
+  <rect x="450" y="326" width="390" height="136" rx="8" fill="#f8fafc" stroke="#2563eb" stroke-width="1.8"/>
+  <rect x="450" y="326" width="390" height="30" rx="8" fill="#2563eb"/>
+  <rect x="450" y="344" width="390" height="12" fill="#2563eb"/>
+  <text x="645" y="346" fill="#ffffff" font-size="12.5" font-weight="700" text-anchor="middle">OpenBaoKV</text>
+  <text x="645" y="374" fill="#0f172a" font-size="10.5" font-weight="500" text-anchor="middle">Path (string): SSH Private Key Secret Path</text>
+</svg>
